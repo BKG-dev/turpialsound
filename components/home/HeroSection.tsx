@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { motion, useAnimation } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { ParticleCanvas } from '@/components/fx/ParticleCanvas'
-import { AudioVisualizerFrequency } from '@/components/media/AudioVisualizerFrequency'
+import { AudioVisualizerWaterfall3D } from '@/components/media/AudioVisualizerWaterfall3D'
 
 const LINE1 = 'TURPIAL'
 const LINE2 = 'SOUND'
@@ -121,7 +121,7 @@ export function HeroSection({
       <ParticleCanvas className="absolute inset-0 h-full w-full" />
 
       {/* ── Plasma Visualizer — fixed top-right, persists on scroll ─────── */}
-      <AudioVisualizerFrequency src={audioSrc} />
+      <AudioVisualizerWaterfall3D src={audioSrc} />
 
       {/* ── Content ───────────────────────────────────────────────────── */}
       <div className="container-base relative z-10 py-32">
