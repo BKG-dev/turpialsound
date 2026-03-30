@@ -2,14 +2,21 @@
 
 import Link from 'next/link'
 import type { Route } from 'next'
-import type { LucideIcon } from 'lucide-react'
+import { Mic, Video, Sliders, Music, type LucideIcon } from 'lucide-react'
 import { TiltCard } from '@/components/ui/TiltCard'
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  Mic,
+  Video,
+  Sliders,
+  Music,
+}
 
 interface NuminousServiceCardProps {
   name: string
   tagline: string
   href: string
-  Icon: LucideIcon
+  iconName: string
   glowColor?: 'cyan' | 'gold'
 }
 
@@ -21,9 +28,10 @@ export function NuminousServiceCard({
   name,
   tagline,
   href,
-  Icon,
+  iconName,
   glowColor = 'cyan',
 }: NuminousServiceCardProps) {
+  const Icon = ICON_MAP[iconName] ?? Mic
   return (
     <TiltCard
       glowColor={glowColor}

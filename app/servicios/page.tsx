@@ -1,7 +1,5 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Mic, Video, Sliders, Music } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 import { generatePageMetadata } from '@/lib/metadata'
 import { coreServices, expandedServices } from '@/content/services'
 import { PageHero } from '@/components/sections/PageHero'
@@ -22,12 +20,12 @@ export const metadata: Metadata = generatePageMetadata({
   path: '/servicios',
 })
 
-/** Map expanded service slugs to lucide icons */
-const expandedIcons: Record<string, { Icon: LucideIcon; glow: 'cyan' | 'gold' }> = {
-  'podcast-locucion':     { Icon: Mic,     glow: 'cyan' },
-  'video-session':        { Icon: Video,   glow: 'gold' },
-  'mezcla-masterizacion': { Icon: Sliders, glow: 'cyan' },
-  'arreglos-musicales':   { Icon: Music,   glow: 'gold' },
+/** Map expanded service slugs to icon names (strings safe to pass to Client Components) */
+const expandedIcons: Record<string, { iconName: string; glow: 'cyan' | 'gold' }> = {
+  'podcast-locucion':     { iconName: 'Mic',     glow: 'cyan' },
+  'video-session':        { iconName: 'Video',   glow: 'gold' },
+  'mezcla-masterizacion': { iconName: 'Sliders', glow: 'cyan' },
+  'arreglos-musicales':   { iconName: 'Music',   glow: 'gold' },
 }
 
 export default function ServiciosPage() {
@@ -85,14 +83,14 @@ export default function ServiciosPage() {
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             {expandedServices.map((service) => {
-              const meta = expandedIcons[service.slug] ?? { Icon: Mic, glow: 'cyan' as const }
+              const meta = expandedIcons[service.slug] ?? { iconName: 'Mic', glow: 'cyan' as const }
               return (
                 <NuminousServiceCard
                   key={service.id}
                   name={service.name}
                   tagline={service.tagline}
                   href={service.ctaHref}
-                  Icon={meta.Icon}
+                  iconName={meta.iconName}
                   glowColor={meta.glow}
                 />
               )
