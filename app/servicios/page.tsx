@@ -1,10 +1,19 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { Mic, Video, Sliders, Music } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { generatePageMetadata } from '@/lib/metadata'
 import { coreServices, expandedServices } from '@/content/services'
 import { PageHero } from '@/components/sections/PageHero'
 import { SectionShell, SectionHeading } from '@/components/sections/SectionShell'
 import { CTASection } from '@/components/sections/CTASection'
+import { AnimatedHeading } from '@/components/ui/AnimatedHeading'
+import { NuminousServiceCard } from '@/components/ui/NuminousServiceCard'
+import { StackingSection } from '@/components/home/StackingSection'
+import { Mac3DGallery } from '@/components/media/Mac3DGallery'
+import { getImageArray, IMAGE_PREFIXES } from '@/lib/imageArrays'
+
+const instalacionesImages = getImageArray(IMAGE_PREFIXES.instalaciones, 3)
 
 export const metadata: Metadata = generatePageMetadata({
   title: 'Servicios de grabación y producción musical',
@@ -12,6 +21,14 @@ export const metadata: Metadata = generatePageMetadata({
     'Todos los servicios de Turpial Sound: ensayo, grabación, producción, mezcla, masterización, podcast, video sessions y arreglos musicales. Caracas.',
   path: '/servicios',
 })
+
+/** Map expanded service slugs to lucide icons */
+const expandedIcons: Record<string, { Icon: LucideIcon; glow: 'cyan' | 'gold' }> = {
+  'podcast-locucion':     { Icon: Mic,     glow: 'cyan' },
+  'video-session':        { Icon: Video,   glow: 'gold' },
+  'mezcla-masterizacion': { Icon: Sliders, glow: 'cyan' },
+  'arreglos-musicales':   { Icon: Music,   glow: 'gold' },
+}
 
 export default function ServiciosPage() {
   return (
@@ -22,57 +39,87 @@ export default function ServiciosPage() {
         subheading="Ensayo, grabación, producción completa y servicios especializados. Un solo lugar, un solo estándar."
       />
 
-      <SectionShell>
-        <SectionHeading eyebrow="Servicios principales" heading="Las tres puertas de entrada." />
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
-          {coreServices.map((service) => (
-            <Link
-              key={service.id}
-              href={service.ctaHref}
-              className="group rounded-xl border border-brand-border bg-brand-surface p-6 transition-all hover:border-accent-gold/40 hover:shadow-glow-sm"
-            >
-              <span className="accent-line" aria-hidden="true" />
-              <h2 className="mt-4 font-display text-xl font-bold text-text-primary transition-colors group-hover:text-accent-gold">
-                {service.name}
-              </h2>
-              <p className="mt-2 text-sm text-text-secondary">{service.description}</p>
-              <p className="mt-4 text-xs text-text-muted">{service.priceNote}</p>
-            </Link>
-          ))}
-        </div>
-      </SectionShell>
-
-      <SectionShell background="surface">
-        <SectionHeading
-          eyebrow="Servicios adicionales"
-          heading="Servicios especializados."
-          subheading="Complementa tu proyecto con servicios que se adaptan a lo que necesitas."
-        />
-        <div className="mt-10 grid gap-4 sm:grid-cols-2">
-          {expandedServices.map((service) => (
-            <Link
-              key={service.id}
-              href={service.ctaHref}
-              className="group flex items-start justify-between rounded-lg border border-brand-border bg-brand-bg p-5 transition-all hover:border-accent-gold/40"
-            >
-              <div>
-                <h3 className="font-display text-base font-semibold text-text-primary transition-colors group-hover:text-accent-gold">
-                  {service.name}
-                </h3>
-                <p className="mt-1 text-sm text-text-secondary">{service.tagline}</p>
-              </div>
-              <span
-                className="ml-4 shrink-0 text-text-muted transition-colors group-hover:text-accent-gold"
-                aria-hidden="true"
+      {/* ── Core services ─────────────────────────────────────────────── */}
+      <StackingSection index={0}>
+        <SectionShell>
+          <SectionHeading eyebrow="Servicios principales" heading="Las tres puertas de entrada." />
+          <div className="mt-10 grid gap-6 md:grid-cols-3">
+            {coreServices.map((service) => (
+              <Link
+                key={service.id}
+                href={service.ctaHref}
+                className="btn-gradient-border group rounded-xl border border-transparent bg-brand-surface p-6 transition-all duration-300 hover:bg-brand-surface/80"
               >
-                →
-              </span>
-            </Link>
-          ))}
-        </div>
-      </SectionShell>
+                <span className="accent-line-animated" aria-hidden="true" />
+                <h2 className="mt-4 font-display text-xl text-text-primary transition-colors group-hover:text-gradient-animated">
+                  {service.name}
+                </h2>
+                <p className="mt-2 text-sm text-text-secondary">{service.description}</p>
+                <p className="mt-4 text-xs text-text-muted">{service.priceNote}</p>
+              </Link>
+            ))}
+          </div>
+        </SectionShell>
+      </StackingSection>
 
-      <CTASection />
+      {/* ── Expanded services ──────────────────────────────────────────── */}
+      <StackingSection index={1} background="surface">
+        <SectionShell background="surface">
+          {/* Eyebrow */}
+          <div className="mb-4 flex items-center gap-4">
+            <span className="accent-line-animated" aria-hidden="true" />
+            <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
+              Servicios adicionales
+            </span>
+          </div>
+
+          {/* Letter-by-letter animated heading */}
+          <AnimatedHeading
+            text="Servicios especializados."
+            as="h2"
+            className="font-display text-display-md text-text-primary"
+          />
+          <p className="mt-4 max-w-prose text-body-base text-text-secondary">
+            Complementa tu proyecto con servicios que se adaptan a lo que necesitas.
+          </p>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+            {expandedServices.map((service) => {
+              const meta = expandedIcons[service.slug] ?? { Icon: Mic, glow: 'cyan' as const }
+              return (
+                <NuminousServiceCard
+                  key={service.id}
+                  name={service.name}
+                  tagline={service.tagline}
+                  href={service.ctaHref}
+                  Icon={meta.Icon}
+                  glowColor={meta.glow}
+                />
+              )
+            })}
+          </div>
+        </SectionShell>
+      </StackingSection>
+
+      {/* Instalaciones — 3D gallery */}
+      <StackingSection index={2}>
+        <SectionShell>
+          <div className="mb-4 flex items-center gap-4">
+            <span className="accent-line-animated" aria-hidden="true" />
+            <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
+              Instalaciones
+            </span>
+          </div>
+          <Mac3DGallery
+            images={instalacionesImages}
+            title="Instalaciones · Turpial Sound"
+          />
+        </SectionShell>
+      </StackingSection>
+
+      <StackingSection index={3}>
+        <CTASection />
+      </StackingSection>
     </>
   )
 }

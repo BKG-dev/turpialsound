@@ -6,13 +6,19 @@ import { SectionShell, SectionHeading } from '@/components/sections/SectionShell
 import { CTASection } from '@/components/sections/CTASection'
 import { Button } from '@/components/ui/Button'
 import { siteConfig } from '@/content/site'
+import { Mac3DGallery } from '@/components/media/Mac3DGallery'
+import { getImageArray, IMAGE_PREFIXES } from '@/lib/imageArrays'
+
+const artistasImages = getImageArray(IMAGE_PREFIXES.artistas, 0)
 
 export const metadata: Metadata = generatePageMetadata({
   title: 'Artistas — Trayectoria verificable',
   description:
-    'Artistas que han grabado y producido en Turpial Sound: Oscar D\'León, Domingo Quiñones, Dimensión Latina y más. Presencia en Caracas desde 2015.',
+    "Artistas que han grabado y producido en Turpial Sound: Oscar D'León, Domingo Quiñones, Dimensión Latina y más. Presencia en Caracas desde 2015.",
   path: '/artistas',
 })
+
+const confirmedArtists = ["Oscar D'León", 'Domingo Quiñones', 'Dimensión Latina']
 
 export default function ArtistasPage() {
   const breadcrumb = buildBreadcrumbSchema([
@@ -31,6 +37,7 @@ export default function ArtistasPage() {
         eyebrow="Artistas"
         heading="Trayectoria que habla por sí sola."
         subheading="Desde 2015, Turpial Sound ha sido el espacio de trabajo de artistas reconocidos en Venezuela y la región."
+        accentColor="cyan"
       />
 
       <SectionShell>
@@ -38,32 +45,52 @@ export default function ArtistasPage() {
           eyebrow="Trayectoria confirmada"
           heading="Algunos de los artistas que han trabajado aquí."
           subheading="Lista parcial — la nómina completa está sujeta a autorización de cada artista para publicación pública."
+          accentColor="cyan"
         />
 
-        {/* CLIENT_REQUIRED: lista completa y autorizada de artistas con sus respectivos permisos */}
-        <div className="mt-10 rounded-xl border border-brand-border bg-brand-surface p-8">
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {['Oscar D\'León', 'Domingo Quiñones', 'Dimensión Latina'].map((artist) => (
-              <li
-                key={artist}
-                className="flex items-center gap-3 rounded-lg border border-brand-border bg-brand-bg p-4"
-              >
-                {/* CLIENT_REQUIRED: imagen/logo del artista */}
-                <div className="h-10 w-10 shrink-0 rounded-full bg-brand-muted" aria-hidden="true" />
-                <span className="font-medium text-text-primary">{artist}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-8 text-sm text-text-muted">
-            + más artistas pendientes de autorización para publicación.{/* CLIENT_REQUIRED */}
-          </p>
-        </div>
+        <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {confirmedArtists.map((artist, i) => (
+            <li
+              key={artist}
+              className="flex items-center gap-4 rounded-2xl border border-brand-border bg-brand-surface p-5 transition-all duration-250 hover:border-accent-cyan/30"
+            >
+              {/* Avatar placeholder */}
+              <div
+                className="h-12 w-12 shrink-0 rounded-full"
+                style={{
+                  background:
+                    i % 2 === 0
+                      ? 'radial-gradient(circle, rgba(255,193,7,0.15) 0%, rgba(255,193,7,0.03) 100%)'
+                      : 'radial-gradient(circle, rgba(0,174,239,0.15) 0%, rgba(0,174,239,0.03) 100%)',
+                  border: `1px solid ${i % 2 === 0 ? 'rgba(255,193,7,0.15)' : 'rgba(0,174,239,0.15)'}`,
+                }}
+                aria-hidden="true"
+              />
+              <span className="font-display text-sm text-text-primary">{artist}</span>
+            </li>
+          ))}
+        </ul>
+
+        <p className="mt-8 text-sm text-text-muted">
+          + más artistas pendientes de autorización para publicación.
+        </p>
+      </SectionShell>
+
+      {/* Photo gallery — 3D carousel */}
+      <SectionShell>
+        <Mac3DGallery
+          images={artistasImages}
+          title="Artistas · Turpial Sound"
+        />
       </SectionShell>
 
       <SectionShell background="surface" size="sm">
-        <p className="text-sm font-medium uppercase tracking-widest text-text-muted">
-          También puede interesarte
-        </p>
+        <div className="flex items-center gap-4">
+          <span className="accent-line-animated" aria-hidden="true" />
+          <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
+            También puede interesarte
+          </span>
+        </div>
         <div className="mt-6 flex flex-wrap gap-4">
           <Button as="link" href="/nosotros" variant="secondary" size="sm">
             El equipo

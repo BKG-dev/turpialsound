@@ -1,55 +1,58 @@
-import Link from 'next/link'
-import { mainNavItems, ctaNav } from '@/content/navigation'
+import { ctaNav } from '@/content/navigation'
 import { Button } from '@/components/ui/Button'
 import { MobileMenu } from '@/components/layout/MobileMenu'
+import { AnimatedLogo } from '@/components/layout/AnimatedLogo'
+import { AnimatedNavLinks } from '@/components/layout/AnimatedNavLinks'
+import { cn } from '@/lib/utils'
 
 export function SiteHeader() {
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-brand-border bg-brand-bg/90 backdrop-blur-sm">
-      <div className="container-base flex h-16 items-center justify-between">
-        {/* Logo */}
-        <Link
-          href="/"
-          className="font-display text-xl font-bold tracking-tight text-text-primary transition-colors hover:text-accent-gold"
-          aria-label="Turpial Sound — Inicio"
-        >
-          Turpial Sound
-        </Link>
+    /*
+     * Pill navbar:
+     *  • right-6  → borde derecho alineado con el AudioVisualizerPlasma (right-6)
+     *  • left-6   → simétrico, deja margen visual a ambos lados
+     *  • rounded-2xl en todos los extremos del pill
+     *  • El CTA "Reservar" es la tapa derecha del pill: rounded-r-2xl, h-full
+     */
+    <header
+      className={[
+        'fixed top-3 left-6 right-6 z-50',
+        'flex items-stretch h-14',
+        'rounded-2xl glass-surface shadow-glow-cyan-sm',
+        '[border-color:rgba(255,255,255,0.11)]',
+      ].join(' ')}
+    >
+      {/* ── Left + centre — logo y nav links ────────────────────────── */}
+      <div className="flex flex-1 items-center gap-4 pl-5 pr-3 min-w-0">
+        <AnimatedLogo />
+        <AnimatedNavLinks />
+      </div>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden items-center gap-1 lg:flex" aria-label="Navegación principal">
-          {mainNavItems.map((item) => (
-            <div key={item.href} className="relative group">
-              <Link
-                href={item.href}
-                className="rounded px-3 py-2 text-sm text-text-secondary transition-colors hover:text-text-primary"
-              >
-                {item.label}
-              </Link>
-              {item.children && (
-                <div className="absolute left-0 top-full mt-1 hidden w-56 rounded-lg border border-brand-border bg-brand-surface py-2 shadow-xl group-hover:block">
-                  {item.children.map((child) => (
-                    <Link
-                      key={child.href}
-                      href={child.href}
-                      className="block px-4 py-2 text-sm text-text-secondary transition-colors hover:text-text-primary"
-                    >
-                      {child.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </nav>
+      {/* ── Right cap — CTA como tapa del pill ──────────────────────── */}
+      {/*
+       * El botón ocupa h-full, sus esquinas derechas repiten el radio del pill
+       * (rounded-r-2xl = 28px). Las izquierdas son más suaves (rounded-l-xl = 20px)
+       * para una transición orgánica desde el interior del pill.
+       * twMerge en Button garantiza que estas clases prevalezcan sobre size="sm".
+       */}
+      <Button
+        as="link"
+        href={ctaNav.href}
+        variant="primary"
+        size="sm"
+        className={cn(
+          'hidden sm:inline-flex items-center',
+          'self-stretch py-0 px-6',
+          'rounded-l-xl rounded-r-2xl',
+          'whitespace-nowrap',
+        )}
+      >
+        {ctaNav.label}
+      </Button>
 
-        {/* CTA + Mobile trigger */}
-        <div className="flex items-center gap-3">
-          <Button as="link" href={ctaNav.href} variant="primary" size="sm" className="hidden sm:inline-flex">
-            {ctaNav.label}
-          </Button>
-          <MobileMenu />
-        </div>
+      {/* Mobile trigger — visible solo en < sm */}
+      <div className="flex items-center px-4 sm:hidden">
+        <MobileMenu />
       </div>
     </header>
   )

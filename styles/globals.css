@@ -4,19 +4,32 @@
 
 /* ─── CSS Custom Properties ─────────────────────────────────────── */
 :root {
-  /* Colors — SUGGESTED palette; CLIENT_REQUIRED for brand approval */
+  /* Base surfaces */
   --color-bg: #0a0a0a;
   --color-surface: #111111;
   --color-border: #1e1e1e;
   --color-muted: #2a2a2a;
-  --color-accent: #c9973a;
-  --color-accent-light: #e5b76a;
+
+  /* Brand accents */
+  --color-gold: #ffc107;
+  --color-gold-light: #ffd54f;
+  --color-gold-dark: #e6a800;
+  --color-cyan: #00aeef;
+  --color-cyan-light: #29bcff;
+  --color-cyan-dark: #0090c8;
+
+  /* Glassmorphism */
+  --glass-bg: rgba(17, 17, 17, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-blur: 12px;
+
+  /* Text */
   --color-text-primary: #f2f2f2;
   --color-text-secondary: #a0a0a0;
   --color-text-muted: #5a5a5a;
 
   /* Typography */
-  --font-display: var(--font-syne), system-ui, sans-serif;
+  --font-display: var(--font-michroma), system-ui, sans-serif;
   --font-body: var(--font-inter), system-ui, sans-serif;
 
   /* Spacing */
@@ -65,6 +78,22 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Ambient background: slow drifting radial glows ──────────────────────── */
+/* Uses transform (GPU-composited) → zero layout thrashing, near-zero GPU cost */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 40% at 15% 20%, rgba(0, 174, 239, 0.042) 0%, transparent 65%),
+    radial-gradient(ellipse 45% 35% at 80% 72%, rgba(255, 193,   7, 0.026) 0%, transparent 60%),
+    radial-gradient(ellipse 35% 30% at 55% 45%, rgba(0,  80, 200, 0.028) 0%, transparent 65%);
+  animation: bgDrift 22s ease-in-out infinite;
+  will-change: transform;
+}
+
 /* ─── Typography Base ────────────────────────────────────────────── */
 h1,
 h2,
@@ -73,9 +102,9 @@ h4,
 h5,
 h6 {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 400;
   line-height: 1.1;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.02em;
   color: var(--color-text-primary);
 }
 
@@ -92,6 +121,120 @@ img,
 video {
   display: block;
   max-width: 100%;
+}
+
+/* ─── Keyframes ──────────────────────────────────────────────────── */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+/* ── Gradient shift — animated background-position (blue-dominant) ───────── */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%;   }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%;   }
+}
+
+/* ── Silky Blue button — numinous halo pulse ─────────────────────────────── */
+@keyframes silkyHalo {
+  0%, 100% {
+    box-shadow:
+      0 0 18px rgba(0, 174, 239, 0.28),
+      0 0 48px rgba(0, 174, 239, 0.07),
+      inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  50% {
+    box-shadow:
+      0 0 30px rgba(0, 174, 239, 0.46),
+      0 0 72px rgba(0, 174, 239, 0.14),
+      inset 0 1px 0 rgba(255,255,255,0.13);
+  }
+}
+
+/* ── Ambient background drift (GPU-composited via transform) ─────────────── */
+@keyframes bgDrift {
+  0%,  100% { transform: translate(0%,    0%)    scale(1);     }
+  25%        { transform: translate(1.5%,  2%)    scale(1.015); }
+  50%        { transform: translate(-1%,   3.5%)  scale(1.008); }
+  75%        { transform: translate(2%,   -1.5%)  scale(0.997); }
+}
+
+/* ── WhatsApp / numinous pulse rings ─────────────────────────────────────── */
+@keyframes ringPulse {
+  0%   { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+/* ── Text gradient cyan ───────────────────────────────────────────────────── */
+.text-gradient-cyan {
+  background: linear-gradient(135deg, var(--color-cyan), var(--color-cyan-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Animated gradient text (logo numinoso, blue-dominant) ───────────────── */
+.text-gradient-animated {
+  background: linear-gradient(
+    135deg,
+    #00aeef  0%,
+    #0050c8 25%,
+    #0068e0 55%,
+    #00aeef 80%,
+    #ffc107 100%
+  );
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 5s ease infinite;
+}
+
+/* ── Gradient border — outline buttons (mask technique, GPU-safe) ─────────── */
+/* Technique: ::before padding-box + mask xor = only border ring visible      */
+.btn-gradient-border {
+  position: relative;
+}
+
+.btn-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;           /* = visual border thickness */
+  background: linear-gradient(
+    135deg,
+    #00aeef  0%,
+    #0050c8 30%,
+    #00aeef 70%,
+    #ffc107 100%
+  );
+  background-size: 300% 300%;
+  animation: gradientShift 5s ease infinite;
+  /* Show only the 1px padding ring, mask away the content area */
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
 /* ─── Utility Classes ────────────────────────────────────────────── */
@@ -111,17 +254,132 @@ video {
     padding-block: clamp(2rem, 4vw, 4rem);
   }
 
+  /* Accent decorative lines */
   .accent-line {
     display: block;
     width: 2.5rem;
     height: 2px;
-    background-color: var(--color-accent);
+    background-color: var(--color-gold);
+    flex-shrink: 0;
   }
 
+  .accent-line-cyan {
+    display: block;
+    width: 2.5rem;
+    height: 2px;
+    background-color: var(--color-cyan);
+    flex-shrink: 0;
+  }
+
+  /* ── Gradient animated accent line — numinous, blue-dominant ── */
+  .accent-line-animated {
+    display: block;
+    width: 2.5rem;
+    height: 2px;
+    background: linear-gradient(90deg, #00aeef 0%, #0050c8 35%, #00aeef 70%, #ffc107 100%);
+    background-size: 300% 100%;
+    animation: gradientShift 5s ease infinite;
+    flex-shrink: 0;
+  }
+
+  /* Text gradients */
   .text-gradient-gold {
-    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-light));
+    background: linear-gradient(135deg, var(--color-gold), var(--color-gold-light));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  .text-gradient-dual {
+    background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glassmorphism surface */
+  .glass-surface {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+  }
+
+  /* Animations */
+  .animate-slide-down {
+    animation: slideDown 280ms var(--ease-out-expo) forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 400ms ease forwards;
+  }
+
+  .animate-pulse-glow {
+    animation: pulseGlow 3s ease-in-out infinite;
+  }
+
+  /* ── Silky Blue primary: blue-dominant animated gradient ─────────────── */
+  .btn-silky-primary {
+    /* Gradient: cyan → deep-blue → mid-blue → cyan → gold (blue dominant: 0–80%) */
+    background: linear-gradient(
+      135deg,
+      #00aeef  0%,
+      #0050c8 25%,
+      #0068e0 55%,
+      #00aeef 80%,
+      #ffc107 100%
+    );
+    background-size: 300% 300%;
+    color: #fff;
+    border: 1px solid rgba(0, 174, 239, 0.45);
+    animation: gradientShift 5s ease infinite, silkyHalo 3.5s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-silky-primary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, rgba(255,255,255,0.07) 0%, transparent 55%);
+    pointer-events: none;
+  }
+
+  .btn-silky-primary:hover {
+    filter: brightness(1.12);
+  }
+
+  /* ── Gradient outline: same palette, transparent fill ──────────────────── */
+  .btn-gradient-outline {
+    background: linear-gradient(
+      135deg,
+      rgba(0, 174, 239, 0.11)  0%,
+      rgba(0,  80, 200, 0.09) 30%,
+      rgba(0, 104, 224, 0.08) 55%,
+      rgba(0, 174, 239, 0.10) 80%,
+      rgba(255, 193, 7, 0.06) 100%
+    );
+    background-size: 300% 300%;
+    border: 1px solid transparent;
+    /* Box-shadow renders the "border" so border: transparent is safe */
+    box-shadow: 0 0 0 1px rgba(0, 174, 239, 0.42), 0 0 14px rgba(0, 174, 239, 0.10);
+    animation: gradientShift 5s ease infinite;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-gradient-outline:hover {
+    box-shadow: 0 0 0 1px rgba(0, 174, 239, 0.70), 0 0 24px rgba(0, 174, 239, 0.18);
+    filter: brightness(1.08);
+  }
+
+  /* Scrollbar hide for carousels */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }
