@@ -105,7 +105,7 @@ export function AudioVisualizerFrequency({ src }: Props) {
     const canvas   = canvasRef.current
     const analyser = analyserRef.current
     if (!canvas || !analyser) return
-    const ctx = canvas.getContext('2d')
+    const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
     if (!ctx) return
 
     const W = canvas.width, H = canvas.height
