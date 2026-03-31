@@ -124,7 +124,8 @@ export function HeroSection({
       <AudioVisualizerWaterfall3D src={audioSrc} />
 
       {/* ── Content ───────────────────────────────────────────────────── */}
-      <div className="container-base relative z-10 py-32">
+      {/* pl-[6.5rem] = left-6(24) + pl-5(20) + logo(52) + gap-2(8) = 104px → alinea con "T" del navbar */}
+      <div className="relative z-10 py-32 w-full pl-6 sm:pl-[6.5rem] pr-6">
         <div className="max-w-[900px]">
 
           {/* Eyebrow */}
