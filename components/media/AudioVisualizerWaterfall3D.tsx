@@ -5,12 +5,15 @@
  *
  * 5 modos de visualización tipo Winamp, canvas 2D puro sin deps externas.
  *
+ * Arranque: modo D (SCOPE). Auto-cicla por todos los modos cada 5 s.
+ *
  * Modos 3D (A / B / C):
- *   Grilla 20×20 con proyección perspectiva manual, pitch dinámico.
- *   Mouse drag → controla yaw + pitch. Al soltar → vuelve a auto-rotate suavemente.
+ *   Grilla 20×20 con proyección perspectiva manual.
+ *   Pointer drag (mouse + touch) → rotación esférica con inercia.
+ *   Al soltar: momentum decae y auto-rotación retoma.
  *
  * Modos 2D (D / E):
- *   D - SCOPE   : Oscilloscope — forma de onda neon con glow
+ *   D - SCOPE   : Osciloscopio — forma de onda neon con glow
  *   E - CLASSIC : Barras Winamp — 64 barras con picos cayendo y reflejo
  */
 
@@ -20,34 +23,27 @@ import { Pause, Play, Layers } from 'lucide-react'
 interface Props { src: string }
 
 /* ── Constantes globales ─────────────────────────────────────────────────── */
-const PITCH_DEF = -0.54          // pitch por defecto (regresa aquí al soltar el mouse)
-const FL        = 460            // focal length
-const CD        = 395            // camera distance
-const GRID      = 20             // 20×20 barras 3D
-const CELL      = 35             // tamaño de celda → grid llena ~90 % del canvas
-const MAX_H     = 200            // altura máxima de barras 3D
-const HW        = CELL * 0.43   // semi-ancho de barra
-const BARS_2D   = 64             // barras para modo E (CLASSIC)
+const PITCH_DEF = -0.54          // pitch por defecto (regresa aquí al soltar)
+const PITCH_MIN = -Math.PI * 0.45
+const PITCH_MAX =  0.18          // rango esférico: ver desde ligeramente debajo
+const FL        = 460
+const CD        = 395
+const GRID      = 20
+const CELL      = 35
+const MAX_H     = 200
+const HW        = CELL * 0.43
+const BARS_2D   = 64
 
 /* ── Modos ──────────────────────────────────────────────────────────────── */
 type Mode = 'A' | 'B' | 'C' | 'D' | 'E'
 const MODES: Mode[] = ['A', 'B', 'C', 'D', 'E']
 const MODE_LABEL: Record<Mode, string> = {
-  A: 'SPECTRUM',
-  B: 'RADIAL',
-  C: 'TERRAIN',
-  D: 'SCOPE',
-  E: 'CLASSIC',
+  A: 'SPECTRUM', B: 'RADIAL', C: 'TERRAIN', D: 'SCOPE', E: 'CLASSIC',
 }
 
-type Bar3D = {
-  cx: number; cz: number
-  h:  number
-  r:  number; g: number; b: number
-  depth: number
-}
+type Bar3D = { cx: number; cz: number; h: number; r: number; g: number; b: number; depth: number }
 
-/* ── Paleta Turpial Sound: oscuro-teal → cian → oro → blanco ─────────────── */
+/* ── Paleta ──────────────────────────────────────────────────────────────── */
 function tsColor(v: number): [number, number, number] {
   const n = v / 255
   if (n < 0.45) {
@@ -62,12 +58,12 @@ function tsColor(v: number): [number, number, number] {
   return [255, Math.round(193 + t * 62), Math.round(7 + t * 248)]
 }
 
-/* ── Proyección 3D → 2D (cosP/sinP dinámicos para control por mouse) ────── */
+/* ── Proyección 3D → 2D ──────────────────────────────────────────────────── */
 function p3(
   lx: number, ly: number, lz: number,
   cosY: number, sinY: number,
   cosP: number, sinP: number,
-  cx: number,  cy: number,
+  cx: number, cy: number,
 ) {
   const x1 =  lx * cosY + lz * sinY
   const z1 = -lx * sinY + lz * cosY
@@ -77,7 +73,7 @@ function p3(
   return { sx: cx + x1 * s, sy: cy - y2 * s, z2 }
 }
 
-/* ── Mapeo de frecuencia por modo 3D ─────────────────────────────────────── */
+/* ── Frecuencia por modo 3D ──────────────────────────────────────────────── */
 function binVal(col: number, row: number, data: Uint8Array, mode: 'A' | 'B' | 'C'): number {
   const bins = data.length
   if (!bins) return 0
@@ -103,26 +99,25 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
   const analyserRef  = useRef<AnalyserNode | null>(null)
   const rafRef       = useRef<number>(0)
 
-  /* Rotación/perspectiva */
+  /* Rotación esférica */
   const yawRef       = useRef(0)
   const pitchRef     = useRef(PITCH_DEF)
   const prevTsRef    = useRef(0)
   const autoRotRef   = useRef(true)
   const draggingRef  = useRef(false)
   const lastPtrRef   = useRef({ x: 0, y: 0 })
+  const velRef       = useRef({ x: 0, y: 0 })   // inercia angular
   const resumeTimRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  /* Modo activo */
-  const modeRef      = useRef<Mode>('A')
-
-  /* Picos para modo E */
+  /* Modo activo — arranca en D (SCOPE, 2D) */
+  const modeRef      = useRef<Mode>('D')
   const peaksRef     = useRef(new Float32Array(BARS_2D))
 
   const [playing,  setPlaying]  = useState(false)
-  const [mode,     setMode]     = useState<Mode>('A')
+  const [mode,     setMode]     = useState<Mode>('D')
   const [dragging, setDragging] = useState(false)
 
-  /* ── Cicla modos ──────────────────────────────────────────────────────── */
+  /* ── Avanza al siguiente modo ──────────────────────────────────────────── */
   function cycleMode() {
     const next = MODES[(MODES.indexOf(modeRef.current) + 1) % MODES.length]
     modeRef.current = next
@@ -130,34 +125,51 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
     if (next === 'E') peaksRef.current.fill(0)
   }
 
-  /* ── Mouse drag (solo para modos 3D) ─────────────────────────────────── */
-  function onMouseDown(e: React.MouseEvent) {
-    const m = modeRef.current
-    if (m === 'D' || m === 'E') return
+  /* ── Auto-ciclo cada 5 s ───────────────────────────────────────────────── */
+  useEffect(() => {
+    const id = setInterval(cycleMode, 5_000)
+    return () => clearInterval(id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     ROTACIÓN ESFÉRICA — Pointer Events (mouse + touch unificados)
+  ════════════════════════════════════════════════════════════════════════════ */
+  function onPointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (modeRef.current === 'D' || modeRef.current === 'E') return
     e.preventDefault()
-    draggingRef.current = true
+    ;(e.target as HTMLCanvasElement).setPointerCapture(e.pointerId)
+    draggingRef.current  = true
+    autoRotRef.current   = false
+    velRef.current       = { x: 0, y: 0 }
+    lastPtrRef.current   = { x: e.clientX, y: e.clientY }
     setDragging(true)
-    autoRotRef.current  = false
-    lastPtrRef.current  = { x: e.clientX, y: e.clientY }
     if (resumeTimRef.current) clearTimeout(resumeTimRef.current)
   }
 
-  function onMouseMove(e: React.MouseEvent) {
+  function onPointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
     if (!draggingRef.current) return
     const dx = e.clientX - lastPtrRef.current.x
     const dy = e.clientY - lastPtrRef.current.y
-    yawRef.current   += dx * 0.008
-    pitchRef.current  = Math.max(-Math.PI * 0.48, Math.min(-0.04, pitchRef.current - dy * 0.004))
+    const dYaw   = dx * 0.010
+    const dPitch = -dy * 0.008
+    yawRef.current    += dYaw
+    pitchRef.current   = Math.max(PITCH_MIN, Math.min(PITCH_MAX, pitchRef.current + dPitch))
+    /* Guardar velocidad instantánea para inercia */
+    velRef.current     = { x: dYaw, y: dPitch }
     lastPtrRef.current = { x: e.clientX, y: e.clientY }
   }
 
-  function stopDrag() {
+  function onPointerUp() {
     if (!draggingRef.current) return
     draggingRef.current = false
     setDragging(false)
+    /* Inercia activa 2 s, luego retoma auto-rotación */
     if (resumeTimRef.current) clearTimeout(resumeTimRef.current)
-    /* Espera 2 s antes de retomar auto-rotación y regreso de pitch */
-    resumeTimRef.current = setTimeout(() => { autoRotRef.current = true }, 2000)
+    resumeTimRef.current = setTimeout(() => {
+      autoRotRef.current = true
+      velRef.current     = { x: 0, y: 0 }
+    }, 2_000)
   }
 
   /* ── AudioContext ─────────────────────────────────────────────────────── */
@@ -176,9 +188,9 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
     analyserRef.current = analyser
   }
 
-  /* ══════════════════════════════════════════════════════════════════════
+  /* ══════════════════════════════════════════════════════════════════════════
      RENDER PRINCIPAL
-  ════════════════════════════════════════════════════════════════════════ */
+  ════════════════════════════════════════════════════════════════════════════ */
   const render = useCallback((
     freqData: Uint8Array | null,
     waveData: Uint8Array | null,
@@ -209,10 +221,20 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
       : 0.016
     prevTsRef.current = ts
 
-    /* Auto-rotación + regreso suave del pitch al default */
-    if (autoRotRef.current && !draggingRef.current) {
+    /* ── Física de rotación esférica ───────────────────────────────────── */
+    if (draggingRef.current) {
+      /* nada — los eventos ya actualizan yaw/pitch */
+    } else if (autoRotRef.current) {
+      /* Auto-rotación suave + pitch regresa al default */
       yawRef.current   += dt * 0.32
       pitchRef.current += (PITCH_DEF - pitchRef.current) * Math.min(1, dt * 1.8)
+      velRef.current    = { x: 0, y: 0 }
+    } else {
+      /* Inercia post-drag: aplica velocidad y la decae */
+      yawRef.current   += velRef.current.x
+      pitchRef.current  = Math.max(PITCH_MIN, Math.min(PITCH_MAX, pitchRef.current + velRef.current.y))
+      velRef.current.x *= 0.91
+      velRef.current.y *= 0.91
     }
 
     const yaw  = yawRef.current
@@ -224,7 +246,7 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
 
     ctx.clearRect(0, 0, bufW, bufH)
 
-    /* ── Datos de frecuencia idle ────────────────────────────────────── */
+    /* ── Datos idle animados ─────────────────────────────────────────── */
     const freq: Uint8Array = freqData ?? (() => {
       const d = new Uint8Array(512)
       for (let i = 0; i < 512; i++)
@@ -232,7 +254,6 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
       return d
     })()
 
-    /* ── Datos de onda idle ──────────────────────────────────────────── */
     const wave: Uint8Array = waveData ?? (() => {
       const d = new Uint8Array(1024)
       for (let i = 0; i < 1024; i++)
@@ -240,15 +261,14 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
       return d
     })()
 
-    /* ════════════════════════════════════════════════════════════════════
-       MODOS 3D: A / B / C — Grilla rotante
-    ════════════════════════════════════════════════════════════════════ */
+    /* ══════════════════════════════════════════════════════════════════════
+       MODOS 3D: A / B / C
+    ════════════════════════════════════════════════════════════════════════ */
     if (curMode === 'A' || curMode === 'B' || curMode === 'C') {
       const cell = CELL  * sc
       const maxH = MAX_H * sc
       const hw   = HW    * sc
 
-      /* Construir barras */
       const bars: Bar3D[] = new Array(GRID * GRID)
       for (let row = 0; row < GRID; row++) {
         for (let col = 0; col < GRID; col++) {
@@ -282,7 +302,6 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
       const frontZ = cosY >= 0
       const rightX = sinY <= 0
 
-      /* Dibujar barras */
       for (const { cx: bcx, cz: bcz, h, r, g, b } of bars) {
         if (h < 0.5 * sc) continue
 
@@ -295,12 +314,14 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
         const tbl = p3(bcx - hw, h, bcz + hw, cosY, sinY, cosP, sinP, cx, cy)
         const tbr = p3(bcx + hw, h, bcz + hw, cosY, sinY, cosP, sinP, cx, cy)
 
+        /* Cara superior */
         ctx.fillStyle = `rgb(${r},${g},${b})`
         ctx.beginPath()
         ctx.moveTo(tfl.sx, tfl.sy); ctx.lineTo(tfr.sx, tfr.sy)
         ctx.lineTo(tbr.sx, tbr.sy); ctx.lineTo(tbl.sx, tbl.sy)
         ctx.closePath(); ctx.fill()
 
+        /* Cara frontal/trasera */
         const rz = r * 0.62 | 0, gz = g * 0.62 | 0, bz = b * 0.62 | 0
         ctx.fillStyle = `rgb(${rz},${gz},${bz})`
         ctx.beginPath()
@@ -313,6 +334,7 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
         }
         ctx.closePath(); ctx.fill()
 
+        /* Cara lateral */
         const rx = r * 0.42 | 0, gx = g * 0.42 | 0, bx = b * 0.42 | 0
         ctx.fillStyle = `rgb(${rx},${gx},${bx})`
         ctx.beginPath()
@@ -326,15 +348,15 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
         ctx.closePath(); ctx.fill()
       }
 
-    /* ════════════════════════════════════════════════════════════════════
-       MODO D: SCOPE — Oscilloscope neon
-    ════════════════════════════════════════════════════════════════════ */
+    /* ══════════════════════════════════════════════════════════════════════
+       MODO D: SCOPE — Osciloscopio neon
+    ════════════════════════════════════════════════════════════════════════ */
     } else if (curMode === 'D') {
       const amp    = bufH * 0.36
       const yMid   = bufH * 0.50
       const sliceW = bufW / wave.length
 
-      /* Grid de referencia tipo osciloscopio */
+      /* Grid de referencia */
       ctx.save()
       ctx.strokeStyle = 'rgba(0,174,239,0.06)'
       ctx.lineWidth   = 0.5 * sc
@@ -349,7 +371,7 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
       }
       ctx.restore()
 
-      /* Glow exterior (blur suave) */
+      /* Glow exterior */
       ctx.save()
       ctx.shadowBlur  = 20 * sc
       ctx.shadowColor = 'rgba(0,174,239,0.8)'
@@ -359,14 +381,12 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
       ctx.beginPath()
       for (let i = 0; i < wave.length; i++) {
         const v = (wave[i] / 128) - 1
-        const x = i * sliceW
-        const y = yMid + v * amp
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+        i === 0 ? ctx.moveTo(i * sliceW, yMid + v * amp) : ctx.lineTo(i * sliceW, yMid + v * amp)
       }
       ctx.stroke()
       ctx.restore()
 
-      /* Línea nítida (core) */
+      /* Core nítido */
       ctx.save()
       ctx.shadowBlur  = 7 * sc
       ctx.shadowColor = 'rgba(0,220,255,1)'
@@ -376,26 +396,22 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
       ctx.beginPath()
       for (let i = 0; i < wave.length; i++) {
         const v = (wave[i] / 128) - 1
-        const x = i * sliceW
-        const y = yMid + v * amp
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+        i === 0 ? ctx.moveTo(i * sliceW, yMid + v * amp) : ctx.lineTo(i * sliceW, yMid + v * amp)
       }
       ctx.stroke()
       ctx.restore()
 
-      /* Línea central de referencia */
+      /* Línea central */
       ctx.save()
       ctx.strokeStyle = 'rgba(0,174,239,0.12)'
       ctx.lineWidth   = 0.6 * sc
       ctx.setLineDash([5 * sc, 10 * sc])
-      ctx.beginPath()
-      ctx.moveTo(0, yMid); ctx.lineTo(bufW, yMid)
-      ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(0, yMid); ctx.lineTo(bufW, yMid); ctx.stroke()
       ctx.restore()
 
-    /* ════════════════════════════════════════════════════════════════════
+    /* ══════════════════════════════════════════════════════════════════════
        MODO E: CLASSIC — Barras tipo Winamp con picos
-    ════════════════════════════════════════════════════════════════════ */
+    ════════════════════════════════════════════════════════════════════════ */
     } else if (curMode === 'E') {
       const peaks  = peaksRef.current
       const barW   = bufW / BARS_2D
@@ -413,11 +429,9 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
         const x   = i * barW
         const [r, g, b] = tsColor(v)
 
-        /* Pico: sube instantáneo, cae gradualmente */
         if (h > peaks[i]) peaks[i] = h
         else peaks[i] = Math.max(0, peaks[i] - 2.5 * sc)
 
-        /* Barra con degradado vertical */
         const grad = ctx.createLinearGradient(0, baseY, 0, baseY - maxBar)
         grad.addColorStop(0,   'rgba(0,80,150,0.75)')
         grad.addColorStop(0.5, `rgba(${r},${g},${b},0.82)`)
@@ -425,7 +439,6 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
         ctx.fillStyle = grad
         ctx.fillRect(x + gap, baseY - h, barW - gap * 2, Math.max(1, h))
 
-        /* Reflejo especular debajo de la línea base */
         if (h > 2) {
           const refGrad = ctx.createLinearGradient(0, baseY, 0, baseY + maxBar * 0.28)
           refGrad.addColorStop(0, `rgba(${r},${g},${b},0.18)`)
@@ -434,24 +447,20 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
           ctx.fillRect(x + gap, baseY, barW - gap * 2, h * 0.26)
         }
 
-        /* Línea de pico (dorada) */
         if (peaks[i] > 3 * sc) {
           ctx.fillStyle = 'rgba(255,193,7,0.90)'
           ctx.fillRect(x + gap, baseY - peaks[i] - 2 * sc, barW - gap * 2, Math.max(1, 2 * sc))
         }
       }
 
-      /* Línea base */
       ctx.save()
       ctx.strokeStyle = 'rgba(0,174,239,0.18)'
       ctx.lineWidth   = sc
-      ctx.beginPath()
-      ctx.moveTo(0, baseY); ctx.lineTo(bufW, baseY)
-      ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(0, baseY); ctx.lineTo(bufW, baseY); ctx.stroke()
       ctx.restore()
     }
 
-    /* ── Etiqueta de modo ─────────────────────────────────────────────── */
+    /* ── Etiqueta de modo ────────────────────────────────────────────────── */
     ctx.save()
     ctx.font      = `${Math.round(7 * sc)}px monospace`
     ctx.fillStyle = 'rgba(0,174,239,0.28)'
@@ -461,7 +470,7 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
 
   }, [])
 
-  /* ── Loops ───────────────────────────────────────────────────────────── */
+  /* ── Loops RAF ───────────────────────────────────────────────────────────── */
   const liveLoop = useCallback((ts: number) => {
     const analyser = analyserRef.current
     if (!analyser) return
@@ -496,7 +505,7 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
     }
   }
 
-  /* ── Lifecycle ───────────────────────────────────────────────────────── */
+  /* ── Lifecycle ───────────────────────────────────────────────────────────── */
   useEffect(() => {
     rafRef.current = requestAnimationFrame(idleLoop)
     return () => {
@@ -506,13 +515,12 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
     }
   }, [idleLoop])
 
-  /* ── UI ──────────────────────────────────────────────────────────────── */
+  /* ── UI ──────────────────────────────────────────────────────────────────── */
   const is3D = mode === 'A' || mode === 'B' || mode === 'C'
 
   return (
     <div className="fixed top-20 right-6 z-50 flex flex-col items-end gap-2">
 
-      {/* Canvas — fondo transparente, cursor indica drag en modos 3D */}
       <div className="overflow-hidden rounded-lg">
         <canvas
           ref={canvasRef}
@@ -521,16 +529,16 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
             background: 'transparent',
             cursor: is3D ? (dragging ? 'grabbing' : 'grab') : 'default',
             userSelect: 'none',
+            touchAction: 'none',   /* evita scroll del navegador en touch */
           }}
-          onMouseDown={onMouseDown}
-          onMouseMove={onMouseMove}
-          onMouseUp={stopDrag}
-          onMouseLeave={stopDrag}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
           aria-hidden="true"
         />
       </div>
 
-      {/* Controles */}
       <div className="flex gap-2">
         <button
           onClick={toggle}
