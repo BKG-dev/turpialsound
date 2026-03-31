@@ -18,9 +18,13 @@ export function SiteHeader() {
       className={[
         'fixed top-3 left-6 right-6 z-50',
         'flex items-stretch h-14',
-        'rounded-2xl glass-surface shadow-glow-cyan-sm',
-        '[border-color:rgba(255,255,255,0.11)]',
+        'rounded-2xl shadow-glow-cyan-sm',
+        'backdrop-blur-[12px] [-webkit-backdrop-filter:blur(12px)]',
+        'border border-white/10',
       ].join(' ')}
+      style={{
+        background: 'linear-gradient(to right, rgba(0,174,239,0.22) 0%, rgba(0,174,239,0.16) 40%, rgba(255,193,7,0.12) 65%, rgba(55,55,55,0.72) 75%, rgba(55,55,55,0.72) 100%)',
+      }}
     >
       {/* ── Left + centre — logo y nav links ────────────────────────── */}
       <div className="flex flex-1 items-center gap-4 pl-5 pr-3 min-w-0">
