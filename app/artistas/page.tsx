@@ -5,11 +5,12 @@ import { PageHero } from '@/components/sections/PageHero'
 import { SectionShell, SectionHeading } from '@/components/sections/SectionShell'
 import { CTASection } from '@/components/sections/CTASection'
 import { Button } from '@/components/ui/Button'
+import { NuminousPersonCard } from '@/components/ui/NuminousPersonCard'
 import { siteConfig } from '@/content/site'
 import { Mac3DGallery } from '@/components/media/Mac3DGallery'
-import { getImageArray, IMAGE_PREFIXES } from '@/lib/imageArrays'
+import { getPublicImages } from '@/lib/getPublicImages'
 
-const artistasImages = getImageArray(IMAGE_PREFIXES.artistas, 0)
+const artistasImages = getPublicImages('artista')
 
 export const metadata: Metadata = generatePageMetadata({
   title: 'Artistas — Trayectoria verificable',
@@ -18,7 +19,35 @@ export const metadata: Metadata = generatePageMetadata({
   path: '/artistas',
 })
 
-const confirmedArtists = ["Oscar D'León", 'Domingo Quiñones', 'Dimensión Latina']
+const confirmedArtists: Array<{
+  name: string
+  role: string
+  bio: string
+  imageSrc: string
+  accent: 'gold' | 'cyan'
+}> = [
+  {
+    name: "Oscar D'León",
+    bio: '[CLIENT_REQUIRED — biografía y créditos de grabación.]',
+    role: 'Artista · Salsero · Caracas',
+    imageSrc: '/images/odl_800.jpg',
+    accent: 'gold',
+  },
+  {
+    name: 'Domingo Quiñones',
+    bio: '[CLIENT_REQUIRED — biografía y créditos de grabación.]',
+    role: 'Artista · Salsero · Puerto Rico',
+    imageSrc: '/images/dq_800.jpg',
+    accent: 'cyan',
+  },
+  {
+    name: 'Dimensión Latina',
+    bio: '[CLIENT_REQUIRED — biografía y créditos de grabación.]',
+    role: 'Agrupación · Salsa · Venezuela',
+    imageSrc: '/images/dl_800.jpg',
+    accent: 'gold',
+  },
+]
 
 export default function ArtistasPage() {
   const breadcrumb = buildBreadcrumbSchema([
@@ -48,25 +77,16 @@ export default function ArtistasPage() {
           accentColor="cyan"
         />
 
-        <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {confirmedArtists.map((artist, i) => (
-            <li
-              key={artist}
-              className="flex items-center gap-4 rounded-2xl border border-brand-border bg-brand-surface p-5 transition-all duration-250 hover:border-accent-cyan/30"
-            >
-              {/* Avatar placeholder */}
-              <div
-                className="h-12 w-12 shrink-0 rounded-full"
-                style={{
-                  background:
-                    i % 2 === 0
-                      ? 'radial-gradient(circle, rgba(255,193,7,0.15) 0%, rgba(255,193,7,0.03) 100%)'
-                      : 'radial-gradient(circle, rgba(0,174,239,0.15) 0%, rgba(0,174,239,0.03) 100%)',
-                  border: `1px solid ${i % 2 === 0 ? 'rgba(255,193,7,0.15)' : 'rgba(0,174,239,0.15)'}`,
-                }}
-                aria-hidden="true"
+        <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {confirmedArtists.map((artist) => (
+            <li key={artist.name}>
+              <NuminousPersonCard
+                name={artist.name}
+                role={artist.role}
+                bio={artist.bio}
+                imageSrc={artist.imageSrc}
+                accent={artist.accent}
               />
-              <span className="font-display text-sm text-text-primary">{artist}</span>
             </li>
           ))}
         </ul>
@@ -76,7 +96,7 @@ export default function ArtistasPage() {
         </p>
       </SectionShell>
 
-      {/* Photo gallery — 3D carousel */}
+      {/* Photo gallery — group photo carousel */}
       <SectionShell>
         <Mac3DGallery
           images={artistasImages}

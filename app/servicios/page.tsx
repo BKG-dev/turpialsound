@@ -9,9 +9,9 @@ import { AnimatedHeading } from '@/components/ui/AnimatedHeading'
 import { NuminousServiceCard } from '@/components/ui/NuminousServiceCard'
 import { StackingSection } from '@/components/home/StackingSection'
 import { Mac3DGallery } from '@/components/media/Mac3DGallery'
-import { getImageArray, IMAGE_PREFIXES } from '@/lib/imageArrays'
+import { getPublicImages } from '@/lib/getPublicImages'
 
-const instalacionesImages = getImageArray(IMAGE_PREFIXES.instalaciones, 3)
+const instalacionesImages = getPublicImages('instalaciones')
 
 export const metadata: Metadata = generatePageMetadata({
   title: 'Servicios de grabación y producción musical',
@@ -38,8 +38,8 @@ export default function ServiciosPage() {
       />
 
       {/* ── Core services ─────────────────────────────────────────────── */}
-      <StackingSection index={0}>
-        <SectionShell>
+      <StackingSection index={0} waves>
+        <SectionShell background="none">
           <SectionHeading eyebrow="Servicios principales" heading="Las tres puertas de entrada." />
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {coreServices.map((service) => (
@@ -61,8 +61,8 @@ export default function ServiciosPage() {
       </StackingSection>
 
       {/* ── Expanded services ──────────────────────────────────────────── */}
-      <StackingSection index={1} background="surface">
-        <SectionShell background="surface">
+      <StackingSection index={1} background="surface" waves>
+        <SectionShell background="none">
           {/* Eyebrow */}
           <div className="mb-4 flex items-center gap-4">
             <span className="accent-line-animated" aria-hidden="true" />
@@ -100,8 +100,8 @@ export default function ServiciosPage() {
       </StackingSection>
 
       {/* Instalaciones — 3D gallery */}
-      <StackingSection index={2}>
-        <SectionShell>
+      <StackingSection index={2} waves>
+        <SectionShell background="none">
           <div className="mb-4 flex items-center gap-4">
             <span className="accent-line-animated" aria-hidden="true" />
             <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">

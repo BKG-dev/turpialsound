@@ -59,8 +59,8 @@ export default function SalasDeEnsayoPage() {
       </PageHero>
 
       {/* Features */}
-      <StackingSection index={0}>
-        <SectionShell>
+      <StackingSection index={0} waves>
+        <SectionShell background="none">
           <SectionHeading
             eyebrow="Lo que incluye"
             heading="Equipamiento y espacio diseñados para rendir."
@@ -85,8 +85,8 @@ export default function SalasDeEnsayoPage() {
       </StackingSection>
 
       {/* Related services */}
-      <StackingSection index={1} background="surface">
-        <SectionShell background="surface" size="sm">
+      <StackingSection index={1} background="surface" waves>
+        <SectionShell background="none" size="sm">
           <div className="flex items-center gap-4">
             <span className="accent-line-animated" aria-hidden="true" />
             <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">

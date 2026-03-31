@@ -45,8 +45,8 @@ export default function ContactoPage() {
         accentColor="cyan"
       />
 
-      <StackingSection index={0}>
-        <SectionShell>
+      <StackingSection index={0} waves>
+        <SectionShell background="none">
         <div className="grid gap-12 lg:grid-cols-2">
           <ContactBlock
             heading="Escríbenos"

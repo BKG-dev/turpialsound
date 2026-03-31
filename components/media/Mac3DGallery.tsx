@@ -110,6 +110,7 @@ export function Mac3DGallery({ images, title, className }: Mac3DGalleryProps) {
                   fill
                   sizes="(max-width: 768px) 90vw, 288px"
                   className="object-cover"
+                  priority={isActive}
                 />
 
                 {/* Active card: subtle shine overlay */}

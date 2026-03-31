@@ -242,8 +242,16 @@ video {
   .container-base {
     width: 100%;
     max-width: var(--container-max);
-    margin-inline: auto;
-    padding-inline: var(--container-px);
+    margin-left: 0;
+    margin-right: auto;
+    padding-left: 1.5rem;
+    padding-right: var(--container-px);
+  }
+
+  @media (min-width: 640px) {
+    .container-base {
+      padding-left: 6.5rem; /* aligns with navbar 'T': left-6(24) + pl-5(20) + logo(52) + gap-2(8) = 104px */
+    }
   }
 
   .section-padding {
@@ -303,6 +311,30 @@ video {
     backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--glass-border);
+  }
+
+  /* Navbar animated gradient */
+  .navbar-gradient {
+    background: linear-gradient(
+      to right,
+      rgba(0,174,239,0.26)  0%,
+      rgba(0,174,239,0.18) 18%,
+      rgba(255,193,7,0.14) 38%,
+      rgba(55,55,55,0.72)  55%,
+      rgba(55,55,55,0.72)  70%,
+      rgba(255,193,7,0.14) 82%,
+      rgba(0,174,239,0.26) 100%
+    );
+    background-size: 280% 100%;
+    animation: navbarGradientFlow 12.6s ease-in-out infinite;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  @keyframes navbarGradientFlow {
+    0%   { background-position: 0%   50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0%   50%; }
   }
 
   /* Animations */

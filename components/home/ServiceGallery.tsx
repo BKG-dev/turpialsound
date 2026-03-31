@@ -38,7 +38,7 @@ const items: ServiceItem[] = [
     title: 'Producción musical integral',
     description: 'De los arreglos al master. Un equipo, un lugar, un estándar.',
     accentColor: 'gold',
-    imageUrl: '/images/produccion-musical.jpg',
+    imageUrl: '/images/produccion.jpg',
   },
 ]
 

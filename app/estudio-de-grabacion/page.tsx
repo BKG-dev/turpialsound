@@ -8,11 +8,11 @@ import { CTASection } from '@/components/sections/CTASection'
 import { Button } from '@/components/ui/Button'
 import { siteConfig } from '@/content/site'
 import { Mac3DGallery } from '@/components/media/Mac3DGallery'
-import { getImageArray, IMAGE_PREFIXES } from '@/lib/imageArrays'
+import { getPublicImages } from '@/lib/getPublicImages'
 
 const studioImages = [
-  ...getImageArray(IMAGE_PREFIXES.estudioGrabacion, 8),
-  ...getImageArray(IMAGE_PREFIXES.salasEnsayo, 6),
+  ...getPublicImages('estudio-grabacion'),
+  ...getPublicImages('salas-ensayo'),
 ]
 
 export const metadata: Metadata = generatePageMetadata({

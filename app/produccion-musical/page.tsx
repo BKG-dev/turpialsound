@@ -11,9 +11,9 @@ import { StackingSection } from '@/components/home/StackingSection'
 import { Button } from '@/components/ui/Button'
 import { siteConfig } from '@/content/site'
 import { Mac3DGallery } from '@/components/media/Mac3DGallery'
-import { getImageArray, IMAGE_PREFIXES } from '@/lib/imageArrays'
+import { getPublicImages } from '@/lib/getPublicImages'
 
-const produccionImages = getImageArray(IMAGE_PREFIXES.produccion, 3)
+const produccionImages = getPublicImages('produccion')
 
 export const metadata: Metadata = generatePageMetadata({
   title: 'Producción musical en Caracas',
@@ -81,8 +81,8 @@ export default function ProduccionMusicalPage() {
         </Button>
       </PageHero>
 
-      <StackingSection index={0}>
-        <SectionShell>
+      <StackingSection index={0} waves>
+        <SectionShell background="none">
           <SectionHeading
             eyebrow="Proceso"
             heading="Cada etapa cubierta."
@@ -116,8 +116,8 @@ export default function ProduccionMusicalPage() {
         />
       </SectionShell>
 
-      <StackingSection index={1} background="surface">
-        <SectionShell background="surface" size="sm">
+      <StackingSection index={1} background="surface" waves>
+        <SectionShell background="none" size="sm">
         <div className="flex items-center gap-4">
           <span className="accent-line-animated" aria-hidden="true" />
           <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">

@@ -1,18 +1,23 @@
 'use client'
 
-import { useRef } from 'react'
-import Image from 'next/image'
+import { useRef, useEffect, useState } from 'react'
 import { motion, useScroll, useSpring, useTransform } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { bellOverRange } from '@/lib/bell'
+import { FluidCurveScrollImg } from '@/components/media/FluidCurveScrollImg'
+import { BokehCanvas } from '@/components/effects/BokehCanvas'
+
+const WAVE_DOWN = '/images/vv-ts-wave-down.svg'
+const WAVE_UP   = '/images/vv-ts-wave-up.svg'
+const EPSILON   = 0.0005
 
 interface StackingSectionProps {
   children: React.ReactNode
   index: number
   background?: 'default' | 'surface'
   className?: string
-  /** Optional wave PNG/WebP (transparent bg) rendered at the top edge of the section */
-  waveSrc?: string
+  /** Enables bidirectional scroll-driven wave transitions */
+  waves?: boolean
 }
 
 export function StackingSection({
@@ -20,7 +25,7 @@ export function StackingSection({
   index,
   background = 'default',
   className,
-  waveSrc,
+  waves = false,
 }: StackingSectionProps) {
   const ref = useRef<HTMLDivElement>(null)
 
@@ -31,38 +36,41 @@ export function StackingSection({
 
   const smooth = useSpring(scrollYProgress, { stiffness: 50, damping: 10, mass: 0.2 })
 
-  // Scale: blooms from 0.94 → 1 as section enters center
   const scale = useTransform(smooth, (t) => {
     const bell = bellOverRange(t, 0, 0.45, 0.9, 1.8, 1.0)
     return 0.94 + 0.06 * bell
   })
 
-  // Y: slides up 50px as it enters
   const y = useTransform(smooth, (t) => {
     const bell = bellOverRange(t, 0, 0.4, 0.8, 1.6, 1.0)
     return (1 - bell) * 50
   })
 
-  const bg =
-    background === 'surface'
-      ? 'bg-brand-surface'
-      : 'bg-brand-bg'
+  // Scroll direction detection
+  const [scrollDir, setScrollDir] = useState<'down' | 'up'>('down')
+  const prevProgress = useRef(0)
+
+  useEffect(() => {
+    if (!waves) return
+    const unsub = scrollYProgress.on('change', (v) => {
+      const delta = v - prevProgress.current
+      if (Math.abs(delta) > EPSILON) setScrollDir(delta > 0 ? 'down' : 'up')
+      prevProgress.current = v
+    })
+    return () => unsub()
+  }, [scrollYProgress, waves])
+
+  const bg = background === 'surface' ? 'bg-brand-surface' : 'bg-brand-bg'
 
   return (
     <motion.div
       ref={ref}
-      style={{
-        scale,
-        y,
-        zIndex: index + 1,
-        willChange: 'transform',
-      }}
-      className={cn(
-        'relative rounded-t-3xl -mt-px',
-        bg,
-        className,
-      )}
+      style={{ scale, y, zIndex: index + 1, willChange: 'transform' }}
+      className={cn('relative rounded-t-3xl -mt-px', bg, className)}
     >
+      {/* Bokeh particle layer — below wave and content */}
+      <BokehCanvas />
+
       {/* Top edge depth line */}
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-px"
@@ -73,24 +81,35 @@ export function StackingSection({
         aria-hidden="true"
       />
 
-      {/* Optional wave transition asset — sits at top, full width, ~90px tall */}
-      {waveSrc && (
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[90px]"
-          aria-hidden="true"
-        >
-          <Image
-            src={waveSrc}
-            alt=""
-            fill
-            sizes="100vw"
-            className="object-fill"
-            priority={false}
-          />
-        </div>
+      {/* Wave top — blooms when scrolling down */}
+      {waves && (
+        <FluidCurveScrollImg
+          scrollProgress={scrollYProgress}
+          imageSrc={WAVE_DOWN}
+          direction="down"
+          curveHeightVh={30}
+          maxScaleY={1.4}
+          edgeBleedVW={6}
+          fade
+          enabled={scrollDir === 'down'}
+        />
       )}
 
-      {children}
+      {/* Wave bottom — blooms when scrolling up */}
+      {waves && (
+        <FluidCurveScrollImg
+          scrollProgress={scrollYProgress}
+          imageSrc={WAVE_UP}
+          direction="up"
+          curveHeightVh={30}
+          maxScaleY={1.4}
+          edgeBleedVW={6}
+          fade
+          enabled={scrollDir === 'up'}
+        />
+      )}
+
+      <div className="relative z-10">{children}</div>
     </motion.div>
   )
 }

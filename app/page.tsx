@@ -10,6 +10,7 @@ import { StatsBar } from '@/components/ui/StatsBar'
 import { SectionShell, SectionHeading } from '@/components/sections/SectionShell'
 import { CTASection } from '@/components/sections/CTASection'
 import { CinematicVideo } from '@/components/media/CinematicVideo'
+import { SocialVideoPlayer } from '@/components/media/SocialVideoPlayer'
 import { HeroSection } from '@/components/home/HeroSection'
 import { StackingSection } from '@/components/home/StackingSection'
 import { ServiceGallery } from '@/components/home/ServiceGallery'
@@ -67,9 +68,40 @@ export default function HomePage() {
       {/* ── STATS BAR ─────────────────────────────────────────────────── */}
       <StatsBar />
 
-      {/* ── SERVICES GALLERY — stacking section 0 ─────────────────────── */}
-      <StackingSection index={0}>
-        <SectionShell>
+      {/* ── SOCIAL VIDEO — RRSS vertical, stacking 0 ──────────────────── */}
+      <StackingSection index={0} waves>
+        <SectionShell background="none">
+          <div className="grid items-center gap-10 lg:grid-cols-2">
+            {/* Text */}
+            <div>
+              <div className="mb-4 flex items-center gap-3">
+                <span className="accent-line-animated" aria-hidden="true" />
+                <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
+                  En vivo y en estudio
+                </span>
+              </div>
+              <h2 className="font-display text-display-md text-text-primary">
+                El sonido que suena diferente.
+              </h2>
+              <p className="mt-5 text-body-base text-text-secondary">
+                No solo producimos — documentamos el proceso. Cada sesión es una historia.
+              </p>
+            </div>
+            {/* Vertical video */}
+            <div className="flex justify-center lg:justify-end">
+              <SocialVideoPlayer
+                src="/video/videoRRSS.webm"
+                fallback="/video/videoRRSS.mp4"
+                label="Turpial Sound — Video RRSS"
+              />
+            </div>
+          </div>
+        </SectionShell>
+      </StackingSection>
+
+      {/* ── SERVICES GALLERY — stacking section 1 ─────────────────────── */}
+      <StackingSection index={1} waves>
+        <SectionShell background="none">
           <SectionHeading
             eyebrow="Servicios principales"
             heading="Tres entradas. Un solo estándar."
@@ -88,9 +120,9 @@ export default function HomePage() {
         </SectionShell>
       </StackingSection>
 
-      {/* ── VIDEO / EL ESTUDIO — stacking section 1 ──────────────────── */}
-      <StackingSection index={1} background="surface" waveSrc="/assets/images/vv-amber-wave-down.webp">
-        <SectionShell background="surface">
+      {/* ── VIDEO / EL ESTUDIO — stacking section 2 ──────────────────── */}
+      <StackingSection index={2} background="surface" waves>
+        <SectionShell background="none">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
               <div className="mb-4 flex items-center gap-3">
@@ -117,8 +149,8 @@ export default function HomePage() {
         </SectionShell>
       </StackingSection>
 
-      {/* ── AUTHORITY BAND ───────────────────────────────────────────── */}
-      <StackingSection index={2}>
+      {/* ── AUTHORITY BAND — stacking section 3 ─────────────────────── */}
+      <StackingSection index={3}>
         <div className="border-y border-brand-border bg-brand-bg py-10">
           <div className="container-base">
             <div className="flex flex-col items-center gap-4 text-center">
@@ -139,9 +171,9 @@ export default function HomePage() {
         </div>
       </StackingSection>
 
-      {/* ── WHY US — stacking section 3 ──────────────────────────────── */}
-      <StackingSection index={3}>
-        <SectionShell>
+      {/* ── WHY US — stacking section 4 ──────────────────────────────── */}
+      <StackingSection index={4} waves>
+        <SectionShell background="none">
           <SectionHeading
             eyebrow="Por qué Turpial Sound"
             heading="Infraestructura real. Criterio técnico. Trayectoria verificable."
@@ -167,8 +199,8 @@ export default function HomePage() {
         </SectionShell>
       </StackingSection>
 
-      {/* ── CTA ──────────────────────────────────────────────────────── */}
-      <StackingSection index={4}>
+      {/* ── CTA — stacking section 5 ─────────────────────────────────── */}
+      <StackingSection index={5}>
         <CTASection
           heading="¿Tienes un proyecto en mente?"
           subheading="Cuéntanos qué necesitas. Revisamos disponibilidad y armamos una propuesta."

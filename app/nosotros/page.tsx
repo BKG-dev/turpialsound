@@ -4,6 +4,7 @@ import { buildPersonSchema, buildBreadcrumbSchema } from '@/lib/schema'
 import { PageHero } from '@/components/sections/PageHero'
 import { SectionShell, SectionHeading } from '@/components/sections/SectionShell'
 import { CTASection } from '@/components/sections/CTASection'
+import { NuminousPersonCard } from '@/components/ui/NuminousPersonCard'
 import { StackingSection } from '@/components/home/StackingSection'
 import { siteConfig } from '@/content/site'
 
@@ -14,18 +15,26 @@ export const metadata: Metadata = generatePageMetadata({
   path: '/nosotros',
 })
 
-const team = [
+const team: Array<{
+  name: string
+  role: string
+  bio: string
+  imageSrc: string
+  accent: 'gold' | 'cyan'
+}> = [
   {
     name: 'Frank Lemus',
     role: '[CLIENT_REQUIRED — cargo oficial]',
     bio: '[CLIENT_REQUIRED — biografía oficial verificable con trayectoria, créditos y logros.]',
-    accent: 'gold' as const,
+    imageSrc: '/images/fl.jpg',
+    accent: 'gold',
   },
   {
     name: 'Susej Vera',
     role: '[CLIENT_REQUIRED — cargo oficial]',
-    bio: '[CLIENT_REQUIRED — biografía oficial verificable con trayectoria, créditos y logros.]',
-    accent: 'cyan' as const,
+    bio: 'Numinosa biografía en camino...',
+    imageSrc: '/images/sv.jpg',
+    accent: 'cyan',
   },
 ]
 
@@ -70,43 +79,26 @@ export default function NosotrosPage() {
         accentColor="cyan"
       />
 
-      <StackingSection index={0}>
-        <SectionShell>
+      <StackingSection index={0} waves>
+        <SectionShell background="none">
           <SectionHeading eyebrow="El equipo" heading="Las personas detrás del sonido." accentColor="gold" />
           <div className="mt-10 grid gap-6 md:grid-cols-2">
-          {team.map((person) => (
-            <div
-              key={person.name}
-              className="rounded-2xl border border-brand-border bg-brand-surface p-8 transition-all duration-350 hover:border-accent-gold/30"
-            >
-              {/* Avatar placeholder */}
-              <div
-                className="mb-6 h-20 w-20 rounded-full"
-                style={{
-                  background:
-                    person.accent === 'cyan'
-                      ? 'radial-gradient(circle, rgba(0,174,239,0.2) 0%, rgba(0,174,239,0.05) 100%)'
-                      : 'radial-gradient(circle, rgba(255,193,7,0.2) 0%, rgba(255,193,7,0.05) 100%)',
-                  border: `1px solid ${person.accent === 'cyan' ? 'rgba(0,174,239,0.2)' : 'rgba(255,193,7,0.2)'}`,
-                }}
-                aria-hidden="true"
+            {team.map((person) => (
+              <NuminousPersonCard
+                key={person.name}
+                name={person.name}
+                role={person.role}
+                bio={person.bio}
+                imageSrc={person.imageSrc}
+                accent={person.accent}
               />
-              <h2 className="font-display text-lg text-text-primary">{person.name}</h2>
-              <p
-                className="mt-1 text-sm"
-                style={{ color: person.accent === 'cyan' ? '#00AEEF' : '#FFC107' }}
-              >
-                {person.role}
-              </p>
-              <p className="mt-4 text-sm text-text-secondary">{person.bio}</p>
-            </div>
-          ))}
+            ))}
           </div>
         </SectionShell>
       </StackingSection>
 
-      <StackingSection index={1} background="surface">
-        <SectionShell background="surface" size="sm">
+      <StackingSection index={1} background="surface" waves>
+        <SectionShell background="none" size="sm">
           <div className="max-w-prose">
             <span className="accent-line-animated" aria-hidden="true" />
             <blockquote className="mt-6 font-display text-display-md text-text-primary">
