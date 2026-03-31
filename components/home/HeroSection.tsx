@@ -54,16 +54,16 @@ export function HeroSection({
       // Wait for full entrance to settle
       await new Promise<void>((resolve) => setTimeout(resolve, 1_900))
       while (!cancelled) {
-        // Fade out → 20% over 4s
+        // Fade out → 5% over 4s
         await headingControls.start({
-          opacity: 0.2,
+          opacity: 0.05,
           transition: { duration: 4, ease: 'easeInOut' },
         })
         if (cancelled) break
-        // HOLD at minimum opacity for 6s
-        await new Promise<void>((resolve) => setTimeout(resolve, 6_000))
+        // HOLD at 5% for 15s
+        await new Promise<void>((resolve) => setTimeout(resolve, 15_000))
         if (cancelled) break
-        // Fade in → 80% over 4s (max in loop)
+        // Fade in → 80% over 4s
         await headingControls.start({
           opacity: 0.8,
           transition: { duration: 4, ease: 'easeInOut' },
