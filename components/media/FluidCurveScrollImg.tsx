@@ -61,12 +61,11 @@ export function FluidCurveScrollImg({
     return minScaleY + (maxScaleY - minScaleY) * bell * g
   })
 
-  const opacity = fade
-    ? useTransform([smooth, gate] as MotionValue[], ([t, g]: number[]) => {
-        const [start, peak, end] = inputRange
-        return bellOverRange(t, start, peak, end, 1.0, 1.0) * g
-      })
-    : undefined
+  const opacityValue = useTransform([smooth, gate] as MotionValue[], ([t, g]: number[]) => {
+    const [start, peak, end] = inputRange
+    return bellOverRange(t, start, peak, end, 1.0, 1.0) * g
+  })
+  const opacity = fade ? opacityValue : undefined
 
   const originY = direction === 'up' ? '100%' : '0%'
   const bleed = Math.max(0, edgeBleedVW)
