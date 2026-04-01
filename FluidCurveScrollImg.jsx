@@ -72,13 +72,13 @@ export default function FluidCurveScrollImg({
   direction = "down",
 
   // ====== Calibración tipo CommonScale (suave y elegante) ======
-  inputRange = [0, 0.5, 1], // inicio-pico-fin dentro de la sección
-  minScaleY = 0.0001,       // colapsada en extremos
-  maxScaleY = 1.62,         // apertura en el centro (1.55–1.65)
+  inputRange = [1, 2, 3], // inicio-pico-fin dentro de la sección
+  minScaleY = 0.5,       // colapsada en extremos
+  maxScaleY = 2.5,         // apertura en el centro (1.55–1.65)
   sharpness = 2.4,          // aplanado progresivo en extremos
-  peakGain = 1.28,          // empuje extra en el centro (1.2–1.4)
+  peakGain = 1.2,          // empuje extra en el centro (1.2–1.4)
 
-  curveHeightVh = 50,       // 48–56 según gusto
+  curveHeightVh = 150,       // 48–56 según gusto
   edgeBleedVW = 8,          // 6–10 si ves bordes laterales
   yOffsetPx = 0,
 

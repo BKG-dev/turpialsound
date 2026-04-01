@@ -44,38 +44,28 @@ export function HeroSection({
 
   /**
    * TAREA 3 — Opacity loop:
-   * After entrance (~1.9s), wrapper fades 0.8 → 0.2 → 0.8 on a 4s+4s cycle.
-   * Maximum opacity in loop = 0.8 (80%). First-load entry reaches 100%.
+   * After entrance (~1.9s), wrapper fades 1 → 0.05 once, then loops
+   * [0.05, 0.8, 0.05] via Framer Motion's native repeat: Infinity.
+   * Framer Motion owns the loop — unmount cleans it up automatically.
    */
   useEffect(() => {
-    let cancelled = false
+    let alive = true
 
-    async function runLoop() {
-      // Wait for full entrance to settle
-      await new Promise<void>((resolve) => setTimeout(resolve, 1_900))
-      while (!cancelled) {
-        // Fade out → 5% over 4s
-        await headingControls.start({
-          opacity: 0.05,
-          transition: { duration: 4, ease: 'easeInOut' },
+    headingControls
+      .start({
+        opacity: 0.05,
+        transition: { delay: 1.9, duration: 4, ease: 'easeInOut' },
+      })
+      .then(() => {
+        if (!alive) return
+        headingControls.start({
+          opacity: [0.05, 0.8, 0.05],
+          transition: { repeat: Infinity, duration: 8, ease: 'easeInOut' },
         })
-        if (cancelled) break
-        // HOLD at 5% for 15s
-        await new Promise<void>((resolve) => setTimeout(resolve, 15_000))
-        if (cancelled) break
-        // Fade in → 80% over 4s
-        await headingControls.start({
-          opacity: 0.8,
-          transition: { duration: 4, ease: 'easeInOut' },
-        })
-        if (cancelled) break
-      }
-    }
-
-    runLoop().catch(() => {})
+      })
 
     return () => {
-      cancelled = true
+      alive = false
       headingControls.stop()
     }
   }, [headingControls])

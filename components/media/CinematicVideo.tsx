@@ -55,6 +55,9 @@ export function CinematicVideo({
           poster={poster}
           className="absolute inset-0 h-full w-full object-cover"
           playsInline
+          muted
+          loop
+          disablePictureInPicture
           onEnded={() => setPlaying(false)}
         />
       ) : (

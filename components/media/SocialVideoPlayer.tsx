@@ -3,10 +3,10 @@
 /**
  * SocialVideoPlayer — Vertical 9:16 video for RRSS content.
  * Wrapped in animated plasma cyan/gold gradient border.
- * Reuses `gradientShift` keyframe already defined in globals.css.
+ * Sources are lazy-loaded via IntersectionObserver — no decode/mount until in viewport.
  */
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Play, Pause } from 'lucide-react'
 
 interface SocialVideoPlayerProps {
@@ -17,7 +17,33 @@ interface SocialVideoPlayerProps {
 
 export function SocialVideoPlayer({ src, fallback, label = 'Turpial Sound' }: SocialVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [playing, setPlaying] = useState(false)
+  const [inView, setInView] = useState(false)
+
+  // Lazy-load: mount sources only once container enters viewport
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '200px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  // Trigger browser load pass after sources mount
+  useEffect(() => {
+    if (inView && videoRef.current) {
+      videoRef.current.load()
+    }
+  }, [inView])
 
   function toggle() {
     const v = videoRef.current
@@ -32,8 +58,8 @@ export function SocialVideoPlayer({ src, fallback, label = 'Turpial Sound' }: So
   }
 
   return (
-    <div className="relative mx-auto w-full" style={{ maxWidth: 300 }}>
-      {/* Animated plasma border */}
+    <div ref={containerRef} className="relative mx-auto w-full" style={{ maxWidth: 300 }}>
+      {/* Animated plasma border — cyan/gold numinoso */}
       <div
         className="rounded-2xl p-[2px]"
         style={{
@@ -52,15 +78,17 @@ export function SocialVideoPlayer({ src, fallback, label = 'Turpial Sound' }: So
           <video
             ref={videoRef}
             loop
+            muted
             playsInline
-            preload="metadata"
+            disablePictureInPicture
+            preload="none"
             className="h-full w-full object-cover"
             onClick={toggle}
             style={{ cursor: 'pointer' }}
             aria-label={label}
           >
-            <source src={src} type="video/webm" />
-            {fallback && <source src={fallback} type="video/mp4" />}
+            {inView && <source src={src} type="video/webm" />}
+            {inView && fallback && <source src={fallback} type="video/mp4" />}
           </video>
 
           {/* Play overlay — visible when paused */}

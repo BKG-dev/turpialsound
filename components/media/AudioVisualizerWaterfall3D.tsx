@@ -99,6 +99,15 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
   const analyserRef  = useRef<AnalyserNode | null>(null)
   const rafRef       = useRef<number>(0)
 
+  /* Buffers reutilizables — evitan allocations GC por frame */
+  const freqBufRef   = useRef<Uint8Array>(new Uint8Array(512))
+  const waveBufRef   = useRef<Uint8Array>(new Uint8Array(1024))
+
+  /* Visibilidad — IntersectionObserver pausa el loop fuera del viewport */
+  const isVisibleRef = useRef(true)
+  /* Tipo de loop activo para reanudar correctamente tras scroll de vuelta */
+  const loopTypeRef  = useRef<'live' | 'idle'>('idle')
+
   /* Rotación esférica */
   const yawRef       = useRef(0)
   const pitchRef     = useRef(PITCH_DEF)
@@ -186,6 +195,9 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
     analyser.connect(actx.destination)
     actxRef.current    = actx
     analyserRef.current = analyser
+    /* Ajustar buffers al tamaño real del analyser */
+    freqBufRef.current = new Uint8Array(analyser.frequencyBinCount)
+    waveBufRef.current = new Uint8Array(analyser.fftSize)
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
@@ -472,17 +484,17 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
 
   /* ── Loops RAF ───────────────────────────────────────────────────────────── */
   const liveLoop = useCallback((ts: number) => {
+    if (!isVisibleRef.current) return          // pausado por IntersectionObserver
     const analyser = analyserRef.current
     if (!analyser) return
-    const freq = new Uint8Array(analyser.frequencyBinCount)
-    const wave = new Uint8Array(analyser.fftSize)
-    analyser.getByteFrequencyData(freq)
-    analyser.getByteTimeDomainData(wave)
-    render(freq, wave, ts)
+    analyser.getByteFrequencyData(freqBufRef.current)
+    analyser.getByteTimeDomainData(waveBufRef.current)
+    render(freqBufRef.current, waveBufRef.current, ts)
     rafRef.current = requestAnimationFrame(liveLoop)
   }, [render])
 
   const idleLoop = useCallback((ts: number) => {
+    if (!isVisibleRef.current) return          // pausado por IntersectionObserver
     render(null, null, ts)
     rafRef.current = requestAnimationFrame(idleLoop)
   }, [render])
@@ -496,24 +508,54 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
     cancelAnimationFrame(rafRef.current)
     if (playing) {
       audio.pause()
-      rafRef.current = requestAnimationFrame(idleLoop)
+      loopTypeRef.current = 'idle'
+      if (isVisibleRef.current) rafRef.current = requestAnimationFrame(idleLoop)
       setPlaying(false)
     } else {
       audio.play().catch(() => {})
-      rafRef.current = requestAnimationFrame(liveLoop)
+      loopTypeRef.current = 'live'
+      if (isVisibleRef.current) rafRef.current = requestAnimationFrame(liveLoop)
       setPlaying(true)
     }
   }
 
-  /* ── Lifecycle ───────────────────────────────────────────────────────────── */
+  /* ── Lifecycle: RAF inicial + IntersectionObserver + cleanup ─────────── */
   useEffect(() => {
+    loopTypeRef.current = 'idle'
     rafRef.current = requestAnimationFrame(idleLoop)
+
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const visible = entry.isIntersecting
+        isVisibleRef.current = visible
+        if (visible) {
+          /* Reanudar el loop correcto al volver al viewport */
+          cancelAnimationFrame(rafRef.current)
+          prevTsRef.current = 0             // resetea delta para evitar salto de animación
+          if (loopTypeRef.current === 'live') {
+            rafRef.current = requestAnimationFrame(liveLoop)
+          } else {
+            rafRef.current = requestAnimationFrame(idleLoop)
+          }
+        } else {
+          /* Fuera del viewport — cancelar loop */
+          cancelAnimationFrame(rafRef.current)
+        }
+      },
+      { threshold: 0.05 },                  // pausa al salir casi del todo
+    )
+    observer.observe(canvas)
+
     return () => {
       cancelAnimationFrame(rafRef.current)
+      observer.disconnect()
       actxRef.current?.close().catch(() => {})
       if (resumeTimRef.current) clearTimeout(resumeTimRef.current)
     }
-  }, [idleLoop])
+  }, [idleLoop, liveLoop])
 
   /* ── UI ──────────────────────────────────────────────────────────────────── */
   const is3D = mode === 'A' || mode === 'B' || mode === 'C'

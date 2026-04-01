@@ -7,9 +7,7 @@ import { bellOverRange } from '@/lib/bell'
 import { FluidCurveScrollImg } from '@/components/media/FluidCurveScrollImg'
 import { BokehCanvas } from '@/components/effects/BokehCanvas'
 
-const WAVE_DOWN = '/images/vv-ts-wave-down.svg'
-const WAVE_UP   = '/images/vv-ts-wave-up.svg'
-const EPSILON   = 0.0005
+const EPSILON = 0.0005
 
 interface StackingSectionProps {
   children: React.ReactNode
@@ -85,13 +83,13 @@ export function StackingSection({
       {waves && (
         <FluidCurveScrollImg
           scrollProgress={scrollYProgress}
-          imageSrc={WAVE_DOWN}
           direction="down"
-          curveHeightVh={30}
+          curveHeightVh={55}
           maxScaleY={1.4}
           edgeBleedVW={6}
           fade
           enabled={scrollDir === 'down'}
+          vertFade={22}
         />
       )}
 
@@ -99,13 +97,13 @@ export function StackingSection({
       {waves && (
         <FluidCurveScrollImg
           scrollProgress={scrollYProgress}
-          imageSrc={WAVE_UP}
           direction="up"
-          curveHeightVh={30}
+          curveHeightVh={55}
           maxScaleY={1.4}
           edgeBleedVW={6}
           fade
           enabled={scrollDir === 'up'}
+          vertFade={22}
         />
       )}
 
