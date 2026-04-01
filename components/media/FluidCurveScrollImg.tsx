@@ -109,7 +109,7 @@ function drawWave(
   bumpExp: number,
   peakDepthRatio: number,
   fadeBodyEnd: number,
-  fadeOutStop: number,
+  _fadeOutStop: number,
 ) {
   const dpr = Math.min(window.devicePixelRatio ?? 1, 2)
   const cssW = canvas.clientWidth

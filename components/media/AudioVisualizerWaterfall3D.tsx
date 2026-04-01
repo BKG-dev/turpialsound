@@ -487,8 +487,8 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
     if (!isVisibleRef.current) return          // pausado por IntersectionObserver
     const analyser = analyserRef.current
     if (!analyser) return
-    analyser.getByteFrequencyData(freqBufRef.current)
-    analyser.getByteTimeDomainData(waveBufRef.current)
+    analyser.getByteFrequencyData(freqBufRef.current as unknown as Uint8Array<ArrayBuffer>)
+    analyser.getByteTimeDomainData(waveBufRef.current as unknown as Uint8Array<ArrayBuffer>)
     render(freqBufRef.current, waveBufRef.current, ts)
     rafRef.current = requestAnimationFrame(liveLoop)
   }, [render])
