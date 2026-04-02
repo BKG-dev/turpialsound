@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { ServiceSelectStep } from '@/components/bookings/steps/ServiceSelectStep'
+import { VariantSelectStep } from '@/components/bookings/steps/VariantSelectStep'
 
 // ─────────────────────────────────────────────────────────────────
 // Definición de pasos
@@ -34,10 +35,12 @@ const WIZARD_STEPS: WizardStepDef[] = [
 
 interface WizardData {
   serviceSlug: string | null
+  variantSlug: string | null
 }
 
 const INITIAL_DATA: WizardData = {
   serviceSlug: null,
+  variantSlug: null,
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -51,7 +54,10 @@ export function BookingWizard() {
   const totalSteps = WIZARD_STEPS.length
   const step = WIZARD_STEPS[currentStep]
 
-  const canProceed = currentStep === 0 ? data.serviceSlug !== null : false
+  const canProceed =
+    currentStep === 0 ? data.serviceSlug !== null :
+    currentStep === 1 ? data.variantSlug !== null :
+    false
 
   function handleNext() {
     if (currentStep < totalSteps - 1) {
@@ -128,11 +134,26 @@ export function BookingWizard() {
         {currentStep === 0 && (
           <ServiceSelectStep
             selected={data.serviceSlug}
-            onChange={(slug) => setData((d) => ({ ...d, serviceSlug: slug }))}
+            onChange={(slug) =>
+              setData((d) => ({
+                ...d,
+                serviceSlug: slug,
+                // Resetear variante si el servicio cambió
+                variantSlug: d.serviceSlug === slug ? d.variantSlug : null,
+              }))
+            }
           />
         )}
 
-        {currentStep > 0 && (
+        {currentStep === 1 && data.serviceSlug && (
+          <VariantSelectStep
+            serviceSlug={data.serviceSlug}
+            selected={data.variantSlug}
+            onChange={(slug) => setData((d) => ({ ...d, variantSlug: slug }))}
+          />
+        )}
+
+        {currentStep > 1 && (
           <div className="flex min-h-[160px] flex-col items-center justify-center rounded-lg border border-dashed border-brand-border p-8 text-center">
             <p className="text-sm font-medium text-text-secondary">
               Este paso se habilitará próximamente.
