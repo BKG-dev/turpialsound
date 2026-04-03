@@ -52,7 +52,7 @@ const confirmedArtists: Array<{
     name: 'Frank Quintero',
     bio: '[CLIENT_REQUIRED — biografía y créditos de grabación.]',
     role: 'Artista · Balada · Venezuela',
-    imageSrc: '/images/FQ.jpg',
+    imageSrc: '/images/FQ.JPG',
     accent: 'cyan',
   },
 ]
