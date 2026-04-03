@@ -108,11 +108,12 @@ export default function HomePage() {
             eyebrow="Servicios principales"
             heading="Tres entradas. Un solo estándar."
             subheading="Ensayo, grabación o producción completa. Cada servicio está diseñado para que tu música llegue más lejos."
+            align="right"
           />
           <div className="mt-12">
             <ServiceGallery />
           </div>
-          <div className="mt-8 flex flex-wrap gap-4">
+          <div className="mt-8 flex flex-wrap justify-end gap-4">
             {coreServices.map((service) => (
               <Button key={service.id} as="link" href={service.ctaHref} variant="secondary" size="sm">
                 {service.name} →
@@ -158,7 +159,7 @@ export default function HomePage() {
             eyebrow="Trayectoria verificable"
             heading="Artistas de élite que hemos atendido"
             subheading="Oscar D'León · Domingo Quiñones · Dimensión Latina · Frank Quintero"
-            align="center"
+            align="right"
           />
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
@@ -204,7 +205,6 @@ export default function HomePage() {
           <SectionHeading
             eyebrow="Por qué Turpial Sound"
             heading="Infraestructura real. Criterio técnico. Trayectoria verificable."
-            align="center"
           />
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {whyItems.map((item) => (
@@ -240,7 +240,6 @@ export default function HomePage() {
             eyebrow="Nuestras instalaciones"
             heading="Un entorno diseñado para crear sin límites."
             subheading="Porque el ambiente también forma parte del sonido. Turpial Sound combina infraestructura profesional con una estética que inspira — en la zona más accesible de Caracas."
-            align="center"
           />
           <div className="mt-12 grid gap-6 sm:grid-cols-3">
             {[

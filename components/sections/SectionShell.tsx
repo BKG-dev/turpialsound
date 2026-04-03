@@ -37,7 +37,7 @@ interface SectionHeadingProps {
   eyebrow?: string
   heading: string
   subheading?: string
-  align?: 'left' | 'center'
+  align?: 'left' | 'center' | 'right'
   accentColor?: 'gold' | 'cyan'
   className?: string
 }
@@ -51,7 +51,11 @@ export function SectionHeading({
 }: SectionHeadingProps) {
   return (
     <motion.div
-      className={cn(align === 'center' && 'text-center', className)}
+      className={cn(
+        align === 'center' && 'text-center',
+        align === 'right' && 'text-right',
+        className,
+      )}
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: '-60px' }}
@@ -62,7 +66,11 @@ export function SectionHeading({
     >
       {eyebrow && (
         <motion.div
-          className={cn('mb-4 flex items-center gap-4', align === 'center' && 'justify-center')}
+          className={cn(
+            'mb-4 flex items-center gap-4',
+            align === 'center' && 'justify-center',
+            align === 'right' && 'justify-end',
+          )}
           variants={{ hidden: { opacity: 0, y: 14 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] } } }}
         >
           <span className="accent-line-animated" aria-hidden="true" />
@@ -79,7 +87,10 @@ export function SectionHeading({
       </motion.h2>
       {subheading && (
         <motion.p
-          className="mt-4 max-w-prose text-body-base text-text-secondary"
+          className={cn(
+            'mt-4 max-w-prose text-body-base text-text-secondary',
+            align === 'right' && 'ml-auto',
+          )}
           variants={{ hidden: { opacity: 0, y: 14 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] } } }}
         >
           {subheading}
