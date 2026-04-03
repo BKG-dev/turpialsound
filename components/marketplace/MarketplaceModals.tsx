@@ -4,8 +4,6 @@ import { useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   X,
-  ShoppingBag,
-  Tag,
   Users,
   Mic,
   ChevronRight,
@@ -23,7 +21,6 @@ import {
   Loader2,
   AlertCircle,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import type { ModalState, ModalFlow, ProductCategory, ServiceCategory } from '@/types/marketplace'
 import { PRODUCT_CATEGORIES, SERVICE_CATEGORIES } from '@/content/marketplace'
 
@@ -268,12 +265,10 @@ function BuyFlow({
   step,
   direction,
   onCategory,
-  onBack,
 }: {
   step: number
   direction: number
   onCategory: (cat: ProductCategory) => void
-  onBack: () => void
 }) {
   return (
     <motion.div key={`buy-${step}`} custom={direction} variants={stepVariants}
@@ -555,8 +550,6 @@ export function MarketplaceModals({
     return () => { document.body.style.overflow = '' }
   }, [flow])
 
-  const stepIndex = ['intent', 'category', 'browse', 'detail', 'form', 'preview', 'success'].indexOf(step)
-
   const FLOW_META: Record<NonNullable<ModalFlow>, {
     title: string
     subtitle?: string
@@ -631,7 +624,6 @@ export function MarketplaceModals({
                     step={step === 'category' ? 0 : 1}
                     direction={direction}
                     onCategory={cat => onNext({ selectedCategory: cat, step: 'form' })}
-                    onBack={onBack}
                   />
                 ) : flow === 'sell' ? (
                   <SellFlow

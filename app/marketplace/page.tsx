@@ -17,7 +17,7 @@ import {
   Lock,
   BadgeCheck,
 } from 'lucide-react'
-import type { ModalFlow, ModalState, ProductCategory, ServiceCategory } from '@/types/marketplace'
+import type { ModalFlow, ModalState } from '@/types/marketplace'
 import { MarketplaceModals } from '@/components/marketplace/MarketplaceModals'
 import { MarketplaceCard } from '@/components/marketplace/MarketplaceCard'
 import { TransactionChat } from '@/components/marketplace/TransactionChat'
