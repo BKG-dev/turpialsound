@@ -24,7 +24,7 @@ export function SiteHeader() {
       ].join(' ')}
     >
       {/* ── Left + centre — logo y nav links ────────────────────────── */}
-      <div className="flex flex-1 items-center gap-4 pl-5 pr-3 min-w-0">
+      <div className="flex flex-1 items-center gap-2 pl-5 pr-3 min-w-0">
         <AnimatedLogo />
         <AnimatedNavLinks />
       </div>

@@ -30,7 +30,7 @@ export function AnimatedNavLinks() {
             href={item.href}
             className={[
               /* base */
-              'relative block rounded px-3 py-2 text-sm text-text-secondary',
+              'relative block rounded px-2 py-2 text-sm text-text-secondary whitespace-nowrap',
               'transition-colors duration-250 hover:text-text-primary',
               /* underline pseudo-element — gold→cyan gradient, scale-x on hover */
               'after:absolute after:bottom-0 after:left-3 after:right-3 after:block after:h-px',

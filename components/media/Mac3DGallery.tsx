@@ -7,7 +7,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Lightbox } from '@/components/media/Lightbox'
 
-// ── Legacy type kept for any external imports ──────────────────────────────
 export interface GalleryItem {
   id: string
   title: string
@@ -18,18 +17,11 @@ export interface GalleryItem {
 }
 
 interface Mac3DGalleryProps {
-  /** Array of image paths to display in the 3D carousel */
   images: string[]
-  /** Accessible label prefix for alt attributes */
   title?: string
   className?: string
 }
 
-/**
- * True Apple-style 3D carousel.
- * Active card is front-facing; adjacent cards are rotated inward with perspective depth.
- * Clicking the active card opens an integrated fullscreen lightbox.
- */
 export function Mac3DGallery({ images, title, className }: Mac3DGalleryProps) {
   const [active, setActive] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -40,10 +32,6 @@ export function Mac3DGallery({ images, title, className }: Mac3DGalleryProps) {
   const prev = () => setActive((a) => (a - 1 + count) % count)
   const next = () => setActive((a) => (a + 1) % count)
 
-  /**
-   * Converts raw index distance from active into a signed offset
-   * in [-floor(count/2), ceil(count/2)], so wrapping works correctly.
-   */
   function getOffset(index: number): number {
     const raw = ((index - active) % count + count) % count
     return raw > Math.floor(count / 2) ? raw - count : raw
@@ -51,12 +39,26 @@ export function Mac3DGallery({ images, title, className }: Mac3DGalleryProps) {
 
   return (
     <>
-      <div className={cn('relative', className)}>
+      <div className={cn('relative w-full', className)}>
         {/* ── 3D Stage ──────────────────────────────────────────────── */}
         <div
           className="relative mx-auto flex items-center justify-center"
-          style={{ perspective: '900px', height: '360px' }}
+          style={{ perspective: '1100px', height: '460px' }}
         >
+          {/* Glow pool — 80% width, centered under active card */}
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={{
+              width: '80%',
+              height: '70%',
+              background:
+                'radial-gradient(ellipse 70% 60% at 50% 55%, rgba(0,174,239,0.18) 0%, rgba(255,193,7,0.07) 45%, transparent 80%)',
+              filter: 'blur(32px)',
+              zIndex: 0,
+            }}
+            aria-hidden="true"
+          />
+
           {images.map((src, i) => {
             const offset = getOffset(i)
             if (Math.abs(offset) > 1) return null
@@ -69,31 +71,30 @@ export function Mac3DGallery({ images, title, className }: Mac3DGalleryProps) {
                 className={cn(
                   'absolute overflow-hidden rounded-2xl border',
                   isActive
-                    ? 'border-accent-cyan/30 cursor-zoom-in'
-                    : 'border-brand-border cursor-pointer',
+                    ? 'border-accent-cyan/40 cursor-zoom-in'
+                    : 'border-brand-border/60 cursor-pointer',
                 )}
-                style={{
-                  width: 288,
-                  height: 216,
-                  transformStyle: 'preserve-3d',
-                }}
+                style={{ transformStyle: 'preserve-3d' }}
                 animate={{
-                  x: offset * 260,
-                  rotateY: -offset * 32,
-                  scale: isActive ? 1 : 0.82,
-                  opacity: isActive ? 1 : 0.55,
-                  zIndex: isActive ? 10 : 1,
+                  width: isActive ? 500 : 260,
+                  height: isActive ? 340 : 195,
+                  x: offset * 340,
+                  y: isActive ? -24 : 12,
+                  rotateY: -offset * 52,
+                  scale: 1,
+                  opacity: isActive ? 1 : 0.5,
+                  zIndex: isActive ? 10 : 2,
+                  boxShadow: isActive
+                    ? '0 32px 80px rgba(0,174,239,0.22), 0 8px 32px rgba(0,0,0,0.55)'
+                    : '0 8px 24px rgba(0,0,0,0.35)',
                 }}
-                transition={{ type: 'spring', stiffness: 270, damping: 28 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 26 }}
                 onClick={() => {
-                  if (isActive) {
-                    setLightboxOpen(true)
-                  } else {
-                    setActive(i)
-                  }
+                  if (isActive) setLightboxOpen(true)
+                  else setActive(i)
                 }}
               >
-                {/* Gradient placeholder (shown before/if image fails) */}
+                {/* Gradient placeholder */}
                 <div
                   className="absolute inset-0"
                   style={{
@@ -108,18 +109,18 @@ export function Mac3DGallery({ images, title, className }: Mac3DGalleryProps) {
                   src={src}
                   alt={title ? `${title} — foto ${i + 1}` : `Foto ${i + 1}`}
                   fill
-                  sizes="(max-width: 768px) 90vw, 288px"
+                  sizes="(max-width: 768px) 90vw, 500px"
                   className="object-cover"
                   priority={isActive}
                 />
 
-                {/* Active card: subtle shine overlay */}
+                {/* Active: shine overlay */}
                 {isActive && (
                   <div
                     className="pointer-events-none absolute inset-0"
                     style={{
                       background:
-                        'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%)',
+                        'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 55%)',
                     }}
                     aria-hidden="true"
                   />
@@ -127,55 +128,59 @@ export function Mac3DGallery({ images, title, className }: Mac3DGalleryProps) {
               </motion.div>
             )
           })}
+
+          {/* ── Nav buttons — always visible, sides of the stage ── */}
+          {count > 1 && (
+            <>
+              <button
+                onClick={prev}
+                className="absolute left-0 top-1/2 z-20 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full glass-surface border border-accent-cyan/30 text-accent-cyan transition-all hover:border-accent-cyan/70 hover:shadow-glow-cyan-sm"
+                aria-label="Imagen anterior"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <button
+                onClick={next}
+                className="absolute right-0 top-1/2 z-20 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full glass-surface border border-accent-cyan/30 text-accent-cyan transition-all hover:border-accent-cyan/70 hover:shadow-glow-cyan-sm"
+                aria-label="Imagen siguiente"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </>
+          )}
         </div>
 
-        {/* ── Navigation ──────────────────────────────────────────────── */}
-        {count > 1 && (
-          <div className="mt-6 flex items-center justify-center gap-5">
-            <button
-              onClick={prev}
-              className="flex h-9 w-9 items-center justify-center rounded-full glass-surface border border-accent-cyan/30 text-accent-cyan transition-all hover:border-accent-cyan/60 hover:shadow-glow-cyan-sm"
-              aria-label="Imagen anterior"
-            >
-              <ChevronLeft size={15} />
-            </button>
+        {/* ── Hint ── */}
+        <p className="mt-2 text-center font-display text-[10px] tracking-[0.2em] uppercase text-text-muted/60">
+          Clic en la imagen central para ampliar
+        </p>
 
-            {/* Dot indicators */}
-            <div className="flex items-center gap-1.5">
-              {images.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActive(i)}
-                  className={cn(
-                    'rounded-full transition-all duration-300',
-                    i === active
-                      ? 'h-1.5 w-5 bg-accent-cyan'
-                      : 'h-1.5 w-1.5 bg-text-muted/40 hover:bg-text-muted/70',
-                  )}
-                  aria-label={`Ir a imagen ${i + 1}`}
-                />
-              ))}
-            </div>
-
-            <button
-              onClick={next}
-              className="flex h-9 w-9 items-center justify-center rounded-full glass-surface border border-accent-cyan/30 text-accent-cyan transition-all hover:border-accent-cyan/60 hover:shadow-glow-cyan-sm"
-              aria-label="Imagen siguiente"
-            >
-              <ChevronRight size={15} />
-            </button>
+        {/* ── Separator ── */}
+        <div className="mt-8 flex items-center justify-center gap-4" aria-hidden="true">
+          <div
+            className="h-px flex-1"
+            style={{
+              background:
+                'linear-gradient(to right, transparent, rgba(0,174,239,0.15) 40%, rgba(0,174,239,0.35) 100%)',
+            }}
+          />
+          <div className="flex items-center gap-1.5">
+            <div className="h-px w-4 bg-accent-cyan/40" />
+            <div className="h-1.5 w-1.5 rounded-full bg-accent-cyan/60" />
+            <div className="h-px w-4 bg-accent-cyan/40" />
           </div>
-        )}
-
-        {/* Click-to-open hint on active card */}
-        {count > 0 && (
-          <p className="mt-3 text-center font-display text-[10px] tracking-[0.2em] uppercase text-text-muted">
-            Clic en la imagen central para ampliar
-          </p>
-        )}
+          <div
+            className="h-px flex-1"
+            style={{
+              background:
+                'linear-gradient(to left, transparent, rgba(0,174,239,0.15) 40%, rgba(0,174,239,0.35) 100%)',
+            }}
+          />
+        </div>
       </div>
 
-      {/* ── Integrated Lightbox ──────────────────────────────────────── */}
+      {/* ── Lightbox ── */}
       <AnimatePresence>
         {lightboxOpen && (
           <Lightbox
