@@ -37,8 +37,7 @@ export function NuminousPersonCard({
   return (
     <TiltCard glowColor={accent} className="h-full">
       <div
-        className="h-full rounded-2xl bg-brand-surface p-8 transition-all duration-350"
-        style={{ border: `1px solid ${borderColor}` }}
+        className={`card-premium-wrapper${accent === 'gold' ? ' card-premium-wrapper--gold' : ''} h-full rounded-2xl bg-brand-surface p-8`}
       >
         {/* Avatar / Photo */}
         <div

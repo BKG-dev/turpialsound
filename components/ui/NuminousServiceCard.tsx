@@ -41,8 +41,8 @@ export function NuminousServiceCard({
       <Link
         href={href as Route<string>}
         className={[
-          'btn-gradient-border group flex items-start gap-5 rounded-xl',
-          'bg-brand-bg p-5 transition-all duration-300',
+          `card-premium-wrapper${glowColor === 'gold' ? ' card-premium-wrapper--gold' : ''} group flex items-start gap-5 rounded-xl`,
+          'bg-brand-bg p-5',
           'hover:bg-brand-surface/60',
         ].join(' ')}
       >

@@ -92,7 +92,7 @@ export default function ProduccionMusicalPage() {
             {steps.map((item) => (
               <div
                 key={item.title}
-                className="rounded-2xl border border-brand-border bg-brand-surface p-6 transition-all duration-250 hover:border-accent-gold/30"
+                className={`card-premium-wrapper${item.accent === 'gold' ? ' card-premium-wrapper--gold' : ''} rounded-2xl bg-brand-surface p-6`}
               >
                 <item.Icon
                   size={22}

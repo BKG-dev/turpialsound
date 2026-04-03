@@ -31,15 +31,16 @@ const config: Config = {
       },
       fontFamily: {
         display: ['var(--font-michroma)', 'system-ui', 'sans-serif'],
-        body: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        body: ['var(--font-michroma)', 'system-ui', 'sans-serif'],
       },
       fontSize: {
-        'display-xl': ['clamp(2.5rem, 6vw, 5rem)', { lineHeight: '1.05', letterSpacing: '0.02em' }],
-        'display-lg': ['clamp(2rem, 4.5vw, 3.75rem)', { lineHeight: '1.08', letterSpacing: '0.02em' }],
-        'display-md': ['clamp(1.5rem, 3vw, 2.5rem)', { lineHeight: '1.1', letterSpacing: '0.015em' }],
-        'body-lg': ['1.125rem', { lineHeight: '1.7' }],
-        'body-base': ['1rem', { lineHeight: '1.6' }],
-        'body-sm': ['0.875rem', { lineHeight: '1.5' }],
+        // Michroma ~10-15% más ancha que Inter → clamp reducidos para no romper layouts
+        'display-xl': ['clamp(2.1rem, 5.2vw, 4.25rem)', { lineHeight: '1.08', letterSpacing: '0.015em' }],
+        'display-lg': ['clamp(1.7rem, 3.8vw, 3.1rem)',  { lineHeight: '1.1',  letterSpacing: '0.015em' }],
+        'display-md': ['clamp(1.25rem, 2.6vw, 2.1rem)', { lineHeight: '1.15', letterSpacing: '0.01em'  }],
+        'body-lg':   ['0.975rem', { lineHeight: '1.8' }],
+        'body-base': ['0.875rem', { lineHeight: '1.75' }],
+        'body-sm':   ['0.775rem', { lineHeight: '1.7' }],
       },
       spacing: {
         section: 'clamp(4rem, 8vw, 8rem)',

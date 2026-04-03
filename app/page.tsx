@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Building2, Ear, Layers, Award } from 'lucide-react'
+import Image from 'next/image'
+import { Building2, Ear, Layers, Award, Car, Sparkles, Coffee } from 'lucide-react'
+import { PricingPreview } from '@/components/home/PricingPreview'
 import type { LucideIcon } from 'lucide-react'
 import { generatePageMetadata } from '@/lib/metadata'
 import { buildLocalBusinessSchema } from '@/lib/schema'
@@ -149,26 +151,51 @@ export default function HomePage() {
         </SectionShell>
       </StackingSection>
 
-      {/* ── AUTHORITY BAND — stacking section 3 ─────────────────────── */}
-      <StackingSection index={3}>
-        <div className="border-y border-brand-border bg-brand-bg py-10">
-          <div className="container-base">
-            <div className="flex flex-col items-center gap-4 text-center">
-              <p className="font-display text-xs tracking-[0.3em] text-text-muted uppercase">
-                Artistas que han grabado aquí
-              </p>
-              <p className="font-display text-lg text-text-secondary">
-                Oscar D&apos;León · Domingo Quiñones · Dimensión Latina
-              </p>
-              <Link
-                href="/artistas"
-                className="font-display text-xs tracking-widest text-accent-cyan uppercase transition-opacity hover:opacity-70"
+      {/* ── ARTISTAS DE ÉLITE — stacking section 3 ─────────────────────── */}
+      <StackingSection index={3} waves>
+        <SectionShell background="none">
+          <SectionHeading
+            eyebrow="Trayectoria verificable"
+            heading="Artistas de élite que hemos atendido"
+            subheading="Oscar D'León · Domingo Quiñones · Dimensión Latina · Frank Quintero"
+            align="center"
+          />
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { src: '/images/odl_800.jpg', name: 'Oscar D\'León' },
+              { src: '/images/dq_800.jpg',  name: 'Domingo Quiñones' },
+              { src: '/images/dl_800.jpg',  name: 'Dimensión Latina' },
+              { src: '/images/fq.jpg',      name: 'Frank Quintero' },
+            ].map(({ src, name }) => (
+              <div
+                key={name}
+                className="card-premium-wrapper group rounded-2xl bg-brand-surface"
               >
-                Ver trayectoria completa →
-              </Link>
-            </div>
+                <div className="relative aspect-[3/4] w-full overflow-hidden rounded-t-2xl">
+                  <Image
+                    src={src}
+                    alt={name}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-brand-bg/80 via-transparent to-transparent" />
+                </div>
+                <div className="px-4 py-4 text-center">
+                  <p className="font-display text-sm font-semibold text-text-primary">{name}</p>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+          <div className="mt-8 flex justify-center">
+            <Link
+              href="/artistas"
+              className="font-display text-xs tracking-widest text-accent-cyan uppercase transition-opacity hover:opacity-70"
+            >
+              Ver trayectoria completa →
+            </Link>
+          </div>
+        </SectionShell>
       </StackingSection>
 
       {/* ── WHY US — stacking section 4 ──────────────────────────────── */}
@@ -183,7 +210,7 @@ export default function HomePage() {
             {whyItems.map((item) => (
               <div
                 key={item.title}
-                className="rounded-2xl border border-brand-border bg-brand-surface p-6 transition-all duration-350 hover:border-accent-cyan/30"
+                className={`card-premium-wrapper${item.accent === 'gold' ? ' card-premium-wrapper--gold' : ''} rounded-2xl bg-brand-surface p-6`}
               >
                 <item.Icon
                   size={20}
@@ -199,8 +226,78 @@ export default function HomePage() {
         </SectionShell>
       </StackingSection>
 
-      {/* ── CTA — stacking section 5 ─────────────────────────────────── */}
-      <StackingSection index={5}>
+      {/* ── PRICING PREVIEW — stacking section 5 ─────────────────────── */}
+      <StackingSection index={5} waves>
+        <SectionShell background="none">
+          <PricingPreview />
+        </SectionShell>
+      </StackingSection>
+
+      {/* ── NUESTRAS INSTALACIONES — stacking section 6 ─────────────── */}
+      <StackingSection index={6} background="surface" waves>
+        <SectionShell background="none">
+          <SectionHeading
+            eyebrow="Nuestras instalaciones"
+            heading="Un entorno diseñado para crear sin límites."
+            subheading="Porque el ambiente también forma parte del sonido. Turpial Sound combina infraestructura profesional con una estética que inspira — en la zona más accesible de Caracas."
+            align="center"
+          />
+          <div className="mt-12 grid gap-6 sm:grid-cols-3">
+            {[
+              {
+                Icon: Car,
+                src: '/images/instalaciones.jpg',
+                label: 'Acceso y seguridad',
+                copy: 'Estacionamiento privado y techado con personal de seguridad permanente. Llega, descarga y enfócate — sin distracciones.',
+                accent: 'gold' as const,
+              },
+              {
+                Icon: Sparkles,
+                src: '/images/instalaciones3.jpg',
+                label: 'Estética que inspira',
+                copy: 'Espacios diseñados con criterio ecléctico: cada rincón fue pensado para estimular la creatividad y sostener sesiones largas.',
+                accent: 'cyan' as const,
+              },
+              {
+                Icon: Coffee,
+                src: '/images/instalaciones7.jpg',
+                label: 'Comodidades de primer nivel',
+                copy: 'Amenidades completas para que el equipo y los artistas trabajen cómodos. Porque las mejores tomas se graban cuando todo fluye.',
+                accent: 'gold' as const,
+              },
+            ].map(({ Icon, src, label, copy, accent }) => (
+              <div
+                key={label}
+                className={`card-premium-wrapper${accent === 'gold' ? ' card-premium-wrapper--gold' : ''} group rounded-2xl bg-brand-bg`}
+              >
+                <div className="relative h-52 w-full overflow-hidden rounded-t-2xl">
+                  <Image
+                    src={src}
+                    alt={label}
+                    fill
+                    sizes="(max-width: 640px) 100vw, 33vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-brand-bg/60 to-transparent" />
+                </div>
+                <div className="p-6">
+                  <Icon
+                    size={18}
+                    className="mb-3"
+                    style={{ color: accent === 'cyan' ? 'var(--color-cyan)' : 'var(--color-gold)' }}
+                    aria-hidden="true"
+                  />
+                  <h3 className="font-display text-sm font-semibold text-text-primary">{label}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-text-secondary">{copy}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </SectionShell>
+      </StackingSection>
+
+      {/* ── CTA — stacking section 7 ─────────────────────────────────── */}
+      <StackingSection index={7}>
         <CTASection
           heading="¿Tienes un proyecto en mente?"
           subheading="Cuéntanos qué necesitas. Revisamos disponibilidad y armamos una propuesta."

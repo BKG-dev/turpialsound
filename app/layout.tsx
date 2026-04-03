@@ -1,17 +1,11 @@
 import type { Metadata } from 'next'
-import { Inter, Michroma } from 'next/font/google'
+import { Michroma } from 'next/font/google'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { WhatsAppButton } from '@/components/ui/WhatsAppButton'
 import { rootMetadata } from '@/lib/metadata'
 import { buildOrganizationSchema } from '@/lib/schema'
 import '@/styles/globals.css'
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-})
 
 const michroma = Michroma({
   subsets: ['latin'],
@@ -30,7 +24,7 @@ export default function RootLayout({
   const orgSchema = buildOrganizationSchema()
 
   return (
-    <html lang="es" className={`${inter.variable} ${michroma.variable}`}>
+    <html lang="es" className={michroma.variable}>
       <head>
         <script
           type="application/ld+json"

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { MapPin, Phone, Mail } from 'lucide-react'
+import { MapEmbed } from '@/components/layout/MapEmbed'
 import { LogoGlb } from '@/components/media/LogoGlb'
 import { footerNavItems, ctaNav } from '@/content/navigation'
 import { siteConfig } from '@/content/site'
@@ -33,6 +34,8 @@ export function SiteFooter() {
                 {ctaNav.label}
               </Button>
             </div>
+
+            <MapEmbed />
           </div>
 
           {/* Navigation */}

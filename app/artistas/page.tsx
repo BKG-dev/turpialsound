@@ -4,6 +4,7 @@ import { buildBreadcrumbSchema } from '@/lib/schema'
 import { PageHero } from '@/components/sections/PageHero'
 import { SectionShell, SectionHeading } from '@/components/sections/SectionShell'
 import { CTASection } from '@/components/sections/CTASection'
+import { StackingSection } from '@/components/home/StackingSection'
 import { Button } from '@/components/ui/Button'
 import { NuminousPersonCard } from '@/components/ui/NuminousPersonCard'
 import { siteConfig } from '@/content/site'
@@ -47,6 +48,13 @@ const confirmedArtists: Array<{
     imageSrc: '/images/dl_800.jpg',
     accent: 'gold',
   },
+  {
+    name: 'Frank Quintero',
+    bio: '[CLIENT_REQUIRED — biografía y créditos de grabación.]',
+    role: 'Artista · Balada · Venezuela',
+    imageSrc: '/images/FQ.jpg',
+    accent: 'cyan',
+  },
 ]
 
 export default function ArtistasPage() {
@@ -69,32 +77,34 @@ export default function ArtistasPage() {
         accentColor="cyan"
       />
 
-      <SectionShell>
-        <SectionHeading
-          eyebrow="Trayectoria confirmada"
-          heading="Algunos de los artistas que han trabajado aquí."
-          subheading="Lista parcial — la nómina completa está sujeta a autorización de cada artista para publicación pública."
-          accentColor="cyan"
-        />
+      <StackingSection index={0} waves>
+        <SectionShell>
+          <SectionHeading
+            eyebrow="Trayectoria confirmada"
+            heading="Algunos de los artistas que han pasado por aquí."
+            subheading="Una selección de los artistas que nos han acompañado en Turpial Sound. Cada nombre, una historia que nos enorgullece contar."
+            accentColor="cyan"
+          />
 
-        <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {confirmedArtists.map((artist) => (
-            <li key={artist.name}>
-              <NuminousPersonCard
-                name={artist.name}
-                role={artist.role}
-                bio={artist.bio}
-                imageSrc={artist.imageSrc}
-                accent={artist.accent}
-              />
-            </li>
-          ))}
-        </ul>
+          <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {confirmedArtists.map((artist) => (
+              <li key={artist.name}>
+                <NuminousPersonCard
+                  name={artist.name}
+                  role={artist.role}
+                  bio={artist.bio}
+                  imageSrc={artist.imageSrc}
+                  accent={artist.accent}
+                />
+              </li>
+            ))}
+          </ul>
 
-        <p className="mt-8 text-sm text-text-muted">
-          + más artistas pendientes de autorización para publicación.
-        </p>
-      </SectionShell>
+          <p className="mt-8 text-sm text-text-muted italic">
+            Hay capítulos aún por revelar — la discreción también forma parte de lo que ofrecemos.
+          </p>
+        </SectionShell>
+      </StackingSection>
 
       {/* Photo gallery — group photo carousel */}
       <SectionShell>
@@ -104,27 +114,31 @@ export default function ArtistasPage() {
         />
       </SectionShell>
 
-      <SectionShell background="surface" size="sm">
-        <div className="flex items-center gap-4">
-          <span className="accent-line-animated" aria-hidden="true" />
-          <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
-            También puede interesarte
-          </span>
-        </div>
-        <div className="mt-6 flex flex-wrap gap-4">
-          <Button as="link" href="/nosotros" variant="secondary" size="sm">
-            El equipo
-          </Button>
-          <Button as="link" href="/estudio-de-grabacion" variant="secondary" size="sm">
-            Estudio de grabación
-          </Button>
-        </div>
-      </SectionShell>
+      <StackingSection index={1} background="surface" waves>
+        <SectionShell background="none" size="sm">
+          <div className="flex items-center gap-4">
+            <span className="accent-line-animated" aria-hidden="true" />
+            <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
+              También puede interesarte
+            </span>
+          </div>
+          <div className="mt-6 flex flex-wrap gap-4">
+            <Button as="link" href="/nosotros" variant="secondary" size="sm">
+              El equipo
+            </Button>
+            <Button as="link" href="/estudio-de-grabacion" variant="secondary" size="sm">
+              Estudio de grabación
+            </Button>
+          </div>
+        </SectionShell>
+      </StackingSection>
 
-      <CTASection
-        heading="¿Listo para añadir tu nombre a esta lista?"
-        subheading="Contáctanos y hablamos de tu proyecto."
-      />
+      <StackingSection index={2}>
+        <CTASection
+          heading="¿Listo para añadir tu nombre a esta lista?"
+          subheading="Contáctanos y hablamos de tu proyecto."
+        />
+      </StackingSection>
     </>
   )
 }

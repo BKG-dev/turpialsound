@@ -20,7 +20,8 @@ export function CinematicVideo({
   label = 'Turpial Sound',
   className,
 }: CinematicVideoProps) {
-  const [playing, setPlaying] = useState(false)
+  // Arranca como true porque el video tiene autoplay (muted + playsInline)
+  const [playing, setPlaying] = useState(true)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useIsomorphicLayoutEffect(() => {
@@ -71,7 +72,10 @@ export function CinematicVideo({
           playsInline
           muted
           loop
+          autoPlay
           disablePictureInPicture
+          onPlay={() => setPlaying(true)}
+          onPause={() => setPlaying(false)}
           onEnded={() => setPlaying(false)}
         />
       ) : (

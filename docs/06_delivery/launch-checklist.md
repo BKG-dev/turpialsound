@@ -1,24 +1,24 @@
-# Turpial Sound — Launch Checklist (Pre-Flight)
+# Launch Checklist — Turpial Sound
 
-Lista de chequeo final de bloqueo obligatorio antes de exponer el sitio al dominio público final.
+> Lista de verificación estricta antes del paso a producción (Main branch / Deploy).
 
-## 1. Contenido del Cliente (CLIENT_REQUIRED)
-- [ ] Dominio oficial configurado en `content/site.ts`.
-- [ ] Número de WhatsApp oficial y Email verificados.
-- [ ] Coordenadas GPS y Horarios introducidos en `lib/schema.ts` (`LocalBusiness`).
-- [ ] Lista final de artistas autorizados (`content/artists.ts`).
-- [ ] Biografías y fotos oficiales del equipo (`/nosotros`).
-- [ ] Textos legales de Privacidad y Términos aprobados.
-- [ ] Ficha técnica real de equipos para las salas de ensayo.
+## 1. Rendimiento, UI y UX
+- [ ] Lighthouse score > 90 en Performance, Accessibility, Best Practices y SEO.
+- [ ] Cero colisiones de `z-index` (Validar menús flotantes, botones numinosos y el AudioVisualizer).
+- [ ] Animaciones CSS nativas y WebGL a 60fps estables sin desbordamientos horizontales.
+- [ ] Fallback del BCV verificado (Simular desconexión o fallo del BCV para asegurar que entra la tasa de respaldo sin romper la página).
 
-## 2. Validaciones Técnicas
-- [ ] El comando `npm run build` finaliza sin errores ni warnings críticos de ESLint.
-- [ ] Comprobación de Google Rich Results (Schema JSON-LD no arroja errores).
-- [ ] Lighthouse Report: Performance > 90, Accessibility > 95, SEO > 95.
-- [ ] Testeo en dispositivo físico iOS y Android para certificar que el WebGL (Logo 3D y visualizador) no colapsa el navegador.
+## 2. Entorno y Build (Next.js)
+- [ ] `npm run build` se ejecuta limpiamente: cero errores de TypeScript y cero warnings severos de ESLint.
+- [ ] Variables de entorno (ENVs) de producción configuradas correctamente en el hosting (Bases de datos, Stripe, APIs, Tokens).
+- [ ] Manejo de caché verificado en Route Handlers (ej. El scraping del BCV no se ejecuta en cada refresh).
 
-## 3. Infraestructura
-- [ ] DNS apuntados correctamente a Vercel.
-- [ ] Certificado SSL (HTTPS) aprovisionado.
-- [ ] Google Search Console verificado e indexación del `sitemap.xml` solicitada.
-- [ ] Variables de entorno (`.env.production`) configuradas en el panel de Vercel.
+## 3. SEO, AEO y Metadatos
+- [ ] `robots.txt` y `sitemap.xml` generados y accesibles.
+- [ ] Etiquetas Open Graph (OG) y Twitter Cards presentes (imágenes de preview de enlaces activas).
+- [ ] Schema.org (JSON-LD) para `LocalBusiness`, `Organization` y `Product` renderizando correctamente.
+
+## 4. Lógica de Negocio (Marketplace & Turpial Studio)
+- [ ] Pruebas de simulación del Escrow (Validar que el cálculo matemático de la comisión del 5% funciona a la perfección en la UI y la DB).
+- [ ] Banners de advertencia y regex anti-bypass (teléfonos/emails) operativos en los hilos de chat del Marketplace.
+- [ ] Formularios de reservas de estudio conectados y enviando data correcta.

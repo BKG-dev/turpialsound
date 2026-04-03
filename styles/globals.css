@@ -28,9 +28,9 @@
   --color-text-secondary: #a0a0a0;
   --color-text-muted: #5a5a5a;
 
-  /* Typography */
+  /* Typography — Michroma exclusiva en todo el sitio */
   --font-display: var(--font-michroma), system-ui, sans-serif;
-  --font-body: var(--font-inter), system-ui, sans-serif;
+  --font-body: var(--font-michroma), system-ui, sans-serif;
 
   /* Spacing */
   --container-max: 1200px;
@@ -73,7 +73,10 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text-primary);
   font-family: var(--font-body);
-  line-height: 1.6;
+  /* Michroma es más ancha que Inter — line-height y tracking compensados */
+  line-height: 1.8;
+  letter-spacing: 0.02em;
+  font-size: clamp(0.8rem, 1.05vw, 0.875rem);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -103,8 +106,9 @@ h5,
 h6 {
   font-family: var(--font-display);
   font-weight: 400;
-  line-height: 1.1;
-  letter-spacing: 0.02em;
+  /* Michroma es ancha: line-height ligeramente mayor que con Inter */
+  line-height: 1.15;
+  letter-spacing: 0.015em;
   color: var(--color-text-primary);
 }
 
@@ -209,6 +213,35 @@ video {
 
 /* ── Gradient border — outline buttons (mask technique, GPU-safe) ─────────── */
 /* Technique: ::before padding-box + mask xor = only border ring visible      */
+/* ── Animated gradient border — cards (Turpial cyan · blue · gold) ────────── */
+.card-gradient-border {
+  position: relative;
+}
+
+.card-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    #00aeef  0%,
+    #0050c8 35%,
+    #ffc107 65%,
+    #00aeef 100%
+  );
+  background-size: 300% 300%;
+  animation: gradientShift 6s ease infinite;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .btn-gradient-border {
   position: relative;
 }
@@ -414,4 +447,263 @@ video {
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* ── Pricing: thick gradient border variant ───────────────────────────────── */
+.card-gradient-border-thick::before {
+  padding: 2px;
+}
+
+/* ── Pricing cards: depth shadow + hover lift ─────────────────────────────── */
+.pricing-card {
+  transition:
+    transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.42s ease;
+  box-shadow:
+    0 4px 28px rgba(0, 0, 0, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.pricing-card:hover {
+  transform: translateY(-8px);
+}
+
+.pricing-card--gold:hover {
+  box-shadow:
+    0 18px 52px rgba(0, 0, 0, 0.68),
+    0 0   80px rgba(255, 193,   7, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.pricing-card--cyan:hover {
+  box-shadow:
+    0 18px 52px rgba(0, 0, 0, 0.68),
+    0 0   80px rgba(0, 174, 239, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+/* ── Pricing carousel: nav buttons with numinous glow ──────────────────────── */
+/* GPU-safe: only box-shadow + border-color + transform animate on hover.       */
+.pricing-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  cursor: pointer;
+  color: var(--color-cyan);
+  background: rgba(17, 17, 17, 0.75);
+  border: 1px solid rgba(0, 174, 239, 0.30);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    0 0  20px rgba(0, 174, 239, 0.16),
+    0 0  50px rgba(0, 174, 239, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition:
+    box-shadow   0.32s ease,
+    border-color 0.32s ease,
+    transform    0.20s ease;
+}
+
+.pricing-nav-btn:hover {
+  border-color: rgba(0, 174, 239, 0.75);
+  box-shadow:
+    0 0  36px rgba(0, 174, 239, 0.52),
+    0 0  80px rgba(0, 174, 239, 0.20),
+    0 0 120px rgba(0, 174, 239, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transform: scale(1.10);
+}
+
+.pricing-nav-btn:active {
+  transform: scale(0.94);
+  transition-duration: 0.08s;
+}
+
+/* ── Premium card wrapper — thick animated border + depth shadow + lift ──── */
+/* GPU-safe: border via ::before mask technique (no layout thrashing)        */
+/* Usage: add .card-premium-wrapper to any card div. For gold hover glow,   */
+/* also add .card-premium-wrapper--gold. Works on div, article, a.          */
+.card-premium-wrapper {
+  position: relative;
+  box-shadow:
+    0 4px 28px rgba(0, 0, 0, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition:
+    transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.42s ease;
+}
+
+.card-premium-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(
+    135deg,
+    #00aeef  0%,
+    #0050c8 35%,
+    #ffc107 65%,
+    #00aeef 100%
+  );
+  background-size: 300% 300%;
+  animation: gradientShift 6s ease infinite;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  /* z-index: 1 garantiza que el ring de borde pinte SOBRE cualquier contenido
+     interno posicionado (imágenes, divs con position:relative), sin interferir
+     con clicks (pointer-events:none). La máscara deja transparente el interior,
+     solo los 2px del perímetro son visibles — el marco queda completo. */
+  z-index: 1;
+}
+
+.card-premium-wrapper:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 18px 52px rgba(0, 0, 0, 0.68),
+    0 0   72px rgba(0, 174, 239, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.card-premium-wrapper--gold:hover {
+  box-shadow:
+    0 18px 52px rgba(0, 0, 0, 0.68),
+    0 0   72px rgba(255, 193, 7, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+/* ── Price halo: micro-stars orbiting around price values ─────────────────── */
+/* GPU-composited (transform + opacity only). Two counter-rotating rings.      */
+@keyframes pricingHaloSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pricingHaloPulse {
+  0%, 100% { opacity: 0.18; }
+  50%       { opacity: 0.42; }
+}
+
+.price-halo {
+  position: relative;
+  display: inline-block;
+  isolation: isolate;
+}
+
+.price-halo--gold { --halo-color: var(--color-gold); }
+.price-halo--cyan { --halo-color: var(--color-cyan); }
+
+/* Outer ring — 8 dots, slow clockwise */
+.price-halo::before {
+  content: '';
+  position: absolute;
+  inset: -14px -22px;
+  pointer-events: none;
+  z-index: -1;
+  background-image:
+    radial-gradient(circle 2px   at  8%  50%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1.5px at 50%   7%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 2px   at 92%  50%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1.5px at 50%  93%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1px   at 17%  18%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1.5px at 83%  82%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1.5px at 80%  17%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1px   at 20%  83%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%);
+  animation:
+    pricingHaloSpin   16s linear       infinite,
+    pricingHaloPulse   4s ease-in-out  infinite;
+}
+
+/* Inner ring — 4 dots, faster counter-clockwise */
+.price-halo::after {
+  content: '';
+  position: absolute;
+  inset: -8px -14px;
+  pointer-events: none;
+  z-index: -1;
+  background-image:
+    radial-gradient(circle 1.5px at 50%   5%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1px   at 95%  40%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1.5px at 72%  93%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1px   at 10%  65%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%);
+  animation:
+    pricingHaloSpin  10s linear       infinite reverse,
+    pricingHaloPulse  5s ease-in-out  infinite 1.8s;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MARKETPLACE — Turpial Market
+   ─ Estilos adicionales para el sistema de Matchmaking & Escrow.
+   ─ GPU-safe: solo transform + opacity + box-shadow en animaciones.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Security warning pulse — ban notice en el chat ─────────────────────── */
+@keyframes securityPulse {
+  0%, 100% { border-color: rgba(239, 68, 68, 0.22); }
+  50%       { border-color: rgba(239, 68, 68, 0.42); }
+}
+
+.market-security-banner {
+  animation: securityPulse 3.5s ease-in-out infinite;
+}
+
+/* ── Escrow chip — pulse de confianza ────────────────────────────────────── */
+@keyframes escrowPing {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 174, 239, 0); }
+  50%       { box-shadow: 0 0 0 6px rgba(0, 174, 239, 0); }
+}
+
+/* ── Intent card grid — mobile-first responsive ──────────────────────────── */
+.market-intent-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .market-intent-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .market-intent-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ── Quote card — fiduciary payment card in chat ─────────────────────────── */
+.market-quote-card {
+  background: rgba(13, 13, 13, 0.95);
+  border: 1px solid rgba(0, 174, 239, 0.18);
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 48px rgba(0, 174, 239, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* ── Listing card image placeholder shimmer ──────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.market-image-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(30, 30, 30, 0.4) 0%,
+    rgba(50, 50, 50, 0.6) 50%,
+    rgba(30, 30, 30, 0.4) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
 }
