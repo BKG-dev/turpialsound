@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { ServiceSelectStep } from '@/components/bookings/steps/ServiceSelectStep'
 import { VariantSelectStep } from '@/components/bookings/steps/VariantSelectStep'
+import { DateTimeStep } from '@/components/bookings/steps/DateTimeStep'
 
 // ─────────────────────────────────────────────────────────────────
 // Definición de pasos
@@ -36,11 +37,17 @@ const WIZARD_STEPS: WizardStepDef[] = [
 interface WizardData {
   serviceSlug: string | null
   variantSlug: string | null
+  eventDate: string | null       // "YYYY-MM-DD"
+  startTime: string | null       // "HH:MM"
+  durationMinutes: number | null
 }
 
 const INITIAL_DATA: WizardData = {
   serviceSlug: null,
   variantSlug: null,
+  eventDate: null,
+  startTime: null,
+  durationMinutes: null,
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -57,6 +64,7 @@ export function BookingWizard() {
   const canProceed =
     currentStep === 0 ? data.serviceSlug !== null :
     currentStep === 1 ? data.variantSlug !== null :
+    currentStep === 2 ? data.eventDate !== null && data.startTime !== null && data.durationMinutes !== null :
     false
 
   function handleNext() {
@@ -153,7 +161,18 @@ export function BookingWizard() {
           />
         )}
 
-        {currentStep > 1 && (
+        {currentStep === 2 && (
+          <DateTimeStep
+            eventDate={data.eventDate}
+            startTime={data.startTime}
+            durationMinutes={data.durationMinutes}
+            onDateChange={(value) => setData((d) => ({ ...d, eventDate: value }))}
+            onStartTimeChange={(value) => setData((d) => ({ ...d, startTime: value }))}
+            onDurationChange={(value) => setData((d) => ({ ...d, durationMinutes: value }))}
+          />
+        )}
+
+        {currentStep > 2 && (
           <div className="flex min-h-[160px] flex-col items-center justify-center rounded-lg border border-dashed border-brand-border p-8 text-center">
             <p className="text-sm font-medium text-text-secondary">
               Este paso se habilitará próximamente.
