@@ -6,7 +6,9 @@
  * Sources are lazy-loaded via IntersectionObserver — no decode/mount until in viewport.
  */
 
-import { useRef, useState, useEffect } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 import { Play, Pause } from 'lucide-react'
 
 interface SocialVideoPlayerProps {
@@ -38,12 +40,24 @@ export function SocialVideoPlayer({ src, fallback, label = 'Turpial Sound' }: So
     return () => observer.disconnect()
   }, [])
 
-  // Trigger browser load pass after sources mount
+  // Set src imperatively once in viewport — avoids src="" attribute interference
   useEffect(() => {
-    if (inView && videoRef.current) {
-      videoRef.current.load()
+    if (!inView || !videoRef.current) return
+    const v = videoRef.current
+    const canWebm = v.canPlayType('video/webm') !== ''
+    v.src = (canWebm || !fallback) ? src : (fallback ?? src)
+    v.load()
+  }, [inView, src, fallback])
+
+  // useIsomorphicLayoutEffect: cleanup runs synchronously before DOM removal.
+  useIsomorphicLayoutEffect(() => {
+    const v = videoRef.current
+    if (!v) return
+    return () => {
+      v.pause()
+      v.src = ''
     }
-  }, [inView])
+  }, [])
 
   function toggle() {
     const v = videoRef.current
@@ -78,7 +92,6 @@ export function SocialVideoPlayer({ src, fallback, label = 'Turpial Sound' }: So
           <video
             ref={videoRef}
             loop
-            muted
             playsInline
             disablePictureInPicture
             preload="none"
@@ -87,8 +100,7 @@ export function SocialVideoPlayer({ src, fallback, label = 'Turpial Sound' }: So
             style={{ cursor: 'pointer' }}
             aria-label={label}
           >
-            {inView && <source src={src} type="video/webm" />}
-            {inView && fallback && <source src={fallback} type="video/mp4" />}
+            {/* src set imperatively by useEffect once inView — no <source> children needed */}
           </video>
 
           {/* Play overlay — visible when paused */}

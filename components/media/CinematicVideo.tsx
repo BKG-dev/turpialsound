@@ -1,6 +1,8 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 import { cn } from '@/lib/utils'
 
 interface CinematicVideoProps {
@@ -20,6 +22,18 @@ export function CinematicVideo({
 }: CinematicVideoProps) {
   const [playing, setPlaying] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
+
+  useIsomorphicLayoutEffect(() => {
+    const vid = videoRef.current
+    if (!vid) return
+    // Restaurar src tras cleanup de Strict Mode — React omite el update del DOM
+    // si el valor del prop no cambió, así que la restauración debe ser explícita.
+    if (src && (!vid.src || vid.src === window.location.href)) vid.src = src
+    return () => {
+      vid.pause()
+      vid.src = ''
+    }
+  }, [src])
 
   function handleToggle() {
     if (!videoRef.current) return

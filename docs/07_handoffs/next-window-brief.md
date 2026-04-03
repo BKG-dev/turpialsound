@@ -1,6 +1,6 @@
 # Next Window Brief — Turpial Sound
-**Fecha de sesión:** 2026-03-30
-**Próxima sesión:** 2026-03-31
+**Fecha de sesión:** 2026-04-01
+**Próxima sesión:** próxima según disponibilidad
 **Modelo recomendado:** Sonnet 4.6 (construcción) / Opus 4.6 (decisiones arquitectónicas)
 
 ---
@@ -15,30 +15,34 @@ Arranca resumiendo los 3 pendientes críticos de este brief, luego espera mi ins
 
 ---
 
-## 1. Estado al cierre de sesión 2026-03-30
+## 1. Estado al cierre de sesión 2026-04-01
 
-### Completado hoy
+### Completado hoy — Auditoría técnica + Estabilización Main Thread
 | Componente | Estado |
 |---|---|
-| `components/media/LogoGlb.tsx` | ✅ Logo 3D giratorio con halo dinámico, drag, metallic material |
-| `components/layout/AnimatedLogo.tsx` | ✅ Logo 3D reemplaza SVG en navbar |
-| `components/layout/SiteFooter.tsx` | ✅ Logo 3D en footer, posicionado y escalado |
-| `components/media/AudioVisualizerFrequency.tsx` | ✅ Nuevo visualizador Winamp-style 128 barras FFT |
-| `components/home/HeroSection.tsx` | ✅ Reemplazado AudioVisualizerPlasma → Frequency, layout fix |
+| `components/home/HeroSection.tsx` | ✅ Navigation lock resuelto + video estabilizado |
 
-### Build status
-- `npx tsc --noEmit` **pendiente de correr** — primera acción de mañana
-- El nuevo `AudioVisualizerFrequency` tiene fix aplicado (bug `ctx.fill()` en barras vacías)
-- `AudioVisualizerPlasma.tsx` sigue existiendo (no borrado — puede reutilizarse)
+### Bugs resueltos esta sesión
+**Bug crítico 1 — Navigation lock ~12s al navegar desde Home:**
+- Causa: `vid.load()` síncrono en el cleanup de unmount. El browser hace teardown del pipeline de media en el main thread antes de retornar (~10-12s en WebM grandes).
+- Fix: eliminado `vid.src = ''` y `vid.load()` del cleanup. React elimina el nodo del DOM; el browser hace GC y libera recursos de forma natural. `vid.pause()` sigue, es rápido y detiene el decode.
+- Archivo: `components/home/HeroSection.tsx` líneas 56-74.
+
+**Bug crítico 2 — Video del Hero no reproduce (desaparece a ~2s en dev, no carga):**
+- Causa A: `preload="none"` creaba race condition con `autoPlay` — el browser intentaba reproducir antes de tener datos buffereados.
+- Causa B: React Strict Mode ejecuta cleanup→remount en desarrollo. El cleanup llama `pause()`; `autoPlay` NO re-dispara en el mismo nodo DOM después de un pause por JS.
+- Fix: `preload="none"` → `preload="metadata"` + llamada explícita a `vid.play().catch(()=>{})` al inicio del efecto para restaurar reproducción tras Strict Mode probe.
+- Archivo: `components/home/HeroSection.tsx` líneas 68-70 + 118.
 
 ### Archivos tocados hoy
 ```
-components/media/LogoGlb.tsx
-components/media/AudioVisualizerFrequency.tsx  ← nuevo
-components/layout/AnimatedLogo.tsx
-components/layout/SiteFooter.tsx
-components/home/HeroSection.tsx
+components/home/HeroSection.tsx  ← cleanup effect + preload attr
+docs/06_delivery/qa-log.md       ← bugs registrados
+docs/07_handoffs/next-window-brief.md  ← este archivo
 ```
+
+### Nota sobre timing de animación del heading (TAREA 3)
+El timing del opacity loop del heading (delay 1.9s, fade 4s, loop [0.05, 0.8, 0.05] 8s) NO fue modificado en esta sesión. Los valores son los del último push. Si en la siguiente sesión se necesita ajustar, los valores están en `components/home/HeroSection.tsx` líneas 82-101.
 
 ---
 

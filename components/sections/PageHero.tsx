@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { ParticleCanvas } from '@/components/fx/ParticleCanvas'
+import { BokehCanvas } from '@/components/effects/BokehCanvas'
 
 interface PageHeroProps {
   eyebrow?: string
@@ -43,8 +43,7 @@ export function PageHero({
         className,
       )}
     >
-      {/* Bokeh particles — same atmosphere as the Hero cinematic */}
-      <ParticleCanvas className="absolute inset-0 h-full w-full" />
+      <BokehCanvas />
 
       {/* Dual-tone background glow */}
       <div

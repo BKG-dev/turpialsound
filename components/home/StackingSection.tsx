@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useMemo } from 'react'
 import { motion, useScroll, useSpring, useTransform } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { bellOverRange } from '@/lib/bell'
@@ -48,6 +48,16 @@ export function StackingSection({
   const [scrollDir, setScrollDir] = useState<'down' | 'up'>('down')
   const prevProgress = useRef(0)
 
+  // Detect mobile — skip heavy GPU layers on small screens
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)')
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
   useEffect(() => {
     if (!waves) return
     const unsub = scrollYProgress.on('change', (v) => {
@@ -60,14 +70,26 @@ export function StackingSection({
 
   const bg = background === 'surface' ? 'bg-brand-surface' : 'bg-brand-bg'
 
+  // On mobile: skip scroll-driven transforms to avoid unnecessary main-thread work
+  // willChange:'transform' explícito eliminado — crea capas GPU persistentes.
+  // Con BokehCanvas (canvas grande) dentro, N secciones = N capas GPU enormes.
+  // Al navegar, Chrome desmonta todas simultáneamente → compositor teardown → freeze.
+  // Framer Motion gestiona sus propias capas solo durante la animación activa.
+  const motionStyle = useMemo(
+    () => isMobile
+      ? { zIndex: index + 1 }
+      : { scale, y, zIndex: index + 1 },
+    [isMobile, index, scale, y],
+  )
+
   return (
     <motion.div
       ref={ref}
-      style={{ scale, y, zIndex: index + 1, willChange: 'transform' }}
+      style={motionStyle}
       className={cn('relative rounded-t-3xl -mt-px', bg, className)}
     >
-      {/* Bokeh particle layer — below wave and content */}
-      <BokehCanvas />
+      {/* Bokeh CSS — sin canvas, sin RAF, seguro en todas las secciones */}
+      {!isMobile && <BokehCanvas />}
 
       {/* Top edge depth line */}
       <div
@@ -79,8 +101,8 @@ export function StackingSection({
         aria-hidden="true"
       />
 
-      {/* Wave top — blooms when scrolling down */}
-      {waves && (
+      {/* Wave top — blooms when scrolling down; skipped on mobile */}
+      {waves && !isMobile && (
         <FluidCurveScrollImg
           scrollProgress={scrollYProgress}
           direction="down"
@@ -89,12 +111,11 @@ export function StackingSection({
           edgeBleedVW={6}
           fade
           enabled={scrollDir === 'down'}
-          vertFade={22}
         />
       )}
 
-      {/* Wave bottom — blooms when scrolling up */}
-      {waves && (
+      {/* Wave bottom — blooms when scrolling up; skipped on mobile */}
+      {waves && !isMobile && (
         <FluidCurveScrollImg
           scrollProgress={scrollYProgress}
           direction="up"
@@ -103,7 +124,6 @@ export function StackingSection({
           edgeBleedVW={6}
           fade
           enabled={scrollDir === 'up'}
-          vertFade={22}
         />
       )}
 

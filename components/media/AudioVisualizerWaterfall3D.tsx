@@ -17,7 +17,9 @@
  *   E - CLASSIC : Barras Winamp — 64 barras con picos cayendo y reflejo
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 import { Pause, Play, Layers } from 'lucide-react'
 
 interface Props { src: string }
@@ -98,10 +100,16 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
   const actxRef      = useRef<AudioContext | null>(null)
   const analyserRef  = useRef<AnalyserNode | null>(null)
   const rafRef       = useRef<number>(0)
+  const mountedRef   = useRef(true)
 
   /* Buffers reutilizables — evitan allocations GC por frame */
   const freqBufRef   = useRef<Uint8Array>(new Uint8Array(512))
   const waveBufRef   = useRef<Uint8Array>(new Uint8Array(1024))
+  // bars3D: buffer de datos + índices separados para sort sin corromper el orden grid
+  const bars3DBufRef = useRef<Bar3D[]>(Array.from({ length: GRID * GRID }, () =>
+    ({ cx: 0, cz: 0, h: 0, r: 0, g: 0, b: 0, depth: 0 }),
+  ))
+  const bars3DIdxRef = useRef<Int16Array>(new Int16Array(GRID * GRID).map((_, i) => i))
 
   /* Visibilidad — IntersectionObserver pausa el loop fuera del viewport */
   const isVisibleRef = useRef(true)
@@ -125,6 +133,22 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
   const [playing,  setPlaying]  = useState(false)
   const [mode,     setMode]     = useState<Mode>('D')
   const [dragging, setDragging] = useState(false)
+
+  /* ── Audio element cleanup — solo pause() sincrónico ──────────────────── */
+  // CRÍTICO: NO llamar audio.src='' aquí. Mientras el MediaElementAudioSourceNode
+  // sigue activo, cambiar src sincronamente (useLayoutEffect) reconfigura el
+  // audio pipeline de Chrome en el hilo principal → HANG de 10+ s.
+  // Solo pause() es seguro aquí; src='' se hace en useEffect (async, después
+  // de que React haya removido el elemento del DOM y el AudioContext esté cerrando).
+  useIsomorphicLayoutEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    // Restaurar src si Strict Mode lo limpió en el ciclo cleanup anterior
+    if (!audio.src || audio.src === window.location.href) audio.src = src
+    return () => {
+      audio.pause()
+    }
+  }, [src])
 
   /* ── Avanza al siguiente modo ──────────────────────────────────────────── */
   function cycleMode() {
@@ -258,20 +282,20 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
 
     ctx.clearRect(0, 0, bufW, bufH)
 
-    /* ── Datos idle animados ─────────────────────────────────────────── */
-    const freq: Uint8Array = freqData ?? (() => {
-      const d = new Uint8Array(512)
-      for (let i = 0; i < 512; i++)
+    /* ── Datos idle animados — rellena buffers pre-allocados, sin new ── */
+    if (!freqData) {
+      const d = freqBufRef.current
+      for (let i = 0; i < d.length; i++)
         d[i] = Math.round((Math.sin(ts / 950 + i / 16) * 0.5 + 0.5) * 26)
-      return d
-    })()
+    }
+    const freq = freqData ?? freqBufRef.current
 
-    const wave: Uint8Array = waveData ?? (() => {
-      const d = new Uint8Array(1024)
-      for (let i = 0; i < 1024; i++)
+    if (!waveData) {
+      const d = waveBufRef.current
+      for (let i = 0; i < d.length; i++)
         d[i] = Math.round(128 + Math.sin(ts / 500 + i / 10) * 22)
-      return d
-    })()
+    }
+    const wave = waveData ?? waveBufRef.current
 
     /* ══════════════════════════════════════════════════════════════════════
        MODOS 3D: A / B / C
@@ -281,19 +305,29 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
       const maxH = MAX_H * sc
       const hw   = HW    * sc
 
-      const bars: Bar3D[] = new Array(GRID * GRID)
+      // Llenar buffer en orden grid (no se reordena)
+      const bars = bars3DBufRef.current
       for (let row = 0; row < GRID; row++) {
         for (let col = 0; col < GRID; col++) {
           const lcx = (col - (GRID - 1) / 2) * cell
           const lcz = (row - (GRID - 1) / 2) * cell
           const v   = binVal(col, row, freq, curMode)
-          const h   = (v / 255) * maxH
           const [r, g, b] = tsColor(v)
-          const z1c = -lcx * sinY + lcz * cosY
-          bars[row * GRID + col] = { cx: lcx, cz: lcz, h, r, g, b, depth: z1c * cosP }
+          const bar = bars[row * GRID + col]
+          bar.cx    = lcx
+          bar.cz    = lcz
+          bar.h     = (v / 255) * maxH
+          bar.r     = r
+          bar.g     = g
+          bar.b     = b
+          bar.depth = (-lcx * sinY + lcz * cosY) * cosP
         }
       }
-      bars.sort((a, b) => b.depth - a.depth)
+      // Ordenar índices separados — el buffer bars queda intacto en orden grid
+      const idx = bars3DIdxRef.current
+      for (let i = 0; i < idx.length; i++) idx[i] = i
+      // Int16Array no tiene sort con comparador — usar Array.prototype.sort sobre la vista
+      Array.prototype.sort.call(idx, (a: number, b: number) => bars[b].depth - bars[a].depth)
 
       /* Cuadrícula de base */
       const half = (GRID / 2) * cell
@@ -314,7 +348,8 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
       const frontZ = cosY >= 0
       const rightX = sinY <= 0
 
-      for (const { cx: bcx, cz: bcz, h, r, g, b } of bars) {
+      for (let _i = 0; _i < idx.length; _i++) {
+        const { cx: bcx, cz: bcz, h, r, g, b } = bars[idx[_i]]
         if (h < 0.5 * sc) continue
 
         const bfl = p3(bcx - hw, 0, bcz - hw, cosY, sinY, cosP, sinP, cx, cy)
@@ -444,18 +479,12 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
         if (h > peaks[i]) peaks[i] = h
         else peaks[i] = Math.max(0, peaks[i] - 2.5 * sc)
 
-        const grad = ctx.createLinearGradient(0, baseY, 0, baseY - maxBar)
-        grad.addColorStop(0,   'rgba(0,80,150,0.75)')
-        grad.addColorStop(0.5, `rgba(${r},${g},${b},0.82)`)
-        grad.addColorStop(1,   `rgba(${Math.min(255, r + 55)},${Math.min(255, g + 55)},${Math.min(255, b + 55)},0.96)`)
-        ctx.fillStyle = grad
+        // Solid color bar — no createLinearGradient allocation per bar
+        ctx.fillStyle = `rgba(${r},${g},${b},0.86)`
         ctx.fillRect(x + gap, baseY - h, barW - gap * 2, Math.max(1, h))
 
         if (h > 2) {
-          const refGrad = ctx.createLinearGradient(0, baseY, 0, baseY + maxBar * 0.28)
-          refGrad.addColorStop(0, `rgba(${r},${g},${b},0.18)`)
-          refGrad.addColorStop(1, 'rgba(0,0,0,0)')
-          ctx.fillStyle = refGrad
+          ctx.fillStyle = `rgba(${r},${g},${b},0.14)`
           ctx.fillRect(x + gap, baseY, barW - gap * 2, h * 0.26)
         }
 
@@ -484,7 +513,7 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
 
   /* ── Loops RAF ───────────────────────────────────────────────────────────── */
   const liveLoop = useCallback((ts: number) => {
-    if (!isVisibleRef.current) return          // pausado por IntersectionObserver
+    if (!mountedRef.current || !isVisibleRef.current) return
     const analyser = analyserRef.current
     if (!analyser) return
     analyser.getByteFrequencyData(freqBufRef.current as unknown as Uint8Array<ArrayBuffer>)
@@ -494,7 +523,7 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
   }, [render])
 
   const idleLoop = useCallback((ts: number) => {
-    if (!isVisibleRef.current) return          // pausado por IntersectionObserver
+    if (!mountedRef.current || !isVisibleRef.current) return
     render(null, null, ts)
     rafRef.current = requestAnimationFrame(idleLoop)
   }, [render])
@@ -521,11 +550,32 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
 
   /* ── Lifecycle: RAF inicial + IntersectionObserver + cleanup ─────────── */
   useEffect(() => {
+    /* ── Optimización móvil: no montar en pantallas pequeñas ── */
+    if (window.matchMedia('(max-width: 768px)').matches) return
+
+    // Reset on every mount — Strict Mode cleanup sets this to false;
+    // without resetting here the loops would exit immediately on re-mount.
+    mountedRef.current = true
+
+    // Capturar audio aquí — React nulifica los refs ANTES de correr los
+    // useEffect cleanups, así que no podemos leer audioRef.current en cleanup.
+    const audio = audioRef.current
+
     loopTypeRef.current = 'idle'
     rafRef.current = requestAnimationFrame(idleLoop)
 
     const canvas = canvasRef.current
     if (!canvas) return
+
+    const restartLoop = () => {
+      cancelAnimationFrame(rafRef.current)
+      prevTsRef.current = 0             // resetea delta para evitar salto de animación
+      if (loopTypeRef.current === 'live') {
+        rafRef.current = requestAnimationFrame(liveLoop)
+      } else {
+        rafRef.current = requestAnimationFrame(idleLoop)
+      }
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -533,13 +583,7 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
         isVisibleRef.current = visible
         if (visible) {
           /* Reanudar el loop correcto al volver al viewport */
-          cancelAnimationFrame(rafRef.current)
-          prevTsRef.current = 0             // resetea delta para evitar salto de animación
-          if (loopTypeRef.current === 'live') {
-            rafRef.current = requestAnimationFrame(liveLoop)
-          } else {
-            rafRef.current = requestAnimationFrame(idleLoop)
-          }
+          restartLoop()
         } else {
           /* Fuera del viewport — cancelar loop */
           cancelAnimationFrame(rafRef.current)
@@ -549,10 +593,29 @@ export function AudioVisualizerWaterfall3D({ src }: Props) {
     )
     observer.observe(canvas)
 
+    /* ── Pausa cuando la pestaña queda oculta ── */
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        cancelAnimationFrame(rafRef.current)
+      } else if (isVisibleRef.current) {
+        /* Pestaña activa de nuevo Y el canvas sigue en el viewport */
+        restartLoop()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
     return () => {
+      mountedRef.current = false
       cancelAnimationFrame(rafRef.current)
       observer.disconnect()
+      document.removeEventListener('visibilitychange', onVisibility)
+      // audio fue capturado en el setup — el ref ya es null aquí
+      // src='' es seguro aquí: AudioContext ya fue cerrado antes del GC,
+      // y el elemento está siendo removido del DOM (no hay pipeline activo)
+      if (audio) { audio.pause(); audio.src = '' }
       actxRef.current?.close().catch(() => {})
+      actxRef.current = null
+      analyserRef.current = null
       if (resumeTimRef.current) clearTimeout(resumeTimRef.current)
     }
   }, [idleLoop, liveLoop])

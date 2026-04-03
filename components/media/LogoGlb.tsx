@@ -73,11 +73,26 @@ function SpinningLogo({ drag }: { drag: React.MutableRefObject<DragState> }) {
   const groupRef = useRef<Group>(null)
 
   useEffect(() => {
+    let cancelled = false
+    const disposables: MeshStandardMaterial[] = []
+
     const loader = new GLTFLoader()
     loader.load(
       GLB_PATH,
       (gltf) => {
         const model = gltf.scene as Group
+
+        if (cancelled) {
+          /* Componente desmontado mientras cargaba — liberar GPU inmediatamente */
+          model.traverse((child) => {
+            if (!(child instanceof Mesh)) return
+            child.geometry?.dispose()
+            const mat = child.material
+            if (Array.isArray(mat)) mat.forEach(m => m.dispose())
+            else mat?.dispose()
+          })
+          return
+        }
 
         // Conservar colores originales + material metálico brillante
         model.traverse((child) => {
@@ -91,11 +106,13 @@ function SpinningLogo({ drag }: { drag: React.MutableRefObject<DragState> }) {
           const color = rawColor.getHSL({ h: 0, s: 0, l: 0 }).l < 0.15
             ? new Color(0x666666)
             : rawColor
-          child.material = new MeshStandardMaterial({
+          const mat = new MeshStandardMaterial({
             color,
             metalness: 0.65,
             roughness: 0.12,
           })
+          child.material = mat
+          disposables.push(mat)  // registrar para dispose en unmount
         })
 
         model.rotation.x = Math.PI / 2
@@ -119,6 +136,12 @@ function SpinningLogo({ drag }: { drag: React.MutableRefObject<DragState> }) {
       undefined,
       (err) => console.error('[LogoGlb] LOAD ERROR', err),
     )
+
+    return () => {
+      cancelled = true
+      /* Liberar materiales GPU al desmontar */
+      disposables.forEach(m => m.dispose())
+    }
   }, [])
 
   useFrame((_, delta) => {
@@ -150,12 +173,44 @@ export function LogoGlb({
   height?:      number
   interactive?: boolean
 }) {
-  const [mounted, setMounted] = useState(false)
+  const [mounted,    setMounted]    = useState(false)
+  const [isDesktop,  setIsDesktop]  = useState(false)
+  const [inView,     setInView]     = useState(true)
+  const [tabVisible, setTabVisible] = useState(true)
+  const containerRef = useRef<HTMLDivElement>(null)
   const drag = useRef<DragState>({ dragging: false, lastX: 0, pendingDelta: 0 })
 
-  useEffect(() => { setMounted(true) }, [])
+  useEffect(() => {
+    setMounted(true)
+    /* ── Optimización móvil: no montar WebGL en pantallas pequeñas ── */
+    setIsDesktop(!window.matchMedia('(max-width: 768px)').matches)
+  }, [])
 
-  if (!mounted) return <div style={{ width, height }} aria-hidden="true" />
+  useEffect(() => {
+    if (!mounted || !isDesktop) return
+    const el = containerRef.current
+    if (!el) return
+
+    /* ── IntersectionObserver: pausa el renderer R3F fuera del viewport ── */
+    const io = new IntersectionObserver(([entry]) => {
+      setInView(entry.isIntersecting)
+    }, { threshold: 0 })
+    io.observe(el)
+
+    /* ── Pausa cuando la pestaña queda oculta ── */
+    const onVisibility = () => {
+      setTabVisible(document.visibilityState === 'visible')
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
+    return () => {
+      io.disconnect()
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [mounted, isDesktop])
+
+  /* Placeholder SSR / móvil */
+  if (!mounted || !isDesktop) return <div style={{ width, height }} aria-hidden="true" />
 
   function onPointerDown(e: PointerEvent<HTMLDivElement>) {
     if (!interactive) return
@@ -172,6 +227,7 @@ export function LogoGlb({
 
   return (
     <div
+      ref={containerRef}
       style={{ width, height, position: 'relative', cursor: interactive ? 'grab' : 'default' }}
       aria-label="Logo Turpial Sound 3D"
       onPointerDown={onPointerDown}
@@ -183,6 +239,7 @@ export function LogoGlb({
         camera={{ position: [0, 0, 5], fov: 50 }}
         gl={{ alpha: true, antialias: true }}
         style={{ width: '100%', height: '100%' }}
+        frameloop={inView && tabVisible ? 'always' : 'never'}
       >
         <ambientLight intensity={0.3} />
         <directionalLight position={[-5,  8,  3]} intensity={2.0} color="#ffffff" />

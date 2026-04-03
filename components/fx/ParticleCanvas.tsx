@@ -63,6 +63,9 @@ export function ParticleCanvas({ className }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
+    /* ── Optimización móvil: no montar en pantallas pequeñas ── */
+    if (window.matchMedia('(max-width: 768px)').matches) return
+
     const canvas = canvasRef.current
     if (!canvas) return
     const ctxRaw = canvas.getContext('2d')
@@ -74,6 +77,8 @@ export function ParticleCanvas({ className }: { className?: string }) {
     // Cursor muy lejos por defecto → sin efecto hasta que el usuario mueva el mouse
     let mouse = { x: -9999, y: -9999 }
     let dpr = devicePixelRatio || 1
+    // Coordina IO + visibilitychange para evitar loops duplicados
+    let isActive = false
 
     /* ── Inicialización / resize ─────────────────────────────────────── */
     function resize() {
@@ -176,6 +181,18 @@ export function ParticleCanvas({ className }: { className?: string }) {
       animId = requestAnimationFrame(draw)
     }
 
+    /* ── Arranque / parada del loop ─────────────────────────────────── */
+    function start() {
+      if (isActive) return          // evita loops duplicados
+      isActive = true
+      animId = requestAnimationFrame(draw)
+    }
+
+    function stop() {
+      isActive = false
+      cancelAnimationFrame(animId)
+    }
+
     /* ── Eventos ─────────────────────────────────────────────────────── */
     function onMouseMove(e: MouseEvent) {
       if (!canvas) return
@@ -187,13 +204,17 @@ export function ParticleCanvas({ className }: { className?: string }) {
       mouse = { x: -9999, y: -9999 }
     }
 
-    /* IntersectionObserver: pausa RAF cuando el canvas no es visible */
+    /* ── Pausa cuando la pestaña queda oculta ── */
+    function onVisibility() {
+      if (document.visibilityState === 'visible') start()
+      else stop()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
+    /* ── IntersectionObserver: pausa si el canvas sale del viewport ── */
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        animId = requestAnimationFrame(draw)
-      } else {
-        cancelAnimationFrame(animId)
-      }
+      if (entry.isIntersecting) start()
+      else stop()
     })
 
     resize()
@@ -201,14 +222,15 @@ export function ParticleCanvas({ className }: { className?: string }) {
     window.addEventListener('resize', resize)
     window.addEventListener('mousemove', onMouseMove)
     canvas.addEventListener('mouseleave', onMouseLeave)
-    animId = requestAnimationFrame(draw)
+    /* El loop lo arranca exclusivamente el IntersectionObserver en su primer disparo */
 
     return () => {
-      cancelAnimationFrame(animId)
+      stop()
       observer.disconnect()
       window.removeEventListener('resize', resize)
       window.removeEventListener('mousemove', onMouseMove)
       canvas?.removeEventListener('mouseleave', onMouseLeave)
+      document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [])
 

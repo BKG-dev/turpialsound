@@ -1,293 +1,365 @@
 'use client'
 
 /**
- * AudioVisualizerFrequency
+ * AudioVisualizerFrequency — Canvas 2D, barras verticales desde borde inferior
  *
- * Visualizador de espectro 3D inspirado en Winamp OpenGL v0.1A by mcbain.
+ * Distribución en montaña (bell curve): barras del centro más altas, extremos más bajas.
+ * Altura máxima fija: pasada como `canvasHeight` desde HeroSection, calculada una sola vez
+ * al cargar la página (borde inferior del CTA "Reservar ahora" − 5 px).
  *
- * Estructura visual:
- *  • 128 barras (cubic rectangles) dispuestas en círculo con proyección oblicua
- *    que simula una vista desde ~30° sobre el plano horizontal.
- *  • La estructura completa rota suavemente sobre su eje.
- *  • Bass (bins 0–31)   → degradado cian eléctrico → turquesa profundo
- *  • Treble (bins 32+)  → ámbar → oro brillante
- *  • 3 passes de renderizado: outer glow (blur 5px), mid (blur 2px), core nítido
- *  • Fondo de metal oscuro cepillado (scanlines + radial gradient)
- *  • Texto "WINAMP OPENGL V0.1A BY MCBAIN" grabado tenuemente
+ * Idle:   barras en cero, caps en borde inferior con gradiente animado.
+ * Activo: responde al audio en tiempo real.
+ * Barras y Caps: gradiente horizontal animado (cyan→blue→gold→blue→cyan, ciclo 5 s, siempre →).
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Pause, Play } from 'lucide-react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
 
-interface Props { src: string }
-
-const N_BARS  = 128
-const INNER_R = 44
-const MAX_BAR = 70
-const PERSP   = 0.44   // compresión Y para efecto de perspectiva oblicua
-
-/* Devuelve [r, g, b] según el bin de frecuencia */
-function barRgb(binIdx: number): [number, number, number] {
-  if (binIdx < 32) {
-    const t = binIdx / 32
-    return [0, Math.round(200 - t * 50), Math.round(255 - t * 70)]
-  }
-  const t = Math.min(1, (binIdx - 32) / 96)
-  return [255, Math.round(180 - t * 80), 0]
+interface Props {
+  src: string
+  /** Altura CSS del strip en px — fijada una vez en HeroSection al cargar la página */
+  canvasHeight?: number
+  onActiveChange?: (active: boolean) => void
 }
 
-export function AudioVisualizerFrequency({ src }: Props) {
-  const canvasRef   = useRef<HTMLCanvasElement>(null)
-  const audioRef    = useRef<HTMLAudioElement>(null)
-  const actxRef     = useRef<AudioContext | null>(null)
-  const analyserRef = useRef<AnalyserNode | null>(null)
-  const rafRef      = useRef<number>(0)
-  const [playing, setPlaying] = useState(false)
+export interface AudioVisualizerHandle {
+  toggle: () => void
+}
 
-  /* ─── AudioContext — diferido al primer gesto ────────────────────────── */
-  function initCtx() {
-    if (actxRef.current) return
-    const audio = audioRef.current
-    if (!audio) return
-    const actx    = new AudioContext()
-    const source  = actx.createMediaElementSource(audio)
-    const analyser = actx.createAnalyser()
-    analyser.fftSize              = 512   // 256 bins
-    analyser.smoothingTimeConstant = 0.82
-    source.connect(analyser)
-    analyser.connect(actx.destination)
-    actxRef.current   = actx
-    analyserRef.current = analyser
+/* ── Constantes ──────────────────────────────────────────────────────────── */
+const N              = 45
+const GAP_H          = 3
+const FPS            = 30
+const STOP           = 90_000   // 90 s activo → auto-idle
+const BELL_SIGMA     = 0.70
+const GRAD_CYCLE     = 5_000    // duración ciclo gradiente animado
+const PULSE_PERIOD   = 1_760    // ms por travesía del pulso idle (−20 %)
+const PULSE_PAUSE    = 3_000    // ms de espera entre pulsos
+
+/* ── Segmentos tipo LED ── cambiar a false para volver a barras sólidas ── */
+const SEGMENTED = true
+const SEG_H     = 1   // alto de cada segmento en CSS px (doble de líneas)
+const SEG_GAP   = 1   // hueco entre segmentos en CSS px
+
+/* Bell curve weight para la barra i */
+function bell(i: number): number {
+  const t = (i / (N - 1)) * 2 - 1
+  return Math.exp(-0.5 * (t / BELL_SIGMA) ** 2)
+}
+
+/**
+ * LUT de 256 colores para barras — precalculada una vez al cargar el módulo.
+ * Índice = Math.round(s[i] * 255).  0 → azul,  ~128 → cyan,  255 → gold.
+ * Cero allocations en runtime.
+ */
+const BAR_LUT: string[] = Array.from({ length: 256 }, (_, j) => {
+  const r = j / 255
+  let R: number, G: number, B: number
+  if (r < 0.62) {
+    const t = r / 0.62                      // 0 → 1 en la zona azul–cyan
+    R = 0
+    G = Math.round(80  + 94  * t)           // 80  → 174
+    B = Math.round(200 + 39  * t)           // 200 → 239
+  } else {
+    const t = (r - 0.62) / 0.38            // 0 → 1 en la zona cyan–gold (−15 % amarillo)
+    R = Math.round(255 * t)                 // 0   → 255
+    G = Math.round(174 + 19  * t)           // 174 → 193
+    B = Math.round(239 - 232 * t)           // 239 → 7
   }
+  return `rgba(${R},${G},${B},0.45)`
+})
 
-  /* ─── Estado idle: fondo + anillo plano + texto ───────────────────────── */
-  const drawIdle = useCallback(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    const W = canvas.width, H = canvas.height
-    const cx = W / 2, cy = H / 2 + 15
+/**
+ * Gradiente horizontal animado para CAPS — paleta cyan→blue→gold→blue→cyan.
+ * gold avanza izq→der. Amarillo reducido 20 %: stops 0.34 / 0.66.
+ */
+function buildCapGradient(
+  ctx: CanvasRenderingContext2D,
+  ts: number,
+  bufW: number,
+): CanvasGradient {
+  const t   = (ts % GRAD_CYCLE) / GRAD_CYCLE
+  const off = (1 - t) * bufW
 
-    ctx.clearRect(0, 0, W, H)
-    const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.72)
-    bg.addColorStop(0, 'rgba(14,14,18,1)')
-    bg.addColorStop(1, 'rgba(4,4,8,1)')
-    ctx.fillStyle = bg
-    ctx.fillRect(0, 0, W, H)
+  const g = ctx.createLinearGradient(-off, 0, 2 * bufW - off, 0)
+  g.addColorStop(0.00, 'rgba(0,174,239,1)')
+  g.addColorStop(0.34, 'rgba(0,80,200,1)')
+  g.addColorStop(0.50, 'rgba(255,193,7,1)')
+  g.addColorStop(0.66, 'rgba(0,80,200,1)')
+  g.addColorStop(1.00, 'rgba(0,174,239,1)')
+  return g
+}
 
-    // Scanlines
-    for (let y = 0; y < H; y += 3) {
-      ctx.fillStyle = 'rgba(255,255,255,0.008)'
-      ctx.fillRect(0, y, W, 1)
+
+export const AudioVisualizerFrequency = forwardRef<AudioVisualizerHandle, Props>(
+  function AudioVisualizerFrequency({ src, canvasHeight = 0, onActiveChange }, ref) {
+    const cvRef    = useRef<HTMLCanvasElement>(null)
+    const audioRef = useRef<HTMLAudioElement>(null)
+    const actxRef  = useRef<AudioContext | null>(null)
+    const anRef    = useRef<AnalyserNode | null>(null)
+    const rafRef   = useRef<number>(0)
+    const fpsTs    = useRef(0)
+    const dtTs     = useRef(0)
+
+    const freqBuf = useRef(new Uint8Array(128))
+    const smooth  = useRef(new Float32Array(N))
+    const peaks   = useRef(new Float32Array(N))
+    const peakV   = useRef(new Float32Array(N))
+
+    const activeRef     = useRef(false)
+    const stopTmr       = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const visRef        = useRef(true)
+    const barOffscreens = useRef<OffscreenCanvas[]>([])
+    const barOffKey     = useRef('')   // "barW,ceiling" — detecta resize
+
+    /* ── AudioContext — reutiliza contexto suspendido si existe ─────────── */
+    function initAudio() {
+      if (!audioRef.current) return
+      if (actxRef.current && actxRef.current.state !== 'closed') return
+      try {
+        const actx = new AudioContext()
+        const node = actx.createMediaElementSource(audioRef.current)
+        const an   = actx.createAnalyser()
+        an.fftSize               = 256
+        an.smoothingTimeConstant = 0.40
+        node.connect(an)
+        an.connect(actx.destination)
+        actxRef.current = actx
+        anRef.current   = an
+        freqBuf.current = new Uint8Array(an.frequencyBinCount)
+      } catch { /* elemento ya conectado */ }
     }
 
-    // Anillo idle tenue
-    ctx.save()
-    ctx.strokeStyle = 'rgba(0,174,239,0.10)'
-    ctx.lineWidth = 0.8
-    ctx.beginPath()
-    ctx.ellipse(cx, cy, INNER_R, INNER_R * PERSP, 0, 0, Math.PI * 2)
-    ctx.stroke()
-    ctx.restore()
+    /* ── Draw ────────────────────────────────────────────────────────────── */
+    const draw = useCallback((ts: number) => {
+      const cv = cvRef.current
+      if (!cv) return
+      const ctx = cv.getContext('2d')
+      if (!ctx) return
 
-    // Header text
-    ctx.save()
-    ctx.font = '6px monospace'
-    ctx.fillStyle = 'rgba(0,174,239,0.14)'
-    ctx.textAlign = 'center'
-    ctx.fillText('WINAMP OPENGL V0.1A BY MCBAIN', cx, 13)
-    ctx.restore()
-  }, [])
+      const dpr  = Math.min(window.devicePixelRatio || 1, 2)
+      const bufW = Math.round(cv.clientWidth  * dpr)
+      const bufH = Math.round(cv.clientHeight * dpr)
+      if (!bufW || !bufH) return
+      if (cv.width  !== bufW) cv.width  = bufW
+      if (cv.height !== bufH) cv.height = bufH
 
-  /* ─── RAF draw loop ──────────────────────────────────────────────────── */
-  const drawFrame = useCallback(() => {
-    const canvas   = canvasRef.current
-    const analyser = analyserRef.current
-    if (!canvas || !analyser) return
-    const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
-    if (!ctx) return
+      const dt = dtTs.current ? Math.min((ts - dtTs.current) / 1000, 0.05) : 0.016
+      dtTs.current = ts
 
-    const W = canvas.width, H = canvas.height
-    const t  = performance.now() / 1000
-    const cx = W / 2, cy = H / 2 + 15
+      ctx.clearRect(0, 0, bufW, bufH)
 
-    const data = new Uint8Array(analyser.frequencyBinCount)
-    analyser.getByteFrequencyData(data)
-    const usedBins = Math.min(N_BARS, data.length)
+      const an = anRef.current
+      const on = activeRef.current && !!an
 
-    // Entropía RMS
-    let sq = 0
-    for (let i = 0; i < usedBins; i++) sq += (data[i] / 255) ** 2
-    const entropy = Math.sqrt(sq / usedBins)
+      if (on) an!.getByteFrequencyData(freqBuf.current)
 
-    /* ── Fondo metal oscuro ─────────────────────────────────────────────── */
-    ctx.clearRect(0, 0, W, H)
-    const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.72)
-    bg.addColorStop(0, 'rgba(14,14,18,1)')
-    bg.addColorStop(1, 'rgba(4,4,8,1)')
-    ctx.fillStyle = bg
-    ctx.fillRect(0, 0, W, H)
+      const s  = smooth.current
+      const pk = peaks.current
+      const pv = peakV.current
+      const fd = freqBuf.current
 
-    // Scanlines (textura metal cepillado)
-    for (let y = 0; y < H; y += 3) {
-      ctx.fillStyle = 'rgba(255,255,255,0.008)'
-      ctx.fillRect(0, y, W, 1)
+      const sliceW  = bufW / N
+      const barW    = Math.max(1, Math.floor(sliceW - GAP_H * dpr))
+      /* Techo: 26.4 % del canvas (+10 % sobre 24 %) */
+      const ceiling = Math.round((bufH - Math.ceil(2 * dpr)) * 0.264)
+
+      /* ── OffscreenCanvas: rebuild solo en resize (D) ─────────────────────── */
+      if (SEGMENTED && typeof OffscreenCanvas !== 'undefined') {
+        const offKey = `${barW},${ceiling}`
+        if (barOffKey.current !== offKey) {
+          barOffKey.current = offKey
+          const pitch = (SEG_H + SEG_GAP) * dpr
+          barOffscreens.current = Array.from({ length: N }, (_, i) => {
+            const bwi       = bell(i)
+            const totalSegs = Math.max(2, Math.floor(bwi * ceiling / pitch))
+            const offH      = Math.ceil(totalSegs * pitch)
+            const off       = new OffscreenCanvas(barW, offH)
+            const octx      = off.getContext('2d')!
+            for (let k = 0; k < totalSegs; k++) {
+              const segRatio = k / (totalSegs - 1)
+              octx.fillStyle = BAR_LUT[Math.min(255, Math.round(segRatio * 255))]
+              octx.fillRect(0, offH - Math.ceil((k + 1) * pitch), barW, Math.ceil(SEG_H * dpr))
+            }
+            return off
+          })
+        }
+      }
+
+      /* Cap: gradiente horizontal animado */
+      const capGrad = buildCapGradient(ctx, ts, bufW)
+      const capGlow = 'rgba(0,174,239,0.85)'
+
+      for (let i = 0; i < N; i++) {
+        const x  = Math.round(i * sliceW + (sliceW - barW) / 2)
+        const bw = bell(i)
+
+        let raw: number
+
+        if (on) {
+          /* Mapeo logarítmico: concentra barras en freqs bajas/medias donde vive la energía */
+          const logBin = Math.pow(i / (N - 1), 1.8) * fd.length * 0.72
+          const bin    = Math.min(Math.floor(logBin), fd.length - 1)
+          raw = fd[bin] / 255
+        } else {
+          /* Idle — pulso gaussiano estrecho viajero izq→der, pausa 3 s entre ciclos */
+          const cyclePos = ts % (PULSE_PERIOD + PULSE_PAUSE)
+          if (cyclePos < PULSE_PERIOD) {
+            const t          = cyclePos / PULSE_PERIOD
+            const waveCenter = t * (N + 8) - 4
+            const waveWidth  = N * 0.0144
+            raw = Math.exp(-0.5 * ((i - waveCenter) / waveWidth) ** 2) * 0.90
+          } else {
+            raw = 0
+          }
+        }
+
+        /* Lerp — muy rápido en activo para máxima reactividad; más suave en idle para el pulso */
+        const kRate = on ? 30 : 12
+        s[i] += (raw - s[i]) * (1 - Math.exp(-dt * kRate))
+
+        /* Longitud visual con bell curve; escala al ceiling — sin clipping */
+        const barLen = Math.max(1, s[i] * bw * ceiling)
+
+        if (SEGMENTED) {
+          /* D: drawImage desde OffscreenCanvas pre-renderizado — 0 allocations en runtime */
+          const off = barOffscreens.current[i]
+          if (off) {
+            const drawH = Math.min(Math.round(barLen), off.height)
+            ctx.drawImage(off, 0, off.height - drawH, barW, drawH, x, bufH - drawH, barW, drawH)
+          }
+        } else {
+          const colorIdx = Math.min(255, Math.round(s[i] * 255))
+          ctx.fillStyle  = BAR_LUT[colorIdx]
+          ctx.fillRect(x, bufH - barLen, barW, barLen)
+        }
+
+        /* Peak tracking en unidades raw */
+        if (s[i] >= pk[i]) {
+          pk[i] = s[i]
+          pv[i] = 0
+        } else {
+          pv[i] = Math.min(pv[i] + dt * 1.6, 2.2)
+          pk[i] = Math.max(0, pk[i] - pv[i] * dt)
+        }
+
+        /* Cap siempre visible — en cero aparece en borde inferior */
+        {
+          const capLen = pk[i] * bw * ceiling
+          const capY   = Math.round(bufH - capLen)
+          const capH   = Math.max(2, Math.round(3.5 * dpr))
+          ctx.save()
+          ctx.shadowColor   = capGlow
+          ctx.shadowBlur    = 20 * dpr
+          ctx.shadowOffsetY = -10 * dpr  // proyecta glow hacia arriba (+60 %)
+          ctx.fillStyle     = capGrad
+          ctx.fillRect(x, capY - capH, barW, capH)
+          ctx.restore()
+        }
+      }
+    }, [])
+
+    /* ── Loop RAF con throttle 30 FPS ──────────────────────────────────── */
+    const loop = useCallback((ts: number) => {
+      rafRef.current = requestAnimationFrame(loop)
+      if (!visRef.current) return
+      if (ts - fpsTs.current < 1000 / FPS) return
+      fpsTs.current = ts
+      draw(ts)
+    }, [draw])
+
+    /* ── Deactivar — va a idle ──────────────────────────────────────────── */
+    function deactivate() {
+      audioRef.current?.pause()
+      actxRef.current?.suspend().catch(() => {})
+      activeRef.current = false
+      onActiveChange?.(false)
+      if (stopTmr.current) { clearTimeout(stopTmr.current); stopTmr.current = null }
+      peaks.current.fill(0)
+      peakV.current.fill(0)
     }
 
-    /* ── Header text ────────────────────────────────────────────────────── */
-    ctx.save()
-    ctx.font = '6px monospace'
-    ctx.fillStyle = `rgba(0,174,239,${0.13 + entropy * 0.09})`
-    ctx.textAlign = 'center'
-    ctx.fillText('WINAMP OPENGL V0.1A BY MCBAIN', cx, 13)
-    ctx.restore()
+    /* ── Toggle idle ↔ activo ───────────────────────────────────────────── */
+    function toggle() {
+      if (activeRef.current) {
+        deactivate()
+        return
+      }
 
-    /* ── Rotación de la estructura ──────────────────────────────────────── */
-    const rot   = t * 0.25
-    const dPhi  = Math.PI / N_BARS * 0.62
+      /* Activar */
+      initAudio()
+      const actx = actxRef.current
+      if (actx?.state === 'suspended') actx.resume().catch(() => {})
+      audioRef.current?.play().catch(() => {})
+      activeRef.current = true
+      onActiveChange?.(true)
+      peaks.current.fill(0)
+      peakV.current.fill(0)
 
-    /* ── Centro glowing ─────────────────────────────────────────────────── */
-    ctx.save()
-    ctx.filter = `blur(${6 + entropy * 8}px)`
-    const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, INNER_R)
-    cg.addColorStop(0, `rgba(0,174,239,${0.22 + entropy * 0.28})`)
-    cg.addColorStop(1, 'rgba(0,0,0,0)')
-    ctx.fillStyle = cg
-    ctx.beginPath()
-    ctx.ellipse(cx, cy, INNER_R, INNER_R * PERSP, 0, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.filter = 'none'
-    ctx.restore()
+      /* Auto-idle tras 60 s */
+      if (stopTmr.current) clearTimeout(stopTmr.current)
+      stopTmr.current = setTimeout(() => {
+        deactivate()
+      }, STOP)
 
-    /* Helper: traza el quad de una barra ─────────────────────────────────── */
-    function drawBar(i: number) {
-      const angle  = (i / N_BARS) * Math.PI * 2 + rot
-      const binIdx = Math.floor((i / N_BARS) * usedBins)
-      const e      = data[binIdx] / 255
-      const barLen = e * MAX_BAR
-      if (barLen < 0.8) return false
-      const inner = INNER_R
-      const outer = INNER_R + barLen
-      ctx.beginPath()
-      ctx.moveTo(cx + inner * Math.cos(angle - dPhi), cy + inner * Math.sin(angle - dPhi) * PERSP)
-      ctx.lineTo(cx + outer * Math.cos(angle - dPhi), cy + outer * Math.sin(angle - dPhi) * PERSP)
-      ctx.lineTo(cx + outer * Math.cos(angle + dPhi), cy + outer * Math.sin(angle + dPhi) * PERSP)
-      ctx.lineTo(cx + inner * Math.cos(angle + dPhi), cy + inner * Math.sin(angle + dPhi) * PERSP)
-      ctx.closePath()
-      return true
     }
 
-    /* ── Pass 0: outer glow (blur grueso, baja alpha) ────────────────────── */
-    ctx.save()
-    ctx.filter = 'blur(5px)'
-    for (let i = 0; i < N_BARS; i++) {
-      const binIdx = Math.floor((i / N_BARS) * usedBins)
-      const [r, g, b] = barRgb(binIdx)
-      ctx.fillStyle = `rgba(${r},${g},${b},${0.14 + entropy * 0.10})`
-      if (drawBar(i)) ctx.fill()
-    }
-    ctx.filter = 'none'
-    ctx.restore()
+    useImperativeHandle(ref, () => ({ toggle }))
 
-    /* ── Pass 1: mid glow (blur leve, alpha media) ───────────────────────── */
-    ctx.save()
-    ctx.filter = 'blur(2px)'
-    for (let i = 0; i < N_BARS; i++) {
-      const binIdx = Math.floor((i / N_BARS) * usedBins)
-      const [r, g, b] = barRgb(binIdx)
-      ctx.fillStyle = `rgba(${r},${g},${b},${0.38 + entropy * 0.18})`
-      if (drawBar(i)) ctx.fill()
-    }
-    ctx.filter = 'none'
-    ctx.restore()
+    /* ── Lifecycle ──────────────────────────────────────────────────────── */
+    useEffect(() => {
+      if (window.matchMedia('(max-width: 768px)').matches) return
 
-    /* ── Pass 2: core nítido (sin blur, alpha alta) ───────────────────────── */
-    ctx.save()
-    for (let i = 0; i < N_BARS; i++) {
-      const binIdx = Math.floor((i / N_BARS) * usedBins)
-      const [r, g, b] = barRgb(binIdx)
-      ctx.fillStyle = `rgba(${r},${g},${b},${0.68 + entropy * 0.28})`
-      if (drawBar(i)) ctx.fill()
-    }
-    ctx.restore()
+      rafRef.current = requestAnimationFrame(loop)
 
-    /* ── Aura exterior pulsante ──────────────────────────────────────────── */
-    ctx.save()
-    ctx.filter = `blur(${4 + entropy * 7}px)`
-    ctx.strokeStyle = `rgba(0,174,239,${0.09 + entropy * 0.13})`
-    ctx.lineWidth = 2
-    ctx.beginPath()
-    ctx.ellipse(cx, cy, INNER_R + MAX_BAR * 0.55, (INNER_R + MAX_BAR * 0.55) * PERSP, 0, 0, Math.PI * 2)
-    ctx.stroke()
-    ctx.filter = 'none'
-    ctx.restore()
+      const observer = new IntersectionObserver(
+        ([e]) => { visRef.current = e.isIntersecting },
+        { threshold: 0.01 },
+      )
+      if (cvRef.current) observer.observe(cvRef.current)
 
-    rafRef.current = requestAnimationFrame(drawFrame)
-  }, [])
+      const onVis = () => { visRef.current = document.visibilityState === 'visible' }
+      document.addEventListener('visibilitychange', onVis)
 
-  /* ─── Toggle play/pause ─────────────────────────────────────────────── */
-  function toggle() {
-    const audio = audioRef.current
-    if (!audio) return
-    initCtx()
-    if (actxRef.current?.state === 'suspended') actxRef.current.resume().catch(() => {})
+      const audio = audioRef.current
+      const actx = actxRef.current
+      return () => {
+        cancelAnimationFrame(rafRef.current)
+        observer.disconnect()
+        document.removeEventListener('visibilitychange', onVis)
+        if (stopTmr.current) clearTimeout(stopTmr.current)
+        audio?.pause()
+        actx?.suspend().catch(() => {})
+      }
+    }, [loop])
 
-    if (playing) {
-      audio.pause()
-      cancelAnimationFrame(rafRef.current)
-      drawIdle()
-      setPlaying(false)
-    } else {
-      audio.play().catch(() => {})
-      drawFrame()
-      setPlaying(true)
-    }
-  }
-
-  /* ─── Lifecycle ─────────────────────────────────────────────────────── */
-  useEffect(() => {
-    drawIdle()
-    return () => {
-      cancelAnimationFrame(rafRef.current)
-      actxRef.current?.close().catch(() => {})
-    }
-  }, [drawIdle])
-
-  /* ─── UI ─────────────────────────────────────────────────────────────── */
-  return (
-    <div className="fixed top-20 right-6 z-50 flex flex-col items-end gap-2">
-
-      {/* Canvas espectro */}
-      <div className="relative overflow-hidden rounded-lg border border-accent-cyan/15 shadow-glow-cyan-sm">
-        <canvas
-          ref={canvasRef}
-          width={240}
-          height={200}
-          className="block"
+    /* ── UI ─────────────────────────────────────────────────────────────── */
+    return (
+      <>
+        <div
+          onClick={toggle}
+          style={{
+            position:      'fixed',
+            bottom:        0,
+            left:          0,
+            width:         '100%',
+            height:        `${canvasHeight}px`,
+            zIndex:        40,
+            cursor:        'pointer',
+            background:    'transparent',
+            pointerEvents: canvasHeight > 0 ? 'auto' : 'none',
+          }}
           aria-hidden="true"
-        />
-      </div>
+        >
+          <canvas
+            ref={cvRef}
+            style={{ display: 'block', width: '100%', height: '100%' }}
+            aria-hidden="true"
+          />
+        </div>
 
-      {/* Play / Pause */}
-      <button
-        onClick={toggle}
-        className={[
-          'flex items-center gap-1.5 rounded-full px-3 py-1.5',
-          'glass-surface border font-display text-[9px] tracking-widest uppercase',
-          'transition-all duration-300',
-          playing
-            ? 'border-accent-gold/50 text-accent-gold hover:border-accent-gold/80'
-            : 'border-accent-cyan/30 text-accent-cyan hover:border-accent-cyan/70',
-        ].join(' ')}
-        aria-label={playing ? 'Pausar visualizador' : 'Reproducir visualizador'}
-      >
-        {playing ? <Pause size={10} /> : <Play size={10} />}
-        {playing ? 'Pause' : 'Play'}
-      </button>
-
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-      <audio ref={audioRef} loop preload="none" src={src} />
-    </div>
-  )
-}
+        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+        <audio ref={audioRef} loop preload="none" src={src} />
+      </>
+    )
+  },
+)
