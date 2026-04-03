@@ -9,6 +9,7 @@ interface SectionShellProps {
   id?: string
   background?: 'default' | 'surface' | 'none'
   size?: 'default' | 'sm'
+  align?: 'left' | 'right'
 }
 
 export function SectionShell({
@@ -17,6 +18,7 @@ export function SectionShell({
   id,
   background = 'default',
   size = 'default',
+  align = 'left',
 }: SectionShellProps) {
   const bgClass = {
     default: 'bg-brand-bg',
@@ -25,10 +27,11 @@ export function SectionShell({
   }[background]
 
   const paddingClass = size === 'sm' ? 'section-padding-sm' : 'section-padding'
+  const containerClass = align === 'right' ? 'container-base container-base--right' : 'container-base'
 
   return (
     <section id={id} className={cn(bgClass, paddingClass, className)}>
-      <div className="container-base">{children}</div>
+      <div className={containerClass}>{children}</div>
     </section>
   )
 }
@@ -69,7 +72,7 @@ export function SectionHeading({
           className={cn(
             'mb-4 flex items-center gap-4',
             align === 'center' && 'justify-center',
-            align === 'right' && 'justify-end',
+            align === 'right' && 'justify-end flex-row-reverse',
           )}
           variants={{ hidden: { opacity: 0, y: 14 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] } } }}
         >

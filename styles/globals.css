@@ -278,12 +278,36 @@ video {
     margin-left: 0;
     margin-right: auto;
     padding-left: 1.5rem;
-    padding-right: var(--container-px);
+    padding-right: 5rem; /* right-6 (24px) + w-14 (56px) = 80px — borde izq. del botón WhatsApp */
   }
 
   @media (min-width: 640px) {
     .container-base {
       padding-left: 6.5rem; /* aligns with navbar 'T': left-6(24) + pl-5(20) + logo(52) + gap-2(8) = 104px */
+    }
+  }
+
+  /*
+   * Contenedor derecho — espejo exacto del izquierdo:
+   *   padding-right: 6.5rem  →  mismo ancla visual que el navbar 'T' (pero en el lado derecho)
+   *   padding-left:  5rem    →  mismo clearance que el borde izq. del botón WhatsApp
+   *   margin-left: auto      →  el bloque flota hacia el borde derecho del viewport
+   *
+   * En pantallas > 1200px genera un zigzag editorial real:
+   *   izquierda: 0 … 1200px   |   derecha: (vw-1200)px … vw
+   * En pantallas ≤ 1200px el efecto viene del padding invertido.
+   */
+  .container-base--right {
+    margin-left: auto;
+    margin-right: 0;
+    padding-left: 5rem;
+    padding-right: 1.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .container-base--right {
+      padding-left: 5rem;    /* borde izq. del botón WhatsApp: right-6(24) + w-14(56) = 80px */
+      padding-right: 6.5rem; /* espejo del navbar 'T': left-6(24) + pl-5(20) + logo(52) + gap(8) = 104px */
     }
   }
 

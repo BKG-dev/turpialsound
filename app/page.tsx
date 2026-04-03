@@ -103,7 +103,7 @@ export default function HomePage() {
 
       {/* ── SERVICES GALLERY — stacking section 1 ─────────────────────── */}
       <StackingSection index={1} waves>
-        <SectionShell background="none">
+        <SectionShell background="none" align="right">
           <SectionHeading
             eyebrow="Servicios principales"
             heading="Tres entradas. Un solo estándar."
@@ -154,7 +154,7 @@ export default function HomePage() {
 
       {/* ── ARTISTAS DE ÉLITE — stacking section 3 ─────────────────────── */}
       <StackingSection index={3} waves>
-        <SectionShell background="none">
+        <SectionShell background="none" align="right">
           <SectionHeading
             eyebrow="Trayectoria verificable"
             heading="Artistas de élite que hemos atendido"
