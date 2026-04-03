@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/Button'
 import { ServiceSelectStep } from '@/components/bookings/steps/ServiceSelectStep'
 import { VariantSelectStep } from '@/components/bookings/steps/VariantSelectStep'
 import { DateTimeStep } from '@/components/bookings/steps/DateTimeStep'
+import { ExtrasStep } from '@/components/bookings/steps/ExtrasStep'
+import { ContactStep, isValidEmail } from '@/components/bookings/steps/ContactStep'
 
 // ─────────────────────────────────────────────────────────────────
 // Definición de pasos
@@ -40,6 +42,12 @@ interface WizardData {
   eventDate: string | null       // "YYYY-MM-DD"
   startTime: string | null       // "HH:MM"
   durationMinutes: number | null
+  extrasNotes: string
+  extrasTechnician: boolean
+  extrasBackline: boolean
+  requesterName: string
+  requesterEmail: string
+  requesterPhone: string
 }
 
 const INITIAL_DATA: WizardData = {
@@ -48,6 +56,12 @@ const INITIAL_DATA: WizardData = {
   eventDate: null,
   startTime: null,
   durationMinutes: null,
+  extrasNotes: '',
+  extrasTechnician: false,
+  extrasBackline: false,
+  requesterName: '',
+  requesterEmail: '',
+  requesterPhone: '',
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -65,6 +79,8 @@ export function BookingWizard() {
     currentStep === 0 ? data.serviceSlug !== null :
     currentStep === 1 ? data.variantSlug !== null :
     currentStep === 2 ? data.eventDate !== null && data.startTime !== null && data.durationMinutes !== null :
+    currentStep === 3 ? true :
+    currentStep === 4 ? data.requesterName.trim() !== '' && isValidEmail(data.requesterEmail) :
     false
 
   function handleNext() {
@@ -172,13 +188,35 @@ export function BookingWizard() {
           />
         )}
 
-        {currentStep > 2 && (
+        {currentStep === 3 && (
+          <ExtrasStep
+            notes={data.extrasNotes}
+            technician={data.extrasTechnician}
+            backline={data.extrasBackline}
+            onNotesChange={(value) => setData((d) => ({ ...d, extrasNotes: value }))}
+            onTechnicianChange={(value) => setData((d) => ({ ...d, extrasTechnician: value }))}
+            onBacklineChange={(value) => setData((d) => ({ ...d, extrasBackline: value }))}
+          />
+        )}
+
+        {currentStep === 4 && (
+          <ContactStep
+            name={data.requesterName}
+            email={data.requesterEmail}
+            phone={data.requesterPhone}
+            onNameChange={(value) => setData((d) => ({ ...d, requesterName: value }))}
+            onEmailChange={(value) => setData((d) => ({ ...d, requesterEmail: value }))}
+            onPhoneChange={(value) => setData((d) => ({ ...d, requesterPhone: value }))}
+          />
+        )}
+
+        {currentStep > 4 && (
           <div className="flex min-h-[160px] flex-col items-center justify-center rounded-lg border border-dashed border-brand-border p-8 text-center">
             <p className="text-sm font-medium text-text-secondary">
-              Este paso se habilitará próximamente.
+              Resumen de la solicitud — próximamente.
             </p>
             <p className="mt-2 text-xs text-text-muted">
-              Completa los pasos anteriores para continuar.
+              Aquí podrás revisar todos los datos antes de enviar.
             </p>
           </div>
         )}
