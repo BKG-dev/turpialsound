@@ -38,6 +38,8 @@ export function AnimatedNavLinks() {
               'after:bg-gradient-to-r after:from-accent-gold after:to-accent-cyan',
               'after:transition-transform after:duration-[300ms] after:ease-out',
               'hover:after:scale-x-100',
+              /* neon override for Marketplace */
+              item.label === 'Marketplace' ? 'nav-glow-marketplace' : '',
             ].join(' ')}
           >
             {item.label}

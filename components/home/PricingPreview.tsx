@@ -154,7 +154,7 @@ function PriceCard({
       </p>
 
       {/* ── ZONA 3: Bloque de precio — h-[6.5rem] fijo ──────────── */}
-      {/* label (9px) · prefijo (text-sm) · monto (2.75rem)         */}
+      {/* label (9px) · prefijo (text-sm) · monto (2.75rem=44px)    */}
       <div className="mt-3 flex h-[6.5rem] shrink-0 flex-col justify-start overflow-hidden">
         <span className="font-display text-[9px] tracking-[0.22em] uppercase leading-none text-text-muted">
           {label}
@@ -249,19 +249,47 @@ export function PricingPreview() {
   function scroll(dir: 'left' | 'right') {
     const el = carouselRef.current
     if (!el) return
-    // First child is the first snap-start wrapper — its width = one card slot
-    const card = el.firstElementChild as HTMLElement | null
-    if (!card) return
-    const amount = card.offsetWidth + 20 // offsetWidth + gap-5 (20px)
-    el.scrollBy({ left: dir === 'right' ? amount : -amount, behavior: 'smooth' })
+    const maxScroll = el.scrollWidth - el.clientWidth
+    const cardWidth = el.clientWidth / 3 + 20
+    if (dir === 'right') {
+      if (el.scrollLeft >= maxScroll - 10) {
+        el.scrollTo({ left: 0, behavior: 'smooth' })
+      } else {
+        el.scrollBy({ left: cardWidth, behavior: 'smooth' })
+      }
+    } else {
+      if (el.scrollLeft <= 10) {
+        el.scrollTo({ left: maxScroll, behavior: 'smooth' })
+      } else {
+        el.scrollBy({ left: -cardWidth, behavior: 'smooth' })
+      }
+    }
   }
 
-  return (
-    <div className="pb-24">
-      {/* ── Header ────────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[1fr_auto] lg:items-end">
+  useEffect(() => {
+    const el = carouselRef.current
+    if (!el) return
+    const handleWheel = (e: WheelEvent) => {
+      const maxScroll = el.scrollWidth - el.clientWidth
+      if (e.deltaY > 0 && el.scrollLeft < maxScroll - 1) {
+        e.preventDefault()
+        el.scrollLeft += e.deltaY
+      } else if (e.deltaY < 0 && el.scrollLeft > 1) {
+        e.preventDefault()
+        el.scrollLeft += e.deltaY
+      }
+    }
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [])
 
-        {/* Left */}
+  return (
+    <div className="pb-16">
+
+      {/* ── HEADER ROW: texto izq + controles der ─────────────────── */}
+      <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between max-w-[1400px] mx-auto">
+
+        {/* Texto */}
         <div>
           <div className="mb-4 flex items-center gap-3">
             <span className="accent-line-animated" aria-hidden="true" />
@@ -269,32 +297,30 @@ export function PricingPreview() {
               Referencia de precios
             </span>
           </div>
-          <h2 className="font-display text-display-md text-text-primary">
+          <h2 className="font-display text-display-lg text-text-primary">
             Claridad desde el primer contacto.
           </h2>
-          <p className="mt-3 max-w-prose font-display text-body-base text-text-secondary">
+          <p className="mt-3 font-display text-body-base text-text-secondary max-w-lg">
             Precios base orientativos en USD o Bolívares. Cada proyecto se ajusta a sus requerimientos.
           </p>
         </div>
 
-        {/* Right: nav arrows + toggle + BCV note */}
-        <div className="flex flex-col items-start gap-2 lg:items-end">
-
-          {/* Nav arrows y toggle en la misma fila: [ ← ] [ → ] [ USD / Bs ] */}
+        {/* Controles */}
+        <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end">
           <div className="flex items-center gap-3">
             <button
               onClick={() => scroll('left')}
               aria-label="Ver paquetes anteriores"
-              className="pricing-nav-btn"
+              className="pricing-nav-btn h-12 w-12"
             >
-              <ChevronLeft size={18} aria-hidden="true" />
+              <ChevronLeft size={22} aria-hidden="true" />
             </button>
             <button
               onClick={() => scroll('right')}
               aria-label="Ver más paquetes"
-              className="pricing-nav-btn"
+              className="pricing-nav-btn h-12 w-12"
             >
-              <ChevronRight size={18} aria-hidden="true" />
+              <ChevronRight size={22} aria-hidden="true" />
             </button>
 
             {/* Toggle pill */}
@@ -332,7 +358,7 @@ export function PricingPreview() {
             </div>
           </div>
 
-          {/* BCV note — siempre visible; la tasa es útil independientemente de la moneda activa */}
+          {/* BCV note */}
           <div className="flex items-center gap-1.5">
             <Info size={10} style={{ color: 'var(--color-cyan)' }} aria-hidden="true" />
             <span className="whitespace-nowrap font-display text-[9px] tracking-wider text-text-muted">
@@ -349,29 +375,23 @@ export function PricingPreview() {
         </div>
       </div>
 
-      {/* ── Carrusel ──────────────────────────────────────────────── */}
-      {/* py-6 protege el badge (-top-3.5) y las box-shadows de ser
-          recortados por overflow-x sin introducir capas visuales extra. */}
+      {/* ── CARRUSEL — ancho completo ──────────────────────────────── */}
+      {/* py-6 protege el badge (-top-3.5) y las box-shadows laterales */}
       <div
         ref={carouselRef}
-        className="mt-10 flex snap-x snap-mandatory gap-5 overflow-x-auto scrollbar-none py-6"
+        className="flex snap-x snap-mandatory gap-5 overflow-x-auto scrollbar-none py-6 px-1"
       >
         {pricingPackages.map((pkg) => (
           <div
             key={pkg.id}
-            className={cn(
-              'flex w-full shrink-0 snap-start flex-col',
-              'md:w-[calc(50%-0.625rem)]',
-              'xl:w-[calc(33.333%-0.833rem)]',
-            )}
+            className="flex shrink-0 snap-start flex-col w-[calc(100%-1rem)] sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2.5rem)/3)]"
           >
             <PriceCard pkg={pkg} currency={currency} bcvRate={rate} />
           </div>
         ))}
       </div>
 
-      {/* ── Nota al pie ───────────────────────────────────────────── */}
-      <p className="mt-6 text-center font-display text-[9px] tracking-wider text-text-muted">
+      <p className="mt-4 font-display text-[9px] tracking-wider text-text-muted max-w-[1400px] mx-auto">
         * Referencias orientativas. El valor final se confirma en la orden de servicio.
       </p>
     </div>

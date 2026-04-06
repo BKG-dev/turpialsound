@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { generatePageMetadata } from '@/lib/metadata'
 import { coreServices, expandedServices } from '@/content/services'
-import { PageHero } from '@/components/sections/PageHero'
+import { NuminousHero } from '@/components/sections/NuminousHero'
 import { SectionShell, SectionHeading } from '@/components/sections/SectionShell'
 import { CTASection } from '@/components/sections/CTASection'
 import { AnimatedHeading } from '@/components/ui/AnimatedHeading'
@@ -31,10 +31,14 @@ const expandedIcons: Record<string, { iconName: string; glow: 'cyan' | 'gold' }>
 export default function ServiciosPage() {
   return (
     <>
-      <PageHero
+      {/* ── HERO NUMINOSO ─────────────────────────────────────────────── */}
+      <NuminousHero
+        imageSrc="/images/instalaciones.jpg"
         eyebrow="Servicios"
-        heading="Todo lo que necesitas para tu música."
-        subheading="Ensayo, grabación, producción completa y servicios especializados. Un solo lugar, un solo estándar."
+        heading="Excelencia Técnica en Cada Etapa."
+        subheading="Grabación, mezcla, masterización, producción integral y servicios especializados. Todo bajo un mismo techo y un solo estándar de industria. Porque tu música merece el mejor camino posible."
+        ctaLabel="Ver todos los servicios"
+        ctaHref="/contacto"
       />
 
       {/* ── Core services ─────────────────────────────────────────────── */}
@@ -115,8 +119,15 @@ export default function ServiciosPage() {
         </SectionShell>
       </StackingSection>
 
+      {/* CTA — panoramic strip with instalaciones3.jpg */}
       <StackingSection index={3}>
-        <CTASection />
+        <CTASection
+          heading="¿Por dónde empezamos?"
+          subheading="Ya sea que necesites grabar, producir o ensayar, tenemos el espacio y el equipo para llevarte al siguiente nivel."
+          ctaLabel="Consultar disponibilidad"
+          ctaHref="/contacto"
+          imageSrc="/images/instalaciones3.jpg"
+        />
       </StackingSection>
     </>
   )

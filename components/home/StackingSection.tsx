@@ -86,7 +86,7 @@ export function StackingSection({
     <motion.div
       ref={ref}
       style={motionStyle}
-      className={cn('relative rounded-t-3xl -mt-px', bg, className)}
+      className={cn('relative flex flex-col justify-center min-h-[100dvh] snap-start snap-always rounded-t-3xl -mt-px pt-24 pb-12', bg, className)}
     >
       {/* Bokeh CSS — sin canvas, sin RAF, seguro en todas las secciones */}
       {!isMobile && <BokehCanvas />}

@@ -190,7 +190,7 @@ export function HeroSection({
 
   return (
     <section
-      className="relative flex min-h-screen min-h-[100dvh] items-center overflow-hidden -mt-16 pt-0"
+      className="relative flex min-h-screen min-h-[100dvh] snap-start items-center overflow-hidden -mt-16 pt-0"
       aria-label="Hero principal"
     >
       {/* ── Video background ───────────────────────────────────────────── */}

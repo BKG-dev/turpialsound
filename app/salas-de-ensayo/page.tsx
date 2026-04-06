@@ -5,7 +5,7 @@ import { getServiceBySlug } from '@/content/services'
 import { Waves, Zap, Music2, Speaker, CalendarCheck, Guitar, type LucideIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { PageHero } from '@/components/sections/PageHero'
+import { NuminousHero } from '@/components/sections/NuminousHero'
 import { SectionShell, SectionHeading } from '@/components/sections/SectionShell'
 import { CTASection } from '@/components/sections/CTASection'
 import { StackingSection } from '@/components/home/StackingSection'
@@ -60,16 +60,15 @@ export default function SalasDeEnsayoPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }}
       />
 
-      <PageHero
+      {/* ── HERO NUMINOSO ─────────────────────────────────────────────── */}
+      <NuminousHero
+        imageSrc="/images/SDE1.jpg"
         eyebrow="Salas de ensayo"
-        heading="El espacio para preparar tu sonido."
-        subheading="Salas tratadas acústicamente con equipamiento real. Para bandas y proyectos que necesitan trabajar en serio."
-        accentColor="gold"
-      >
-        <Button as="link" href="/contacto" variant="primary" size="lg">
-          Consultar disponibilidad
-        </Button>
-      </PageHero>
+        heading="El Escenario Antes Del Escenario."
+        subheading="Acústica milimétrica y backline de élite. Un espacio diseñado para la ejecución perfecta, la práctica profunda y la evolución de tu producción musical."
+        ctaLabel="Consultar disponibilidad"
+        ctaHref="/contacto"
+      />
 
       {/* Features — con iconografía y borde animado premium */}
       <StackingSection index={0} waves>
@@ -97,16 +96,18 @@ export default function SalasDeEnsayoPage() {
         </SectionShell>
       </StackingSection>
 
-      {/* Galería 3D */}
-      <SectionShell>
-        <Mac3DGallery
-          images={salasImages}
-          title="Salas de ensayo · Turpial Sound"
-        />
-      </SectionShell>
+      {/* Galería 3D — wrapped in StackingSection for correct snap */}
+      <StackingSection index={1} waves>
+        <SectionShell background="none">
+          <Mac3DGallery
+            images={salasImages}
+            title="Salas de ensayo · Turpial Sound"
+          />
+        </SectionShell>
+      </StackingSection>
 
       {/* Artistas — clon de la sección del Home */}
-      <StackingSection index={1} waves>
+      <StackingSection index={2} waves>
         <SectionShell background="none">
           <SectionHeading
             eyebrow="Trayectoria verificable"
@@ -148,7 +149,7 @@ export default function SalasDeEnsayoPage() {
       </StackingSection>
 
       {/* Related services */}
-      <StackingSection index={2} background="surface" waves>
+      <StackingSection index={3} background="surface" waves>
         <SectionShell background="none" size="sm">
           <div className="flex items-center gap-4">
             <span className="accent-line-animated" aria-hidden="true" />
@@ -167,10 +168,15 @@ export default function SalasDeEnsayoPage() {
         </SectionShell>
       </StackingSection>
 
-      <StackingSection index={3}>
+      {/* CTA — panoramic strip with SDE2.jpg */}
+      <StackingSection index={4}>
         <CTASection
           heading="¿Cuándo quieres ensayar?"
-          subheading="Revisa disponibilidad y reserva tu sala."
+          subheading="Revisa disponibilidad y reserva tu sala. El espacio está listo cuando tú lo estés."
+          ctaLabel="Reservar sala"
+          ctaHref="/contacto"
+          imageSrc="/images/SDE2.jpg"
+          className="py-20 sm:py-28"
         />
       </StackingSection>
     </>

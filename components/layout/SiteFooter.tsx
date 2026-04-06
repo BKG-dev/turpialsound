@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { MapPin, Phone, Mail } from 'lucide-react'
 import { MapEmbed } from '@/components/layout/MapEmbed'
 import { LogoGlb } from '@/components/media/LogoGlb'
+import { FlipCounter } from '@/components/ui/FlipCounter'
 import { footerNavItems, ctaNav } from '@/content/navigation'
 import { siteConfig } from '@/content/site'
 import { Button } from '@/components/ui/Button'
@@ -10,7 +11,7 @@ export function SiteFooter() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="border-t border-white/[0.04] bg-brand-surface">
+    <footer className="snap-end border-t border-white/[0.04] bg-brand-surface">
       <div className="container-base section-padding-sm">
         <div className="grid gap-12 md:grid-cols-3">
 
@@ -100,8 +101,13 @@ export function SiteFooter() {
           </div>
         </div>
 
+        {/* Flip counter */}
+        <div className="mt-10 border-t border-brand-border pt-2">
+          <FlipCounter />
+        </div>
+
         {/* Bottom bar */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-brand-border pt-8 sm:flex-row">
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-brand-border pt-8 sm:flex-row">
           <p className="text-xs text-text-muted">
             © {currentYear} {siteConfig.name}. Todos los derechos reservados.
           </p>

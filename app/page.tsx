@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Building2, Ear, Layers, Award, Car, Sparkles, Coffee } from 'lucide-react'
+import { Building2, Ear, Layers, Award } from 'lucide-react'
 import { PricingPreview } from '@/components/home/PricingPreview'
 import type { LucideIcon } from 'lucide-react'
 import { generatePageMetadata } from '@/lib/metadata'
@@ -16,6 +16,7 @@ import { SocialVideoPlayer } from '@/components/media/SocialVideoPlayer'
 import { HeroSection } from '@/components/home/HeroSection'
 import { StackingSection } from '@/components/home/StackingSection'
 import { ServiceGallery } from '@/components/home/ServiceGallery'
+import { InstalacionesSection } from '@/components/home/InstalacionesSection'
 
 export const metadata: Metadata = generatePageMetadata({
   title: 'Estudio de grabación y producción musical en Caracas',
@@ -73,24 +74,25 @@ export default function HomePage() {
       {/* ── SOCIAL VIDEO — RRSS vertical, stacking 0 ──────────────────── */}
       <StackingSection index={0} waves>
         <SectionShell background="none">
-          <div className="grid items-center gap-10 lg:grid-cols-2">
-            {/* Text */}
-            <div>
-              <div className="mb-4 flex items-center gap-3">
+          <div className="grid items-center gap-12 lg:grid-cols-[1fr_auto]">
+            {/* Text — left */}
+            <div className="max-w-3xl">
+              <div className="mb-5 flex items-center gap-3">
                 <span className="accent-line-animated" aria-hidden="true" />
                 <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
                   En vivo y en estudio
                 </span>
               </div>
-              <h2 className="font-display text-display-md text-text-primary">
-                El sonido que suena diferente.
+              <h2 className="font-display text-text-primary" style={{ fontSize: 'clamp(1.8rem, 3.6vw, 3.12rem)', lineHeight: 1.1, letterSpacing: '0.01em' }}>
+                El Espacio Que Tu Música Merece!!!{' '}
+                <span className="text-gradient-animated">El Sonido De Tus Sueños!!!</span>
               </h2>
-              <p className="mt-5 text-body-base text-text-secondary">
+              <p className="mt-5 text-text-secondary" style={{ fontSize: '1.2em', lineHeight: 1.6 }}>
                 No solo producimos — documentamos el proceso. Cada sesión es una historia.
               </p>
             </div>
-            {/* Vertical video */}
-            <div className="flex justify-center lg:justify-end">
+            {/* Vertical video — right, shifted left by half width, size +15% */}
+            <div className="shrink-0" style={{ width: '16.1rem', transform: 'translateX(-50%)' }}>
               <SocialVideoPlayer
                 src="/video/videoRRSS.webm"
                 fallback="/video/videoRRSS.mp4"
@@ -103,17 +105,17 @@ export default function HomePage() {
 
       {/* ── SERVICES GALLERY — stacking section 1 ─────────────────────── */}
       <StackingSection index={1} waves>
-        <SectionShell background="none" align="right">
+        <SectionShell background="none">
           <SectionHeading
             eyebrow="Servicios principales"
             heading="Tres entradas. Un solo estándar."
             subheading="Ensayo, grabación o producción completa. Cada servicio está diseñado para que tu música llegue más lejos."
-            align="right"
+            align="center"
           />
-          <div className="mt-12">
+          <div className="mt-12 w-full">
             <ServiceGallery />
           </div>
-          <div className="mt-8 flex flex-wrap justify-end gap-4">
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
             {coreServices.map((service) => (
               <Button key={service.id} as="link" href={service.ctaHref} variant="secondary" size="sm">
                 {service.name} →
@@ -126,7 +128,8 @@ export default function HomePage() {
       {/* ── VIDEO / EL ESTUDIO — stacking section 2 ──────────────────── */}
       <StackingSection index={2} background="surface" waves>
         <SectionShell background="none">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
+          <div className="grid items-center gap-12 lg:grid-cols-[1fr_2fr]">
+            {/* Text — left */}
             <div>
               <div className="mb-4 flex items-center gap-3">
                 <span className="accent-line-animated" aria-hidden="true" />
@@ -147,21 +150,24 @@ export default function HomePage() {
                 </Button>
               </div>
             </div>
-            <CinematicVideo src="/video/turpial-sound-studio.webm" label="Turpial Sound · Caracas" />
+            {/* Video — right, immersive */}
+            <div className="w-full">
+              <CinematicVideo src="/video/turpial-sound-studio.webm" label="Turpial Sound · Caracas" />
+            </div>
           </div>
         </SectionShell>
       </StackingSection>
 
       {/* ── ARTISTAS DE ÉLITE — stacking section 3 ─────────────────────── */}
       <StackingSection index={3} waves>
-        <SectionShell background="none" align="right">
+        <SectionShell background="none">
           <SectionHeading
             eyebrow="Trayectoria verificable"
             heading="Artistas de élite que hemos atendido"
             subheading="Oscar D'León · Domingo Quiñones · Dimensión Latina · Frank Quintero"
-            align="right"
+            align="center"
           />
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4 max-w-[1400px] mx-auto">
             {[
               { src: '/images/odl_800.jpg', name: 'Oscar D\'León' },
               { src: '/images/dq_800.jpg',  name: 'Domingo Quiñones' },
@@ -182,13 +188,13 @@ export default function HomePage() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-brand-bg/80 via-transparent to-transparent" />
                 </div>
-                <div className="px-4 py-4 text-center">
+                <div className="px-5 py-5 text-center">
                   <p className="font-display text-sm font-semibold text-text-primary">{name}</p>
                 </div>
               </div>
             ))}
           </div>
-          <div className="mt-8 flex justify-center">
+          <div className="mt-10 flex justify-center">
             <Link
               href="/artistas"
               className="font-display text-xs tracking-widest text-accent-cyan uppercase transition-opacity hover:opacity-70"
@@ -205,21 +211,22 @@ export default function HomePage() {
           <SectionHeading
             eyebrow="Por qué Turpial Sound"
             heading="Infraestructura real. Criterio técnico. Trayectoria verificable."
+            align="center"
           />
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4 max-w-[1400px] mx-auto">
             {whyItems.map((item) => (
               <div
                 key={item.title}
-                className={`card-premium-wrapper${item.accent === 'gold' ? ' card-premium-wrapper--gold' : ''} rounded-2xl bg-brand-surface p-6`}
+                className={`card-premium-wrapper${item.accent === 'gold' ? ' card-premium-wrapper--gold' : ''} flex flex-col items-center justify-center text-center rounded-2xl bg-brand-surface p-8 min-h-[320px]`}
               >
                 <item.Icon
-                  size={20}
-                  className="mb-4"
+                  size={32}
+                  className="mb-6"
                   style={{ color: item.accent === 'cyan' ? 'var(--color-cyan)' : 'var(--color-gold)' }}
                   aria-hidden="true"
                 />
-                <h3 className="font-display text-sm text-text-primary">{item.title}</h3>
-                <p className="mt-3 text-sm text-text-secondary">{item.body}</p>
+                <h3 className="font-display text-base text-text-primary">{item.title}</h3>
+                <p className="mt-3 text-base leading-relaxed text-text-secondary">{item.body}</p>
               </div>
             ))}
           </div>
@@ -240,58 +247,9 @@ export default function HomePage() {
             eyebrow="Nuestras instalaciones"
             heading="Un entorno diseñado para crear sin límites."
             subheading="Porque el ambiente también forma parte del sonido. Turpial Sound combina infraestructura profesional con una estética que inspira — en la zona más accesible de Caracas."
+            align="center"
           />
-          <div className="mt-12 grid gap-6 sm:grid-cols-3">
-            {[
-              {
-                Icon: Car,
-                src: '/images/instalaciones.jpg',
-                label: 'Acceso y seguridad',
-                copy: 'Estacionamiento privado y techado con personal de seguridad permanente. Llega, descarga y enfócate — sin distracciones.',
-                accent: 'gold' as const,
-              },
-              {
-                Icon: Sparkles,
-                src: '/images/instalaciones3.jpg',
-                label: 'Estética que inspira',
-                copy: 'Espacios diseñados con criterio ecléctico: cada rincón fue pensado para estimular la creatividad y sostener sesiones largas.',
-                accent: 'cyan' as const,
-              },
-              {
-                Icon: Coffee,
-                src: '/images/instalaciones7.jpg',
-                label: 'Comodidades de primer nivel',
-                copy: 'Amenidades completas para que el equipo y los artistas trabajen cómodos. Porque las mejores tomas se graban cuando todo fluye.',
-                accent: 'gold' as const,
-              },
-            ].map(({ Icon, src, label, copy, accent }) => (
-              <div
-                key={label}
-                className={`card-premium-wrapper${accent === 'gold' ? ' card-premium-wrapper--gold' : ''} group rounded-2xl bg-brand-bg`}
-              >
-                <div className="relative h-52 w-full overflow-hidden rounded-t-2xl">
-                  <Image
-                    src={src}
-                    alt={label}
-                    fill
-                    sizes="(max-width: 640px) 100vw, 33vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-brand-bg/60 to-transparent" />
-                </div>
-                <div className="p-6">
-                  <Icon
-                    size={18}
-                    className="mb-3"
-                    style={{ color: accent === 'cyan' ? 'var(--color-cyan)' : 'var(--color-gold)' }}
-                    aria-hidden="true"
-                  />
-                  <h3 className="font-display text-sm font-semibold text-text-primary">{label}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-text-secondary">{copy}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <InstalacionesSection />
         </SectionShell>
       </StackingSection>
 
@@ -301,6 +259,7 @@ export default function HomePage() {
           heading="¿Tienes un proyecto en mente?"
           subheading="Cuéntanos qué necesitas. Revisamos disponibilidad y armamos una propuesta."
           secondaryCTA={{ label: 'Ver todos los servicios', href: '/servicios' }}
+          imageSrc="/images/consola.jpg"
         />
       </StackingSection>
     </>

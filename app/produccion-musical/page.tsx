@@ -4,7 +4,7 @@ import { buildServiceSchema, buildBreadcrumbSchema } from '@/lib/schema'
 import { getServiceBySlug } from '@/content/services'
 import { Wand2, Mic, Sliders, Disc } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { PageHero } from '@/components/sections/PageHero'
+import { NuminousHero } from '@/components/sections/NuminousHero'
 import { SectionShell, SectionHeading } from '@/components/sections/SectionShell'
 import { CTASection } from '@/components/sections/CTASection'
 import { StackingSection } from '@/components/home/StackingSection'
@@ -70,17 +70,17 @@ export default function ProduccionMusicalPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }}
       />
 
-      <PageHero
+      {/* ── HERO NUMINOSO ─────────────────────────────────────────────── */}
+      <NuminousHero
+        imageSrc="/images/produccion2.jpg"
         eyebrow="Producción musical"
-        heading="De la idea al master en un solo lugar."
-        subheading="Producción integral con el equipo de Turpial Sound. Más de 30 años de experiencia acumulada en géneros tropicales, pop y producción contemporánea."
-        accentColor="gold"
-      >
-        <Button as="link" href="/contacto" variant="primary" size="lg">
-          Hablar con el equipo
-        </Button>
-      </PageHero>
+        heading="Donde la Idea Se Convierte en Obra."
+        subheading="Producción integral de alto nivel: arreglos, grabación, mezcla y masterización bajo un mismo criterio técnico. Más de 30 años materializando visiones musicales con estándar de exportación."
+        ctaLabel="Hablar con el equipo"
+        ctaHref="/contacto"
+      />
 
+      {/* Proceso */}
       <StackingSection index={0} waves>
         <SectionShell background="none">
           <SectionHeading
@@ -108,37 +108,44 @@ export default function ProduccionMusicalPage() {
         </SectionShell>
       </StackingSection>
 
-      {/* Photo gallery — 3D carousel */}
-      <SectionShell>
-        <Mac3DGallery
-          images={produccionImages}
-          title="Producción musical · Turpial Sound"
-        />
-      </SectionShell>
-
-      <StackingSection index={1} background="surface" waves>
-        <SectionShell background="none" size="sm">
-        <div className="flex items-center gap-4">
-          <span className="accent-line-animated" aria-hidden="true" />
-          <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
-            También puede interesarte
-          </span>
-        </div>
-        <div className="mt-6 flex flex-wrap gap-4">
-          <Button as="link" href="/estudio-de-grabacion" variant="secondary" size="sm">
-            Estudio de grabación
-          </Button>
-          <Button as="link" href="/servicios/arreglos-musicales" variant="secondary" size="sm">
-            Arreglos musicales
-          </Button>
-        </div>
+      {/* Photo gallery — 3D carousel, wrapped for correct snap */}
+      <StackingSection index={1} waves>
+        <SectionShell background="none">
+          <Mac3DGallery
+            images={produccionImages}
+            title="Producción musical · Turpial Sound"
+          />
         </SectionShell>
       </StackingSection>
 
-      <StackingSection index={2}>
-          <CTASection
+      {/* Related services */}
+      <StackingSection index={2} background="surface" waves>
+        <SectionShell background="none" size="sm">
+          <div className="flex items-center gap-4">
+            <span className="accent-line-animated" aria-hidden="true" />
+            <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
+              También puede interesarte
+            </span>
+          </div>
+          <div className="mt-6 flex flex-wrap gap-4">
+            <Button as="link" href="/estudio-de-grabacion" variant="secondary" size="sm">
+              Estudio de grabación
+            </Button>
+            <Button as="link" href="/servicios/arreglos-musicales" variant="secondary" size="sm">
+              Arreglos musicales
+            </Button>
+          </div>
+        </SectionShell>
+      </StackingSection>
+
+      {/* CTA — panoramic strip with pm1.jpg */}
+      <StackingSection index={3}>
+        <CTASection
           heading="¿Tienes un proyecto de producción?"
-          subheading="Cuéntanos dónde estás y a dónde quieres llegar."
+          subheading="Cuéntanos dónde estás y a dónde quieres llegar. Construimos el camino contigo."
+          ctaLabel="Iniciar proyecto"
+          ctaHref="/contacto"
+          imageSrc="/images/produccion1.jpg"
         />
       </StackingSection>
     </>

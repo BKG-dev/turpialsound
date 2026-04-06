@@ -72,7 +72,7 @@ export function SocialVideoPlayer({ src, fallback, label = 'Turpial Sound' }: So
   }
 
   return (
-    <div ref={containerRef} className="relative mx-auto w-full" style={{ maxWidth: 300 }}>
+    <div ref={containerRef} className="relative mx-auto w-full">
       {/* Animated plasma border — cyan/gold numinoso */}
       <div
         className="rounded-2xl p-[2px]"

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { generatePageMetadata } from '@/lib/metadata'
 import { buildBreadcrumbSchema } from '@/lib/schema'
-import { PageHero } from '@/components/sections/PageHero'
+import { NuminousHero } from '@/components/sections/NuminousHero'
 import { SectionShell, SectionHeading } from '@/components/sections/SectionShell'
 import { CTASection } from '@/components/sections/CTASection'
 import { StackingSection } from '@/components/home/StackingSection'
@@ -29,29 +29,29 @@ const confirmedArtists: Array<{
 }> = [
   {
     name: "Oscar D'León",
-    bio: '[CLIENT_REQUIRED — biografía y créditos de grabación.]',
     role: 'Artista · Salsero · Caracas',
+    bio: "Apodado «El Sonero del Mundo», Oscar D'León lleva más de cinco décadas electrizando escenarios con su voz inconfundible y su contrabajo. Con más de 50 álbumes grabados y estadios llenos en cinco continentes, es la mayor figura de la salsa venezolana de todos los tiempos.",
     imageSrc: '/images/odl_800.jpg',
     accent: 'gold',
   },
   {
     name: 'Domingo Quiñones',
-    bio: '[CLIENT_REQUIRED — biografía y créditos de grabación.]',
     role: 'Artista · Salsero · Puerto Rico',
+    bio: "Conocido como «El Gallito de Puerto Rico», Domingo Quiñones debutó con el Conjunto Clásico en los ochenta y conquistó las listas latinas con discos que definieron la salsa romántica. Su voz aguda y su presencia escénica lo convierten en referencia indiscutible del género.",
     imageSrc: '/images/dq_800.jpg',
     accent: 'cyan',
   },
   {
     name: 'Dimensión Latina',
-    bio: '[CLIENT_REQUIRED — biografía y créditos de grabación.]',
     role: 'Agrupación · Salsa · Venezuela',
+    bio: 'Orquesta fundada en Caracas en 1972, considerada el gran semillero de la salsa venezolana. Entre sus filas pasaron Oscar D\'León, Willy Colón y César Monge. Su sonido define una época dorada de la música tropical latinoamericana y sigue siendo referencia de generaciones.',
     imageSrc: '/images/dl_800.jpg',
     accent: 'gold',
   },
   {
     name: 'Frank Quintero',
-    bio: '[CLIENT_REQUIRED — biografía y créditos de grabación.]',
     role: 'Artista · Balada · Venezuela',
+    bio: 'Cantautor venezolano de balada romántica con más de tres décadas de trayectoria regional. Sus temas han dominado las listas de popularidad del género en Latinoamérica y lo consolidan como una de las voces más sólidas y reconocidas del pop latino venezolano.',
     imageSrc: '/images/FQ.JPG',
     accent: 'cyan',
   },
@@ -70,15 +70,20 @@ export default function ArtistasPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }}
       />
 
-      <PageHero
+      {/* ── HERO NUMINOSO ─────────────────────────────────────────────── */}
+      <NuminousHero
+        imageSrc="/images/artista-hero.jpg"
         eyebrow="Artistas"
-        heading="Trayectoria que habla por sí sola."
-        subheading="Desde 2015, Turpial Sound ha sido el espacio de trabajo de artistas reconocidos en Venezuela y la región."
-        accentColor="cyan"
+        heading="Trayectoria Que Habla Por Sí Sola."
+        subheading="Desde hace más de tres décadas, Turpial Sound ha sido el espacio de trabajo de artistas que definen la música latinoamericana. Nombres que no necesitan presentación; un estudio que está a su altura."
+        ctaLabel="Conocer el estudio"
+        ctaHref="/estudio-de-grabacion"
+        imageAlign="right"
       />
 
+      {/* Artist cards */}
       <StackingSection index={0} waves>
-        <SectionShell>
+        <SectionShell background="none">
           <SectionHeading
             eyebrow="Trayectoria confirmada"
             heading="Algunos de los artistas que han pasado por aquí."
@@ -106,15 +111,18 @@ export default function ArtistasPage() {
         </SectionShell>
       </StackingSection>
 
-      {/* Photo gallery — group photo carousel */}
-      <SectionShell>
-        <Mac3DGallery
-          images={artistasImages}
-          title="Artistas · Turpial Sound"
-        />
-      </SectionShell>
+      {/* Photo gallery — wrapped for snap */}
+      <StackingSection index={1} waves>
+        <SectionShell background="none">
+          <Mac3DGallery
+            images={artistasImages}
+            title="Artistas · Turpial Sound"
+          />
+        </SectionShell>
+      </StackingSection>
 
-      <StackingSection index={1} background="surface" waves>
+      {/* Related services */}
+      <StackingSection index={2} background="surface" waves>
         <SectionShell background="none" size="sm">
           <div className="flex items-center gap-4">
             <span className="accent-line-animated" aria-hidden="true" />
@@ -133,10 +141,15 @@ export default function ArtistasPage() {
         </SectionShell>
       </StackingSection>
 
-      <StackingSection index={2}>
+      {/* CTA — panoramic strip */}
+      <StackingSection index={3}>
         <CTASection
           heading="¿Listo para añadir tu nombre a esta lista?"
-          subheading="Contáctanos y hablamos de tu proyecto."
+          subheading="Contáctanos y hablamos de tu proyecto. El estudio está listo."
+          ctaLabel="Iniciar conversación"
+          ctaHref="/contacto"
+          imageSrc="/images/salas-ensayo10.jpg"
+          className="py-20 sm:py-28"
         />
       </StackingSection>
     </>

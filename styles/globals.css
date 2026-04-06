@@ -54,6 +54,8 @@
 html {
   scroll-behavior: smooth;
   text-size-adjust: 100%;
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -272,43 +274,26 @@ video {
 
 /* ─── Utility Classes ────────────────────────────────────────────── */
 @layer utilities {
+  /*
+   * Center-stacked experiment: contenedor centrado, ancho expandido (1440px).
+   * Márgenes simétricos — safe zone clamp para no llegar al borde del viewport
+   * ni colisionar con el botón WhatsApp (right-6 + w-14 = 80px, ~5rem).
+   */
   .container-base {
     width: 100%;
-    max-width: var(--container-max);
-    margin-left: 0;
+    max-width: 1440px;
+    margin-left: auto;
     margin-right: auto;
-    padding-left: 1.5rem;
-    padding-right: 5rem; /* right-6 (24px) + w-14 (56px) = 80px — borde izq. del botón WhatsApp */
+    padding-left: clamp(1.5rem, 4vw, 3.5rem);
+    padding-right: clamp(1.5rem, 4vw, 3.5rem);
   }
 
-  @media (min-width: 640px) {
-    .container-base {
-      padding-left: 6.5rem; /* aligns with navbar 'T': left-6(24) + pl-5(20) + logo(52) + gap-2(8) = 104px */
-    }
-  }
-
-  /*
-   * Contenedor derecho — espejo exacto del izquierdo:
-   *   padding-right: 6.5rem  →  mismo ancla visual que el navbar 'T' (pero en el lado derecho)
-   *   padding-left:  5rem    →  mismo clearance que el borde izq. del botón WhatsApp
-   *   margin-left: auto      →  el bloque flota hacia el borde derecho del viewport
-   *
-   * En pantallas > 1200px genera un zigzag editorial real:
-   *   izquierda: 0 … 1200px   |   derecha: (vw-1200)px … vw
-   * En pantallas ≤ 1200px el efecto viene del padding invertido.
-   */
+  /* Kept for backwards compat on non-home pages */
   .container-base--right {
     margin-left: auto;
     margin-right: 0;
-    padding-left: 5rem;
-    padding-right: 1.5rem;
-  }
-
-  @media (min-width: 640px) {
-    .container-base--right {
-      padding-left: 5rem;    /* borde izq. del botón WhatsApp: right-6(24) + w-14(56) = 80px */
-      padding-right: 6.5rem; /* espejo del navbar 'T': left-6(24) + pl-5(20) + logo(52) + gap(8) = 104px */
-    }
+    padding-left: clamp(1.5rem, 4vw, 3.5rem);
+    padding-right: clamp(1.5rem, 4vw, 3.5rem);
   }
 
   .section-padding {
@@ -662,6 +647,40 @@ video {
     pricingHaloPulse  5s ease-in-out  infinite 1.8s;
 }
 
+/* ── Nav glow Marketplace — neon pulse oro/cian ──────────────────────────── */
+@keyframes navMarketplaceGlow {
+  0%, 100% {
+    background-position: 0% 50%;
+    text-shadow:
+      0 0  8px rgba(0, 174, 239, 0.55),
+      0 0 18px rgba(0, 174, 239, 0.25),
+      0 0  4px rgba(255, 193,   7, 0.30);
+  }
+  50% {
+    background-position: 100% 50%;
+    text-shadow:
+      0 0 14px rgba(255, 193,   7, 0.65),
+      0 0 30px rgba(255, 193,   7, 0.28),
+      0 0  6px rgba(0,  174, 239, 0.35);
+  }
+}
+
+.nav-glow-marketplace {
+  background: linear-gradient(
+    135deg,
+    #ffc107  0%,
+    #00aeef 35%,
+    #0068e0 55%,
+    #00aeef 75%,
+    #ffc107 100%
+  );
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: navMarketplaceGlow 3.8s ease-in-out infinite;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    MARKETPLACE — Turpial Market
    ─ Estilos adicionales para el sistema de Matchmaking & Escrow.
@@ -713,6 +732,17 @@ video {
     0 8px 32px rgba(0, 0, 0, 0.5),
     0 0 48px rgba(0, 174, 239, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* ── Hero Numinoso — slow breathing zoom ─────────────────────────────────── */
+@keyframes heroSlowZoom {
+  0%   { transform: scale(1); }
+  100% { transform: scale(1.06); }
+}
+
+.hero-slow-zoom {
+  animation: heroSlowZoom 18s ease-in-out infinite alternate;
+  will-change: transform;
 }
 
 /* ── Listing card image placeholder shimmer ──────────────────────────────── */
