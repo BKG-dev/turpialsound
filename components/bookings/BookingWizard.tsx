@@ -12,6 +12,8 @@ import { VariantSelectStep } from '@/components/bookings/steps/VariantSelectStep
 import { DateTimeStep } from '@/components/bookings/steps/DateTimeStep'
 import { ExtrasStep } from '@/components/bookings/steps/ExtrasStep'
 import { ContactStep, isValidEmail } from '@/components/bookings/steps/ContactStep'
+import { SummaryStep } from '@/components/bookings/steps/SummaryStep'
+import { submitBookingRequest } from '@/lib/bookings/actions'
 
 // ─────────────────────────────────────────────────────────────────
 // Definición de pasos
@@ -71,6 +73,9 @@ const INITIAL_DATA: WizardData = {
 export function BookingWizard() {
   const [currentStep, setCurrentStep] = useState(0)
   const [data, setData] = useState<WizardData>(INITIAL_DATA)
+  const [submissionState, setSubmissionState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [publicCode, setPublicCode] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const totalSteps = WIZARD_STEPS.length
   const step = WIZARD_STEPS[currentStep]
@@ -81,6 +86,7 @@ export function BookingWizard() {
     currentStep === 2 ? data.eventDate !== null && data.startTime !== null && data.durationMinutes !== null :
     currentStep === 3 ? true :
     currentStep === 4 ? data.requesterName.trim() !== '' && isValidEmail(data.requesterEmail) :
+    currentStep === 5 ? true :
     false
 
   function handleNext() {
@@ -93,6 +99,69 @@ export function BookingWizard() {
     if (currentStep > 0) {
       setCurrentStep((s) => s - 1)
     }
+  }
+
+  async function handleSubmit() {
+    if (submissionState === 'loading') return
+    setSubmissionState('loading')
+    setSubmitError(null)
+
+    const result = await submitBookingRequest({
+      serviceSlug: data.serviceSlug!,
+      variantSlug: data.variantSlug!,
+      eventDate: data.eventDate!,
+      startTime: data.startTime!,
+      durationMinutes: data.durationMinutes!,
+      extrasNotes: data.extrasNotes,
+      extrasTechnician: data.extrasTechnician,
+      extrasBackline: data.extrasBackline,
+      requesterName: data.requesterName,
+      requesterEmail: data.requesterEmail,
+      requesterPhone: data.requesterPhone,
+    })
+
+    if (result.success && result.publicCode) {
+      setPublicCode(result.publicCode)
+      setSubmissionState('success')
+    } else {
+      setSubmitError(result.error ?? 'Error al enviar. Intenta de nuevo.')
+      setSubmissionState('error')
+    }
+  }
+
+  if (submissionState === 'success' && publicCode) {
+    return (
+      <div className="rounded-2xl border border-brand-border bg-brand-surface p-8 text-center">
+        <div className="mb-4 flex items-center justify-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-gold/10">
+            <svg className="h-7 w-7 text-accent-gold" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M5 13l4 4L19 7"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+        </div>
+        <h2 className="mb-2 font-display text-xl font-bold text-text-primary">
+          Solicitud enviada
+        </h2>
+        <p className="mb-6 text-sm text-text-secondary">
+          Tu solicitud ha sido registrada. El equipo de Turpial Sound confirmará disponibilidad y se pondrá en contacto contigo.
+        </p>
+        <div className="mb-6 inline-block rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-6 py-3">
+          <p className="mb-1 text-xs text-text-muted">Código de referencia</p>
+          <p className="font-display text-2xl font-bold tracking-wider text-accent-gold">
+            {publicCode}
+          </p>
+        </div>
+        <p className="text-xs text-text-muted">
+          Guarda este código para hacer seguimiento de tu solicitud.
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -210,17 +279,34 @@ export function BookingWizard() {
           />
         )}
 
-        {currentStep > 4 && (
-          <div className="flex min-h-[160px] flex-col items-center justify-center rounded-lg border border-dashed border-brand-border p-8 text-center">
-            <p className="text-sm font-medium text-text-secondary">
-              Resumen de la solicitud — próximamente.
-            </p>
-            <p className="mt-2 text-xs text-text-muted">
-              Aquí podrás revisar todos los datos antes de enviar.
-            </p>
-          </div>
-        )}
+        {currentStep === 5 &&
+          data.serviceSlug &&
+          data.variantSlug &&
+          data.eventDate &&
+          data.startTime &&
+          data.durationMinutes && (
+            <SummaryStep
+              serviceSlug={data.serviceSlug}
+              variantSlug={data.variantSlug}
+              eventDate={data.eventDate}
+              startTime={data.startTime}
+              durationMinutes={data.durationMinutes}
+              extrasNotes={data.extrasNotes}
+              extrasTechnician={data.extrasTechnician}
+              extrasBackline={data.extrasBackline}
+              requesterName={data.requesterName}
+              requesterEmail={data.requesterEmail}
+              requesterPhone={data.requesterPhone}
+            />
+          )}
       </div>
+
+      {/* Error de envío */}
+      {submitError && (
+        <div className="border-t border-brand-border bg-red-500/5 px-6 py-3">
+          <p className="text-xs text-red-400">{submitError}</p>
+        </div>
+      )}
 
       {/* Navegación */}
       <div className="flex items-center justify-between border-t border-brand-border px-6 py-4">
@@ -228,7 +314,7 @@ export function BookingWizard() {
           variant="ghost"
           size="sm"
           onClick={handleBack}
-          disabled={currentStep === 0}
+          disabled={currentStep === 0 || submissionState === 'loading'}
         >
           ← Anterior
         </Button>
@@ -250,9 +336,10 @@ export function BookingWizard() {
           <Button
             variant="primary"
             size="sm"
-            disabled
+            onClick={handleSubmit}
+            disabled={submissionState === 'loading'}
           >
-            Enviar solicitud
+            {submissionState === 'loading' ? 'Enviando…' : 'Enviar solicitud'}
           </Button>
         )}
       </div>
