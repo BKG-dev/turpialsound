@@ -1,74 +1,111 @@
 # AGENTS.md
 
 ## Proyecto
-Turpial Sound — plataforma web en Next.js 14 + React 18 + TypeScript + Tailwind.
+Turpial Sound — Next.js 14 + React 18 + TypeScript + Tailwind.
 
 ## Estado actual
-
-### Fase 1A — completada
-- Estructura base del módulo de reservas
+### 1A — completada
 - Prisma 7 configurado
 - Neon conectado
-- Migración inicial aplicada
-- Seed base funcionando
-- Dominio puro de reservas en `lib/bookings`
-- Base mínima de auth/roles interna
-- Ruta `/admin` placeholder protegida por middleware mínimo
+- migración inicial aplicada
+- seed base funcionando
+- dominio puro en `lib/bookings`
+- base mínima de auth/roles interna
 
-### Fase 1B — estado actual
-- 1B.1 cerrado: entrada pública `/reservas`
-- 1B.2 cerrado: servicio + variante
-- 1B.3 cerrado: fecha + bloque horario
-- 1B.4 cerrado: extras + datos del solicitante
-- 1B.5a resuelto manualmente: fix de runtime Prisma en la app
-- 1B.5b aparentemente resuelto: resumen visual del wizard ya existe
-- Próxima tarea real: **1B.5c persistencia mínima de la solicitud**
-- Después: **1B.5d confirmación de éxito/error**
+### 1B — funcional
+- `/reservas` pública operativa
+- wizard completo: servicio, modalidad, fecha, extras, contacto, resumen
+- persistencia mínima real implementada
+- confirmación post-envío funcional
+- submit exitoso con `publicCode`
 
-## Objetivo inmediato
-Cerrar la primera versión funcional del wizard público:
-1. guardar una solicitud real en DB
-2. crear `BookingRequest`
-3. crear `BookingRequestItem`
-4. mostrar feedback claro de envío exitoso o error
+## Nuevo objetivo inmediato
+Evolucionar el wizard de “solicitud simple” a “orden de servicio”:
+
+### 1B.6a
+Preparar el estado interno para trabajar con ítems seleccionados, no solo con un servicio único.
+
+### 1B.6b
+Introducir catálogo tarifario / pricing a partir del sheet aprobado.
+
+### 1B.6c
+Mostrar desglose económico y total en el resumen.
+
+### 1B.6d
+Persistir múltiples `BookingRequestItem` y guardar `estimatedTotal`.
+
+## Lo que viene después
+### 1C.1
+Panel interno mínimo: listado simple de solicitudes.
+
+## Reglas duras
+- Una tarea = un objetivo = un diff revisable.
+- No expandir alcance.
+- No rehacer arquitectura sin necesidad.
+- No tocar rutas o módulos fuera del alcance.
+- Preferir cambios pequeños y reversibles.
+- Si el bug es puntual, corregir el bug puntual.
+- No mezclar pricing, panel interno, Calendar y pagos en una sola tarea.
+
+## Validación
+Codex NO debe ejecutar:
+- `pnpm build`
+- `pnpm lint`
+- `npm run dev`
+- tests
+- comandos de validación automática
+
+Codex debe:
+1. leer este archivo
+2. aplicar cambios
+3. revisar el diff
+4. resumir qué cambió
+5. detenerse
+
+La validación final la hace el usuario manualmente en su terminal local.
 
 ## Stack y reglas técnicas
-- Usar `pnpm`
+- usar `pnpm`
 - Next.js App Router
 - Prisma 7
 - Neon PostgreSQL
-- Tailwind existente del proyecto
-- No usar imports incompatibles con Prisma 7
-- No tocar `schema.prisma` ni `seed.ts` salvo que la tarea lo pida explícitamente
-- Mantener compatibilidad con el cliente generado y la config actual de Prisma 7
+- mantener compatibilidad con el cliente generado y la config actual de Prisma 7
+- no tocar `schema.prisma` ni `seed.ts` salvo que la tarea lo pida explícitamente
+- no editar archivos generados manualmente
 
-## Reglas de trabajo
-- Una tarea = un objetivo = un diff revisable
-- No expandir alcance
-- No rehacer arquitectura ya decidida
-- No tocar rutas o módulos fuera del alcance
-- Mantener cambios pequeños, verificables y reversibles
-- Preferir soluciones mínimas y claras sobre abstracciones grandes
-- Si una tarea falla por segunda vez con el mismo error, detenerse y proponer corrección acotada
-- No mezclar persistencia, Calendar, pagos y aprobación en una sola tarea
+## Fuente de verdad
+- dominio: `lib/bookings/*`
+- catálogo temporal del wizard: `lib/bookings/catalog.ts`
+- persistencia: `prisma/schema.prisma`
+- UI del flujo: `components/bookings/*`
 
-## Validación obligatoria
-Después de cada tarea:
-- `pnpm build`
-- `pnpm lint`
+## Carpetas que debe ignorar
+No leer ni usar como fuente principal de contexto:
+- `.next/`
+- `node_modules/`
+- `.git/`
+- `dist/`
+- `build/`
+- `.turbo/`
+- `coverage/`
 
-## Checkpoints
-Crear commit antes y después de cada tarea importante.
+No proponer cambios manuales dentro de esas carpetas.
 
-## Qué está fuera de alcance por ahora
-- Google Calendar
-- pagos
-- ODS
-- aprobaciones internas completas
-- panel admin funcional completo
-- auth pública de clientes
-- disponibilidad real por recurso
-- bloqueo real de agenda
+## Archivos generados
+No editar manualmente:
+- `generated/prisma/`
+
+Se puede importar desde ahí si corresponde.
+
+## Orden de inspección
+1. `AGENTS.md`
+2. `docs/roadmap/tasks/` relevantes
+3. archivos fuente en:
+   - `app/`
+   - `components/`
+   - `lib/`
+   - `prisma/`
+   - `content/`
 
 ## Rutas y módulos sensibles
 - `app/reservas/*`
@@ -77,44 +114,30 @@ Crear commit antes y después de cada tarea importante.
 - `lib/db.ts`
 - `prisma/*`
 
-## Fuente de verdad del dominio
-- Dominio puro: `lib/bookings/*`
-- Catálogo temporal del wizard: `lib/bookings/catalog.ts`
-- Schema y persistencia: `prisma/schema.prisma`
-
-## Política de tareas para el wizard público
-### Ya funcional
-- servicio
-- modalidad
-- fecha/bloque
-- extras
-- datos del solicitante
-- resumen visual
-
-### Pendiente inmediato
-- persistencia mínima real
-- feedback post-envío
-
-## Próximas tareas
-### 1B.5c
-Persistencia mínima de la solicitud:
-- crear `BookingRequest`
-- crear `BookingRequestItem`
-- guardar datos del wizard
-- generar `publicCode` simple y coherente
-- estado inicial correcto
-- source = `web`
-
-### 1B.5d
-Confirmación post-envío:
-- loading
-- success
-- error
-- mensaje honesto de “solicitud recibida, pendiente de revisión”
+## Fuera de alcance por ahora
+- Google Calendar
+- pagos
+- ODS
+- aprobaciones internas completas
+- panel admin completo
+- auth pública de clientes
+- disponibilidad real por recurso
+- bloqueo real de agenda
+- notificaciones por email o WhatsApp
+- rediseño global del sitio
 
 ## Estilo de implementación
-- No introducir librerías nuevas salvo necesidad real
-- No mover archivos sin motivo fuerte
-- No convertir todo a una arquitectura grande
-- No tocar diseño global del sitio
-- Mantener UX honesta: solicitud, no reserva instantánea
+- no introducir librerías nuevas salvo necesidad real
+- no mover archivos sin motivo fuerte
+- no convertir todo en una arquitectura grande
+- mantener UX honesta: solicitud / orden de servicio, no reserva instantánea
+
+## Formato de salida esperado de Codex
+Al terminar una tarea, responder con:
+- archivos creados/editados
+- qué hizo exactamente
+- qué no tocó
+- riesgos o pendientes
+
+No incluir comandos de validación dentro de Codex.
+Indicar que la validación la hará el usuario manualmente fuera de Codex.

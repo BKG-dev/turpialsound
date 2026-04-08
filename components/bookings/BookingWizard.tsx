@@ -2,7 +2,7 @@
 
 // Turpial Sound — Shell del wizard de solicitud de reserva
 // Fase 1B — Shell multi-step con estado local.
-// Sin persistencia real todavía (se añade en siguientes microtareas).
+// Persistencia mínima real conectada al submit final del wizard.
 
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -14,6 +14,7 @@ import { ExtrasStep } from '@/components/bookings/steps/ExtrasStep'
 import { ContactStep, isValidEmail } from '@/components/bookings/steps/ContactStep'
 import { SummaryStep } from '@/components/bookings/steps/SummaryStep'
 import { submitBookingRequest } from '@/lib/bookings/actions'
+import type { SelectedBookingItem } from '@/lib/bookings/types'
 
 // ─────────────────────────────────────────────────────────────────
 // Definición de pasos
@@ -39,8 +40,7 @@ const WIZARD_STEPS: WizardStepDef[] = [
 // ─────────────────────────────────────────────────────────────────
 
 interface WizardData {
-  serviceSlug: string | null
-  variantSlug: string | null
+  selectedItems: SelectedBookingItem[]
   eventDate: string | null       // "YYYY-MM-DD"
   startTime: string | null       // "HH:MM"
   durationMinutes: number | null
@@ -53,8 +53,7 @@ interface WizardData {
 }
 
 const INITIAL_DATA: WizardData = {
-  serviceSlug: null,
-  variantSlug: null,
+  selectedItems: [],
   eventDate: null,
   startTime: null,
   durationMinutes: null,
@@ -79,15 +78,30 @@ export function BookingWizard() {
 
   const totalSteps = WIZARD_STEPS.length
   const step = WIZARD_STEPS[currentStep]
+  const primaryItem = data.selectedItems[0] ?? null
+  const selectedServiceSlug = primaryItem?.serviceSlug ?? null
+  const selectedVariantSlug = primaryItem?.variantSlug ?? null
 
   const canProceed =
-    currentStep === 0 ? data.serviceSlug !== null :
-    currentStep === 1 ? data.variantSlug !== null :
+    currentStep === 0 ? selectedServiceSlug !== null :
+    currentStep === 1 ? selectedVariantSlug !== null :
     currentStep === 2 ? data.eventDate !== null && data.startTime !== null && data.durationMinutes !== null :
     currentStep === 3 ? true :
     currentStep === 4 ? data.requesterName.trim() !== '' && isValidEmail(data.requesterEmail) :
     currentStep === 5 ? true :
     false
+
+  function setPrimaryItem(
+    updater: (currentItem: SelectedBookingItem | null) => SelectedBookingItem | null,
+  ) {
+    setData((currentData) => {
+      const nextItem = updater(currentData.selectedItems[0] ?? null)
+      return {
+        ...currentData,
+        selectedItems: nextItem ? [nextItem] : [],
+      }
+    })
+  }
 
   function handleNext() {
     if (currentStep < totalSteps - 1) {
@@ -101,14 +115,23 @@ export function BookingWizard() {
     }
   }
 
+  function resetWizard() {
+    setCurrentStep(0)
+    setData(INITIAL_DATA)
+    setSubmissionState('idle')
+    setPublicCode(null)
+    setSubmitError(null)
+  }
+
   async function handleSubmit() {
     if (submissionState === 'loading') return
     setSubmissionState('loading')
+    setPublicCode(null)
     setSubmitError(null)
 
     const result = await submitBookingRequest({
-      serviceSlug: data.serviceSlug!,
-      variantSlug: data.variantSlug!,
+      serviceSlug: selectedServiceSlug!,
+      variantSlug: selectedVariantSlug!,
       eventDate: data.eventDate!,
       startTime: data.startTime!,
       durationMinutes: data.durationMinutes!,
@@ -149,7 +172,7 @@ export function BookingWizard() {
           Solicitud enviada
         </h2>
         <p className="mb-6 text-sm text-text-secondary">
-          Tu solicitud ha sido registrada. El equipo de Turpial Sound confirmará disponibilidad y se pondrá en contacto contigo.
+          Tu solicitud fue recibida y quedó pendiente de revisión interna. El equipo de Turpial Sound confirmará disponibilidad y se pondrá en contacto contigo.
         </p>
         <div className="mb-6 inline-block rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-6 py-3">
           <p className="mb-1 text-xs text-text-muted">Código de referencia</p>
@@ -157,15 +180,23 @@ export function BookingWizard() {
             {publicCode}
           </p>
         </div>
-        <p className="text-xs text-text-muted">
-          Guarda este código para hacer seguimiento de tu solicitud.
+        <p className="mx-auto max-w-md text-xs text-text-muted">
+          Guarda este código para hacer seguimiento de tu solicitud. Esta confirmación no significa reserva instantánea: primero revisaremos disponibilidad y condiciones.
         </p>
+        <div className="mt-6">
+          <Button variant="ghost" size="sm" onClick={resetWizard}>
+            Crear una nueva solicitud
+          </Button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="rounded-2xl border border-brand-border bg-brand-surface">
+    <div
+      className="rounded-2xl border border-brand-border bg-brand-surface"
+      aria-busy={submissionState === 'loading'}
+    >
       {/* Indicador de pasos */}
       <div className="border-b border-brand-border px-6 py-4">
         <ol className="flex items-center gap-1 overflow-x-auto" aria-label="Pasos del formulario">
@@ -224,25 +255,51 @@ export function BookingWizard() {
           {step.title}
         </h2>
 
+        {currentStep === totalSteps - 1 && submissionState === 'loading' && (
+          <div className="mb-6 rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-4 py-3">
+            <div className="flex items-start gap-3">
+              <span
+                className="mt-0.5 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-accent-gold/30 border-t-accent-gold"
+                aria-hidden="true"
+              />
+              <div className="space-y-1 text-sm">
+                <p className="font-medium text-text-primary">
+                  Enviando tu solicitud
+                </p>
+                <p className="text-text-secondary">
+                  Estamos registrando tus datos. No cierres esta ventana hasta recibir la confirmación.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {currentStep === 0 && (
           <ServiceSelectStep
-            selected={data.serviceSlug}
+            selected={selectedServiceSlug}
             onChange={(slug) =>
-              setData((d) => ({
-                ...d,
+              setPrimaryItem((currentItem) => ({
                 serviceSlug: slug,
-                // Resetear variante si el servicio cambió
-                variantSlug: d.serviceSlug === slug ? d.variantSlug : null,
+                // Si cambia el servicio, la variante actual deja de ser válida.
+                variantSlug:
+                  currentItem?.serviceSlug === slug ? currentItem.variantSlug : null,
+                quantity: currentItem?.quantity ?? 1,
               }))
             }
           />
         )}
 
-        {currentStep === 1 && data.serviceSlug && (
+        {currentStep === 1 && selectedServiceSlug && (
           <VariantSelectStep
-            serviceSlug={data.serviceSlug}
-            selected={data.variantSlug}
-            onChange={(slug) => setData((d) => ({ ...d, variantSlug: slug }))}
+            serviceSlug={selectedServiceSlug}
+            selected={selectedVariantSlug}
+            onChange={(slug) =>
+              setPrimaryItem((currentItem) => ({
+                serviceSlug: currentItem?.serviceSlug ?? selectedServiceSlug,
+                variantSlug: slug,
+                quantity: currentItem?.quantity ?? 1,
+              }))
+            }
           />
         )}
 
@@ -280,14 +337,14 @@ export function BookingWizard() {
         )}
 
         {currentStep === 5 &&
-          data.serviceSlug &&
-          data.variantSlug &&
+          selectedServiceSlug &&
+          selectedVariantSlug &&
           data.eventDate &&
           data.startTime &&
           data.durationMinutes && (
             <SummaryStep
-              serviceSlug={data.serviceSlug}
-              variantSlug={data.variantSlug}
+              serviceSlug={selectedServiceSlug}
+              variantSlug={selectedVariantSlug}
               eventDate={data.eventDate}
               startTime={data.startTime}
               durationMinutes={data.durationMinutes}
@@ -304,7 +361,12 @@ export function BookingWizard() {
       {/* Error de envío */}
       {submitError && (
         <div className="border-t border-brand-border bg-red-500/5 px-6 py-3">
-          <p className="text-xs text-red-400">{submitError}</p>
+          <p className="text-sm font-medium text-red-300">
+            No pudimos registrar tu solicitud.
+          </p>
+          <p className="mt-1 text-xs text-red-200/90">
+            {submitError} Revisa los datos e intenta de nuevo.
+          </p>
         </div>
       )}
 
@@ -339,10 +401,11 @@ export function BookingWizard() {
             onClick={handleSubmit}
             disabled={submissionState === 'loading'}
           >
-            {submissionState === 'loading' ? 'Enviando…' : 'Enviar solicitud'}
+            {submissionState === 'loading' ? 'Enviando solicitud…' : 'Enviar solicitud'}
           </Button>
         )}
       </div>
     </div>
   )
 }
+

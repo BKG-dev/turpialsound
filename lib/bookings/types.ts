@@ -100,6 +100,15 @@ export interface BookingRequestItemInput {
   notes?: string | null
 }
 
+// Representa un item seleccionado dentro del wizard publico.
+// En 1B.6a seguimos usando un solo item visible, pero el contrato
+// deja preparado el estado para evolucionar a multiples items.
+export interface SelectedBookingItem {
+  serviceSlug: string
+  variantSlug: string | null
+  quantity: number
+}
+
 // ─────────────────────────────────────────────────────────────────
 // APROBACIONES
 // ─────────────────────────────────────────────────────────────────
