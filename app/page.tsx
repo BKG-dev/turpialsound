@@ -91,8 +91,8 @@ export default function HomePage() {
                 No solo producimos — documentamos el proceso. Cada sesión es una historia.
               </p>
             </div>
-            {/* Vertical video — right, shifted left by half width, size +15% */}
-            <div className="shrink-0" style={{ width: '16.1rem', transform: 'translateX(-50%)' }}>
+            {/* Vertical video — right, shifted left by half width (desktop only) */}
+            <div className="shrink-0 w-full px-4 flex justify-center lg:w-[16.1rem] lg:px-0 lg:-translate-x-1/2">
               <SocialVideoPlayer
                 src="/video/videoRRSS.webm"
                 fallback="/video/videoRRSS.mp4"

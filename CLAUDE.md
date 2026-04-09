@@ -84,6 +84,11 @@ CSS: tokens globales mínimos, módulos por componente, naming explícito. Sin `
 
 → Referencia ODS completa: `docs/05_technical/ods-reference.md`
 
+**MARKETPLACE & PAYMENTS** → Si trabajas en el Marketplace o sistema de pagos, ANTES de escribir código, DEBES leer:
+- `/docs/marketplace/01_ROADMAP_AND_STATUS.md` — Estado del proyecto, hitos y DoD
+- `/docs/marketplace/02_PAYMENT_ARCHITECTURE.md` — Máquina de estados de pagos, esquema Prisma
+- Esto es OBLIGATORIO para respetar la arquitectura de escrow y transiciones de estado válidas
+
 ---
 
 ## Debugging
