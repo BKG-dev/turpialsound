@@ -1,0 +1,248 @@
+// Turpial Sound — Schema de dominio reservas
+// Fase 1A.2 — Schema inicial (rev. correctiva 1A.2-b)
+// Fuente de verdad: base de datos, no Google Calendar
+
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────────
+
+enum BookingStatus {
+  draft
+  submitted
+  availability_checked
+  under_review
+  approved_partial
+  approved
+  rejected
+  needs_adjustment
+  calendar_booked
+  confirmed
+
+  @@map("booking_status")
+}
+
+enum UserRole {
+  admin
+  operations
+  casa_director
+  turpial_director
+
+  @@map("user_role")
+}
+
+enum ApprovalDecision {
+  approved
+  rejected
+  needs_adjustment
+
+  @@map("approval_decision")
+}
+
+enum PriorityLevel {
+  low
+  normal
+  high
+
+  @@map("priority_level")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CATÁLOGOS
+// ─────────────────────────────────────────────────────────────────
+
+model Service {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  variants ServiceVariant[]
+
+  @@map("services")
+}
+
+model ServiceVariant {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items BookingRequestItem[]
+
+  @@index([serviceId])
+  @@map("service_variants")
+}
+
+model Resource {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items BookingRequestItem[]
+
+  @@map("resources")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// USUARIOS INTERNOS
+// El modelo de auth público se prepara en 1A.5.
+// Esta tabla es para el staff y directivos que usan el panel interno.
+// ─────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      UserRole
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  approvals Approval[]
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// DOMINIO RESERVAS
+// ─────────────────────────────────────────────────────────────────
+
+model BookingRequest {
+  id            String        @id @default(cuid())
+  // Código legible para referencia externa (ej: "TUR-2026-001")
+  // Se genera al crear la solicitud; se usa en comunicaciones con el cliente.
+  publicCode    String        @unique
+  status        BookingStatus @default(draft)
+  priorityLevel PriorityLevel @default(normal)
+  // Origen de la solicitud: "web" | "phone" | "in_person" | "referral" | etc.
+  source        String        @default("web")
+
+  // Datos del solicitante (no es un User interno)
+  requesterName  String
+  requesterEmail String
+  requesterPhone String?
+
+  // Datos del evento
+  eventTitle   String
+  eventDate    DateTime
+  eventEndDate DateTime?
+
+  // Notas
+  notes         String? // Notas del solicitante (visibles externamente)
+  internalNotes String? // Notas internas del equipo (staff only)
+
+  // Estimación económica (opcional; se completa durante revisión interna)
+  estimatedTotal Decimal? @db.Decimal(10, 2)
+  currency       String   @default("USD")
+
+  // Reservado para integración con Google Calendar (fases posteriores)
+  calendarEventId String?
+
+  // Timestamps de flujo
+  submittedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  items     BookingRequestItem[]
+  approvals Approval[]
+  auditLogs AuditLog[]
+
+  @@index([status])
+  @@index([eventDate])
+  @@index([publicCode])
+  @@map("booking_requests")
+}
+
+model BookingRequestItem {
+  id               String         @id @default(cuid())
+  bookingRequestId String
+  bookingRequest   BookingRequest @relation(fields: [bookingRequestId], references: [id])
+  serviceVariantId String
+  serviceVariant   ServiceVariant @relation(fields: [serviceVariantId], references: [id])
+
+  // El recurso físico se asigna durante la revisión interna, no al crear la solicitud
+  resourceId String?
+  resource   Resource? @relation(fields: [resourceId], references: [id])
+
+  quantity  Int      @default(1)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([bookingRequestId])
+  @@index([serviceVariantId])
+  @@map("booking_request_items")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// APROBACIONES
+// Un booking_request puede tener múltiples rondas de aprobación
+// (ej: aprobación parcial de operaciones + aprobación final de directivo).
+// ─────────────────────────────────────────────────────────────────
+
+model Approval {
+  id               String           @id @default(cuid())
+  bookingRequestId String
+  bookingRequest   BookingRequest   @relation(fields: [bookingRequestId], references: [id])
+  approverId       String
+  approver         User             @relation(fields: [approverId], references: [id])
+  // Rol mínimo requerido para este paso de aprobación
+  // Permite distinguir aprobación de operaciones vs. aprobación de directivo
+  roleRequired     UserRole
+  decision         ApprovalDecision
+  comment          String?
+  // Momento exacto en que se tomó la decisión (puede ser posterior a createdAt)
+  decidedAt        DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([bookingRequestId])
+  @@map("approvals")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// AUDIT LOG
+// Registro inmutable de transiciones de estado y acciones internas.
+// previousState / nextState almacenan snapshots en JSON.
+// ─────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id               String          @id @default(cuid())
+  bookingRequestId String?
+  bookingRequest   BookingRequest? @relation(fields: [bookingRequestId], references: [id])
+  userId           String?
+  user             User?           @relation(fields: [userId], references: [id])
+
+  // Acción canónica (ej: "status_changed", "approval_added", "item_updated")
+  action        String
+  previousState Json?
+  nextState     Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([bookingRequestId])
+  @@index([createdAt])
+  @@map("audit_log")
+}
