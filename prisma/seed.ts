@@ -48,6 +48,11 @@ async function main() {
       name: "Arreglos Musicales",
       description: "Arreglos y adaptaciones musicales para proyectos propios o de terceros.",
     },
+    {
+      slug: "consultoria",
+      name: "Consultoría",
+      description: "Clase o consultoría de producción por hora.",
+    },
   ];
 
   for (const data of servicesData) {
@@ -61,8 +66,8 @@ async function main() {
   console.log(`  ✓ ${servicesData.length} services`);
 
   // ── Service Variants ────────────────────────────────────────────
-  // Sala de ensayo: 3 variantes (flexible / premium / prioritaria)
-  // Resto de servicios: 1 variante estándar por servicio
+  // Sala de ensayo: 3 variantes
+  // El resto del catálogo sigue los subtipos aprobados en 1B.6b
 
   const variantsData: Array<{
     slug: string;
@@ -89,40 +94,76 @@ async function main() {
       serviceSlug: "sala-ensayo",
     },
     {
-      slug: "grabacion-standard",
-      name: "Estándar",
-      description: null,
+      slug: "grabacion-ensayo",
+      name: "Grabación de ensayo",
+      description: "Registro de ensayo por hora.",
       serviceSlug: "grabacion",
     },
     {
-      slug: "produccion-musical-standard",
-      name: "Estándar",
-      description: null,
+      slug: "grabacion-hora-estudio",
+      name: "Hora de grabación",
+      description: "Sesión de grabación en estudio por hora.",
+      serviceSlug: "grabacion",
+    },
+    {
+      slug: "produccion-musical-por-tema",
+      name: "Producción por tema",
+      description: "Servicio principal por tema.",
       serviceSlug: "produccion-musical",
     },
     {
-      slug: "mezcla-masterizacion-standard",
-      name: "Estándar",
-      description: null,
+      slug: "mezcla-por-tema",
+      name: "Mezcla",
+      description: "Proceso de mezcla por tema.",
       serviceSlug: "mezcla-masterizacion",
     },
     {
-      slug: "podcast-locucion-standard",
-      name: "Estándar",
-      description: null,
+      slug: "master-por-tema",
+      name: "Master",
+      description: "Proceso de master por tema.",
+      serviceSlug: "mezcla-masterizacion",
+    },
+    {
+      slug: "mezcla-master-por-tema",
+      name: "Mezcla + Master",
+      description: "Paquete conjunto por tema.",
+      serviceSlug: "mezcla-masterizacion",
+    },
+    {
+      slug: "podcast-por-episodio",
+      name: "Podcast",
+      description: "Producción por episodio con máximo 4 horas por sesión.",
       serviceSlug: "podcast-locucion",
     },
     {
-      slug: "video-session-standard",
-      name: "Estándar",
-      description: null,
+      slug: "locucion-por-hora",
+      name: "Locución",
+      description: "Sesión de locución por hora.",
+      serviceSlug: "podcast-locucion",
+    },
+    {
+      slug: "studio-session-fija",
+      name: "Studio Session",
+      description: "Sesión fija de video con máximo 4 horas.",
       serviceSlug: "video-session",
     },
     {
-      slug: "arreglos-musicales-standard",
-      name: "Estándar",
-      description: null,
+      slug: "diseno-sonoro-video",
+      name: "Diseño de sonido para video",
+      description: "Puede pedirse como servicio aparte o como complemento.",
+      serviceSlug: "video-session",
+    },
+    {
+      slug: "arreglos-musicales-por-tema",
+      name: "Arreglo por tema",
+      description: "Servicio principal por tema.",
       serviceSlug: "arreglos-musicales",
+    },
+    {
+      slug: "consultoria-produccion",
+      name: "Clase / consultoría de producción",
+      description: "Consultoría o clase por hora.",
+      serviceSlug: "consultoria",
     },
   ];
 

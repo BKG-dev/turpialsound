@@ -109,6 +109,33 @@ export interface SelectedBookingItem {
   quantity: number
 }
 
+export interface BookingEstimateLine {
+  label: string
+  quantity: number
+  unit: 'hour' | 'track' | 'episode' | 'fixed' | 'addon'
+  unitPriceUsd: number | null
+  lineTotalUsd: number
+}
+
+export interface BookingEstimateAdjustment {
+  label: string
+  amountUsd: number
+}
+
+export interface BookingEstimateIssue {
+  code: string
+  message: string
+}
+
+export interface BookingEstimate {
+  lines: BookingEstimateLine[]
+  adjustments: BookingEstimateAdjustment[]
+  subtotalUsd: number
+  estimatedTotalUsd: number
+  blockingIssues: BookingEstimateIssue[]
+  isBlocked: boolean
+}
+
 // ─────────────────────────────────────────────────────────────────
 // APROBACIONES
 // ─────────────────────────────────────────────────────────────────

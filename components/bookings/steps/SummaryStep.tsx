@@ -7,6 +7,7 @@
 import type { ReactNode } from 'react'
 import { CATALOG_SERVICES, CATALOG_VARIANTS } from '@/lib/bookings/catalog'
 import { DURATION_OPTIONS, deriveEndTime } from '@/components/bookings/steps/DateTimeStep'
+import type { BookingEstimate } from '@/lib/bookings/types'
 
 // ─────────────────────────────────────────────────────────────────
 // HELPERS LOCALES
@@ -65,6 +66,7 @@ interface SummaryStepProps {
   requesterName: string
   requesterEmail: string
   requesterPhone: string
+  estimate?: BookingEstimate
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -83,6 +85,7 @@ export function SummaryStep({
   requesterName,
   requesterEmail,
   requesterPhone,
+  estimate,
 }: SummaryStepProps) {
   const service = CATALOG_SERVICES.find((s) => s.slug === serviceSlug)
   const variant = CATALOG_VARIANTS.find((v) => v.slug === variantSlug)
@@ -130,6 +133,51 @@ export function SummaryStep({
           <SummaryRow label="Teléfono" value={requesterPhone.trim()} />
         )}
       </SummarySection>
+
+      {estimate && estimate.lines.length > 0 && (
+        <SummarySection title="Estimado preliminar">
+          {estimate.lines.map((line) => {
+            const amountLabel =
+              line.unitPriceUsd === null
+                ? 'A coordinar'
+                : `${line.lineTotalUsd} USD`
+
+            return (
+              <SummaryRow
+                key={`${line.label}-${line.unit}`}
+                label={`${line.label} x${line.quantity}`}
+                value={amountLabel}
+              />
+            )
+          })}
+
+          {estimate.adjustments.map((adjustment) => (
+            <SummaryRow
+              key={adjustment.label}
+              label={adjustment.label}
+              value={`${adjustment.amountUsd} USD`}
+            />
+          ))}
+
+          <SummaryRow
+            label="Total estimado"
+            value={`${estimate.estimatedTotalUsd} USD`}
+          />
+        </SummarySection>
+      )}
+
+      {estimate && estimate.blockingIssues.length > 0 && (
+        <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-red-300">
+            Requiere ajuste antes de enviar
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-red-200">
+            {estimate.blockingIssues.map((issue) => (
+              <li key={issue.code}>{issue.message}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <p className="text-xs text-text-muted">
         Al enviar, tu solicitud quedará pendiente de revisión interna. No es una reserva confirmada.

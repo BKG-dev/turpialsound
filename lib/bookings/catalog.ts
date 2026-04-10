@@ -9,6 +9,11 @@
 // TIPOS
 // ─────────────────────────────────────────────────────────────────
 
+import {
+  BOOKING_CATALOG_ADDONS,
+  type BookingPriceUnit,
+} from '@/lib/bookings/pricing'
+
 export interface CatalogService {
   slug: string
   name: string
@@ -20,6 +25,15 @@ export interface CatalogVariant {
   name: string
   description: string | null
   serviceSlug: string
+  priceUsd?: number | null
+  priceUnit?: BookingPriceUnit
+  showPriceToClient?: boolean
+  maxHours?: number | null
+  blockWhenExceedingMaxHours?: boolean
+  weekendSurchargeUsd?: number | null
+  canBeStandalone?: boolean
+  canBeComplement?: boolean
+  badges?: string[]
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -30,37 +44,42 @@ export const CATALOG_SERVICES: CatalogService[] = [
   {
     slug: 'sala-ensayo',
     name: 'Sala de Ensayo',
-    description: 'Espacio acústicamente tratado para ensayo de bandas y artistas.',
+    description: 'Reserva por horas con modalidades diferenciadas y recargo especial fin de semana.',
   },
   {
     slug: 'grabacion',
     name: 'Grabación',
-    description: 'Sesión de grabación profesional en estudio.',
+    description: 'Servicio separado entre grabación de ensayo y hora de grabación en estudio.',
   },
   {
     slug: 'produccion-musical',
     name: 'Producción Musical',
-    description: 'Producción integral de una pieza o proyecto musical.',
+    description: 'Servicio principal por tema, sin variantes comerciales adicionales por ahora.',
   },
   {
     slug: 'mezcla-masterizacion',
     name: 'Mezcla y Masterización',
-    description: 'Mezcla y masterización de material grabado.',
+    description: 'Servicio separado por mezcla, master o paquete conjunto por tema.',
   },
   {
     slug: 'podcast-locucion',
     name: 'Podcast / Locución',
-    description: 'Producción de podcast o sesión de locución profesional.',
+    description: 'Servicio separado entre producción de podcast y sesiones de locución.',
   },
   {
     slug: 'video-session',
     name: 'Video Session',
-    description: 'Sesión de video para artistas en set de producción audiovisual.',
+    description: 'Incluye Studio Session fija y diseño de sonido para video como opción standalone o complemento.',
   },
   {
     slug: 'arreglos-musicales',
     name: 'Arreglos Musicales',
-    description: 'Arreglos y adaptaciones musicales para proyectos propios o de terceros.',
+    description: 'Servicio principal por tema, sin variantes comerciales adicionales por ahora.',
+  },
+  {
+    slug: 'consultoria',
+    name: 'Consultoría',
+    description: 'Clase o consultoría de producción por hora.',
   },
 ]
 
@@ -74,56 +93,189 @@ export const CATALOG_VARIANTS: CatalogVariant[] = [
   {
     slug: 'sala-ensayo-flexible',
     name: 'Flexible',
-    description: 'Bloque de horas flexible sin horario preferencial fijo.',
+    description: 'Modalidad base de sala de ensayo.',
     serviceSlug: 'sala-ensayo',
+    priceUsd: 25,
+    priceUnit: 'hour',
+    showPriceToClient: true,
+    weekendSurchargeUsd: 5,
+    canBeStandalone: true,
+    canBeComplement: false,
+    badges: ['Recargo fin de semana'],
   },
   {
     slug: 'sala-ensayo-premium',
     name: 'Premium',
-    description: 'Bloque preferencial con acceso a equipamiento completo.',
+    description: 'Modalidad premium de sala de ensayo.',
     serviceSlug: 'sala-ensayo',
+    priceUsd: 30,
+    priceUnit: 'hour',
+    showPriceToClient: true,
+    weekendSurchargeUsd: 5,
+    canBeStandalone: true,
+    canBeComplement: false,
+    badges: ['Recargo fin de semana'],
   },
   {
     slug: 'sala-ensayo-prioritaria',
     name: 'Prioritaria',
-    description: 'Reserva con prioridad máxima y confirmación acelerada.',
+    description: 'Modalidad prioritaria para solicitudes con mayor urgencia operativa.',
     serviceSlug: 'sala-ensayo',
+    priceUsd: 35,
+    priceUnit: 'hour',
+    showPriceToClient: true,
+    weekendSurchargeUsd: 5,
+    canBeStandalone: true,
+    canBeComplement: false,
+    badges: ['Recargo fin de semana'],
   },
   {
-    slug: 'grabacion-standard',
-    name: 'Estándar',
-    description: null,
+    slug: 'grabacion-ensayo',
+    name: 'Grabación de ensayo',
+    description: 'Registro de ensayo por hora.',
     serviceSlug: 'grabacion',
+    priceUsd: 35,
+    priceUnit: 'hour',
+    showPriceToClient: true,
+    canBeStandalone: true,
+    canBeComplement: false,
+    badges: [],
   },
   {
-    slug: 'produccion-musical-standard',
-    name: 'Estándar',
-    description: null,
+    slug: 'grabacion-hora-estudio',
+    name: 'Hora de grabación',
+    description: 'Sesión de grabación en estudio por hora.',
+    serviceSlug: 'grabacion',
+    priceUsd: 40,
+    priceUnit: 'hour',
+    showPriceToClient: true,
+    canBeStandalone: true,
+    canBeComplement: false,
+    badges: [],
+  },
+  {
+    slug: 'produccion-musical-por-tema',
+    name: 'Producción por tema',
+    description: 'Servicio principal por tema.',
     serviceSlug: 'produccion-musical',
+    priceUsd: 200,
+    priceUnit: 'track',
+    showPriceToClient: true,
+    canBeStandalone: true,
+    canBeComplement: false,
+    badges: [],
   },
   {
-    slug: 'mezcla-masterizacion-standard',
-    name: 'Estándar',
-    description: null,
+    slug: 'mezcla-por-tema',
+    name: 'Mezcla',
+    description: 'Proceso de mezcla por tema.',
     serviceSlug: 'mezcla-masterizacion',
+    priceUsd: 150,
+    priceUnit: 'track',
+    showPriceToClient: true,
+    canBeStandalone: true,
+    canBeComplement: false,
+    badges: [],
   },
   {
-    slug: 'podcast-locucion-standard',
-    name: 'Estándar',
-    description: null,
+    slug: 'master-por-tema',
+    name: 'Master',
+    description: 'Proceso de master por tema.',
+    serviceSlug: 'mezcla-masterizacion',
+    priceUsd: 150,
+    priceUnit: 'track',
+    showPriceToClient: true,
+    canBeStandalone: true,
+    canBeComplement: false,
+    badges: [],
+  },
+  {
+    slug: 'mezcla-master-por-tema',
+    name: 'Mezcla + Master',
+    description: 'Paquete conjunto por tema.',
+    serviceSlug: 'mezcla-masterizacion',
+    priceUsd: 300,
+    priceUnit: 'track',
+    showPriceToClient: true,
+    canBeStandalone: true,
+    canBeComplement: false,
+    badges: ['Paquete conjunto'],
+  },
+  {
+    slug: 'podcast-por-episodio',
+    name: 'Podcast',
+    description: 'Producción por episodio con máximo 4 horas por sesión.',
     serviceSlug: 'podcast-locucion',
+    priceUsd: 100,
+    priceUnit: 'episode',
+    showPriceToClient: true,
+    maxHours: 4,
+    blockWhenExceedingMaxHours: true,
+    canBeStandalone: true,
+    canBeComplement: false,
+    badges: ['Máximo 4 horas'],
   },
   {
-    slug: 'video-session-standard',
-    name: 'Estándar',
-    description: null,
+    slug: 'locucion-por-hora',
+    name: 'Locución',
+    description: 'Sesión de locución por hora.',
+    serviceSlug: 'podcast-locucion',
+    priceUsd: 50,
+    priceUnit: 'hour',
+    showPriceToClient: true,
+    canBeStandalone: true,
+    canBeComplement: false,
+    badges: [],
+  },
+  {
+    slug: 'studio-session-fija',
+    name: 'Studio Session',
+    description: 'Sesión fija de video con máximo 4 horas.',
     serviceSlug: 'video-session',
+    priceUsd: 500,
+    priceUnit: 'fixed',
+    showPriceToClient: true,
+    maxHours: 4,
+    blockWhenExceedingMaxHours: true,
+    canBeStandalone: true,
+    canBeComplement: false,
+    badges: ['Máximo 4 horas'],
   },
   {
-    slug: 'arreglos-musicales-standard',
-    name: 'Estándar',
-    description: null,
+    slug: 'diseno-sonoro-video',
+    name: 'Diseño de sonido para video',
+    description: 'Puede pedirse como servicio aparte o como complemento.',
+    serviceSlug: 'video-session',
+    priceUsd: 60,
+    priceUnit: 'hour',
+    showPriceToClient: true,
+    canBeStandalone: true,
+    canBeComplement: true,
+    badges: ['Standalone o complemento'],
+  },
+  {
+    slug: 'arreglos-musicales-por-tema',
+    name: 'Arreglo por tema',
+    description: 'Servicio principal por tema.',
     serviceSlug: 'arreglos-musicales',
+    priceUsd: 200,
+    priceUnit: 'track',
+    showPriceToClient: true,
+    canBeStandalone: true,
+    canBeComplement: false,
+    badges: [],
+  },
+  {
+    slug: 'consultoria-produccion',
+    name: 'Clase / consultoría de producción',
+    description: 'Consultoría o clase por hora.',
+    serviceSlug: 'consultoria',
+    priceUsd: 80,
+    priceUnit: 'hour',
+    showPriceToClient: true,
+    canBeStandalone: true,
+    canBeComplement: false,
+    badges: [],
   },
 ]
 
@@ -134,4 +286,25 @@ export const CATALOG_VARIANTS: CatalogVariant[] = [
 /** Devuelve las variantes activas de un servicio dado su slug. */
 export function getVariantsForService(serviceSlug: string): CatalogVariant[] {
   return CATALOG_VARIANTS.filter((v) => v.serviceSlug === serviceSlug)
+}
+
+export function getAddonsForService(serviceSlug: string) {
+  return BOOKING_CATALOG_ADDONS.filter((addon) => addon.serviceSlugs.includes(serviceSlug))
+}
+
+export function getVariantPriceLabel(variant: CatalogVariant): string | null {
+  if (!variant.showPriceToClient || variant.priceUsd == null || !variant.priceUnit) {
+    return null
+  }
+
+  if (variant.priceUnit === 'fixed') {
+    return `${variant.priceUsd} USD fijo`
+  }
+
+  const unitLabel =
+    variant.priceUnit === 'hour' ? 'hora' :
+    variant.priceUnit === 'track' ? 'tema' :
+    'episodio'
+
+  return `${variant.priceUsd} USD / ${unitLabel}`
 }

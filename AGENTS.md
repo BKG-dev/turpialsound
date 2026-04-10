@@ -29,9 +29,13 @@ Preparar el estado interno para trabajar con ítems seleccionados, no solo con u
 Introducir catálogo tarifario / pricing a partir del sheet aprobado.
 
 ### 1B.6c
-Mostrar desglose económico y total en el resumen.
+Implementar motor de cotización derivada en memoria a partir del catálogo tarifario aprobado.
+Debe calcular breakdown, subtotal, ajustes, total estimado e issues de bloqueo, sin persistencia todavía.
 
 ### 1B.6d
+Conectar el estimate derivado al `SummaryStep` para mostrar desglose económico y total estimado en UI.
+
+### 1B.6e
 Persistir múltiples `BookingRequestItem` y guardar `estimatedTotal`.
 
 ## Lo que viene después
@@ -46,6 +50,7 @@ Panel interno mínimo: listado simple de solicitudes.
 - Preferir cambios pequeños y reversibles.
 - Si el bug es puntual, corregir el bug puntual.
 - No mezclar pricing, panel interno, Calendar y pagos en una sola tarea.
+- En 1B.6c no tocar persistencia final ni rehacer el resumen completo; solo cálculo derivado en memoria y conexión mínima al estado actual del wizard.
 
 ## Validación
 Codex NO debe ejecutar:
@@ -76,6 +81,7 @@ La validación final la hace el usuario manualmente en su terminal local.
 ## Fuente de verdad
 - dominio: `lib/bookings/*`
 - catálogo temporal del wizard: `lib/bookings/catalog.ts`
+- pricing canónico: `lib/bookings/pricing.ts`
 - persistencia: `prisma/schema.prisma`
 - UI del flujo: `components/bookings/*`
 
