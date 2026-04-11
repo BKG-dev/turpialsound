@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 700" preserveAspectRatio="none">
+  <defs>
+    <!-- Valley clip: region ABOVE the U-curve → opaque; below → transparent -->
+    <clipPath id="c">
+      <path d="M0,0 H1600 V470 C1200,470 1050,710 800,710 C550,710 400,470 0,470 Z"/>
+    </clipPath>
+    <filter id="b1" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="55"/>
+    </filter>
+    <filter id="b2" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="32"/>
+    </filter>
+  </defs>
+
+  <g clip-path="url(#c)">
+    <!-- Dark base -->
+    <rect width="1600" height="710" fill="#0a0a0a"/>
+
+    <!-- Cyan glow — center of the valley bottom -->
+    <ellipse cx="800" cy="660" rx="620" ry="220" fill="#00aeef" opacity="0.52" filter="url(#b1)"/>
+    <ellipse cx="800" cy="610" rx="340" ry="140" fill="#29bcff" opacity="0.38" filter="url(#b2)"/>
+
+    <!-- Deep cyan arc along the curve -->
+    <ellipse cx="800" cy="700" rx="820" ry="90"  fill="#0050c8" opacity="0.48" filter="url(#b1)"/>
+
+    <!-- Gold glow — left corner -->
+    <ellipse cx="60"   cy="468" rx="290" ry="130" fill="#ffc107" opacity="0.52" filter="url(#b1)"/>
+    <ellipse cx="100"  cy="450" rx="150" ry="72"  fill="#ffd54f" opacity="0.34" filter="url(#b2)"/>
+
+    <!-- Gold glow — right corner -->
+    <ellipse cx="1540" cy="468" rx="290" ry="130" fill="#ffc107" opacity="0.52" filter="url(#b1)"/>
+    <ellipse cx="1500" cy="450" rx="150" ry="72"  fill="#ffd54f" opacity="0.34" filter="url(#b2)"/>
+  </g>
+</svg>

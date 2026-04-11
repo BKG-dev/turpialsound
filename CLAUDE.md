@@ -1,153 +1,169 @@
-# CLAUDE.md
+# TURPIAL SOUND — CLAUDE CODE MASTER
 
-## Propósito
-Este repositorio está incorporando un sistema de solicitudes y apartados de reservas para Turpial Sound dentro de la web ya existente. El objetivo es construirlo por fases, con cambios seguros, reversibles y de alcance mínimo.
-
-Claude debe trabajar como un operador quirúrgico:
-- una sesión = una microtarea = un entregable verificable
-- no expandir alcance
-- no improvisar arquitectura fuera de la fase activa
-- no tocar áreas no autorizadas
-- no ejecutar comandos bash dentro de la consola de Claude
+> Este archivo gobierna toda ejecución. Los detalles extensos viven en `/docs` y se leen solo cuando se trabaja ese frente.
 
 ---
 
-## Reglas operativas obligatorias
+## North Star
 
-1. **Trabajar solo la microtarea activa.**
-   - No adelantar tareas futuras.
-   - No mezclar backend, UI, auth, Calendar y panel en una sola ejecución si no está pedido explícitamente.
+**Brand Authority Platform + Lead Engine + ODS Operations Core**
 
-2. **Primero inspeccionar, luego proponer, luego ejecutar.**
-   - Antes de editar, revisar la estructura actual del proyecto.
-   - Explicar en breve qué se tocará y por qué.
-   - Ejecutar solo después de delimitar el alcance.
+Dos capas coordinadas:
+1. **Frente público** — web premium de autoridad, captación, SEO/AEO, conversión.
+2. **Frente operativo** — motor ODS sobre Google Workspace (Sheets, Apps Script, Drive, Calendar, Gmail).
 
-3. **Prohibido correr bash dentro de Claude Code.**
-   - No ejecutar `bash`, `npm`, `pnpm`, `yarn`, `git`, `npx`, `prisma`, `next`, `vercel` ni comandos similares dentro de Claude.
-   - En su lugar, entregar al usuario los comandos exactos para correr fuera de Claude.
-   - Excepción: solo si el usuario autoriza de forma explícita y puntual ejecutar un comando dentro de Claude.
-
-4. **Control estricto de contexto.**
-   - Al cerrar cada microtarea validada: usar `/clear` obligatoriamente antes de iniciar la siguiente.
-   - Usar `/compact` como higiene periódica cuando el contexto empiece a crecer innecesariamente; por defecto, aplicar cada 4 prompts o antes si la conversación se volvió pesada o repetitiva.
-   - Nunca confiar en la memoria del chat como fuente principal de continuidad; la continuidad debe vivir en archivos `.md` del proyecto.
-
-5. **No entrar en bucles de reparación.**
-   - Si aparece un error nuevo, hacer como máximo 1 intento de corrección autónoma dentro del alcance actual.
-   - Si el error cambia de naturaleza, detenerse y reportar.
-   - No encadenar arreglos indefinidos.
-
-6. **No tocar archivos fuera de la lista permitida.**
-   - Cada microtarea define archivos permitidos y archivos prohibidos.
-   - Si para resolver algo hace falta tocar un archivo no permitido, detenerse y reportarlo primero.
-
-7. **Salida final obligatoria por microtarea.**
-   Claude debe terminar siempre con este bloque:
-   - Archivos creados/editados
-   - Qué hizo exactamente
-   - Qué no tocó
-   - Riesgos o pendientes
-   - Comandos que el usuario debe ejecutar fuera de Claude para validar
+Nunca tratar el proyecto como landing aislada ni como simple script. Siempre como sistema.
 
 ---
 
-## Criterios de estilo de implementación
+## Arquitectura maestra
 
-- Mantener arquitectura clara y extensible.
-- Preferir nombres canónicos, no textos ambiguos.
-- Separar claramente:
-  - contenido/editorial
-  - lógica transaccional
-  - panel interno
-  - integraciones externas
-- No acoplar Google Calendar como motor de aprobación.
-- La fuente de verdad del workflow debe ser la base de datos.
-- No prometer “reserva instantánea” si la fase actual es de solicitud con aprobación.
+```
+[ Dominio 1 ] Public Brand Platform
+  Next.js · TypeScript · Tailwind · Vercel
+  SEO/AEO · leads · portfolio · autoridad
 
----
+[ Dominio 2 ] Operations Core
+  Google Apps Script · Sheets · Drive · Calendar · Gmail
+  ODS · agenda · documentos · aprobaciones
+```
 
-## Modelo funcional objetivo
-
-El sistema debe soportar este flujo general:
-
-1. visitante envía solicitud desde la web
-2. el sistema registra la solicitud en base de datos
-3. el equipo interno revisa
-4. directivos aprueban o rechazan
-5. si se aprueba, se crea evento en Google Calendar
-6. posteriormente podrá haber ODS, Drive, pagos y confirmación final
-
-En Fase 1A solo se construyen las fundaciones.
+**Regla de separación**: el ODS no contamina la arquitectura del front público. La integración va por endpoints bien delimitados.
 
 ---
 
-## Estados canónicos previstos
+## Stack
 
-Usar como referencia estos estados, aunque solo algunos se implementen en la fase activa:
-- `draft`
-- `submitted`
-- `availability_checked`
-- `under_review`
-- `approved_partial`
-- `approved`
-- `rejected`
-- `needs_adjustment`
-- `calendar_booked`
-- `confirmed`
+| Frente | Tecnología |
+|--------|-----------|
+| Frontend | Next.js App Router · TypeScript estricto · Tailwind CSS |
+| Aislamiento fino | CSS Modules o vanilla-extract |
+| 3D / efectos | React Three Fiber / Drei solo donde justifique el valor visual |
+| Backend operativo | Google Apps Script (mantener; abstraer hacia API cuando el negocio lo justifique) |
+| Deploy | Vercel (principal) · Cloudflare (alternativa edge) |
+
+CSS: tokens globales mínimos, módulos por componente, naming explícito. Sin `globals.css` monolítico.
 
 ---
 
-## Entidades previstas
+## Principios operativos
 
-- `services`
-- `service_variants`
-- `resources`
-- `booking_requests`
-- `booking_request_items`
-- `approvals`
-- `users`
-- `audit_log`
-
-Claude no debe inventar entidades nuevas sin justificarlo.
+1. **No improvisar** — cerrar brief, sitemap, stack y checkpoints antes de tocar código productivo.
+2. **Todo persiste en `.md`** — ninguna decisión maestra vive solo en el chat.
+3. **Un cambio, una razón** — explicar: problema · decisión · impacto · archivos · riesgo.
+4. **La autoridad no se inventa** — apoyar con evidencia, metodología, casos, estructura.
+5. **Diseño y sistema van juntos** — el front premium debe sostener SEO, AEO, conversión y mantenibilidad.
+6. **El ODS no rebaja la marca** — el motor operativo no justifica bajar el nivel visual del frente público.
 
 ---
 
-## Relación con el proyecto actual
+## Fases — referencia rápida
 
-Este sistema debe integrarse dentro de la web existente de Turpial Sound sin romper:
-- rutas públicas actuales
-- diseño ya aprobado
-- sistema editorial existente
-- arquitectura base del proyecto
+| Fase | Foco | Gate |
+|------|------|------|
+| 1 | Intake / verdad base | categoría · promesa · oferta · CTA |
+| 2 | Arquitectura de autoridad | sitemap · money pages · rol ODS |
+| 3 | Sistema editorial y visual | tono · tokens · motion · layouts |
+| 4 | Shell técnico + ODS boundary | rutas · metadata · frontera ODS/front |
+| 5 | Producción guiada | calidad por página · bloques reutilizables |
+| 6 | QA + release | build limpio · links · schema · conversiones |
 
-Antes de proponer estructura nueva, revisar la organización real del repo.
-
----
-
-## Política de validación
-
-Claude no ejecuta comandos. Claude propone los comandos.
-
-Ejemplos de salida esperada al final de cada tarea:
-- `pnpm lint`
-- `pnpm build`
-- `pnpm prisma validate`
-- `pnpm prisma migrate dev`
-- `pnpm test`
-
-Solo listar los que realmente apliquen a la microtarea.
+→ Detalle completo de cada fase y sus gates: `docs/00_governance/phases-detail.md`
 
 ---
 
-## Formato de respuesta esperado en cada microtarea
+## Pre-lectura obligatoria por frente
 
-1. Diagnóstico breve del alcance
-2. Plan breve de ejecución
-3. Cambios realizados
-4. Bloque final obligatorio:
-   - Archivos creados/editados
-   - Resumen
-   - Riesgos/pendientes
-   - Comandos a ejecutar fuera de Claude
+**Estrategia** → `roadmap-master.md` · `brand-core.md` · `market-positioning.md` · `authority-map.md` · `session-summary-active.md`
 
+**Contenido** → `brand-core.md` · `messaging-pillars.md` · `tone-of-voice.md` · `page-briefs.md`
+
+**UI** → `design-principles.md` · `design-tokens.md` · `component-inventory.md` · `layout-rules.md`
+
+**ODS** → `ods-architecture.md` · `ods-refactor-plan.md` · `data-model.md` · `api-contracts.md` · `bug-log.md` · `session-summary-active.md`
+
+→ Referencia ODS completa: `docs/05_technical/ods-reference.md`
+
+**MARKETPLACE & PAYMENTS** → Si trabajas en el Marketplace o sistema de pagos, ANTES de escribir código, DEBES leer:
+- `/docs/marketplace/01_ROADMAP_AND_STATUS.md` — Estado del proyecto, hitos y DoD
+- `/docs/marketplace/02_PAYMENT_ARCHITECTURE.md` — Máquina de estados de pagos, esquema Prisma
+- Esto es OBLIGATORIO para respetar la arquitectura de escrow y transiciones de estado válidas
+
+---
+
+## Debugging
+
+Orden al encontrar un bug:
+1. síntoma visible
+2. hipótesis principal
+3. archivos sospechosos
+4. fix mínimo propuesto
+5. riesgo secundario
+6. test para confirmar
+
+No mezclar refactor con hotfix. Registrar en `bug-log.md`: fecha · bug · causa · fix · validación · lección.
+
+---
+
+## Definition of Done
+
+Un bloque está terminado cuando:
+- resuelve una función real
+- no rompe consistencia sistémica
+- pasa validación visual y técnica básica
+- queda documentado
+- deja claro qué sigue
+
+---
+
+## Prioridad ante conflictos
+
+1. claridad estratégica
+2. integridad del sistema
+3. experiencia del usuario
+4. mantenibilidad técnica
+5. performance
+6. refinamiento visual extra
+
+---
+
+## SEO / AEO
+
+Cada URL resuelve una intención. Cada bloque aporta a usuario y máquina. Sin relleno. Sin adjetivos vacíos.
+Activos clave: `authority-map.md` · `content-clusters.md` · `page-briefs.md` · `entity-bios.md` · `faq-bank.md`
+
+---
+
+## Git y sesiones
+
+- **Commit + push antes de cada compactación** — nunca compactar sin push limpio.
+- Antes de cerrar sesión: actualizar `session-summary-active.md` y `next-window-brief.md`.
+- → Template de handoff: `docs/00_governance/session-handoff-template.md`
+
+---
+
+## Modelos y tokens
+
+→ Ver `TASK_ROUTING.md` para routing de modelos por tipo de tarea.
+→ Contexto activo: solo objetivo inmediato + archivos relevantes + restricciones vigentes.
+→ Compactar cuando: fase cerrada · contexto mezclado · costo sin justificación.
+
+---
+
+## Documentación de referencia
+
+```
+docs/
+  00_governance/   phases-detail.md · session-handoff-template.md · roadmap-master.md
+  01_strategy/     brand-core.md · market-positioning.md · customer-profiles.md · authority-map.md
+  02_ia/           sitemap-master.md · url-map.md · content-clusters.md
+  03_editorial/    messaging-pillars.md · tone-of-voice.md · page-briefs.md · faq-bank.md
+  04_design/       design-principles.md · design-tokens.md · component-inventory.md · motion-rules.md
+  05_technical/    stack-decision.md · app-architecture.md · ods-reference.md · api-contracts.md
+  06_delivery/     qa-checklist.md · bug-log.md · launch-checklist.md
+  07_handoffs/     session-summary-active.md · next-window-brief.md · compact-history.md
+```
+
+---
+
+*Cada intervención debe acercar Turpial Sound a una posición de autoridad verificable, elegante, escalable y operativamente sólida.*

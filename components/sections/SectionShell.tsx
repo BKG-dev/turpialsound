@@ -1,3 +1,6 @@
+'use client'
+
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface SectionShellProps {
@@ -6,6 +9,7 @@ interface SectionShellProps {
   id?: string
   background?: 'default' | 'surface' | 'none'
   size?: 'default' | 'sm'
+  align?: 'left' | 'right'
 }
 
 export function SectionShell({
@@ -14,6 +18,7 @@ export function SectionShell({
   id,
   background = 'default',
   size = 'default',
+  align = 'left',
 }: SectionShellProps) {
   const bgClass = {
     default: 'bg-brand-bg',
@@ -22,10 +27,11 @@ export function SectionShell({
   }[background]
 
   const paddingClass = size === 'sm' ? 'section-padding-sm' : 'section-padding'
+  const containerClass = align === 'right' ? 'container-base container-base--right' : 'container-base'
 
   return (
     <section id={id} className={cn(bgClass, paddingClass, className)}>
-      <div className="container-base">{children}</div>
+      <div className={containerClass}>{children}</div>
     </section>
   )
 }
@@ -34,7 +40,8 @@ interface SectionHeadingProps {
   eyebrow?: string
   heading: string
   subheading?: string
-  align?: 'left' | 'center'
+  align?: 'left' | 'center' | 'right'
+  accentColor?: 'gold' | 'cyan'
   className?: string
 }
 
@@ -46,19 +53,52 @@ export function SectionHeading({
   className,
 }: SectionHeadingProps) {
   return (
-    <div className={cn(align === 'center' && 'text-center', className)}>
+    <motion.div
+      className={cn(
+        align === 'center' && 'text-center',
+        align === 'right' && 'text-right',
+        className,
+      )}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-60px' }}
+      variants={{
+        hidden: {},
+        visible: { transition: { staggerChildren: 0.12 } },
+      }}
+    >
       {eyebrow && (
-        <div className={cn('mb-3 flex items-center gap-3', align === 'center' && 'justify-center')}>
-          <span className="accent-line" aria-hidden="true" />
-          <span className="text-sm font-medium uppercase tracking-widest text-accent-gold">
+        <motion.div
+          className={cn(
+            'mb-4 flex items-center gap-4',
+            align === 'center' && 'justify-center',
+            align === 'right' && 'justify-end flex-row-reverse',
+          )}
+          variants={{ hidden: { opacity: 0, y: 14 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] } } }}
+        >
+          <span className="accent-line-animated" aria-hidden="true" />
+          <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
             {eyebrow}
           </span>
-        </div>
+        </motion.div>
       )}
-      <h2 className="text-display-md font-display font-bold text-text-primary">{heading}</h2>
+      <motion.h2
+        className="font-display text-display-md text-text-primary"
+        variants={{ hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } } }}
+      >
+        {heading}
+      </motion.h2>
       {subheading && (
-        <p className="mt-4 max-w-prose text-body-base text-text-secondary">{subheading}</p>
+        <motion.p
+          className={cn(
+            'mt-4 max-w-prose text-body-base text-text-secondary',
+            align === 'right' && 'ml-auto',
+          )}
+          variants={{ hidden: { opacity: 0, y: 14 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] } } }}
+        >
+          {subheading}
+        </motion.p>
       )}
-    </div>
+    </motion.div>
   )
 }

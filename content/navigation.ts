@@ -29,6 +29,10 @@ export const mainNavItems: NavItem[] = [
     href: '/artistas',
   },
   {
+    label: 'Marketplace',
+    href: '/marketplace' as Route,
+  },
+  {
     label: 'Recursos',
     href: '/recursos',
   },
