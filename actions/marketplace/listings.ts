@@ -5,10 +5,22 @@ import {
   type CreateListingInput,
   type ActionResult,
 } from '@/lib/validations/marketplace'
+import {
+  marketplaceMockData,
+  type MockMpListing,
+} from '@/lib/mocks/marketplaceData'
+
+// Re-export so UI components import from one place
+export type { MockMpListing as MpListing }
+
+// ─── MOCK MODE ────────────────────────────────────────────────────────────────
+// Local dev: add USE_MOCK_DATA=true to .env to bypass the database entirely.
+// When Jean runs the migration and the tables exist, set to false (or remove).
+const IS_MOCK =
+  process.env.USE_MOCK_DATA === 'true' || !process.env.DATABASE_URL
 
 // ─── DB CLIENT (GRACEFUL FALLBACK) ────────────────────────────────────────────
 // Dynamic import so the action compiles before Jean runs the migration.
-// Returns null if the generated client or DB tables are not yet available.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getPrismaClient(): Promise<any | null> {
   try {
@@ -38,6 +50,33 @@ function generateSlug(title: string): string {
   return `${base}-${Date.now()}`
 }
 
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// ─── GET LISTINGS ─────────────────────────────────────────────────────────────
+
+export async function getMockListings(): Promise<MockMpListing[]> {
+  if (IS_MOCK) {
+    await delay(600)
+    return marketplaceMockData.listings
+  }
+
+  const prisma = await getPrismaClient()
+  if (!prisma) return marketplaceMockData.listings
+
+  try {
+    const listings = await prisma.mpListing.findMany({
+      where: { status: 'ACTIVE' },
+      orderBy: { createdAt: 'desc' },
+    })
+    await prisma.$disconnect()
+    return listings
+  } catch {
+    // Tables not yet migrated → fall back to mock data silently
+    await prisma.$disconnect().catch(() => {})
+    return marketplaceMockData.listings
+  }
+}
+
 // ─── CREATE LISTING ───────────────────────────────────────────────────────────
 
 export async function createListing(
@@ -52,17 +91,27 @@ export async function createListing(
 
   const data = parsed.data
 
-  // 2. Get DB client
+  // 2. Mock mode: return a fake success so the UI flow works end-to-end locally
+  if (IS_MOCK) {
+    await delay(800)
+    const slug = generateSlug(data.title)
+    return {
+      success: true,
+      data: { id: `mock_${Date.now()}`, slug },
+      message: '[MOCK] Listing creado correctamente',
+    }
+  }
+
+  // 3. Get DB client
   const prisma = await getPrismaClient()
   if (!prisma) {
-    // DB not yet available — Jean will run the migration after merge
     return {
       success: false,
       message: 'Base de datos no disponible. Pendiente de migración.',
     }
   }
 
-  // 3. Create listing
+  // 4. Create listing
   try {
     const slug = generateSlug(data.title)
 
