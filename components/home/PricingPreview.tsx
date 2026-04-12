@@ -156,7 +156,7 @@ function PriceCard({
       {/* ── ZONA 3: Bloque de precio — h-[6.5rem] fijo ──────────── */}
       {/* label (9px) · prefijo (text-sm) · monto (2.75rem=44px)    */}
       <div className="mt-3 flex h-[6.5rem] shrink-0 flex-col justify-start overflow-hidden">
-        <span className="font-display text-[9px] tracking-[0.22em] uppercase leading-none text-text-muted">
+        <span className="font-display text-[10px] tracking-[0.22em] uppercase leading-none text-text-muted">
           {label}
         </span>
 
@@ -222,7 +222,7 @@ function PriceCard({
             >
               <Check size={9} style={{ color: accentVar }} aria-hidden="true" />
             </div>
-            <span className="font-display text-[11px] leading-[1.6] text-text-secondary">
+            <span className="font-display text-xs leading-[1.6] text-text-secondary">
               {feat}
             </span>
           </li>
@@ -232,7 +232,7 @@ function PriceCard({
       {/* ── CTA — mt-auto ancla el botón al fondo en todas ─────── */}
       <Link
         href={pkg.ctaHref as Route}
-        className="btn-silky-primary mt-auto inline-flex h-[2.75rem] w-full shrink-0 items-center justify-center rounded-lg font-display text-[10px] tracking-[0.22em] uppercase text-white"
+        className="btn-silky-primary mt-auto inline-flex h-[2.75rem] w-full shrink-0 items-center justify-center rounded-lg font-display text-xs tracking-[0.22em] uppercase text-white"
       >
         {pkg.ctaLabel}
       </Link>
@@ -245,6 +245,8 @@ export function PricingPreview() {
   const [currency, setCurrency] = useState<'usd' | 'bs'>('bs')
   const { rate, isFallback, loading } = useBcvRate()
   const carouselRef = useRef<HTMLDivElement>(null)
+  const wrapperRef  = useRef<HTMLDivElement>(null)
+  const wheelThrottle = useRef(false)
 
   function scroll(dir: 'left' | 'right') {
     const el = carouselRef.current
@@ -267,24 +269,41 @@ export function PricingPreview() {
   }
 
   useEffect(() => {
+    const wrapper = wrapperRef.current
     const el = carouselRef.current
-    if (!el) return
+    if (!wrapper || !el) return
+
     const handleWheel = (e: WheelEvent) => {
       const maxScroll = el.scrollWidth - el.clientWidth
-      if (e.deltaY > 0 && el.scrollLeft < maxScroll - 1) {
+      const isAtEnd   = el.scrollLeft >= maxScroll - 2
+      const isAtStart = el.scrollLeft <= 2
+
+      if (e.deltaY > 0 && !isAtEnd) {
         e.preventDefault()
-        el.scrollLeft += e.deltaY
-      } else if (e.deltaY < 0 && el.scrollLeft > 1) {
+        if (!wheelThrottle.current) {
+          wheelThrottle.current = true
+          const cardWidth = el.clientWidth / 3 + 20
+          el.scrollBy({ left: cardWidth, behavior: 'smooth' })
+          setTimeout(() => { wheelThrottle.current = false }, 500)
+        }
+      } else if (e.deltaY < 0 && !isAtStart) {
         e.preventDefault()
-        el.scrollLeft += e.deltaY
+        if (!wheelThrottle.current) {
+          wheelThrottle.current = true
+          const cardWidth = el.clientWidth / 3 + 20
+          el.scrollBy({ left: -cardWidth, behavior: 'smooth' })
+          setTimeout(() => { wheelThrottle.current = false }, 500)
+        }
       }
     }
-    el.addEventListener('wheel', handleWheel, { passive: false })
-    return () => el.removeEventListener('wheel', handleWheel)
+    // Attach to the entire section wrapper — intercepts wheel regardless of
+    // which child element the cursor is over, not just the carousel strip.
+    wrapper.addEventListener('wheel', handleWheel, { passive: false })
+    return () => wrapper.removeEventListener('wheel', handleWheel)
   }, [])
 
   return (
-    <div className="pb-16">
+    <div ref={wrapperRef} className="pb-16">
 
       {/* ── HEADER ROW: texto izq + controles der ─────────────────── */}
       <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between max-w-[1400px] mx-auto">

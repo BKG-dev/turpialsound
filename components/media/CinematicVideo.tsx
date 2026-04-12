@@ -22,6 +22,7 @@ export function CinematicVideo({
 }: CinematicVideoProps) {
   // Arranca como true porque el video tiene autoplay (muted + playsInline)
   const [playing, setPlaying] = useState(true)
+  const [hovered, setHovered] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useIsomorphicLayoutEffect(() => {
@@ -53,6 +54,16 @@ export function CinematicVideo({
         aspect === 'horizontal' ? 'aspect-video' : 'aspect-[9/16] max-w-sm mx-auto',
         className,
       )}
+      style={{
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        boxShadow: hovered
+          ? '0 30px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 190, 255, 0.25)'
+          : '0 20px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 150, 255, 0.15)',
+        transform: hovered ? 'translateY(-8px)' : 'translateY(0)',
+        transition: 'all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       {/* Bottom gradient overlay */}
       <div
@@ -69,6 +80,7 @@ export function CinematicVideo({
           src={src}
           poster={poster}
           className="absolute inset-0 h-full w-full object-cover"
+          style={{ objectFit: 'cover', objectPosition: 'center', transform: 'scale(1.2)' }}
           playsInline
           muted
           loop
@@ -120,7 +132,7 @@ export function CinematicVideo({
         className={cn(
           'absolute inset-0 z-20 flex items-center justify-center',
           'transition-opacity duration-350',
-          playing ? 'opacity-0 hover:opacity-100' : 'opacity-100',
+          playing ? 'opacity-100 sm:opacity-0 sm:hover:opacity-100' : 'opacity-100',
         )}
         aria-label={playing ? 'Pausar video' : 'Reproducir video'}
       >

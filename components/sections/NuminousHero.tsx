@@ -136,7 +136,15 @@ export function NuminousHero({
         animate="visible"
         variants={variants}
       >
-        <div className="max-w-2xl">
+        <div
+          className="max-w-2xl"
+          style={{
+            background: 'linear-gradient(90deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.22) 55%, rgba(0,0,0,0) 100%)',
+            borderRadius: '0.5rem',
+            padding: '1rem 2rem 1rem 0',
+            marginLeft: '-0.5rem',
+          }}
+        >
           {eyebrow && (
             <motion.div className="mb-5 flex items-center gap-3" variants={item}>
               <span className="accent-line-animated" aria-hidden="true" />
@@ -161,7 +169,11 @@ export function NuminousHero({
 
           <motion.p
             className="mt-6 max-w-xl text-body-lg"
-            style={{ color: 'rgba(255,255,255,0.65)' }}
+            style={{
+              color: '#F5F5F5',
+              fontWeight: 500,
+              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+            }}
             variants={item}
           >
             {subheading}

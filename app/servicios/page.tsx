@@ -41,11 +41,14 @@ export default function ServiciosPage() {
         ctaHref="/contacto"
       />
 
-      {/* ── Core services ─────────────────────────────────────────────── */}
+      {/* ── SECCIÓN UNIFICADA: Servicios principales + Galería 3D ──────── */}
       <StackingSection index={0} waves>
-        <SectionShell background="none">
-          <SectionHeading eyebrow="Servicios principales" heading="Las tres puertas de entrada." />
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
+        <SectionShell background="none" size="sm">
+          {/* Encabezado — título actualizado */}
+          <SectionHeading eyebrow="Servicios principales" heading="Del ensayo al máster." />
+
+          {/* 3 tarjetas de servicios core */}
+          <div className="mt-10 grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
             {coreServices.map((service) => (
               <Link
                 key={service.id}
@@ -60,6 +63,21 @@ export default function ServiciosPage() {
                 <p className="mt-4 text-xs text-text-muted">{service.priceNote}</p>
               </Link>
             ))}
+          </div>
+
+          {/* Galería 3D de instalaciones — separada con espacio generoso */}
+          <div className="mt-8 w-full max-w-5xl mx-auto">
+            <div className="mb-4 flex items-center gap-4">
+              <span className="accent-line-animated" aria-hidden="true" />
+              <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
+                Instalaciones
+              </span>
+            </div>
+            <Mac3DGallery
+              images={instalacionesImages}
+              title="Instalaciones · Turpial Sound"
+              compact
+            />
           </div>
         </SectionShell>
       </StackingSection>
@@ -103,24 +121,8 @@ export default function ServiciosPage() {
         </SectionShell>
       </StackingSection>
 
-      {/* Instalaciones — 3D gallery */}
-      <StackingSection index={2} waves>
-        <SectionShell background="none">
-          <div className="mb-4 flex items-center gap-4">
-            <span className="accent-line-animated" aria-hidden="true" />
-            <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
-              Instalaciones
-            </span>
-          </div>
-          <Mac3DGallery
-            images={instalacionesImages}
-            title="Instalaciones · Turpial Sound"
-          />
-        </SectionShell>
-      </StackingSection>
-
       {/* CTA — panoramic strip with instalaciones3.jpg */}
-      <StackingSection index={3}>
+      <StackingSection index={2}>
         <CTASection
           heading="¿Por dónde empezamos?"
           subheading="Ya sea que necesites grabar, producir o ensayar, tenemos el espacio y el equipo para llevarte al siguiente nivel."

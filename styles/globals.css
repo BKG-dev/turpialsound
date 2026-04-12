@@ -25,7 +25,7 @@
 
   /* Text */
   --color-text-primary: #f2f2f2;
-  --color-text-secondary: #a0a0a0;
+  --color-text-secondary: #c0c0c0;
   --color-text-muted: #5a5a5a;
 
   /* Typography — Michroma exclusiva en todo el sitio */
@@ -54,8 +54,14 @@
 html {
   scroll-behavior: smooth;
   text-size-adjust: 100%;
-  scroll-snap-type: y mandatory;
+  scroll-snap-type: y proximity;
   overflow-y: scroll;
+}
+
+@media (max-width: 768px) {
+  html {
+    scroll-snap-type: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -539,11 +545,11 @@ video {
 .card-premium-wrapper {
   position: relative;
   box-shadow:
-    0 4px 28px rgba(0, 0, 0, 0.58),
+    0 10px 20px rgba(0, 0, 0, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
   transition:
-    transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.42s ease;
+    transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+    box-shadow 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .card-premium-wrapper::before {
@@ -575,17 +581,18 @@ video {
 }
 
 .card-premium-wrapper:hover {
-  transform: translateY(-6px);
+  transform: translateY(-7px);
   box-shadow:
-    0 18px 52px rgba(0, 0, 0, 0.68),
-    0 0   72px rgba(0, 174, 239, 0.16),
+    0 20px 40px rgba(0, 0, 0, 0.7),
+    0 0   25px rgba(0, 190, 255, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 
 .card-premium-wrapper--gold:hover {
   box-shadow:
-    0 18px 52px rgba(0, 0, 0, 0.68),
-    0 0   72px rgba(255, 193, 7, 0.13),
+    0 20px 40px rgba(0, 0, 0, 0.7),
+    0 0   25px rgba(0, 190, 255, 0.25),
+    0 0   40px rgba(255, 193, 7, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 

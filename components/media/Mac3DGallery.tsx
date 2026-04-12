@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
@@ -20,17 +20,44 @@ interface Mac3DGalleryProps {
   images: string[]
   title?: string
   className?: string
+  compact?: boolean
 }
 
-export function Mac3DGallery({ images, title, className }: Mac3DGalleryProps) {
+export function Mac3DGallery({ images, title, className, compact = false }: Mac3DGalleryProps) {
   const [active, setActive] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const touchStartX = useRef(0)
   const count = images.length
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)')
+    setIsMobile(mq.matches)
+    const h = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', h)
+    return () => mq.removeEventListener('change', h)
+  }, [])
 
   if (count === 0) return null
 
   const prev = () => setActive((a) => (a - 1 + count) % count)
   const next = () => setActive((a) => (a + 1) % count)
+
+  // Mobile: single-card display to avoid horizontal overflow
+  const stageH  = isMobile ? 250 : (compact ? 300 : 460)
+  const activeW = isMobile ? 270 : (compact ? 360 : 500)
+  const activeH = isMobile ? 175 : (compact ? 230 : 340)
+  const sideW   = compact ? 190 : 260
+  const sideH   = compact ? 135 : 195
+  const sideX   = compact ? 250 : 340
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX
+  }
+  function handleTouchEnd(e: React.TouchEvent) {
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    if (Math.abs(dx) > 40) { dx < 0 ? next() : prev() }
+  }
 
   function getOffset(index: number): number {
     const raw = ((index - active) % count + count) % count
@@ -39,11 +66,15 @@ export function Mac3DGallery({ images, title, className }: Mac3DGalleryProps) {
 
   return (
     <>
-      <div className={cn('relative w-full', className)}>
+      <div
+        className={cn('relative w-full overflow-hidden', className)}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {/* ── 3D Stage ──────────────────────────────────────────────── */}
         <div
           className="relative mx-auto flex items-center justify-center"
-          style={{ perspective: '1100px', height: '460px' }}
+          style={{ perspective: '1100px', height: `${stageH}px` }}
         >
           {/* Glow pool — 80% width, centered under active card */}
           <div
@@ -61,7 +92,9 @@ export function Mac3DGallery({ images, title, className }: Mac3DGalleryProps) {
 
           {images.map((src, i) => {
             const offset = getOffset(i)
-            if (Math.abs(offset) > 1) return null
+            // Mobile: only render active card to prevent horizontal overflow
+            if (isMobile && offset !== 0) return null
+            if (!isMobile && Math.abs(offset) > 1) return null
 
             const isActive = offset === 0
 
@@ -76,9 +109,9 @@ export function Mac3DGallery({ images, title, className }: Mac3DGalleryProps) {
                 )}
                 style={{ transformStyle: 'preserve-3d' }}
                 animate={{
-                  width: isActive ? 500 : 260,
-                  height: isActive ? 340 : 195,
-                  x: offset * 340,
+                  width: isActive ? activeW : sideW,
+                  height: isActive ? activeH : sideH,
+                  x: offset * sideX,
                   y: isActive ? -24 : 12,
                   rotateY: -offset * 52,
                   scale: 1,
@@ -152,32 +185,34 @@ export function Mac3DGallery({ images, title, className }: Mac3DGalleryProps) {
         </div>
 
         {/* ── Hint ── */}
-        <p className="mt-2 text-center font-display text-[10px] tracking-[0.2em] uppercase text-text-muted/60">
+        <p className="mt-2 text-center font-display text-xs tracking-[0.2em] uppercase text-text-muted/60">
           Clic en la imagen central para ampliar
         </p>
 
         {/* ── Separator ── */}
-        <div className="mt-8 flex items-center justify-center gap-4" aria-hidden="true">
-          <div
-            className="h-px flex-1"
-            style={{
-              background:
-                'linear-gradient(to right, transparent, rgba(0,174,239,0.15) 40%, rgba(0,174,239,0.35) 100%)',
-            }}
-          />
-          <div className="flex items-center gap-1.5">
-            <div className="h-px w-4 bg-accent-cyan/40" />
-            <div className="h-1.5 w-1.5 rounded-full bg-accent-cyan/60" />
-            <div className="h-px w-4 bg-accent-cyan/40" />
+        {!compact && (
+          <div className="mt-8 flex items-center justify-center gap-4" aria-hidden="true">
+            <div
+              className="h-px flex-1"
+              style={{
+                background:
+                  'linear-gradient(to right, transparent, rgba(0,174,239,0.15) 40%, rgba(0,174,239,0.35) 100%)',
+              }}
+            />
+            <div className="flex items-center gap-1.5">
+              <div className="h-px w-4 bg-accent-cyan/40" />
+              <div className="h-1.5 w-1.5 rounded-full bg-accent-cyan/60" />
+              <div className="h-px w-4 bg-accent-cyan/40" />
+            </div>
+            <div
+              className="h-px flex-1"
+              style={{
+                background:
+                  'linear-gradient(to left, transparent, rgba(0,174,239,0.15) 40%, rgba(0,174,239,0.35) 100%)',
+              }}
+            />
           </div>
-          <div
-            className="h-px flex-1"
-            style={{
-              background:
-                'linear-gradient(to left, transparent, rgba(0,174,239,0.15) 40%, rgba(0,174,239,0.35) 100%)',
-            }}
-          />
-        </div>
+        )}
       </div>
 
       {/* ── Lightbox ── */}

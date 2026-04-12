@@ -61,7 +61,7 @@ export function NuminousPersonCard({
         <p className="mt-1 text-sm" style={{ color: accentHex }}>
           {role}
         </p>
-        <p className="mt-4 text-sm text-text-secondary leading-relaxed">{bio}</p>
+        <p className="mt-4 text-sm text-text-secondary leading-relaxed line-clamp-3">{bio}</p>
       </div>
     </TiltCard>
   )

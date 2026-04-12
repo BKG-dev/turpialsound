@@ -87,7 +87,7 @@ export default function HomePage() {
                 El Espacio Que Tu Música Merece!!!{' '}
                 <span className="text-gradient-animated">El Sonido De Tus Sueños!!!</span>
               </h2>
-              <p className="mt-5 text-text-secondary" style={{ fontSize: '1.2em', lineHeight: 1.6 }}>
+              <p className="mt-5" style={{ fontSize: '1.2em', lineHeight: 1.6, color: '#F5F5F5', fontWeight: 500, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
                 No solo producimos — documentamos el proceso. Cada sesión es una historia.
               </p>
             </div>
@@ -110,7 +110,6 @@ export default function HomePage() {
             eyebrow="Servicios principales"
             heading="Tres entradas. Un solo estándar."
             subheading="Ensayo, grabación o producción completa. Cada servicio está diseñado para que tu música llegue más lejos."
-            align="center"
           />
           <div className="mt-12 w-full">
             <ServiceGallery />
@@ -140,7 +139,7 @@ export default function HomePage() {
               <h2 className="font-display text-display-md text-text-primary">
                 Un espacio construido para el sonido.
               </h2>
-              <p className="mt-5 text-body-base text-text-secondary">
+              <p className="mt-5 text-body-base" style={{ color: '#F5F5F5', fontWeight: 500, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
                 Tratamiento acústico profesional, consola de referencia y 30 años de criterio
                 técnico. No solo un espacio — un equipo que sabe escuchar.
               </p>
@@ -226,7 +225,7 @@ export default function HomePage() {
                   aria-hidden="true"
                 />
                 <h3 className="font-display text-base text-text-primary">{item.title}</h3>
-                <p className="mt-3 text-base leading-relaxed text-text-secondary">{item.body}</p>
+                <p className="mt-3 text-base leading-relaxed" style={{ color: '#e0e0e0', textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>{item.body}</p>
               </div>
             ))}
           </div>

@@ -106,7 +106,7 @@ export function StackingSection({
         <FluidCurveScrollImg
           scrollProgress={scrollYProgress}
           direction="down"
-          curveHeightVh={55}
+          curveHeightVh={35}
           maxScaleY={1.4}
           edgeBleedVW={6}
           fade
@@ -119,7 +119,7 @@ export function StackingSection({
         <FluidCurveScrollImg
           scrollProgress={scrollYProgress}
           direction="up"
-          curveHeightVh={55}
+          curveHeightVh={35}
           maxScaleY={1.4}
           edgeBleedVW={6}
           fade

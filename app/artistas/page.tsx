@@ -111,38 +111,57 @@ export default function ArtistasPage() {
         </SectionShell>
       </StackingSection>
 
-      {/* Photo gallery — wrapped for snap */}
+      {/* ── SECCIÓN UNIFICADA: Cabecera de Prestigio → Galería → "También puede interesarte" ── */}
       <StackingSection index={1} waves>
-        <SectionShell background="none">
+        <SectionShell background="none" size="sm">
+
+          {/* Cabecera de Prestigio — centrada */}
+          <div className="flex flex-col items-center text-center mb-4">
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <span className="accent-line-animated" aria-hidden="true" />
+              <span className="font-display text-xs tracking-[0.3em] uppercase text-gradient-animated">
+                — Validado por maestros
+              </span>
+              <span className="accent-line-animated" aria-hidden="true" />
+            </div>
+            <h2
+              className="font-display text-text-primary"
+              style={{ fontSize: 'clamp(1.8rem, 3.2vw, 2.8rem)', lineHeight: 1.1 }}
+            >
+              Ellos confiaron en nuestro sonido.
+            </h2>
+          </div>
+
+          {/* Galería 3D — protagonista */}
           <Mac3DGallery
             images={artistasImages}
             title="Artistas · Turpial Sound"
+            compact
           />
-        </SectionShell>
-      </StackingSection>
 
-      {/* Related services */}
-      <StackingSection index={2} background="surface" waves>
-        <SectionShell background="none" size="sm">
-          <div className="flex items-center gap-4">
-            <span className="accent-line-animated" aria-hidden="true" />
-            <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
-              También puede interesarte
-            </span>
+          {/* "También puede interesarte" — dentro del mismo flujo de onda */}
+          <div className="mt-6 flex flex-col items-start gap-4">
+            <div className="flex items-center gap-4">
+              <span className="accent-line-animated" aria-hidden="true" />
+              <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
+                También puede interesarte
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-4">
+              <Button as="link" href="/nosotros" variant="secondary" size="sm">
+                El equipo
+              </Button>
+              <Button as="link" href="/estudio-de-grabacion" variant="secondary" size="sm">
+                Estudio de grabación
+              </Button>
+            </div>
           </div>
-          <div className="mt-6 flex flex-wrap gap-4">
-            <Button as="link" href="/nosotros" variant="secondary" size="sm">
-              El equipo
-            </Button>
-            <Button as="link" href="/estudio-de-grabacion" variant="secondary" size="sm">
-              Estudio de grabación
-            </Button>
-          </div>
+
         </SectionShell>
       </StackingSection>
 
       {/* CTA — panoramic strip */}
-      <StackingSection index={3}>
+      <StackingSection index={2}>
         <CTASection
           heading="¿Listo para añadir tu nombre a esta lista?"
           subheading="Contáctanos y hablamos de tu proyecto. El estudio está listo."

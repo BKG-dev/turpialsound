@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ShoppingBag,
@@ -117,6 +117,12 @@ function SectionHeading({
 // ─── Page Component ───────────────────────────────────────────────────────────
 
 export default function MarketplacePage() {
+  // Scroll restoration — ensure page always loads from the top.
+  // Prevents focus hijacking from footer inputs or other elements.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior })
+  }, [])
+
   // Modal state
   const [modalState, setModalState] = useState<ModalState>({
     flow: null,
@@ -298,7 +304,7 @@ export default function MarketplacePage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.35 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
                   onClick={() => openFlow(card.id)}
-                  className="group relative flex flex-col items-center text-center gap-4 p-6 rounded-2xl transition-all duration-350 hover:-translate-y-2"
+                  className="group relative flex flex-col items-center text-center gap-4 p-6 rounded-2xl transition-all duration-350 hover:-translate-y-2 active:scale-95 active:opacity-80"
                   style={{
                     background: card.accentBg,
                     border: `1px solid ${card.accentBorder}`,
@@ -366,8 +372,8 @@ export default function MarketplacePage() {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
               >
-                <chip.icon size={11} className="text-[#00aeef]" />
-                <span className="text-[11px] text-[#5a5a5a]">{chip.text}</span>
+                <chip.icon size={12} className="text-[#00aeef]" />
+                <span className="text-xs text-[#5a5a5a]">{chip.text}</span>
               </div>
             ))}
           </motion.div>

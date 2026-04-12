@@ -10,10 +10,10 @@
 
 ## 📊 PROJECT STATUS OVERVIEW
 
-### Current Phase: FOUNDATION & ARCHITECTURE
-- **Progress:** 15%
+### Current Phase: DATABASE IMPLEMENTATION
+- **Progress:** 35%
 - **Blockers:** Pending Mercantil Sandbox credentials, Binance API decision
-- **Next Milestone:** Complete payment schema design & API integration plan
+- **Next Milestone:** API integration implementation
 
 ---
 
@@ -51,16 +51,18 @@
 
 ---
 
-### 🔵 PHASE 1: DATABASE & CORE MODELS
-**Target:** Week 2  
-**Status:** 🔵 NOT STARTED
+### ✅ PHASE 1: DATABASE & CORE MODELS
+**Target:** Week 2
+**Status:** ✅ COMPLETED
 
 | Task | Status | Owner | Completion Date | Notes |
 |------|--------|-------|-----------------|-------|
-| Prisma schema for Transactions | 🔵 Pending | Backend | - | See `02_PAYMENT_ARCHITECTURE.md` |
-| PaymentMethod enum & types | 🔵 Pending | Backend | - | - |
-| Escrow state machine logic | 🔵 Pending | Backend | - | - |
-| Migration scripts | 🔵 Pending | Backend | - | - |
+| Prisma schema for Transactions | ✅ Done | Architect | 2026-04-10 | Complete Mp-prefixed schema with idempotency |
+| PaymentMethod enum & types | ✅ Done | Architect | 2026-04-10 | All 6 payment methods defined |
+| Escrow state machine logic | ✅ Done | Architect | 2026-04-10 | State transitions defined in schema |
+| Migration scripts | 🔵 Pending | Backend | - | Ready for `prisma migrate dev` |
+
+**Summary:** Implemented complete isolated marketplace schema with 11 models (MpUser, MpPayoutMethod, MpListing, MpChatThread, MpMessage, MpTransaction, MpTransactionStatusHistory, MpDispute, MpPayout, MpWebhookLog). All models use `Mp` prefix for complete business isolation from studio booking system. Includes database-level idempotency via unique `idempotencyKey` field, eliminating Redis dependency. Schema validated with `prisma format`.
 
 ---
 
@@ -184,6 +186,15 @@
 ---
 
 ## 📝 CHANGE LOG
+
+### 2026-04-10
+- **[Architect]** ✅ COMPLETED Phase 1: Database & Core Models
+- **[Architect]** Implemented complete Prisma schema with 11 Mp-prefixed models
+- **[Architect]** Added 6 enums for payment methods, transaction status, payout methods, dispute status
+- **[Architect]** Implemented database-level idempotency (unique constraint on `idempotencyKey`)
+- **[Architect]** Added audit trail models (MpTransactionStatusHistory, MpWebhookLog)
+- **[Architect]** Included buyer confirmation tracking (`buyerConfirmedAt`) for T+7 flow
+- **[Architect]** Schema validated successfully with `prisma format`
 
 ### 2026-04-09
 - **[Architect]** Created marketplace documentation structure

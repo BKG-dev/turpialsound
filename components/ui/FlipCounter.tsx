@@ -1,11 +1,17 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { motion, useInView } from 'framer-motion'
 
-const TARGET = ['1', '7', '7', '7', '7', '7']
+/** Starting value — displayed on first render before the API responds */
+const BASE_COUNT = 81000
 const DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 const DIGIT_H = 4 // rem
+const DISPLAY_LENGTH = 6 // always show 6 digits
+
+function numberToDigits(num: number): string[] {
+  return String(num).padStart(DISPLAY_LENGTH, '0').split('')
+}
 
 function DigitSlot({ digit, delay }: { digit: string; delay: number }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -58,6 +64,26 @@ function DigitSlot({ digit, delay }: { digit: string; delay: number }) {
 }
 
 export function FlipCounter() {
+  const [count, setCount] = useState(BASE_COUNT)
+
+  useEffect(() => {
+    // Increment visit counter on each page load and get the updated value.
+    // Falls back to BASE_COUNT if the API is unavailable (e.g. during local dev
+    // before the first migration is applied).
+    fetch('/api/counter', { method: 'POST' })
+      .then((r) => r.json())
+      .then((data: { count?: number }) => {
+        if (typeof data.count === 'number' && data.count >= BASE_COUNT) {
+          setCount(data.count)
+        }
+      })
+      .catch(() => {
+        // Silently keep the BASE_COUNT display — no error shown to user
+      })
+  }, [])
+
+  const digits = numberToDigits(count)
+
   return (
     <div className="flex flex-col items-center py-8">
       <p
@@ -66,8 +92,8 @@ export function FlipCounter() {
       >
         Tu presencia resuena. Eres el visitante...
       </p>
-      <div className="flex gap-1.5" aria-label="177777 visitantes">
-        {TARGET.map((digit, i) => (
+      <div className="flex gap-1.5" aria-label={`${count} visitantes`}>
+        {digits.map((digit, i) => (
           <DigitSlot key={i} digit={digit} delay={i * 0.14} />
         ))}
       </div>

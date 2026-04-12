@@ -56,6 +56,20 @@ enum PriorityLevel {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// SITE COUNTER — persistent visit counter displayed in the footer
+// Row id=1 is the single global counter. Upserted on every page load.
+// Run `prisma migrate dev` or `prisma db push` after adding this model.
+// ─────────────────────────────────────────────────────────────────
+
+model SiteCounter {
+  id        Int      @id
+  count     Int      @default(81000)
+  updatedAt DateTime @updatedAt
+
+  @@map("site_counter")
+}
+
+// ─────────────────────────────────────────────────────────────────
 // CATÁLOGOS
 // ─────────────────────────────────────────────────────────────────
 
@@ -245,4 +259,457 @@ model AuditLog {
   @@index([bookingRequestId])
   @@index([createdAt])
   @@map("audit_log")
+}
+
+// ═════════════════════════════════════════════════════════════════
+// MARKETPLACE DOMAIN (ISOLATED)
+// Namespace: Mp (Marketplace)
+// Business Isolation: 100% separate from studio booking system
+// Shared Infrastructure: Same database, separate tables
+// ═════════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────
+// MARKETPLACE ENUMS
+// ─────────────────────────────────────────────────────────────────
+
+enum MpPaymentMethodType {
+  MERCANTIL_C2P // Mercantil C2P (Card to Phone)
+  MERCANTIL_PAGO_MOVIL // Mercantil Pago Móvil
+  MERCANTIL_BOTON_PAGO // Mercantil Botón de Pago
+  BINANCE_PAY // Binance Pay API (automated)
+  ZELLE // Zelle (manual verification)
+  CRYPTO_WALLET_MANUAL // Direct crypto wallet (manual)
+
+  @@map("mp_payment_method_type")
+}
+
+enum MpTransactionStatus {
+  // Initial States
+  INITIATED // User selected payment method
+  PENDING_PAYMENT // Awaiting payment confirmation
+
+  // Payment Validation
+  PAYMENT_RECEIVED // Payment detected (webhook/manual)
+  VALIDATING // Admin reviewing manual payment
+  PAYMENT_FAILED // Payment rejected/failed
+
+  // Escrow States
+  IN_ESCROW // Funds held, awaiting delivery
+  DELIVERY_CONFIRMED // Buyer confirmed receipt
+
+  // Final States
+  RELEASED // Funds released to seller
+  REFUNDED // Funds returned to buyer
+  DISPUTED // Under dispute resolution
+  CANCELLED // Transaction cancelled
+
+  @@map("mp_transaction_status")
+}
+
+enum MpPayoutMethodType {
+  ZELLE // Zelle USD
+  PAGO_MOVIL // Pago Móvil VES
+  CRYPTO_WALLET // Crypto wallet (USDT, BTC, ETH)
+  BANK_TRANSFER // Direct bank transfer
+
+  @@map("mp_payout_method_type")
+}
+
+enum MpPayoutStatus {
+  PENDING // Awaiting processing
+  PROCESSING // Being processed
+  COMPLETED // Successfully paid
+  FAILED // Payment failed
+  CANCELLED // Cancelled by admin
+
+  @@map("mp_payout_status")
+}
+
+enum MpDisputeStatus {
+  OPEN // Dispute opened
+  UNDER_REVIEW // Admin investigating
+  RESOLVED_BUYER // Resolved in buyer's favor
+  RESOLVED_SELLER // Resolved in seller's favor
+  CLOSED // Closed without resolution
+
+  @@map("mp_dispute_status")
+}
+
+enum MpListingStatus {
+  DRAFT // Being created
+  ACTIVE // Published and visible
+  PAUSED // Temporarily hidden
+  SOLD_OUT // No inventory
+  ARCHIVED // Permanently hidden
+
+  @@map("mp_listing_status")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// MARKETPLACE USER (BUYER/SELLER PROFILES)
+// CRITICAL: This is NOT the internal staff User table
+// ─────────────────────────────────────────────────────────────────
+
+model MpUser {
+  id String @id @default(cuid())
+
+  // Authentication (will integrate with NextAuth in Phase 2)
+  email           String    @unique
+  emailVerified   Boolean   @default(false)
+  emailVerifiedAt DateTime?
+
+  // Profile
+  displayName String
+  bio         String?
+  avatarUrl   String?
+
+  // Identity Verification (KYC)
+  isVerified        Boolean   @default(false)
+  verifiedAt        DateTime?
+  verificationLevel String    @default("none") // "none", "basic", "full"
+
+  // Seller-specific fields
+  isSeller     Boolean  @default(false)
+  sellerRating Decimal? @db.Decimal(3, 2) // 0.00 to 5.00
+  totalSales   Int      @default(0)
+
+  // Buyer-specific fields
+  totalPurchases Int @default(0)
+
+  // Security
+  isBanned     Boolean   @default(false)
+  bannedAt     DateTime?
+  bannedReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  listings            MpListing[]
+  payoutMethods       MpPayoutMethod[]
+  buyerTransactions   MpTransaction[]  @relation("MpBuyerTransactions")
+  sellerTransactions  MpTransaction[]  @relation("MpSellerTransactions")
+  sentMessages        MpMessage[]      @relation("MpMessageSender")
+  receivedMessages    MpMessage[]      @relation("MpMessageReceiver")
+  chatThreadsAsBuyer  MpChatThread[]   @relation("MpChatBuyer")
+  chatThreadsAsSeller MpChatThread[]   @relation("MpChatSeller")
+  disputes            MpDispute[]
+  mpPayouts           MpPayout[]
+
+  @@index([email])
+  @@index([isSeller])
+  @@index([isVerified])
+  @@map("mp_users")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// PAYOUT METHODS (SELLER WITHDRAWAL CONFIGURATION)
+// ─────────────────────────────────────────────────────────────────
+
+model MpPayoutMethod {
+  id     String @id @default(cuid())
+  userId String
+  user   MpUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  methodType MpPayoutMethodType
+  isDefault  Boolean            @default(false)
+  isActive   Boolean            @default(true)
+
+  // Encrypted sensitive data (use encryption at application level)
+  // For Zelle: email
+  // For Pago Móvil: phone + bank code + ID
+  // For Crypto: wallet address
+  encryptedData String // JSON encrypted with app secret
+
+  // Display info (non-sensitive)
+  displayLabel String // e.g., "Zelle (****@gmail.com)"
+  currency     String // USD, VES, USDT, etc.
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("mp_payout_methods")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// LISTINGS (PRODUCTS/SERVICES FOR SALE)
+// ─────────────────────────────────────────────────────────────────
+
+model MpListing {
+  id       String @id @default(cuid())
+  sellerId String
+  seller   MpUser @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String
+  category    String // "beats", "mixing", "mastering", "vocals", etc.
+  tags        String[] // Searchable tags
+
+  price    Decimal @db.Decimal(10, 2)
+  currency String  @default("USD")
+
+  // Media
+  coverImageUrl String?
+  mediaUrls     String[] // Additional images/audio previews
+
+  // Inventory
+  hasInventory Boolean @default(false)
+  inventory    Int? // null = unlimited
+
+  status MpListingStatus @default(DRAFT)
+
+  // SEO
+  slug String @unique
+
+  // Stats
+  viewCount     Int @default(0)
+  favoriteCount Int @default(0)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+
+  transactions MpTransaction[]
+
+  @@index([sellerId])
+  @@index([status])
+  @@index([category])
+  @@index([slug])
+  @@map("mp_listings")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CHAT THREADS (BUYER-SELLER COMMUNICATION)
+// AUDIT REQUIREMENT: Immutable message history
+// ─────────────────────────────────────────────────────────────────
+
+model MpChatThread {
+  id String @id @default(cuid())
+
+  buyerId String
+  buyer   MpUser @relation("MpChatBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+
+  sellerId String
+  seller   MpUser @relation("MpChatSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  listingId String? // Optional: may be general inquiry
+
+  // Status
+  isActive      Boolean   @default(true)
+  lastMessageAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages MpMessage[]
+
+  @@unique([buyerId, sellerId, listingId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@map("mp_chat_threads")
+}
+
+model MpMessage {
+  id       String       @id @default(cuid())
+  threadId String
+  thread   MpChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  senderId String
+  sender   MpUser @relation("MpMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  receiverId String
+  receiver   MpUser @relation("MpMessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  content       String
+  attachmentUrl String?
+
+  // Audit: Messages are IMMUTABLE (no updates/deletes)
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([threadId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
+  @@map("mp_messages")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// TRANSACTIONS (PAYMENT & ESCROW)
+// ─────────────────────────────────────────────────────────────────
+
+model MpTransaction {
+  id String @id @default(cuid())
+
+  // Idempotency: Prevents duplicate charges WITHOUT Redis
+  // This is a database-level unique constraint
+  idempotencyKey String @unique
+
+  // Relationships
+  buyerId String
+  buyer   MpUser @relation("MpBuyerTransactions", fields: [buyerId], references: [id])
+
+  sellerId String
+  seller   MpUser @relation("MpSellerTransactions", fields: [sellerId], references: [id])
+
+  listingId String
+  listing   MpListing @relation(fields: [listingId], references: [id])
+
+  // Payment Details
+  paymentMethod MpPaymentMethodType
+  status        MpTransactionStatus @default(INITIATED)
+  amount        Decimal             @db.Decimal(10, 2)
+  currency      String              @default("USD")
+
+  // Platform Fee (calculated at creation)
+  platformFeePercent Decimal @db.Decimal(5, 2) // e.g., 10.00 for 10%
+  platformFeeAmount  Decimal @db.Decimal(10, 2)
+  sellerNetAmount    Decimal @db.Decimal(10, 2)
+
+  // External References
+  externalTxId     String? // Mercantil/Binance transaction ID
+  paymentReference String? // Zelle reference, wallet hash, etc.
+  paymentProofUrl  String? // Screenshot/proof upload URL
+
+  // Escrow Management
+  escrowHeldAt    DateTime? // When funds entered escrow
+  escrowReleaseAt DateTime? // Scheduled auto-release date (T+7)
+  releasedAt      DateTime? // Actual release timestamp
+
+  // Buyer Confirmation (CRITICAL for T+7 flow)
+  buyerConfirmedAt DateTime? // When buyer clicked "I received it"
+
+  // Dispute & Notes
+  disputeReason   String?
+  disputeOpenedAt DateTime?
+  adminNotes      String? // Internal notes for manual review
+
+  // Audit Trail
+  statusHistory MpTransactionStatusHistory[]
+  disputes      MpDispute[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([listingId])
+  @@index([status])
+  @@index([paymentMethod])
+  @@index([externalTxId])
+  @@index([idempotencyKey])
+  @@map("mp_transactions")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// TRANSACTION STATUS HISTORY (AUDIT TRAIL)
+// ─────────────────────────────────────────────────────────────────
+
+model MpTransactionStatusHistory {
+  id            String        @id @default(cuid())
+  transactionId String
+  transaction   MpTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  fromStatus MpTransactionStatus? // null for initial state
+  toStatus   MpTransactionStatus
+  changedBy  String? // userId or "SYSTEM" or "WEBHOOK"
+  reason     String? // Why the status changed
+  metadata   Json? // Additional context (webhook payload, etc.)
+
+  createdAt DateTime @default(now())
+
+  @@index([transactionId])
+  @@index([createdAt])
+  @@map("mp_transaction_status_history")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// DISPUTES (BUYER-SELLER CONFLICTS)
+// ─────────────────────────────────────────────────────────────────
+
+model MpDispute {
+  id            String        @id @default(cuid())
+  transactionId String
+  transaction   MpTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  openedById String
+  openedBy   MpUser @relation(fields: [openedById], references: [id])
+
+  reason       String
+  description  String
+  evidenceUrls String[] // Screenshots, files, etc.
+
+  status MpDisputeStatus @default(OPEN)
+
+  // Resolution
+  resolvedAt   DateTime?
+  resolution   String? // Admin's decision explanation
+  refundAmount Decimal?  @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([transactionId])
+  @@index([openedById])
+  @@index([status])
+  @@map("mp_disputes")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// PAYOUTS (SELLER WITHDRAWALS)
+// ─────────────────────────────────────────────────────────────────
+
+model MpPayout {
+  id       String @id @default(cuid())
+  sellerId String
+  seller   MpUser @relation(fields: [sellerId], references: [id])
+
+  amount   Decimal            @db.Decimal(10, 2)
+  currency String
+  method   MpPayoutMethodType
+  status   MpPayoutStatus     @default(PENDING)
+
+  // Transactions included in this payout
+  transactionIds String[] // Array of MpTransaction IDs
+
+  // External payout tracking
+  externalPayoutId String? // External payment reference
+
+  // Completion
+  completedAt   DateTime?
+  failureReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sellerId])
+  @@index([status])
+  @@map("mp_payouts")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// WEBHOOK LOGS (SECURITY & DEBUGGING)
+// ─────────────────────────────────────────────────────────────────
+
+model MpWebhookLog {
+  id            String  @id @default(cuid())
+  provider      String // "MERCANTIL", "BINANCE"
+  event         String // Event type from webhook
+  payload       Json // Full webhook payload
+  signature     String? // Webhook signature for verification
+  verified      Boolean @default(false)
+  processed     Boolean @default(false)
+  transactionId String? // Linked transaction if found
+  error         String? // Error message if processing failed
+
+  createdAt DateTime @default(now())
+
+  @@index([provider])
+  @@index([transactionId])
+  @@index([processed])
+  @@index([createdAt])
+  @@map("mp_webhook_logs")
 }
