@@ -72,6 +72,7 @@ const INITIAL_DATA: WizardData = {
 
 export function BookingWizard() {
   const [currentStep, setCurrentStep] = useState(0)
+  const [furthestStep, setFurthestStep] = useState(0)
   const [data, setData] = useState<WizardData>(INITIAL_DATA)
   const [submissionState, setSubmissionState] = useState<'idle' | 'loading' | 'success' | 'error'>(
     'idle',
@@ -131,7 +132,9 @@ export function BookingWizard() {
 
   function handleNext() {
     if (currentStep < totalSteps - 1) {
-      setCurrentStep((s) => s + 1)
+      const nextStep = currentStep + 1
+      setCurrentStep(nextStep)
+      setFurthestStep((currentFurthestStep) => Math.max(currentFurthestStep, nextStep))
     }
   }
 
@@ -143,10 +146,19 @@ export function BookingWizard() {
 
   function resetWizard() {
     setCurrentStep(0)
+    setFurthestStep(0)
     setData(INITIAL_DATA)
     setSubmissionState('idle')
     setPublicCode(null)
     setSubmitError(null)
+  }
+
+  function handleStepClick(stepIndex: number) {
+    if (submissionState === 'loading' || stepIndex > furthestStep || stepIndex === currentStep) {
+      return
+    }
+
+    setCurrentStep(stepIndex)
   }
 
   async function handleSubmit() {
@@ -243,51 +255,72 @@ export function BookingWizard() {
       aria-busy={submissionState === 'loading'}
     >
       {/* Indicador de pasos */}
-      <div className="border-b border-brand-border px-6 py-4">
-        <ol className="flex items-center gap-1 overflow-x-auto" aria-label="Pasos del formulario">
+      <div className="border-b border-brand-border px-5 py-3 md:px-6 md:py-3">
+        <ol
+          className="flex gap-2 overflow-x-auto pb-1 lg:grid lg:grid-cols-6 lg:gap-2 xl:gap-3 lg:overflow-visible lg:pb-0"
+          aria-label="Pasos del formulario"
+        >
           {WIZARD_STEPS.map((s, index) => {
             const isCompleted = index < currentStep
             const isCurrent = index === currentStep
+            const isVisited = index <= furthestStep
+            const isClickable = isVisited && !isCurrent && submissionState !== 'loading'
             return (
-              <li key={s.id} className="flex items-center gap-1">
-                <span
+              <li key={s.id} className="min-w-[8.5rem] flex-1 lg:min-w-0">
+                <button
+                  type="button"
+                  onClick={() => handleStepClick(index)}
+                  disabled={!isClickable}
                   className={cn(
-                    'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                    isCompleted
-                      ? 'bg-accent-gold text-brand-bg'
-                      : isCurrent
-                        ? 'border-2 border-accent-gold text-accent-gold'
-                        : 'border border-brand-border text-text-muted',
+                    'flex w-full items-center gap-2 rounded-xl border px-2.5 py-3 text-left transition-colors',
+                    isCurrent
+                      ? 'border-accent-gold bg-accent-gold/5'
+                      : isCompleted
+                        ? 'border-accent-gold/30 bg-accent-gold/5'
+                        : 'border-brand-border bg-transparent',
+                    isClickable
+                      ? 'cursor-pointer hover:border-accent-gold/50 hover:bg-accent-gold/5'
+                      : 'cursor-default',
                   )}
                   aria-current={isCurrent ? 'step' : undefined}
                 >
-                  {isCompleted ? (
-                    <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                      <path
-                        d="M2 6l3 3 5-5"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  ) : (
-                    index + 1
-                  )}
-                </span>
-                <span
-                  className={cn(
-                    'hidden text-xs sm:inline',
-                    isCurrent ? 'font-medium text-text-primary' : 'text-text-muted',
-                  )}
-                >
-                  {s.label}
-                </span>
-                {index < totalSteps - 1 && (
-                  <span className="mx-1 text-brand-border" aria-hidden="true">
-                    /
+                  <span
+                    className={cn(
+                      'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold',
+                      isCompleted
+                        ? 'bg-accent-gold text-brand-bg'
+                        : isCurrent
+                          ? 'border-2 border-accent-gold text-accent-gold'
+                          : isVisited
+                            ? 'border border-brand-border text-text-secondary'
+                            : 'border border-brand-border text-text-muted',
+                    )}
+                  >
+                    {isCompleted ? (
+                      <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                        <path
+                          d="M2 6l3 3 5-5"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    ) : (
+                      index + 1
+                    )}
                   </span>
-                )}
+                  <span className="min-w-0">
+                    <span
+                      className={cn(
+                        'block text-[11px] font-medium leading-tight xl:text-xs',
+                        isCurrent || isCompleted ? 'text-text-primary' : 'text-text-secondary',
+                      )}
+                    >
+                      {s.label}
+                    </span>
+                  </span>
+                </button>
               </li>
             )
           })}
@@ -295,8 +328,23 @@ export function BookingWizard() {
       </div>
 
       {/* Contenido del paso */}
-      <div className="p-6 md:p-8">
-        <h2 className="mb-6 font-display text-xl font-bold text-text-primary">{step.title}</h2>
+      <div className="p-5 md:px-6 md:py-4">
+        <div
+          className={cn(
+            'mb-4 md:mb-3',
+            (currentStep === 0 ||
+              currentStep === 1 ||
+              currentStep === 2 ||
+              currentStep === 3 ||
+              currentStep === 4 ||
+              currentStep === 5) &&
+              'md:hidden',
+          )}
+        >
+          <h2 className="font-display text-lg font-bold text-text-primary md:text-xl">
+            {step.title}
+          </h2>
+        </div>
 
         {currentStep === totalSteps - 1 && submissionState === 'loading' && (
           <div className="mb-6 rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-4 py-3">
@@ -411,7 +459,7 @@ export function BookingWizard() {
       )}
 
       {/* Navegación */}
-      <div className="flex items-center justify-between border-t border-brand-border px-6 py-4">
+      <div className="flex items-center justify-between border-t border-brand-border px-5 py-3 md:px-6 md:py-4">
         <Button
           variant="ghost"
           size="sm"

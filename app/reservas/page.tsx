@@ -35,15 +35,17 @@ export default function ReservasPage() {
 
       {/* Wizard de solicitud */}
       <SectionShell background="surface">
-        <div className="mx-auto max-w-2xl">
-          <SectionHeading
-            eyebrow="Formulario de solicitud"
-            heading="Arma tu solicitud paso a paso."
-          />
-          <div className="mt-8">
+        <div className="mx-auto max-w-5xl xl:max-w-6xl">
+          <div className="mb-4 md:mb-2">
+            <SectionHeading
+              eyebrow="Formulario de solicitud"
+              heading="Arma tu solicitud paso a paso."
+            />
+          </div>
+          <div className="mt-4 md:mt-2">
             <BookingWizard />
           </div>
-          <p className="mt-4 text-xs text-text-muted">
+          <p className="mt-2 text-xs text-text-muted">
             Al enviar tu solicitud no estás reservando todavía. El equipo la revisará y te
             contactará para confirmar disponibilidad y condiciones.
           </p>
