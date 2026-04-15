@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/db'
 import { buildPublicCode } from '@/lib/bookings'
 import { CATALOG_SERVICES } from '@/lib/bookings/catalog'
+import { assignResourceForRequestedSlot } from '@/lib/bookings/availability'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const WHATSAPP_REGEX = /^\+58(412|414|416|424|426)\d{7}$/
@@ -108,7 +109,22 @@ export async function submitBookingRequest(
       CATALOG_SERVICES.find((service) => service.slug === input.serviceSlug)?.name ?? 'Servicio'
     const eventTitle = `Solicitud - ${serviceName}`
 
-    await prisma.$transaction(async (tx) => {
+    const submitResult = await prisma.$transaction(async (tx) => {
+      const resourceAssignment = await assignResourceForRequestedSlot(tx, {
+        serviceSlug: input.serviceSlug,
+        eventDate: eventDateTime,
+        eventEndDate: eventEndDateTime,
+      })
+
+      if (!resourceAssignment.available) {
+        return {
+          success: false,
+          error:
+            resourceAssignment.message ??
+            'El bloque seleccionado no esta disponible. Elige otro horario.',
+        } satisfies SubmitBookingResult
+      }
+
       const booking = await tx.bookingRequest.create({
         data: {
           publicCode,
@@ -129,12 +145,15 @@ export async function submitBookingRequest(
         data: {
           bookingRequestId: booking.id,
           serviceVariantId: serviceVariant.id,
+          resourceId: resourceAssignment.assignedResourceId,
           quantity: 1,
         },
       })
+
+      return { success: true, publicCode } satisfies SubmitBookingResult
     })
 
-    return { success: true, publicCode }
+    return submitResult
   } catch (error) {
     console.error('[submitBookingRequest]', error)
     return {
