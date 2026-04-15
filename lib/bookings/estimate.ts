@@ -49,6 +49,7 @@ export function buildBookingEstimate(input: BuildBookingEstimateInput): BookingE
   }
 
   const durationHours = input.durationMinutes ? input.durationMinutes / 60 : 0
+  const baseQuantity = getBaseQuantity(variant.priceUnit, durationHours, primaryItem.quantity)
 
   if (variant.slug === 'mezcla-master-por-tema') {
     lines.push(
@@ -69,14 +70,14 @@ export function buildBookingEstimate(input: BuildBookingEstimateInput): BookingE
     )
   } else {
     lines.push({
-      label: variant.name,
-      quantity: getBaseQuantity(variant.priceUnit, durationHours, primaryItem.quantity),
+      label: `Modalidad base (${variant.name})`,
+      quantity: baseQuantity,
       unit: variant.priceUnit,
       unitPriceUsd: variant.priceUsd,
       lineTotalUsd:
         variant.priceUnit === 'fixed'
           ? variant.priceUsd * primaryItem.quantity
-          : variant.priceUsd * getBaseQuantity(variant.priceUnit, durationHours, primaryItem.quantity),
+          : variant.priceUsd * baseQuantity,
     })
   }
 
@@ -87,7 +88,7 @@ export function buildBookingEstimate(input: BuildBookingEstimateInput): BookingE
     durationHours > 0
   ) {
     adjustments.push({
-      label: 'Recargo fin de semana',
+      label: 'Recargo de fin de semana',
       amountUsd: variant.weekendSurchargeUsd * durationHours * primaryItem.quantity,
     })
   }
@@ -105,12 +106,16 @@ export function buildBookingEstimate(input: BuildBookingEstimateInput): BookingE
 
   const addons = getVisibleSelectedAddons(input, primaryItem.serviceSlug)
   for (const addon of addons) {
+    const priceUsd = addon.pricing?.amountUsd ?? 0
+    const label = addon.slug === 'tecnico-sonido' ? 'Tecnico' : 'Backline'
+    const quantity = durationHours > 0 ? durationHours : 1
+
     lines.push({
-      label: addon.name,
-      quantity: 1,
+      label,
+      quantity,
       unit: 'addon',
-      unitPriceUsd: null,
-      lineTotalUsd: 0,
+      unitPriceUsd: priceUsd,
+      lineTotalUsd: priceUsd * quantity,
     })
   }
 

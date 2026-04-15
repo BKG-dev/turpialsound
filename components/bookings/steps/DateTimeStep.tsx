@@ -1,15 +1,7 @@
 'use client'
 
-// Turpial Sound — Paso 3 del wizard: fecha y bloque horario
-// Sin integración con disponibilidad real ni Prisma Client.
-// La hora de fin se deriva de startTime + durationMinutes.
-
 import { useRef } from 'react'
 import { cn } from '@/lib/utils'
-
-// ─────────────────────────────────────────────────────────────────
-// CONSTANTES
-// ─────────────────────────────────────────────────────────────────
 
 const START_TIMES: string[] = [
   '08:00', '09:00', '10:00', '11:00', '12:00',
@@ -18,17 +10,12 @@ const START_TIMES: string[] = [
 ]
 
 export const DURATION_OPTIONS: { value: number; label: string }[] = [
-  { value: 60,  label: '1 hora' },
-  { value: 90,  label: '1 hora 30 min' },
+  { value: 60, label: '1 hora' },
+  { value: 90, label: '1 hora 30 min' },
   { value: 120, label: '2 horas' },
   { value: 180, label: '3 horas' },
 ]
 
-// ─────────────────────────────────────────────────────────────────
-// HELPERS PUROS
-// ─────────────────────────────────────────────────────────────────
-
-/** Deriva la hora de fin dado startTime (HH:MM) y durationMinutes. */
 export function deriveEndTime(startTime: string, durationMinutes: number): string {
   const [h, m] = startTime.split(':').map(Number)
   const totalMinutes = h * 60 + m + durationMinutes
@@ -37,7 +24,32 @@ export function deriveEndTime(startTime: string, durationMinutes: number): strin
   return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`
 }
 
-/** Fecha mínima seleccionable: hoy en hora local. */
+function getAvailableEndTimes(startTime: string | null): string[] {
+  if (!startTime) return []
+
+  const [startHour] = startTime.split(':').map(Number)
+  const options: string[] = []
+
+  for (let hour = startHour + 1; hour <= 20; hour += 1) {
+    options.push(`${String(hour).padStart(2, '0')}:00`)
+  }
+
+  return options
+}
+
+function getDurationFromRange(startTime: string, endTime: string): number | null {
+  const [startHour, startMinute] = startTime.split(':').map(Number)
+  const [endHour, endMinute] = endTime.split(':').map(Number)
+  const durationMinutes = endHour * 60 + endMinute - (startHour * 60 + startMinute)
+
+  return durationMinutes > 0 ? durationMinutes : null
+}
+
+function getDurationLabel(durationMinutes: number): string {
+  const hours = durationMinutes / 60
+  return hours === 1 ? '1 hora' : `${hours} horas`
+}
+
 function getTodayISO(): string {
   const d = new Date()
   const year = d.getFullYear()
@@ -46,9 +58,10 @@ function getTodayISO(): string {
   return `${year}-${month}-${day}`
 }
 
-// ─────────────────────────────────────────────────────────────────
-// PROPS
-// ─────────────────────────────────────────────────────────────────
+function formatDateForBlock(date: string): string {
+  const [year, month, day] = date.split('-')
+  return `${day}/${month}/${year}`
+}
 
 interface DateTimeStepProps {
   eventDate: string | null
@@ -58,10 +71,6 @@ interface DateTimeStepProps {
   onStartTimeChange: (value: string | null) => void
   onDurationChange: (value: number | null) => void
 }
-
-// ─────────────────────────────────────────────────────────────────
-// COMPONENTE
-// ─────────────────────────────────────────────────────────────────
 
 export function DateTimeStep({
   eventDate,
@@ -76,8 +85,7 @@ export function DateTimeStep({
       ? deriveEndTime(startTime, durationMinutes)
       : null
   const dateInputRef = useRef<HTMLInputElement>(null)
-
-  const durationLabel = DURATION_OPTIONS.find((d) => d.value === durationMinutes)?.label ?? null
+  const availableEndTimes = getAvailableEndTimes(startTime)
 
   function openNativeDatePicker() {
     const input = dateInputRef.current
@@ -97,11 +105,10 @@ export function DateTimeStep({
     <div className="space-y-4 md:space-y-3">
       <p className="text-sm text-text-secondary md:text-[11px]">
         Selecciona la fecha y el bloque horario que necesitas. La disponibilidad se confirma durante
-        la revisión interna — no es reserva inmediata.
+        la revision interna; no es reserva inmediata.
       </p>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-2">
-        {/* Fecha */}
         <div>
           <label
             htmlFor="event-date"
@@ -125,9 +132,7 @@ export function DateTimeStep({
               min={getTodayISO()}
               value={eventDate ?? ''}
               onChange={(e) => onDateChange(e.target.value || null)}
-              className={cn(
-                'w-full cursor-pointer rounded-lg border-0 bg-transparent px-3.5 py-2.5 pr-11 text-sm text-text-primary outline-none md:text-[13px]',
-              )}
+              className="w-full cursor-pointer rounded-lg border-0 bg-transparent px-3.5 py-2.5 pr-11 text-sm text-text-primary outline-none md:text-[13px]"
             />
             <span
               className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-accent-gold/80"
@@ -149,7 +154,6 @@ export function DateTimeStep({
           </p>
         </div>
 
-        {/* Hora de inicio */}
         <div>
           <label
             htmlFor="start-time"
@@ -167,53 +171,61 @@ export function DateTimeStep({
               startTime ? 'border-accent-gold/50' : 'border-brand-border',
             )}
           >
-            <option value="">— Elige una hora —</option>
-            {START_TIMES.map((t) => (
-              <option key={t} value={t}>
-                {t}
+            <option value="">- Elige una hora -</option>
+            {START_TIMES.map((time) => (
+              <option key={time} value={time}>
+                {time}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Duración */}
         <div>
           <label
-            htmlFor="duration"
+            htmlFor="end-time"
             className="mb-1.5 block text-sm font-medium text-text-primary md:text-[11px]"
           >
-            Duración
+            Hora de finalizacion
           </label>
           <select
-            id="duration"
-            value={durationMinutes ?? ''}
-            onChange={(e) => onDurationChange(e.target.value ? Number(e.target.value) : null)}
+            id="end-time"
+            value={endTime ?? ''}
+            onChange={(e) =>
+              onDurationChange(
+                startTime && e.target.value ? getDurationFromRange(startTime, e.target.value) : null,
+              )
+            }
+            disabled={!startTime}
             className={cn(
               'w-full rounded-lg border bg-brand-surface px-3.5 py-2.5 text-sm text-text-primary outline-none transition-colors md:text-[13px]',
               'focus:border-accent-gold',
-              durationMinutes ? 'border-accent-gold/50' : 'border-brand-border',
+              endTime ? 'border-accent-gold/50' : 'border-brand-border',
             )}
           >
-            <option value="">— Elige una duración —</option>
-            {DURATION_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
+            <option value="">- Elige una hora de finalizacion -</option>
+            {availableEndTimes.map((time) => (
+              <option key={time} value={time}>
+                {time}
               </option>
             ))}
           </select>
+          <p className="mt-1 text-[11px] text-text-muted">
+            Primero elige la hora de inicio para ver opciones de cierre.
+          </p>
         </div>
       </div>
 
-      {/* Resumen del bloque — solo visible cuando los tres campos están completos */}
-      {eventDate && startTime && endTime && durationLabel && (
+      {eventDate && startTime && endTime && durationMinutes !== null && (
         <div className="rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-3.5 py-2.5">
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-text-muted">
             Bloque solicitado
           </p>
           <p className="text-sm font-semibold text-text-primary md:text-[13px]">
-            {eventDate} · {startTime} – {endTime}
+            {formatDateForBlock(eventDate)} · {startTime} - {endTime}
           </p>
-          <p className="mt-0.5 text-[11px] text-text-secondary">{durationLabel}</p>
+          <p className="mt-0.5 text-[11px] text-text-secondary">
+            {getDurationLabel(durationMinutes)}
+          </p>
         </div>
       )}
     </div>

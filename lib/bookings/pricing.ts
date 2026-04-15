@@ -18,6 +18,7 @@ export interface BookingCatalogAddonDefinition {
   name: string
   description: string
   serviceSlugs: string[]
+  pricing?: BookingPricingRule
   showPriceToClient: boolean
 }
 
@@ -45,14 +46,24 @@ export const BOOKING_CATALOG_ADDONS: BookingCatalogAddonDefinition[] = [
     name: 'Tecnico de sonido',
     description: 'Acompanamiento tecnico durante la sesion.',
     serviceSlugs: ['sala-ensayo', 'grabacion', 'podcast-locucion', 'video-session'],
-    showPriceToClient: false,
+    pricing: {
+      amountUsd: 5,
+      unit: 'fixed',
+      showPriceToClient: true,
+    },
+    showPriceToClient: true,
   },
   {
     slug: 'backline-equipamiento',
     name: 'Backline / equipamiento adicional',
     description: 'Instrumentos y equipamiento adicional segun disponibilidad.',
     serviceSlugs: ['sala-ensayo', 'grabacion', 'video-session'],
-    showPriceToClient: false,
+    pricing: {
+      amountUsd: 5,
+      unit: 'fixed',
+      showPriceToClient: true,
+    },
+    showPriceToClient: true,
   },
 ]
 
@@ -66,9 +77,10 @@ export const BOOKING_CATALOG_SERVICES: BookingCatalogServiceDefinition[] = [
         slug: 'sala-ensayo-flexible',
         serviceSlug: 'sala-ensayo',
         name: 'Flexible',
-        description: '25 USD por hora. Ideal para sesiones de ensayo regulares.',
+        description:
+          'Tarifa flexible; la sesion puede reprogramarse con aviso previo si entra una solicitud prioritaria.',
         pricing: {
-          amountUsd: 25,
+          amountUsd: 15,
           unit: 'hour',
           showPriceToClient: true,
           weekendSurchargeUsd: 5,
@@ -81,9 +93,9 @@ export const BOOKING_CATALOG_SERVICES: BookingCatalogServiceDefinition[] = [
         slug: 'sala-ensayo-premium',
         serviceSlug: 'sala-ensayo',
         name: 'Premium',
-        description: '30 USD por hora con prioridad operativa sobre el bloque solicitado.',
+        description: 'Horario fijo y garantizado, no sujeto a cambios.',
         pricing: {
-          amountUsd: 30,
+          amountUsd: 20,
           unit: 'hour',
           showPriceToClient: true,
           weekendSurchargeUsd: 5,
@@ -96,9 +108,9 @@ export const BOOKING_CATALOG_SERVICES: BookingCatalogServiceDefinition[] = [
         slug: 'sala-ensayo-prioritaria',
         serviceSlug: 'sala-ensayo',
         name: 'Prioritaria',
-        description: '35 USD por hora para solicitudes con mayor urgencia operativa.',
+        description: 'Acceso prioritario al espacio cuando lo necesitas.',
         pricing: {
-          amountUsd: 35,
+          amountUsd: 25,
           unit: 'hour',
           showPriceToClient: true,
           weekendSurchargeUsd: 5,

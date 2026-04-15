@@ -1,18 +1,21 @@
 'use server'
 
-// Turpial Sound - Server Actions del modulo de reservas
-// Fase 1B.5c - Persistencia minima de la solicitud publica
-//
-// RIESGO documentado: publicCode se genera con COUNT + 1.
-// No es atomico: bajo concurrencia alta puede generar colisiones.
-// El constraint @unique de la DB rechazara duplicados y el catch lo reportara.
-// Solucion definitiva (secuencia atomica o UUID) se implementa en una fase posterior.
-
 import { prisma } from '@/lib/db'
 import { buildPublicCode } from '@/lib/bookings'
 import { CATALOG_SERVICES } from '@/lib/bookings/catalog'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const WHATSAPP_REGEX = /^\+58(412|414|416|424|426)\d{7}$/
+
+function normalizeWhatsappVe(value: string): string {
+  const compact = value.replace(/[^\d+]/g, '')
+
+  if (compact.startsWith('+58')) return compact
+  if (compact.startsWith('58')) return `+${compact}`
+  if (compact.startsWith('0')) return `+58${compact.slice(1)}`
+
+  return compact
+}
 
 export interface SubmitBookingInput {
   serviceSlug: string
@@ -50,14 +53,18 @@ export async function submitBookingRequest(
 
     const requesterName = input.requesterName.trim()
     const requesterEmail = input.requesterEmail.trim().toLowerCase()
-    const requesterPhone = input.requesterPhone.trim()
+    const requesterPhone = normalizeWhatsappVe(input.requesterPhone)
 
-    if (!requesterName || !requesterEmail) {
-      return { success: false, error: 'El nombre y el correo son obligatorios.' }
+    if (!requesterName || !requesterEmail || !requesterPhone) {
+      return { success: false, error: 'El nombre, el correo y el WhatsApp son obligatorios.' }
     }
 
     if (!EMAIL_REGEX.test(requesterEmail)) {
       return { success: false, error: 'El correo electronico no es valido.' }
+    }
+
+    if (!WHATSAPP_REGEX.test(requesterPhone)) {
+      return { success: false, error: 'El numero de WhatsApp no es valido.' }
     }
 
     const serviceVariant = await prisma.serviceVariant.findUnique({
@@ -109,7 +116,7 @@ export async function submitBookingRequest(
           source: 'web',
           requesterName,
           requesterEmail,
-          requesterPhone: requesterPhone || null,
+          requesterPhone,
           eventTitle,
           eventDate: eventDateTime,
           eventEndDate: eventEndDateTime,

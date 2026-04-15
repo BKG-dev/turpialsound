@@ -57,7 +57,7 @@ export function VariantSelectStep({ serviceSlug, selected, onChange }: VariantSe
                 </span>
               )}
               {variant.description && (
-                <span className="mt-0.5 line-clamp-3 text-xs leading-relaxed text-text-secondary md:text-[10px] md:leading-4">
+                <span className="mt-1 line-clamp-4 text-xs leading-relaxed text-text-secondary md:text-[10px] md:leading-4">
                   {variant.description}
                 </span>
               )}

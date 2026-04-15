@@ -1,9 +1,5 @@
 'use client'
 
-// Turpial Sound — Shell del wizard de solicitud de reserva
-// Fase 1B — Shell multi-step con estado local.
-// Persistencia mínima real conectada al submit final del wizard.
-
 import { useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
@@ -11,15 +7,16 @@ import { ServiceSelectStep } from '@/components/bookings/steps/ServiceSelectStep
 import { VariantSelectStep } from '@/components/bookings/steps/VariantSelectStep'
 import { DateTimeStep } from '@/components/bookings/steps/DateTimeStep'
 import { ExtrasStep } from '@/components/bookings/steps/ExtrasStep'
-import { ContactStep, isValidEmail } from '@/components/bookings/steps/ContactStep'
+import {
+  ContactStep,
+  isValidEmail,
+  isValidWhatsappVe,
+  normalizeWhatsappVe,
+} from '@/components/bookings/steps/ContactStep'
 import { SummaryStep } from '@/components/bookings/steps/SummaryStep'
 import { submitBookingRequest } from '@/lib/bookings/actions'
 import { buildBookingEstimate } from '@/lib/bookings/estimate'
 import type { SelectedBookingItem } from '@/lib/bookings/types'
-
-// ─────────────────────────────────────────────────────────────────
-// Definición de pasos
-// ─────────────────────────────────────────────────────────────────
 
 interface WizardStepDef {
   id: string
@@ -28,7 +25,7 @@ interface WizardStepDef {
 }
 
 const WIZARD_STEPS: WizardStepDef[] = [
-  { id: 'service', label: 'Servicio', title: '¿Qué tipo de servicio necesitas?' },
+  { id: 'service', label: 'Servicio', title: 'Que tipo de servicio necesitas?' },
   { id: 'variant', label: 'Modalidad', title: 'Elige la modalidad' },
   { id: 'date', label: 'Fecha', title: 'Fecha y bloque horario' },
   { id: 'extras', label: 'Extras', title: 'Requerimientos adicionales' },
@@ -36,14 +33,10 @@ const WIZARD_STEPS: WizardStepDef[] = [
   { id: 'summary', label: 'Resumen', title: 'Revisa tu solicitud' },
 ]
 
-// ─────────────────────────────────────────────────────────────────
-// Estado del wizard
-// ─────────────────────────────────────────────────────────────────
-
 interface WizardData {
   selectedItems: SelectedBookingItem[]
-  eventDate: string | null // "YYYY-MM-DD"
-  startTime: string | null // "HH:MM"
+  eventDate: string | null
+  startTime: string | null
   durationMinutes: number | null
   extrasNotes: string
   extrasTechnician: boolean
@@ -59,16 +52,12 @@ const INITIAL_DATA: WizardData = {
   startTime: null,
   durationMinutes: null,
   extrasNotes: '',
-  extrasTechnician: false,
-  extrasBackline: false,
+  extrasTechnician: true,
+  extrasBackline: true,
   requesterName: '',
   requesterEmail: '',
   requesterPhone: '',
 }
-
-// ─────────────────────────────────────────────────────────────────
-// Componente
-// ─────────────────────────────────────────────────────────────────
 
 export function BookingWizard() {
   const [currentStep, setCurrentStep] = useState(0)
@@ -113,7 +102,9 @@ export function BookingWizard() {
           : currentStep === 3
             ? true
             : currentStep === 4
-              ? data.requesterName.trim() !== '' && isValidEmail(data.requesterEmail)
+              ? data.requesterName.trim() !== '' &&
+                isValidEmail(data.requesterEmail) &&
+                isValidWhatsappVe(data.requesterPhone)
               : currentStep === 5
                 ? true
                 : false
@@ -192,7 +183,7 @@ export function BookingWizard() {
       extrasBackline: data.extrasBackline,
       requesterName: data.requesterName,
       requesterEmail: data.requesterEmail,
-      requesterPhone: data.requesterPhone,
+      requesterPhone: normalizeWhatsappVe(data.requesterPhone),
     })
 
     if (result.success && result.publicCode) {
@@ -227,18 +218,18 @@ export function BookingWizard() {
         </div>
         <h2 className="mb-2 font-display text-xl font-bold text-text-primary">Solicitud enviada</h2>
         <p className="mb-6 text-sm text-text-secondary">
-          Tu solicitud fue recibida y quedó pendiente de revisión interna. El equipo de Turpial
-          Sound confirmará disponibilidad y se pondrá en contacto contigo.
+          Tu solicitud fue recibida y quedo pendiente de revision interna. El equipo de Turpial
+          Sound confirmara disponibilidad y se pondra en contacto contigo.
         </p>
         <div className="mb-6 inline-block rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-6 py-3">
-          <p className="mb-1 text-xs text-text-muted">Código de referencia</p>
+          <p className="mb-1 text-xs text-text-muted">Codigo de referencia</p>
           <p className="font-display text-2xl font-bold tracking-wider text-accent-gold">
             {publicCode}
           </p>
         </div>
         <p className="mx-auto max-w-md text-xs text-text-muted">
-          Guarda este código para hacer seguimiento de tu solicitud. Esta confirmación no significa
-          reserva instantánea: primero revisaremos disponibilidad y condiciones.
+          Guarda este codigo para hacer seguimiento de tu solicitud. Esta confirmacion no significa
+          reserva instantanea: primero revisaremos disponibilidad y condiciones.
         </p>
         <div className="mt-6">
           <Button variant="ghost" size="sm" onClick={resetWizard}>
@@ -254,7 +245,6 @@ export function BookingWizard() {
       className="rounded-2xl border border-brand-border bg-brand-surface"
       aria-busy={submissionState === 'loading'}
     >
-      {/* Indicador de pasos */}
       <div className="border-b border-brand-border px-5 py-3 md:px-6 md:py-3">
         <ol
           className="flex gap-2 overflow-x-auto pb-1 lg:grid lg:grid-cols-6 lg:gap-2 xl:gap-3 lg:overflow-visible lg:pb-0"
@@ -327,7 +317,6 @@ export function BookingWizard() {
         </ol>
       </div>
 
-      {/* Contenido del paso */}
       <div className="p-5 md:px-6 md:py-4">
         <div
           className={cn(
@@ -357,7 +346,7 @@ export function BookingWizard() {
                 <p className="font-medium text-text-primary">Enviando tu solicitud</p>
                 <p className="text-text-secondary">
                   Estamos registrando tus datos. No cierres esta ventana hasta recibir la
-                  confirmación.
+                  confirmacion.
                 </p>
               </div>
             </div>
@@ -370,7 +359,6 @@ export function BookingWizard() {
             onChange={(slug) =>
               setPrimaryItem((currentItem) => ({
                 serviceSlug: slug,
-                // Si cambia el servicio, la variante actual deja de ser válida.
                 variantSlug: currentItem?.serviceSlug === slug ? currentItem.variantSlug : null,
                 quantity: currentItem?.quantity ?? 1,
               }))
@@ -398,7 +386,7 @@ export function BookingWizard() {
             startTime={data.startTime}
             durationMinutes={data.durationMinutes}
             onDateChange={(value) => setData((d) => ({ ...d, eventDate: value }))}
-            onStartTimeChange={(value) => setData((d) => ({ ...d, startTime: value }))}
+            onStartTimeChange={(value) => setData((d) => ({ ...d, startTime: value, durationMinutes: null }))}
             onDurationChange={(value) => setData((d) => ({ ...d, durationMinutes: value }))}
           />
         )}
@@ -442,13 +430,12 @@ export function BookingWizard() {
               extrasBackline={data.extrasBackline}
               requesterName={data.requesterName}
               requesterEmail={data.requesterEmail}
-              requesterPhone={data.requesterPhone}
+              requesterPhone={normalizeWhatsappVe(data.requesterPhone)}
               estimate={bookingEstimate}
             />
           )}
       </div>
 
-      {/* Error de envío */}
       {submitError && (
         <div className="border-t border-brand-border bg-red-500/5 px-6 py-3">
           <p className="text-sm font-medium text-red-300">No pudimos registrar tu solicitud.</p>
@@ -458,7 +445,6 @@ export function BookingWizard() {
         </div>
       )}
 
-      {/* Navegación */}
       <div className="flex items-center justify-between border-t border-brand-border px-5 py-3 md:px-6 md:py-4">
         <Button
           variant="ghost"
@@ -466,7 +452,7 @@ export function BookingWizard() {
           onClick={handleBack}
           disabled={currentStep === 0 || submissionState === 'loading'}
         >
-          ← Anterior
+          Anterior
         </Button>
 
         <span className="text-xs text-text-muted">
@@ -475,7 +461,7 @@ export function BookingWizard() {
 
         {currentStep < totalSteps - 1 ? (
           <Button variant="primary" size="sm" onClick={handleNext} disabled={!canProceed}>
-            Continuar →
+            Continuar
           </Button>
         ) : (
           <Button
@@ -485,7 +471,7 @@ export function BookingWizard() {
             disabled={submissionState === 'loading' || bookingEstimate.isBlocked}
           >
             {submissionState === 'loading'
-              ? 'Enviando solicitud…'
+              ? 'Enviando solicitud...'
               : bookingEstimate.isBlocked
                 ? 'Corrige la solicitud'
                 : 'Enviar solicitud'}
@@ -495,3 +481,4 @@ export function BookingWizard() {
     </div>
   )
 }
+

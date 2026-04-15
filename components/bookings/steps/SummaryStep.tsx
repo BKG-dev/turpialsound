@@ -1,20 +1,11 @@
 'use client'
 
-// Turpial Sound — Paso 6 del wizard: resumen de la solicitud
-// Fase 1B.5 — Componente de solo lectura. No recibe callbacks.
-// Muestra todos los datos recopilados antes del envío final.
-
 import type { ReactNode } from 'react'
 import { CATALOG_SERVICES, CATALOG_VARIANTS } from '@/lib/bookings/catalog'
-import { DURATION_OPTIONS, deriveEndTime } from '@/components/bookings/steps/DateTimeStep'
+import { deriveEndTime } from '@/components/bookings/steps/DateTimeStep'
 import type { BookingEstimate } from '@/lib/bookings/types'
 
-// ─────────────────────────────────────────────────────────────────
-// HELPERS LOCALES
-// ─────────────────────────────────────────────────────────────────
-
 function formatDate(dateStr: string): string {
-  // T12:00:00 evita que UTC midnight cruce al día anterior en zonas UTC-N
   const d = new Date(`${dateStr}T12:00:00`)
   return new Intl.DateTimeFormat('es', {
     weekday: 'long',
@@ -23,10 +14,6 @@ function formatDate(dateStr: string): string {
     year: 'numeric',
   }).format(d)
 }
-
-// ─────────────────────────────────────────────────────────────────
-// SUB-COMPONENTES
-// ─────────────────────────────────────────────────────────────────
 
 function SummaryCard({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -59,16 +46,21 @@ function SummaryPill({ children }: { children: ReactNode }) {
 function EstimateLine({
   label,
   value,
+  detail,
   emphasis = false,
 }: {
   label: string
   value: string
+  detail?: string
   emphasis?: boolean
 }) {
   return (
     <div className="flex items-start justify-between gap-3 border-b border-brand-border/70 py-2 last:border-b-0 last:pb-0 first:pt-0">
-      <span className={emphasis ? 'text-[11px] font-semibold uppercase tracking-wide text-text-primary' : 'text-[12px] text-text-secondary'}>
-        {label}
+      <span>
+        <span className={emphasis ? 'text-[11px] font-semibold uppercase tracking-wide text-text-primary' : 'text-[12px] text-text-secondary'}>
+          {label}
+        </span>
+        {detail && <span className="mt-0.5 block text-[11px] text-text-muted">{detail}</span>}
       </span>
       <span className={emphasis ? 'text-sm font-semibold text-accent-gold md:text-[15px]' : 'text-sm font-medium text-text-primary md:text-[13px]'}>
         {value}
@@ -77,9 +69,9 @@ function EstimateLine({
   )
 }
 
-// ─────────────────────────────────────────────────────────────────
-// PROPS
-// ─────────────────────────────────────────────────────────────────
+function getHourLabel(quantity: number): string {
+  return quantity === 1 ? '1 hora' : `${quantity} horas`
+}
 
 interface SummaryStepProps {
   serviceSlug: string
@@ -95,10 +87,6 @@ interface SummaryStepProps {
   requesterPhone: string
   estimate?: BookingEstimate
 }
-
-// ─────────────────────────────────────────────────────────────────
-// COMPONENTE
-// ─────────────────────────────────────────────────────────────────
 
 export function SummaryStep({
   serviceSlug,
@@ -117,15 +105,12 @@ export function SummaryStep({
   const service = CATALOG_SERVICES.find((s) => s.slug === serviceSlug)
   const variant = CATALOG_VARIANTS.find((v) => v.slug === variantSlug)
   const endTime = deriveEndTime(startTime, durationMinutes)
-  const durationLabel =
-    DURATION_OPTIONS.find((d) => d.value === durationMinutes)?.label ?? `${durationMinutes} min`
-
   const hasExtras = extrasTechnician || extrasBackline || extrasNotes.trim().length > 0
 
   return (
     <div className="space-y-4 md:space-y-3">
       <p className="text-sm text-text-secondary md:text-[11px]">
-        Revisa los datos antes de enviar. El equipo de Turpial Sound confirmará disponibilidad y se pondrá en contacto contigo.
+        Revisa los datos antes de enviar. El equipo de Turpial Sound confirmara disponibilidad y se pondra en contacto contigo.
       </p>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.15fr)] xl:gap-3">
@@ -135,8 +120,7 @@ export function SummaryStep({
               <SummaryPair label="Servicio" value={service?.name ?? serviceSlug} />
               <SummaryPair label="Modalidad" value={variant?.name ?? variantSlug} />
               <SummaryPair label="Fecha" value={formatDate(eventDate)} />
-              <SummaryPair label="Hora" value={`${startTime} – ${endTime}`} />
-              <SummaryPair label="Duración" value={durationLabel} />
+              <SummaryPair label="Horario" value={`${startTime} - ${endTime}`} />
             </div>
           </SummaryCard>
         </div>
@@ -146,9 +130,8 @@ export function SummaryStep({
             {hasExtras ? (
               <div className="space-y-2.5">
                 <div className="flex flex-wrap gap-1.5">
-                  {extrasTechnician && <SummaryPill>Técnico requerido</SummaryPill>}
-                  {extrasBackline && <SummaryPill>Backline requerido</SummaryPill>}
-                  {!extrasTechnician && !extrasBackline && <SummaryPill>Sin extras marcados</SummaryPill>}
+                  {extrasTechnician && <SummaryPill>Tecnico incluido</SummaryPill>}
+                  {extrasBackline && <SummaryPill>Backline incluido</SummaryPill>}
                 </div>
                 {extrasNotes.trim() && (
                   <div className="space-y-1 rounded-md bg-brand-bg/30 px-2.5 py-2">
@@ -168,7 +151,7 @@ export function SummaryStep({
               <SummaryPair label="Correo" value={requesterEmail} />
               {requesterPhone.trim() && (
                 <div className="sm:col-span-2">
-                  <SummaryPair label="Teléfono" value={requesterPhone.trim()} />
+                  <SummaryPair label="WhatsApp" value={requesterPhone.trim()} />
                 </div>
               )}
             </div>
@@ -180,14 +163,17 @@ export function SummaryStep({
             <SummaryCard title="Estimado Preliminar">
               <div className="space-y-0">
                 {estimate.lines.map((line) => {
-                  const amountLabel =
-                    line.unitPriceUsd === null ? 'A coordinar' : `${line.lineTotalUsd} USD`
+                  const detail =
+                    line.unitPriceUsd !== null && (line.unit === 'hour' || line.label === 'Tecnico' || line.label === 'Backline')
+                      ? `${getHourLabel(line.quantity)} x ${line.unitPriceUsd} USD`
+                      : undefined
 
                   return (
                     <EstimateLine
                       key={`${line.label}-${line.unit}`}
-                      label={`${line.label} x${line.quantity}`}
-                      value={amountLabel}
+                      label={line.label}
+                      value={`${line.lineTotalUsd} USD`}
+                      detail={detail}
                     />
                   )
                 })}
@@ -197,6 +183,12 @@ export function SummaryStep({
                     key={adjustment.label}
                     label={adjustment.label}
                     value={`${adjustment.amountUsd} USD`}
+                    detail={
+                      adjustment.label === 'Recargo de fin de semana' &&
+                      variant?.weekendSurchargeUsd
+                        ? `${getHourLabel(durationMinutes / 60)} x ${variant.weekendSurchargeUsd} USD`
+                        : undefined
+                    }
                   />
                 ))}
 
@@ -225,7 +217,7 @@ export function SummaryStep({
       </div>
 
       <p className="text-xs text-text-muted md:text-[11px]">
-        Al enviar, tu solicitud quedará pendiente de revisión interna. No es una reserva confirmada.
+        Al enviar, tu solicitud quedara pendiente de revision interna. No es una reserva confirmada.
       </p>
     </div>
   )

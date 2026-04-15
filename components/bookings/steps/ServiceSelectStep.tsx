@@ -5,7 +5,7 @@
 // Recibe el valor seleccionado y un callback onChange.
 
 import { cn } from '@/lib/utils'
-import { CATALOG_SERVICES } from '@/lib/bookings/catalog'
+import { CATALOG_SERVICES, getServiceStartingPriceUsd } from '@/lib/bookings/catalog'
 
 interface ServiceSelectStepProps {
   selected: string | null
@@ -22,6 +22,7 @@ export function ServiceSelectStep({ selected, onChange }: ServiceSelectStepProps
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4 md:gap-2">
         {CATALOG_SERVICES.map((service) => {
           const isSelected = selected === service.slug
+          const startingPriceUsd = getServiceStartingPriceUsd(service.slug)
           return (
             <button
               key={service.slug}
@@ -46,6 +47,11 @@ export function ServiceSelectStep({ selected, onChange }: ServiceSelectStepProps
               <span className="mt-1 line-clamp-3 text-xs leading-relaxed text-text-secondary md:mt-0.5 md:text-[10px] md:leading-4">
                 {service.description}
               </span>
+              {startingPriceUsd !== null && (
+                <span className="mt-auto self-end pt-3 text-[11px] font-medium text-accent-gold">
+                  Desde {startingPriceUsd} USD
+                </span>
+              )}
             </button>
           )
         })}

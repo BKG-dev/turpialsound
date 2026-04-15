@@ -11,6 +11,7 @@
 
 import {
   BOOKING_CATALOG_ADDONS,
+  BOOKING_CATALOG_SERVICES,
   type BookingPriceUnit,
 } from '@/lib/bookings/pricing'
 
@@ -93,9 +94,9 @@ export const CATALOG_VARIANTS: CatalogVariant[] = [
   {
     slug: 'sala-ensayo-flexible',
     name: 'Flexible',
-    description: 'Modalidad base de sala de ensayo.',
+    description: 'Tarifa flexible; la sesion puede reprogramarse con aviso previo si entra una solicitud prioritaria.',
     serviceSlug: 'sala-ensayo',
-    priceUsd: 25,
+    priceUsd: 15,
     priceUnit: 'hour',
     showPriceToClient: true,
     weekendSurchargeUsd: 5,
@@ -106,9 +107,9 @@ export const CATALOG_VARIANTS: CatalogVariant[] = [
   {
     slug: 'sala-ensayo-premium',
     name: 'Premium',
-    description: 'Modalidad premium de sala de ensayo.',
+    description: 'Horario fijo y garantizado, no sujeto a cambios.',
     serviceSlug: 'sala-ensayo',
-    priceUsd: 30,
+    priceUsd: 20,
     priceUnit: 'hour',
     showPriceToClient: true,
     weekendSurchargeUsd: 5,
@@ -119,9 +120,9 @@ export const CATALOG_VARIANTS: CatalogVariant[] = [
   {
     slug: 'sala-ensayo-prioritaria',
     name: 'Prioritaria',
-    description: 'Modalidad prioritaria para solicitudes con mayor urgencia operativa.',
+    description: 'Acceso prioritario al espacio cuando lo necesitas.',
     serviceSlug: 'sala-ensayo',
-    priceUsd: 35,
+    priceUsd: 25,
     priceUnit: 'hour',
     showPriceToClient: true,
     weekendSurchargeUsd: 5,
@@ -308,3 +309,18 @@ export function getVariantPriceLabel(variant: CatalogVariant): string | null {
 
   return `${variant.priceUsd} USD / ${unitLabel}`
 }
+
+export function getServiceStartingPriceUsd(serviceSlug: string): number | null {
+  const service = BOOKING_CATALOG_SERVICES.find((entry) => entry.slug === serviceSlug)
+  if (!service) return null
+
+  const amounts = service.variants
+    .map((variant) => variant.pricing.amountUsd)
+    .filter((amount): amount is number => amount !== null)
+
+  if (amounts.length === 0) return null
+
+  return Math.min(...amounts)
+}
+
+
