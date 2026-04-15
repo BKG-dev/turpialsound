@@ -17,6 +17,7 @@ import {
   setOperationalStatusInInternalNotes,
   type OperationalBookingStatus,
 } from '@/lib/bookings/operations'
+import { syncBookingToGoogleCalendar } from '@/lib/bookings/google-calendar'
 
 type SearchParamValue = string | string[] | undefined
 
@@ -25,10 +26,12 @@ interface AdminPageProps {
     | Promise<{
         date?: SearchParamValue
         status?: SearchParamValue
+        calendarSync?: SearchParamValue
       }>
     | {
         date?: SearchParamValue
         status?: SearchParamValue
+        calendarSync?: SearchParamValue
       }
 }
 
@@ -78,6 +81,14 @@ function formatSchedule(eventDate: Date, eventEndDate: Date | null): string {
   return `${start} - ${end}`
 }
 
+function withQueryParam(path: string, key: string, value: string): string {
+  const [basePath, queryString = ''] = path.split('?')
+  const params = new URLSearchParams(queryString)
+  params.set(key, value)
+  const serialized = params.toString()
+  return serialized ? `${basePath}?${serialized}` : basePath
+}
+
 async function updateOperationalStatus(formData: FormData) {
   'use server'
 
@@ -94,6 +105,28 @@ async function updateOperationalStatus(formData: FormData) {
     select: {
       status: true,
       internalNotes: true,
+      publicCode: true,
+      requesterName: true,
+      requesterPhone: true,
+      eventDate: true,
+      eventEndDate: true,
+      calendarEventId: true,
+      items: {
+        take: 1,
+        orderBy: { createdAt: 'asc' },
+        select: {
+          serviceVariant: {
+            select: {
+              name: true,
+              service: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
     },
   })
 
@@ -132,6 +165,46 @@ async function updateOperationalStatus(formData: FormData) {
     }),
   ])
 
+  const primaryItem = current.items[0]
+  const calendarSync = await syncBookingToGoogleCalendar({
+    publicCode: current.publicCode,
+    serviceName: primaryItem?.serviceVariant.service.name ?? 'Sin servicio',
+    variantName: primaryItem?.serviceVariant.name ?? 'Sin modalidad',
+    requesterName: current.requesterName,
+    requesterPhone: current.requesterPhone,
+    eventDate: current.eventDate,
+    eventEndDate: current.eventEndDate,
+    operationalStatus: nextStatus,
+    existingCalendarEventId: current.calendarEventId,
+  })
+
+  if (!calendarSync.ok) {
+    await prisma.auditLog.create({
+      data: {
+        bookingRequestId,
+        action: 'calendar_sync_failed',
+        nextState: {
+          operationalStatus: nextStatus,
+          reason: calendarSync.reason ?? 'unknown',
+        },
+      },
+    })
+
+    const syncState =
+      calendarSync.reason?.startsWith('missing_env:') === true ? 'missing_config' : 'error'
+    revalidatePath('/admin')
+    redirect(withQueryParam(returnPath, 'calendarSync', syncState))
+  }
+
+  if (calendarSync.eventId !== current.calendarEventId) {
+    await prisma.bookingRequest.update({
+      where: { id: bookingRequestId },
+      data: {
+        calendarEventId: calendarSync.eventId,
+      },
+    })
+  }
+
   revalidatePath('/admin')
   redirect(returnPath)
 }
@@ -159,6 +232,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const params = (await searchParams) ?? {}
   const dateFilter = getSingleValue(params.date)
   const requestedStatus = getSingleValue(params.status)
+  const calendarSyncState = getSingleValue(params.calendarSync)
   const statusFilter: OperationalBookingStatus | 'all' =
     requestedStatus && isOperationalBookingStatus(requestedStatus) ? requestedStatus : 'all'
 
@@ -235,6 +309,20 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             </form>
           </div>
         </header>
+
+        {calendarSyncState === 'error' ? (
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            El estado se guardo, pero falló la sincronizacion con Google Calendar. Revisa la
+            configuracion o intenta de nuevo.
+          </section>
+        ) : null}
+
+        {calendarSyncState === 'missing_config' ? (
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            El estado se guardo, pero falta configurar variables de Google Calendar en el entorno
+            interno.
+          </section>
+        ) : null}
 
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
           <form className="grid gap-4 md:grid-cols-[220px_220px_auto] md:items-end">
