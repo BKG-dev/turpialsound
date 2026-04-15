@@ -1,20 +1,30 @@
-// middleware.ts — Turpial Sound
-// Protección mínima de rutas internas.
-// Fase 1A.5: bloquea /admin si no existe cookie de sesión.
-// La validación real del token se implementa en Fase 1C.
+// middleware.ts - Turpial Sound
+// Proteccion minima de rutas internas con login V1.
 
 import { NextRequest, NextResponse } from 'next/server'
-
-// Nombre de cookie de sesión interna (ver también lib/auth/session.ts)
-const SESSION_COOKIE_NAME = 'turpial_admin_session'
+import {
+  ADMIN_DASHBOARD_PATH,
+  ADMIN_LOGIN_PATH,
+  SESSION_COOKIE_NAME,
+  isAdminLoginPath,
+  isValidAdminSessionValue,
+} from '@/lib/auth/session'
 
 export function middleware(request: NextRequest) {
-  const session = request.cookies.get(SESSION_COOKIE_NAME)
+  const pathname = request.nextUrl.pathname
+  const sessionValue = request.cookies.get(SESSION_COOKIE_NAME)?.value
+  const hasValidSession = isValidAdminSessionValue(sessionValue)
 
-  if (!session) {
-    // Sin sesión válida: redirigir al inicio.
-    // En Fase 1C se reemplaza por redirección a /admin/login con validación de token.
-    return NextResponse.redirect(new URL('/', request.url))
+  if (isAdminLoginPath(pathname)) {
+    if (hasValidSession) {
+      return NextResponse.redirect(new URL(ADMIN_DASHBOARD_PATH, request.url))
+    }
+
+    return NextResponse.next()
+  }
+
+  if (!hasValidSession) {
+    return NextResponse.redirect(new URL(ADMIN_LOGIN_PATH, request.url))
   }
 
   return NextResponse.next()
