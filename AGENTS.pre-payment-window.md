@@ -34,16 +34,11 @@ Booking Command Center mínimo:
 - vista operativa básica del día
 - acción manual para verificar pago
 - vista mínima de agenda interna
-- mostrar sala asignada por solicitud
-- mostrar hora límite de pago / vencimiento del apartado
 
 ### 1C.2
 Google Calendar operativo central:
 - usar un calendario maestro compartido
 - crear / actualizar / cancelar eventos según estado
-- crear evento desde el submit cuando la solicitud entra a `pending_payment`
-- incluir sala asignada en el evento
-- usar color por estado operativo en el evento
 - reflejar al menos estados:
   - `pending_payment`
   - `payment_verified`
@@ -55,17 +50,13 @@ Disponibilidad real mínima:
 - el cliente solo puede solicitar bloques realmente disponibles
 - el sistema debe bloquear choques por recurso y horario
 - los estados `pending_payment`, `payment_verified` y `confirmed` bloquean agenda
-- el bloque queda apartado mientras no expire el plazo de pago
 - sin sincronización a calendarios personales como primera etapa; primero calendario operativo central
 
 ### 1C.4
 Pago manual asistido:
 - mostrar monto e instrucciones de pago al cliente
-- ventana de pago manual de 1 hora
 - la directiva solo verifica pago
-- al verificar pago dentro del plazo, la solicitud pasa a `confirmed` y se refleja en agenda
-- si no se verifica dentro del plazo, la solicitud pasa a `expired`
-- al expirar, el bloque se libera y el evento debe cancelarse o marcarse como expirado
+- al verificar pago, la solicitud pasa a confirmada y se refleja en agenda
 
 ### 1C.5
 Reglas de recursos físicas:
@@ -87,10 +78,6 @@ Estados operativos mínimos:
 - `confirmed`
 - `cancelled`
 - `expired`
-
-Nota operativa:
-- el primer estado operativo visible del submit público es `pending_payment`
-- `submitted` puede mantenerse como estado técnico/transitorio, no como estado operativo principal visible
 
 ## Fase posterior aplazada
 ### 1B.6c
