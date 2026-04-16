@@ -1,4 +1,5 @@
 import type { BookingStatus } from '@/generated/prisma/client'
+import { getPaymentWindowMinutes } from '@/lib/bookings/payment-settings'
 
 export type OperationalBookingStatus =
   | 'submitted'
@@ -29,7 +30,7 @@ export const OPERATIONAL_STATUS_LABELS: Record<OperationalBookingStatus, string>
 const OPERATIONAL_STATUS_PATTERN =
   /\[ops_status:(submitted|pending_payment|payment_verified|confirmed|cancelled|expired)\]/i
 
-export const PAYMENT_WINDOW_MINUTES = 60
+export const PAYMENT_WINDOW_MINUTES = getPaymentWindowMinutes()
 
 export function getPaymentDeadline(createdAt: Date): Date {
   return new Date(createdAt.getTime() + PAYMENT_WINDOW_MINUTES * 60 * 1000)
