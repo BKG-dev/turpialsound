@@ -183,43 +183,50 @@ async function main() {
 
   // ── Resources ───────────────────────────────────────────────────
 
+  const legacyResourceSlugs = [
+    "sala-ensayo-a",
+    "sala-ensayo-b",
+    "estudio-grabacion",
+    "booth-voz",
+    "set-video",
+  ];
+
+  await prisma.resource.updateMany({
+    where: { slug: { in: legacyResourceSlugs } },
+    data: { isActive: false },
+  });
+
   const resourcesData = [
     {
-      slug: "sala-ensayo-a",
-      name: "Sala Ensayo A",
-      description: "Sala de ensayo principal. Capacidad hasta 8 músicos con batería.",
+      slug: "sala-1-grande",
+      name: "Sala 1 Grande",
+      description: "Sala principal para grabacion y respaldo de ensayo cuando aplique.",
     },
     {
-      slug: "sala-ensayo-b",
-      name: "Sala Ensayo B",
-      description: "Sala de ensayo secundaria. Capacidad hasta 5 músicos.",
+      slug: "sala-2-podcast-locucion",
+      name: "Sala 2 Podcast / Locucion",
+      description: "Sala dedicada a sesiones de podcast y locucion.",
     },
     {
-      slug: "estudio-grabacion",
-      name: "Estudio de Grabación",
-      description: "Estudio principal con consola, monitores y control room.",
-    },
-    {
-      slug: "booth-voz",
-      name: "Booth de Voz",
-      description: "Cabina aislada para grabación de voces, locución y doblaje.",
-    },
-    {
-      slug: "set-video",
-      name: "Set Video Session",
-      description: "Set de producción audiovisual para video sessions y contenido visual.",
+      slug: "sala-3-ensayo",
+      name: "Sala 3 Ensayo",
+      description: "Sala de ensayo preferente para solicitudes de sala-ensayo.",
     },
   ];
 
   for (const data of resourcesData) {
     await prisma.resource.upsert({
       where: { slug: data.slug },
-      update: {},
+      update: {
+        name: data.name,
+        description: data.description,
+        isActive: true,
+      },
       create: data,
     });
   }
 
-  console.log(`  ✓ ${resourcesData.length} resources`);
+  console.log(`  OK ${resourcesData.length} resources`);
   console.log("Seed completado.");
 }
 
@@ -231,3 +238,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+

@@ -3,13 +3,10 @@ import type { BookingStatus, Prisma } from '@/generated/prisma/client'
 const BLOCKING_BOOKING_STATUSES: BookingStatus[] = ['under_review', 'approved', 'confirmed']
 
 type ManagedServiceSlug = 'grabacion' | 'podcast-locucion' | 'sala-ensayo'
-type ResourceSlot = 'sala1' | 'sala2' | 'sala3'
-
-interface ResourceRecord {
-  id: string
-  slug: string
-  name: string
-}
+type ResourceSlug =
+  | 'sala-1-grande'
+  | 'sala-2-podcast-locucion'
+  | 'sala-3-ensayo'
 
 interface ResourceAssignmentResult {
   shouldBlockResource: boolean
@@ -18,43 +15,38 @@ interface ResourceAssignmentResult {
   message?: string
 }
 
-function normalizeText(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+const CANONICAL_RESOURCE_ORDER: ResourceSlug[] = [
+  'sala-1-grande',
+  'sala-2-podcast-locucion',
+  'sala-3-ensayo',
+]
+
+const CANONICAL_RESOURCE_NAMES: Record<ResourceSlug, string> = {
+  'sala-1-grande': 'Sala 1 Grande',
+  'sala-2-podcast-locucion': 'Sala 2 Podcast / Locucion',
+  'sala-3-ensayo': 'Sala 3 Ensayo',
+}
+
+const RESOURCE_ALIAS_FALLBACK: Partial<Record<ResourceSlug, string[]>> = {
+  'sala-1-grande': ['estudio-grabacion', 'estudio de grabacion'],
+  'sala-2-podcast-locucion': ['booth-voz', 'booth de voz'],
+  'sala-3-ensayo': ['sala-ensayo-a', 'sala ensayo a'],
 }
 
 function isManagedServiceSlug(serviceSlug: string): serviceSlug is ManagedServiceSlug {
   return serviceSlug === 'grabacion' || serviceSlug === 'podcast-locucion' || serviceSlug === 'sala-ensayo'
 }
 
-function slotMatchesResource(slot: ResourceSlot, resource: ResourceRecord): boolean {
-  const slug = normalizeText(resource.slug)
-  const name = normalizeText(resource.name)
-  const text = `${slug} ${name}`
-
-  if (slot === 'sala1') {
-    return text.includes('sala-1') || text.includes('sala 1') || text.includes('sala1')
-  }
-
-  if (slot === 'sala2') {
-    return text.includes('sala-2') || text.includes('sala 2') || text.includes('sala2')
-  }
-
-  return text.includes('sala-3') || text.includes('sala 3') || text.includes('sala3')
-}
-
-function getSlotPriorityByService(serviceSlug: ManagedServiceSlug): ResourceSlot[] {
+function getResourcePriorityByService(serviceSlug: ManagedServiceSlug): ResourceSlug[] {
   if (serviceSlug === 'grabacion') {
-    return ['sala1']
+    return ['sala-1-grande']
   }
 
   if (serviceSlug === 'podcast-locucion') {
-    return ['sala2']
+    return ['sala-2-podcast-locucion']
   }
 
-  return ['sala3', 'sala1']
+  return ['sala-3-ensayo', 'sala-1-grande']
 }
 
 function getServiceUnavailableMessage(serviceSlug: ManagedServiceSlug): string {
@@ -67,6 +59,14 @@ function getServiceUnavailableMessage(serviceSlug: ManagedServiceSlug): string {
   }
 
   return 'No hay salas disponibles para Sala de Ensayo en ese bloque. Elige otro horario.'
+}
+
+function normalizeText(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
 }
 
 async function resourceHasCollision(
@@ -101,6 +101,52 @@ async function resourceHasCollision(
   return count > 0
 }
 
+async function resolveResourceIdsByCanonicalSlug(
+  tx: Prisma.TransactionClient,
+): Promise<Record<ResourceSlug, string | null>> {
+  const activeResources = await tx.resource.findMany({
+    where: {
+      isActive: true,
+    },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+    },
+  })
+
+  const bySlug = new Map(activeResources.map((resource) => [normalizeText(resource.slug), resource.id]))
+  const byName = new Map(activeResources.map((resource) => [normalizeText(resource.name), resource.id]))
+  const resolved: Record<ResourceSlug, string | null> = {
+    'sala-1-grande': null,
+    'sala-2-podcast-locucion': null,
+    'sala-3-ensayo': null,
+  }
+
+  for (const canonicalSlug of CANONICAL_RESOURCE_ORDER) {
+    const canonicalId = bySlug.get(normalizeText(canonicalSlug))
+    if (canonicalId) {
+      resolved[canonicalSlug] = canonicalId
+      continue
+    }
+
+    const canonicalNameId = byName.get(normalizeText(CANONICAL_RESOURCE_NAMES[canonicalSlug]))
+    if (canonicalNameId) {
+      resolved[canonicalSlug] = canonicalNameId
+      continue
+    }
+
+    const aliasFallback = RESOURCE_ALIAS_FALLBACK[canonicalSlug] ?? []
+    const fallbackId =
+      aliasFallback
+        .map((alias) => bySlug.get(normalizeText(alias)) ?? byName.get(normalizeText(alias)))
+        .find((id) => Boolean(id)) ?? null
+    resolved[canonicalSlug] = fallbackId
+  }
+
+  return resolved
+}
+
 export async function assignResourceForRequestedSlot(
   tx: Prisma.TransactionClient,
   params: {
@@ -117,35 +163,19 @@ export async function assignResourceForRequestedSlot(
     }
   }
 
-  const activeResources = await tx.resource.findMany({
-    where: { isActive: true },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-    },
-  })
-
-  const slotPriority = getSlotPriorityByService(params.serviceSlug)
-  const slotToResourceId: Partial<Record<ResourceSlot, string>> = {}
-
-  for (const slot of slotPriority) {
-    const found = activeResources.find((resource) => slotMatchesResource(slot, resource))
-    if (found) {
-      slotToResourceId[slot] = found.id
-    }
-  }
-
-  const orderedResourceIds = slotPriority
-    .map((slot) => slotToResourceId[slot])
+  const resourcesByCanonicalSlug = await resolveResourceIdsByCanonicalSlug(tx)
+  const orderedResourceIds = getResourcePriorityByService(params.serviceSlug)
+    .map((slug) => resourcesByCanonicalSlug[slug])
     .filter((value): value is string => Boolean(value))
 
   if (orderedResourceIds.length === 0) {
+    const requiredSlugs = getResourcePriorityByService(params.serviceSlug).join(', ')
     return {
       shouldBlockResource: true,
       assignedResourceId: null,
       available: false,
-      message: 'No se encontraron salas operativas configuradas para este servicio.',
+      message:
+        `No se encontraron recursos operativos activos para: ${requiredSlugs}. Verifica seed y slugs canónicos.`,
     }
   }
 
