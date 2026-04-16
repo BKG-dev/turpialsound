@@ -16,6 +16,7 @@ import {
 import { SummaryStep } from '@/components/bookings/steps/SummaryStep'
 import { submitBookingRequest } from '@/lib/bookings/actions'
 import { buildBookingEstimate } from '@/lib/bookings/estimate'
+import { getPaymentWindowMinutes, getPrimaryPaymentMethod } from '@/lib/bookings/payment-settings'
 import type { SelectedBookingItem } from '@/lib/bookings/types'
 
 interface WizardStepDef {
@@ -59,6 +60,9 @@ const INITIAL_DATA: WizardData = {
   requesterPhone: '',
 }
 
+const PRIMARY_PAYMENT_METHOD = getPrimaryPaymentMethod()
+const PAYMENT_WINDOW_MINUTES = getPaymentWindowMinutes()
+
 export function BookingWizard() {
   const [currentStep, setCurrentStep] = useState(0)
   const [furthestStep, setFurthestStep] = useState(0)
@@ -91,6 +95,8 @@ export function BookingWizard() {
       data.extrasBackline,
     ],
   )
+  const paymentWindowLabel =
+    PAYMENT_WINDOW_MINUTES === 60 ? '1 hora' : `${PAYMENT_WINDOW_MINUTES} minutos`
 
   const canProceed =
     currentStep === 0
@@ -197,7 +203,7 @@ export function BookingWizard() {
 
   if (submissionState === 'success' && publicCode) {
     return (
-      <div className="rounded-2xl border border-brand-border bg-brand-surface p-8 text-center">
+      <div className="rounded-2xl border border-brand-border bg-brand-surface p-8">
         <div className="mb-4 flex items-center justify-center">
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-gold/10">
             <svg
@@ -216,20 +222,47 @@ export function BookingWizard() {
             </svg>
           </span>
         </div>
-        <h2 className="mb-2 font-display text-xl font-bold text-text-primary">Solicitud enviada</h2>
-        <p className="mb-6 text-sm text-text-secondary">
-          Tu solicitud fue recibida y quedo pendiente de revision interna. El equipo de Turpial
-          Sound confirmara disponibilidad y se pondra en contacto contigo.
+        <h2 className="mb-2 text-center font-display text-xl font-bold text-text-primary">
+          Solicitud enviada
+        </h2>
+        <p className="mb-6 text-center text-sm text-text-secondary">
+          Tu solicitud quedo en estado pendiente de pago. El bloque quedo apartado por{' '}
+          {paymentWindowLabel} mientras verificamos tu pago manualmente.
         </p>
-        <div className="mb-6 inline-block rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-6 py-3">
-          <p className="mb-1 text-xs text-text-muted">Codigo de referencia</p>
-          <p className="font-display text-2xl font-bold tracking-wider text-accent-gold">
-            {publicCode}
+
+        <div className="mb-4 rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-6 py-4 text-center">
+          <p className="mb-1 text-xs text-text-muted">Codigo de solicitud</p>
+          <p className="font-display text-2xl font-bold tracking-wider text-accent-gold">{publicCode}</p>
+        </div>
+
+        <div className="rounded-lg border border-brand-border bg-brand-bg/40 p-4">
+          <h3 className="mb-2 text-sm font-semibold text-text-primary">Instrucciones de pago</h3>
+          <p className="text-sm text-text-secondary">
+            Metodo: <span className="font-medium text-text-primary">{PRIMARY_PAYMENT_METHOD.name}</span>
+          </p>
+          <p className="mt-1 text-sm text-text-secondary">
+            Beneficiario:{' '}
+            <span className="font-medium text-text-primary">{PRIMARY_PAYMENT_METHOD.beneficiaryName}</span>
+          </p>
+          <p className="mt-1 text-sm text-text-secondary">
+            Identificacion:{' '}
+            <span className="font-medium text-text-primary">{PRIMARY_PAYMENT_METHOD.beneficiaryDocument}</span>
+          </p>
+          <p className="mt-1 text-sm text-text-secondary">
+            Banco: <span className="font-medium text-text-primary">{PRIMARY_PAYMENT_METHOD.bankName}</span>
+          </p>
+          <p className="mt-1 text-sm text-text-secondary">
+            Telefono: <span className="font-medium text-text-primary">{PRIMARY_PAYMENT_METHOD.phoneNumber}</span>
+          </p>
+          <p className="mt-3 text-xs text-text-muted">{PRIMARY_PAYMENT_METHOD.referenceHint}</p>
+          <p className="mt-1 text-xs text-text-muted">{PRIMARY_PAYMENT_METHOD.customerMessage}</p>
+          <p className="mt-1 text-xs text-text-muted">
+            Tiempo limite para reportar el pago: {paymentWindowLabel}.
           </p>
         </div>
-        <p className="mx-auto max-w-md text-xs text-text-muted">
-          Guarda este codigo para hacer seguimiento de tu solicitud. Esta confirmacion no significa
-          reserva instantanea: primero revisaremos disponibilidad y condiciones.
+
+        <p className="mx-auto mt-4 max-w-2xl text-center text-xs text-text-muted">
+          Guarda tu codigo de solicitud para reportar el pago y hacer seguimiento.
         </p>
         <div className="mt-6">
           <Button variant="ghost" size="sm" onClick={resetWizard}>
