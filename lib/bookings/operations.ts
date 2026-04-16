@@ -6,6 +6,7 @@ export type OperationalBookingStatus =
   | 'payment_verified'
   | 'confirmed'
   | 'cancelled'
+  | 'expired'
 
 export const OPERATIONAL_BOOKING_STATUSES: OperationalBookingStatus[] = [
   'submitted',
@@ -13,6 +14,7 @@ export const OPERATIONAL_BOOKING_STATUSES: OperationalBookingStatus[] = [
   'payment_verified',
   'confirmed',
   'cancelled',
+  'expired',
 ]
 
 export const OPERATIONAL_STATUS_LABELS: Record<OperationalBookingStatus, string> = {
@@ -21,10 +23,21 @@ export const OPERATIONAL_STATUS_LABELS: Record<OperationalBookingStatus, string>
   payment_verified: 'Pago verificado',
   confirmed: 'Confirmada',
   cancelled: 'Cancelada',
+  expired: 'Expirada',
 }
 
 const OPERATIONAL_STATUS_PATTERN =
-  /\[ops_status:(submitted|pending_payment|payment_verified|confirmed|cancelled)\]/i
+  /\[ops_status:(submitted|pending_payment|payment_verified|confirmed|cancelled|expired)\]/i
+
+export const PAYMENT_WINDOW_MINUTES = 60
+
+export function getPaymentDeadline(createdAt: Date): Date {
+  return new Date(createdAt.getTime() + PAYMENT_WINDOW_MINUTES * 60 * 1000)
+}
+
+export function isPaymentWindowExpired(createdAt: Date, referenceDate = new Date()): boolean {
+  return getPaymentDeadline(createdAt).getTime() <= referenceDate.getTime()
+}
 
 export function isOperationalBookingStatus(value: string): value is OperationalBookingStatus {
   return OPERATIONAL_BOOKING_STATUSES.includes(value as OperationalBookingStatus)
@@ -47,10 +60,16 @@ export function getOperationalStatusFromInternalNotes(
 }
 
 export function inferOperationalStatusFromBookingStatus(
-  status: BookingStatus,
+  booking: {
+    status: BookingStatus
+    createdAt?: Date
+  },
 ): OperationalBookingStatus {
-  switch (status) {
+  switch (booking.status) {
     case 'under_review':
+      if (booking.createdAt && isPaymentWindowExpired(booking.createdAt)) {
+        return 'expired'
+      }
       return 'pending_payment'
     case 'approved':
       return 'payment_verified'
@@ -67,12 +86,23 @@ export function getOperationalStatus(
   booking: {
     status: BookingStatus
     internalNotes?: string | null
+    createdAt?: Date
   },
 ): OperationalBookingStatus {
-  return (
-    getOperationalStatusFromInternalNotes(booking.internalNotes) ??
-    inferOperationalStatusFromBookingStatus(booking.status)
-  )
+  const taggedStatus = getOperationalStatusFromInternalNotes(booking.internalNotes)
+  if (taggedStatus) {
+    if (
+      taggedStatus === 'pending_payment' &&
+      booking.createdAt &&
+      isPaymentWindowExpired(booking.createdAt)
+    ) {
+      return 'expired'
+    }
+
+    return taggedStatus
+  }
+
+  return inferOperationalStatusFromBookingStatus(booking)
 }
 
 export function mapOperationalStatusToBookingStatus(
@@ -86,6 +116,8 @@ export function mapOperationalStatusToBookingStatus(
     case 'confirmed':
       return 'confirmed'
     case 'cancelled':
+      return 'rejected'
+    case 'expired':
       return 'rejected'
     case 'submitted':
     default:

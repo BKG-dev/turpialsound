@@ -12,10 +12,12 @@ export interface BookingCalendarSyncInput {
   publicCode: string
   serviceName: string
   variantName: string
+  resourceName: string | null
   requesterName: string
   requesterPhone: string | null
   eventDate: Date
   eventEndDate: Date | null
+  paymentDeadline: Date | null
   operationalStatus: OperationalBookingStatus
   existingCalendarEventId: string | null
 }
@@ -86,15 +88,18 @@ function buildEventPayload(input: BookingCalendarSyncInput, timezone: string) {
   const description = [
     `Codigo: ${input.publicCode}`,
     `Estado operativo: ${input.operationalStatus}`,
+    `Sala asignada: ${input.resourceName ?? 'No asignada'}`,
     `Solicitante: ${input.requesterName}`,
     `WhatsApp: ${input.requesterPhone ?? 'No disponible'}`,
     `Servicio: ${input.serviceName}`,
     `Modalidad: ${input.variantName}`,
+    `Limite de pago: ${input.paymentDeadline ? input.paymentDeadline.toISOString() : 'N/A'}`,
   ].join('\n')
 
   return {
     summary,
     description,
+    colorId: getGoogleCalendarColorIdByStatus(input.operationalStatus),
     start: {
       dateTime: input.eventDate.toISOString(),
       timeZone: timezone,
@@ -103,6 +108,24 @@ function buildEventPayload(input: BookingCalendarSyncInput, timezone: string) {
       dateTime: normalizedEndDate.toISOString(),
       timeZone: timezone,
     },
+  }
+}
+
+function getGoogleCalendarColorIdByStatus(status: OperationalBookingStatus): string {
+  switch (status) {
+    case 'pending_payment':
+      return '5'
+    case 'payment_verified':
+      return '10'
+    case 'confirmed':
+      return '2'
+    case 'cancelled':
+      return '11'
+    case 'expired':
+      return '8'
+    case 'submitted':
+    default:
+      return '1'
   }
 }
 
@@ -128,7 +151,13 @@ async function googleCalendarRequest(
 }
 
 function shouldMaintainCalendarEvent(status: OperationalBookingStatus): boolean {
-  return status === 'pending_payment' || status === 'payment_verified' || status === 'confirmed'
+  return (
+    status === 'pending_payment' ||
+    status === 'payment_verified' ||
+    status === 'confirmed' ||
+    status === 'cancelled' ||
+    status === 'expired'
+  )
 }
 
 export async function syncBookingToGoogleCalendar(
@@ -173,6 +202,10 @@ export async function syncBookingToGoogleCalendar(
     }
 
     const eventPayload = buildEventPayload(input, config.timezone)
+
+    if (!input.existingCalendarEventId && (input.operationalStatus === 'cancelled' || input.operationalStatus === 'expired')) {
+      return { ok: true, action: 'noop', eventId: null }
+    }
 
     if (input.existingCalendarEventId) {
       const patchResponse = await googleCalendarRequest(

@@ -1,6 +1,5 @@
-import type { BookingStatus, Prisma } from '@/generated/prisma/client'
-
-const BLOCKING_BOOKING_STATUSES: BookingStatus[] = ['under_review', 'approved', 'confirmed']
+import type { Prisma } from '@/generated/prisma/client'
+import { PAYMENT_WINDOW_MINUTES } from '@/lib/bookings/operations'
 
 type ManagedServiceSlug = 'grabacion' | 'podcast-locucion' | 'sala-ensayo'
 type ResourceSlug =
@@ -75,9 +74,17 @@ async function resourceHasCollision(
   start: Date,
   end: Date,
 ): Promise<boolean> {
+  const pendingPaymentCutoff = new Date(Date.now() - PAYMENT_WINDOW_MINUTES * 60 * 1000)
+
   const count = await tx.bookingRequest.count({
     where: {
-      status: { in: BLOCKING_BOOKING_STATUSES },
+      OR: [
+        { status: { in: ['approved', 'confirmed'] } },
+        {
+          status: 'under_review',
+          createdAt: { gte: pendingPaymentCutoff },
+        },
+      ],
       eventDate: { lt: end },
       AND: [
         {

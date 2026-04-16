@@ -4,6 +4,8 @@ import { prisma } from '@/lib/db'
 import { buildPublicCode } from '@/lib/bookings'
 import { CATALOG_SERVICES } from '@/lib/bookings/catalog'
 import { assignResourceForRequestedSlot } from '@/lib/bookings/availability'
+import { syncBookingToGoogleCalendar } from '@/lib/bookings/google-calendar'
+import { getPaymentDeadline, setOperationalStatusInInternalNotes } from '@/lib/bookings/operations'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const WHATSAPP_REGEX = /^\+58(412|414|416|424|426)\d{7}$/
@@ -125,10 +127,17 @@ export async function submitBookingRequest(
         } satisfies SubmitBookingResult
       }
 
+      const assignedResource = resourceAssignment.assignedResourceId
+        ? await tx.resource.findUnique({
+            where: { id: resourceAssignment.assignedResourceId },
+            select: { id: true, name: true },
+          })
+        : null
+
       const booking = await tx.bookingRequest.create({
         data: {
           publicCode,
-          status: 'submitted',
+          status: 'under_review',
           source: 'web',
           requesterName,
           requesterEmail,
@@ -137,6 +146,7 @@ export async function submitBookingRequest(
           eventDate: eventDateTime,
           eventEndDate: eventEndDateTime,
           notes,
+          internalNotes: setOperationalStatusInInternalNotes(null, 'pending_payment'),
           submittedAt: new Date(),
         },
       })
@@ -150,10 +160,59 @@ export async function submitBookingRequest(
         },
       })
 
-      return { success: true, publicCode } satisfies SubmitBookingResult
+      return {
+        success: true,
+        publicCode,
+        bookingId: booking.id,
+        createdAt: booking.createdAt,
+        resourceName: assignedResource?.name ?? null,
+      } satisfies SubmitBookingResult & {
+        bookingId: string
+        createdAt: Date
+        resourceName: string | null
+      }
     })
 
-    return submitResult
+    if (!submitResult.success || !submitResult.publicCode || !('bookingId' in submitResult)) {
+      return submitResult
+    }
+
+    const paymentDeadline = getPaymentDeadline(submitResult.createdAt)
+    const calendarSync = await syncBookingToGoogleCalendar({
+      publicCode: submitResult.publicCode,
+      serviceName,
+      variantName: serviceVariant.name,
+      resourceName: submitResult.resourceName,
+      requesterName,
+      requesterPhone,
+      eventDate: eventDateTime,
+      eventEndDate: eventEndDateTime,
+      paymentDeadline,
+      operationalStatus: 'pending_payment',
+      existingCalendarEventId: null,
+    })
+
+    if (calendarSync.ok) {
+      await prisma.bookingRequest.update({
+        where: { id: submitResult.bookingId },
+        data: {
+          calendarEventId: calendarSync.eventId,
+        },
+      })
+    } else {
+      await prisma.auditLog.create({
+        data: {
+          bookingRequestId: submitResult.bookingId,
+          action: 'calendar_sync_failed_on_submit',
+          nextState: {
+            operationalStatus: 'pending_payment',
+            reason: calendarSync.reason ?? 'unknown',
+          },
+        },
+      })
+    }
+
+    return { success: true, publicCode: submitResult.publicCode }
   } catch (error) {
     console.error('[submitBookingRequest]', error)
     return {

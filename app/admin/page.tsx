@@ -9,11 +9,14 @@ import {
   isValidAdminSessionValue,
 } from '@/lib/auth/session'
 import {
+  getOperationalStatusFromInternalNotes,
+  getPaymentDeadline,
   getOperationalStatus,
   isOperationalBookingStatus,
   mapOperationalStatusToBookingStatus,
   OPERATIONAL_BOOKING_STATUSES,
   OPERATIONAL_STATUS_LABELS,
+  PAYMENT_WINDOW_MINUTES,
   setOperationalStatusInInternalNotes,
   type OperationalBookingStatus,
 } from '@/lib/bookings/operations'
@@ -81,6 +84,94 @@ function formatSchedule(eventDate: Date, eventEndDate: Date | null): string {
   return `${start} - ${end}`
 }
 
+function formatPaymentDeadline(createdAt: Date): string {
+  return formatDateTime(getPaymentDeadline(createdAt))
+}
+
+async function expireOverduePendingPayments() {
+  const cutoff = new Date(Date.now() - PAYMENT_WINDOW_MINUTES * 60 * 1000)
+  const overdueBookings = await prisma.bookingRequest.findMany({
+    where: {
+      status: 'under_review',
+      createdAt: { lt: cutoff },
+    },
+    include: {
+      items: {
+        take: 1,
+        orderBy: { createdAt: 'asc' },
+        include: {
+          resource: {
+            select: {
+              name: true,
+            },
+          },
+          serviceVariant: {
+            include: {
+              service: true,
+            },
+          },
+        },
+      },
+    },
+    take: 200,
+  })
+
+  for (const booking of overdueBookings) {
+    const taggedStatus = getOperationalStatusFromInternalNotes(booking.internalNotes)
+    if (taggedStatus && taggedStatus !== 'pending_payment') {
+      continue
+    }
+
+    const updatedInternalNotes = setOperationalStatusInInternalNotes(
+      booking.internalNotes,
+      'expired',
+    )
+
+    await prisma.$transaction([
+      prisma.bookingRequest.update({
+        where: { id: booking.id },
+        data: {
+          status: 'rejected',
+          internalNotes: updatedInternalNotes,
+        },
+      }),
+      prisma.auditLog.create({
+        data: {
+          bookingRequestId: booking.id,
+          action: 'booking_expired_payment_window',
+          nextState: {
+            operationalStatus: 'expired',
+          },
+        },
+      }),
+    ])
+
+    const primaryItem = booking.items[0]
+    const calendarSync = await syncBookingToGoogleCalendar({
+      publicCode: booking.publicCode,
+      serviceName: primaryItem?.serviceVariant.service.name ?? 'Sin servicio',
+      variantName: primaryItem?.serviceVariant.name ?? 'Sin modalidad',
+      resourceName: primaryItem?.resource?.name ?? null,
+      requesterName: booking.requesterName,
+      requesterPhone: booking.requesterPhone,
+      eventDate: booking.eventDate,
+      eventEndDate: booking.eventEndDate,
+      paymentDeadline: getPaymentDeadline(booking.createdAt),
+      operationalStatus: 'expired',
+      existingCalendarEventId: booking.calendarEventId,
+    })
+
+    if (calendarSync.ok && calendarSync.eventId !== booking.calendarEventId) {
+      await prisma.bookingRequest.update({
+        where: { id: booking.id },
+        data: {
+          calendarEventId: calendarSync.eventId,
+        },
+      })
+    }
+  }
+}
+
 function withQueryParam(path: string, key: string, value: string): string {
   const [basePath, queryString = ''] = path.split('?')
   const params = new URLSearchParams(queryString)
@@ -110,6 +201,7 @@ async function updateOperationalStatus(formData: FormData) {
       requesterPhone: true,
       eventDate: true,
       eventEndDate: true,
+      createdAt: true,
       calendarEventId: true,
       items: {
         take: 1,
@@ -123,6 +215,11 @@ async function updateOperationalStatus(formData: FormData) {
                   name: true,
                 },
               },
+            },
+          },
+          resource: {
+            select: {
+              name: true,
             },
           },
         },
@@ -170,10 +267,12 @@ async function updateOperationalStatus(formData: FormData) {
     publicCode: current.publicCode,
     serviceName: primaryItem?.serviceVariant.service.name ?? 'Sin servicio',
     variantName: primaryItem?.serviceVariant.name ?? 'Sin modalidad',
+    resourceName: primaryItem?.resource?.name ?? null,
     requesterName: current.requesterName,
     requesterPhone: current.requesterPhone,
     eventDate: current.eventDate,
     eventEndDate: current.eventEndDate,
+    paymentDeadline: getPaymentDeadline(current.createdAt),
     operationalStatus: nextStatus,
     existingCalendarEventId: current.calendarEventId,
   })
@@ -236,6 +335,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const statusFilter: OperationalBookingStatus | 'all' =
     requestedStatus && isOperationalBookingStatus(requestedStatus) ? requestedStatus : 'all'
 
+  await expireOverduePendingPayments()
+
   const eventDateRange = getDateRangeFromInput(dateFilter)
   const rows = await prisma.bookingRequest.findMany({
     where: eventDateRange ? { eventDate: eventDateRange } : undefined,
@@ -247,6 +348,11 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           serviceVariant: {
             include: {
               service: true,
+            },
+          },
+          resource: {
+            select: {
+              name: true,
             },
           },
         },
@@ -270,6 +376,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         variantName: primaryItem?.serviceVariant.name ?? 'Sin modalidad',
         eventDate: booking.eventDate,
         eventEndDate: booking.eventEndDate,
+        resourceName: primaryItem?.resource?.name ?? null,
+        paymentDeadline: getPaymentDeadline(booking.createdAt),
         operationalStatus,
       }
     })
@@ -372,7 +480,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   <th className="px-4 py-3">Telefono</th>
                   <th className="px-4 py-3">Servicio</th>
                   <th className="px-4 py-3">Modalidad</th>
+                  <th className="px-4 py-3">Sala</th>
                   <th className="px-4 py-3">Fecha y horario</th>
+                  <th className="px-4 py-3">Limite pago</th>
                   <th className="px-4 py-3">Estado</th>
                   <th className="px-4 py-3">Accion</th>
                 </tr>
@@ -380,7 +490,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               <tbody className="divide-y divide-slate-100 bg-white text-slate-800">
                 {bookings.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-slate-500">
+                    <td colSpan={11} className="px-4 py-8 text-center text-slate-500">
                       No hay solicitudes para los filtros seleccionados.
                     </td>
                   </tr>
@@ -393,9 +503,11 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                       <td className="px-4 py-3">{booking.requesterPhone ?? '-'}</td>
                       <td className="px-4 py-3">{booking.serviceName}</td>
                       <td className="px-4 py-3">{booking.variantName}</td>
+                      <td className="px-4 py-3">{booking.resourceName ?? '-'}</td>
                       <td className="px-4 py-3">
                         {formatSchedule(booking.eventDate, booking.eventEndDate)}
                       </td>
+                      <td className="px-4 py-3">{formatPaymentDeadline(booking.createdAt)}</td>
                       <td className="px-4 py-3">
                         <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
                           {OPERATIONAL_STATUS_LABELS[booking.operationalStatus]}
