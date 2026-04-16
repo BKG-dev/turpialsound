@@ -67,50 +67,6 @@ Pago manual asistido:
 - si no se verifica dentro del plazo, la solicitud pasa a `expired`
 - al expirar, el bloque se libera y el evento debe cancelarse o marcarse como expirado
 
-### 1C.4a — UX visible de pago
-- añadir total a la confirmación post-submit
-- añadir sala asignada visible para el cliente
-- mostrar deadline en GMT-4 / America-Caracas
-- selector de método de pago:
-  - Pago Móvil
-  - Transferencia
-  - Binance
-- botón `Reportar pago`
-
-### 1C.4b — Reporte de pago
-- permitir que el cliente reporte el pago
-- seleccionar el método usado
-- subir comprobante
-- guardar referencia / datos mínimos del pago reportado
-- introducir estado operativo nuevo:
-  - `payment_reported`
-
-### 1C.4c — Notificación de verificación
-- al reportar pago:
-  - correo al cliente: “Estamos verificando tu pago”
-  - correo a Turpial Sound: “VERIFICAR PAGO”
-- mantener WhatsApp automático fuera de alcance por ahora si todavía no se implementará en esta fase
-
-### 1C.4d — Confirmación operativa
-- al verificar pago:
-  - cambiar a `confirmed`
-  - correo al cliente: “Pago verificado”
-  - correo a Turpial Sound: “Pago verificado”
-
-### 1C.4e — Documento operativo
-- recibo detallado
-- orden de servicio
-- incluir como base:
-  - código
-  - cliente
-  - servicio
-  - modalidad
-  - sala
-  - horario
-  - monto
-  - método
-  - estado
-
 ### 1C.5
 Reglas de recursos físicas:
 - Sala 1 grande: `grabacion` y/o `sala-ensayo`
@@ -127,7 +83,6 @@ Reglas operativas iniciales de asignación:
 Estados operativos mínimos:
 - `submitted`
 - `pending_payment`
-- `payment_reported`
 - `payment_verified`
 - `confirmed`
 - `cancelled`

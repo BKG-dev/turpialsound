@@ -1,13 +1,17 @@
-export type BookingPaymentMethodSlug = 'pago_movil'
+export type BookingPaymentMethodSlug = 'pago_movil' | 'transferencia' | 'binance'
+
+export interface BookingPaymentMethodDetails {
+  beneficiaryName?: string
+  beneficiaryDocument?: string
+  bankName?: string
+  phoneNumber?: string
+}
 
 export interface BookingPaymentMethodConfig {
   slug: BookingPaymentMethodSlug
   enabled: boolean
   name: string
-  beneficiaryName: string
-  beneficiaryDocument: string
-  bankName: string
-  phoneNumber: string
+  details?: BookingPaymentMethodDetails
   referenceHint: string
   customerMessage: string
 }
@@ -27,14 +31,30 @@ export const BOOKING_PAYMENT_SETTINGS: BookingPaymentSettings = {
     {
       slug: 'pago_movil',
       enabled: true,
-      name: 'Pago Movil',
-      beneficiaryName: 'REEMPLAZAR_BENEFICIARIO',
-      beneficiaryDocument: 'REEMPLAZAR_DOCUMENTO',
-      bankName: 'REEMPLAZAR_BANCO',
-      phoneNumber: 'REEMPLAZAR_TELEFONO',
+      name: 'Pago Móvil',
+      details: {
+        beneficiaryName: 'REEMPLAZAR_BENEFICIARIO',
+        beneficiaryDocument: 'REEMPLAZAR_DOCUMENTO',
+        bankName: 'REEMPLAZAR_BANCO',
+        phoneNumber: 'REEMPLAZAR_TELEFONO',
+      },
       referenceHint: 'Usa tu codigo de solicitud como referencia al reportar el pago.',
       customerMessage:
         'Tu bloque quedara apartado por 1 hora mientras verificamos el pago manualmente.',
+    },
+    {
+      slug: 'transferencia',
+      enabled: true,
+      name: 'Transferencia',
+      referenceHint: 'Usa tu codigo de solicitud como referencia al reportar el pago.',
+      customerMessage: 'Metodo visible en preparacion. Pronto veras las instrucciones completas.',
+    },
+    {
+      slug: 'binance',
+      enabled: true,
+      name: 'Binance',
+      referenceHint: 'Usa tu codigo de solicitud como referencia al reportar el pago.',
+      customerMessage: 'Metodo visible en preparacion. Pronto veras las instrucciones completas.',
     },
   ],
 }
@@ -58,4 +78,8 @@ export function getPrimaryPaymentMethod(): BookingPaymentMethodConfig {
 
 export function getPaymentWindowMinutes(): number {
   return BOOKING_PAYMENT_SETTINGS.paymentWindowMinutes
+}
+
+export function getEnabledPaymentMethods(): BookingPaymentMethodConfig[] {
+  return BOOKING_PAYMENT_SETTINGS.methods.filter((method) => method.enabled)
 }

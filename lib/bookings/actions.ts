@@ -37,6 +37,8 @@ export interface SubmitBookingInput {
 export interface SubmitBookingResult {
   success: boolean
   publicCode?: string
+  assignedResourceName?: string | null
+  paymentDeadlineIso?: string
   error?: string
 }
 
@@ -212,7 +214,12 @@ export async function submitBookingRequest(
       })
     }
 
-    return { success: true, publicCode: submitResult.publicCode }
+    return {
+      success: true,
+      publicCode: submitResult.publicCode,
+      assignedResourceName: submitResult.resourceName,
+      paymentDeadlineIso: paymentDeadline.toISOString(),
+    }
   } catch (error) {
     console.error('[submitBookingRequest]', error)
     return {

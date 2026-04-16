@@ -16,7 +16,12 @@ import {
 import { SummaryStep } from '@/components/bookings/steps/SummaryStep'
 import { submitBookingRequest } from '@/lib/bookings/actions'
 import { buildBookingEstimate } from '@/lib/bookings/estimate'
-import { getPaymentWindowMinutes, getPrimaryPaymentMethod } from '@/lib/bookings/payment-settings'
+import {
+  getEnabledPaymentMethods,
+  getPaymentWindowMinutes,
+  getPrimaryPaymentMethod,
+  type BookingPaymentMethodSlug,
+} from '@/lib/bookings/payment-settings'
 import type { SelectedBookingItem } from '@/lib/bookings/types'
 
 interface WizardStepDef {
@@ -61,6 +66,7 @@ const INITIAL_DATA: WizardData = {
 }
 
 const PRIMARY_PAYMENT_METHOD = getPrimaryPaymentMethod()
+const ENABLED_PAYMENT_METHODS = getEnabledPaymentMethods()
 const PAYMENT_WINDOW_MINUTES = getPaymentWindowMinutes()
 
 export function BookingWizard() {
@@ -71,6 +77,10 @@ export function BookingWizard() {
     'idle',
   )
   const [publicCode, setPublicCode] = useState<string | null>(null)
+  const [assignedResourceName, setAssignedResourceName] = useState<string | null>(null)
+  const [paymentDeadlineIso, setPaymentDeadlineIso] = useState<string | null>(null)
+  const [selectedPaymentMethodSlug, setSelectedPaymentMethodSlug] =
+    useState<BookingPaymentMethodSlug>(PRIMARY_PAYMENT_METHOD.slug)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const totalSteps = WIZARD_STEPS.length
@@ -97,6 +107,30 @@ export function BookingWizard() {
   )
   const paymentWindowLabel =
     PAYMENT_WINDOW_MINUTES === 60 ? '1 hora' : `${PAYMENT_WINDOW_MINUTES} minutos`
+  const selectedPaymentMethod =
+    ENABLED_PAYMENT_METHODS.find((method) => method.slug === selectedPaymentMethodSlug) ??
+    PRIMARY_PAYMENT_METHOD
+  const paymentDeadlineLabel = useMemo(() => {
+    if (!paymentDeadlineIso) {
+      return null
+    }
+
+    const parsedDeadline = new Date(paymentDeadlineIso)
+    if (Number.isNaN(parsedDeadline.getTime())) {
+      return null
+    }
+
+    return new Intl.DateTimeFormat('es-VE', {
+      timeZone: 'America/Caracas',
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZoneName: 'short',
+    }).format(parsedDeadline)
+  }, [paymentDeadlineIso])
 
   const canProceed =
     currentStep === 0
@@ -147,6 +181,9 @@ export function BookingWizard() {
     setData(INITIAL_DATA)
     setSubmissionState('idle')
     setPublicCode(null)
+    setAssignedResourceName(null)
+    setPaymentDeadlineIso(null)
+    setSelectedPaymentMethodSlug(PRIMARY_PAYMENT_METHOD.slug)
     setSubmitError(null)
   }
 
@@ -176,6 +213,8 @@ export function BookingWizard() {
 
     setSubmissionState('loading')
     setPublicCode(null)
+    setAssignedResourceName(null)
+    setPaymentDeadlineIso(null)
     setSubmitError(null)
 
     const result = await submitBookingRequest({
@@ -194,6 +233,8 @@ export function BookingWizard() {
 
     if (result.success && result.publicCode) {
       setPublicCode(result.publicCode)
+      setAssignedResourceName(result.assignedResourceName ?? null)
+      setPaymentDeadlineIso(result.paymentDeadlineIso ?? null)
       setSubmissionState('success')
     } else {
       setSubmitError(result.error ?? 'Error al enviar. Intenta de nuevo.')
@@ -235,30 +276,95 @@ export function BookingWizard() {
           <p className="font-display text-2xl font-bold tracking-wider text-accent-gold">{publicCode}</p>
         </div>
 
+        <div className="mb-4 grid gap-3 rounded-lg border border-brand-border bg-brand-bg/40 p-4 sm:grid-cols-2">
+          <p className="text-sm text-text-secondary">
+            Sala asignada:{' '}
+            <span className="font-medium text-text-primary">
+              {assignedResourceName ?? 'Por confirmar'}
+            </span>
+          </p>
+          <p className="text-sm text-text-secondary">
+            Total:{' '}
+            <span className="font-medium text-text-primary">
+              {bookingEstimate.estimatedTotalUsd} USD
+            </span>
+          </p>
+          <p className="text-sm text-text-secondary sm:col-span-2">
+            Tiempo limite para pagar:{' '}
+            <span className="font-medium text-text-primary">
+              {paymentDeadlineLabel
+                ? `${paymentDeadlineLabel} (GMT-4 / America-Caracas)`
+                : `Dentro de ${paymentWindowLabel} (GMT-4 / America-Caracas)`}
+            </span>
+          </p>
+        </div>
+
         <div className="rounded-lg border border-brand-border bg-brand-bg/40 p-4">
           <h3 className="mb-2 text-sm font-semibold text-text-primary">Instrucciones de pago</h3>
+          <div className="mb-3 grid gap-2 sm:grid-cols-3">
+            {ENABLED_PAYMENT_METHODS.map((method) => (
+              <button
+                key={method.slug}
+                type="button"
+                onClick={() => setSelectedPaymentMethodSlug(method.slug)}
+                className={cn(
+                  'rounded-md border px-3 py-2 text-xs font-medium transition-colors',
+                  selectedPaymentMethod.slug === method.slug
+                    ? 'border-accent-gold bg-accent-gold/10 text-text-primary'
+                    : 'border-brand-border bg-brand-surface text-text-secondary hover:border-accent-gold/50',
+                )}
+                aria-pressed={selectedPaymentMethod.slug === method.slug}
+              >
+                {method.name}
+              </button>
+            ))}
+          </div>
           <p className="text-sm text-text-secondary">
-            Metodo: <span className="font-medium text-text-primary">{PRIMARY_PAYMENT_METHOD.name}</span>
+            Metodo seleccionado:{' '}
+            <span className="font-medium text-text-primary">{selectedPaymentMethod.name}</span>
           </p>
-          <p className="mt-1 text-sm text-text-secondary">
-            Beneficiario:{' '}
-            <span className="font-medium text-text-primary">{PRIMARY_PAYMENT_METHOD.beneficiaryName}</span>
-          </p>
-          <p className="mt-1 text-sm text-text-secondary">
-            Identificacion:{' '}
-            <span className="font-medium text-text-primary">{PRIMARY_PAYMENT_METHOD.beneficiaryDocument}</span>
-          </p>
-          <p className="mt-1 text-sm text-text-secondary">
-            Banco: <span className="font-medium text-text-primary">{PRIMARY_PAYMENT_METHOD.bankName}</span>
-          </p>
-          <p className="mt-1 text-sm text-text-secondary">
-            Telefono: <span className="font-medium text-text-primary">{PRIMARY_PAYMENT_METHOD.phoneNumber}</span>
-          </p>
-          <p className="mt-3 text-xs text-text-muted">{PRIMARY_PAYMENT_METHOD.referenceHint}</p>
-          <p className="mt-1 text-xs text-text-muted">{PRIMARY_PAYMENT_METHOD.customerMessage}</p>
+          {selectedPaymentMethod.details?.beneficiaryName && (
+            <p className="mt-1 text-sm text-text-secondary">
+              Beneficiario:{' '}
+              <span className="font-medium text-text-primary">
+                {selectedPaymentMethod.details.beneficiaryName}
+              </span>
+            </p>
+          )}
+          {selectedPaymentMethod.details?.beneficiaryDocument && (
+            <p className="mt-1 text-sm text-text-secondary">
+              Identificacion:{' '}
+              <span className="font-medium text-text-primary">
+                {selectedPaymentMethod.details.beneficiaryDocument}
+              </span>
+            </p>
+          )}
+          {selectedPaymentMethod.details?.bankName && (
+            <p className="mt-1 text-sm text-text-secondary">
+              Banco:{' '}
+              <span className="font-medium text-text-primary">
+                {selectedPaymentMethod.details.bankName}
+              </span>
+            </p>
+          )}
+          {selectedPaymentMethod.details?.phoneNumber && (
+            <p className="mt-1 text-sm text-text-secondary">
+              Telefono:{' '}
+              <span className="font-medium text-text-primary">
+                {selectedPaymentMethod.details.phoneNumber}
+              </span>
+            </p>
+          )}
+          <p className="mt-3 text-xs text-text-muted">{selectedPaymentMethod.referenceHint}</p>
+          <p className="mt-1 text-xs text-text-muted">{selectedPaymentMethod.customerMessage}</p>
           <p className="mt-1 text-xs text-text-muted">
             Tiempo limite para reportar el pago: {paymentWindowLabel}.
           </p>
+          <div className="mt-4">
+            <Button variant="primary" size="sm" type="button" disabled>
+              Reportar pago
+            </Button>
+          </div>
         </div>
 
         <p className="mx-auto mt-4 max-w-2xl text-center text-xs text-text-muted">
