@@ -17,8 +17,8 @@ function formatDate(dateStr: string): string {
 
 function SummaryCard({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="space-y-2 rounded-lg border border-brand-border bg-brand-surface px-3.5 py-3">
-      <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">
+    <section className="space-y-1.5 rounded-lg border border-brand-border bg-brand-surface px-3 py-2.5 md:space-y-1 md:px-2.5 md:py-2">
+      <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted md:text-[10px]">
         {title}
       </h3>
       {children}
@@ -28,16 +28,16 @@ function SummaryCard({ title, children }: { title: string; children: ReactNode }
 
 function SummaryPair({ label, value }: { label: string; value: string }) {
   return (
-    <div className="space-y-0.5 rounded-md bg-brand-bg/30 px-2.5 py-2">
-      <p className="text-[11px] uppercase tracking-wide text-text-muted">{label}</p>
-      <p className="break-words text-sm font-medium text-text-primary md:text-[13px]">{value}</p>
+    <div className="space-y-0.5 rounded-md bg-brand-bg/30 px-2.5 py-2 md:px-2 md:py-1.5">
+      <p className="text-[11px] uppercase tracking-wide text-text-muted md:text-[10px]">{label}</p>
+      <p className="break-words text-sm font-medium text-text-primary md:text-[12px]">{value}</p>
     </div>
   )
 }
 
 function SummaryPill({ children }: { children: ReactNode }) {
   return (
-    <span className="rounded-full border border-brand-border px-2 py-0.5 text-[10px] text-text-secondary">
+    <span className="rounded-full border border-brand-border px-2 py-0.5 text-[10px] text-text-secondary md:text-[9px]">
       {children}
     </span>
   )
@@ -55,14 +55,14 @@ function EstimateLine({
   emphasis?: boolean
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-brand-border/70 py-2 last:border-b-0 last:pb-0 first:pt-0">
+    <div className="flex items-start justify-between gap-3 border-b border-brand-border/70 py-2 last:border-b-0 last:pb-0 first:pt-0 md:gap-2 md:py-1.5">
       <span>
-        <span className={emphasis ? 'text-[11px] font-semibold uppercase tracking-wide text-text-primary' : 'text-[12px] text-text-secondary'}>
+        <span className={emphasis ? 'text-[11px] font-semibold uppercase tracking-wide text-text-primary md:text-[10px]' : 'text-[12px] text-text-secondary md:text-[11px]'}>
           {label}
         </span>
-        {detail && <span className="mt-0.5 block text-[11px] text-text-muted">{detail}</span>}
+        {detail && <span className="mt-0.5 block text-[11px] text-text-muted md:text-[10px]">{detail}</span>}
       </span>
-      <span className={emphasis ? 'text-sm font-semibold text-accent-gold md:text-[15px]' : 'text-sm font-medium text-text-primary md:text-[13px]'}>
+      <span className={emphasis ? 'text-sm font-semibold text-accent-gold md:text-[14px]' : 'text-sm font-medium text-text-primary md:text-[12px]'}>
         {value}
       </span>
     </div>
@@ -108,15 +108,15 @@ export function SummaryStep({
   const hasExtras = extrasTechnician || extrasBackline || extrasNotes.trim().length > 0
 
   return (
-    <div className="space-y-4 md:space-y-3">
-      <p className="text-sm text-text-secondary md:text-[11px]">
+    <div className="space-y-3 md:space-y-2">
+      <p className="text-sm text-text-secondary md:text-[10px] md:leading-tight">
         Revisa los datos antes de enviar. El equipo de Turpial Sound confirmara disponibilidad y se pondra en contacto contigo.
       </p>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.15fr)] xl:gap-3">
-        <div className="space-y-4 md:space-y-3">
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.15fr)] xl:gap-2">
+        <div className="space-y-3 md:space-y-2">
           <SummaryCard title="Servicio y Agenda">
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 md:gap-1.5 sm:grid-cols-2">
               <SummaryPair label="Servicio" value={service?.name ?? serviceSlug} />
               <SummaryPair label="Modalidad" value={variant?.name ?? variantSlug} />
               <SummaryPair label="Fecha" value={formatDate(eventDate)} />
@@ -125,28 +125,28 @@ export function SummaryStep({
           </SummaryCard>
         </div>
 
-        <div className="space-y-4 md:space-y-3">
+        <div className="space-y-3 md:space-y-2">
           <SummaryCard title="Extras y Contacto">
             {hasExtras ? (
-              <div className="space-y-2.5">
+              <div className="space-y-2 md:space-y-1.5">
                 <div className="flex flex-wrap gap-1.5">
                   {extrasTechnician && <SummaryPill>Tecnico incluido</SummaryPill>}
                   {extrasBackline && <SummaryPill>Backline incluido</SummaryPill>}
                 </div>
                 {extrasNotes.trim() && (
-                  <div className="space-y-1 rounded-md bg-brand-bg/30 px-2.5 py-2">
-                    <p className="text-[11px] uppercase tracking-wide text-text-muted">Notas</p>
-                    <p className="text-sm text-text-primary md:text-[13px]">{extrasNotes.trim()}</p>
+                  <div className="space-y-1 rounded-md bg-brand-bg/30 px-2.5 py-2 md:px-2 md:py-1.5">
+                    <p className="text-[11px] uppercase tracking-wide text-text-muted md:text-[10px]">Notas</p>
+                    <p className="text-sm text-text-primary md:text-[12px]">{extrasNotes.trim()}</p>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="rounded-md bg-brand-bg/30 px-2.5 py-2">
-                <p className="text-[12px] text-text-secondary">Sin requerimientos adicionales.</p>
+              <div className="rounded-md bg-brand-bg/30 px-2.5 py-2 md:px-2 md:py-1.5">
+                <p className="text-[12px] text-text-secondary md:text-[11px]">Sin requerimientos adicionales.</p>
               </div>
             )}
 
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 md:gap-1.5 sm:grid-cols-2">
               <SummaryPair label="Nombre" value={requesterName} />
               <SummaryPair label="Correo" value={requesterEmail} />
               {requesterPhone.trim() && (
@@ -158,7 +158,7 @@ export function SummaryStep({
           </SummaryCard>
         </div>
 
-        <div className="space-y-4 md:space-y-3">
+        <div className="space-y-3 md:space-y-2">
           {estimate && estimate.lines.length > 0 && (
             <SummaryCard title="Estimado Preliminar">
               <div className="space-y-0">
@@ -202,11 +202,11 @@ export function SummaryStep({
           )}
 
           {estimate && estimate.blockingIssues.length > 0 && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-3.5 py-2.5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-red-300">
+            <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2 md:px-2.5 md:py-1.5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-red-300 md:text-[10px]">
                 Requiere ajuste antes de enviar
               </p>
-              <ul className="mt-1.5 space-y-1 text-[13px] text-red-200">
+              <ul className="mt-1 space-y-1 text-[13px] text-red-200 md:text-[12px]">
                 {estimate.blockingIssues.map((issue) => (
                   <li key={issue.code}>{issue.message}</li>
                 ))}
@@ -216,7 +216,7 @@ export function SummaryStep({
         </div>
       </div>
 
-      <p className="text-xs text-text-muted md:text-[11px]">
+      <p className="text-xs text-text-muted md:text-[10px] md:leading-tight">
         Al enviar, tu solicitud quedara pendiente de revision interna. No es una reserva confirmada.
       </p>
     </div>

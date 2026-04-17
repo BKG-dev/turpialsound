@@ -326,7 +326,7 @@ export function BookingWizard() {
 
   if (submissionState === 'success' && publicCode) {
     return (
-      <div className="rounded-2xl border border-brand-border bg-brand-surface p-8">
+      <div className="rounded-2xl border border-brand-border bg-brand-surface p-5 md:p-6">
         <div className="mb-4 flex items-center justify-center">
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-gold/10">
             <svg
@@ -348,215 +348,219 @@ export function BookingWizard() {
         <h2 className="mb-2 text-center font-display text-xl font-bold text-text-primary">
           Solicitud enviada
         </h2>
-        <p className="mb-6 text-center text-sm text-text-secondary">
+        <p className="mb-4 text-center text-sm text-text-secondary">
           Tu solicitud quedo en estado pendiente de pago. El bloque quedo apartado por{' '}
           {paymentWindowLabel} mientras confirmamos el pago.
         </p>
 
-        <div className="mb-4 rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-6 py-4 text-center">
-          <p className="mb-1 text-xs text-text-muted">Codigo de solicitud</p>
-          <p className="font-display text-2xl font-bold tracking-wider text-accent-gold">{publicCode}</p>
-        </div>
-
-        <div className="mb-4 grid gap-3 rounded-lg border border-brand-border bg-brand-bg/40 p-4 sm:grid-cols-2">
-          <p className="text-sm text-text-secondary">
-            Sala asignada:{' '}
-            <span className="font-medium text-text-primary">
-              {assignedResourceName ?? 'Por confirmar'}
-            </span>
-          </p>
-          <p className="text-sm text-text-secondary">
-            Total:{' '}
-            <span className="font-medium text-text-primary">
-              {estimatedTotalDisplay}
-            </span>
-          </p>
-          <p className="text-sm text-text-secondary sm:col-span-2">
-            Tiempo limite para pagar:{' '}
-            <span className="font-medium text-text-primary">{countdownLabel}</span>
-          </p>
-          <div className="text-xs text-text-muted sm:col-span-2">
-            <div
-              className="mb-2 flex rounded-lg border border-brand-border p-1"
-              role="group"
-              aria-label="Moneda del total"
-            >
-              <button
-                type="button"
-                onClick={() => setDisplayCurrency('usd')}
-                className={cn(
-                  'flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors',
-                  displayCurrency === 'usd'
-                    ? 'bg-accent-gold text-brand-bg'
-                    : 'text-text-secondary hover:text-text-primary',
-                )}
-                aria-pressed={displayCurrency === 'usd'}
-              >
-                USD
-              </button>
-              <button
-                type="button"
-                onClick={() => setDisplayCurrency('bs')}
-                className={cn(
-                  'flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors',
-                  displayCurrency === 'bs'
-                    ? 'bg-accent-gold text-brand-bg'
-                    : 'text-text-secondary hover:text-text-primary',
-                )}
-                aria-pressed={displayCurrency === 'bs'}
-              >
-                Bs.
-              </button>
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] xl:items-start">
+          <div className="space-y-3">
+            <div className="rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-4 py-3 text-center">
+              <p className="mb-1 text-xs text-text-muted">Codigo de solicitud</p>
+              <p className="font-display text-xl font-bold tracking-wider text-accent-gold">{publicCode}</p>
             </div>
-            <p>
-              USD: <span className="font-medium text-text-primary">{estimatedTotalUsdLabel}</span>
-            </p>
-            <p className="mt-0.5">
-              Bs: <span className="font-medium text-text-primary">{estimatedTotalBsLabel}</span>
-            </p>
-            <p className="mt-1">{bcvCompactLabel}</p>
+
+            <div className="grid gap-2 rounded-lg border border-brand-border bg-brand-bg/40 p-3 sm:grid-cols-2">
+              <p className="text-sm text-text-secondary">
+                Sala asignada:{' '}
+                <span className="font-medium text-text-primary">
+                  {assignedResourceName ?? 'Por confirmar'}
+                </span>
+              </p>
+              <p className="text-sm text-text-secondary">
+                Total:{' '}
+                <span className="font-medium text-text-primary">{estimatedTotalDisplay}</span>
+              </p>
+              <p className="text-sm text-text-secondary sm:col-span-2">
+                Tiempo limite para pagar:{' '}
+                <span className="font-medium text-text-primary">{countdownLabel}</span>
+              </p>
+              <div className="text-xs text-text-muted sm:col-span-2">
+                <div
+                  className="mb-2 flex rounded-lg border border-brand-border p-1"
+                  role="group"
+                  aria-label="Moneda del total"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setDisplayCurrency('usd')}
+                    className={cn(
+                      'flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors',
+                      displayCurrency === 'usd'
+                        ? 'bg-accent-gold text-brand-bg'
+                        : 'text-text-secondary hover:text-text-primary',
+                    )}
+                    aria-pressed={displayCurrency === 'usd'}
+                  >
+                    USD
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDisplayCurrency('bs')}
+                    className={cn(
+                      'flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors',
+                      displayCurrency === 'bs'
+                        ? 'bg-accent-gold text-brand-bg'
+                        : 'text-text-secondary hover:text-text-primary',
+                    )}
+                    aria-pressed={displayCurrency === 'bs'}
+                  >
+                    Bs.
+                  </button>
+                </div>
+                <p>
+                  USD: <span className="font-medium text-text-primary">{estimatedTotalUsdLabel}</span>
+                </p>
+                <p className="mt-0.5">
+                  Bs: <span className="font-medium text-text-primary">{estimatedTotalBsLabel}</span>
+                </p>
+                <p className="mt-1">{bcvCompactLabel}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-brand-border bg-brand-bg/40 p-3 xl:p-4">
+            <h3 className="mb-2 text-sm font-semibold text-text-primary">Inicia tu pago</h3>
+            <Button
+              variant="primary"
+              size="sm"
+              type="button"
+              onClick={() => setShowPaymentOptions((currentState) => !currentState)}
+            >
+              Pagar en 3 seg
+            </Button>
+
+            {showPaymentOptions && (
+              <div className="mt-3">
+                <div className="mb-2 grid gap-2 sm:grid-cols-4">
+                  {ENABLED_PAYMENT_METHODS.map((method) => (
+                    <button
+                      key={method.slug}
+                      type="button"
+                      onClick={() => setSelectedPaymentMethodSlug(method.slug)}
+                      className={cn(
+                        'rounded-md border px-3 py-2 text-xs font-medium transition-colors',
+                        selectedPaymentMethod.slug === method.slug
+                          ? 'border-accent-gold bg-accent-gold/10 text-text-primary'
+                          : 'border-brand-border bg-brand-surface text-text-secondary hover:border-accent-gold/50',
+                      )}
+                      aria-pressed={selectedPaymentMethod.slug === method.slug}
+                    >
+                      {method.name}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="space-y-2 xl:max-h-[40vh] xl:overflow-y-auto xl:pr-1">
+                  {selectedPaymentMethod.slug === 'pago_movil' && (
+                    <div className="space-y-2 rounded-lg border border-brand-border bg-brand-surface p-3">
+                      <p className="text-sm font-semibold text-text-primary">Opcion A: Pago Movil</p>
+                      <p className="text-xs text-text-muted">Envia tu pago a estos datos:</p>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-text-secondary">Banco: {selectedPaymentMethod.details?.bankName ?? 'Por definir'}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-bank', selectedPaymentMethod.details?.bankName)}>Copiar</Button>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-text-secondary">Telefono: {selectedPaymentMethod.details?.phoneNumber ?? 'Por definir'}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-phone', selectedPaymentMethod.details?.phoneNumber)}>Copiar</Button>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-text-secondary">Cedula / RIF: {selectedPaymentMethod.details?.beneficiaryDocument ?? 'Por definir'}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-doc', selectedPaymentMethod.details?.beneficiaryDocument)}>Copiar</Button>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-text-secondary">Referencia: {publicCode}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-ref', publicCode)}>Copiar</Button>
+                      </div>
+                      <p className="text-xs text-text-muted">Importante: En el concepto del pago, coloca: {publicCode}</p>
+                      {selectedPaymentMethod.details?.qrImageUrl ? (
+                        <img
+                          src={selectedPaymentMethod.details.qrImageUrl}
+                          alt="QR Pago Movil"
+                          className="h-32 w-32 rounded-md border border-brand-border object-contain"
+                        />
+                      ) : (
+                        <div className="h-20 rounded-md border border-dashed border-brand-border/80 bg-brand-bg/30 p-3 text-xs text-text-muted">
+                          Espacio QR preparado. Disponible cuando se configure la fuente real.
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {selectedPaymentMethod.slug === 'transferencia' && (
+                    <div className="space-y-2 rounded-lg border border-brand-border bg-brand-surface p-3">
+                      <p className="text-sm font-semibold text-text-primary">Opcion B: Transferencia Bancaria</p>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-text-secondary">Banco: {selectedPaymentMethod.details?.bankName ?? 'Por definir'}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-bank', selectedPaymentMethod.details?.bankName)}>Copiar</Button>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-text-secondary">Cuenta: {selectedPaymentMethod.details?.accountNumber ?? 'Por definir'}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-account', selectedPaymentMethod.details?.accountNumber)}>Copiar</Button>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-text-secondary">Titular: {selectedPaymentMethod.details?.accountHolder ?? 'Por definir'}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-holder', selectedPaymentMethod.details?.accountHolder)}>Copiar</Button>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-text-secondary">RIF / Cedula: {selectedPaymentMethod.details?.beneficiaryDocument ?? 'Por definir'}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-doc', selectedPaymentMethod.details?.beneficiaryDocument)}>Copiar</Button>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-text-secondary">Referencia: {publicCode}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-ref', publicCode)}>Copiar</Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedPaymentMethod.slug === 'binance' && (
+                    <div className="space-y-2 rounded-lg border border-brand-border bg-brand-surface p-3">
+                      <p className="text-sm font-semibold text-text-primary">Opcion C: Binance (USDT)</p>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-text-secondary">Pay ID: {selectedPaymentMethod.details?.payId ?? 'Por definir'}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('bn-payid', selectedPaymentMethod.details?.payId)}>Copiar</Button>
+                      </div>
+                      <p className="text-sm text-text-secondary">Monto exacto: {estimatedTotalDisplay}</p>
+                      {selectedPaymentMethod.details?.qrImageUrl ? (
+                        <img
+                          src={selectedPaymentMethod.details.qrImageUrl}
+                          alt="QR Binance"
+                          className="h-32 w-32 rounded-md border border-brand-border object-contain"
+                        />
+                      ) : (
+                        <div className="h-20 rounded-md border border-dashed border-brand-border/80 bg-brand-bg/30 p-3 text-xs text-text-muted">
+                          Espacio QR preparado. Disponible cuando se configure la fuente real.
+                        </div>
+                      )}
+                      <p className="text-xs text-text-muted">Envia captura del comprobante al finalizar.</p>
+                    </div>
+                  )}
+
+                  {selectedPaymentMethod.slug === 'efectivo' && (
+                    <div className="space-y-2 rounded-lg border border-brand-border bg-brand-surface p-3">
+                      <p className="text-sm font-semibold text-text-primary">Opcion D: Efectivo</p>
+                      <p className="text-sm text-text-secondary">
+                        Solo valido para pago presencial dentro de la ventana activa del apartado.
+                      </p>
+                      <p className="text-xs text-text-muted">
+                        El bloque sigue sujeto a la ventana de {paymentWindowLabel} para completar el pago.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <p className="mt-2 text-xs text-text-muted">
+                  {copyStatusKey ? 'Dato copiado.' : selectedPaymentMethod.referenceHint}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="rounded-lg border border-brand-border bg-brand-bg/40 p-4">
-          <h3 className="mb-3 text-sm font-semibold text-text-primary">Inicia tu pago</h3>
-          <Button
-            variant="primary"
-            size="sm"
-            type="button"
-            onClick={() => setShowPaymentOptions((currentState) => !currentState)}
-          >
-            Pagar en 3 seg
-          </Button>
-
-          {showPaymentOptions && (
-            <div className="mt-4">
-              <div className="mb-3 grid gap-2 sm:grid-cols-4">
-                {ENABLED_PAYMENT_METHODS.map((method) => (
-                  <button
-                    key={method.slug}
-                    type="button"
-                    onClick={() => setSelectedPaymentMethodSlug(method.slug)}
-                    className={cn(
-                      'rounded-md border px-3 py-2 text-xs font-medium transition-colors',
-                      selectedPaymentMethod.slug === method.slug
-                        ? 'border-accent-gold bg-accent-gold/10 text-text-primary'
-                        : 'border-brand-border bg-brand-surface text-text-secondary hover:border-accent-gold/50',
-                    )}
-                    aria-pressed={selectedPaymentMethod.slug === method.slug}
-                  >
-                    {method.name}
-                  </button>
-                ))}
-              </div>
-
-              {selectedPaymentMethod.slug === 'pago_movil' && (
-                <div className="space-y-2 rounded-lg border border-brand-border bg-brand-surface p-3">
-                  <p className="text-sm font-semibold text-text-primary">Opcion A: Pago Movil</p>
-                  <p className="text-xs text-text-muted">Envia tu pago a estos datos:</p>
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-text-secondary">Banco: {selectedPaymentMethod.details?.bankName ?? 'Por definir'}</span>
-                    <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-bank', selectedPaymentMethod.details?.bankName)}>Copiar</Button>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-text-secondary">Telefono: {selectedPaymentMethod.details?.phoneNumber ?? 'Por definir'}</span>
-                    <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-phone', selectedPaymentMethod.details?.phoneNumber)}>Copiar</Button>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-text-secondary">Cedula / RIF: {selectedPaymentMethod.details?.beneficiaryDocument ?? 'Por definir'}</span>
-                    <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-doc', selectedPaymentMethod.details?.beneficiaryDocument)}>Copiar</Button>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-text-secondary">Referencia: {publicCode}</span>
-                    <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-ref', publicCode)}>Copiar</Button>
-                  </div>
-                  <p className="text-xs text-text-muted">Importante: En el concepto del pago, coloca: {publicCode}</p>
-                  {selectedPaymentMethod.details?.qrImageUrl ? (
-                    <img
-                      src={selectedPaymentMethod.details.qrImageUrl}
-                      alt="QR Pago Movil"
-                      className="h-36 w-36 rounded-md border border-brand-border object-contain"
-                    />
-                  ) : (
-                    <div className="h-24 rounded-md border border-dashed border-brand-border/80 bg-brand-bg/30 p-3 text-xs text-text-muted">
-                      Espacio QR preparado. Disponible cuando se configure la fuente real.
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {selectedPaymentMethod.slug === 'transferencia' && (
-                <div className="space-y-2 rounded-lg border border-brand-border bg-brand-surface p-3">
-                  <p className="text-sm font-semibold text-text-primary">Opcion B: Transferencia Bancaria</p>
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-text-secondary">Banco: {selectedPaymentMethod.details?.bankName ?? 'Por definir'}</span>
-                    <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-bank', selectedPaymentMethod.details?.bankName)}>Copiar</Button>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-text-secondary">Cuenta: {selectedPaymentMethod.details?.accountNumber ?? 'Por definir'}</span>
-                    <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-account', selectedPaymentMethod.details?.accountNumber)}>Copiar</Button>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-text-secondary">Titular: {selectedPaymentMethod.details?.accountHolder ?? 'Por definir'}</span>
-                    <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-holder', selectedPaymentMethod.details?.accountHolder)}>Copiar</Button>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-text-secondary">RIF / Cedula: {selectedPaymentMethod.details?.beneficiaryDocument ?? 'Por definir'}</span>
-                    <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-doc', selectedPaymentMethod.details?.beneficiaryDocument)}>Copiar</Button>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-text-secondary">Referencia: {publicCode}</span>
-                    <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-ref', publicCode)}>Copiar</Button>
-                  </div>
-                </div>
-              )}
-
-              {selectedPaymentMethod.slug === 'binance' && (
-                <div className="space-y-2 rounded-lg border border-brand-border bg-brand-surface p-3">
-                  <p className="text-sm font-semibold text-text-primary">Opcion C: Binance (USDT)</p>
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-text-secondary">Pay ID: {selectedPaymentMethod.details?.payId ?? 'Por definir'}</span>
-                    <Button variant="ghost" size="sm" onClick={() => handleCopy('bn-payid', selectedPaymentMethod.details?.payId)}>Copiar</Button>
-                  </div>
-                  <p className="text-sm text-text-secondary">Monto exacto: {estimatedTotalDisplay}</p>
-                  {selectedPaymentMethod.details?.qrImageUrl ? (
-                    <img
-                      src={selectedPaymentMethod.details.qrImageUrl}
-                      alt="QR Binance"
-                      className="h-36 w-36 rounded-md border border-brand-border object-contain"
-                    />
-                  ) : (
-                    <div className="h-24 rounded-md border border-dashed border-brand-border/80 bg-brand-bg/30 p-3 text-xs text-text-muted">
-                      Espacio QR preparado. Disponible cuando se configure la fuente real.
-                    </div>
-                  )}
-                  <p className="text-xs text-text-muted">Envia captura del comprobante al finalizar.</p>
-                </div>
-              )}
-
-              {selectedPaymentMethod.slug === 'efectivo' && (
-                <div className="space-y-2 rounded-lg border border-brand-border bg-brand-surface p-3">
-                  <p className="text-sm font-semibold text-text-primary">Opcion D: Efectivo</p>
-                  <p className="text-sm text-text-secondary">
-                    Solo valido para pago presencial dentro de la ventana activa del apartado.
-                  </p>
-                  <p className="text-xs text-text-muted">
-                    El bloque sigue sujeto a la ventana de {paymentWindowLabel} para completar el pago.
-                  </p>
-                </div>
-              )}
-
-              <p className="mt-2 text-xs text-text-muted">
-                {copyStatusKey ? 'Dato copiado.' : selectedPaymentMethod.referenceHint}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <p className="mx-auto mt-4 max-w-2xl text-center text-xs text-text-muted">
+        <p className="mx-auto mt-3 max-w-2xl text-center text-xs text-text-muted">
           Guarda tu codigo de solicitud para reportar el pago y hacer seguimiento.
         </p>
-        <div className="mt-6">
+        <div className="mt-4">
           <Button variant="ghost" size="sm" onClick={resetWizard}>
             Crear una nueva solicitud
           </Button>
@@ -642,7 +646,12 @@ export function BookingWizard() {
         </ol>
       </div>
 
-      <div className="p-5 md:px-6 md:py-4">
+      <div
+        className={cn(
+          'p-5 md:px-6 md:py-4',
+          currentStep === 5 && 'md:py-3 lg:py-2.5',
+        )}
+      >
         <div
           className={cn(
             'mb-4 md:mb-3',
@@ -744,61 +753,20 @@ export function BookingWizard() {
           data.eventDate &&
           data.startTime &&
           data.durationMinutes && (
-            <>
-              <SummaryStep
-                serviceSlug={selectedServiceSlug}
-                variantSlug={selectedVariantSlug}
-                eventDate={data.eventDate}
-                startTime={data.startTime}
-                durationMinutes={data.durationMinutes}
-                extrasNotes={data.extrasNotes}
-                extrasTechnician={data.extrasTechnician}
-                extrasBackline={data.extrasBackline}
-                requesterName={data.requesterName}
-                requesterEmail={data.requesterEmail}
-                requesterPhone={normalizeWhatsappVe(data.requesterPhone)}
-                estimate={bookingEstimate}
-              />
-              <div className="mt-4 rounded-lg border border-brand-border bg-brand-bg/40 p-4">
-                <div className="mb-3 flex rounded-lg border border-brand-border p-1" role="group" aria-label="Moneda del total estimado">
-                  <button
-                    type="button"
-                    onClick={() => setDisplayCurrency('usd')}
-                    className={cn(
-                      'flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors',
-                      displayCurrency === 'usd'
-                        ? 'bg-accent-gold text-brand-bg'
-                        : 'text-text-secondary hover:text-text-primary',
-                    )}
-                    aria-pressed={displayCurrency === 'usd'}
-                  >
-                    USD
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDisplayCurrency('bs')}
-                    className={cn(
-                      'flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors',
-                      displayCurrency === 'bs'
-                        ? 'bg-accent-gold text-brand-bg'
-                        : 'text-text-secondary hover:text-text-primary',
-                    )}
-                    aria-pressed={displayCurrency === 'bs'}
-                  >
-                    Bs.
-                  </button>
-                </div>
-                <p className="text-sm text-text-secondary">
-                  Total estimado:{' '}
-                  <span className="font-medium text-text-primary">{estimatedTotalDisplay}</span>
-                </p>
-                <p className="mt-1 text-xs text-text-muted">
-                  USD: <span className="font-medium text-text-primary">{estimatedTotalUsdLabel}</span> | Bs:{' '}
-                  <span className="font-medium text-text-primary">{estimatedTotalBsLabel}</span>
-                </p>
-                <p className="mt-1 text-xs text-text-muted">{bcvReferenceLabel}</p>
-              </div>
-            </>
+            <SummaryStep
+              serviceSlug={selectedServiceSlug}
+              variantSlug={selectedVariantSlug}
+              eventDate={data.eventDate}
+              startTime={data.startTime}
+              durationMinutes={data.durationMinutes}
+              extrasNotes={data.extrasNotes}
+              extrasTechnician={data.extrasTechnician}
+              extrasBackline={data.extrasBackline}
+              requesterName={data.requesterName}
+              requesterEmail={data.requesterEmail}
+              requesterPhone={normalizeWhatsappVe(data.requesterPhone)}
+              estimate={bookingEstimate}
+            />
           )}
       </div>
 
