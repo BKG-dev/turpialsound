@@ -20,7 +20,6 @@ import { buildBookingEstimate } from '@/lib/bookings/estimate'
 import {
   formatUsdByCurrency,
   useBcvRate,
-  type DisplayCurrency,
 } from '@/lib/bookings/currency-display'
 import {
   getEnabledPaymentMethods,
@@ -99,7 +98,6 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
   const [publicCode, setPublicCode] = useState<string | null>(null)
   const [assignedResourceName, setAssignedResourceName] = useState<string | null>(null)
   const [paymentDeadlineIso, setPaymentDeadlineIso] = useState<string | null>(null)
-  const [displayCurrency, setDisplayCurrency] = useState<DisplayCurrency>('bs')
   const [showPaymentOptions, setShowPaymentOptions] = useState(false)
   const [selectedPaymentMethodSlug, setSelectedPaymentMethodSlug] =
     useState<BookingPaymentMethodSlug>(PRIMARY_PAYMENT_METHOD.slug)
@@ -160,11 +158,8 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
     data.extrasBackline ? 'Backline incluido' : null,
   ].filter(Boolean) as string[]
   const hasPurchaseExtras = selectedExtras.length > 0 || data.extrasNotes.trim().length > 0
-  const activeAmountLabel =
-    displayCurrency === 'usd' ? estimatedTotalUsdLabel : estimatedTotalBsLabel
-  const secondaryAmountLabel =
-    displayCurrency === 'usd' ? estimatedTotalBsLabel : estimatedTotalUsdLabel
-  const secondaryAmountPrefix = displayCurrency === 'usd' ? 'Bs' : 'USD'
+  const activeAmountLabel = estimatedTotalBsLabel
+  const secondaryAmountLabel = estimatedTotalUsdLabel
   const paymentDeadlineMs = useMemo(() => {
     if (!paymentDeadlineIso) return null
     const parsedDeadline = new Date(paymentDeadlineIso).getTime()
@@ -283,7 +278,6 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
     setPublicCode(null)
     setAssignedResourceName(null)
     setPaymentDeadlineIso(null)
-    setDisplayCurrency('bs')
     setShowPaymentOptions(false)
     setSelectedPaymentMethodSlug(PRIMARY_PAYMENT_METHOD.slug)
     setCopyStatusKey(null)
@@ -432,75 +426,58 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
                   <p className="font-medium text-text-primary">{selectedVariantName}</p>
                 </div>
                 {(bookingDateLabel || data.startTime || durationLabel) && (
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-text-muted">Cuando aplica</p>
-                    {bookingDateLabel && <p className="text-text-secondary">{bookingDateLabel}</p>}
-                    {data.startTime && (
-                      <p className="text-text-secondary">
-                        Horario: {data.startTime}
-                        {bookingEndTime ? ` - ${bookingEndTime}` : ''}
-                      </p>
+                  <div className="grid gap-1 sm:grid-cols-3">
+                    {bookingDateLabel && (
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wide text-text-muted">Fecha</p>
+                        <p className="text-text-secondary">{bookingDateLabel}</p>
+                      </div>
                     )}
-                    {durationLabel && <p className="text-text-secondary">Duracion: {durationLabel}</p>}
-                    {assignedResourceName && (
-                      <p className="text-text-secondary">Sala asignada: {assignedResourceName}</p>
+                    {data.startTime && (
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wide text-text-muted">Horario</p>
+                        <p className="text-text-secondary">
+                          {data.startTime}
+                          {bookingEndTime ? ` - ${bookingEndTime}` : ''}
+                        </p>
+                      </div>
+                    )}
+                    {durationLabel && (
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wide text-text-muted">Duracion</p>
+                        <p className="text-text-secondary">{durationLabel}</p>
+                      </div>
                     )}
                   </div>
                 )}
                 {hasPurchaseExtras && (
                   <div>
                     <p className="text-[10px] uppercase tracking-wide text-text-muted">Extras incluidos</p>
-                    {selectedExtras.map((extraLabel) => (
-                      <p key={extraLabel} className="text-text-secondary">
-                        {extraLabel}
-                      </p>
-                    ))}
+                    <div className="mt-0.5 flex flex-wrap gap-1">
+                      {selectedExtras.map((extraLabel) => (
+                        <span
+                          key={extraLabel}
+                          className="rounded-full border border-brand-border bg-brand-bg/30 px-1.5 py-0.5 text-[10px] text-text-secondary"
+                        >
+                          {extraLabel}
+                        </span>
+                      ))}
+                    </div>
                     {data.extrasNotes.trim() && (
-                      <p className="text-text-secondary">Notas: {data.extrasNotes.trim()}</p>
+                      <p className="mt-0.5 text-text-secondary">Notas: {data.extrasNotes.trim()}</p>
                     )}
                   </div>
+                )}
+                {assignedResourceName && (
+                  <p className="text-[10px] text-text-muted">Sala asignada: {assignedResourceName}</p>
                 )}
               </div>
 
               <div className="mt-1.5 text-[11px] leading-snug text-text-muted">
                 <p className="mb-0.5 text-[10px] uppercase tracking-wide text-text-muted">Monto a pagar</p>
-                <div
-                  className="mb-1 flex rounded-lg border border-brand-border p-0.5"
-                  role="group"
-                  aria-label="Moneda del total"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setDisplayCurrency('usd')}
-                    className={cn(
-                      'flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors',
-                      displayCurrency === 'usd'
-                        ? 'bg-accent-gold text-brand-bg'
-                        : 'text-text-secondary hover:text-text-primary',
-                    )}
-                    aria-pressed={displayCurrency === 'usd'}
-                  >
-                    USD
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDisplayCurrency('bs')}
-                    className={cn(
-                      'flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors',
-                      displayCurrency === 'bs'
-                        ? 'bg-accent-gold text-brand-bg'
-                        : 'text-text-secondary hover:text-text-primary',
-                    )}
-                    aria-pressed={displayCurrency === 'bs'}
-                  >
-                    Bs.
-                  </button>
-                </div>
+                <p className="font-medium text-text-primary">{activeAmountLabel}</p>
                 <p>
-                  <span className="font-medium text-text-primary">{activeAmountLabel}</span>
-                </p>
-                <p>
-                  {secondaryAmountPrefix}:{' '}
+                  USD:{' '}
                   <span className="font-medium text-text-primary">{secondaryAmountLabel}</span>
                 </p>
                 <p>{bcvCompactLabel}</p>
