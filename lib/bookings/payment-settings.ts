@@ -1,10 +1,14 @@
-export type BookingPaymentMethodSlug = 'pago_movil' | 'transferencia' | 'binance'
+export type BookingPaymentMethodSlug = 'pago_movil' | 'transferencia' | 'binance' | 'efectivo'
 
 export interface BookingPaymentMethodDetails {
   beneficiaryName?: string
   beneficiaryDocument?: string
   bankName?: string
   phoneNumber?: string
+  accountNumber?: string
+  accountHolder?: string
+  payId?: string
+  qrImageUrl?: string
 }
 
 export interface BookingPaymentMethodConfig {
@@ -46,15 +50,32 @@ export const BOOKING_PAYMENT_SETTINGS: BookingPaymentSettings = {
       slug: 'transferencia',
       enabled: true,
       name: 'Transferencia',
+      details: {
+        bankName: 'REEMPLAZAR_BANCO',
+        accountNumber: 'REEMPLAZAR_CUENTA',
+        accountHolder: 'REEMPLAZAR_TITULAR',
+        beneficiaryDocument: 'REEMPLAZAR_DOCUMENTO',
+      },
       referenceHint: 'Usa tu codigo de solicitud como referencia al reportar el pago.',
-      customerMessage: 'Metodo visible en preparacion. Pronto veras las instrucciones completas.',
+      customerMessage: 'Envia tu pago y conserva el comprobante para reportarlo.',
     },
     {
       slug: 'binance',
       enabled: true,
       name: 'Binance',
+      details: {
+        payId: 'REEMPLAZAR_PAY_ID',
+      },
       referenceHint: 'Usa tu codigo de solicitud como referencia al reportar el pago.',
-      customerMessage: 'Metodo visible en preparacion. Pronto veras las instrucciones completas.',
+      customerMessage: 'Envia tu pago y conserva el comprobante para reportarlo.',
+    },
+    {
+      slug: 'efectivo',
+      enabled: true,
+      name: 'Efectivo',
+      referenceHint: 'Indica tu codigo de solicitud al momento de pagar.',
+      customerMessage:
+        'Solo valido para pago presencial dentro de la ventana activa del apartado.',
     },
   ],
 }
