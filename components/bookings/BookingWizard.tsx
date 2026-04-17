@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { ServiceSelectStep } from '@/components/bookings/steps/ServiceSelectStep'
 import { VariantSelectStep } from '@/components/bookings/steps/VariantSelectStep'
-import { DateTimeStep } from '@/components/bookings/steps/DateTimeStep'
+import { DateTimeStep, deriveEndTime } from '@/components/bookings/steps/DateTimeStep'
 import { ExtrasStep } from '@/components/bookings/steps/ExtrasStep'
 import {
   ContactStep,
@@ -14,10 +14,10 @@ import {
   normalizeWhatsappVe,
 } from '@/components/bookings/steps/ContactStep'
 import { SummaryStep } from '@/components/bookings/steps/SummaryStep'
+import { CATALOG_SERVICES, CATALOG_VARIANTS } from '@/lib/bookings/catalog'
 import { submitBookingRequest } from '@/lib/bookings/actions'
 import { buildBookingEstimate } from '@/lib/bookings/estimate'
 import {
-  formatBcvReferenceLabel,
   formatUsdByCurrency,
   useBcvRate,
   type DisplayCurrency,
@@ -75,6 +75,16 @@ const PRIMARY_PAYMENT_METHOD = getPrimaryPaymentMethod()
 const ENABLED_PAYMENT_METHODS = getEnabledPaymentMethods()
 const PAYMENT_WINDOW_MINUTES = getPaymentWindowMinutes()
 
+function formatBookingDate(dateStr: string): string {
+  const d = new Date(`${dateStr}T12:00:00`)
+  return new Intl.DateTimeFormat('es', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(d)
+}
+
 interface BookingWizardProps {
   onSubmissionStateChange?: (state: 'idle' | 'loading' | 'success' | 'error') => void
 }
@@ -123,15 +133,38 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
   const bcvState = useBcvRate()
   const estimatedTotalUsdLabel = formatUsdByCurrency(bookingEstimate.estimatedTotalUsd, 'usd', bcvState.rate)
   const estimatedTotalBsLabel = formatUsdByCurrency(bookingEstimate.estimatedTotalUsd, 'bs', bcvState.rate)
-  const estimatedTotalDisplay = formatUsdByCurrency(
-    bookingEstimate.estimatedTotalUsd,
-    displayCurrency,
-    bcvState.rate,
-  )
-  const bcvReferenceLabel = formatBcvReferenceLabel(bcvState)
   const selectedPaymentMethod =
     ENABLED_PAYMENT_METHODS.find((method) => method.slug === selectedPaymentMethodSlug) ??
     PRIMARY_PAYMENT_METHOD
+  const selectedServiceName =
+    CATALOG_SERVICES.find((service) => service.slug === selectedServiceSlug)?.name ??
+    selectedServiceSlug ??
+    ''
+  const selectedVariantName =
+    CATALOG_VARIANTS.find((variant) => variant.slug === selectedVariantSlug)?.name ??
+    selectedVariantSlug ??
+    ''
+  const bookingDateLabel = data.eventDate ? formatBookingDate(data.eventDate) : null
+  const bookingEndTime =
+    data.startTime && data.durationMinutes !== null
+      ? deriveEndTime(data.startTime, data.durationMinutes)
+      : null
+  const durationLabel =
+    data.durationMinutes !== null
+      ? data.durationMinutes % 60 === 0
+        ? `${data.durationMinutes / 60} hora${data.durationMinutes / 60 === 1 ? '' : 's'}`
+        : `${Math.floor(data.durationMinutes / 60)}h ${String(data.durationMinutes % 60).padStart(2, '0')}m`
+      : null
+  const selectedExtras = [
+    data.extrasTechnician ? 'Tecnico incluido' : null,
+    data.extrasBackline ? 'Backline incluido' : null,
+  ].filter(Boolean) as string[]
+  const hasPurchaseExtras = selectedExtras.length > 0 || data.extrasNotes.trim().length > 0
+  const activeAmountLabel =
+    displayCurrency === 'usd' ? estimatedTotalUsdLabel : estimatedTotalBsLabel
+  const secondaryAmountLabel =
+    displayCurrency === 'usd' ? estimatedTotalBsLabel : estimatedTotalUsdLabel
+  const secondaryAmountPrefix = displayCurrency === 'usd' ? 'Bs' : 'USD'
   const paymentDeadlineMs = useMemo(() => {
     if (!paymentDeadlineIso) return null
     const parsedDeadline = new Date(paymentDeadlineIso).getTime()
@@ -389,16 +422,48 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
             </div>
 
             <div className="rounded-lg border border-brand-border bg-brand-bg/40 p-2">
-              <div className="grid gap-1 sm:grid-cols-1">
-                <p className="text-[11px] leading-snug text-text-secondary">
-                  Sala asignada:{' '}
-                  <span className="font-medium text-text-primary">
-                    {assignedResourceName ?? 'Por confirmar'}
-                  </span>
-                </p>
+              <div className="space-y-1.5 text-[11px] leading-snug">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-text-muted">Servicio</p>
+                  <p className="font-medium text-text-primary">{selectedServiceName}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-text-muted">Modalidad</p>
+                  <p className="font-medium text-text-primary">{selectedVariantName}</p>
+                </div>
+                {(bookingDateLabel || data.startTime || durationLabel) && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-text-muted">Cuando aplica</p>
+                    {bookingDateLabel && <p className="text-text-secondary">{bookingDateLabel}</p>}
+                    {data.startTime && (
+                      <p className="text-text-secondary">
+                        Horario: {data.startTime}
+                        {bookingEndTime ? ` - ${bookingEndTime}` : ''}
+                      </p>
+                    )}
+                    {durationLabel && <p className="text-text-secondary">Duracion: {durationLabel}</p>}
+                    {assignedResourceName && (
+                      <p className="text-text-secondary">Sala asignada: {assignedResourceName}</p>
+                    )}
+                  </div>
+                )}
+                {hasPurchaseExtras && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-text-muted">Extras incluidos</p>
+                    {selectedExtras.map((extraLabel) => (
+                      <p key={extraLabel} className="text-text-secondary">
+                        {extraLabel}
+                      </p>
+                    ))}
+                    {data.extrasNotes.trim() && (
+                      <p className="text-text-secondary">Notas: {data.extrasNotes.trim()}</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="mt-1.5 text-[11px] leading-snug text-text-muted">
+                <p className="mb-0.5 text-[10px] uppercase tracking-wide text-text-muted">Monto a pagar</p>
                 <div
                   className="mb-1 flex rounded-lg border border-brand-border p-0.5"
                   role="group"
@@ -432,10 +497,11 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
                   </button>
                 </div>
                 <p>
-                  USD: <span className="font-medium text-text-primary">{estimatedTotalUsdLabel}</span>
+                  <span className="font-medium text-text-primary">{activeAmountLabel}</span>
                 </p>
                 <p>
-                  Bs: <span className="font-medium text-text-primary">{estimatedTotalBsLabel}</span>
+                  {secondaryAmountPrefix}:{' '}
+                  <span className="font-medium text-text-primary">{secondaryAmountLabel}</span>
                 </p>
                 <p>{bcvCompactLabel}</p>
               </div>
