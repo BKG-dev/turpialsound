@@ -6,7 +6,11 @@ import { Menu, X } from 'lucide-react'
 import { mainNavItems, ctaNav } from '@/content/navigation'
 import { Button } from '@/components/ui/Button'
 
-export function MobileMenu() {
+interface MobileMenuProps {
+  hideWhatsAppCta?: boolean
+}
+
+export function MobileMenu({ hideWhatsAppCta = false }: MobileMenuProps) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -62,11 +66,13 @@ export function MobileMenu() {
             ))}
           </nav>
 
-          <div className="mt-6 border-t border-brand-border pt-6">
-            <Button as="link" href={ctaNav.href} variant="primary" size="md" className="w-full">
-              {ctaNav.label}
-            </Button>
-          </div>
+          {!hideWhatsAppCta && (
+            <div className="mt-6 border-t border-brand-border pt-6">
+              <Button as="link" href={ctaNav.href} variant="primary" size="md" className="w-full">
+                {ctaNav.label}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

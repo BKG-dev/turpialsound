@@ -2,10 +2,17 @@
 
 import { motion } from 'framer-motion'
 import { MessageCircle } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 
 const WA_NUMBER = '58XXXXXXXXX' // [CLIENT_REQUIRED] — replace with real number
 
 export function WhatsAppButton() {
+  const pathname = usePathname()
+
+  if (pathname === '/reservas') {
+    return null
+  }
+
   return (
     <div className="fixed bottom-6 right-6 z-50">
       {/* Pulsing rings */}

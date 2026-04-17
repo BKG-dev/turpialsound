@@ -75,7 +75,11 @@ const PRIMARY_PAYMENT_METHOD = getPrimaryPaymentMethod()
 const ENABLED_PAYMENT_METHODS = getEnabledPaymentMethods()
 const PAYMENT_WINDOW_MINUTES = getPaymentWindowMinutes()
 
-export function BookingWizard() {
+interface BookingWizardProps {
+  onSubmissionStateChange?: (state: 'idle' | 'loading' | 'success' | 'error') => void
+}
+
+export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = {}) {
   const [currentStep, setCurrentStep] = useState(0)
   const [furthestStep, setFurthestStep] = useState(0)
   const [data, setData] = useState<WizardData>(INITIAL_DATA)
@@ -175,6 +179,10 @@ export function BookingWizard() {
 
     return `TASA REFERENCIAL = Bs. ${rateLabel} (actualizada: ${dateLabel})`
   }, [bcvState])
+
+  useEffect(() => {
+    onSubmissionStateChange?.(submissionState)
+  }, [onSubmissionStateChange, submissionState])
 
   useEffect(() => {
     if (paymentDeadlineMs === null) {
@@ -326,58 +334,62 @@ export function BookingWizard() {
 
   if (submissionState === 'success' && publicCode) {
     return (
-      <div className="rounded-2xl border border-brand-border bg-brand-surface p-5 md:p-6">
-        <div className="mb-4 flex items-center justify-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-gold/10">
-            <svg
-              className="h-7 w-7 text-accent-gold"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M5 13l4 4L19 7"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
+      <div className="rounded-2xl border border-brand-border bg-brand-surface p-3">
+        <div className="mb-2.5 rounded-lg border border-brand-border/70 bg-brand-bg/30 px-2.5 py-2">
+          <div className="flex items-start gap-2">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-gold/10">
+              <svg className="h-4 w-4 text-accent-gold" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M5 13l4 4L19 7"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            <div className="min-w-0">
+              <h2 className="font-display text-sm font-bold leading-tight text-text-primary md:text-base">
+                Solicitud enviada
+              </h2>
+              <p className="mt-0.5 text-[11px] leading-snug text-text-secondary">
+                Tu solicitud quedo en estado pendiente de pago. El bloque quedo apartado por{' '}
+                {paymentWindowLabel} mientras confirmamos el pago.
+              </p>
+            </div>
+          </div>
         </div>
-        <h2 className="mb-2 text-center font-display text-xl font-bold text-text-primary">
-          Solicitud enviada
-        </h2>
-        <p className="mb-4 text-center text-sm text-text-secondary">
-          Tu solicitud quedo en estado pendiente de pago. El bloque quedo apartado por{' '}
-          {paymentWindowLabel} mientras confirmamos el pago.
-        </p>
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] xl:items-start">
-          <div className="space-y-3">
-            <div className="rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-4 py-3 text-center">
-              <p className="mb-1 text-xs text-text-muted">Codigo de solicitud</p>
-              <p className="font-display text-xl font-bold tracking-wider text-accent-gold">{publicCode}</p>
+        <div className="grid grid-cols-1 gap-2.5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="space-y-2">
+            <div className="rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-2.5 py-1.5 text-center">
+              <p className="mb-0.5 text-[10px] text-text-muted">Codigo de solicitud</p>
+              <p className="font-display text-sm font-bold tracking-wider text-accent-gold md:text-base">
+                {publicCode}
+              </p>
             </div>
 
-            <div className="grid gap-2 rounded-lg border border-brand-border bg-brand-bg/40 p-3 sm:grid-cols-2">
-              <p className="text-sm text-text-secondary">
-                Sala asignada:{' '}
-                <span className="font-medium text-text-primary">
-                  {assignedResourceName ?? 'Por confirmar'}
-                </span>
-              </p>
-              <p className="text-sm text-text-secondary">
-                Total:{' '}
-                <span className="font-medium text-text-primary">{estimatedTotalDisplay}</span>
-              </p>
-              <p className="text-sm text-text-secondary sm:col-span-2">
-                Tiempo limite para pagar:{' '}
-                <span className="font-medium text-text-primary">{countdownLabel}</span>
-              </p>
-              <div className="text-xs text-text-muted sm:col-span-2">
+            <div className="rounded-lg border border-brand-border bg-brand-bg/40 p-2">
+              <div className="grid gap-1 sm:grid-cols-2">
+                <p className="text-[11px] leading-snug text-text-secondary">
+                  Sala asignada:{' '}
+                  <span className="font-medium text-text-primary">
+                    {assignedResourceName ?? 'Por confirmar'}
+                  </span>
+                </p>
+                <p className="text-[11px] leading-snug text-text-secondary">
+                  Total:{' '}
+                  <span className="font-medium text-text-primary">{estimatedTotalDisplay}</span>
+                </p>
+                <p className="text-[11px] leading-snug text-text-secondary sm:col-span-2">
+                  Tiempo limite para pagar:{' '}
+                  <span className="font-medium text-text-primary">{countdownLabel}</span>
+                </p>
+              </div>
+
+              <div className="mt-1.5 text-[11px] leading-snug text-text-muted">
                 <div
-                  className="mb-2 flex rounded-lg border border-brand-border p-1"
+                  className="mb-1 flex rounded-lg border border-brand-border p-0.5"
                   role="group"
                   aria-label="Moneda del total"
                 >
@@ -385,7 +397,7 @@ export function BookingWizard() {
                     type="button"
                     onClick={() => setDisplayCurrency('usd')}
                     className={cn(
-                      'flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors',
+                      'flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors',
                       displayCurrency === 'usd'
                         ? 'bg-accent-gold text-brand-bg'
                         : 'text-text-secondary hover:text-text-primary',
@@ -398,7 +410,7 @@ export function BookingWizard() {
                     type="button"
                     onClick={() => setDisplayCurrency('bs')}
                     className={cn(
-                      'flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors',
+                      'flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors',
                       displayCurrency === 'bs'
                         ? 'bg-accent-gold text-brand-bg'
                         : 'text-text-secondary hover:text-text-primary',
@@ -411,35 +423,37 @@ export function BookingWizard() {
                 <p>
                   USD: <span className="font-medium text-text-primary">{estimatedTotalUsdLabel}</span>
                 </p>
-                <p className="mt-0.5">
+                <p>
                   Bs: <span className="font-medium text-text-primary">{estimatedTotalBsLabel}</span>
                 </p>
-                <p className="mt-1">{bcvCompactLabel}</p>
+                <p>{bcvCompactLabel}</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-lg border border-brand-border bg-brand-bg/40 p-3 xl:p-4">
-            <h3 className="mb-2 text-sm font-semibold text-text-primary">Inicia tu pago</h3>
-            <Button
-              variant="primary"
-              size="sm"
-              type="button"
-              onClick={() => setShowPaymentOptions((currentState) => !currentState)}
-            >
-              Pagar en 3 seg
-            </Button>
+          <div className="rounded-lg border border-brand-border bg-brand-bg/40 p-2">
+            <h3 className="mb-1 text-center text-xs font-semibold text-text-primary">Inicia tu pago</h3>
+            <div className="mb-1.5 flex justify-center">
+              <Button
+                variant="primary"
+                size="sm"
+                type="button"
+                onClick={() => setShowPaymentOptions((currentState) => !currentState)}
+              >
+                Pagar en 3 seg
+              </Button>
+            </div>
 
             {showPaymentOptions && (
-              <div className="mt-3">
-                <div className="mb-2 grid gap-2 sm:grid-cols-4">
+              <div>
+                <div className="mb-1.5 grid grid-cols-2 gap-1 sm:grid-cols-4">
                   {ENABLED_PAYMENT_METHODS.map((method) => (
                     <button
                       key={method.slug}
                       type="button"
                       onClick={() => setSelectedPaymentMethodSlug(method.slug)}
                       className={cn(
-                        'rounded-md border px-3 py-2 text-xs font-medium transition-colors',
+                        'rounded-md border px-2 py-1 text-[10px] font-medium leading-tight transition-colors',
                         selectedPaymentMethod.slug === method.slug
                           ? 'border-accent-gold bg-accent-gold/10 text-text-primary'
                           : 'border-brand-border bg-brand-surface text-text-secondary hover:border-accent-gold/50',
@@ -451,36 +465,64 @@ export function BookingWizard() {
                   ))}
                 </div>
 
-                <div className="space-y-2 xl:max-h-[40vh] xl:overflow-y-auto xl:pr-1">
+                <div className="space-y-1">
                   {selectedPaymentMethod.slug === 'pago_movil' && (
-                    <div className="space-y-2 rounded-lg border border-brand-border bg-brand-surface p-3">
-                      <p className="text-sm font-semibold text-text-primary">Opcion A: Pago Movil</p>
-                      <p className="text-xs text-text-muted">Envia tu pago a estos datos:</p>
-                      <div className="flex items-center justify-between gap-3 text-sm">
-                        <span className="text-text-secondary">Banco: {selectedPaymentMethod.details?.bankName ?? 'Por definir'}</span>
-                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-bank', selectedPaymentMethod.details?.bankName)}>Copiar</Button>
+                    <div className="space-y-1 rounded-lg border border-brand-border bg-brand-surface p-1.5">
+                      <p className="text-[11px] font-semibold text-text-primary">Opcion A: Pago Movil</p>
+                      <p className="text-[10px] text-text-muted">Envia tu pago a estos datos:</p>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">
+                          Banco: {selectedPaymentMethod.details?.bankName ?? 'Por definir'}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopy('pm-bank', selectedPaymentMethod.details?.bankName)}
+                        >
+                          Copiar
+                        </Button>
                       </div>
-                      <div className="flex items-center justify-between gap-3 text-sm">
-                        <span className="text-text-secondary">Telefono: {selectedPaymentMethod.details?.phoneNumber ?? 'Por definir'}</span>
-                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-phone', selectedPaymentMethod.details?.phoneNumber)}>Copiar</Button>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">
+                          Telefono: {selectedPaymentMethod.details?.phoneNumber ?? 'Por definir'}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopy('pm-phone', selectedPaymentMethod.details?.phoneNumber)}
+                        >
+                          Copiar
+                        </Button>
                       </div>
-                      <div className="flex items-center justify-between gap-3 text-sm">
-                        <span className="text-text-secondary">Cedula / RIF: {selectedPaymentMethod.details?.beneficiaryDocument ?? 'Por definir'}</span>
-                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-doc', selectedPaymentMethod.details?.beneficiaryDocument)}>Copiar</Button>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">
+                          Cedula / RIF: {selectedPaymentMethod.details?.beneficiaryDocument ?? 'Por definir'}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopy('pm-doc', selectedPaymentMethod.details?.beneficiaryDocument)}
+                        >
+                          Copiar
+                        </Button>
                       </div>
-                      <div className="flex items-center justify-between gap-3 text-sm">
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
                         <span className="text-text-secondary">Referencia: {publicCode}</span>
-                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-ref', publicCode)}>Copiar</Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-ref', publicCode)}>
+                          Copiar
+                        </Button>
                       </div>
-                      <p className="text-xs text-text-muted">Importante: En el concepto del pago, coloca: {publicCode}</p>
+                      <p className="text-[10px] text-text-muted">
+                        Importante: En el concepto del pago, coloca: {publicCode}
+                      </p>
                       {selectedPaymentMethod.details?.qrImageUrl ? (
                         <img
                           src={selectedPaymentMethod.details.qrImageUrl}
                           alt="QR Pago Movil"
-                          className="h-32 w-32 rounded-md border border-brand-border object-contain"
+                          className="h-16 w-16 rounded-md border border-brand-border object-contain"
                         />
                       ) : (
-                        <div className="h-20 rounded-md border border-dashed border-brand-border/80 bg-brand-bg/30 p-3 text-xs text-text-muted">
+                        <div className="h-10 rounded-md border border-dashed border-brand-border/80 bg-brand-bg/30 p-1 text-[10px] text-text-muted">
                           Espacio QR preparado. Disponible cuando se configure la fuente real.
                         </div>
                       )}
@@ -488,68 +530,112 @@ export function BookingWizard() {
                   )}
 
                   {selectedPaymentMethod.slug === 'transferencia' && (
-                    <div className="space-y-2 rounded-lg border border-brand-border bg-brand-surface p-3">
-                      <p className="text-sm font-semibold text-text-primary">Opcion B: Transferencia Bancaria</p>
-                      <div className="flex items-center justify-between gap-3 text-sm">
-                        <span className="text-text-secondary">Banco: {selectedPaymentMethod.details?.bankName ?? 'Por definir'}</span>
-                        <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-bank', selectedPaymentMethod.details?.bankName)}>Copiar</Button>
+                    <div className="space-y-1 rounded-lg border border-brand-border bg-brand-surface p-1.5">
+                      <p className="text-[11px] font-semibold text-text-primary">
+                        Opcion B: Transferencia Bancaria
+                      </p>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">
+                          Banco: {selectedPaymentMethod.details?.bankName ?? 'Por definir'}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopy('tr-bank', selectedPaymentMethod.details?.bankName)}
+                        >
+                          Copiar
+                        </Button>
                       </div>
-                      <div className="flex items-center justify-between gap-3 text-sm">
-                        <span className="text-text-secondary">Cuenta: {selectedPaymentMethod.details?.accountNumber ?? 'Por definir'}</span>
-                        <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-account', selectedPaymentMethod.details?.accountNumber)}>Copiar</Button>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">
+                          Cuenta: {selectedPaymentMethod.details?.accountNumber ?? 'Por definir'}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopy('tr-account', selectedPaymentMethod.details?.accountNumber)}
+                        >
+                          Copiar
+                        </Button>
                       </div>
-                      <div className="flex items-center justify-between gap-3 text-sm">
-                        <span className="text-text-secondary">Titular: {selectedPaymentMethod.details?.accountHolder ?? 'Por definir'}</span>
-                        <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-holder', selectedPaymentMethod.details?.accountHolder)}>Copiar</Button>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">
+                          Titular: {selectedPaymentMethod.details?.accountHolder ?? 'Por definir'}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopy('tr-holder', selectedPaymentMethod.details?.accountHolder)}
+                        >
+                          Copiar
+                        </Button>
                       </div>
-                      <div className="flex items-center justify-between gap-3 text-sm">
-                        <span className="text-text-secondary">RIF / Cedula: {selectedPaymentMethod.details?.beneficiaryDocument ?? 'Por definir'}</span>
-                        <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-doc', selectedPaymentMethod.details?.beneficiaryDocument)}>Copiar</Button>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">
+                          RIF / Cedula: {selectedPaymentMethod.details?.beneficiaryDocument ?? 'Por definir'}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopy('tr-doc', selectedPaymentMethod.details?.beneficiaryDocument)}
+                        >
+                          Copiar
+                        </Button>
                       </div>
-                      <div className="flex items-center justify-between gap-3 text-sm">
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
                         <span className="text-text-secondary">Referencia: {publicCode}</span>
-                        <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-ref', publicCode)}>Copiar</Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-ref', publicCode)}>
+                          Copiar
+                        </Button>
                       </div>
                     </div>
                   )}
 
                   {selectedPaymentMethod.slug === 'binance' && (
-                    <div className="space-y-2 rounded-lg border border-brand-border bg-brand-surface p-3">
-                      <p className="text-sm font-semibold text-text-primary">Opcion C: Binance (USDT)</p>
-                      <div className="flex items-center justify-between gap-3 text-sm">
-                        <span className="text-text-secondary">Pay ID: {selectedPaymentMethod.details?.payId ?? 'Por definir'}</span>
-                        <Button variant="ghost" size="sm" onClick={() => handleCopy('bn-payid', selectedPaymentMethod.details?.payId)}>Copiar</Button>
+                    <div className="space-y-1 rounded-lg border border-brand-border bg-brand-surface p-1.5">
+                      <p className="text-[11px] font-semibold text-text-primary">Opcion C: Binance (USDT)</p>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">
+                          Pay ID: {selectedPaymentMethod.details?.payId ?? 'Por definir'}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopy('bn-payid', selectedPaymentMethod.details?.payId)}
+                        >
+                          Copiar
+                        </Button>
                       </div>
-                      <p className="text-sm text-text-secondary">Monto exacto: {estimatedTotalDisplay}</p>
+                      <p className="text-[10px] text-text-secondary">Monto exacto: {estimatedTotalDisplay}</p>
                       {selectedPaymentMethod.details?.qrImageUrl ? (
                         <img
                           src={selectedPaymentMethod.details.qrImageUrl}
                           alt="QR Binance"
-                          className="h-32 w-32 rounded-md border border-brand-border object-contain"
+                          className="h-16 w-16 rounded-md border border-brand-border object-contain"
                         />
                       ) : (
-                        <div className="h-20 rounded-md border border-dashed border-brand-border/80 bg-brand-bg/30 p-3 text-xs text-text-muted">
+                        <div className="h-10 rounded-md border border-dashed border-brand-border/80 bg-brand-bg/30 p-1 text-[10px] text-text-muted">
                           Espacio QR preparado. Disponible cuando se configure la fuente real.
                         </div>
                       )}
-                      <p className="text-xs text-text-muted">Envia captura del comprobante al finalizar.</p>
+                      <p className="text-[10px] text-text-muted">Envia captura del comprobante al finalizar.</p>
                     </div>
                   )}
 
                   {selectedPaymentMethod.slug === 'efectivo' && (
-                    <div className="space-y-2 rounded-lg border border-brand-border bg-brand-surface p-3">
-                      <p className="text-sm font-semibold text-text-primary">Opcion D: Efectivo</p>
-                      <p className="text-sm text-text-secondary">
+                    <div className="space-y-1 rounded-lg border border-brand-border bg-brand-surface p-1.5">
+                      <p className="text-[11px] font-semibold text-text-primary">Opcion D: Efectivo</p>
+                      <p className="text-[10px] text-text-secondary">
                         Solo valido para pago presencial dentro de la ventana activa del apartado.
                       </p>
-                      <p className="text-xs text-text-muted">
+                      <p className="text-[10px] text-text-muted">
                         El bloque sigue sujeto a la ventana de {paymentWindowLabel} para completar el pago.
                       </p>
                     </div>
                   )}
                 </div>
 
-                <p className="mt-2 text-xs text-text-muted">
+                <p className="mt-1 text-center text-[10px] text-text-muted">
                   {copyStatusKey ? 'Dato copiado.' : selectedPaymentMethod.referenceHint}
                 </p>
               </div>
@@ -557,10 +643,10 @@ export function BookingWizard() {
           </div>
         </div>
 
-        <p className="mx-auto mt-3 max-w-2xl text-center text-xs text-text-muted">
-          Guarda tu codigo de solicitud para reportar el pago y hacer seguimiento.
-        </p>
-        <div className="mt-4">
+        <div className="mt-2 flex items-center justify-between gap-2 border-t border-brand-border/70 pt-1.5">
+          <p className="text-[10px] leading-snug text-text-muted">
+            Guarda tu codigo de solicitud para reportar el pago y hacer seguimiento.
+          </p>
           <Button variant="ghost" size="sm" onClick={resetWizard}>
             Crear una nueva solicitud
           </Button>
@@ -648,8 +734,8 @@ export function BookingWizard() {
 
       <div
         className={cn(
-          'p-5 md:px-6 md:py-4',
-          currentStep === 5 && 'md:py-3 lg:py-2.5',
+          'p-4 md:px-6 md:py-3',
+          currentStep === 5 && 'md:py-2.5 lg:py-2',
         )}
       >
         <div
@@ -779,7 +865,7 @@ export function BookingWizard() {
         </div>
       )}
 
-      <div className="flex items-center justify-between border-t border-brand-border px-5 py-3 md:px-6 md:py-4">
+      <div className="flex items-center justify-between border-t border-brand-border px-5 py-3 md:px-6 md:py-3">
         <Button
           variant="ghost"
           size="sm"
