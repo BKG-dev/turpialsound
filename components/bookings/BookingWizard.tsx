@@ -362,28 +362,39 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
 
         <div className="grid grid-cols-1 gap-2.5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="space-y-2">
-            <div className="rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-2.5 py-1.5 text-center">
-              <p className="mb-0.5 text-[10px] text-text-muted">Codigo de solicitud</p>
-              <p className="font-display text-sm font-bold tracking-wider text-accent-gold md:text-base">
-                {publicCode}
-              </p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div className="rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-2.5 py-1.5 text-center">
+                <p className="mb-0.5 text-[10px] text-text-muted">Codigo de solicitud</p>
+                <p className="font-display text-sm font-bold tracking-wider text-accent-gold md:text-base">
+                  {publicCode}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-brand-border bg-brand-bg/30 px-2 py-1.5">
+                <div className="flex justify-center">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    type="button"
+                    onClick={() => setShowPaymentOptions((currentState) => !currentState)}
+                  >
+                    Pagar en 3 seg
+                  </Button>
+                </div>
+                <div className="mt-1 flex items-center justify-center gap-1.5 rounded-md border border-accent-gold/20 bg-accent-gold/5 px-2 py-1">
+                  <span className="text-[10px] text-text-muted">Tiempo restante</span>
+                  <span className="font-mono text-xs font-semibold text-accent-gold">{countdownLabel}</span>
+                </div>
+              </div>
             </div>
 
             <div className="rounded-lg border border-brand-border bg-brand-bg/40 p-2">
-              <div className="grid gap-1 sm:grid-cols-2">
+              <div className="grid gap-1 sm:grid-cols-1">
                 <p className="text-[11px] leading-snug text-text-secondary">
                   Sala asignada:{' '}
                   <span className="font-medium text-text-primary">
                     {assignedResourceName ?? 'Por confirmar'}
                   </span>
-                </p>
-                <p className="text-[11px] leading-snug text-text-secondary">
-                  Total:{' '}
-                  <span className="font-medium text-text-primary">{estimatedTotalDisplay}</span>
-                </p>
-                <p className="text-[11px] leading-snug text-text-secondary sm:col-span-2">
-                  Tiempo limite para pagar:{' '}
-                  <span className="font-medium text-text-primary">{countdownLabel}</span>
                 </p>
               </div>
 
@@ -432,18 +443,6 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
           </div>
 
           <div className="rounded-lg border border-brand-border bg-brand-bg/40 p-2">
-            <h3 className="mb-1 text-center text-xs font-semibold text-text-primary">Inicia tu pago</h3>
-            <div className="mb-1.5 flex justify-center">
-              <Button
-                variant="primary"
-                size="sm"
-                type="button"
-                onClick={() => setShowPaymentOptions((currentState) => !currentState)}
-              >
-                Pagar en 3 seg
-              </Button>
-            </div>
-
             {showPaymentOptions && (
               <div>
                 <div className="mb-1.5 grid grid-cols-2 gap-1 sm:grid-cols-4">
@@ -468,8 +467,14 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
                 <div className="space-y-1">
                   {selectedPaymentMethod.slug === 'pago_movil' && (
                     <div className="space-y-1 rounded-lg border border-brand-border bg-brand-surface p-1.5">
-                      <p className="text-[11px] font-semibold text-text-primary">Opcion A: Pago Movil</p>
+                      <p className="text-[11px] font-semibold text-text-primary">Pago movil</p>
                       <p className="text-[10px] text-text-muted">Envia tu pago a estos datos:</p>
+                      <div className="flex items-center justify-between gap-2 rounded-md border border-accent-gold/20 bg-accent-gold/5 px-2 py-1 text-[10px]">
+                        <span className="text-text-secondary">Monto a pagar: {estimatedTotalBsLabel}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-amount', estimatedTotalBsLabel)}>
+                          Copiar
+                        </Button>
+                      </div>
                       <div className="flex items-center justify-between gap-2 text-[10px]">
                         <span className="text-text-secondary">
                           Banco: {selectedPaymentMethod.details?.bankName ?? 'Por definir'}
@@ -531,9 +536,13 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
 
                   {selectedPaymentMethod.slug === 'transferencia' && (
                     <div className="space-y-1 rounded-lg border border-brand-border bg-brand-surface p-1.5">
-                      <p className="text-[11px] font-semibold text-text-primary">
-                        Opcion B: Transferencia Bancaria
-                      </p>
+                      <p className="text-[11px] font-semibold text-text-primary">Transferencia</p>
+                      <div className="flex items-center justify-between gap-2 rounded-md border border-accent-gold/20 bg-accent-gold/5 px-2 py-1 text-[10px]">
+                        <span className="text-text-secondary">Monto a pagar: {estimatedTotalBsLabel}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-amount', estimatedTotalBsLabel)}>
+                          Copiar
+                        </Button>
+                      </div>
                       <div className="flex items-center justify-between gap-2 text-[10px]">
                         <span className="text-text-secondary">
                           Banco: {selectedPaymentMethod.details?.bankName ?? 'Por definir'}
@@ -593,7 +602,13 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
 
                   {selectedPaymentMethod.slug === 'binance' && (
                     <div className="space-y-1 rounded-lg border border-brand-border bg-brand-surface p-1.5">
-                      <p className="text-[11px] font-semibold text-text-primary">Opcion C: Binance (USDT)</p>
+                      <p className="text-[11px] font-semibold text-text-primary">Binance</p>
+                      <div className="flex items-center justify-between gap-2 rounded-md border border-accent-gold/20 bg-accent-gold/5 px-2 py-1 text-[10px]">
+                        <span className="text-text-secondary">Monto a pagar: {estimatedTotalUsdLabel}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('bn-amount', estimatedTotalUsdLabel)}>
+                          Copiar
+                        </Button>
+                      </div>
                       <div className="flex items-center justify-between gap-2 text-[10px]">
                         <span className="text-text-secondary">
                           Pay ID: {selectedPaymentMethod.details?.payId ?? 'Por definir'}
@@ -606,7 +621,6 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
                           Copiar
                         </Button>
                       </div>
-                      <p className="text-[10px] text-text-secondary">Monto exacto: {estimatedTotalDisplay}</p>
                       {selectedPaymentMethod.details?.qrImageUrl ? (
                         <img
                           src={selectedPaymentMethod.details.qrImageUrl}
@@ -624,7 +638,13 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
 
                   {selectedPaymentMethod.slug === 'efectivo' && (
                     <div className="space-y-1 rounded-lg border border-brand-border bg-brand-surface p-1.5">
-                      <p className="text-[11px] font-semibold text-text-primary">Opcion D: Efectivo</p>
+                      <p className="text-[11px] font-semibold text-text-primary">Efectivo</p>
+                      <div className="flex items-center justify-between gap-2 rounded-md border border-accent-gold/20 bg-accent-gold/5 px-2 py-1 text-[10px]">
+                        <span className="text-text-secondary">Monto a pagar: {estimatedTotalUsdLabel}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('cash-amount', estimatedTotalUsdLabel)}>
+                          Copiar
+                        </Button>
+                      </div>
                       <p className="text-[10px] text-text-secondary">
                         Solo valido para pago presencial dentro de la ventana activa del apartado.
                       </p>
