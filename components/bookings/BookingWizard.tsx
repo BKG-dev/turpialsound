@@ -17,6 +17,12 @@ import { SummaryStep } from '@/components/bookings/steps/SummaryStep'
 import { submitBookingRequest } from '@/lib/bookings/actions'
 import { buildBookingEstimate } from '@/lib/bookings/estimate'
 import {
+  formatBcvReferenceLabel,
+  formatUsdByCurrency,
+  useBcvRate,
+  type DisplayCurrency,
+} from '@/lib/bookings/currency-display'
+import {
   getEnabledPaymentMethods,
   getPaymentWindowMinutes,
   getPrimaryPaymentMethod,
@@ -79,6 +85,7 @@ export function BookingWizard() {
   const [publicCode, setPublicCode] = useState<string | null>(null)
   const [assignedResourceName, setAssignedResourceName] = useState<string | null>(null)
   const [paymentDeadlineIso, setPaymentDeadlineIso] = useState<string | null>(null)
+  const [displayCurrency, setDisplayCurrency] = useState<DisplayCurrency>('bs')
   const [selectedPaymentMethodSlug, setSelectedPaymentMethodSlug] =
     useState<BookingPaymentMethodSlug>(PRIMARY_PAYMENT_METHOD.slug)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -107,6 +114,15 @@ export function BookingWizard() {
   )
   const paymentWindowLabel =
     PAYMENT_WINDOW_MINUTES === 60 ? '1 hora' : `${PAYMENT_WINDOW_MINUTES} minutos`
+  const bcvState = useBcvRate()
+  const estimatedTotalUsdLabel = formatUsdByCurrency(bookingEstimate.estimatedTotalUsd, 'usd', bcvState.rate)
+  const estimatedTotalBsLabel = formatUsdByCurrency(bookingEstimate.estimatedTotalUsd, 'bs', bcvState.rate)
+  const estimatedTotalDisplay = formatUsdByCurrency(
+    bookingEstimate.estimatedTotalUsd,
+    displayCurrency,
+    bcvState.rate,
+  )
+  const bcvReferenceLabel = formatBcvReferenceLabel(bcvState)
   const selectedPaymentMethod =
     ENABLED_PAYMENT_METHODS.find((method) => method.slug === selectedPaymentMethodSlug) ??
     PRIMARY_PAYMENT_METHOD
@@ -183,6 +199,7 @@ export function BookingWizard() {
     setPublicCode(null)
     setAssignedResourceName(null)
     setPaymentDeadlineIso(null)
+    setDisplayCurrency('bs')
     setSelectedPaymentMethodSlug(PRIMARY_PAYMENT_METHOD.slug)
     setSubmitError(null)
   }
@@ -286,7 +303,7 @@ export function BookingWizard() {
           <p className="text-sm text-text-secondary">
             Total:{' '}
             <span className="font-medium text-text-primary">
-              {bookingEstimate.estimatedTotalUsd} USD
+              {estimatedTotalDisplay}
             </span>
           </p>
           <p className="text-sm text-text-secondary sm:col-span-2">
@@ -297,10 +314,47 @@ export function BookingWizard() {
                 : `Dentro de ${paymentWindowLabel} (GMT-4 / America-Caracas)`}
             </span>
           </p>
+          <div className="text-xs text-text-muted sm:col-span-2">
+            <p>
+              USD: <span className="font-medium text-text-primary">{estimatedTotalUsdLabel}</span>
+            </p>
+            <p className="mt-0.5">
+              Bs: <span className="font-medium text-text-primary">{estimatedTotalBsLabel}</span>
+            </p>
+            <p className="mt-1">{bcvReferenceLabel}</p>
+          </div>
         </div>
 
         <div className="rounded-lg border border-brand-border bg-brand-bg/40 p-4">
           <h3 className="mb-2 text-sm font-semibold text-text-primary">Instrucciones de pago</h3>
+          <div className="mb-3 flex rounded-lg border border-brand-border p-1" role="group" aria-label="Moneda del total">
+            <button
+              type="button"
+              onClick={() => setDisplayCurrency('usd')}
+              className={cn(
+                'flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors',
+                displayCurrency === 'usd'
+                  ? 'bg-accent-gold text-brand-bg'
+                  : 'text-text-secondary hover:text-text-primary',
+              )}
+              aria-pressed={displayCurrency === 'usd'}
+            >
+              USD
+            </button>
+            <button
+              type="button"
+              onClick={() => setDisplayCurrency('bs')}
+              className={cn(
+                'flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors',
+                displayCurrency === 'bs'
+                  ? 'bg-accent-gold text-brand-bg'
+                  : 'text-text-secondary hover:text-text-primary',
+              )}
+              aria-pressed={displayCurrency === 'bs'}
+            >
+              Bs.
+            </button>
+          </div>
           <div className="mb-3 grid gap-2 sm:grid-cols-3">
             {ENABLED_PAYMENT_METHODS.map((method) => (
               <button
@@ -558,20 +612,61 @@ export function BookingWizard() {
           data.eventDate &&
           data.startTime &&
           data.durationMinutes && (
-            <SummaryStep
-              serviceSlug={selectedServiceSlug}
-              variantSlug={selectedVariantSlug}
-              eventDate={data.eventDate}
-              startTime={data.startTime}
-              durationMinutes={data.durationMinutes}
-              extrasNotes={data.extrasNotes}
-              extrasTechnician={data.extrasTechnician}
-              extrasBackline={data.extrasBackline}
-              requesterName={data.requesterName}
-              requesterEmail={data.requesterEmail}
-              requesterPhone={normalizeWhatsappVe(data.requesterPhone)}
-              estimate={bookingEstimate}
-            />
+            <>
+              <SummaryStep
+                serviceSlug={selectedServiceSlug}
+                variantSlug={selectedVariantSlug}
+                eventDate={data.eventDate}
+                startTime={data.startTime}
+                durationMinutes={data.durationMinutes}
+                extrasNotes={data.extrasNotes}
+                extrasTechnician={data.extrasTechnician}
+                extrasBackline={data.extrasBackline}
+                requesterName={data.requesterName}
+                requesterEmail={data.requesterEmail}
+                requesterPhone={normalizeWhatsappVe(data.requesterPhone)}
+                estimate={bookingEstimate}
+              />
+              <div className="mt-4 rounded-lg border border-brand-border bg-brand-bg/40 p-4">
+                <div className="mb-3 flex rounded-lg border border-brand-border p-1" role="group" aria-label="Moneda del total estimado">
+                  <button
+                    type="button"
+                    onClick={() => setDisplayCurrency('usd')}
+                    className={cn(
+                      'flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors',
+                      displayCurrency === 'usd'
+                        ? 'bg-accent-gold text-brand-bg'
+                        : 'text-text-secondary hover:text-text-primary',
+                    )}
+                    aria-pressed={displayCurrency === 'usd'}
+                  >
+                    USD
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDisplayCurrency('bs')}
+                    className={cn(
+                      'flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors',
+                      displayCurrency === 'bs'
+                        ? 'bg-accent-gold text-brand-bg'
+                        : 'text-text-secondary hover:text-text-primary',
+                    )}
+                    aria-pressed={displayCurrency === 'bs'}
+                  >
+                    Bs.
+                  </button>
+                </div>
+                <p className="text-sm text-text-secondary">
+                  Total estimado:{' '}
+                  <span className="font-medium text-text-primary">{estimatedTotalDisplay}</span>
+                </p>
+                <p className="mt-1 text-xs text-text-muted">
+                  USD: <span className="font-medium text-text-primary">{estimatedTotalUsdLabel}</span> | Bs:{' '}
+                  <span className="font-medium text-text-primary">{estimatedTotalBsLabel}</span>
+                </p>
+                <p className="mt-1 text-xs text-text-muted">{bcvReferenceLabel}</p>
+              </div>
+            </>
           )}
       </div>
 

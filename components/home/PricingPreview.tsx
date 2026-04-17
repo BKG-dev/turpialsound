@@ -20,6 +20,12 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { pricingPackages, type PricingPackage } from '@/content/pricing'
+import {
+  formatBcvReferenceLabel,
+  formatUsdByCurrencyParts,
+  useBcvRate,
+  type DisplayCurrency,
+} from '@/lib/bookings/currency-display'
 
 /* ── Icon map ─────────────────────────────────────────────────── */
 const iconMap: Record<PricingPackage['iconName'], LucideIcon> = {
@@ -32,33 +38,6 @@ const iconMap: Record<PricingPackage['iconName'], LucideIcon> = {
 }
 
 /* ── BCV rate hook ────────────────────────────────────────────── */
-interface BcvState {
-  rate: number
-  isFallback: boolean
-  loading: boolean
-}
-
-function useBcvRate(): BcvState {
-  const [state, setState] = useState<BcvState>({ rate: 50, isFallback: true, loading: true })
-
-  useEffect(() => {
-    let cancelled = false
-    fetch('/api/bcv-rate')
-      .then((r) => r.json())
-      .then((data: { rate: number; isFallback: boolean }) => {
-        if (!cancelled) setState({ rate: data.rate, isFallback: data.isFallback, loading: false })
-      })
-      .catch(() => {
-        if (!cancelled) setState((s) => ({ ...s, loading: false }))
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  return state
-}
-
 /* ── Price formatting ─────────────────────────────────────────── */
 interface PriceDisplay {
   label: string
@@ -66,15 +45,12 @@ interface PriceDisplay {
   amount: string | null
 }
 
-function formatPrice(pkg: PricingPackage, currency: 'usd' | 'bs', rate: number): PriceDisplay {
+function formatPrice(pkg: PricingPackage, currency: DisplayCurrency, rate: number): PriceDisplay {
   if (pkg.priceUSD === null) {
     return { label: pkg.priceLabel, prefix: null, amount: null }
   }
-  if (currency === 'usd') {
-    return { label: pkg.priceLabel, prefix: '$', amount: String(pkg.priceUSD) }
-  }
-  const bs = Math.round(pkg.priceUSD * rate)
-  return { label: pkg.priceLabel, prefix: 'Bs.', amount: bs.toLocaleString('es-VE') }
+  const priceParts = formatUsdByCurrencyParts(pkg.priceUSD, currency, rate)
+  return { label: pkg.priceLabel, prefix: priceParts.prefix, amount: priceParts.amount }
 }
 
 /* ── Card ─────────────────────────────────────────────────────── */
@@ -84,7 +60,7 @@ function PriceCard({
   bcvRate,
 }: {
   pkg: PricingPackage
-  currency: 'usd' | 'bs'
+  currency: DisplayCurrency
   bcvRate: number
 }) {
   const Icon = iconMap[pkg.iconName]
@@ -242,8 +218,8 @@ function PriceCard({
 
 /* ── Main component ───────────────────────────────────────────── */
 export function PricingPreview() {
-  const [currency, setCurrency] = useState<'usd' | 'bs'>('bs')
-  const { rate, isFallback, loading } = useBcvRate()
+  const [currency, setCurrency] = useState<DisplayCurrency>('bs')
+  const bcvState = useBcvRate()
   const carouselRef = useRef<HTMLDivElement>(null)
 
   function scroll(dir: 'left' | 'right') {
@@ -362,14 +338,7 @@ export function PricingPreview() {
           <div className="flex items-center gap-1.5">
             <Info size={10} style={{ color: 'var(--color-cyan)' }} aria-hidden="true" />
             <span className="whitespace-nowrap font-display text-[9px] tracking-wider text-text-muted">
-              {loading
-                ? 'Obteniendo tasa BCV…'
-                : isFallback
-                  ? 'Tasa de referencia (BCV no disponible)'
-                  : `1 USD = Bs. ${rate.toLocaleString('es-VE', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 4,
-                    })}`}
+              {formatBcvReferenceLabel(bcvState)}
             </span>
           </div>
         </div>
@@ -386,7 +355,7 @@ export function PricingPreview() {
             key={pkg.id}
             className="flex shrink-0 snap-start flex-col w-[calc(100%-1rem)] sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2.5rem)/3)]"
           >
-            <PriceCard pkg={pkg} currency={currency} bcvRate={rate} />
+            <PriceCard pkg={pkg} currency={currency} bcvRate={bcvState.rate} />
           </div>
         ))}
       </div>
@@ -397,3 +366,4 @@ export function PricingPreview() {
     </div>
   )
 }
+
