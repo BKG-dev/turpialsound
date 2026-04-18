@@ -1,19 +1,23 @@
 .cta {
   position: relative;
-  display: flex;
+  --cta-height: 70px;
+  --label-column: minmax(170px, 1fr);
+  --timer-column: minmax(230px, 1.18fr);
+  display: block;
   width: 100%;
-  align-items: center;
   overflow: hidden;
-  border-radius: 22px;
-  border: 1px solid rgba(106, 239, 255, 0.9);
-  background: linear-gradient(92deg, #071a31 0%, #0b2c50 56%, #113c69 100%);
-  padding: 2px;
+  border-radius: 25px;
+  border: 1px solid rgba(132, 240, 255, 0.96);
+  background:
+    linear-gradient(180deg, rgba(150, 246, 255, 0.14), rgba(150, 246, 255, 0.02)),
+    linear-gradient(92deg, #081a2f 0%, #0c2947 48%, #0f3157 100%);
+  padding: 3px;
   text-align: left;
   box-shadow:
-    0 0 0 1px rgba(66, 229, 255, 0.34),
-    0 0 0 2px rgba(0, 128, 255, 0.1),
-    0 0 18px rgba(0, 174, 255, 0.38),
-    0 0 42px rgba(0, 174, 255, 0.24);
+    0 0 0 1px rgba(116, 236, 255, 0.42),
+    0 0 0 2px rgba(48, 156, 255, 0.15),
+    0 0 18px rgba(0, 196, 255, 0.42),
+    0 0 40px rgba(0, 154, 255, 0.24);
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -23,10 +27,10 @@
 .cta:hover {
   border-color: rgba(162, 250, 255, 1);
   box-shadow:
-    0 0 0 1px rgba(88, 242, 255, 0.46),
-    0 0 0 2px rgba(0, 144, 255, 0.16),
-    0 0 26px rgba(0, 189, 255, 0.5),
-    0 0 56px rgba(0, 171, 255, 0.3);
+    0 0 0 1px rgba(141, 244, 255, 0.5),
+    0 0 0 2px rgba(70, 178, 255, 0.2),
+    0 0 22px rgba(0, 208, 255, 0.5),
+    0 0 52px rgba(0, 171, 255, 0.3);
 }
 
 .shellGlow {
@@ -34,76 +38,80 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 12% 50%, rgba(86, 226, 255, 0.34), transparent 54%),
-    radial-gradient(circle at 85% 52%, rgba(0, 126, 255, 0.2), transparent 65%),
-    linear-gradient(180deg, rgba(136, 247, 255, 0.1), transparent 45%);
+    radial-gradient(circle at 10% 50%, rgba(102, 232, 255, 0.32), transparent 38%),
+    radial-gradient(circle at 94% 50%, rgba(53, 159, 255, 0.2), transparent 40%),
+    linear-gradient(180deg, rgba(151, 247, 255, 0.13), transparent 36%);
 }
 
-.leftPane {
+.surface {
   position: relative;
-  display: flex;
-  height: 56px;
-  min-width: 0;
-  flex: 0 1 42%;
-  align-items: center;
-  border-radius: 19px 0 0 19px;
-  background: linear-gradient(98deg, #0b203a 0%, #12345f 58%, #123960 100%);
-  padding: 0 22px;
-  z-index: 2;
+  display: grid;
+  grid-template-columns: var(--label-column) var(--timer-column);
+  align-items: stretch;
+  min-height: var(--cta-height);
+  border-radius: 21px;
+  background:
+    radial-gradient(circle at 12% 50%, rgba(72, 219, 255, 0.14), transparent 34%),
+    linear-gradient(90deg, #0c233d 0%, #123154 40%, #132f50 100%);
+  overflow: hidden;
 }
 
-.leftPane::after {
+.surface::before {
   content: '';
   position: absolute;
-  right: -26px;
-  top: -2px;
-  bottom: -2px;
-  width: 56px;
-  border-radius: 0 52% 52% 0;
-  background:
-    radial-gradient(85% 100% at 0% 50%, rgba(8, 18, 34, 0.2), rgba(8, 18, 34, 0.75) 58%, rgba(4, 9, 17, 0.96) 100%);
-  z-index: 3;
+  inset: 1px;
+  border-radius: 20px;
+  border: 1px solid rgba(138, 239, 255, 0.16);
   pointer-events: none;
 }
 
 .leftLabel {
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: #caf6ff;
-  text-shadow:
-    0 0 14px rgba(79, 225, 255, 0.34),
-    0 0 1px rgba(255, 255, 255, 0.3);
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: var(--cta-height);
+  align-items: center;
+  padding: 0 26px 0 38px;
   white-space: nowrap;
+  font-family: 'Rajdhani', 'Segoe UI', sans-serif;
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  color: #d8f9ff;
+  text-shadow:
+    0 0 12px rgba(96, 231, 255, 0.3),
+    0 0 2px rgba(255, 255, 255, 0.28);
 }
 
 .timerWindow {
   position: relative;
   display: flex;
-  height: 56px;
-  min-width: 0;
-  flex: 1 1 58%;
   align-items: center;
   justify-content: center;
-  border-radius: 0 19px 19px 0;
-  background: linear-gradient(100deg, #03070d 0%, #060b12 38%, #08101b 100%);
-  padding: 0 22px 0 34px;
+  margin: 9px 10px 9px -16px;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(34, 40, 53, 0.28), rgba(0, 0, 0, 0.16)),
+    linear-gradient(94deg, #05080d 0%, #090d14 48%, #0b111a 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.09),
-    inset 0 0 0 1px rgba(9, 29, 48, 0.95),
-    inset 0 0 34px rgba(0, 0, 0, 0.6);
-  z-index: 4;
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(61, 95, 130, 0.28),
+    inset 0 0 34px rgba(0, 0, 0, 0.66);
+  z-index: 2;
 }
 
 .timerWindow::before {
   content: '';
   position: absolute;
-  left: -22px;
-  top: 7px;
-  bottom: 7px;
-  width: 44px;
-  border-radius: 0 999px 999px 0;
-  background: linear-gradient(90deg, rgba(4, 10, 18, 0.02), rgba(3, 8, 15, 0.88) 42%, rgba(4, 9, 16, 1) 100%);
+  left: -28px;
+  top: 0;
+  bottom: 0;
+  width: 66px;
+  background:
+    linear-gradient(108deg, transparent 0 14%, rgba(8, 12, 19, 0.84) 34%, #090d14 50%, #0a1018 100%);
+  clip-path: polygon(100% 0, 48% 0, 0 50%, 48% 100%, 100% 100%);
+  filter: drop-shadow(-1px 0 0 rgba(127, 236, 255, 0.07));
   pointer-events: none;
 }
 
@@ -113,89 +121,124 @@
   inset: 0;
   border-radius: inherit;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.26) 70%),
-    radial-gradient(circle at 78% 50%, rgba(255, 191, 71, 0.1), transparent 58%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.24) 68%),
+    radial-gradient(circle at 82% 56%, rgba(255, 183, 39, 0.18), transparent 24%);
 }
 
 .timerTick {
   pointer-events: none;
   position: absolute;
-  left: 18px;
-  right: 16px;
+  left: 36px;
+  right: 20px;
   top: 50%;
-  border-top: 1px solid rgba(133, 225, 255, 0.16);
+  border-top: 1px solid rgba(131, 224, 255, 0.12);
+}
+
+.timerSpark {
+  pointer-events: none;
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  width: 52px;
+  height: 14px;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(255, 212, 88, 0.9), transparent 20%),
+    radial-gradient(circle at 47% 52%, rgba(255, 197, 63, 0.5), transparent 15%),
+    radial-gradient(circle at 73% 54%, rgba(255, 186, 42, 0.25), transparent 13%);
+  opacity: 0.82;
 }
 
 .timerValue {
   position: relative;
-  min-width: 6.8rem;
+  z-index: 1;
+  min-width: 0;
+  padding: 0 30px 0 44px;
   text-align: center;
-  font-family: 'Orbitron', 'Rajdhani', 'Eurostile', 'Trebuchet MS', sans-serif;
-  font-size: 50px;
+  font-family: 'Orbitron', 'Rajdhani', 'Segoe UI', sans-serif;
+  font-size: 56px;
   font-weight: 700;
   line-height: 1;
-  letter-spacing: 0.05em;
-  color: #ffd258;
+  letter-spacing: 0.04em;
+  color: #ffd25a;
   text-shadow:
-    0 0 14px rgba(255, 194, 82, 0.58),
-    0 0 2px rgba(255, 240, 201, 0.44);
+    0 0 10px rgba(255, 206, 82, 0.62),
+    0 0 22px rgba(255, 176, 42, 0.24);
 }
 
 @media (max-width: 1200px) {
-  .leftPane {
-    height: 50px;
-    padding: 0 18px;
+  .cta {
+    --cta-height: 60px;
+    --label-column: minmax(146px, 0.95fr);
+    --timer-column: minmax(198px, 1.08fr);
   }
 
   .leftLabel {
-    font-size: 18px;
+    padding: 0 18px 0 28px;
+    font-size: 22px;
   }
 
   .timerWindow {
-    height: 50px;
-    padding: 0 18px 0 28px;
+    margin: 7px 8px 7px -14px;
+  }
+
+  .timerWindow::before {
+    left: -22px;
+    width: 52px;
+  }
+
+  .timerTick {
+    left: 28px;
   }
 
   .timerValue {
-    font-size: 42px;
-    min-width: 6rem;
+    padding: 0 22px 0 34px;
+    font-size: 46px;
   }
 }
 
 @media (max-width: 700px) {
   .cta {
-    border-radius: 17px;
+    --cta-height: 48px;
+    --label-column: minmax(104px, 0.95fr);
+    --timer-column: minmax(132px, 1.06fr);
+    border-radius: 18px;
     padding: 1px;
   }
 
-  .leftPane {
-    height: 46px;
-    border-radius: 15px 0 0 15px;
-    padding: 0 14px;
-  }
-
-  .leftPane::after {
-    right: -18px;
-    width: 36px;
+  .surface {
+    border-radius: 15px;
   }
 
   .leftLabel {
-    font-size: 15px;
+    min-height: var(--cta-height);
+    padding: 0 12px 0 16px;
+    font-size: 17px;
   }
 
   .timerWindow {
-    height: 46px;
-    border-radius: 0 15px 15px 0;
-    padding: 0 12px 0 22px;
+    margin: 5px 5px 5px -10px;
+    border-radius: 12px;
   }
 
   .timerWindow::before {
-    left: -14px;
+    left: -12px;
     width: 28px;
   }
 
+  .timerTick {
+    left: 18px;
+    right: 14px;
+  }
+
+  .timerSpark {
+    right: 8px;
+    bottom: 7px;
+    width: 30px;
+    height: 10px;
+  }
+
   .timerValue {
-    min-width: 4.85rem;
-    font-size: 34px;
+    padding: 0 14px 0 20px;
+    font-size: 32px;
   }
 }

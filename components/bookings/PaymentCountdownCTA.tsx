@@ -41,15 +41,15 @@ export function PaymentCountdownCTA({ initialSeconds, onClick }: PaymentCountdow
       aria-label="Pagar en el tiempo restante"
     >
       <span className={styles.shellGlow} />
-
-      <span className={styles.leftPane}>
+      <span className={styles.surface}>
         <span className={styles.leftLabel}>Pagar en</span>
-      </span>
 
-      <span className={styles.timerWindow}>
-        <span className={styles.timerGlass} />
-        <span className={styles.timerTick} />
-        <span className={styles.timerValue}>{countdownLabel}</span>
+        <span className={styles.timerWindow}>
+          <span className={styles.timerGlass} />
+          <span className={styles.timerTick} />
+          <span className={styles.timerSpark} />
+          <span className={styles.timerValue}>{countdownLabel}</span>
+        </span>
       </span>
     </button>
   )

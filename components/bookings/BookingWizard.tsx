@@ -370,19 +370,19 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
 
         <div className="grid grid-cols-1 gap-2.5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="space-y-2">
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <div className="rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-2.5 py-1.5 text-center">
-                <p className="mb-0.5 text-[10px] text-text-muted">Codigo de solicitud</p>
-                <p className="font-display text-sm font-bold tracking-wider text-accent-gold md:text-base">
-                  {publicCode}
-                </p>
-              </div>
-
+            <div className="space-y-2">
               <div className="rounded-lg border border-brand-border bg-brand-bg/30 px-2 py-1.5">
                 <PaymentCountdownCTA
                   initialSeconds={countdownStartSeconds}
                   onClick={() => setShowPaymentOptions((currentState) => !currentState)}
                 />
+              </div>
+
+              <div className="rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-2.5 py-1.5 text-center sm:max-w-[19rem]">
+                <p className="mb-0.5 text-[10px] text-text-muted">Codigo de solicitud</p>
+                <p className="font-display text-sm font-bold tracking-wider text-accent-gold md:text-base">
+                  {publicCode}
+                </p>
               </div>
             </div>
 
