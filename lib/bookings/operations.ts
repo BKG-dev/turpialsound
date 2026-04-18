@@ -4,6 +4,7 @@ import { getPaymentWindowMinutes } from '@/lib/bookings/payment-settings'
 export type OperationalBookingStatus =
   | 'submitted'
   | 'pending_payment'
+  | 'payment_reported'
   | 'payment_verified'
   | 'confirmed'
   | 'cancelled'
@@ -12,6 +13,7 @@ export type OperationalBookingStatus =
 export const OPERATIONAL_BOOKING_STATUSES: OperationalBookingStatus[] = [
   'submitted',
   'pending_payment',
+  'payment_reported',
   'payment_verified',
   'confirmed',
   'cancelled',
@@ -21,6 +23,7 @@ export const OPERATIONAL_BOOKING_STATUSES: OperationalBookingStatus[] = [
 export const OPERATIONAL_STATUS_LABELS: Record<OperationalBookingStatus, string> = {
   submitted: 'Enviada',
   pending_payment: 'Pendiente de pago',
+  payment_reported: 'Pago reportado',
   payment_verified: 'Pago verificado',
   confirmed: 'Confirmada',
   cancelled: 'Cancelada',
@@ -28,7 +31,7 @@ export const OPERATIONAL_STATUS_LABELS: Record<OperationalBookingStatus, string>
 }
 
 const OPERATIONAL_STATUS_PATTERN =
-  /\[ops_status:(submitted|pending_payment|payment_verified|confirmed|cancelled|expired)\]/i
+  /\[ops_status:(submitted|pending_payment|payment_reported|payment_verified|confirmed|cancelled|expired)\]/i
 
 export const PAYMENT_WINDOW_MINUTES = getPaymentWindowMinutes()
 
@@ -93,7 +96,7 @@ export function getOperationalStatus(
   const taggedStatus = getOperationalStatusFromInternalNotes(booking.internalNotes)
   if (taggedStatus) {
     if (
-      taggedStatus === 'pending_payment' &&
+      (taggedStatus === 'pending_payment' || taggedStatus === 'payment_reported') &&
       booking.createdAt &&
       isPaymentWindowExpired(booking.createdAt)
     ) {
@@ -111,6 +114,7 @@ export function mapOperationalStatusToBookingStatus(
 ): BookingStatus {
   switch (status) {
     case 'pending_payment':
+    case 'payment_reported':
       return 'under_review'
     case 'payment_verified':
       return 'approved'

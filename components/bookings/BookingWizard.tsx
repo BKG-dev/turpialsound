@@ -16,7 +16,7 @@ import {
 import { SummaryStep } from '@/components/bookings/steps/SummaryStep'
 import { PaymentCountdownCTA } from '@/components/bookings/PaymentCountdownCTA'
 import { CATALOG_SERVICES, CATALOG_VARIANTS } from '@/lib/bookings/catalog'
-import { submitBookingRequest } from '@/lib/bookings/actions'
+import { reportBookingPayment, submitBookingRequest } from '@/lib/bookings/actions'
 import { buildBookingEstimate } from '@/lib/bookings/estimate'
 import {
   formatUsdByCurrency,
@@ -76,6 +76,9 @@ const ENABLED_PAYMENT_METHODS = getEnabledPaymentMethods()
 const PAYMENT_WINDOW_MINUTES = getPaymentWindowMinutes()
 const DEFAULT_SUCCESS_PAYMENT_METHOD =
   ENABLED_PAYMENT_METHODS.find((method) => method.slug === 'pago_movil') ?? PRIMARY_PAYMENT_METHOD
+const PAYMENT_PROOF_MAX_SIZE_BYTES = 5 * 1024 * 1024
+
+type PostSubmitOperationalStatus = 'pending_payment' | 'payment_reported'
 
 function formatBookingDate(dateStr: string): string {
   const d = new Date(`${dateStr}T12:00:00`)
@@ -85,6 +88,14 @@ function formatBookingDate(dateStr: string): string {
     month: 'long',
     year: 'numeric',
   }).format(d)
+}
+
+function formatCaracasDateTime(value: string): string {
+  return new Intl.DateTimeFormat('es-VE', {
+    timeZone: 'America/Caracas',
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value))
 }
 
 interface BookingWizardProps {
@@ -104,6 +115,14 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
   const [showPaymentOptions, setShowPaymentOptions] = useState(false)
   const [selectedPaymentMethodSlug, setSelectedPaymentMethodSlug] =
     useState<BookingPaymentMethodSlug>(DEFAULT_SUCCESS_PAYMENT_METHOD.slug)
+  const [postSubmitOperationalStatus, setPostSubmitOperationalStatus] =
+    useState<PostSubmitOperationalStatus>('pending_payment')
+  const [paymentReportReference, setPaymentReportReference] = useState('')
+  const [paymentReportProofFile, setPaymentReportProofFile] = useState<File | null>(null)
+  const [paymentReportState, setPaymentReportState] =
+    useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [paymentReportError, setPaymentReportError] = useState<string | null>(null)
+  const [paymentReportedAtIso, setPaymentReportedAtIso] = useState<string | null>(null)
   const [copyStatusKey, setCopyStatusKey] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -263,6 +282,12 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
     setPaymentDeadlineIso(null)
     setShowPaymentOptions(false)
     setSelectedPaymentMethodSlug(DEFAULT_SUCCESS_PAYMENT_METHOD.slug)
+    setPostSubmitOperationalStatus('pending_payment')
+    setPaymentReportReference('')
+    setPaymentReportProofFile(null)
+    setPaymentReportState('idle')
+    setPaymentReportError(null)
+    setPaymentReportedAtIso(null)
     setCopyStatusKey(null)
     setSubmitError(null)
   }
@@ -314,6 +339,12 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
     setPaymentDeadlineIso(null)
     setShowPaymentOptions(false)
     setSelectedPaymentMethodSlug(DEFAULT_SUCCESS_PAYMENT_METHOD.slug)
+    setPostSubmitOperationalStatus('pending_payment')
+    setPaymentReportReference('')
+    setPaymentReportProofFile(null)
+    setPaymentReportState('idle')
+    setPaymentReportError(null)
+    setPaymentReportedAtIso(null)
     setSubmitError(null)
 
     const result = await submitBookingRequest({
@@ -336,11 +367,75 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
       setPaymentDeadlineIso(result.paymentDeadlineIso ?? null)
       setShowPaymentOptions(true)
       setSelectedPaymentMethodSlug(DEFAULT_SUCCESS_PAYMENT_METHOD.slug)
+      setPostSubmitOperationalStatus('pending_payment')
+      setPaymentReportReference(result.publicCode)
+      setPaymentReportProofFile(null)
+      setPaymentReportState('idle')
+      setPaymentReportError(null)
+      setPaymentReportedAtIso(null)
       setSubmissionState('success')
     } else {
       setSubmitError(result.error ?? 'Error al enviar. Intenta de nuevo.')
       setSubmissionState('error')
     }
+  }
+
+  async function handleReportPayment() {
+    if (!publicCode || paymentReportState === 'loading') return
+
+    if (postSubmitOperationalStatus !== 'pending_payment') {
+      setPaymentReportError('Esta solicitud ya no acepta reportes de pago.')
+      setPaymentReportState('error')
+      return
+    }
+
+    const trimmedReference = paymentReportReference.trim()
+
+    if (!trimmedReference) {
+      setPaymentReportError('La referencia de pago es obligatoria.')
+      setPaymentReportState('error')
+      return
+    }
+
+    if (!paymentReportProofFile) {
+      setPaymentReportError('Debes adjuntar el comprobante JPG/JPEG.')
+      setPaymentReportState('error')
+      return
+    }
+
+    const proofType = paymentReportProofFile.type.toLowerCase()
+    if (proofType !== 'image/jpeg' && proofType !== 'image/jpg') {
+      setPaymentReportError('Solo se acepta comprobante JPG/JPEG.')
+      setPaymentReportState('error')
+      return
+    }
+
+    if (paymentReportProofFile.size > PAYMENT_PROOF_MAX_SIZE_BYTES) {
+      setPaymentReportError('El comprobante supera el maximo permitido de 5 MB.')
+      setPaymentReportState('error')
+      return
+    }
+
+    setPaymentReportState('loading')
+    setPaymentReportError(null)
+
+    const paymentReportFormData = new FormData()
+    paymentReportFormData.set('publicCode', publicCode)
+    paymentReportFormData.set('paymentMethod', selectedPaymentMethod.slug)
+    paymentReportFormData.set('paymentReference', trimmedReference)
+    paymentReportFormData.set('paymentProofFile', paymentReportProofFile)
+
+    const result = await reportBookingPayment(paymentReportFormData)
+
+    if (!result.success) {
+      setPaymentReportError(result.error ?? 'No pudimos registrar el pago reportado.')
+      setPaymentReportState('error')
+      return
+    }
+
+    setPostSubmitOperationalStatus('payment_reported')
+    setPaymentReportState('success')
+    setPaymentReportedAtIso(result.paymentReportedAtIso ?? new Date().toISOString())
   }
 
   if (submissionState === 'success' && publicCode) {
@@ -361,11 +456,14 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
             </span>
             <div className="min-w-0">
               <h2 className="font-display text-sm font-bold leading-tight text-text-primary md:text-base">
-                Solicitud enviada
+                {postSubmitOperationalStatus === 'payment_reported'
+                  ? 'Pago reportado'
+                  : 'Solicitud enviada'}
               </h2>
               <p className="mt-0.5 text-[11px] leading-snug text-text-secondary">
-                Tu solicitud quedo en estado pendiente de pago. El bloque quedo apartado por{' '}
-                {paymentWindowLabel} mientras confirmamos el pago.
+                {postSubmitOperationalStatus === 'payment_reported'
+                  ? 'Tu comprobante fue recibido y el pago quedo en revision por el equipo de Turpial Sound.'
+                  : `Tu solicitud quedo en estado pendiente de pago. El bloque quedo apartado por ${paymentWindowLabel} mientras confirmamos el pago.`}
               </p>
             </div>
           </div>
@@ -474,6 +572,7 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
                           : 'border-brand-border bg-brand-surface text-text-secondary hover:border-accent-gold/50',
                       )}
                       aria-pressed={selectedPaymentMethod.slug === method.slug}
+                      disabled={postSubmitOperationalStatus === 'payment_reported' || paymentReportState === 'loading'}
                     >
                       {method.name}
                     </button>
@@ -674,6 +773,67 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
                 <p className="mt-1 text-center text-[10px] text-text-muted">
                   {copyStatusKey ? 'Dato copiado.' : selectedPaymentMethod.referenceHint}
                 </p>
+
+                {postSubmitOperationalStatus === 'pending_payment' ? (
+                  <div className="mt-2 space-y-1.5 rounded-lg border border-brand-border bg-brand-surface p-2">
+                    <p className="text-[11px] font-semibold text-text-primary">Reportar pago</p>
+                    <p className="text-[10px] text-text-muted">
+                      Metodo usado: <span className="font-medium text-text-secondary">{selectedPaymentMethod.name}</span>
+                    </p>
+
+                    <label className="block space-y-0.5">
+                      <span className="text-[10px] uppercase tracking-wide text-text-muted">Referencia</span>
+                      <input
+                        type="text"
+                        value={paymentReportReference}
+                        onChange={(event) => setPaymentReportReference(event.target.value)}
+                        placeholder="Ej: 184562 / 009123"
+                        className="w-full rounded-md border border-brand-border bg-brand-bg/40 px-2 py-1.5 text-[11px] text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-accent-gold/60"
+                        disabled={paymentReportState === 'loading'}
+                      />
+                    </label>
+
+                    <label className="block space-y-0.5">
+                      <span className="text-[10px] uppercase tracking-wide text-text-muted">
+                        Comprobante (JPG/JPEG, max 5MB)
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/jpg"
+                        onChange={(event) => setPaymentReportProofFile(event.target.files?.[0] ?? null)}
+                        className="w-full rounded-md border border-brand-border bg-brand-bg/40 px-2 py-1.5 text-[11px] text-text-secondary file:mr-2 file:rounded-md file:border-0 file:bg-accent-gold/15 file:px-2 file:py-1 file:text-[10px] file:font-medium file:text-text-primary"
+                        disabled={paymentReportState === 'loading'}
+                      />
+                    </label>
+
+                    {paymentReportError && (
+                      <p className="rounded-md border border-red-400/30 bg-red-500/10 px-2 py-1 text-[10px] text-red-200">
+                        {paymentReportError}
+                      </p>
+                    )}
+
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleReportPayment}
+                      disabled={paymentReportState === 'loading'}
+                    >
+                      {paymentReportState === 'loading' ? 'Reportando pago...' : 'Reportar pago'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="mt-2 rounded-lg border border-accent-gold/35 bg-accent-gold/10 px-2 py-2 text-[11px] leading-snug">
+                    <p className="font-semibold text-text-primary">Pago reportado</p>
+                    <p className="text-text-secondary">
+                      Tu comprobante fue enviado y el estado quedo en revision.
+                    </p>
+                    {paymentReportedAtIso && (
+                      <p className="mt-0.5 text-[10px] text-text-muted">
+                        Reportado: {formatCaracasDateTime(paymentReportedAtIso)} (America/Caracas)
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -681,7 +841,9 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
 
         <div className="mt-2 flex items-center justify-between gap-2 border-t border-brand-border/70 pt-1.5">
           <p className="text-[10px] leading-snug text-text-muted">
-            Guarda tu codigo de solicitud para reportar el pago y hacer seguimiento.
+            {postSubmitOperationalStatus === 'payment_reported'
+              ? 'Conserva tu codigo de solicitud mientras el equipo verifica el pago reportado.'
+              : 'Guarda tu codigo de solicitud para reportar el pago y hacer seguimiento.'}
           </p>
           <Button variant="ghost" size="sm" onClick={resetWizard}>
             Crear una nueva solicitud

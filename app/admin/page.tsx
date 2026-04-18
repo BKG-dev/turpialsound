@@ -118,7 +118,7 @@ async function expireOverduePendingPayments() {
 
   for (const booking of overdueBookings) {
     const taggedStatus = getOperationalStatusFromInternalNotes(booking.internalNotes)
-    if (taggedStatus && taggedStatus !== 'pending_payment') {
+    if (taggedStatus && taggedStatus !== 'pending_payment' && taggedStatus !== 'payment_reported') {
       continue
     }
 
@@ -524,6 +524,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                           >
                             <option value="pending_payment">
                               {OPERATIONAL_STATUS_LABELS.pending_payment}
+                            </option>
+                            <option value="payment_reported">
+                              {OPERATIONAL_STATUS_LABELS.payment_reported}
                             </option>
                             <option value="payment_verified">
                               {OPERATIONAL_STATUS_LABELS.payment_verified}

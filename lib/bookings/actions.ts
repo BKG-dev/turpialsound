@@ -5,7 +5,18 @@ import { buildPublicCode } from '@/lib/bookings'
 import { CATALOG_SERVICES } from '@/lib/bookings/catalog'
 import { assignResourceForRequestedSlot } from '@/lib/bookings/availability'
 import { syncBookingToGoogleCalendar } from '@/lib/bookings/google-calendar'
-import { getPaymentDeadline, setOperationalStatusInInternalNotes } from '@/lib/bookings/operations'
+import {
+  getOperationalStatus,
+  getPaymentDeadline,
+  mapOperationalStatusToBookingStatus,
+  setOperationalStatusInInternalNotes,
+} from '@/lib/bookings/operations'
+import { getEnabledPaymentMethods, type BookingPaymentMethodSlug } from '@/lib/bookings/payment-settings'
+import {
+  isAllowedPaymentProofMimeType,
+  PAYMENT_PROOF_MAX_SIZE_BYTES,
+  storePaymentProof,
+} from '@/lib/bookings/payment-proof-storage'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const WHATSAPP_REGEX = /^\+58(412|414|416|424|426)\d{7}$/
@@ -225,6 +236,196 @@ export async function submitBookingRequest(
     return {
       success: false,
       error: 'Error al enviar la solicitud. Por favor intenta de nuevo.',
+    }
+  }
+}
+
+export interface ReportBookingPaymentResult {
+  success: boolean
+  operationalStatus?: 'payment_reported'
+  paymentReportedAtIso?: string
+  error?: string
+}
+
+function isBookingPaymentMethodSlug(value: string): value is BookingPaymentMethodSlug {
+  return getEnabledPaymentMethods().some((method) => method.slug === value)
+}
+
+export async function reportBookingPayment(
+  formData: FormData,
+): Promise<ReportBookingPaymentResult> {
+  try {
+    const publicCode = formData.get('publicCode')?.toString().trim().toUpperCase() ?? ''
+    const paymentReference = formData.get('paymentReference')?.toString().trim() ?? ''
+    const paymentMethod = formData.get('paymentMethod')?.toString().trim() ?? ''
+    const paymentProofFile = formData.get('paymentProofFile')
+
+    if (!publicCode) {
+      return { success: false, error: 'No pudimos identificar la solicitud.' }
+    }
+
+    if (!isBookingPaymentMethodSlug(paymentMethod)) {
+      return { success: false, error: 'Metodo de pago invalido.' }
+    }
+
+    if (!paymentReference) {
+      return { success: false, error: 'La referencia de pago es obligatoria.' }
+    }
+
+    if (!(paymentProofFile instanceof File)) {
+      return { success: false, error: 'Debes adjuntar el comprobante en JPG.' }
+    }
+
+    if (!isAllowedPaymentProofMimeType(paymentProofFile.type)) {
+      return { success: false, error: 'Solo se acepta comprobante JPG/JPEG.' }
+    }
+
+    if (paymentProofFile.size <= 0) {
+      return { success: false, error: 'El comprobante no puede estar vacio.' }
+    }
+
+    if (paymentProofFile.size > PAYMENT_PROOF_MAX_SIZE_BYTES) {
+      return { success: false, error: 'El comprobante supera el maximo permitido de 5 MB.' }
+    }
+
+    const booking = await prisma.bookingRequest.findUnique({
+      where: { publicCode },
+      select: {
+        id: true,
+        status: true,
+        internalNotes: true,
+        publicCode: true,
+        requesterName: true,
+        requesterPhone: true,
+        eventDate: true,
+        eventEndDate: true,
+        createdAt: true,
+        calendarEventId: true,
+        items: {
+          take: 1,
+          orderBy: { createdAt: 'asc' },
+          select: {
+            serviceVariant: {
+              select: {
+                name: true,
+                service: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+            resource: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    if (!booking) {
+      return { success: false, error: 'Solicitud no encontrada.' }
+    }
+
+    const currentOperationalStatus = getOperationalStatus(booking)
+
+    if (currentOperationalStatus === 'payment_reported') {
+      return { success: false, error: 'Esta solicitud ya tiene un pago reportado.' }
+    }
+
+    if (currentOperationalStatus !== 'pending_payment') {
+      return {
+        success: false,
+        error: 'Solo puedes reportar pago cuando la solicitud esta en estado pendiente de pago.',
+      }
+    }
+
+    const storedProof = await storePaymentProof({ file: paymentProofFile })
+    const paymentReportedAt = new Date()
+    const nextOperationalStatus = 'payment_reported' as const
+    const nextBookingStatus = mapOperationalStatusToBookingStatus(nextOperationalStatus)
+    const updatedInternalNotes = setOperationalStatusInInternalNotes(
+      booking.internalNotes,
+      nextOperationalStatus,
+    )
+
+    await prisma.$transaction([
+      prisma.bookingRequest.update({
+        where: { id: booking.id },
+        data: {
+          status: nextBookingStatus,
+          internalNotes: updatedInternalNotes,
+        },
+      }),
+      prisma.auditLog.create({
+        data: {
+          bookingRequestId: booking.id,
+          action: 'payment_reported_by_customer',
+          previousState: {
+            operationalStatus: currentOperationalStatus,
+            bookingStatus: booking.status,
+          },
+          nextState: {
+            operationalStatus: nextOperationalStatus,
+            bookingStatus: nextBookingStatus,
+            paymentMethod,
+            paymentReference,
+            paymentProofUrl: storedProof.proofUrl,
+            paymentProofMimeType: storedProof.mimeType,
+            paymentProofSizeBytes: storedProof.sizeBytes,
+            paymentReportedAt: paymentReportedAt.toISOString(),
+          },
+        },
+      }),
+    ])
+
+    const primaryItem = booking.items[0]
+    const calendarSync = await syncBookingToGoogleCalendar({
+      publicCode: booking.publicCode,
+      serviceName: primaryItem?.serviceVariant.service.name ?? 'Sin servicio',
+      variantName: primaryItem?.serviceVariant.name ?? 'Sin modalidad',
+      resourceName: primaryItem?.resource?.name ?? null,
+      requesterName: booking.requesterName,
+      requesterPhone: booking.requesterPhone,
+      eventDate: booking.eventDate,
+      eventEndDate: booking.eventEndDate,
+      paymentDeadline: getPaymentDeadline(booking.createdAt),
+      operationalStatus: nextOperationalStatus,
+      existingCalendarEventId: booking.calendarEventId,
+    })
+
+    if (!calendarSync.ok) {
+      await prisma.auditLog.create({
+        data: {
+          bookingRequestId: booking.id,
+          action: 'calendar_sync_failed_on_payment_reported',
+          nextState: {
+            operationalStatus: nextOperationalStatus,
+            reason: calendarSync.reason ?? 'unknown',
+          },
+        },
+      })
+    } else if (calendarSync.eventId !== booking.calendarEventId) {
+      await prisma.bookingRequest.update({
+        where: { id: booking.id },
+        data: {
+          calendarEventId: calendarSync.eventId,
+        },
+      })
+    }
+
+    return {
+      success: true,
+      operationalStatus: nextOperationalStatus,
+      paymentReportedAtIso: paymentReportedAt.toISOString(),
+    }
+  } catch (error) {
+    console.error('[reportBookingPayment]', error)
+    return {
+      success: false,
+      error: 'No pudimos registrar tu reporte de pago. Intenta de nuevo.',
     }
   }
 }

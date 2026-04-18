@@ -115,6 +115,8 @@ function getGoogleCalendarColorIdByStatus(status: OperationalBookingStatus): str
   switch (status) {
     case 'pending_payment':
       return '5'
+    case 'payment_reported':
+      return '6'
     case 'payment_verified':
       return '10'
     case 'confirmed':
@@ -153,6 +155,7 @@ async function googleCalendarRequest(
 function shouldMaintainCalendarEvent(status: OperationalBookingStatus): boolean {
   return (
     status === 'pending_payment' ||
+    status === 'payment_reported' ||
     status === 'payment_verified' ||
     status === 'confirmed' ||
     status === 'cancelled' ||
