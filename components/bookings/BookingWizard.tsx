@@ -14,6 +14,7 @@ import {
   normalizeWhatsappVe,
 } from '@/components/bookings/steps/ContactStep'
 import { SummaryStep } from '@/components/bookings/steps/SummaryStep'
+import { PaymentFlipCountdown } from '@/components/bookings/PaymentFlipCountdown'
 import { CATALOG_SERVICES, CATALOG_VARIANTS } from '@/lib/bookings/catalog'
 import { submitBookingRequest } from '@/lib/bookings/actions'
 import { buildBookingEstimate } from '@/lib/bookings/estimate'
@@ -165,17 +166,12 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
     const parsedDeadline = new Date(paymentDeadlineIso).getTime()
     return Number.isNaN(parsedDeadline) ? null : parsedDeadline
   }, [paymentDeadlineIso])
-  const [nowMs, setNowMs] = useState(() => Date.now())
-  const remainingSeconds =
-    paymentDeadlineMs === null ? null : Math.max(0, Math.floor((paymentDeadlineMs - nowMs) / 1000))
-  const countdownLabel = useMemo(() => {
-    if (remainingSeconds === null) {
-      return `${String(PAYMENT_WINDOW_MINUTES).padStart(2, '0')}:00`
+  const countdownStartSeconds = useMemo(() => {
+    if (paymentDeadlineMs === null) {
+      return PAYMENT_WINDOW_MINUTES * 60
     }
-    const minutes = Math.floor(remainingSeconds / 60)
-    const seconds = remainingSeconds % 60
-    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-  }, [remainingSeconds])
+    return Math.max(0, Math.floor((paymentDeadlineMs - Date.now()) / 1000))
+  }, [paymentDeadlineMs])
   const bcvCompactLabel = useMemo(() => {
     if (bcvState.loading) {
       return 'TASA BCV = Bs. --.-- (actualizada: --)'
@@ -211,21 +207,6 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
   useEffect(() => {
     onSubmissionStateChange?.(submissionState)
   }, [onSubmissionStateChange, submissionState])
-
-  useEffect(() => {
-    if (paymentDeadlineMs === null) {
-      return
-    }
-
-    setNowMs(Date.now())
-    const intervalId = window.setInterval(() => {
-      setNowMs(Date.now())
-    }, 1000)
-
-    return () => {
-      window.clearInterval(intervalId)
-    }
-  }, [paymentDeadlineMs])
 
   const canProceed =
     currentStep === 0
@@ -398,7 +379,7 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
               </div>
 
               <div className="rounded-lg border border-brand-border bg-brand-bg/30 px-2 py-1.5">
-                <div className="flex justify-center">
+                <div className="flex items-center justify-center gap-2">
                   <Button
                     variant="primary"
                     size="sm"
@@ -407,10 +388,9 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
                   >
                     Pagar en 3 seg
                   </Button>
-                </div>
-                <div className="mt-1 flex items-center justify-center gap-1.5 rounded-md border border-accent-gold/20 bg-accent-gold/5 px-2 py-1">
-                  <span className="text-[10px] text-text-muted">Tiempo restante</span>
-                  <span className="font-mono text-xs font-semibold text-accent-gold">{countdownLabel}</span>
+                  <div className="rounded-md border border-accent-cyan/40 bg-brand-bg/80 px-1.5 py-1 shadow-[0_0_12px_rgba(0,174,239,0.12)]">
+                    <PaymentFlipCountdown initialSeconds={countdownStartSeconds} />
+                  </div>
                 </div>
               </div>
             </div>
