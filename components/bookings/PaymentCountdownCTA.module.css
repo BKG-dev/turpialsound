@@ -1,244 +1,51 @@
 .cta {
   position: relative;
-  --cta-height: 70px;
-  --label-column: minmax(170px, 1fr);
-  --timer-column: minmax(230px, 1.18fr);
-  display: block;
-  width: 100%;
-  overflow: hidden;
-  border-radius: 25px;
-  border: 1px solid rgba(132, 240, 255, 0.96);
-  background:
-    linear-gradient(180deg, rgba(150, 246, 255, 0.14), rgba(150, 246, 255, 0.02)),
-    linear-gradient(92deg, #081a2f 0%, #0c2947 48%, #0f3157 100%);
-  padding: 3px;
-  text-align: left;
-  box-shadow:
-    0 0 0 1px rgba(116, 236, 255, 0.42),
-    0 0 0 2px rgba(48, 156, 255, 0.15),
-    0 0 18px rgba(0, 196, 255, 0.42),
-    0 0 40px rgba(0, 154, 255, 0.24);
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
 }
 
-.cta:hover {
-  border-color: rgba(162, 250, 255, 1);
-  box-shadow:
-    0 0 0 1px rgba(141, 244, 255, 0.5),
-    0 0 0 2px rgba(70, 178, 255, 0.2),
-    0 0 22px rgba(0, 208, 255, 0.5),
-    0 0 52px rgba(0, 171, 255, 0.3);
-}
-
-.shellGlow {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 10% 50%, rgba(102, 232, 255, 0.32), transparent 38%),
-    radial-gradient(circle at 94% 50%, rgba(53, 159, 255, 0.2), transparent 40%),
-    linear-gradient(180deg, rgba(151, 247, 255, 0.13), transparent 36%);
-}
-
-.surface {
-  position: relative;
-  display: grid;
-  grid-template-columns: var(--label-column) var(--timer-column);
-  align-items: stretch;
-  min-height: var(--cta-height);
-  border-radius: 21px;
-  background:
-    radial-gradient(circle at 12% 50%, rgba(72, 219, 255, 0.14), transparent 34%),
-    linear-gradient(90deg, #0c233d 0%, #123154 40%, #132f50 100%);
-  overflow: hidden;
-}
-
-.surface::before {
-  content: '';
-  position: absolute;
-  inset: 1px;
-  border-radius: 20px;
-  border: 1px solid rgba(138, 239, 255, 0.16);
-  pointer-events: none;
-}
-
-.leftLabel {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  min-height: var(--cta-height);
-  align-items: center;
-  padding: 0 26px 0 38px;
-  white-space: nowrap;
+.label {
+  color: rgba(222, 247, 255, 0.96);
   font-family: 'Rajdhani', 'Segoe UI', sans-serif;
-  font-size: 27px;
+  font-size: 1.03rem;
   font-weight: 700;
-  letter-spacing: 0.01em;
-  line-height: 1;
-  color: #d8f9ff;
-  text-shadow:
-    0 0 12px rgba(96, 231, 255, 0.3),
-    0 0 2px rgba(255, 255, 255, 0.28);
-}
-
-.timerWindow {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 9px 10px 9px -16px;
-  border-radius: 18px;
-  background:
-    linear-gradient(180deg, rgba(34, 40, 53, 0.28), rgba(0, 0, 0, 0.16)),
-    linear-gradient(94deg, #05080d 0%, #090d14 48%, #0b111a 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 0 0 1px rgba(61, 95, 130, 0.28),
-    inset 0 0 34px rgba(0, 0, 0, 0.66);
-  z-index: 2;
-}
-
-.timerWindow::before {
-  content: '';
-  position: absolute;
-  left: -28px;
-  top: 0;
-  bottom: 0;
-  width: 66px;
-  background:
-    linear-gradient(108deg, transparent 0 14%, rgba(8, 12, 19, 0.84) 34%, #090d14 50%, #0a1018 100%);
-  clip-path: polygon(100% 0, 48% 0, 0 50%, 48% 100%, 100% 100%);
-  filter: drop-shadow(-1px 0 0 rgba(127, 236, 255, 0.07));
-  pointer-events: none;
-}
-
-.timerGlass {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.24) 68%),
-    radial-gradient(circle at 82% 56%, rgba(255, 183, 39, 0.18), transparent 24%);
-}
-
-.timerTick {
-  pointer-events: none;
-  position: absolute;
-  left: 36px;
-  right: 20px;
-  top: 50%;
-  border-top: 1px solid rgba(131, 224, 255, 0.12);
-}
-
-.timerSpark {
-  pointer-events: none;
-  position: absolute;
-  right: 12px;
-  bottom: 10px;
-  width: 52px;
-  height: 14px;
-  background:
-    radial-gradient(circle at 20% 50%, rgba(255, 212, 88, 0.9), transparent 20%),
-    radial-gradient(circle at 47% 52%, rgba(255, 197, 63, 0.5), transparent 15%),
-    radial-gradient(circle at 73% 54%, rgba(255, 186, 42, 0.25), transparent 13%);
-  opacity: 0.82;
-}
-
-.timerValue {
-  position: relative;
-  z-index: 1;
-  min-width: 0;
-  padding: 0 30px 0 44px;
-  text-align: center;
-  font-family: 'Orbitron', 'Rajdhani', 'Segoe UI', sans-serif;
-  font-size: 56px;
-  font-weight: 700;
-  line-height: 1;
   letter-spacing: 0.04em;
-  color: #ffd25a;
+  line-height: 1;
+  white-space: nowrap;
   text-shadow:
-    0 0 10px rgba(255, 206, 82, 0.62),
-    0 0 22px rgba(255, 176, 42, 0.24);
+    0 0 8px rgba(84, 226, 255, 0.14),
+    0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.timeValue {
+  color: #ffd66d;
+  font-family: 'Orbitron', 'Rajdhani', 'Segoe UI', sans-serif;
+  font-size: 1.22rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow:
+    0 0 8px rgba(255, 201, 66, 0.16),
+    0 0 1px rgba(255, 237, 201, 0.08);
 }
 
 @media (max-width: 1200px) {
-  .cta {
-    --cta-height: 60px;
-    --label-column: minmax(146px, 0.95fr);
-    --timer-column: minmax(198px, 1.08fr);
+  .label {
+    font-size: 0.98rem;
   }
 
-  .leftLabel {
-    padding: 0 18px 0 28px;
-    font-size: 22px;
-  }
-
-  .timerWindow {
-    margin: 7px 8px 7px -14px;
-  }
-
-  .timerWindow::before {
-    left: -22px;
-    width: 52px;
-  }
-
-  .timerTick {
-    left: 28px;
-  }
-
-  .timerValue {
-    padding: 0 22px 0 34px;
-    font-size: 46px;
+  .timeValue {
+    font-size: 1.12rem;
   }
 }
 
 @media (max-width: 700px) {
-  .cta {
-    --cta-height: 48px;
-    --label-column: minmax(104px, 0.95fr);
-    --timer-column: minmax(132px, 1.06fr);
-    border-radius: 18px;
-    padding: 1px;
+  .label {
+    font-size: 0.82rem;
+    letter-spacing: 0.03em;
   }
 
-  .surface {
-    border-radius: 15px;
-  }
-
-  .leftLabel {
-    min-height: var(--cta-height);
-    padding: 0 12px 0 16px;
-    font-size: 17px;
-  }
-
-  .timerWindow {
-    margin: 5px 5px 5px -10px;
-    border-radius: 12px;
-  }
-
-  .timerWindow::before {
-    left: -12px;
-    width: 28px;
-  }
-
-  .timerTick {
-    left: 18px;
-    right: 14px;
-  }
-
-  .timerSpark {
-    right: 8px;
-    bottom: 7px;
-    width: 30px;
-    height: 10px;
-  }
-
-  .timerValue {
-    padding: 0 14px 0 20px;
-    font-size: 32px;
+  .timeValue {
+    font-size: 0.96rem;
+    letter-spacing: 0.05em;
   }
 }

@@ -74,6 +74,8 @@ const INITIAL_DATA: WizardData = {
 const PRIMARY_PAYMENT_METHOD = getPrimaryPaymentMethod()
 const ENABLED_PAYMENT_METHODS = getEnabledPaymentMethods()
 const PAYMENT_WINDOW_MINUTES = getPaymentWindowMinutes()
+const DEFAULT_SUCCESS_PAYMENT_METHOD =
+  ENABLED_PAYMENT_METHODS.find((method) => method.slug === 'pago_movil') ?? PRIMARY_PAYMENT_METHOD
 
 function formatBookingDate(dateStr: string): string {
   const d = new Date(`${dateStr}T12:00:00`)
@@ -101,7 +103,7 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
   const [paymentDeadlineIso, setPaymentDeadlineIso] = useState<string | null>(null)
   const [showPaymentOptions, setShowPaymentOptions] = useState(false)
   const [selectedPaymentMethodSlug, setSelectedPaymentMethodSlug] =
-    useState<BookingPaymentMethodSlug>(PRIMARY_PAYMENT_METHOD.slug)
+    useState<BookingPaymentMethodSlug>(DEFAULT_SUCCESS_PAYMENT_METHOD.slug)
   const [copyStatusKey, setCopyStatusKey] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -260,7 +262,7 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
     setAssignedResourceName(null)
     setPaymentDeadlineIso(null)
     setShowPaymentOptions(false)
-    setSelectedPaymentMethodSlug(PRIMARY_PAYMENT_METHOD.slug)
+    setSelectedPaymentMethodSlug(DEFAULT_SUCCESS_PAYMENT_METHOD.slug)
     setCopyStatusKey(null)
     setSubmitError(null)
   }
@@ -311,6 +313,7 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
     setAssignedResourceName(null)
     setPaymentDeadlineIso(null)
     setShowPaymentOptions(false)
+    setSelectedPaymentMethodSlug(DEFAULT_SUCCESS_PAYMENT_METHOD.slug)
     setSubmitError(null)
 
     const result = await submitBookingRequest({
@@ -331,8 +334,8 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
       setPublicCode(result.publicCode)
       setAssignedResourceName(result.assignedResourceName ?? null)
       setPaymentDeadlineIso(result.paymentDeadlineIso ?? null)
-      setShowPaymentOptions(false)
-      setSelectedPaymentMethodSlug(PRIMARY_PAYMENT_METHOD.slug)
+      setShowPaymentOptions(true)
+      setSelectedPaymentMethodSlug(DEFAULT_SUCCESS_PAYMENT_METHOD.slug)
       setSubmissionState('success')
     } else {
       setSubmitError(result.error ?? 'Error al enviar. Intenta de nuevo.')
@@ -372,15 +375,14 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
           <div className="space-y-2">
             <div className="space-y-2">
               <div className="rounded-lg border border-brand-border bg-brand-bg/30 px-2 py-1.5">
-                <PaymentCountdownCTA
-                  initialSeconds={countdownStartSeconds}
-                  onClick={() => setShowPaymentOptions((currentState) => !currentState)}
-                />
+                <PaymentCountdownCTA initialSeconds={countdownStartSeconds} />
               </div>
 
-              <div className="rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-2.5 py-1.5 text-center sm:max-w-[19rem]">
-                <p className="mb-0.5 text-[10px] text-text-muted">Codigo de solicitud</p>
-                <p className="font-display text-sm font-bold tracking-wider text-accent-gold md:text-base">
+              <div className="mx-auto w-full max-w-[23rem] rounded-lg border border-accent-gold/35 bg-accent-gold/5 px-4 py-2.5 text-center shadow-[0_0_0_1px_rgba(255,191,0,0.04)]">
+                <p className="mb-1 text-[10px] uppercase tracking-[0.16em] text-text-muted">
+                  Codigo de solicitud
+                </p>
+                <p className="font-display text-base font-bold tracking-[0.08em] text-accent-gold md:text-lg">
                   {publicCode}
                 </p>
               </div>

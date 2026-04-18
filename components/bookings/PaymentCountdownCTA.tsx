@@ -1,18 +1,18 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { cn } from '@/lib/utils'
 import styles from '@/components/bookings/PaymentCountdownCTA.module.css'
 
 interface PaymentCountdownCTAProps {
   initialSeconds: number
-  onClick: () => void
 }
 
 function two(value: number): string {
   return String(Math.max(0, value)).padStart(2, '0')
 }
 
-export function PaymentCountdownCTA({ initialSeconds, onClick }: PaymentCountdownCTAProps) {
+export function PaymentCountdownCTA({ initialSeconds }: PaymentCountdownCTAProps) {
   const [secondsLeft, setSecondsLeft] = useState(Math.max(0, Math.floor(initialSeconds)))
 
   useEffect(() => {
@@ -28,29 +28,23 @@ export function PaymentCountdownCTA({ initialSeconds, onClick }: PaymentCountdow
   }, [secondsLeft])
 
   const countdownLabel = useMemo(() => {
-    const mm = two(Math.floor(secondsLeft / 60))
-    const ss = two(secondsLeft % 60)
-    return `${mm}:${ss}`
+    const minutes = two(Math.floor(secondsLeft / 60))
+    const seconds = two(secondsLeft % 60)
+    return `${minutes}:${seconds}`
   }, [secondsLeft])
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={styles.cta}
-      aria-label="Pagar en el tiempo restante"
+    <div
+      className={cn(
+        'btn-silky-primary inline-flex w-full items-center justify-between gap-5 rounded-xl px-8 py-4 text-base text-left',
+        'font-semibold transition-all duration-250',
+        styles.cta,
+      )}
+      aria-label="Tiempo restante para completar el pago"
+      aria-live="polite"
     >
-      <span className={styles.shellGlow} />
-      <span className={styles.surface}>
-        <span className={styles.leftLabel}>Pagar en</span>
-
-        <span className={styles.timerWindow}>
-          <span className={styles.timerGlass} />
-          <span className={styles.timerTick} />
-          <span className={styles.timerSpark} />
-          <span className={styles.timerValue}>{countdownLabel}</span>
-        </span>
-      </span>
-    </button>
+      <span className={styles.label}>Completa tu pago en</span>
+      <span className={styles.timeValue}>{countdownLabel}</span>
+    </div>
   )
 }
