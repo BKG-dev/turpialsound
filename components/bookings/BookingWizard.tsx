@@ -14,7 +14,7 @@ import {
   normalizeWhatsappVe,
 } from '@/components/bookings/steps/ContactStep'
 import { SummaryStep } from '@/components/bookings/steps/SummaryStep'
-import { PaymentFlipCountdown } from '@/components/bookings/PaymentFlipCountdown'
+import { PaymentCountdownCTA } from '@/components/bookings/PaymentCountdownCTA'
 import { CATALOG_SERVICES, CATALOG_VARIANTS } from '@/lib/bookings/catalog'
 import { submitBookingRequest } from '@/lib/bookings/actions'
 import { buildBookingEstimate } from '@/lib/bookings/estimate'
@@ -379,19 +379,10 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
               </div>
 
               <div className="rounded-lg border border-brand-border bg-brand-bg/30 px-2 py-1.5">
-                <div className="flex items-center justify-center gap-2">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    type="button"
-                    onClick={() => setShowPaymentOptions((currentState) => !currentState)}
-                  >
-                    Pagar en 3 seg
-                  </Button>
-                  <div className="rounded-md border border-accent-cyan/40 bg-brand-bg/80 px-1.5 py-1 shadow-[0_0_12px_rgba(0,174,239,0.12)]">
-                    <PaymentFlipCountdown initialSeconds={countdownStartSeconds} />
-                  </div>
-                </div>
+                <PaymentCountdownCTA
+                  initialSeconds={countdownStartSeconds}
+                  onClick={() => setShowPaymentOptions((currentState) => !currentState)}
+                />
               </div>
             </div>
 
