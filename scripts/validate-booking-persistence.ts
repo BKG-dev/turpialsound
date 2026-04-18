@@ -1,6 +1,7 @@
 import 'dotenv/config'
 
 import { prisma } from '@/lib/db'
+import type { Prisma } from '@/generated/prisma/client'
 import { submitBookingRequest, type SubmitBookingInput } from '@/lib/bookings/actions'
 import { CATALOG_SERVICES, getVariantsForService } from '@/lib/bookings/catalog'
 
@@ -42,6 +43,20 @@ interface CatalogIntegrityReport {
   missing: string[]
   mismatched: string[]
 }
+
+type PersistedBookingWithItems = Prisma.BookingRequestGetPayload<{
+  include: {
+    items: {
+      include: {
+        serviceVariant: {
+          select: {
+            slug: true
+          }
+        }
+      }
+    }
+  }
+}>
 
 const SCRIPT_LABEL = 'booking-persistence-validation'
 const START_TIME = '10:00'
@@ -305,7 +320,7 @@ async function runScenario(scenario: Scenario): Promise<ScenarioResult> {
 function validatePersistedBooking(input: {
   scenario: Scenario
   publicCode: string
-  persisted: Awaited<ReturnType<typeof prisma.bookingRequest.findFirst>>
+  persisted: PersistedBookingWithItems | null
 }) {
   const { scenario, publicCode, persisted } = input
   const errors: string[] = []
