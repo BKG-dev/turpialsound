@@ -17,6 +17,7 @@ import {
   PAYMENT_PROOF_MAX_SIZE_BYTES,
   storePaymentProof,
 } from '@/lib/bookings/payment-proof-storage'
+import { sendBookingNotifications } from '@/lib/bookings/notifications'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const WHATSAPP_REGEX = /^\+58(412|414|416|424|426)\d{7}$/
@@ -29,6 +30,17 @@ function normalizeWhatsappVe(value: string): string {
   if (compact.startsWith('0')) return `+58${compact.slice(1)}`
 
   return compact
+}
+
+function parseOptionalAmount(value: unknown): number | null {
+  if (value === null || value === undefined) return null
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null
+  }
+
+  const numericValue = Number(value)
+  return Number.isFinite(numericValue) ? numericValue : null
 }
 
 export interface SubmitBookingInput {
@@ -225,6 +237,19 @@ export async function submitBookingRequest(
       })
     }
 
+    await sendBookingNotifications('booking.pending_payment.created', {
+      publicCode: submitResult.publicCode,
+      clientName: requesterName,
+      clientEmail: requesterEmail,
+      serviceName,
+      variantName: serviceVariant.name,
+      resourceName: submitResult.resourceName,
+      startAt: eventDateTime,
+      endAt: eventEndDateTime,
+      deadlineAt: paymentDeadline,
+      status: 'pending_payment',
+    })
+
     return {
       success: true,
       publicCode: submitResult.publicCode,
@@ -296,9 +321,12 @@ export async function reportBookingPayment(
         internalNotes: true,
         publicCode: true,
         requesterName: true,
+        requesterEmail: true,
         requesterPhone: true,
         eventDate: true,
         eventEndDate: true,
+        estimatedTotal: true,
+        currency: true,
         createdAt: true,
         calendarEventId: true,
         items: {
@@ -415,6 +443,22 @@ export async function reportBookingPayment(
         },
       })
     }
+
+    await sendBookingNotifications('booking.payment_reported', {
+      publicCode: booking.publicCode,
+      clientName: booking.requesterName,
+      clientEmail: booking.requesterEmail,
+      serviceName: primaryItem?.serviceVariant.service.name ?? null,
+      variantName: primaryItem?.serviceVariant.name ?? null,
+      resourceName: primaryItem?.resource?.name ?? null,
+      startAt: booking.eventDate,
+      endAt: booking.eventEndDate,
+      deadlineAt: getPaymentDeadline(booking.createdAt),
+      estimatedTotal: parseOptionalAmount(booking.estimatedTotal),
+      currency: booking.currency,
+      paymentMethod,
+      status: nextOperationalStatus,
+    })
 
     return {
       success: true,

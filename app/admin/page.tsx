@@ -21,6 +21,10 @@ import {
   type OperationalBookingStatus,
 } from '@/lib/bookings/operations'
 import { syncBookingToGoogleCalendar } from '@/lib/bookings/google-calendar'
+import {
+  getBookingNotificationEventForOperationalStatus,
+  sendBookingNotifications,
+} from '@/lib/bookings/notifications'
 
 type SearchParamValue = string | string[] | undefined
 
@@ -88,6 +92,14 @@ function formatPaymentDeadline(createdAt: Date): string {
   return formatDateTime(getPaymentDeadline(createdAt))
 }
 
+function parseOptionalAmount(value: unknown): number | null {
+  if (value === null || value === undefined) return null
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null
+
+  const numericValue = Number(value)
+  return Number.isFinite(numericValue) ? numericValue : null
+}
+
 async function expireOverduePendingPayments() {
   const cutoff = new Date(Date.now() - PAYMENT_WINDOW_MINUTES * 60 * 1000)
   const overdueBookings = await prisma.bookingRequest.findMany({
@@ -127,15 +139,23 @@ async function expireOverduePendingPayments() {
       'expired',
     )
 
-    await prisma.$transaction([
-      prisma.bookingRequest.update({
-        where: { id: booking.id },
+    const expireResult = await prisma.$transaction(async (tx) => {
+      const updateResult = await tx.bookingRequest.updateMany({
+        where: {
+          id: booking.id,
+          status: 'under_review',
+        },
         data: {
           status: 'rejected',
           internalNotes: updatedInternalNotes,
         },
-      }),
-      prisma.auditLog.create({
+      })
+
+      if (updateResult.count === 0) {
+        return { changed: false }
+      }
+
+      await tx.auditLog.create({
         data: {
           bookingRequestId: booking.id,
           action: 'booking_expired_payment_window',
@@ -143,10 +163,32 @@ async function expireOverduePendingPayments() {
             operationalStatus: 'expired',
           },
         },
-      }),
-    ])
+      })
+
+      return { changed: true }
+    })
+
+    if (!expireResult.changed) {
+      continue
+    }
 
     const primaryItem = booking.items[0]
+    await sendBookingNotifications('booking.expired', {
+      publicCode: booking.publicCode,
+      clientName: booking.requesterName,
+      clientEmail: booking.requesterEmail,
+      serviceName: primaryItem?.serviceVariant.service.name ?? null,
+      variantName: primaryItem?.serviceVariant.name ?? null,
+      resourceName: primaryItem?.resource?.name ?? null,
+      startAt: booking.eventDate,
+      endAt: booking.eventEndDate,
+      deadlineAt: getPaymentDeadline(booking.createdAt),
+      estimatedTotal: parseOptionalAmount(booking.estimatedTotal),
+      currency: booking.currency,
+      status: 'expired',
+      notes: booking.notes,
+    })
+
     const calendarSync = await syncBookingToGoogleCalendar({
       publicCode: booking.publicCode,
       serviceName: primaryItem?.serviceVariant.service.name ?? 'Sin servicio',
@@ -198,9 +240,13 @@ async function updateOperationalStatus(formData: FormData) {
       internalNotes: true,
       publicCode: true,
       requesterName: true,
+      requesterEmail: true,
       requesterPhone: true,
       eventDate: true,
       eventEndDate: true,
+      estimatedTotal: true,
+      currency: true,
+      notes: true,
       createdAt: true,
       calendarEventId: true,
       items: {
@@ -232,21 +278,36 @@ async function updateOperationalStatus(formData: FormData) {
   }
 
   const currentOperationalStatus = getOperationalStatus(current)
+  const hasOperationalStatusChanged = currentOperationalStatus !== nextStatus
+
+  if (!hasOperationalStatusChanged) {
+    revalidatePath('/admin')
+    redirect(returnPath)
+  }
+
   const mappedBookingStatus = mapOperationalStatusToBookingStatus(nextStatus)
   const updatedInternalNotes = setOperationalStatusInInternalNotes(
     current.internalNotes,
     nextStatus,
   )
 
-  await prisma.$transaction([
-    prisma.bookingRequest.update({
-      where: { id: bookingRequestId },
+  const updateResult = await prisma.$transaction(async (tx) => {
+    const bookingUpdate = await tx.bookingRequest.updateMany({
+      where: {
+        id: bookingRequestId,
+        status: current.status,
+      },
       data: {
         status: mappedBookingStatus,
         internalNotes: updatedInternalNotes,
       },
-    }),
-    prisma.auditLog.create({
+    })
+
+    if (bookingUpdate.count === 0) {
+      return { changed: false }
+    }
+
+    await tx.auditLog.create({
       data: {
         bookingRequestId,
         action: 'operational_status_changed',
@@ -259,10 +320,40 @@ async function updateOperationalStatus(formData: FormData) {
           bookingStatus: mappedBookingStatus,
         },
       },
-    }),
-  ])
+    })
 
+    return { changed: true }
+  })
+
+  if (!updateResult.changed) {
+    revalidatePath('/admin')
+    redirect(returnPath)
+  }
+
+  const notificationEvent =
+    nextStatus === 'pending_payment'
+      ? null
+      : getBookingNotificationEventForOperationalStatus(nextStatus)
   const primaryItem = current.items[0]
+
+  if (notificationEvent) {
+    await sendBookingNotifications(notificationEvent, {
+      publicCode: current.publicCode,
+      clientName: current.requesterName,
+      clientEmail: current.requesterEmail,
+      serviceName: primaryItem?.serviceVariant.service.name ?? null,
+      variantName: primaryItem?.serviceVariant.name ?? null,
+      resourceName: primaryItem?.resource?.name ?? null,
+      startAt: current.eventDate,
+      endAt: current.eventEndDate,
+      deadlineAt: getPaymentDeadline(current.createdAt),
+      estimatedTotal: parseOptionalAmount(current.estimatedTotal),
+      currency: current.currency,
+      status: nextStatus,
+      notes: current.notes,
+    })
+  }
+
   const calendarSync = await syncBookingToGoogleCalendar({
     publicCode: current.publicCode,
     serviceName: primaryItem?.serviceVariant.service.name ?? 'Sin servicio',
