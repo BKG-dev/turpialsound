@@ -3,7 +3,11 @@
     "allow": [
       "WebSearch",
       "Bash(npx tsc:*)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('Next.js:', p.dependencies.next\\); console.log\\('Zod:', p.dependencies.zod\\)\")",
+      "PowerShell(New-Item *)",
+      "Bash(npx prisma *)",
+      "Bash(where node *)"
     ]
   }
 }

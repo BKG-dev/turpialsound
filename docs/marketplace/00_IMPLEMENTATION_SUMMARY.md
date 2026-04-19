@@ -1,311 +1,224 @@
-# 🎯 MARKETPLACE IMPLEMENTATION SUMMARY
+# MARKETPLACE — RESUMEN DE IMPLEMENTACIÓN
 
-**Date:** 2026-04-09  
-**Status:** ✅ ARCHITECTURE COMPLETE - READY FOR DEVELOPMENT  
-**Lead Architect:** System
-
----
-
-## 📋 EXECUTIVE SUMMARY
-
-The Turpial Sound Marketplace payment gateway architecture is complete. All technical documentation, type systems, and strategic decisions have been finalized. The project is ready to move into the implementation phase.
+**Actualizado:** 2026-04-18 (Epic 5 — FASE DE DESARROLLO FUNCIONAL COMPLETA)
+**Estado:** ✅ 100% COMPLETO — Producción activa (Neon DB)
+**Rama:** `UI-UX-finalV3`
+**Modo:** `USE_MOCK_DATA=false` — conectado a Neon PostgreSQL
 
 ---
 
-## ✅ COMPLETED DELIVERABLES
+## QUÉ ESTÁ CONSTRUIDO Y FUNCIONA
 
-### 1. Documentation Hub (`/docs/marketplace/`)
-- ✅ [`01_ROADMAP_AND_STATUS.md`](./01_ROADMAP_AND_STATUS.md) - Project roadmap with 8 phases and DoD
-- ✅ [`02_PAYMENT_ARCHITECTURE.md`](./02_PAYMENT_ARCHITECTURE.md) - Prisma schema, state machine, escrow logic
-- ✅ [`03_API_INTEGRATION_PLAN.md`](./03_API_INTEGRATION_PLAN.md) - Mercantil & Binance API specifications
-- ✅ [`04_DISPUTES_&_SECURITY.md`](./04_DISPUTES_&_SECURITY.md) - Security protocols & dispute resolution
+### Backend completo (acciones servidor)
 
-### 2. Type System (`/types/payments.ts`)
-- ✅ Complete TypeScript interfaces for all payment methods
-- ✅ State machine types with valid transitions
-- ✅ Webhook payload types (Mercantil & Binance)
-- ✅ Manual payment verification types
-- ✅ Dispute and payout types
-- ✅ Custom error classes
+Todos los módulos apuntan directamente a Neon PostgreSQL. La capa mock fue eliminada en Epic 1 (2026-04-18).
+Patrón: `getDb()` → Prisma + Neon PostgreSQL. Sin fallbacks mock.
 
-### 3. Global Context Rules (`CLAUDE.md`)
-- ✅ Added mandatory pre-reading rules for marketplace work
-- ✅ Agents MUST read architecture docs before coding
+| Módulo | Archivo | Funciones |
+|--------|---------|-----------|
+| Auth | `actions/marketplace/auth.ts` | `registerMpUser`, `loginMpUser`, `logoutMpUser`, `getMpSession` |
+| Listings | `actions/marketplace/listings.ts` | `getActiveListings`, `getListingById`, `getListingBySlug`, `getListingsByCategory`, `getUserListings`, `updateListingStatus`, `incrementListingView`, `createListing` |
+| Transacciones | `actions/marketplace/transactions.ts` | `initiatePurchase`, `submitPaymentProof`, `validatePayment`, `confirmDelivery`, `releaseEscrow`, `openDispute`, `resolveDispute`, `cancelTransaction`, `getTransaction`, `getMyTransactions` |
+| Chat | `actions/marketplace/chat.ts` | `getOrCreateThread`, `sendMessage`, `getThreadMessages`, `getMyThreads`, `markMessagesRead`, `closeThread` |
+| Usuarios | `actions/marketplace/users.ts` | `getMyProfile`, `updateProfile`, `getUserProfile`, `becomeSeller`, `addPayoutMethod`, `getPayoutMethods`, `setDefaultPayoutMethod`, `removePayoutMethod`, `getSellerPayoutMethodsForCheckout` |
+| Admin | `actions/marketplace/admin.ts` | `getAdminStats`, `getEscrowList`, `getPayoutReport`, `adminValidatePayment`, `adminReleaseEscrow`, `adminResolveDispute`, `adminCancelTransaction`, `adminGetUsers`, `adminBanUser`, `adminUnbanUser`, `adminSetUserRole`, `adminVerifyUser` |
+| **Q&A (Epic 5)** | `actions/marketplace/questions.ts` | `getListingQuestions` (público), `askQuestion` (auth), `answerQuestion` (seller/SUPER) |
 
----
+### Frontend completo
 
-## 🎯 STRATEGIC DECISIONS (CLIENT CONFIRMED)
+| Componente | Descripción |
+|-----------|-------------|
+| `app/marketplace/page.tsx` | Página principal: hero, grid de listings, 4 intent cards, auth bar, chat demo |
+| `app/marketplace/admin/page.tsx` | Panel admin (SUPER only — auth real, sin bypass) |
+| `app/api/marketplace/ai-chat/route.ts` | **Epic 5** — API route POST: Gemini 1.5 Flash, maxTokens 150, rate limit 8 calls/h por cookie |
+| `components/marketplace/MarketplaceModals.tsx` | 4 flujos + **Q&A section por listing** (Epic 5): expandible, carga lazy, formulario de pregunta |
+| `components/marketplace/MarketplaceCard.tsx` | Card de listing con imagen o placeholder |
+| `components/marketplace/TransactionChat.tsx` | Chat dual-mode: mock/demo con **Turpial Assistant AI** (Epic 5) + real DB con polling 10 s |
+| `app/marketplace/dashboard/page.tsx` | Server component: parallel fetch profile/compras/ventas/threads → redirect si no hay sesión |
+| `components/marketplace/dashboard/DashboardClient.tsx` | Dashboard "Market Command Center": 4 tabs, KPI cards, status badges, chat overlay + **Flujo de Disputa** (Epic 5) |
+| `components/marketplace/CheckoutModal.tsx` | Flujo de pago manual completo: selección de método, datos del vendedor, subida de comprobante |
+| `components/marketplace/MarketplaceAuthModal.tsx` | Login + registro (teléfono + opt-in WhatsApp) |
+| `components/marketplace/admin/AdminDashboard.tsx` | Dashboard admin: 4 tabs (Stats / Escrow / Pagos / Usuarios) |
 
-### Payment Methods Strategy
+### Base de datos (Prisma)
 
-#### **PHASE 1 (MVP - IMMEDIATE):** Manual Verification
-- ✅ **Zelle:** Screenshot + reference number validation by admin
-- ✅ **Crypto Wallets:** Transaction hash + blockchain explorer verification
-- **Rationale:** No API credentials needed, fastest time to market
-- **SLA:** 2 hours during business hours for manual validation
-
-#### **PHASE 2 (DEFERRED):** Mercantil Bank API
-- ⏸️ **Status:** ON HOLD - Awaiting sandbox credentials
-- **Methods:** C2P, Pago Móvil, Botón de Pago
-- **Currency:** VES (Bolívares)
-- **Action Required:** Client must request API access from Mercantil
-
-#### **PHASE 3 (FUTURE):** Binance Pay API
-- ⏸️ **Status:** DEFERRED - Manual crypto verification sufficient for MVP
-- **Upgrade Path:** Can be added later if transaction volume justifies automation
-
----
-
-### Escrow & Release Policy
-
-#### **Release Triggers (Hybrid Approach)**
-1. **Manual Confirmation:** Buyer clicks "I received the item" → Immediate release
-2. **Auto-Release:** If no confirmation after **7 days** → Automatic release
-3. **Dispute Window:** Buyer can dispute within **14 days** of escrow
-
-#### **Commission Structure**
-- **Seller Commission:** 5% deducted on payout
-- **Buyer Fee:** None (free for buyers)
-
-#### **Dispute Resolution**
-- **Seller Response Time:** 48 hours
-- **Evidence Collection:** 7 days
-- **Admin Review:** Final decision by admin
-- **Resolutions:** Full refund, full release, or partial refund
-
----
-
-## 🗄️ DATABASE ARCHITECTURE
-
-### Core Models (Prisma Schema)
-
-```prisma
-Transaction {
-  - Payment method (enum)
-  - Status (state machine)
-  - Amount + currency
-  - External references (Mercantil/Binance IDs)
-  - Escrow timestamps (held, release, released)
-  - Dispute fields
-}
-
-TransactionStatusHistory {
-  - Audit trail for all status changes
-  - Changed by (user/system/webhook)
-  - Metadata (webhook payloads, etc.)
-}
-
-WebhookLog {
-  - Provider (Mercantil/Binance)
-  - Payload + signature
-  - Verification status
-  - Processing status
-}
-
-Dispute {
-  - Reason + description
-  - Evidence (text/images/documents)
-  - Status + resolution
-  - Response deadline
-}
-
-Payout {
-  - Seller payouts
-  - Transaction IDs included
-  - Status + external reference
-}
-```
-
-### State Machine (Strict Transitions)
+**12 modelos Mp-prefixed** en `prisma/schema.prisma`, totalmente aislados del sistema de reservas:
 
 ```
-INITIATED → PENDING_PAYMENT → PAYMENT_RECEIVED → IN_ESCROW
-                                                      ↓
-                                              DELIVERY_CONFIRMED
-                                                      ↓
-                                                  RELEASED
+MpUser                      — perfiles, auth, KYC, phone, whatsappConsent
+MpPayoutMethod              — métodos de cobro del vendedor (encriptados)
+MpListing                   — productos y servicios
+MpListingQuestion           — Q&A pública por listing (Epic 5)
+MpChatThread                — hilos de conversación buyer↔seller
+MpMessage                   — mensajes inmutables (sin update/delete)
+MpTransaction               — transacciones con máquina de estados
+MpTransactionStatusHistory  — audit trail inmutable
+MpDispute                   — disputas con evidencias
+MpPayout                    — pagos a vendedores
+MpWebhookLog                — logs de webhooks (Mercantil/Binance)
+```
 
-Alternative paths:
-- PAYMENT_FAILED (terminal)
-- CANCELLED (terminal)
-- DISPUTED → REFUNDED/RELEASED (admin resolution)
+**Migración pendiente:** `npx prisma migrate dev --name add_mp_listing_question`
+
+---
+
+## FLUJOS DE USUARIO POR ROL
+
+### ANONYMOUS
+- Navega el marketplace, ve listings, filtra por categoría
+- Lee Q&A de cualquier listing (sin login)
+- Puede abrir "Comprar" y "Buscar Talento" libremente
+- Al intentar contactar, vender o preguntar → se abre AuthModal
+
+### USER (Comprador y vendedor unificado — Epic 1)
+- Todo lo de ANONYMOUS +
+- Publica productos y servicios vía modal "Vender" / "Ofrecer Talento"
+- Hace preguntas en listings (Q&A pública)
+- Responde preguntas en sus propios listings
+- Inicia transacciones y envía comprobantes de pago
+- Confirma recepción de productos → libera fondos
+- **Abre disputas desde el Dashboard** (estado IN_ESCROW)
+- Recibe mensajes y genera cotizaciones
+- Chatea con "Turpial Assistant" en el demo del marketplace
+
+### SOCIO (isSeller=true, comisión exenta)
+- Igual que USER pero sin el 5% de comisión deducido
+
+### SUPER (Admin)
+- Todo lo anterior +
+- Acceso a `/marketplace/admin`
+- Valida pagos manuales (Zelle/Crypto)
+- Libera fondos, resuelve disputas, cancela transacciones
+- Responde Q&A de cualquier listing
+- Gestiona usuarios: ban/unban, verificar, cambiar rol
+- Descarga reporte CSV de pagos a vendedores
+
+---
+
+## MÁQUINA DE ESTADOS ESCROW
+
+```
+INITIATED
+  └─► PENDING_PAYMENT
+        ├─► VALIDATING (pago manual: Zelle/Crypto)
+        │     ├─► IN_ESCROW ─────────────────────┐
+        │     └─► PAYMENT_FAILED (terminal)       │
+        ├─► PAYMENT_RECEIVED (webhook automático) │
+        │     └─► IN_ESCROW ────────────────────► │
+        └─► CANCELLED (terminal)                  │
+                                                  ▼
+                                            IN_ESCROW ◄── Abrir Disputa disponible aquí
+                                     ┌──────────┼──────────┐
+                                     ▼          ▼          ▼
+                            DELIVERY_CONFIRMED  RELEASED  DISPUTED
+                                     │         (terminal)    │
+                                     ▼                       ├─► RELEASED (terminal)
+                                  RELEASED                   ├─► REFUNDED (terminal)
+                                 (terminal)                  └─► IN_ESCROW (retira disputa)
 ```
 
 ---
 
-## 🔐 SECURITY MEASURES
+## ESTRUCTURA DE ARCHIVOS CLAVE
 
-### Implemented Protections
-- ✅ Webhook signature verification (HMAC SHA256)
-- ✅ Rate limiting (20 requests/minute per IP)
-- ✅ Idempotency keys (prevent duplicate processing)
-- ✅ SQL injection prevention (Prisma parameterized queries)
-- ✅ Sensitive data encryption at rest (AES-256-GCM)
-- ✅ Role-based access control (RBAC)
-- ✅ Complete audit trail (all status changes logged)
+```
+app/
+  marketplace/
+    page.tsx                    ← Página principal
+    admin/
+      page.tsx                  ← Panel admin (SUPER)
+    dashboard/
+      page.tsx                  ← Server component dashboard
+  api/
+    marketplace/
+      ai-chat/
+        route.ts                ← Turpial Assistant (Gemini 1.5 Flash) — Epic 5
 
-### Monitoring & Alerts
-- Failed payment rate > 5%
-- Manual validation queue > 50 pending
-- Webhook failure rate > 5%
-- Disputed transactions not resolved within 48 hours
+components/marketplace/
+  MarketplaceCard.tsx
+  MarketplaceModals.tsx         ← + ListingQASection (Epic 5)
+  MarketplaceAuthModal.tsx
+  TransactionChat.tsx           ← + Turpial Assistant demo AI (Epic 5)
+  CheckoutModal.tsx
+  admin/
+    AdminDashboard.tsx
+  dashboard/
+    DashboardClient.tsx         ← + DisputeModal + dispute flow (Epic 5)
 
----
+actions/marketplace/
+  auth.ts
+  listings.ts
+  transactions.ts               ← openDispute (ya existía)
+  chat.ts
+  users.ts
+  admin.ts
+  questions.ts                  ← NUEVO (Epic 5)
+actions/marketplace.ts          ← Barrel re-export
 
-## 📊 IMPLEMENTATION ROADMAP
+lib/marketplace/
+  auth.ts                       ← JWT, session cookie
+  db.ts                         ← Prisma factory (getDb)
 
-### ✅ PHASE 0: ARCHITECTURE (COMPLETE)
-- [x] Documentation hub created
-- [x] Payment architecture designed
-- [x] API integration plans documented
-- [x] Security protocols defined
-- [x] TypeScript types scaffolded
-- [x] Strategic decisions finalized
+lib/validations/
+  marketplace.ts                ← Zod schemas + MP_CATEGORIES
 
-### 🟢 PHASE 1: DATABASE & CORE MODELS (NEXT)
-**Target:** Week 2  
-**Owner:** Backend Mode
+types/
+  marketplace.ts                ← Tipos UI
 
-**Tasks:**
-1. Create Prisma schema file (`prisma/schema.prisma`)
-2. Add Transaction, TransactionStatusHistory, WebhookLog models
-3. Add Dispute, DisputeEvidence, Payout models
-4. Generate migration scripts
-5. Test migrations in development
-6. Seed database with test data
-
-**Deliverables:**
-- `prisma/schema.prisma` with all models
-- Migration files in `prisma/migrations/`
-- Seed script for testing
-
----
-
-### 🟢 PHASE 4: MANUAL PAYMENT METHODS (PRIORITY)
-**Target:** Week 2-3  
-**Owner:** Obrero Mode (UI) + Backend Mode (API)
-
-**Tasks:**
-1. **Zelle Flow:**
-   - Upload screenshot UI component
-   - Reference number input field
-   - Admin validation dashboard
-   - Email notifications on approval/rejection
-
-2. **Crypto Wallet Flow:**
-   - Transaction hash input
-   - Network selector (Ethereum, BSC, Tron, Bitcoin)
-   - Blockchain explorer link generation
-   - Admin verification interface
-
-3. **API Endpoints:**
-   - `POST /api/marketplace/transactions/:id/submit-proof`
-   - `PATCH /api/admin/transactions/:id/validate`
-   - `GET /api/admin/transactions/pending-validation`
-
-**Deliverables:**
-- Payment proof upload component
-- Admin validation dashboard
-- API routes for manual verification
-- Email notification system
+prisma/
+  schema.prisma                 ← Schema completo (12 modelos mp_*)
+```
 
 ---
 
-### 🟡 PHASE 5: ESCROW & RELEASE LOGIC
-**Target:** Week 3-4  
-**Owner:** Backend Mode
+## PENDIENTE (POST EPIC 5)
 
-**Tasks:**
-1. Implement escrow hold mechanism
-2. Create auto-release cron job (daily check of `escrowReleaseAt`)
-3. Build buyer confirmation endpoint
-4. Implement dispute opening flow
-5. Create seller payout calculation (5% commission)
-6. Add notification triggers
-
-**Deliverables:**
-- Escrow state management functions
-- Cron job for auto-release
-- Dispute handling API
-- Payout calculation logic
+| Ítem | Descripción | Prioridad |
+|------|-------------|-----------|
+| Migración DB | `npx prisma migrate dev --name add_mp_listing_question` | INMEDIATA |
+| `/marketplace/[slug]` | Página de detalle con SEO metadata | Alta |
+| Cron T+7 | Auto-release escrow: `app/api/cron/escrow-release/route.ts` | Alta |
+| Upload imágenes persistente | S3 o Cloudflare Images (decisión cliente) | Media |
+| Mercantil API | Webhooks C2P/Pago Móvil/Botón (bloqueado — credenciales) | Bloqueado |
+| WhatsApp notificaciones | Triggers: pago validado, escrow, disputa | Media |
 
 ---
 
-### ⏸️ PHASE 2: MERCANTIL BANK (ON HOLD)
-**Status:** Awaiting API credentials  
-**Action Required:** Client must request sandbox access from Mercantil
+## VARIABLES DE ENTORNO REQUERIDAS
+
+| Variable | Descripción | Estado |
+|----------|-------------|--------|
+| `DATABASE_URL` | Neon PostgreSQL connection string | ✅ Activo |
+| `MP_JWT_SECRET` | Secret para JWT de sesión (32+ chars) | ✅ Activo |
+| `RESEND_API_KEY` | Para emails de reset password | ✅ Activo |
+| `NEXT_PUBLIC_APP_URL` | URL base para links en emails | ✅ Activo |
+| `WHATSAPP_ACCESS_TOKEN` | Meta WhatsApp Cloud API token | Configurar |
+| `WHATSAPP_PHONE_NUMBER_ID` | ID del número WhatsApp Business | Configurar |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | **Gemini API key (Turpial Assistant — Epic 5)** | Configurar |
+| `CRON_SECRET` | Protege el endpoint de cron T+7 | Por configurar |
+| `MERCANTIL_*` | Credenciales API Mercantil | Bloqueado |
+| `BINANCE_*` | Credenciales Binance Pay | Diferido |
 
 ---
 
-### ⏸️ PHASE 3: BINANCE PAY (DEFERRED)
-**Status:** Manual verification sufficient for MVP  
-**Future Enhancement:** Can be added if automation is needed
+## CÓMO PROBAR EN PRODUCCIÓN
 
----
+```bash
+# Requiere DATABASE_URL + MP_JWT_SECRET en .env
+# Para AI demo: GOOGLE_GENERATIVE_AI_API_KEY
 
-## 🚀 IMMEDIATE NEXT STEPS
+# Migración obligatoria tras Epic 5:
+npx prisma migrate dev --name add_mp_listing_question
+npx prisma generate
 
-### For Backend Developer:
-1. Read [`02_PAYMENT_ARCHITECTURE.md`](./02_PAYMENT_ARCHITECTURE.md)
-2. Create Prisma schema based on documented models
-3. Generate and test migrations
-4. Implement state machine validation functions
+# Navegar a:
+http://localhost:3000/marketplace           # Página principal + demo AI
+http://localhost:3000/marketplace/dashboard # Dashboard con disputa flow
+http://localhost:3000/marketplace/admin     # Panel admin (requiere SUPER)
+```
 
-### For Frontend Developer (Obrero):
-1. Read [`01_ROADMAP_AND_STATUS.md`](./01_ROADMAP_AND_STATUS.md)
-2. Design payment proof upload UI
-3. Build admin validation dashboard
-4. Create buyer confirmation button
-
-### For Project Manager:
-1. Request Mercantil Bank sandbox credentials
-2. Setup monitoring tools (Sentry, logging)
-3. Define SLA for manual payment validation
-4. Plan soft launch with limited users
-
----
-
-## 📚 REFERENCE DOCUMENTS
-
-| Document | Purpose | When to Read |
-|----------|---------|--------------|
-| [`01_ROADMAP_AND_STATUS.md`](./01_ROADMAP_AND_STATUS.md) | Project status, milestones, DoD | Before starting any marketplace task |
-| [`02_PAYMENT_ARCHITECTURE.md`](./02_PAYMENT_ARCHITECTURE.md) | Database schema, state machine | Before writing payment logic |
-| [`03_API_INTEGRATION_PLAN.md`](./03_API_INTEGRATION_PLAN.md) | API specifications | When integrating Mercantil/Binance |
-| [`04_DISPUTES_&_SECURITY.md`](./04_DISPUTES_&_SECURITY.md) | Security protocols | When implementing webhooks/disputes |
-| [`/types/payments.ts`](../../types/payments.ts) | TypeScript types | When writing any payment-related code |
-
----
-
-## ⚠️ MANDATORY UPDATE PROTOCOL
-
-**CRITICAL:** Any developer who completes work on the marketplace MUST:
-
-1. Update [`01_ROADMAP_AND_STATUS.md`](./01_ROADMAP_AND_STATUS.md)
-2. Move task from "Pending" to "Done"
-3. Fill in completion date and notes
-4. Update phase progress percentage
-
-**This is NOT optional.** Failure to update = incomplete work.
-
----
-
-## 🎉 ARCHITECTURE SIGN-OFF
-
-**Architect:** System  
-**Date:** 2026-04-09  
-**Status:** ✅ APPROVED FOR IMPLEMENTATION
-
-**Key Achievements:**
-- Complete payment gateway architecture designed
-- Multi-channel support (Zelle, Crypto, Mercantil, Binance)
-- Secure escrow system with T+7 auto-release
-- Comprehensive dispute resolution protocol
-- Full TypeScript type coverage
-- Security-first approach with audit trails
-
-**Next Phase Owner:** Backend Mode (Prisma schema implementation)
-
----
-
-**Questions or Issues?** Refer to the documentation hub or consult the Lead Architect.
+**Flujos a probar:**
+1. Demo chat → enviar mensaje → Turpial Assistant responde (requiere `GOOGLE_GENERATIVE_AI_API_KEY`)
+2. Comprar listing → explorar Q&A → hacer pregunta (requiere sesión)
+3. Dashboard compras → transacción EN_ESCROW → "Abrir Disputa" → llenar formulario → confirmar
+4. Admin: resolver disputa → RELEASED o REFUNDED

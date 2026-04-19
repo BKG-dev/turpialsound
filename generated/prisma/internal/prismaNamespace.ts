@@ -396,6 +396,7 @@ export const ModelName = {
   MpUser: 'MpUser',
   MpPayoutMethod: 'MpPayoutMethod',
   MpListing: 'MpListing',
+  MpListingQuestion: 'MpListingQuestion',
   MpChatThread: 'MpChatThread',
   MpMessage: 'MpMessage',
   MpTransaction: 'MpTransaction',
@@ -418,7 +419,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "siteCounter" | "service" | "serviceVariant" | "resource" | "user" | "bookingRequest" | "bookingRequestItem" | "approval" | "auditLog" | "mpUser" | "mpPayoutMethod" | "mpListing" | "mpChatThread" | "mpMessage" | "mpTransaction" | "mpTransactionStatusHistory" | "mpDispute" | "mpPayout" | "mpWebhookLog"
+    modelProps: "siteCounter" | "service" | "serviceVariant" | "resource" | "user" | "bookingRequest" | "bookingRequestItem" | "approval" | "auditLog" | "mpUser" | "mpPayoutMethod" | "mpListing" | "mpListingQuestion" | "mpChatThread" | "mpMessage" | "mpTransaction" | "mpTransactionStatusHistory" | "mpDispute" | "mpPayout" | "mpWebhookLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1310,6 +1311,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    MpListingQuestion: {
+      payload: Prisma.$MpListingQuestionPayload<ExtArgs>
+      fields: Prisma.MpListingQuestionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MpListingQuestionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpListingQuestionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MpListingQuestionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpListingQuestionPayload>
+        }
+        findFirst: {
+          args: Prisma.MpListingQuestionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpListingQuestionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MpListingQuestionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpListingQuestionPayload>
+        }
+        findMany: {
+          args: Prisma.MpListingQuestionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpListingQuestionPayload>[]
+        }
+        create: {
+          args: Prisma.MpListingQuestionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpListingQuestionPayload>
+        }
+        createMany: {
+          args: Prisma.MpListingQuestionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MpListingQuestionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpListingQuestionPayload>[]
+        }
+        delete: {
+          args: Prisma.MpListingQuestionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpListingQuestionPayload>
+        }
+        update: {
+          args: Prisma.MpListingQuestionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpListingQuestionPayload>
+        }
+        deleteMany: {
+          args: Prisma.MpListingQuestionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MpListingQuestionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MpListingQuestionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpListingQuestionPayload>[]
+        }
+        upsert: {
+          args: Prisma.MpListingQuestionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpListingQuestionPayload>
+        }
+        aggregate: {
+          args: Prisma.MpListingQuestionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMpListingQuestion>
+        }
+        groupBy: {
+          args: Prisma.MpListingQuestionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpListingQuestionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MpListingQuestionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpListingQuestionCountAggregateOutputType> | number
+        }
+      }
+    }
     MpChatThread: {
       payload: Prisma.$MpChatThreadPayload<ExtArgs>
       fields: Prisma.MpChatThreadFieldRefs
@@ -2011,6 +2086,13 @@ export const MpUserScalarFieldEnum = {
   sellerRating: 'sellerRating',
   totalSales: 'totalSales',
   totalPurchases: 'totalPurchases',
+  passwordHash: 'passwordHash',
+  role: 'role',
+  phone: 'phone',
+  whatsappConsent: 'whatsappConsent',
+  whatsappConsentAt: 'whatsappConsentAt',
+  passwordResetToken: 'passwordResetToken',
+  passwordResetTokenExpiresAt: 'passwordResetTokenExpiresAt',
   isBanned: 'isBanned',
   bannedAt: 'bannedAt',
   bannedReason: 'bannedReason',
@@ -2060,6 +2142,19 @@ export const MpListingScalarFieldEnum = {
 } as const
 
 export type MpListingScalarFieldEnum = (typeof MpListingScalarFieldEnum)[keyof typeof MpListingScalarFieldEnum]
+
+
+export const MpListingQuestionScalarFieldEnum = {
+  id: 'id',
+  listingId: 'listingId',
+  askerId: 'askerId',
+  question: 'question',
+  answer: 'answer',
+  answeredAt: 'answeredAt',
+  createdAt: 'createdAt'
+} as const
+
+export type MpListingQuestionScalarFieldEnum = (typeof MpListingQuestionScalarFieldEnum)[keyof typeof MpListingQuestionScalarFieldEnum]
 
 
 export const MpChatThreadScalarFieldEnum = {
@@ -2375,6 +2470,20 @@ export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$Prisma
 
 
 /**
+ * Reference to a field of type 'MpUserRole'
+ */
+export type EnumMpUserRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MpUserRole'>
+    
+
+
+/**
+ * Reference to a field of type 'MpUserRole[]'
+ */
+export type ListEnumMpUserRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MpUserRole[]'>
+    
+
+
+/**
  * Reference to a field of type 'MpPayoutMethodType'
  */
 export type EnumMpPayoutMethodTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MpPayoutMethodType'>
@@ -2578,6 +2687,7 @@ export type GlobalOmitConfig = {
   mpUser?: Prisma.MpUserOmit
   mpPayoutMethod?: Prisma.MpPayoutMethodOmit
   mpListing?: Prisma.MpListingOmit
+  mpListingQuestion?: Prisma.MpListingQuestionOmit
   mpChatThread?: Prisma.MpChatThreadOmit
   mpMessage?: Prisma.MpMessageOmit
   mpTransaction?: Prisma.MpTransactionOmit

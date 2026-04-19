@@ -39,9 +39,11 @@ export const mainNavItems: NavItem[] = [
 ]
 
 export const ctaNav: { label: string; href: Route } = {
-  label: 'Reservar por WhatsApp', // SUGGESTED — CLIENT_REQUIRED for final CTA text
+  label: 'Reservar por WhatsApp',
   href: '/contacto',
 }
+
+export const ctaWaHref = 'https://wa.me/58414133305'
 
 export const footerNavItems: NavItem[] = [
   { label: 'Salas de ensayo', href: '/salas-de-ensayo' },

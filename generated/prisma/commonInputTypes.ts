@@ -321,6 +321,23 @@ export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
   _max?: Prisma.NestedJsonNullableFilter<$PrismaModel>
 }
 
+export type EnumMpUserRoleFilter<$PrismaModel = never> = {
+  equals?: $Enums.MpUserRole | Prisma.EnumMpUserRoleFieldRefInput<$PrismaModel>
+  in?: $Enums.MpUserRole[] | Prisma.ListEnumMpUserRoleFieldRefInput<$PrismaModel>
+  notIn?: $Enums.MpUserRole[] | Prisma.ListEnumMpUserRoleFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumMpUserRoleFilter<$PrismaModel> | $Enums.MpUserRole
+}
+
+export type EnumMpUserRoleWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.MpUserRole | Prisma.EnumMpUserRoleFieldRefInput<$PrismaModel>
+  in?: $Enums.MpUserRole[] | Prisma.ListEnumMpUserRoleFieldRefInput<$PrismaModel>
+  notIn?: $Enums.MpUserRole[] | Prisma.ListEnumMpUserRoleFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumMpUserRoleWithAggregatesFilter<$PrismaModel> | $Enums.MpUserRole
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumMpUserRoleFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumMpUserRoleFilter<$PrismaModel>
+}
+
 export type EnumMpPayoutMethodTypeFilter<$PrismaModel = never> = {
   equals?: $Enums.MpPayoutMethodType | Prisma.EnumMpPayoutMethodTypeFieldRefInput<$PrismaModel>
   in?: $Enums.MpPayoutMethodType[] | Prisma.ListEnumMpPayoutMethodTypeFieldRefInput<$PrismaModel>
@@ -836,6 +853,23 @@ export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
   gt?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   gte?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   not?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | Prisma.JsonNullValueFilter
+}
+
+export type NestedEnumMpUserRoleFilter<$PrismaModel = never> = {
+  equals?: $Enums.MpUserRole | Prisma.EnumMpUserRoleFieldRefInput<$PrismaModel>
+  in?: $Enums.MpUserRole[] | Prisma.ListEnumMpUserRoleFieldRefInput<$PrismaModel>
+  notIn?: $Enums.MpUserRole[] | Prisma.ListEnumMpUserRoleFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumMpUserRoleFilter<$PrismaModel> | $Enums.MpUserRole
+}
+
+export type NestedEnumMpUserRoleWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.MpUserRole | Prisma.EnumMpUserRoleFieldRefInput<$PrismaModel>
+  in?: $Enums.MpUserRole[] | Prisma.ListEnumMpUserRoleFieldRefInput<$PrismaModel>
+  notIn?: $Enums.MpUserRole[] | Prisma.ListEnumMpUserRoleFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumMpUserRoleWithAggregatesFilter<$PrismaModel> | $Enums.MpUserRole
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumMpUserRoleFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumMpUserRoleFilter<$PrismaModel>
 }
 
 export type NestedEnumMpPayoutMethodTypeFilter<$PrismaModel = never> = {

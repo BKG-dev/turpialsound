@@ -3,6 +3,18 @@ import { z } from 'zod'
 // ─── CATEGORIES ───────────────────────────────────────────────────────────────
 
 export const MP_CATEGORIES = [
+  // Physical products
+  'instrumentos-nuevos',
+  'instrumentos-usados',
+  'audio-pro-estudio',
+  'consumibles',
+  'alquiler-equipos',
+  // Services & talent
+  'musicos-sesion',
+  'bandas-eventos',
+  'tecnicos-audio-iluminacion',
+  'productores-arreglistas',
+  // Digital goods
   'beats',
   'mixing',
   'mastering',
@@ -42,7 +54,14 @@ export const createListingSchema = z
 
     currency: z.enum(['USD']).default('USD'),
 
-    coverImageUrl: z.string().url('URL de imagen inválida').optional(),
+    // Accepts both persistent URLs (https://) and inline data URLs (data:image/...)
+    coverImageUrl: z
+      .string()
+      .refine(
+        v => v.startsWith('data:image/') || /^https?:\/\//.test(v),
+        'URL de imagen inválida',
+      )
+      .optional(),
 
     hasInventory: z.boolean().default(false),
 

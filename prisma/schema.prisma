@@ -345,6 +345,14 @@ enum MpListingStatus {
   @@map("mp_listing_status")
 }
 
+enum MpUserRole {
+  USER  // Standard marketplace user
+  SOCIO // Partner — exempt from platform commission
+  SUPER // Developer/admin — full access, exempt from commission
+
+  @@map("mp_user_role")
+}
+
 // ─────────────────────────────────────────────────────────────────
 // MARKETPLACE USER (BUYER/SELLER PROFILES)
 // CRITICAL: This is NOT the internal staff User table
@@ -369,12 +377,27 @@ model MpUser {
   verificationLevel String    @default("none") // "none", "basic", "full"
 
   // Seller-specific fields
-  isSeller     Boolean  @default(false)
+  isSeller     Boolean  @default(true)
   sellerRating Decimal? @db.Decimal(3, 2) // 0.00 to 5.00
   totalSales   Int      @default(0)
 
   // Buyer-specific fields
   totalPurchases Int @default(0)
+
+  // Authentication credential (plain NextAuth integration removes this in Phase 2)
+  passwordHash String?
+
+  // Role — SOCIO and SUPER are exempt from platform commission
+  role MpUserRole @default(USER)
+
+  // Contact & Notifications
+  phone             String?   // e.g. "+58 414 123 4567"
+  whatsappConsent   Boolean   @default(false)
+  whatsappConsentAt DateTime?
+
+  // Password Reset (token stored as SHA-256 hash; plain token emailed to user)
+  passwordResetToken          String?   @unique
+  passwordResetTokenExpiresAt DateTime?
 
   // Security
   isBanned     Boolean   @default(false)
@@ -395,10 +418,13 @@ model MpUser {
   chatThreadsAsSeller MpChatThread[]   @relation("MpChatSeller")
   disputes            MpDispute[]
   mpPayouts           MpPayout[]
+  askedQuestions      MpListingQuestion[] @relation("MpAskedQuestions")
+  favoriteListings    MpListing[]      @relation("UserFavorites")
 
   @@index([email])
   @@index([isSeller])
   @@index([isVerified])
+  @@index([role])
   @@map("mp_users")
 }
 
@@ -471,12 +497,36 @@ model MpListing {
   publishedAt DateTime?
 
   transactions MpTransaction[]
+  questions    MpListingQuestion[]
+  favoritedBy  MpUser[]            @relation("UserFavorites")
 
   @@index([sellerId])
   @@index([status])
   @@index([category])
   @@index([slug])
   @@map("mp_listings")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// LISTING Q&A (PUBLIC BUYER-FACING QUESTIONS)
+// ─────────────────────────────────────────────────────────────────
+
+model MpListingQuestion {
+  id        String    @id @default(cuid())
+  listingId String
+  listing   MpListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  askerId   String
+  asker     MpUser    @relation("MpAskedQuestions", fields: [askerId], references: [id], onDelete: Cascade)
+
+  question   String
+  answer     String?
+  answeredAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([listingId])
+  @@index([askerId])
+  @@map("mp_listing_questions")
 }
 
 // ─────────────────────────────────────────────────────────────────

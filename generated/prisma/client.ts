@@ -102,6 +102,11 @@ export type MpPayoutMethod = Prisma.MpPayoutMethodModel
  */
 export type MpListing = Prisma.MpListingModel
 /**
+ * Model MpListingQuestion
+ * 
+ */
+export type MpListingQuestion = Prisma.MpListingQuestionModel
+/**
  * Model MpChatThread
  * 
  */

@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import { MessageCircle } from 'lucide-react'
 
-const WA_NUMBER = '58XXXXXXXXX' // [CLIENT_REQUIRED] — replace with real number
+const WA_NUMBER = '584168017844'
 
 export function WhatsAppButton() {
   return (

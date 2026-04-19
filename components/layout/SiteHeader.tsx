@@ -1,5 +1,4 @@
-import { ctaNav } from '@/content/navigation'
-import { Button } from '@/components/ui/Button'
+import { ctaNav, ctaWaHref } from '@/content/navigation'
 import { MobileMenu } from '@/components/layout/MobileMenu'
 import { AnimatedLogo } from '@/components/layout/AnimatedLogo'
 import { AnimatedNavLinks } from '@/components/layout/AnimatedNavLinks'
@@ -36,20 +35,21 @@ export function SiteHeader() {
        * para una transición orgánica desde el interior del pill.
        * twMerge en Button garantiza que estas clases prevalezcan sobre size="sm".
        */}
-      <Button
-        as="link"
-        href={ctaNav.href}
-        variant="primary"
-        size="sm"
+      <a
+        href={ctaWaHref}
+        target="_blank"
+        rel="noopener noreferrer"
         className={cn(
-          'hidden sm:inline-flex items-center',
+          'btn-silky-primary font-semibold transition-all duration-250 hover:brightness-110',
+          'inline-flex items-center justify-center gap-2 font-medium leading-none text-sm',
+          'hidden sm:inline-flex',
           'self-stretch py-0 px-6',
           'rounded-l-xl rounded-r-2xl',
           'whitespace-nowrap',
         )}
       >
         {ctaNav.label}
-      </Button>
+      </a>
 
       {/* Mobile trigger — visible solo en < sm */}
       <div className="flex items-center px-4 sm:hidden">

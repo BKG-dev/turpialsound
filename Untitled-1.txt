@@ -1,0 +1,1 @@
+vamos hacer una clase interactiva sobre el uso de la ia para un proposito , creacion de una landing page , usando next js react y tailwind , la alumna tiene visual studio, pero no en este momento, vamos a dejarle un caso de uso practico, desde la instalacion, y el mvp para un minimo viable

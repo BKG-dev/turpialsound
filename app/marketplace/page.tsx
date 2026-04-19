@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ShoppingBag,
@@ -16,12 +17,69 @@ import {
   Sparkles,
   Lock,
   BadgeCheck,
+  UserCircle2,
+  LogOut,
+  ShieldAlert,
 } from 'lucide-react'
-import type { ModalFlow, ModalState } from '@/types/marketplace'
+import type { ModalFlow, ModalState, Listing, MarketplaceUser, MessageThread } from '@/types/marketplace'
 import { MarketplaceModals } from '@/components/marketplace/MarketplaceModals'
 import { MarketplaceCard } from '@/components/marketplace/MarketplaceCard'
 import { TransactionChat } from '@/components/marketplace/TransactionChat'
-import { MOCK_PRODUCT_LISTINGS, MOCK_SERVICE_LISTINGS, MOCK_THREAD } from '@/content/marketplace'
+import { MarketplaceAuthModal } from '@/components/marketplace/MarketplaceAuthModal'
+import { CheckoutModal } from '@/components/marketplace/CheckoutModal'
+import { getMpSession, logoutMpUser } from '@/actions/marketplace/auth'
+import { getActiveListings, getOrCreateThread } from '@/actions/marketplace'
+import { getUnreadCount } from '@/actions/marketplace/chat'
+import { toggleFavorite, getMyFavoriteIds } from '@/actions/marketplace/favorites'
+import type { MpSessionPayload } from '@/lib/marketplace/auth'
+import Link from 'next/link'
+
+// ─── Build a MessageThread from a listing + optional session ──────────────────
+// Used when opening a real chat: we have the listing data but no pre-fetched thread.
+
+function buildThreadFromListing(
+  listing: Listing,
+  session: MpSessionPayload | null,
+  threadId: string | null,
+): MessageThread {
+  const seller: MarketplaceUser =
+    listing.type === 'product' ? listing.seller : listing.talent
+
+  const buyer: MarketplaceUser = session
+    ? {
+        id: session.userId,
+        name: session.displayName,
+        initials: session.displayName.slice(0, 2).toUpperCase(),
+        role: 'buyer',
+        verified: false,
+        rating: 0,
+        reviewCount: 0,
+        joinedAt: '',
+        location: '',
+      }
+    : {
+        id: 'guest',
+        name: 'Visitante',
+        initials: 'VI',
+        role: 'buyer',
+        verified: false,
+        rating: 0,
+        reviewCount: 0,
+        joinedAt: '',
+        location: '',
+      }
+
+  const now = new Date().toISOString()
+  return {
+    id: threadId ?? `demo-${listing.id}`,
+    listingId: listing.id,
+    listing,
+    participants: [buyer, seller],
+    messages: [],
+    createdAt: now,
+    updatedAt: now,
+  }
+}
 
 // ─── Hero Intent Cards ────────────────────────────────────────────────────────
 
@@ -117,6 +175,8 @@ function SectionHeading({
 // ─── Page Component ───────────────────────────────────────────────────────────
 
 export default function MarketplacePage() {
+  const router = useRouter()
+
   // Scroll restoration — ensure page always loads from the top.
   // Prevents focus hijacking from footer inputs or other elements.
   useEffect(() => {
@@ -130,22 +190,136 @@ export default function MarketplacePage() {
   })
   const [direction, setDirection] = useState(1)
 
-  // Chat demo state
+  // Chat state — tracks the listing being viewed + the real DB thread ID
   const [showChat, setShowChat] = useState(false)
+  const [chatListing, setChatListing] = useState<Listing | null>(null)
+  const [chatThreadId, setChatThreadId] = useState<string | null>(null)
+
+  // Checkout state
+  const [checkoutListing, setCheckoutListing] = useState<Listing | null>(null)
 
   // Tab
   const [activeTab, setActiveTab] = useState('all')
 
+  // Auth
+  const [session, setSession] = useState<MpSessionPayload | null>(null)
+  const [authOpen, setAuthOpen] = useState(false)
+  const [authTab, setAuthTab] = useState<'login' | 'register'>('login')
+  const [unreadCount, setUnreadCount] = useState(0)
+  // Flow requested while unauthenticated — open after login
+  const [pendingFlow, setPendingFlow] = useState<ModalFlow | null>(null)
+
+  // Favorites
+  const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    getMpSession().then(setSession)
+  }, [])
+
+  // Poll unread count every 30s when logged in
+  useEffect(() => {
+    if (!session) { setUnreadCount(0); return }
+    getUnreadCount().then(r => { if (r.success && r.data) setUnreadCount(r.data.count) })
+    const id = setInterval(() => {
+      getUnreadCount().then(r => { if (r.success && r.data) setUnreadCount(r.data.count) })
+    }, 30_000)
+    return () => clearInterval(id)
+  }, [session])
+
+  // Load favorite IDs when session is active
+  useEffect(() => {
+    if (!session) { setFavoritedIds(new Set()); return }
+    getMyFavoriteIds().then(r => {
+      if (r.success && r.data) setFavoritedIds(new Set(r.data))
+    })
+  }, [session])
+
+  const handleToggleFavorite = useCallback(async (id: string) => {
+    if (!session) { openAuth('login'); return }
+    setFavoritedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+    await toggleFavorite(id)
+  }, [session])
+
+  function openAuth(tab: 'login' | 'register' = 'login') {
+    setAuthTab(tab)
+    setAuthOpen(true)
+  }
+
+  function handleAuthSuccess(s: MpSessionPayload) {
+    setSession(s)
+    setAuthOpen(false)
+    // Open deferred flow after login
+    if (pendingFlow) {
+      setDirection(1)
+      setModalState({ flow: pendingFlow, step: 'category' })
+      setPendingFlow(null)
+    }
+  }
+
+  async function handleLogout() {
+    await logoutMpUser()
+    setSession(null)
+  }
+
+  // Listings loaded from DB on mount (persisted across sessions)
+  const [dbListings, setDbListings] = useState<Listing[]>([])
+
+  useEffect(() => {
+    getActiveListings().then(setDbListings).catch(() => {})
+  }, [])
+
+  // Extra listings added by the user in this session (appear immediately, before DB refresh)
+  const [extraListings, setExtraListings] = useState<Listing[]>([])
+
+  const handleListingCreated = useCallback((listing: Listing) => {
+    setExtraListings(prev => [listing, ...prev])
+  }, [])
+
   // ── Modal handlers ──────────────────────────────────────────────────────────
 
   const openFlow = useCallback((flow: ModalFlow) => {
+    // Sell / offer-talent require a session — prompt auth first
+    if ((flow === 'sell' || flow === 'offer-talent') && !session) {
+      setPendingFlow(flow)
+      openAuth('register')
+      return
+    }
     setDirection(1)
     setModalState({ flow, step: 'category' })
-  }, [])
+  }, [session])
 
   const closeModal = useCallback(() => {
     setModalState({ flow: null, step: 'category' })
   }, [])
+
+  // Opens the real chat for a specific listing.
+  // Creates/finds a DB thread when the user is authenticated.
+  const openChat = useCallback(async (listing: Listing) => {
+    closeModal()
+    setChatListing(listing)
+    setChatThreadId(null)
+    setShowChat(true)
+
+    if (session) {
+      const sellerId = listing.type === 'product' ? listing.seller.id : listing.talent.id
+      getOrCreateThread(sellerId, listing.id)
+        .then(r => { if (r.success && r.data) setChatThreadId(r.data.threadId) })
+        .catch(() => {})
+    }
+  }, [session, closeModal])
+
+  const openCheckout = useCallback((listing: Listing) => {
+    if (!session) {
+      setPendingFlow(null)
+      openAuth('login')
+      return
+    }
+    setCheckoutListing(listing)
+  }, [session])
 
   const nextStep = useCallback((payload?: Partial<ModalState>) => {
     setDirection(1)
@@ -168,15 +342,116 @@ export default function MarketplacePage() {
 
   // ── Listings filtered ───────────────────────────────────────────────────────
 
-  const listings =
-    activeTab === 'products'
-      ? MOCK_PRODUCT_LISTINGS
-      : activeTab === 'services'
-      ? MOCK_SERVICE_LISTINGS
-      : [...MOCK_PRODUCT_LISTINGS, ...MOCK_SERVICE_LISTINGS]
+  const tabFilter = (l: Listing) =>
+    activeTab === 'all' ||
+    (activeTab === 'products' && l.type === 'product') ||
+    (activeTab === 'services' && l.type === 'service')
+
+  const filteredExtra = extraListings.filter(tabFilter)
+  const filteredDb    = dbListings.filter(tabFilter)
+
+  // Deduplicate: extraListings (same-session) take priority over dbListings
+  const extraIds  = new Set(filteredExtra.map(l => l.id))
+  const uniqueDb  = filteredDb.filter(l => !extraIds.has(l.id))
+
+  const listings: Listing[] = [...filteredExtra, ...uniqueDb]
 
   return (
     <>
+      {/* ── Auth Modal ─────────────────────────────────────────────────────── */}
+      <MarketplaceAuthModal
+        isOpen={authOpen}
+        defaultTab={authTab}
+        onClose={() => { setAuthOpen(false); setPendingFlow(null) }}
+        onSuccess={handleAuthSuccess}
+      />
+
+      {/* ── Auth Bar ───────────────────────────────────────────────────────── */}
+      <div className="w-full flex items-center justify-end px-6 py-2 gap-3"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.3)' }}>
+        {session ? (
+          <>
+            {session.role === 'SUPER' && (
+              <a
+                href="/marketplace/admin"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+                style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}
+              >
+                <ShieldAlert size={11} /> Admin
+              </a>
+            )}
+            {/* Unread messages badge */}
+            <Link
+              href="/marketplace/dashboard?tab=messages"
+              className="relative flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-90"
+              style={{
+                background: unreadCount > 0 ? 'rgba(0,174,239,0.1)' : 'transparent',
+                color: unreadCount > 0 ? '#00aeef' : 'rgba(255,255,255,0.35)',
+                border: unreadCount > 0 ? '1px solid rgba(0,174,239,0.25)' : '1px solid transparent',
+                boxShadow: unreadCount > 0 ? '0 0 12px rgba(0,174,239,0.2)' : 'none',
+              }}
+            >
+              <MessageSquare size={12} />
+              {unreadCount > 0 && (
+                <span
+                  className="font-bold tabular-nums"
+                  style={{ textShadow: '0 0 8px rgba(0,174,239,0.8)' }}
+                >
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </Link>
+
+            <div className="flex items-center gap-2">
+              <UserCircle2 size={15} style={{ color: '#00aeef' }} />
+              <span className="text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                {session.displayName}
+                {session.role === 'SUPER' ? (
+                  <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded"
+                    style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)' }}>
+                    Admin
+                  </span>
+                ) : session.role === 'SOCIO' ? (
+                  <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded"
+                    style={{ background: 'rgba(168,85,247,0.15)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.25)' }}>
+                    Socio
+                  </span>
+                ) : session.isSeller ? (
+                  <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded"
+                    style={{ background: 'rgba(255,193,7,0.15)', color: '#ffc107', border: '1px solid rgba(255,193,7,0.25)' }}>
+                    Vendedor
+                  </span>
+                ) : null}
+              </span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-colors hover:bg-white/5"
+              style={{ color: 'rgba(255,255,255,0.35)' }}
+            >
+              <LogOut size={12} /> Salir
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => openAuth('login')}
+              className="text-xs px-3 py-1 rounded-lg transition-colors hover:bg-white/5"
+              style={{ color: 'rgba(255,255,255,0.4)' }}
+            >
+              Iniciar sesión
+            </button>
+            <button
+              onClick={() => openAuth('register')}
+              className="text-xs px-3 py-1 rounded-lg font-medium transition-all"
+              style={{ background: 'rgba(0,174,239,0.12)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.25)' }}
+            >
+              Crear cuenta
+            </button>
+          </>
+        )}
+      </div>
+
       {/* ── Marketplace Modals ─────────────────────────────────────────────── */}
       <MarketplaceModals
         state={modalState}
@@ -184,7 +459,31 @@ export default function MarketplacePage() {
         onClose={closeModal}
         onNext={nextStep}
         onBack={prevStep}
+        onListingCreated={handleListingCreated}
+        listings={[...extraListings, ...dbListings]}
+        onOpenChat={openChat}
+        onBuy={openCheckout}
+        currentUserId={session?.userId}
       />
+
+      {/* ── Checkout Modal ─────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {checkoutListing && (
+          <CheckoutModal
+            listing={checkoutListing}
+            sellerId={
+              checkoutListing.type === 'product'
+                ? checkoutListing.seller.id
+                : checkoutListing.talent.id
+            }
+            onClose={() => setCheckoutListing(null)}
+            onOpenChat={listing => {
+              setCheckoutListing(null)
+              openChat(listing)
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ── Chat Demo Modal ────────────────────────────────────────────────── */}
       <AnimatePresence>
@@ -209,8 +508,22 @@ export default function MarketplacePage() {
               style={{ height: '80vh', maxHeight: '680px' }}
             >
               <TransactionChat
-                thread={MOCK_THREAD}
-                onClose={() => setShowChat(false)}
+                thread={
+                  chatListing
+                    ? buildThreadFromListing(chatListing, session, chatThreadId)
+                    : undefined
+                }
+                threadId={chatThreadId ?? undefined}
+                currentUserId={session?.userId}
+                currentUserName={session?.displayName}
+                currentUserInitials={
+                  session ? session.displayName.slice(0, 2).toUpperCase() : undefined
+                }
+                onClose={() => {
+                  setShowChat(false)
+                  setChatListing(null)
+                  setChatThreadId(null)
+                }}
               />
             </motion.div>
           </div>
@@ -467,7 +780,18 @@ export default function MarketplacePage() {
                 transition={{ duration: 0.3 }}
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
               >
-                {listings.map((listing, i) => (
+                {listings.length === 0 ? (
+                  <div className="col-span-full flex flex-col items-center gap-3 py-20 text-center">
+                    <p className="text-sm text-[#5a5a5a]">No hay listados activos en este momento.</p>
+                    <button
+                      onClick={() => openFlow('sell')}
+                      className="text-xs underline"
+                      style={{ color: '#00aeef' }}
+                    >
+                      ¿Quieres publicar el primero?
+                    </button>
+                  </div>
+                ) : listings.map((listing, i) => (
                   <motion.div
                     key={listing.id}
                     initial={{ opacity: 0, y: 16 }}
@@ -476,7 +800,9 @@ export default function MarketplacePage() {
                   >
                     <MarketplaceCard
                       listing={listing}
-                      onClick={() => setShowChat(true)}
+                      onClick={() => router.push(`/marketplace/${listing.slug}`)}
+                      isFavorited={favoritedIds.has(listing.id)}
+                      onToggleFavorite={handleToggleFavorite}
                     />
                   </motion.div>
                 ))}
@@ -585,7 +911,11 @@ export default function MarketplacePage() {
                 </p>
               </div>
               <button
-                onClick={() => setShowChat(true)}
+                onClick={() => {
+                  const demo = listings[0]
+                  if (demo) openChat(demo)
+                  else setShowChat(true)
+                }}
                 className="btn-silky-primary px-8 py-3.5 rounded-xl text-sm font-semibold flex items-center gap-2 flex-shrink-0"
               >
                 <MessageSquare size={15} />

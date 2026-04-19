@@ -123,3 +123,12 @@ export const MpListingStatus = {
 } as const
 
 export type MpListingStatus = (typeof MpListingStatus)[keyof typeof MpListingStatus]
+
+
+export const MpUserRole = {
+  USER: 'USER',
+  SOCIO: 'SOCIO',
+  SUPER: 'SUPER'
+} as const
+
+export type MpUserRole = (typeof MpUserRole)[keyof typeof MpUserRole]

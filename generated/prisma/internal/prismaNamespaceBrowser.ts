@@ -63,6 +63,7 @@ export const ModelName = {
   MpUser: 'MpUser',
   MpPayoutMethod: 'MpPayoutMethod',
   MpListing: 'MpListing',
+  MpListingQuestion: 'MpListingQuestion',
   MpChatThread: 'MpChatThread',
   MpMessage: 'MpMessage',
   MpTransaction: 'MpTransaction',
@@ -232,6 +233,13 @@ export const MpUserScalarFieldEnum = {
   sellerRating: 'sellerRating',
   totalSales: 'totalSales',
   totalPurchases: 'totalPurchases',
+  passwordHash: 'passwordHash',
+  role: 'role',
+  phone: 'phone',
+  whatsappConsent: 'whatsappConsent',
+  whatsappConsentAt: 'whatsappConsentAt',
+  passwordResetToken: 'passwordResetToken',
+  passwordResetTokenExpiresAt: 'passwordResetTokenExpiresAt',
   isBanned: 'isBanned',
   bannedAt: 'bannedAt',
   bannedReason: 'bannedReason',
@@ -281,6 +289,19 @@ export const MpListingScalarFieldEnum = {
 } as const
 
 export type MpListingScalarFieldEnum = (typeof MpListingScalarFieldEnum)[keyof typeof MpListingScalarFieldEnum]
+
+
+export const MpListingQuestionScalarFieldEnum = {
+  id: 'id',
+  listingId: 'listingId',
+  askerId: 'askerId',
+  question: 'question',
+  answer: 'answer',
+  answeredAt: 'answeredAt',
+  createdAt: 'createdAt'
+} as const
+
+export type MpListingQuestionScalarFieldEnum = (typeof MpListingQuestionScalarFieldEnum)[keyof typeof MpListingQuestionScalarFieldEnum]
 
 
 export const MpChatThreadScalarFieldEnum = {

@@ -1,0 +1,112 @@
+# CREDENCIALES PARA PRUEBAS - Turpial Sound Marketplace
+# Generado: 2026-04-18
+# Archivo de texto plano con usuarios y contraseñas para desarrollo y testing.
+
+## USUARIOS MOCK (definidos en prisma/seed-dev.ts)
+# Estos usuarios se crean al ejecutar `npm run seed:dev`
+# Las contraseñas están en texto plano antes del hash.
+
+mvera@dev.local:13894619
+igor@dev.local:bugdanoff
+frank@dev.local:lemus
+susej@dev.local:12960245
+user@dev.local:password
+
+## DETALLES DE USUARIOS MOCK
+# Formato: email | displayName | role | isSeller | contraseña_texto_plano
+mvera@dev.local | mvera | SUPER | true | 13894619
+igor@dev.local | Igor | SUPER | true | bugdanoff
+frank@dev.local | frank | SOCIO | true | lemus
+susej@dev.local | susej | SOCIO | true | 12960245
+user@dev.local | user | USER | false | password
+
+## TODOS LOS USUARIOS EN LA BASE DE DATOS (Marketplace - MpUser)
+# Incluye los 5 mock más 2 usuarios reales registrados.
+# Las contraseñas están hasheadas (bcrypt). Solo los mock tienen texto plano conocido.
+
+ID: cmnw0qtms00001cnew7o28bnp
+Email: mvera@dev.local
+Display Name: mvera
+Role: SUPER
+Is Seller: true
+Created: 2026-04-12
+Password Hash: $2b$12$Ib6eR5eIy.EpR...
+Plaintext Password: 13894619
+
+ID: cmnw0qu9a00011cneolqa8d44
+Email: igor@dev.local
+Display Name: Igor
+Role: SUPER
+Is Seller: true
+Created: 2026-04-12
+Password Hash: $2b$12$gGtqbbiuxQjUx...
+Plaintext Password: bugdanoff
+
+ID: cmnw0qukb00021cne5zuubwjb
+Email: frank@dev.local
+Display Name: frank
+Role: SOCIO
+Is Seller: true
+Created: 2026-04-12
+Password Hash: $2b$12$1aJiZobBJFzcM...
+Plaintext Password: lemus
+
+ID: cmnw0qutn00031cne4wva7bf1
+Email: susej@dev.local
+Display Name: susej
+Role: SOCIO
+Is Seller: true
+Created: 2026-04-12
+Password Hash: $2b$12$npD9mGQ.U/mLh...
+Plaintext Password: 12960245
+
+ID: cmnw0qv3600041cnex7s3zqrc
+Email: user@dev.local
+Display Name: user
+Role: USER
+Is Seller: false
+Created: 2026-04-12
+Password Hash: $2b$12$md9slUQTI1ECv...
+Plaintext Password: password
+
+ID: cmnwjiyt7000044ne64zxn84t
+Email: manuelverax@gmail.com
+Display Name: manuel vera p
+Role: USER
+Is Seller: false
+Created: 2026-04-13
+Password Hash: $2b$12$t44CwzlZt3m9u...
+Plaintext Password: DESCONOCIDA (hash bcrypt)
+
+ID: cmnyq4s5b00039gnehfmdyjwt
+Email: manuelverax@hotmail.com
+Display Name: manolito vera
+Role: USER
+Is Seller: true
+Created: 2026-04-14
+Password Hash: $2b$12$KX0q/ogiYxigi...
+Plaintext Password: DESCONOCIDA (hash bcrypt)
+
+## USUARIOS INTERNOS (User)
+# La tabla User está vacía. No hay usuarios internos.
+
+## INSTRUCCIONES DE USO
+1. Para autenticación en el marketplace, usar cualquiera de los emails mock con su contraseña en texto plano.
+2. Los usuarios SUPER (mvera, Igor) tienen acceso administrativo.
+3. Los usuarios SOCIO (frank, susej) tienen permisos de socio (sin comisión).
+4. El usuario regular (user) es un comprador/vendedor básico.
+5. Los usuarios reales (manuelverax@gmail.com, manuelverax@hotmail.com) tienen contraseñas hasheadas; no se puede autenticar con texto plano a menos que se conozca la contraseña original.
+
+## NOTAS DE SEGURIDAD
+- Este archivo es solo para entornos de desarrollo y testing.
+- Nunca subir a repositorios públicos.
+- Las contraseñas en texto plano solo existen para los usuarios mock definidos en el seed.
+- En producción, todas las contraseñas están hasheadas con bcrypt (12 rounds).
+
+## COMANDOS ÚTILES
+# Ejecutar seed de usuarios mock:
+#   npm run seed:dev
+# Verificar estado de la base de datos:
+#   npx prisma studio
+# Limpiar usuarios mock (eliminar y recrear):
+#   npx prisma db push --force-reset (cuidado: borra toda la data)

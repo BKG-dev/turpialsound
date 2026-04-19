@@ -1,10 +1,41 @@
 'use client'
 
 import { useState } from 'react'
-import { Star, MapPin, Clock, Shield, BadgeCheck, Package, Mic2 } from 'lucide-react'
+import { Star, MapPin, Clock, Shield, BadgeCheck, Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Listing, ProductListing, ServiceListing } from '@/types/marketplace'
 import { MARKETPLACE_CONFIG } from '@/types/marketplace'
+
+// ─── Category fallback images ─────────────────────────────────────────────────
+// Used when a listing has no uploaded photo.
+// Maps to real images already present in /public/images/.
+
+const CATEGORY_FALLBACK: Record<string, string> = {
+  // Physical products
+  'instrumentos-nuevos':         '/images/artista9.jpg',
+  'instrumentos-usados':         '/images/artista9.jpg',
+  'audio-pro-estudio':           '/images/estudio-grabacion3.jpg',
+  'consumibles':                 '/images/estudio-grabacion8.jpg',
+  'alquiler-equipos':            '/images/estudio-grabacion12.jpg',
+  // Services & talent
+  'musicos-sesion':              '/images/artista2.jpg',
+  'bandas-eventos':              '/images/artista1.jpg',
+  'tecnicos-audio-iluminacion':  '/images/estudio-grabacion5.jpg',
+  'productores-arreglistas':     '/images/artista4.jpg',
+  // Digital
+  'beats':                       '/images/estudio-grabacion15.jpg',
+  'mixing':                      '/images/estudio-grabacion20.jpg',
+  'mastering':                   '/images/estudio-grabacion20.jpg',
+  'vocals':                      '/images/artista7.jpg',
+  'production':                  '/images/artista4.jpg',
+  'arreglos':                    '/images/artista5.jpg',
+  'podcast':                     '/images/estudio-grabacion15.jpg',
+}
+
+function getCoverImage(category: string, images?: string[]): string | null {
+  if (images && images.length > 0) return images[0]
+  return CATEGORY_FALLBACK[category] ?? null
+}
 
 // ─── Condition label map ───────────────────────────────────────────────────────
 
@@ -60,8 +91,15 @@ function UserChip({ name, initials, verified, rating }: {
 
 // ─── Product Card ─────────────────────────────────────────────────────────────
 
-function ProductCard({ listing, onClick }: { listing: ProductListing; onClick: () => void }) {
+function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }: {
+  listing: ProductListing
+  onClick: () => void
+  isFavorited?: boolean
+  onToggleFavorite?: (id: string) => void
+}) {
   const [hovered, setHovered] = useState(false)
+  const [localFav, setLocalFav] = useState(isFavorited)
+  const cover = getCoverImage(listing.category, listing.images)
 
   return (
     <button
@@ -72,17 +110,24 @@ function ProductCard({ listing, onClick }: { listing: ProductListing; onClick: (
       style={{ background: 'rgba(17,17,17,0.85)' }}
     >
       {/* Image area */}
-      <div className="relative h-44 rounded-t-xl overflow-hidden bg-[#0d0d0d] flex items-center justify-center">
-        {/* Placeholder visual */}
-        <div
-          className="w-full h-full flex items-center justify-center transition-transform duration-500"
-          style={{
-            background: 'linear-gradient(135deg, rgba(0,174,239,0.06) 0%, rgba(0,80,200,0.04) 50%, rgba(255,193,7,0.03) 100%)',
-            transform: hovered ? 'scale(1.04)' : 'scale(1)',
-          }}
-        >
-          <Package size={40} className="text-[#2a2a2a]" />
-        </div>
+      <div className="relative h-44 rounded-t-xl overflow-hidden bg-[#0d0d0d]">
+        {cover ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={cover}
+            alt={listing.title}
+            className="w-full h-full object-cover transition-transform duration-500"
+            style={{ transform: hovered ? 'scale(1.04)' : 'scale(1)' }}
+          />
+        ) : (
+          <div
+            className="w-full h-full flex items-center justify-center transition-transform duration-500"
+            style={{
+              background: 'linear-gradient(135deg, rgba(0,174,239,0.06) 0%, rgba(0,80,200,0.04) 50%, rgba(255,193,7,0.03) 100%)',
+              transform: hovered ? 'scale(1.04)' : 'scale(1)',
+            }}
+          />
+        )}
 
         {/* Badge */}
         {listing.badge && (
@@ -95,6 +140,24 @@ function ProductCard({ listing, onClick }: { listing: ProductListing; onClick: (
           >
             {listing.badge}
           </span>
+        )}
+
+        {/* VENDIDO overlay */}
+        {listing.status === 'sold' && (
+          <div className="absolute inset-0 flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)' }}>
+            <span
+              className="px-4 py-1.5 rounded-lg text-sm font-bold tracking-widest rotate-[-8deg]"
+              style={{
+                background: 'rgba(239,68,68,0.15)',
+                border: '2px solid rgba(239,68,68,0.7)',
+                color: '#ef4444',
+                boxShadow: '0 0 20px rgba(239,68,68,0.3)',
+              }}
+            >
+              VENDIDO
+            </span>
+          </div>
         )}
 
         {/* Condition */}
@@ -132,15 +195,34 @@ function ProductCard({ listing, onClick }: { listing: ProductListing; onClick: (
         </div>
 
         {/* Price */}
-        <div className="flex items-end gap-1">
-          <span className="text-xl font-semibold text-gradient-gold leading-none">
-            ${listing.price.toLocaleString()}
-          </span>
-          <span className="text-xs text-[#5a5a5a] mb-0.5">{listing.currency}</span>
-          {listing.rentalAvailable && listing.rentalPricePerDay && (
-            <span className="text-xs text-[#a0a0a0] mb-0.5 ml-1">
-              · ${listing.rentalPricePerDay}/día
+        <div className="flex items-end justify-between gap-1">
+          <div className="flex items-end gap-1">
+            <span className="text-xl font-semibold text-gradient-gold leading-none">
+              ${listing.price.toLocaleString()}
             </span>
+            <span className="text-xs text-[#5a5a5a] mb-0.5">{listing.currency}</span>
+            {listing.rentalAvailable && listing.rentalPricePerDay && (
+              <span className="text-xs text-[#a0a0a0] mb-0.5 ml-1">
+                · ${listing.rentalPricePerDay}/día
+              </span>
+            )}
+          </div>
+          {onToggleFavorite && (
+            <button
+              onClick={e => {
+                e.stopPropagation()
+                setLocalFav(p => !p)
+                onToggleFavorite(listing.id)
+              }}
+              className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200"
+              style={{
+                background: localFav ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${localFav ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`,
+              }}
+              title={localFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+            >
+              <Heart size={12} className={localFav ? 'text-[#ef4444] fill-[#ef4444]' : 'text-[#5a5a5a]'} />
+            </button>
           )}
         </div>
 
@@ -170,8 +252,16 @@ function ProductCard({ listing, onClick }: { listing: ProductListing; onClick: (
 
 // ─── Service Card ─────────────────────────────────────────────────────────────
 
-function ServiceCard({ listing, onClick }: { listing: ServiceListing; onClick: () => void }) {
+function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }: {
+  listing: ServiceListing
+  onClick: () => void
+  isFavorited?: boolean
+  onToggleFavorite?: (id: string) => void
+}) {
   const [hovered, setHovered] = useState(false)
+  const [localFav, setLocalFav] = useState(isFavorited)
+  // portfolio[0] takes priority; falls back to category image
+  const cover = getCoverImage(listing.category, listing.portfolio)
 
   return (
     <button
@@ -183,15 +273,23 @@ function ServiceCard({ listing, onClick }: { listing: ServiceListing; onClick: (
     >
       {/* Header band */}
       <div className="relative h-44 rounded-t-xl overflow-hidden bg-[#0d0d0d] flex items-center justify-center">
-        <div
-          className="w-full h-full flex items-center justify-center transition-transform duration-500"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255,193,7,0.05) 0%, rgba(0,80,200,0.04) 60%, rgba(0,174,239,0.04) 100%)',
-            transform: hovered ? 'scale(1.04)' : 'scale(1)',
-          }}
-        >
-          <Mic2 size={40} className="text-[#2a2a2a]" />
-        </div>
+        {cover ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={cover}
+            alt={listing.title}
+            className="w-full h-full object-cover transition-transform duration-500"
+            style={{ transform: hovered ? 'scale(1.04)' : 'scale(1)' }}
+          />
+        ) : (
+          <div
+            className="w-full h-full transition-transform duration-500"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,193,7,0.05) 0%, rgba(0,80,200,0.04) 60%, rgba(0,174,239,0.04) 100%)',
+              transform: hovered ? 'scale(1.04)' : 'scale(1)',
+            }}
+          />
+        )}
 
         {/* Badge */}
         {listing.badge && (
@@ -204,6 +302,24 @@ function ServiceCard({ listing, onClick }: { listing: ServiceListing; onClick: (
           >
             {listing.badge}
           </span>
+        )}
+
+        {/* VENDIDO overlay */}
+        {listing.status === 'sold' && (
+          <div className="absolute inset-0 flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)' }}>
+            <span
+              className="px-4 py-1.5 rounded-lg text-sm font-bold tracking-widest rotate-[-8deg]"
+              style={{
+                background: 'rgba(239,68,68,0.15)',
+                border: '2px solid rgba(239,68,68,0.7)',
+                color: '#ef4444',
+                boxShadow: '0 0 20px rgba(239,68,68,0.3)',
+              }}
+            >
+              VENDIDO
+            </span>
+          </div>
         )}
 
         {/* Delivery */}
@@ -244,15 +360,34 @@ function ServiceCard({ listing, onClick }: { listing: ServiceListing; onClick: (
         </div>
 
         {/* Price */}
-        <div className="flex items-end gap-1">
-          <span className="text-[11px] text-[#5a5a5a] mb-0.5">Desde</span>
-          <span className="text-xl font-semibold text-gradient-gold leading-none">
-            ${listing.priceFrom.toLocaleString()}
-          </span>
-          {listing.priceTo && (
-            <span className="text-xs text-[#5a5a5a] mb-0.5">– ${listing.priceTo}</span>
+        <div className="flex items-end justify-between gap-1">
+          <div className="flex items-end gap-1">
+            <span className="text-[11px] text-[#5a5a5a] mb-0.5">Desde</span>
+            <span className="text-xl font-semibold text-gradient-gold leading-none">
+              ${listing.priceFrom.toLocaleString()}
+            </span>
+            {listing.priceTo && (
+              <span className="text-xs text-[#5a5a5a] mb-0.5">– ${listing.priceTo}</span>
+            )}
+            <span className="text-xs text-[#a0a0a0] mb-0.5 ml-0.5">{listing.priceLabel}</span>
+          </div>
+          {onToggleFavorite && (
+            <button
+              onClick={e => {
+                e.stopPropagation()
+                setLocalFav(p => !p)
+                onToggleFavorite(listing.id)
+              }}
+              className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200"
+              style={{
+                background: localFav ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${localFav ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`,
+              }}
+              title={localFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+            >
+              <Heart size={12} className={localFav ? 'text-[#ef4444] fill-[#ef4444]' : 'text-[#5a5a5a]'} />
+            </button>
           )}
-          <span className="text-xs text-[#a0a0a0] mb-0.5 ml-0.5">{listing.priceLabel}</span>
         </div>
 
         {/* Meta row */}
@@ -280,14 +415,16 @@ function ServiceCard({ listing, onClick }: { listing: ServiceListing; onClick: (
 
 // ─── Unified export ───────────────────────────────────────────────────────────
 
-export function MarketplaceCard({ listing, onClick }: {
+export function MarketplaceCard({ listing, onClick, isFavorited = false, onToggleFavorite }: {
   listing: Listing
   onClick?: () => void
+  isFavorited?: boolean
+  onToggleFavorite?: (id: string) => void
 }) {
   const handleClick = onClick ?? (() => {})
 
   if (listing.type === 'product') {
-    return <ProductCard listing={listing} onClick={handleClick} />
+    return <ProductCard listing={listing} onClick={handleClick} isFavorited={isFavorited} onToggleFavorite={onToggleFavorite} />
   }
-  return <ServiceCard listing={listing} onClick={handleClick} />
+  return <ServiceCard listing={listing} onClick={handleClick} isFavorited={isFavorited} onToggleFavorite={onToggleFavorite} />
 }
