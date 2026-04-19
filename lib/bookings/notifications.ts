@@ -1,5 +1,7 @@
 import { getEnabledPaymentMethods } from '@/lib/bookings/payment-settings'
 import type { OperationalBookingStatus } from '@/lib/bookings/operations'
+import { Resend } from 'resend'
+import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
 
 export type BookingNotificationEvent =
   | 'booking.pending_payment.created'
@@ -21,6 +23,8 @@ export interface BookingNotificationPayload {
   estimatedTotal?: number | null
   currency?: string | null
   currencyDisplay?: string | null
+  bcvRate?: number | null
+  bcvAsOf?: Date | string | null
   paymentMethod?: string | null
   status?: OperationalBookingStatus | null
   notes?: string | null
@@ -35,6 +39,25 @@ interface BookingEmailMessage {
 function getBookingAdminNotificationsEmail(): string | null {
   const value = process.env.BOOKINGS_ADMIN_NOTIFICATIONS_EMAIL?.trim()
   return value ? value : null
+}
+
+function getBookingsEmailFrom(): string | null {
+  const value = process.env.BOOKINGS_EMAIL_FROM?.trim()
+  return value ? value : null
+}
+
+function getBookingsEmailReplyTo(): string | null {
+  const value = process.env.BOOKINGS_EMAIL_REPLY_TO?.trim()
+  return value ? value : null
+}
+
+function getResendClient(): Resend | null {
+  const apiKey = process.env.RESEND_API_KEY?.trim()
+  if (!apiKey) {
+    return null
+  }
+
+  return new Resend(apiKey)
 }
 
 function normalizeEmail(value: string | null | undefined): string | null {
@@ -79,8 +102,43 @@ function formatAmount(payload: BookingNotificationPayload): string {
   return 'Por confirmar'
 }
 
+function formatBsReferenceAmount(payload: BookingNotificationPayload): string | null {
+  const currency = payload.currency?.trim().toUpperCase() || 'USD'
+  if (currency !== 'USD') {
+    return null
+  }
+
+  if (typeof payload.estimatedTotal !== 'number' || !Number.isFinite(payload.estimatedTotal)) {
+    return null
+  }
+
+  if (typeof payload.bcvRate !== 'number' || !Number.isFinite(payload.bcvRate)) {
+    return null
+  }
+
+  const bsAmount = payload.estimatedTotal * payload.bcvRate
+  return `Bs. ${bsAmount.toLocaleString('es-VE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
+}
+
+function formatBcvReference(payload: BookingNotificationPayload): string | null {
+  if (typeof payload.bcvRate !== 'number' || !Number.isFinite(payload.bcvRate)) {
+    return null
+  }
+
+  const rateLabel = payload.bcvRate.toLocaleString('es-VE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  })
+  const asOfLabel = payload.bcvAsOf ? ` (asOf: ${formatDateTime(payload.bcvAsOf)})` : ''
+
+  return `Referencia BCV: 1 USD = Bs. ${rateLabel}${asOfLabel}`
+}
+
 function buildCommonLines(payload: BookingNotificationPayload): string[] {
-  return [
+  const lines = [
     `Codigo: ${payload.publicCode}`,
     `Servicio: ${payload.serviceName ?? 'Por confirmar'}`,
     `Modalidad: ${payload.variantName ?? 'Por confirmar'}`,
@@ -88,6 +146,18 @@ function buildCommonLines(payload: BookingNotificationPayload): string[] {
     `Sala: ${payload.resourceName ?? 'Por asignar'}`,
     `Monto: ${formatAmount(payload)}`,
   ]
+
+  const bsReferenceAmount = formatBsReferenceAmount(payload)
+  if (bsReferenceAmount) {
+    lines.push(`Monto referencial Bs: ${bsReferenceAmount}`)
+  }
+
+  const bcvReference = formatBcvReference(payload)
+  if (bcvReference) {
+    lines.push(bcvReference)
+  }
+
+  return lines
 }
 
 function buildPendingPaymentCustomerText(payload: BookingNotificationPayload): string {
@@ -258,9 +328,11 @@ async function sendEmailMessage(
   message: BookingEmailMessage,
   event: BookingNotificationEvent,
 ): Promise<void> {
-  const webhookUrl = process.env.BOOKINGS_EMAIL_WEBHOOK_URL?.trim()
-  if (!webhookUrl) {
-    console.warn('[bookings.notifications] skipped email: missing BOOKINGS_EMAIL_WEBHOOK_URL', {
+  const resendClient = getResendClient()
+  const emailFrom = getBookingsEmailFrom()
+
+  if (!resendClient) {
+    console.warn('[bookings.notifications] skipped email: missing RESEND_API_KEY', {
       event,
       to: message.to,
       subject: message.subject,
@@ -268,34 +340,35 @@ async function sendEmailMessage(
     return
   }
 
-  const webhookToken = process.env.BOOKINGS_EMAIL_WEBHOOK_TOKEN?.trim()
+  if (!emailFrom) {
+    console.warn('[bookings.notifications] skipped email: missing BOOKINGS_EMAIL_FROM', {
+      event,
+      to: message.to,
+      subject: message.subject,
+    })
+    return
+  }
+
+  const replyTo = getBookingsEmailReplyTo()
 
   try {
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(webhookToken ? { Authorization: `Bearer ${webhookToken}` } : {}),
-      },
-      body: JSON.stringify({
-        to: message.to,
-        subject: message.subject,
-        text: message.text,
-        from: process.env.BOOKINGS_EMAIL_FROM?.trim() || null,
-        event,
-      }),
-      cache: 'no-store',
+    const result = await resendClient.emails.send({
+      from: emailFrom,
+      to: message.to,
+      subject: message.subject,
+      text: message.text,
+      ...(replyTo ? { replyTo } : {}),
     })
 
-    if (!response.ok) {
-      console.error('[bookings.notifications] email webhook failed', {
+    if (result.error) {
+      console.error('[bookings.notifications] resend send failed', {
         event,
-        status: response.status,
         to: message.to,
+        error: result.error,
       })
     }
   } catch (error) {
-    console.error('[bookings.notifications] email webhook error', {
+    console.error('[bookings.notifications] resend send error', {
       event,
       to: message.to,
       error,
@@ -303,11 +376,49 @@ async function sendEmailMessage(
   }
 }
 
+async function enrichPayloadWithReferenceRate(
+  event: BookingNotificationEvent,
+  payload: BookingNotificationPayload,
+): Promise<BookingNotificationPayload> {
+  if (
+    event !== 'booking.pending_payment.created' &&
+    event !== 'booking.payment_reported' &&
+    event !== 'booking.confirmed'
+  ) {
+    return payload
+  }
+
+  if (typeof payload.bcvRate === 'number' && Number.isFinite(payload.bcvRate)) {
+    return payload
+  }
+
+  const currency = payload.currency?.trim().toUpperCase() || 'USD'
+  if (currency !== 'USD') {
+    return payload
+  }
+
+  if (typeof payload.estimatedTotal !== 'number' || !Number.isFinite(payload.estimatedTotal)) {
+    return payload
+  }
+
+  try {
+    const rate = await resolveReferenceRate()
+    return {
+      ...payload,
+      bcvRate: rate.rate,
+      bcvAsOf: rate.asOf,
+    }
+  } catch {
+    return payload
+  }
+}
+
 export async function sendBookingNotifications(
   event: BookingNotificationEvent,
   payload: BookingNotificationPayload,
 ): Promise<void> {
-  const messages = buildMessages(event, payload)
+  const enrichedPayload = await enrichPayloadWithReferenceRate(event, payload)
+  const messages = buildMessages(event, enrichedPayload)
   if (messages.length === 0) {
     return
   }

@@ -232,6 +232,8 @@ async function updateOperationalStatus(formData: FormData) {
   if (!bookingRequestId || !nextStatus || !isOperationalBookingStatus(nextStatus)) {
     redirect(returnPath)
   }
+  const effectiveNextStatus: OperationalBookingStatus =
+    nextStatus === 'payment_verified' ? 'confirmed' : nextStatus
 
   const current = await prisma.bookingRequest.findUnique({
     where: { id: bookingRequestId },
@@ -278,17 +280,17 @@ async function updateOperationalStatus(formData: FormData) {
   }
 
   const currentOperationalStatus = getOperationalStatus(current)
-  const hasOperationalStatusChanged = currentOperationalStatus !== nextStatus
+  const hasOperationalStatusChanged = currentOperationalStatus !== effectiveNextStatus
 
   if (!hasOperationalStatusChanged) {
     revalidatePath('/admin')
     redirect(returnPath)
   }
 
-  const mappedBookingStatus = mapOperationalStatusToBookingStatus(nextStatus)
+  const mappedBookingStatus = mapOperationalStatusToBookingStatus(effectiveNextStatus)
   const updatedInternalNotes = setOperationalStatusInInternalNotes(
     current.internalNotes,
-    nextStatus,
+    effectiveNextStatus,
   )
 
   const updateResult = await prisma.$transaction(async (tx) => {
@@ -316,7 +318,7 @@ async function updateOperationalStatus(formData: FormData) {
           bookingStatus: current.status,
         },
         nextState: {
-          operationalStatus: nextStatus,
+          operationalStatus: effectiveNextStatus,
           bookingStatus: mappedBookingStatus,
         },
       },
@@ -331,9 +333,9 @@ async function updateOperationalStatus(formData: FormData) {
   }
 
   const notificationEvent =
-    nextStatus === 'pending_payment'
+    effectiveNextStatus === 'pending_payment'
       ? null
-      : getBookingNotificationEventForOperationalStatus(nextStatus)
+      : getBookingNotificationEventForOperationalStatus(effectiveNextStatus)
   const primaryItem = current.items[0]
 
   if (notificationEvent) {
@@ -349,7 +351,7 @@ async function updateOperationalStatus(formData: FormData) {
       deadlineAt: getPaymentDeadline(current.createdAt),
       estimatedTotal: parseOptionalAmount(current.estimatedTotal),
       currency: current.currency,
-      status: nextStatus,
+      status: effectiveNextStatus,
       notes: current.notes,
     })
   }
@@ -364,7 +366,7 @@ async function updateOperationalStatus(formData: FormData) {
     eventDate: current.eventDate,
     eventEndDate: current.eventEndDate,
     paymentDeadline: getPaymentDeadline(current.createdAt),
-    operationalStatus: nextStatus,
+    operationalStatus: effectiveNextStatus,
     existingCalendarEventId: current.calendarEventId,
   })
 
@@ -374,7 +376,7 @@ async function updateOperationalStatus(formData: FormData) {
         bookingRequestId,
         action: 'calendar_sync_failed',
         nextState: {
-          operationalStatus: nextStatus,
+          operationalStatus: effectiveNextStatus,
           reason: calendarSync.reason ?? 'unknown',
         },
       },
@@ -457,6 +459,10 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     .map((booking) => {
       const primaryItem = booking.items[0]
       const operationalStatus = getOperationalStatus(booking)
+      const operationalStatusLabel =
+        operationalStatus === 'payment_verified'
+          ? OPERATIONAL_STATUS_LABELS.confirmed
+          : OPERATIONAL_STATUS_LABELS[operationalStatus]
       return {
         id: booking.id,
         publicCode: booking.publicCode,
@@ -470,6 +476,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         resourceName: primaryItem?.resource?.name ?? null,
         paymentDeadline: getPaymentDeadline(booking.createdAt),
         operationalStatus,
+        operationalStatusLabel,
       }
     })
     .filter((booking) => statusFilter === 'all' || booking.operationalStatus === statusFilter)
@@ -565,53 +572,56 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             <table className="min-w-full divide-y divide-slate-200 text-sm">
               <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-600">
                 <tr>
-                  <th className="px-4 py-3">Codigo</th>
-                  <th className="px-4 py-3">Creada</th>
-                  <th className="px-4 py-3">Solicitante</th>
-                  <th className="px-4 py-3">Telefono</th>
-                  <th className="px-4 py-3">Servicio</th>
-                  <th className="px-4 py-3">Modalidad</th>
-                  <th className="px-4 py-3">Sala</th>
-                  <th className="px-4 py-3">Fecha y horario</th>
-                  <th className="px-4 py-3">Limite pago</th>
-                  <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3">Accion</th>
+                  <th className="px-3 py-2.5">Solicitud</th>
+                  <th className="px-3 py-2.5">Operacion</th>
+                  <th className="px-3 py-2.5">Pago/Estado</th>
+                  <th className="px-3 py-2.5">Accion</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white text-slate-800">
                 {bookings.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="px-4 py-8 text-center text-slate-500">
+                    <td colSpan={4} className="px-4 py-8 text-center text-slate-500">
                       No hay solicitudes para los filtros seleccionados.
                     </td>
                   </tr>
                 ) : (
                   bookings.map((booking) => (
                     <tr key={booking.id} className="align-top">
-                      <td className="px-4 py-3 font-semibold text-slate-900">{booking.publicCode}</td>
-                      <td className="px-4 py-3">{formatDateTime(booking.createdAt)}</td>
-                      <td className="px-4 py-3">{booking.requesterName}</td>
-                      <td className="px-4 py-3">{booking.requesterPhone ?? '-'}</td>
-                      <td className="px-4 py-3">{booking.serviceName}</td>
-                      <td className="px-4 py-3">{booking.variantName}</td>
-                      <td className="px-4 py-3">{booking.resourceName ?? '-'}</td>
-                      <td className="px-4 py-3">
-                        {formatSchedule(booking.eventDate, booking.eventEndDate)}
+                      <td className="px-3 py-2.5">
+                        <p className="font-semibold text-slate-900">{booking.publicCode}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">{formatDateTime(booking.createdAt)}</p>
+                        <p className="mt-1 text-sm text-slate-800">{booking.requesterName}</p>
+                        <p className="text-xs text-slate-500">{booking.requesterPhone ?? '-'}</p>
                       </td>
-                      <td className="px-4 py-3">{formatPaymentDeadline(booking.createdAt)}</td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
-                          {OPERATIONAL_STATUS_LABELS[booking.operationalStatus]}
-                        </span>
+                      <td className="px-3 py-2.5">
+                        <p className="text-sm font-medium text-slate-900">{booking.serviceName}</p>
+                        <p className="text-xs text-slate-600">{booking.variantName}</p>
+                        <p className="mt-1 text-xs text-slate-600">
+                          Sala: <span className="font-medium text-slate-700">{booking.resourceName ?? '-'}</span>
+                        </p>
+                        <p className="mt-1 text-xs text-slate-600">
+                          {formatSchedule(booking.eventDate, booking.eventEndDate)}
+                        </p>
                       </td>
-                      <td className="px-4 py-3">
-                        <form action={updateOperationalStatus} className="flex items-center gap-2">
+                      <td className="px-3 py-2.5">
+                        <p className="text-xs text-slate-500">
+                          Limite: <span className="font-medium text-slate-700">{formatPaymentDeadline(booking.createdAt)}</span>
+                        </p>
+                        <div className="mt-1.5">
+                          <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                            {booking.operationalStatusLabel}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <form action={updateOperationalStatus} className="flex min-w-[12rem] flex-col gap-1.5">
                           <input type="hidden" name="bookingRequestId" value={booking.id} />
                           <input type="hidden" name="returnPath" value={returnPath} />
                           <select
                             name="nextStatus"
                             defaultValue={booking.operationalStatus}
-                            className="w-44 rounded-md border border-slate-300 px-2 py-1.5 text-xs text-slate-900"
+                            className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs text-slate-900"
                           >
                             <option value="pending_payment">
                               {OPERATIONAL_STATUS_LABELS.pending_payment}
@@ -620,14 +630,14 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                               {OPERATIONAL_STATUS_LABELS.payment_reported}
                             </option>
                             <option value="payment_verified">
-                              {OPERATIONAL_STATUS_LABELS.payment_verified}
+                              Verificar pago (confirmar)
                             </option>
                             <option value="confirmed">{OPERATIONAL_STATUS_LABELS.confirmed}</option>
                             <option value="cancelled">{OPERATIONAL_STATUS_LABELS.cancelled}</option>
                           </select>
                           <button
                             type="submit"
-                            className="inline-flex items-center rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                            className="inline-flex w-full items-center justify-center rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
                           >
                             Guardar
                           </button>

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { buildPublicCode } from '@/lib/bookings'
 import { CATALOG_SERVICES } from '@/lib/bookings/catalog'
 import { assignResourceForRequestedSlot } from '@/lib/bookings/availability'
+import { buildBookingEstimate } from '@/lib/bookings/estimate'
 import { syncBookingToGoogleCalendar } from '@/lib/bookings/google-calendar'
 import {
   getOperationalStatus,
@@ -135,6 +136,20 @@ export async function submitBookingRequest(
     const serviceName =
       CATALOG_SERVICES.find((service) => service.slug === input.serviceSlug)?.name ?? 'Servicio'
     const eventTitle = `Solicitud - ${serviceName}`
+    const bookingEstimate = buildBookingEstimate({
+      selectedItems: [
+        {
+          serviceSlug: input.serviceSlug,
+          variantSlug: input.variantSlug,
+          quantity: 1,
+        },
+      ],
+      eventDate: input.eventDate,
+      durationMinutes: input.durationMinutes,
+      extrasTechnician: input.extrasTechnician,
+      extrasBackline: input.extrasBackline,
+    })
+    const estimatedTotalUsd = bookingEstimate.estimatedTotalUsd
 
     const submitResult = await prisma.$transaction(async (tx) => {
       const resourceAssignment = await assignResourceForRequestedSlot(tx, {
@@ -171,6 +186,7 @@ export async function submitBookingRequest(
           eventDate: eventDateTime,
           eventEndDate: eventEndDateTime,
           notes,
+          estimatedTotal: estimatedTotalUsd,
           internalNotes: setOperationalStatusInInternalNotes(null, 'pending_payment'),
           submittedAt: new Date(),
         },
@@ -247,6 +263,8 @@ export async function submitBookingRequest(
       startAt: eventDateTime,
       endAt: eventEndDateTime,
       deadlineAt: paymentDeadline,
+      estimatedTotal: estimatedTotalUsd,
+      currency: 'USD',
       status: 'pending_payment',
     })
 

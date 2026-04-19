@@ -31,6 +31,14 @@ export interface BookingCalendarSyncResult {
   reason?: string
 }
 
+function formatCaracasDateTime(value: Date): string {
+  return new Intl.DateTimeFormat('es-VE', {
+    timeZone: 'America/Caracas',
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(value)
+}
+
 function readGoogleCalendarConfig(): { config: GoogleCalendarConfig | null; missing: string[] } {
   const config: GoogleCalendarConfig = {
     clientId: process.env.GOOGLE_CLIENT_ID?.trim() ?? '',
@@ -93,7 +101,7 @@ function buildEventPayload(input: BookingCalendarSyncInput, timezone: string) {
     `WhatsApp: ${input.requesterPhone ?? 'No disponible'}`,
     `Servicio: ${input.serviceName}`,
     `Modalidad: ${input.variantName}`,
-    `Limite de pago: ${input.paymentDeadline ? input.paymentDeadline.toISOString() : 'N/A'}`,
+    `Limite de pago: ${input.paymentDeadline ? formatCaracasDateTime(input.paymentDeadline) : 'N/A'} (America/Caracas)`,
   ].join('\n')
 
   return {
