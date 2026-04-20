@@ -48,6 +48,11 @@ export type BookingRequest = Prisma.BookingRequestModel
  */
 export type BookingRequestItem = Prisma.BookingRequestItemModel
 /**
+ * Model PaymentProof
+ * 
+ */
+export type PaymentProof = Prisma.PaymentProofModel
+/**
  * Model Approval
  * 
  */

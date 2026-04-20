@@ -253,6 +253,23 @@ export type IntWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedIntFilter<$PrismaModel>
 }
 
+export type EnumPaymentProofDuplicateStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.PaymentProofDuplicateStatus | Prisma.EnumPaymentProofDuplicateStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.PaymentProofDuplicateStatus[] | Prisma.ListEnumPaymentProofDuplicateStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PaymentProofDuplicateStatus[] | Prisma.ListEnumPaymentProofDuplicateStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPaymentProofDuplicateStatusFilter<$PrismaModel> | $Enums.PaymentProofDuplicateStatus
+}
+
+export type EnumPaymentProofDuplicateStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PaymentProofDuplicateStatus | Prisma.EnumPaymentProofDuplicateStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.PaymentProofDuplicateStatus[] | Prisma.ListEnumPaymentProofDuplicateStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PaymentProofDuplicateStatus[] | Prisma.ListEnumPaymentProofDuplicateStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPaymentProofDuplicateStatusWithAggregatesFilter<$PrismaModel> | $Enums.PaymentProofDuplicateStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPaymentProofDuplicateStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPaymentProofDuplicateStatusFilter<$PrismaModel>
+}
+
 export type EnumApprovalDecisionFilter<$PrismaModel = never> = {
   equals?: $Enums.ApprovalDecision | Prisma.EnumApprovalDecisionFieldRefInput<$PrismaModel>
   in?: $Enums.ApprovalDecision[] | Prisma.ListEnumApprovalDecisionFieldRefInput<$PrismaModel>
@@ -571,6 +588,23 @@ export type NestedFloatFilter<$PrismaModel = never> = {
   gt?: number | Prisma.FloatFieldRefInput<$PrismaModel>
   gte?: number | Prisma.FloatFieldRefInput<$PrismaModel>
   not?: Prisma.NestedFloatFilter<$PrismaModel> | number
+}
+
+export type NestedEnumPaymentProofDuplicateStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.PaymentProofDuplicateStatus | Prisma.EnumPaymentProofDuplicateStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.PaymentProofDuplicateStatus[] | Prisma.ListEnumPaymentProofDuplicateStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PaymentProofDuplicateStatus[] | Prisma.ListEnumPaymentProofDuplicateStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPaymentProofDuplicateStatusFilter<$PrismaModel> | $Enums.PaymentProofDuplicateStatus
+}
+
+export type NestedEnumPaymentProofDuplicateStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PaymentProofDuplicateStatus | Prisma.EnumPaymentProofDuplicateStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.PaymentProofDuplicateStatus[] | Prisma.ListEnumPaymentProofDuplicateStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PaymentProofDuplicateStatus[] | Prisma.ListEnumPaymentProofDuplicateStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPaymentProofDuplicateStatusWithAggregatesFilter<$PrismaModel> | $Enums.PaymentProofDuplicateStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPaymentProofDuplicateStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPaymentProofDuplicateStatusFilter<$PrismaModel>
 }
 
 export type NestedEnumApprovalDecisionFilter<$PrismaModel = never> = {

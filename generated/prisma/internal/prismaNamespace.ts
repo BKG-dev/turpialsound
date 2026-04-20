@@ -390,6 +390,7 @@ export const ModelName = {
   User: 'User',
   BookingRequest: 'BookingRequest',
   BookingRequestItem: 'BookingRequestItem',
+  PaymentProof: 'PaymentProof',
   Approval: 'Approval',
   AuditLog: 'AuditLog'
 } as const
@@ -407,7 +408,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "service" | "serviceVariant" | "resource" | "user" | "bookingRequest" | "bookingRequestItem" | "approval" | "auditLog"
+    modelProps: "service" | "serviceVariant" | "resource" | "user" | "bookingRequest" | "bookingRequestItem" | "paymentProof" | "approval" | "auditLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -855,6 +856,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    PaymentProof: {
+      payload: Prisma.$PaymentProofPayload<ExtArgs>
+      fields: Prisma.PaymentProofFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PaymentProofFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentProofPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PaymentProofFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentProofPayload>
+        }
+        findFirst: {
+          args: Prisma.PaymentProofFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentProofPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PaymentProofFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentProofPayload>
+        }
+        findMany: {
+          args: Prisma.PaymentProofFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentProofPayload>[]
+        }
+        create: {
+          args: Prisma.PaymentProofCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentProofPayload>
+        }
+        createMany: {
+          args: Prisma.PaymentProofCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PaymentProofCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentProofPayload>[]
+        }
+        delete: {
+          args: Prisma.PaymentProofDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentProofPayload>
+        }
+        update: {
+          args: Prisma.PaymentProofUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentProofPayload>
+        }
+        deleteMany: {
+          args: Prisma.PaymentProofDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PaymentProofUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PaymentProofUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentProofPayload>[]
+        }
+        upsert: {
+          args: Prisma.PaymentProofUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PaymentProofPayload>
+        }
+        aggregate: {
+          args: Prisma.PaymentProofAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePaymentProof>
+        }
+        groupBy: {
+          args: Prisma.PaymentProofGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PaymentProofGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PaymentProofCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PaymentProofCountAggregateOutputType> | number
+        }
+      }
+    }
     Approval: {
       payload: Prisma.$ApprovalPayload<ExtArgs>
       fields: Prisma.ApprovalFieldRefs
@@ -1134,6 +1209,25 @@ export const BookingRequestItemScalarFieldEnum = {
 export type BookingRequestItemScalarFieldEnum = (typeof BookingRequestItemScalarFieldEnum)[keyof typeof BookingRequestItemScalarFieldEnum]
 
 
+export const PaymentProofScalarFieldEnum = {
+  id: 'id',
+  bookingRequestId: 'bookingRequestId',
+  blobPathname: 'blobPathname',
+  sha256: 'sha256',
+  mimeType: 'mimeType',
+  sizeBytes: 'sizeBytes',
+  originalFilename: 'originalFilename',
+  uploadedAt: 'uploadedAt',
+  reportedReference: 'reportedReference',
+  normalizedReference: 'normalizedReference',
+  duplicateStatus: 'duplicateStatus',
+  isActive: 'isActive',
+  replacesProofId: 'replacesProofId'
+} as const
+
+export type PaymentProofScalarFieldEnum = (typeof PaymentProofScalarFieldEnum)[keyof typeof PaymentProofScalarFieldEnum]
+
+
 export const ApprovalScalarFieldEnum = {
   id: 'id',
   bookingRequestId: 'bookingRequestId',
@@ -1315,6 +1409,20 @@ export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
+ * Reference to a field of type 'PaymentProofDuplicateStatus'
+ */
+export type EnumPaymentProofDuplicateStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PaymentProofDuplicateStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'PaymentProofDuplicateStatus[]'
+ */
+export type ListEnumPaymentProofDuplicateStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PaymentProofDuplicateStatus[]'>
+    
+
+
+/**
  * Reference to a field of type 'ApprovalDecision'
  */
 export type EnumApprovalDecisionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ApprovalDecision'>
@@ -1456,6 +1564,7 @@ export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
   bookingRequest?: Prisma.BookingRequestOmit
   bookingRequestItem?: Prisma.BookingRequestItemOmit
+  paymentProof?: Prisma.PaymentProofOmit
   approval?: Prisma.ApprovalOmit
   auditLog?: Prisma.AuditLogOmit
 }

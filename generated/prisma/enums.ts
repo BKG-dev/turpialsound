@@ -51,3 +51,12 @@ export const PriorityLevel = {
 } as const
 
 export type PriorityLevel = (typeof PriorityLevel)[keyof typeof PriorityLevel]
+
+
+export const PaymentProofDuplicateStatus = {
+  none: 'none',
+  same_booking: 'same_booking',
+  other_booking: 'other_booking'
+} as const
+
+export type PaymentProofDuplicateStatus = (typeof PaymentProofDuplicateStatus)[keyof typeof PaymentProofDuplicateStatus]

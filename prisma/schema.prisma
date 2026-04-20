@@ -55,6 +55,14 @@ enum PriorityLevel {
   @@map("priority_level")
 }
 
+enum PaymentProofDuplicateStatus {
+  none
+  same_booking
+  other_booking
+
+  @@map("payment_proof_duplicate_status")
+}
+
 // ─────────────────────────────────────────────────────────────────
 // CATÁLOGOS
 // ─────────────────────────────────────────────────────────────────
@@ -166,6 +174,7 @@ model BookingRequest {
   updatedAt   DateTime  @updatedAt
 
   items     BookingRequestItem[]
+  paymentProofs PaymentProof[]
   approvals Approval[]
   auditLogs AuditLog[]
 
@@ -194,6 +203,33 @@ model BookingRequestItem {
   @@index([bookingRequestId])
   @@index([serviceVariantId])
   @@map("booking_request_items")
+}
+
+model PaymentProof {
+  id                String                      @id @default(cuid())
+  bookingRequestId  String
+  bookingRequest    BookingRequest              @relation(fields: [bookingRequestId], references: [id])
+  blobPathname      String                      @unique
+  sha256            String
+  mimeType          String
+  sizeBytes         Int
+  originalFilename  String?
+  uploadedAt        DateTime                    @default(now())
+  reportedReference String?
+  normalizedReference String?
+  duplicateStatus   PaymentProofDuplicateStatus @default(none)
+  isActive          Boolean                     @default(true)
+  replacesProofId   String?
+  replacesProof     PaymentProof?               @relation("PaymentProofReplacement", fields: [replacesProofId], references: [id])
+  replacedBy        PaymentProof[]              @relation("PaymentProofReplacement")
+
+  @@index([bookingRequestId])
+  @@index([sha256])
+  @@index([isActive])
+  @@index([duplicateStatus])
+  @@index([uploadedAt])
+  @@index([replacesProofId])
+  @@map("payment_proofs")
 }
 
 // ─────────────────────────────────────────────────────────────────

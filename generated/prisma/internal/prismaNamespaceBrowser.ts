@@ -57,6 +57,7 @@ export const ModelName = {
   User: 'User',
   BookingRequest: 'BookingRequest',
   BookingRequestItem: 'BookingRequestItem',
+  PaymentProof: 'PaymentProof',
   Approval: 'Approval',
   AuditLog: 'AuditLog'
 } as const
@@ -167,6 +168,25 @@ export const BookingRequestItemScalarFieldEnum = {
 } as const
 
 export type BookingRequestItemScalarFieldEnum = (typeof BookingRequestItemScalarFieldEnum)[keyof typeof BookingRequestItemScalarFieldEnum]
+
+
+export const PaymentProofScalarFieldEnum = {
+  id: 'id',
+  bookingRequestId: 'bookingRequestId',
+  blobPathname: 'blobPathname',
+  sha256: 'sha256',
+  mimeType: 'mimeType',
+  sizeBytes: 'sizeBytes',
+  originalFilename: 'originalFilename',
+  uploadedAt: 'uploadedAt',
+  reportedReference: 'reportedReference',
+  normalizedReference: 'normalizedReference',
+  duplicateStatus: 'duplicateStatus',
+  isActive: 'isActive',
+  replacesProofId: 'replacesProofId'
+} as const
+
+export type PaymentProofScalarFieldEnum = (typeof PaymentProofScalarFieldEnum)[keyof typeof PaymentProofScalarFieldEnum]
 
 
 export const ApprovalScalarFieldEnum = {
