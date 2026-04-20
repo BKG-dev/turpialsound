@@ -19,9 +19,12 @@ import {
   storePaymentProof,
 } from '@/lib/bookings/payment-proof-storage'
 import { sendBookingNotifications } from '@/lib/bookings/notifications'
+import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const WHATSAPP_REGEX = /^\+58(412|414|416|424|426)\d{7}$/
+const WHATSAPP_CONSENT_ACCEPTED_TAG = '[wa_consent:accepted]'
+const WHATSAPP_CONSENT_AT_PREFIX = '[wa_consent_at:'
 
 function normalizeWhatsappVe(value: string): string {
   const compact = value.replace(/[^\d+]/g, '')
@@ -44,6 +47,80 @@ function parseOptionalAmount(value: unknown): number | null {
   return Number.isFinite(numericValue) ? numericValue : null
 }
 
+function withWhatsappConsentTags(baseInternalNotes: string, acceptedAt: Date): string {
+  const withoutConsentTags = baseInternalNotes
+    .replace(/\[wa_consent:accepted\]/gi, '')
+    .replace(/\[wa_consent_at:[^\]]+\]/gi, '')
+    .trim()
+
+  const consentLines = [
+    WHATSAPP_CONSENT_ACCEPTED_TAG,
+    `${WHATSAPP_CONSENT_AT_PREFIX}${acceptedAt.toISOString()}]`,
+  ]
+
+  return [withoutConsentTags, ...consentLines].filter(Boolean).join('\n')
+}
+
+function hasWhatsappConsentAccepted(internalNotes: string | null | undefined): boolean {
+  return (internalNotes ?? '').toLowerCase().includes(WHATSAPP_CONSENT_ACCEPTED_TAG)
+}
+
+function getBookingsWhatsappNumber(): string | null {
+  const compact = process.env.BOOKINGS_WHATSAPP_NUMBER?.replace(/[^\d]/g, '') ?? ''
+  return compact.length > 0 ? compact : null
+}
+
+function formatUsdAmount(amount: number | null): string | null {
+  if (typeof amount !== 'number' || !Number.isFinite(amount)) {
+    return null
+  }
+
+  return amount.toFixed(2)
+}
+
+function formatBsAmount(amount: number | null, rate: number | null): string | null {
+  if (
+    typeof amount !== 'number' ||
+    !Number.isFinite(amount) ||
+    typeof rate !== 'number' ||
+    !Number.isFinite(rate)
+  ) {
+    return null
+  }
+
+  return (amount * rate).toLocaleString('es-VE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
+function buildPaymentReportedWhatsappDeepLink(input: {
+  number: string
+  clientName: string | null | undefined
+  publicCode: string
+  serviceName?: string | null
+  variantName?: string | null
+  usdTotal?: string | null
+  bsTotal?: string | null
+  paymentMethod?: string | null
+}): string {
+  const lines = [
+    `Hola, soy ${input.clientName?.trim() || 'cliente'}. Ya reporte el pago de mi solicitud en Turpial Sound.`,
+    '',
+    `Codigo: ${input.publicCode}`,
+    input.serviceName ? `Servicio: ${input.serviceName}` : '',
+    input.variantName ? `Modalidad: ${input.variantName}` : '',
+    input.usdTotal ? `Monto: USD ${input.usdTotal}` : '',
+    input.bsTotal ? `Monto referencial: Bs. ${input.bsTotal}` : '',
+    input.paymentMethod ? `Metodo: ${input.paymentMethod}` : '',
+    '',
+    'Quedo atento a las actualizaciones de mi reserva por WhatsApp.',
+  ].filter(Boolean)
+
+  const encodedMessage = encodeURIComponent(lines.join('\n'))
+  return `https://wa.me/${input.number}?text=${encodedMessage}`
+}
+
 export interface SubmitBookingInput {
   serviceSlug: string
   variantSlug: string
@@ -56,6 +133,7 @@ export interface SubmitBookingInput {
   requesterName: string
   requesterEmail: string
   requesterPhone: string
+  whatsappConsentAccepted?: boolean
 }
 
 export interface SubmitBookingResult {
@@ -94,6 +172,13 @@ export async function submitBookingRequest(
 
     if (!WHATSAPP_REGEX.test(requesterPhone)) {
       return { success: false, error: 'El numero de WhatsApp no es valido.' }
+    }
+
+    if (!input.whatsappConsentAccepted) {
+      return {
+        success: false,
+        error: 'Debes autorizar el seguimiento operativo por WhatsApp para continuar.',
+      }
     }
 
     const serviceVariant = await prisma.serviceVariant.findUnique({
@@ -150,6 +235,8 @@ export async function submitBookingRequest(
       extrasBackline: input.extrasBackline,
     })
     const estimatedTotalUsd = bookingEstimate.estimatedTotalUsd
+    const internalNotesWithStatus = setOperationalStatusInInternalNotes(null, 'pending_payment')
+    const internalNotes = withWhatsappConsentTags(internalNotesWithStatus, new Date())
 
     const submitResult = await prisma.$transaction(async (tx) => {
       const resourceAssignment = await assignResourceForRequestedSlot(tx, {
@@ -187,7 +274,7 @@ export async function submitBookingRequest(
           eventEndDate: eventEndDateTime,
           notes,
           estimatedTotal: estimatedTotalUsd,
-          internalNotes: setOperationalStatusInInternalNotes(null, 'pending_payment'),
+          internalNotes,
           submittedAt: new Date(),
         },
       })
@@ -287,6 +374,7 @@ export interface ReportBookingPaymentResult {
   success: boolean
   operationalStatus?: 'payment_reported'
   paymentReportedAtIso?: string
+  whatsappDeepLink?: string | null
   error?: string
 }
 
@@ -315,20 +403,38 @@ export async function reportBookingPayment(
       return { success: false, error: 'La referencia de pago es obligatoria.' }
     }
 
-    if (!(paymentProofFile instanceof File)) {
+    const requiresPaymentProofFile = paymentMethod !== 'efectivo'
+
+    if (requiresPaymentProofFile && !(paymentProofFile instanceof File)) {
       return { success: false, error: 'Debes adjuntar el comprobante en JPG.' }
     }
 
-    if (!isAllowedPaymentProofMimeType(paymentProofFile.type)) {
-      return { success: false, error: 'Solo se acepta comprobante JPG/JPEG.' }
+    let storedProof:
+      | {
+          proofUrl: string
+          mimeType: string
+          sizeBytes: number
+        }
+      | null = null
+
+    if (paymentProofFile instanceof File) {
+      if (!isAllowedPaymentProofMimeType(paymentProofFile.type)) {
+        return { success: false, error: 'Solo se acepta comprobante JPG/JPEG.' }
+      }
+
+      if (paymentProofFile.size <= 0) {
+        return { success: false, error: 'El comprobante no puede estar vacio.' }
+      }
+
+      if (paymentProofFile.size > PAYMENT_PROOF_MAX_SIZE_BYTES) {
+        return { success: false, error: 'El comprobante supera el maximo permitido de 5 MB.' }
+      }
+
+      storedProof = await storePaymentProof({ file: paymentProofFile })
     }
 
-    if (paymentProofFile.size <= 0) {
-      return { success: false, error: 'El comprobante no puede estar vacio.' }
-    }
-
-    if (paymentProofFile.size > PAYMENT_PROOF_MAX_SIZE_BYTES) {
-      return { success: false, error: 'El comprobante supera el maximo permitido de 5 MB.' }
+    if (requiresPaymentProofFile && !storedProof) {
+      return { success: false, error: 'Debes adjuntar el comprobante en JPG.' }
     }
 
     const booking = await prisma.bookingRequest.findUnique({
@@ -388,7 +494,6 @@ export async function reportBookingPayment(
       }
     }
 
-    const storedProof = await storePaymentProof({ file: paymentProofFile })
     const paymentReportedAt = new Date()
     const nextOperationalStatus = 'payment_reported' as const
     const nextBookingStatus = mapOperationalStatusToBookingStatus(nextOperationalStatus)
@@ -418,9 +523,13 @@ export async function reportBookingPayment(
             bookingStatus: nextBookingStatus,
             paymentMethod,
             paymentReference,
-            paymentProofUrl: storedProof.proofUrl,
-            paymentProofMimeType: storedProof.mimeType,
-            paymentProofSizeBytes: storedProof.sizeBytes,
+            ...(storedProof
+              ? {
+                  paymentProofUrl: storedProof.proofUrl,
+                  paymentProofMimeType: storedProof.mimeType,
+                  paymentProofSizeBytes: storedProof.sizeBytes,
+                }
+              : {}),
             paymentReportedAt: paymentReportedAt.toISOString(),
           },
         },
@@ -478,10 +587,44 @@ export async function reportBookingPayment(
       status: nextOperationalStatus,
     })
 
+    let whatsappDeepLink: string | null = null
+    if (hasWhatsappConsentAccepted(booking.internalNotes)) {
+      const whatsappNumber = getBookingsWhatsappNumber()
+      if (whatsappNumber) {
+        const estimatedTotal = parseOptionalAmount(booking.estimatedTotal)
+        let bsTotal: string | null = null
+
+        if (
+          booking.currency?.toUpperCase() === 'USD' &&
+          typeof estimatedTotal === 'number' &&
+          Number.isFinite(estimatedTotal)
+        ) {
+          try {
+            const referenceRate = await resolveReferenceRate()
+            bsTotal = formatBsAmount(estimatedTotal, referenceRate.rate)
+          } catch {
+            bsTotal = null
+          }
+        }
+
+        whatsappDeepLink = buildPaymentReportedWhatsappDeepLink({
+          number: whatsappNumber,
+          clientName: booking.requesterName,
+          publicCode: booking.publicCode,
+          serviceName: primaryItem?.serviceVariant.service.name ?? null,
+          variantName: primaryItem?.serviceVariant.name ?? null,
+          usdTotal: formatUsdAmount(estimatedTotal),
+          bsTotal,
+          paymentMethod,
+        })
+      }
+    }
+
     return {
       success: true,
       operationalStatus: nextOperationalStatus,
       paymentReportedAtIso: paymentReportedAt.toISOString(),
+      whatsappDeepLink,
     }
   } catch (error) {
     console.error('[reportBookingPayment]', error)

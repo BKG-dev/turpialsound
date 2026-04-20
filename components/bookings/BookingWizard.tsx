@@ -22,11 +22,9 @@ import {
   formatUsdByCurrency,
   useBcvRate,
 } from '@/lib/bookings/currency-display'
-import {
-  getEnabledPaymentMethods,
-  getPaymentWindowMinutes,
-  getPrimaryPaymentMethod,
-  type BookingPaymentMethodSlug,
+import type {
+  BookingPaymentMethodConfig,
+  BookingPaymentMethodSlug,
 } from '@/lib/bookings/payment-settings'
 import type { SelectedBookingItem } from '@/lib/bookings/types'
 
@@ -56,6 +54,7 @@ interface WizardData {
   requesterName: string
   requesterEmail: string
   requesterPhone: string
+  whatsappConsentAccepted: boolean
 }
 
 const INITIAL_DATA: WizardData = {
@@ -69,13 +68,9 @@ const INITIAL_DATA: WizardData = {
   requesterName: '',
   requesterEmail: '',
   requesterPhone: '',
+  whatsappConsentAccepted: false,
 }
 
-const PRIMARY_PAYMENT_METHOD = getPrimaryPaymentMethod()
-const ENABLED_PAYMENT_METHODS = getEnabledPaymentMethods()
-const PAYMENT_WINDOW_MINUTES = getPaymentWindowMinutes()
-const DEFAULT_SUCCESS_PAYMENT_METHOD =
-  ENABLED_PAYMENT_METHODS.find((method) => method.slug === 'pago_movil') ?? PRIMARY_PAYMENT_METHOD
 const PAYMENT_PROOF_MAX_SIZE_BYTES = 5 * 1024 * 1024
 
 type PostSubmitOperationalStatus = 'pending_payment' | 'payment_reported'
@@ -98,11 +93,118 @@ function formatCaracasDateTime(value: string): string {
   }).format(new Date(value))
 }
 
+function normalizePaymentReference(value: string): string {
+  return value.replace(/[^a-z0-9]/gi, '').toUpperCase()
+}
+
+function getDigitsOnly(value: string | null | undefined): string {
+  return (value ?? '').replace(/\D/g, '')
+}
+
+function formatBankVisible(value: string | null | undefined): string {
+  const raw = value?.trim()
+  if (!raw) return 'Por definir'
+  const match = raw.match(/^(\d{4})\s*(.+)$/)
+  if (match) return `(${match[1]}) ${match[2].trim()}`
+  return raw
+}
+
+function getBankCodeForCopy(value: string | null | undefined): string {
+  const digits = getDigitsOnly(value)
+  if (digits.length >= 4) return digits.slice(0, 4)
+  if (digits.length > 0) return digits
+  return value?.trim() || ''
+}
+
+function parseIdentityData(value: string | null | undefined): { type: string; number: string } {
+  const raw = value?.trim()
+  if (!raw) return { type: 'V', number: '' }
+
+  const normalized = raw
+    .toUpperCase()
+    .replace(/[_\s\-]+/g, '')
+
+  let type = ''
+  if (
+    normalized.startsWith('CI') ||
+    normalized.startsWith('CEDULA') ||
+    normalized.startsWith('CEDULADEIDENTIDAD')
+  ) {
+    type = 'V'
+  } else if (normalized.startsWith('RIF')) {
+    type = 'J'
+  } else if (/^[VEJGP]/.test(normalized)) {
+    type = normalized[0]
+  } else {
+    type = 'V'
+  }
+
+  const digits = getDigitsOnly(raw)
+  return { type, number: digits }
+}
+
+function splitMobilePhone(value: string | null | undefined): {
+  operator: string
+  number: string
+} {
+  const digits = getDigitsOnly(value)
+  if (digits.length === 11 && digits.startsWith('0')) {
+    return {
+      operator: digits.slice(0, 4),
+      number: digits.slice(4),
+    }
+  }
+
+  return {
+    operator: '',
+    number: digits,
+  }
+}
+
+function formatWhatsappVeVisible(value: string | null | undefined): string {
+  const digits = getDigitsOnly(value)
+  if (digits.length === 11 && digits.startsWith('0')) {
+    return `${digits.slice(0, 4)}-${digits.slice(4)}`
+  }
+  return value?.trim() || 'Por definir'
+}
+
+function formatBsVisibleFromLabel(label: string): string {
+  const digits = getDigitsOnly(label)
+  if (!digits) return label
+  return `Bs. ${Number(digits).toLocaleString('es-VE')}`
+}
+
+function getAmountCopyDigits(label: string): string {
+  return getDigitsOnly(label)
+}
+
+function formatUsdtAmount(value: number): string {
+  const rounded = Number(value.toFixed(2))
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2)
+}
+
 interface BookingWizardProps {
+  paymentMethods: BookingPaymentMethodConfig[]
+  primaryPaymentMethodSlug: BookingPaymentMethodSlug
+  paymentWindowMinutes: number
   onSubmissionStateChange?: (state: 'idle' | 'loading' | 'success' | 'error') => void
 }
 
-export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = {}) {
+export function BookingWizard({
+  paymentMethods,
+  primaryPaymentMethodSlug,
+  paymentWindowMinutes,
+  onSubmissionStateChange,
+}: BookingWizardProps) {
+  const primaryPaymentMethod =
+    paymentMethods.find((method) => method.slug === primaryPaymentMethodSlug) ?? paymentMethods[0]
+  const defaultSuccessPaymentMethod =
+    paymentMethods.find((method) => method.slug === 'pago_movil') ?? primaryPaymentMethod
+  if (!primaryPaymentMethod || !defaultSuccessPaymentMethod) {
+    throw new Error('No hay metodos de pago manual habilitados para el wizard de reservas.')
+  }
+
   const [currentStep, setCurrentStep] = useState(0)
   const [furthestStep, setFurthestStep] = useState(0)
   const [data, setData] = useState<WizardData>(INITIAL_DATA)
@@ -114,7 +216,7 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
   const [paymentDeadlineIso, setPaymentDeadlineIso] = useState<string | null>(null)
   const [showPaymentOptions, setShowPaymentOptions] = useState(false)
   const [selectedPaymentMethodSlug, setSelectedPaymentMethodSlug] =
-    useState<BookingPaymentMethodSlug>(DEFAULT_SUCCESS_PAYMENT_METHOD.slug)
+    useState<BookingPaymentMethodSlug>(defaultSuccessPaymentMethod.slug)
   const [postSubmitOperationalStatus, setPostSubmitOperationalStatus] =
     useState<PostSubmitOperationalStatus>('pending_payment')
   const [paymentReportReference, setPaymentReportReference] = useState('')
@@ -123,6 +225,8 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
     useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [paymentReportError, setPaymentReportError] = useState<string | null>(null)
   const [paymentReportedAtIso, setPaymentReportedAtIso] = useState<string | null>(null)
+  const [paymentReportedWhatsappLink, setPaymentReportedWhatsappLink] = useState<string | null>(null)
+  const [contactConsentError, setContactConsentError] = useState<string | null>(null)
   const [copyStatusKey, setCopyStatusKey] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -149,13 +253,13 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
     ],
   )
   const paymentWindowLabel =
-    PAYMENT_WINDOW_MINUTES === 60 ? '1 hora' : `${PAYMENT_WINDOW_MINUTES} minutos`
+    paymentWindowMinutes === 60 ? '1 hora' : `${paymentWindowMinutes} minutos`
   const bcvState = useBcvRate()
   const estimatedTotalUsdLabel = formatUsdByCurrency(bookingEstimate.estimatedTotalUsd, 'usd', bcvState.rate)
   const estimatedTotalBsLabel = formatUsdByCurrency(bookingEstimate.estimatedTotalUsd, 'bs', bcvState.rate)
   const selectedPaymentMethod =
-    ENABLED_PAYMENT_METHODS.find((method) => method.slug === selectedPaymentMethodSlug) ??
-    PRIMARY_PAYMENT_METHOD
+    paymentMethods.find((method) => method.slug === selectedPaymentMethodSlug) ??
+    primaryPaymentMethod
   const selectedServiceName =
     CATALOG_SERVICES.find((service) => service.slug === selectedServiceSlug)?.name ??
     selectedServiceSlug ??
@@ -182,6 +286,47 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
   const hasPurchaseExtras = selectedExtras.length > 0 || data.extrasNotes.trim().length > 0
   const activeAmountLabel = estimatedTotalBsLabel
   const secondaryAmountLabel = estimatedTotalUsdLabel
+  const bsAmountEstimated = Number.isFinite(bookingEstimate.estimatedTotalUsd * bcvState.rate)
+    ? Math.round(bookingEstimate.estimatedTotalUsd * bcvState.rate)
+    : 0
+  const bsAmountCopyValue =
+    bsAmountEstimated > 0 ? String(bsAmountEstimated) : getAmountCopyDigits(activeAmountLabel)
+  const bsAmountVisible =
+    bsAmountCopyValue.length > 0
+      ? `Bs. ${Number(bsAmountCopyValue).toLocaleString('es-VE')}`
+      : formatBsVisibleFromLabel(activeAmountLabel)
+  const usdtAmountValue = formatUsdtAmount(bookingEstimate.estimatedTotalUsd)
+  const normalizedPaymentReference = publicCode ? normalizePaymentReference(publicCode) : ''
+  const paymentMethodNameForButton =
+    selectedPaymentMethod.slug === 'efectivo' ? 'Notificar pago en efectivo' : 'Reportar pago'
+
+  const mobilePhoneParts = splitMobilePhone(selectedPaymentMethod.details?.phoneNumber)
+  const mobileIdentityData = parseIdentityData(selectedPaymentMethod.details?.beneficiaryDocument)
+
+  const mobileBankVisible = formatBankVisible(selectedPaymentMethod.details?.bankName)
+  const mobileBankCopyValue = getBankCodeForCopy(selectedPaymentMethod.details?.bankName)
+  const mobileOperatorVisible = mobilePhoneParts.operator || 'Por definir'
+  const mobileNumberVisible = mobilePhoneParts.number || 'Por definir'
+  const mobileOperatorCopyValue = mobilePhoneParts.operator
+  const mobileNumberCopyValue = mobilePhoneParts.number
+  const mobileIdentityTypeVisible = mobileIdentityData.type
+  const mobileIdentityNumberVisible = mobileIdentityData.number || 'Por definir'
+  const mobileIdentityTypeCopyValue = mobileIdentityData.type
+  const mobileIdentityNumberCopyValue = mobileIdentityData.number
+
+  const transferIdentityData = parseIdentityData(selectedPaymentMethod.details?.beneficiaryDocument)
+  const transferBankVisible = formatBankVisible(selectedPaymentMethod.details?.bankName)
+  const transferBankCopyValue = getBankCodeForCopy(selectedPaymentMethod.details?.bankName)
+  const transferIdentityTypeVisible = transferIdentityData.type
+  const transferIdentityNumberVisible = transferIdentityData.number || 'Por definir'
+  const transferIdentityTypeCopyValue = transferIdentityData.type
+  const transferIdentityNumberCopyValue = transferIdentityData.number
+
+  const binancePhoneVisible = formatWhatsappVeVisible(selectedPaymentMethod.details?.phoneNumber)
+  const binancePhoneDigits = getDigitsOnly(selectedPaymentMethod.details?.phoneNumber)
+  const binancePhoneCopyValue = binancePhoneDigits.startsWith('0')
+    ? binancePhoneDigits.slice(1)
+    : binancePhoneDigits
   const paymentDeadlineMs = useMemo(() => {
     if (!paymentDeadlineIso) return null
     const parsedDeadline = new Date(paymentDeadlineIso).getTime()
@@ -189,10 +334,10 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
   }, [paymentDeadlineIso])
   const countdownStartSeconds = useMemo(() => {
     if (paymentDeadlineMs === null) {
-      return PAYMENT_WINDOW_MINUTES * 60
+      return paymentWindowMinutes * 60
     }
     return Math.max(0, Math.floor((paymentDeadlineMs - Date.now()) / 1000))
-  }, [paymentDeadlineMs])
+  }, [paymentDeadlineMs, paymentWindowMinutes])
   const bcvCompactLabel = useMemo(() => {
     if (bcvState.loading) {
       return 'TASA BCV = Bs. --.-- (actualizada: --)'
@@ -246,6 +391,17 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
                 ? true
                 : false
 
+  function focusWhatsappConsentBlock() {
+    const consentBlock = document.getElementById('requester-whatsapp-consent-block')
+    if (!(consentBlock instanceof HTMLElement)) return
+
+    consentBlock.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    })
+    consentBlock.focus({ preventScroll: true })
+  }
+
   function setPrimaryItem(
     updater: (currentItem: SelectedBookingItem | null) => SelectedBookingItem | null,
   ) {
@@ -259,6 +415,12 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
   }
 
   function handleNext() {
+    if (currentStep === 4 && !data.whatsappConsentAccepted) {
+      setContactConsentError('Debes autorizar el seguimiento por WhatsApp para continuar.')
+      focusWhatsappConsentBlock()
+      return
+    }
+
     if (currentStep < totalSteps - 1) {
       const nextStep = currentStep + 1
       setCurrentStep(nextStep)
@@ -281,13 +443,15 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
     setAssignedResourceName(null)
     setPaymentDeadlineIso(null)
     setShowPaymentOptions(false)
-    setSelectedPaymentMethodSlug(DEFAULT_SUCCESS_PAYMENT_METHOD.slug)
+    setSelectedPaymentMethodSlug(defaultSuccessPaymentMethod.slug)
     setPostSubmitOperationalStatus('pending_payment')
     setPaymentReportReference('')
     setPaymentReportProofFile(null)
     setPaymentReportState('idle')
     setPaymentReportError(null)
     setPaymentReportedAtIso(null)
+    setPaymentReportedWhatsappLink(null)
+    setContactConsentError(null)
     setCopyStatusKey(null)
     setSubmitError(null)
   }
@@ -338,13 +502,14 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
     setAssignedResourceName(null)
     setPaymentDeadlineIso(null)
     setShowPaymentOptions(false)
-    setSelectedPaymentMethodSlug(DEFAULT_SUCCESS_PAYMENT_METHOD.slug)
+    setSelectedPaymentMethodSlug(defaultSuccessPaymentMethod.slug)
     setPostSubmitOperationalStatus('pending_payment')
     setPaymentReportReference('')
     setPaymentReportProofFile(null)
     setPaymentReportState('idle')
     setPaymentReportError(null)
     setPaymentReportedAtIso(null)
+    setPaymentReportedWhatsappLink(null)
     setSubmitError(null)
 
     const result = await submitBookingRequest({
@@ -359,6 +524,7 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
       requesterName: data.requesterName,
       requesterEmail: data.requesterEmail,
       requesterPhone: normalizeWhatsappVe(data.requesterPhone),
+      whatsappConsentAccepted: data.whatsappConsentAccepted,
     })
 
     if (result.success && result.publicCode) {
@@ -366,13 +532,14 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
       setAssignedResourceName(result.assignedResourceName ?? null)
       setPaymentDeadlineIso(result.paymentDeadlineIso ?? null)
       setShowPaymentOptions(true)
-      setSelectedPaymentMethodSlug(DEFAULT_SUCCESS_PAYMENT_METHOD.slug)
+      setSelectedPaymentMethodSlug(defaultSuccessPaymentMethod.slug)
       setPostSubmitOperationalStatus('pending_payment')
-      setPaymentReportReference(result.publicCode)
+      setPaymentReportReference(normalizePaymentReference(result.publicCode))
       setPaymentReportProofFile(null)
       setPaymentReportState('idle')
       setPaymentReportError(null)
       setPaymentReportedAtIso(null)
+      setPaymentReportedWhatsappLink(null)
       setSubmissionState('success')
     } else {
       setSubmitError(result.error ?? 'Error al enviar. Intenta de nuevo.')
@@ -390,6 +557,7 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
     }
 
     const trimmedReference = paymentReportReference.trim()
+    const requiresProofFile = selectedPaymentMethod.slug !== 'efectivo'
 
     if (!trimmedReference) {
       setPaymentReportError('La referencia de pago es obligatoria.')
@@ -397,23 +565,25 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
       return
     }
 
-    if (!paymentReportProofFile) {
+    if (requiresProofFile && !paymentReportProofFile) {
       setPaymentReportError('Debes adjuntar el comprobante JPG/JPEG.')
       setPaymentReportState('error')
       return
     }
 
-    const proofType = paymentReportProofFile.type.toLowerCase()
-    if (proofType !== 'image/jpeg' && proofType !== 'image/jpg') {
-      setPaymentReportError('Solo se acepta comprobante JPG/JPEG.')
-      setPaymentReportState('error')
-      return
-    }
+    if (paymentReportProofFile) {
+      const proofType = paymentReportProofFile.type.toLowerCase()
+      if (proofType !== 'image/jpeg' && proofType !== 'image/jpg') {
+        setPaymentReportError('Solo se acepta comprobante JPG/JPEG.')
+        setPaymentReportState('error')
+        return
+      }
 
-    if (paymentReportProofFile.size > PAYMENT_PROOF_MAX_SIZE_BYTES) {
-      setPaymentReportError('El comprobante supera el maximo permitido de 5 MB.')
-      setPaymentReportState('error')
-      return
+      if (paymentReportProofFile.size > PAYMENT_PROOF_MAX_SIZE_BYTES) {
+        setPaymentReportError('El comprobante supera el maximo permitido de 5 MB.')
+        setPaymentReportState('error')
+        return
+      }
     }
 
     setPaymentReportState('loading')
@@ -423,7 +593,9 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
     paymentReportFormData.set('publicCode', publicCode)
     paymentReportFormData.set('paymentMethod', selectedPaymentMethod.slug)
     paymentReportFormData.set('paymentReference', trimmedReference)
-    paymentReportFormData.set('paymentProofFile', paymentReportProofFile)
+    if (paymentReportProofFile) {
+      paymentReportFormData.set('paymentProofFile', paymentReportProofFile)
+    }
 
     const result = await reportBookingPayment(paymentReportFormData)
 
@@ -436,6 +608,11 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
     setPostSubmitOperationalStatus('payment_reported')
     setPaymentReportState('success')
     setPaymentReportedAtIso(result.paymentReportedAtIso ?? new Date().toISOString())
+    const whatsappLink = result.whatsappDeepLink ?? null
+    setPaymentReportedWhatsappLink(whatsappLink)
+    if (whatsappLink) {
+      window.open(whatsappLink, '_blank', 'noopener,noreferrer')
+    }
   }
 
   if (submissionState === 'success' && publicCode) {
@@ -560,11 +737,16 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
             {showPaymentOptions && (
               <div>
                 <div className="mb-1.5 grid grid-cols-2 gap-1 sm:grid-cols-4">
-                  {ENABLED_PAYMENT_METHODS.map((method) => (
+                  {paymentMethods.map((method) => (
                     <button
                       key={method.slug}
                       type="button"
-                      onClick={() => setSelectedPaymentMethodSlug(method.slug)}
+                      onClick={() => {
+                        setSelectedPaymentMethodSlug(method.slug)
+                        if (method.slug === 'efectivo') {
+                          setPaymentReportProofFile(null)
+                        }
+                      }}
                       className={cn(
                         'rounded-md border px-2 py-1 text-[10px] font-medium leading-tight transition-colors',
                         selectedPaymentMethod.slug === method.slug
@@ -584,56 +766,50 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
                     <div className="space-y-1 rounded-lg border border-brand-border bg-brand-surface p-1.5">
                       <p className="text-[11px] font-semibold text-text-primary">Pago movil</p>
                       <p className="text-[10px] text-text-muted">Envia tu pago a estos datos:</p>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">Operadora: {mobileOperatorVisible}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-operator', mobileOperatorCopyValue)}>
+                          Copiar
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">Numero: {mobileNumberVisible}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-number', mobileNumberCopyValue)}>
+                          Copiar
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">Tipo: {mobileIdentityTypeVisible}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-type', mobileIdentityTypeCopyValue)}>
+                          Copiar
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">Cedula de identidad: {mobileIdentityNumberVisible}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-doc', mobileIdentityNumberCopyValue)}>
+                          Copiar
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">Banco: {mobileBankVisible}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-bank', mobileBankCopyValue)}>
+                          Copiar
+                        </Button>
+                      </div>
                       <div className="flex items-center justify-between gap-2 rounded-md border border-accent-gold/20 bg-accent-gold/5 px-2 py-1 text-[10px]">
-                        <span className="text-text-secondary">Monto a pagar: {estimatedTotalBsLabel}</span>
-                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-amount', estimatedTotalBsLabel)}>
+                        <span className="text-text-secondary">Monto a pagar: {bsAmountVisible}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-amount', bsAmountCopyValue)}>
                           Copiar
                         </Button>
                       </div>
                       <div className="flex items-center justify-between gap-2 text-[10px]">
-                        <span className="text-text-secondary">
-                          Banco: {selectedPaymentMethod.details?.bankName ?? 'Por definir'}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCopy('pm-bank', selectedPaymentMethod.details?.bankName)}
-                        >
-                          Copiar
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between gap-2 text-[10px]">
-                        <span className="text-text-secondary">
-                          Telefono: {selectedPaymentMethod.details?.phoneNumber ?? 'Por definir'}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCopy('pm-phone', selectedPaymentMethod.details?.phoneNumber)}
-                        >
-                          Copiar
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between gap-2 text-[10px]">
-                        <span className="text-text-secondary">
-                          Cedula / RIF: {selectedPaymentMethod.details?.beneficiaryDocument ?? 'Por definir'}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCopy('pm-doc', selectedPaymentMethod.details?.beneficiaryDocument)}
-                        >
-                          Copiar
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between gap-2 text-[10px]">
-                        <span className="text-text-secondary">Referencia: {publicCode}</span>
-                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-ref', publicCode)}>
+                        <span className="text-text-secondary">Concepto: {normalizedPaymentReference}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('pm-ref', normalizedPaymentReference)}>
                           Copiar
                         </Button>
                       </div>
                       <p className="text-[10px] text-text-muted">
-                        Importante: En el concepto del pago, coloca: {publicCode}
+                        Importante: En el concepto del pago, coloca: {normalizedPaymentReference}
                       </p>
                       {selectedPaymentMethod.details?.qrImageUrl ? (
                         <img
@@ -652,27 +828,9 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
                   {selectedPaymentMethod.slug === 'transferencia' && (
                     <div className="space-y-1 rounded-lg border border-brand-border bg-brand-surface p-1.5">
                       <p className="text-[11px] font-semibold text-text-primary">Transferencia</p>
-                      <div className="flex items-center justify-between gap-2 rounded-md border border-accent-gold/20 bg-accent-gold/5 px-2 py-1 text-[10px]">
-                        <span className="text-text-secondary">Monto a pagar: {estimatedTotalBsLabel}</span>
-                        <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-amount', estimatedTotalBsLabel)}>
-                          Copiar
-                        </Button>
-                      </div>
                       <div className="flex items-center justify-between gap-2 text-[10px]">
                         <span className="text-text-secondary">
-                          Banco: {selectedPaymentMethod.details?.bankName ?? 'Por definir'}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCopy('tr-bank', selectedPaymentMethod.details?.bankName)}
-                        >
-                          Copiar
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between gap-2 text-[10px]">
-                        <span className="text-text-secondary">
-                          Cuenta: {selectedPaymentMethod.details?.accountNumber ?? 'Por definir'}
+                          Numero de cuenta: {selectedPaymentMethod.details?.accountNumber ?? 'Por definir'}
                         </span>
                         <Button
                           variant="ghost"
@@ -683,50 +841,85 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
                         </Button>
                       </div>
                       <div className="flex items-center justify-between gap-2 text-[10px]">
-                        <span className="text-text-secondary">
-                          Titular: {selectedPaymentMethod.details?.accountHolder ?? 'Por definir'}
-                        </span>
+                        <span className="text-text-secondary">Tipo: {transferIdentityTypeVisible}</span>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleCopy('tr-holder', selectedPaymentMethod.details?.accountHolder)}
+                          onClick={() => handleCopy('tr-type', transferIdentityTypeCopyValue)}
                         >
                           Copiar
                         </Button>
                       </div>
                       <div className="flex items-center justify-between gap-2 text-[10px]">
-                        <span className="text-text-secondary">
-                          RIF / Cedula: {selectedPaymentMethod.details?.beneficiaryDocument ?? 'Por definir'}
-                        </span>
+                        <span className="text-text-secondary">Cedula de identidad: {transferIdentityNumberVisible}</span>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleCopy('tr-doc', selectedPaymentMethod.details?.beneficiaryDocument)}
+                          onClick={() => handleCopy('tr-doc', transferIdentityNumberCopyValue)}
                         >
                           Copiar
                         </Button>
                       </div>
-                      <div className="flex items-center justify-between gap-2 text-[10px]">
-                        <span className="text-text-secondary">Referencia: {publicCode}</span>
-                        <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-ref', publicCode)}>
+                      <div className="flex items-center justify-between gap-2 rounded-md border border-accent-gold/20 bg-accent-gold/5 px-2 py-1 text-[10px]">
+                        <span className="text-text-secondary">Monto a pagar: {bsAmountVisible}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-amount', bsAmountCopyValue)}>
                           Copiar
                         </Button>
                       </div>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">Descripcion: {normalizedPaymentReference}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-ref', normalizedPaymentReference)}>
+                          Copiar
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">Banco: {transferBankVisible}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('tr-bank', transferBankCopyValue)}>
+                          Copiar
+                        </Button>
+                      </div>
+                      <p className="text-[10px] text-text-muted">
+                        Titular: {selectedPaymentMethod.details?.accountHolder ?? 'Por definir'}
+                      </p>
                     </div>
                   )}
 
                   {selectedPaymentMethod.slug === 'binance' && (
                     <div className="space-y-1 rounded-lg border border-brand-border bg-brand-surface p-1.5">
                       <p className="text-[11px] font-semibold text-text-primary">Binance</p>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">
+                          Telefono: {binancePhoneVisible}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopy('bn-phone', binancePhoneCopyValue)}
+                        >
+                          Copiar
+                        </Button>
+                      </div>
                       <div className="flex items-center justify-between gap-2 rounded-md border border-accent-gold/20 bg-accent-gold/5 px-2 py-1 text-[10px]">
-                        <span className="text-text-secondary">Monto a pagar: {estimatedTotalUsdLabel}</span>
-                        <Button variant="ghost" size="sm" onClick={() => handleCopy('bn-amount', estimatedTotalUsdLabel)}>
+                        <span className="text-text-secondary">Monto a pagar: {usdtAmountValue} USDT</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('bn-amount', usdtAmountValue)}>
                           Copiar
                         </Button>
                       </div>
                       <div className="flex items-center justify-between gap-2 text-[10px]">
                         <span className="text-text-secondary">
-                          Pay ID: {selectedPaymentMethod.details?.payId ?? 'Por definir'}
+                          Nota al beneficiario: {normalizedPaymentReference}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopy('bn-note', normalizedPaymentReference)}
+                        >
+                          Copiar
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">
+                          Binance ID: {selectedPaymentMethod.details?.payId ?? 'Por definir'}
                         </span>
                         <Button
                           variant="ghost"
@@ -755,16 +948,27 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
                     <div className="space-y-1 rounded-lg border border-brand-border bg-brand-surface p-1.5">
                       <p className="text-[11px] font-semibold text-text-primary">Efectivo</p>
                       <div className="flex items-center justify-between gap-2 rounded-md border border-accent-gold/20 bg-accent-gold/5 px-2 py-1 text-[10px]">
-                        <span className="text-text-secondary">Monto a pagar: {estimatedTotalUsdLabel}</span>
-                        <Button variant="ghost" size="sm" onClick={() => handleCopy('cash-amount', estimatedTotalUsdLabel)}>
+                        <span className="text-text-secondary">Monto a pagar: ${usdtAmountValue}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('cash-amount', usdtAmountValue)}>
+                          Copiar
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">Codigo de solicitud: {publicCode}</span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('cash-code', publicCode)}>
+                          Copiar
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-text-secondary">
+                          Referencia operativa: {normalizedPaymentReference}
+                        </span>
+                        <Button variant="ghost" size="sm" onClick={() => handleCopy('cash-ref', normalizedPaymentReference)}>
                           Copiar
                         </Button>
                       </div>
                       <p className="text-[10px] text-text-secondary">
                         Solo valido para pago presencial dentro de la ventana activa del apartado.
-                      </p>
-                      <p className="text-[10px] text-text-muted">
-                        El bloque sigue sujeto a la ventana de {paymentWindowLabel} para completar el pago.
                       </p>
                     </div>
                   )}
@@ -776,7 +980,7 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
 
                 {postSubmitOperationalStatus === 'pending_payment' ? (
                   <div className="mt-2 space-y-1.5 rounded-lg border border-brand-border bg-brand-surface p-2">
-                    <p className="text-[11px] font-semibold text-text-primary">Reportar pago</p>
+                    <p className="text-[11px] font-semibold text-text-primary">{paymentMethodNameForButton}</p>
                     <p className="text-[10px] text-text-muted">
                       Metodo usado: <span className="font-medium text-text-secondary">{selectedPaymentMethod.name}</span>
                     </p>
@@ -787,24 +991,26 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
                         type="text"
                         value={paymentReportReference}
                         onChange={(event) => setPaymentReportReference(event.target.value)}
-                        placeholder="Ej: 184562 / 009123"
+                        placeholder="Ej: TUR2026073"
                         className="w-full rounded-md border border-brand-border bg-brand-bg/40 px-2 py-1.5 text-[11px] text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-accent-gold/60"
                         disabled={paymentReportState === 'loading'}
                       />
                     </label>
 
-                    <label className="block space-y-0.5">
-                      <span className="text-[10px] uppercase tracking-wide text-text-muted">
-                        Comprobante (JPG/JPEG, max 5MB)
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/jpg"
-                        onChange={(event) => setPaymentReportProofFile(event.target.files?.[0] ?? null)}
-                        className="w-full rounded-md border border-brand-border bg-brand-bg/40 px-2 py-1.5 text-[11px] text-text-secondary file:mr-2 file:rounded-md file:border-0 file:bg-accent-gold/15 file:px-2 file:py-1 file:text-[10px] file:font-medium file:text-text-primary"
-                        disabled={paymentReportState === 'loading'}
-                      />
-                    </label>
+                    {selectedPaymentMethod.slug !== 'efectivo' && (
+                      <label className="block space-y-0.5">
+                        <span className="text-[10px] uppercase tracking-wide text-text-muted">
+                          Comprobante (JPG/JPEG, max 5MB)
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/jpg"
+                          onChange={(event) => setPaymentReportProofFile(event.target.files?.[0] ?? null)}
+                          className="w-full rounded-md border border-brand-border bg-brand-bg/40 px-2 py-1.5 text-[11px] text-text-secondary file:mr-2 file:rounded-md file:border-0 file:bg-accent-gold/15 file:px-2 file:py-1 file:text-[10px] file:font-medium file:text-text-primary"
+                          disabled={paymentReportState === 'loading'}
+                        />
+                      </label>
+                    )}
 
                     {paymentReportError && (
                       <p className="rounded-md border border-red-400/30 bg-red-500/10 px-2 py-1 text-[10px] text-red-200">
@@ -818,7 +1024,7 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
                       onClick={handleReportPayment}
                       disabled={paymentReportState === 'loading'}
                     >
-                      {paymentReportState === 'loading' ? 'Reportando pago...' : 'Reportar pago'}
+                      {paymentReportState === 'loading' ? 'Reportando pago...' : paymentMethodNameForButton}
                     </Button>
                   </div>
                 ) : (
@@ -827,6 +1033,23 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
                     <p className="text-text-secondary">
                       Tu comprobante fue enviado y el estado quedo en revision.
                     </p>
+                    {paymentReportedWhatsappLink && (
+                      <div className="mt-1.5">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() =>
+                            window.open(
+                              paymentReportedWhatsappLink,
+                              '_blank',
+                              'noopener,noreferrer',
+                            )
+                          }
+                        >
+                          Abrir WhatsApp
+                        </Button>
+                      </div>
+                    )}
                     {paymentReportedAtIso && (
                       <p className="mt-0.5 text-[10px] text-text-muted">
                         Reportado: {formatCaracasDateTime(paymentReportedAtIso)} (America/Caracas)
@@ -1025,9 +1248,17 @@ export function BookingWizard({ onSubmissionStateChange }: BookingWizardProps = 
             name={data.requesterName}
             email={data.requesterEmail}
             phone={data.requesterPhone}
+            whatsappConsentAccepted={data.whatsappConsentAccepted}
+            whatsappConsentError={contactConsentError}
             onNameChange={(value) => setData((d) => ({ ...d, requesterName: value }))}
             onEmailChange={(value) => setData((d) => ({ ...d, requesterEmail: value }))}
             onPhoneChange={(value) => setData((d) => ({ ...d, requesterPhone: value }))}
+            onWhatsappConsentChange={(value) => {
+              setData((d) => ({ ...d, whatsappConsentAccepted: value }))
+              if (value) {
+                setContactConsentError(null)
+              }
+            }}
           />
         )}
 

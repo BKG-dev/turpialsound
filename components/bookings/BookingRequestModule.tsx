@@ -3,10 +3,24 @@
 import { useState } from 'react'
 import { SectionHeading } from '@/components/sections/SectionShell'
 import { BookingWizard } from '@/components/bookings/BookingWizard'
+import type {
+  BookingPaymentMethodConfig,
+  BookingPaymentMethodSlug,
+} from '@/lib/bookings/payment-settings'
 
 type SubmissionState = 'idle' | 'loading' | 'success' | 'error'
 
-export function BookingRequestModule() {
+interface BookingRequestModuleProps {
+  paymentMethods: BookingPaymentMethodConfig[]
+  primaryPaymentMethodSlug: BookingPaymentMethodSlug
+  paymentWindowMinutes: number
+}
+
+export function BookingRequestModule({
+  paymentMethods,
+  primaryPaymentMethodSlug,
+  paymentWindowMinutes,
+}: BookingRequestModuleProps) {
   const [submissionState, setSubmissionState] = useState<SubmissionState>('idle')
   const isSuccess = submissionState === 'success'
 
@@ -23,7 +37,12 @@ export function BookingRequestModule() {
           }
         />
       </div>
-      <BookingWizard onSubmissionStateChange={setSubmissionState} />
+      <BookingWizard
+        paymentMethods={paymentMethods}
+        primaryPaymentMethodSlug={primaryPaymentMethodSlug}
+        paymentWindowMinutes={paymentWindowMinutes}
+        onSubmissionStateChange={setSubmissionState}
+      />
     </>
   )
 }

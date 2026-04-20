@@ -26,6 +26,28 @@ export interface BookingPaymentSettings {
   methods: BookingPaymentMethodConfig[]
 }
 
+const PAYMENT_DETAILS_FALLBACK = 'Por definir'
+
+function resolvePaymentEnvValue(value: string | undefined): string {
+  const normalized = value?.trim()
+  if (!normalized) return PAYMENT_DETAILS_FALLBACK
+  if (normalized.toUpperCase().startsWith('REEMPLAZAR_')) return PAYMENT_DETAILS_FALLBACK
+  return normalized
+}
+
+function buildMobileBeneficiaryDocument(): string {
+  const idType = resolvePaymentEnvValue(process.env.BOOKINGS_PAYMENT_MOBILE_ID_TYPE)
+  const idNumber = resolvePaymentEnvValue(process.env.BOOKINGS_PAYMENT_MOBILE_ID_NUMBER)
+
+  if (idType === PAYMENT_DETAILS_FALLBACK && idNumber === PAYMENT_DETAILS_FALLBACK) {
+    return PAYMENT_DETAILS_FALLBACK
+  }
+
+  if (idType === PAYMENT_DETAILS_FALLBACK) return idNumber
+  if (idNumber === PAYMENT_DETAILS_FALLBACK) return idType
+  return `${idType} ${idNumber}`
+}
+
 // Fuente operativa temporal en codigo.
 // En una fase posterior puede migrarse a DB o configuracion editable interna.
 export const BOOKING_PAYMENT_SETTINGS: BookingPaymentSettings = {
@@ -37,10 +59,10 @@ export const BOOKING_PAYMENT_SETTINGS: BookingPaymentSettings = {
       enabled: true,
       name: 'Pago Móvil',
       details: {
-        beneficiaryName: 'REEMPLAZAR_BENEFICIARIO',
-        beneficiaryDocument: 'REEMPLAZAR_DOCUMENTO',
-        bankName: 'REEMPLAZAR_BANCO',
-        phoneNumber: 'REEMPLAZAR_TELEFONO',
+        beneficiaryName: PAYMENT_DETAILS_FALLBACK,
+        beneficiaryDocument: buildMobileBeneficiaryDocument(),
+        bankName: resolvePaymentEnvValue(process.env.BOOKINGS_PAYMENT_MOBILE_BANK),
+        phoneNumber: resolvePaymentEnvValue(process.env.BOOKINGS_PAYMENT_MOBILE_PHONE),
       },
       referenceHint: 'Usa tu codigo de solicitud como referencia al reportar el pago.',
       customerMessage:
@@ -51,10 +73,10 @@ export const BOOKING_PAYMENT_SETTINGS: BookingPaymentSettings = {
       enabled: true,
       name: 'Transferencia',
       details: {
-        bankName: 'REEMPLAZAR_BANCO',
-        accountNumber: 'REEMPLAZAR_CUENTA',
-        accountHolder: 'REEMPLAZAR_TITULAR',
-        beneficiaryDocument: 'REEMPLAZAR_DOCUMENTO',
+        bankName: resolvePaymentEnvValue(process.env.BOOKINGS_BANK_TRANSFER_BANK),
+        accountNumber: resolvePaymentEnvValue(process.env.BOOKINGS_BANK_TRANSFER_ACCOUNT_NUMBER),
+        accountHolder: resolvePaymentEnvValue(process.env.BOOKINGS_BANK_TRANSFER_BENEFICIARY),
+        beneficiaryDocument: buildMobileBeneficiaryDocument(),
       },
       referenceHint: 'Usa tu codigo de solicitud como referencia al reportar el pago.',
       customerMessage: 'Envia tu pago y conserva el comprobante para reportarlo.',
@@ -64,7 +86,8 @@ export const BOOKING_PAYMENT_SETTINGS: BookingPaymentSettings = {
       enabled: true,
       name: 'Binance',
       details: {
-        payId: 'REEMPLAZAR_PAY_ID',
+        payId: resolvePaymentEnvValue(process.env.BOOKINGS_BINANCE_PAY_ID),
+        phoneNumber: resolvePaymentEnvValue(process.env.BOOKINGS_BINANCE_PHONE),
       },
       referenceHint: 'Usa tu codigo de solicitud como referencia al reportar el pago.',
       customerMessage: 'Envia tu pago y conserva el comprobante para reportarlo.',

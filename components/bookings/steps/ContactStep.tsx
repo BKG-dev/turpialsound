@@ -26,18 +26,24 @@ interface ContactStepProps {
   name: string
   email: string
   phone: string
+  whatsappConsentAccepted: boolean
+  whatsappConsentError?: string | null
   onNameChange: (value: string) => void
   onEmailChange: (value: string) => void
   onPhoneChange: (value: string) => void
+  onWhatsappConsentChange: (value: boolean) => void
 }
 
 export function ContactStep({
   name,
   email,
   phone,
+  whatsappConsentAccepted,
+  whatsappConsentError,
   onNameChange,
   onEmailChange,
   onPhoneChange,
+  onWhatsappConsentChange,
 }: ContactStepProps) {
   const emailHasContent = email.length > 0
   const emailInvalid = emailHasContent && !isValidEmail(email)
@@ -138,6 +144,52 @@ export function ContactStep({
               Usaremos este numero para coordinar por WhatsApp.
             </p>
           )}
+
+          <div
+            id="requester-whatsapp-consent-block"
+            tabIndex={-1}
+            className={cn(
+              'mt-3 rounded-md border bg-brand-bg/20 px-3 py-2 outline-none transition-colors',
+              whatsappConsentError
+                ? 'border-red-500/70 bg-red-500/10 ring-1 ring-red-500/30'
+                : 'border-brand-border/80',
+            )}
+          >
+            <label
+              htmlFor="requester-whatsapp-consent"
+              className="flex cursor-pointer items-start gap-2"
+            >
+              <input
+                id="requester-whatsapp-consent"
+                type="checkbox"
+                checked={whatsappConsentAccepted}
+                onChange={(event) => onWhatsappConsentChange(event.target.checked)}
+                aria-invalid={Boolean(whatsappConsentError)}
+                aria-describedby={whatsappConsentError ? 'requester-whatsapp-consent-error' : undefined}
+                className="mt-0.5 h-4 w-4 rounded border-brand-border bg-brand-surface accent-accent-gold"
+              />
+              <span className="space-y-1 text-[11px] leading-snug">
+                <span className="block text-text-primary">
+                  Autorizo a Turpial Sound a contactarme por WhatsApp al numero indicado para el
+                  seguimiento operativo de esta reserva.
+                </span>
+                <span className="block text-text-muted">
+                  Sin esta autorizacion no podremos dar seguimiento operativo a tu reserva por
+                  WhatsApp.
+                </span>
+              </span>
+            </label>
+
+            {whatsappConsentError && (
+              <p
+                id="requester-whatsapp-consent-error"
+                className="mt-2 text-[11px] text-red-300"
+                role="alert"
+              >
+                {whatsappConsentError}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>
