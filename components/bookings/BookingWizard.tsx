@@ -71,7 +71,7 @@ const INITIAL_DATA: WizardData = {
   whatsappConsentAccepted: false,
 }
 
-const PAYMENT_PROOF_MAX_SIZE_BYTES = 5 * 1024 * 1024
+const PAYMENT_PROOF_MAX_SIZE_BYTES = Math.floor(4.5 * 1024 * 1024)
 
 type PostSubmitOperationalStatus = 'pending_payment' | 'payment_reported'
 
@@ -224,6 +224,7 @@ export function BookingWizard({
   const [paymentReportState, setPaymentReportState] =
     useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [paymentReportError, setPaymentReportError] = useState<string | null>(null)
+  const [paymentReportWarning, setPaymentReportWarning] = useState<string | null>(null)
   const [paymentReportedAtIso, setPaymentReportedAtIso] = useState<string | null>(null)
   const [paymentReportedWhatsappLink, setPaymentReportedWhatsappLink] = useState<string | null>(null)
   const [contactConsentError, setContactConsentError] = useState<string | null>(null)
@@ -449,6 +450,7 @@ export function BookingWizard({
     setPaymentReportProofFile(null)
     setPaymentReportState('idle')
     setPaymentReportError(null)
+    setPaymentReportWarning(null)
     setPaymentReportedAtIso(null)
     setPaymentReportedWhatsappLink(null)
     setContactConsentError(null)
@@ -508,6 +510,7 @@ export function BookingWizard({
     setPaymentReportProofFile(null)
     setPaymentReportState('idle')
     setPaymentReportError(null)
+    setPaymentReportWarning(null)
     setPaymentReportedAtIso(null)
     setPaymentReportedWhatsappLink(null)
     setSubmitError(null)
@@ -553,6 +556,7 @@ export function BookingWizard({
     if (postSubmitOperationalStatus !== 'pending_payment') {
       setPaymentReportError('Esta solicitud ya no acepta reportes de pago.')
       setPaymentReportState('error')
+      setPaymentReportWarning(null)
       return
     }
 
@@ -574,6 +578,7 @@ export function BookingWizard({
     if (!trimmedReference) {
       setPaymentReportError('La referencia de pago es obligatoria.')
       setPaymentReportState('error')
+      setPaymentReportWarning(null)
       closeWhatsappWindow()
       return
     }
@@ -581,22 +586,25 @@ export function BookingWizard({
     if (requiresProofFile && !paymentReportProofFile) {
       setPaymentReportError('Debes adjuntar el comprobante JPG/JPEG.')
       setPaymentReportState('error')
+      setPaymentReportWarning(null)
       closeWhatsappWindow()
       return
     }
 
     if (paymentReportProofFile) {
       const proofType = paymentReportProofFile.type.toLowerCase()
-      if (proofType !== 'image/jpeg' && proofType !== 'image/jpg') {
-        setPaymentReportError('Solo se acepta comprobante JPG/JPEG.')
+      if (proofType !== 'image/jpeg') {
+        setPaymentReportError('Solo se acepta comprobante image/jpeg.')
         setPaymentReportState('error')
+        setPaymentReportWarning(null)
         closeWhatsappWindow()
         return
       }
 
       if (paymentReportProofFile.size > PAYMENT_PROOF_MAX_SIZE_BYTES) {
-        setPaymentReportError('El comprobante supera el maximo permitido de 5 MB.')
+        setPaymentReportError('El comprobante supera el maximo permitido de 4.5 MB.')
         setPaymentReportState('error')
+        setPaymentReportWarning(null)
         closeWhatsappWindow()
         return
       }
@@ -604,6 +612,7 @@ export function BookingWizard({
 
     setPaymentReportState('loading')
     setPaymentReportError(null)
+    setPaymentReportWarning(null)
 
     const paymentReportFormData = new FormData()
     paymentReportFormData.set('publicCode', publicCode)
@@ -618,12 +627,14 @@ export function BookingWizard({
     if (!result.success) {
       setPaymentReportError(result.error ?? 'No pudimos registrar el pago reportado.')
       setPaymentReportState('error')
+      setPaymentReportWarning(null)
       closeWhatsappWindow()
       return
     }
 
     setPostSubmitOperationalStatus('payment_reported')
     setPaymentReportState('success')
+    setPaymentReportWarning(result.warning ?? null)
     setPaymentReportedAtIso(result.paymentReportedAtIso ?? new Date().toISOString())
     const whatsappLink = result.whatsappDeepLink ?? null
     setPaymentReportedWhatsappLink(whatsappLink)
@@ -1022,11 +1033,11 @@ export function BookingWizard({
                     {selectedPaymentMethod.slug !== 'efectivo' && (
                       <label className="block space-y-0.5">
                         <span className="text-[10px] uppercase tracking-wide text-text-muted">
-                          Comprobante (JPG/JPEG, max 5MB)
+                          Comprobante (image/jpeg, max 4.5MB)
                         </span>
                         <input
                           type="file"
-                          accept="image/jpeg,image/jpg"
+                          accept="image/jpeg"
                           onChange={(event) => setPaymentReportProofFile(event.target.files?.[0] ?? null)}
                           className="w-full rounded-md border border-brand-border bg-brand-bg/40 px-2 py-1.5 text-[11px] text-text-secondary file:mr-2 file:rounded-md file:border-0 file:bg-accent-gold/15 file:px-2 file:py-1 file:text-[10px] file:font-medium file:text-text-primary"
                           disabled={paymentReportState === 'loading'}
@@ -1055,6 +1066,11 @@ export function BookingWizard({
                     <p className="text-text-secondary">
                       Tu comprobante fue enviado y el estado quedo en revision.
                     </p>
+                    {paymentReportWarning && (
+                      <p className="mt-1 rounded-md border border-amber-300/40 bg-amber-400/10 px-2 py-1 text-[10px] text-amber-200">
+                        {paymentReportWarning}
+                      </p>
+                    )}
                     {paymentReportedWhatsappLink && (
                       <div className="mt-1.5">
                         <Button

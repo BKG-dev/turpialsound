@@ -14,10 +14,10 @@ import {
 } from '@/lib/bookings/operations'
 import { getEnabledPaymentMethods, type BookingPaymentMethodSlug } from '@/lib/bookings/payment-settings'
 import {
-  isAllowedPaymentProofMimeType,
-  PAYMENT_PROOF_MAX_SIZE_BYTES,
-  storePaymentProof,
-} from '@/lib/bookings/payment-proof-storage'
+  type PaymentProofDuplicateStatus,
+  PaymentProofValidationError,
+  uploadPaymentProofToBlob,
+} from '@/lib/storage/payment-proofs'
 import { sendBookingNotifications } from '@/lib/bookings/notifications'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
 
@@ -119,6 +119,20 @@ function buildPaymentReportedWhatsappDeepLink(input: {
 
   const encodedMessage = encodeURIComponent(lines.join('\n'))
   return `https://wa.me/${input.number}?text=${encodedMessage}`
+}
+
+function getPaymentProofDuplicateWarning(
+  duplicateStatus: PaymentProofDuplicateStatus | null | undefined,
+): string | null {
+  if (!duplicateStatus || duplicateStatus === 'none') {
+    return null
+  }
+
+  if (duplicateStatus === 'same_booking') {
+    return 'Advertencia: este comprobante coincide con otro ya cargado en esta misma solicitud.'
+  }
+
+  return 'Advertencia: este comprobante coincide con uno ya registrado en otra solicitud.'
 }
 
 export interface SubmitBookingInput {
@@ -373,7 +387,11 @@ export async function submitBookingRequest(
 export interface ReportBookingPaymentResult {
   success: boolean
   operationalStatus?: 'payment_reported'
+  bookingStatus?: 'under_review'
   paymentReportedAtIso?: string
+  paymentProofId?: string
+  duplicateStatus?: PaymentProofDuplicateStatus
+  warning?: string
   whatsappDeepLink?: string | null
   error?: string
 }
@@ -406,34 +424,6 @@ export async function reportBookingPayment(
     const requiresPaymentProofFile = paymentMethod !== 'efectivo'
 
     if (requiresPaymentProofFile && !(paymentProofFile instanceof File)) {
-      return { success: false, error: 'Debes adjuntar el comprobante en JPG.' }
-    }
-
-    let storedProof:
-      | {
-          proofUrl: string
-          mimeType: string
-          sizeBytes: number
-        }
-      | null = null
-
-    if (paymentProofFile instanceof File) {
-      if (!isAllowedPaymentProofMimeType(paymentProofFile.type)) {
-        return { success: false, error: 'Solo se acepta comprobante JPG/JPEG.' }
-      }
-
-      if (paymentProofFile.size <= 0) {
-        return { success: false, error: 'El comprobante no puede estar vacio.' }
-      }
-
-      if (paymentProofFile.size > PAYMENT_PROOF_MAX_SIZE_BYTES) {
-        return { success: false, error: 'El comprobante supera el maximo permitido de 5 MB.' }
-      }
-
-      storedProof = await storePaymentProof({ file: paymentProofFile })
-    }
-
-    if (requiresPaymentProofFile && !storedProof) {
       return { success: false, error: 'Debes adjuntar el comprobante en JPG.' }
     }
 
@@ -487,11 +477,47 @@ export async function reportBookingPayment(
       return { success: false, error: 'Esta solicitud ya tiene un pago reportado.' }
     }
 
+    if (currentOperationalStatus === 'expired') {
+      return {
+        success: false,
+        error: 'La solicitud esta expirada y ya no admite reporte de pago.',
+      }
+    }
+
     if (currentOperationalStatus !== 'pending_payment') {
       return {
         success: false,
         error: 'Solo puedes reportar pago cuando la solicitud esta en estado pendiente de pago.',
       }
+    }
+
+    let uploadedPaymentProof:
+      | Awaited<ReturnType<typeof uploadPaymentProofToBlob>>
+      | null = null
+
+    if (paymentProofFile instanceof File) {
+      try {
+        uploadedPaymentProof = await uploadPaymentProofToBlob({
+          file: paymentProofFile,
+          bookingId: booking.id,
+          bookingPublicCode: booking.publicCode,
+          reportedReference: paymentReference,
+        })
+      } catch (error) {
+        if (error instanceof PaymentProofValidationError) {
+          return { success: false, error: error.message }
+        }
+
+        console.error('[reportBookingPayment.uploadPaymentProofToBlob]', error)
+        return {
+          success: false,
+          error: 'No pudimos subir el comprobante al storage privado. Intenta de nuevo.',
+        }
+      }
+    }
+
+    if (requiresPaymentProofFile && !uploadedPaymentProof) {
+      return { success: false, error: 'Debes adjuntar el comprobante en formato image/jpeg.' }
     }
 
     const paymentReportedAt = new Date()
@@ -501,40 +527,73 @@ export async function reportBookingPayment(
       booking.internalNotes,
       nextOperationalStatus,
     )
+    let paymentProofId: string | null = null
 
-    await prisma.$transaction([
-      prisma.bookingRequest.update({
-        where: { id: booking.id },
-        data: {
-          status: nextBookingStatus,
-          internalNotes: updatedInternalNotes,
-        },
-      }),
-      prisma.auditLog.create({
-        data: {
-          bookingRequestId: booking.id,
-          action: 'payment_reported_by_customer',
-          previousState: {
-            operationalStatus: currentOperationalStatus,
-            bookingStatus: booking.status,
+    try {
+      await prisma.$transaction(async (tx) => {
+        if (uploadedPaymentProof) {
+          const paymentProof = await tx.paymentProof.create({
+            data: {
+              bookingRequestId: booking.id,
+              blobPathname: uploadedPaymentProof.blobPathname,
+              sha256: uploadedPaymentProof.sha256,
+              mimeType: uploadedPaymentProof.mimeType,
+              sizeBytes: uploadedPaymentProof.sizeBytes,
+              originalFilename: uploadedPaymentProof.originalFilename,
+              uploadedAt: uploadedPaymentProof.uploadedAt,
+              reportedReference: uploadedPaymentProof.reportedReference,
+              normalizedReference: uploadedPaymentProof.normalizedReference,
+              duplicateStatus: uploadedPaymentProof.duplicateStatus,
+            },
+            select: { id: true },
+          })
+
+          paymentProofId = paymentProof.id
+        }
+
+        await tx.bookingRequest.update({
+          where: { id: booking.id },
+          data: {
+            status: nextBookingStatus,
+            internalNotes: updatedInternalNotes,
           },
-          nextState: {
-            operationalStatus: nextOperationalStatus,
-            bookingStatus: nextBookingStatus,
-            paymentMethod,
-            paymentReference,
-            ...(storedProof
-              ? {
-                  paymentProofUrl: storedProof.proofUrl,
-                  paymentProofMimeType: storedProof.mimeType,
-                  paymentProofSizeBytes: storedProof.sizeBytes,
-                }
-              : {}),
-            paymentReportedAt: paymentReportedAt.toISOString(),
+        })
+
+        await tx.auditLog.create({
+          data: {
+            bookingRequestId: booking.id,
+            action: 'payment_reported_by_customer',
+            previousState: {
+              operationalStatus: currentOperationalStatus,
+              bookingStatus: booking.status,
+            },
+            nextState: {
+              operationalStatus: nextOperationalStatus,
+              bookingStatus: nextBookingStatus,
+              paymentMethod,
+              paymentReference,
+              paymentReportedAt: paymentReportedAt.toISOString(),
+              ...(uploadedPaymentProof
+                ? {
+                    paymentProofId,
+                    paymentProofPathname: uploadedPaymentProof.blobPathname,
+                    paymentProofSha256: uploadedPaymentProof.sha256,
+                    paymentProofMimeType: uploadedPaymentProof.mimeType,
+                    paymentProofSizeBytes: uploadedPaymentProof.sizeBytes,
+                    paymentProofDuplicateStatus: uploadedPaymentProof.duplicateStatus,
+                  }
+                : {}),
+            },
           },
-        },
-      }),
-    ])
+        })
+      })
+    } catch (error) {
+      console.error('[reportBookingPayment.persistence]', error)
+      return {
+        success: false,
+        error: 'No pudimos persistir el reporte de pago. Intenta de nuevo.',
+      }
+    }
 
     const primaryItem = booking.items[0]
     const calendarSync = await syncBookingToGoogleCalendar({
@@ -623,7 +682,11 @@ export async function reportBookingPayment(
     return {
       success: true,
       operationalStatus: nextOperationalStatus,
+      bookingStatus: 'under_review',
       paymentReportedAtIso: paymentReportedAt.toISOString(),
+      paymentProofId: paymentProofId ?? undefined,
+      duplicateStatus: uploadedPaymentProof?.duplicateStatus,
+      warning: getPaymentProofDuplicateWarning(uploadedPaymentProof?.duplicateStatus) ?? undefined,
       whatsappDeepLink,
     }
   } catch (error) {
