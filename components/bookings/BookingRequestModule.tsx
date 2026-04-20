@@ -6,7 +6,7 @@ import { BookingWizard } from '@/components/bookings/BookingWizard'
 import type {
   BookingPaymentMethodConfig,
   BookingPaymentMethodSlug,
-} from '@/lib/bookings/payment-settings'
+} from '@/lib/bookings/payment-settings.types'
 
 type SubmissionState = 'idle' | 'loading' | 'success' | 'error'
 

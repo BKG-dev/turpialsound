@@ -1,3 +1,5 @@
+import 'server-only'
+
 import { createHmac, timingSafeEqual } from 'node:crypto'
 
 export const PAYMENT_PROOF_ACCESS_TTL_SECONDS = 48 * 60 * 60

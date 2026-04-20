@@ -12,7 +12,8 @@ import {
   mapOperationalStatusToBookingStatus,
   setOperationalStatusInInternalNotes,
 } from '@/lib/bookings/operations'
-import { getEnabledPaymentMethods, type BookingPaymentMethodSlug } from '@/lib/bookings/payment-settings'
+import { getEnabledPaymentMethods } from '@/lib/bookings/payment-settings'
+import type { BookingPaymentMethodSlug } from '@/lib/bookings/payment-settings.types'
 import {
   type PaymentProofDuplicateStatus,
   PaymentProofValidationError,

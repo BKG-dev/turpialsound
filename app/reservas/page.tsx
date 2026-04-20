@@ -15,6 +15,8 @@ export const metadata: Metadata = generatePageMetadata({
   path: '/reservas',
 })
 
+export const dynamic = 'force-dynamic'
+
 export default function ReservasPage() {
   const paymentMethods = getEnabledPaymentMethods()
   const primaryPaymentMethodSlug = getPrimaryPaymentMethod().slug

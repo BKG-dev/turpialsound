@@ -25,7 +25,7 @@ import {
 import type {
   BookingPaymentMethodConfig,
   BookingPaymentMethodSlug,
-} from '@/lib/bookings/payment-settings'
+} from '@/lib/bookings/payment-settings.types'
 import type { SelectedBookingItem } from '@/lib/bookings/types'
 
 interface WizardStepDef {

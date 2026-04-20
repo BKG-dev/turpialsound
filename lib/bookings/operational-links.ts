@@ -1,3 +1,5 @@
+import 'server-only'
+
 import { buildPaymentProofAccessToken } from '@/lib/bookings/payment-proof-access'
 
 function normalizeBaseUrl(value: string | null | undefined): string | null {
