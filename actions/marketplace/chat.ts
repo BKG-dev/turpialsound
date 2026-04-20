@@ -5,6 +5,13 @@ import { getSession } from '@/lib/marketplace/auth'
 import type { ActionResult } from '@/lib/validations/marketplace'
 import { sendWhatsAppNotification } from '@/lib/marketplace/notifications'
 
+type ThreadListing = {
+  id: string
+  title: string
+  slug: string
+  coverImageUrl: string | null
+}
+
 // ─── GET OR CREATE CHAT THREAD ────────────────────────────────────────────────
 // Returns an existing thread or creates a new one between the current user (buyer)
 // and the given seller, optionally linked to a specific listing.
@@ -203,17 +210,19 @@ export async function getMyThreads(): Promise<ActionResult<object[]>> {
     })
 
     // MpChatThread has no Prisma relation to MpListing — fetch separately by listingId
-    const listingIds = threads.map(t => t.listingId).filter((id): id is string => id !== null)
-    const listingMap = new Map<string, { id: string; title: string; slug: string; coverImageUrl: string | null }>()
+    const listingIds = threads
+      .map((t: (typeof threads)[number]) => t.listingId)
+      .filter((id: string | null): id is string => id !== null)
+    const listingMap = new Map<string, ThreadListing>()
     if (listingIds.length > 0) {
       const listings = await db.mpListing.findMany({
         where: { id: { in: listingIds } },
         select: { id: true, title: true, slug: true, coverImageUrl: true },
       })
-      listings.forEach(l => listingMap.set(l.id, l))
+      listings.forEach((l: ThreadListing) => listingMap.set(l.id, l))
     }
 
-    const result = threads.map(t => ({
+    const result = threads.map((t: (typeof threads)[number]) => ({
       ...t,
       listing: t.listingId ? (listingMap.get(t.listingId) ?? null) : null,
     }))

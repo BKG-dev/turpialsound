@@ -44,7 +44,7 @@ import {
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
-type AdminTab = 'dashboard' | 'escrow' | 'payouts' | 'users'
+type AdminTab = 'dashboard' | 'transactions' | 'escrow' | 'validations' | 'payouts' | 'commissions' | 'users'
 
 type PendingAction = {
   txId: string
@@ -60,6 +60,15 @@ function fmtDate(iso: string | null) {
   return new Date(iso).toLocaleString('es-VE', {
     day: '2-digit', month: '2-digit', year: '2-digit',
     hour: '2-digit', minute: '2-digit',
+  })
+}
+
+function fmtShortDate(iso: string | null) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('es-VE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
   })
 }
 
@@ -93,7 +102,7 @@ function statusBadge(status: string, expiring?: boolean) {
 
   if (expiring && status === 'IN_ESCROW') { bg = 'rgba(251,146,60,0.15)'; color = '#fb923c' }
   else if (status === 'IN_ESCROW' || status === 'DELIVERY_CONFIRMED') { bg = 'rgba(0,174,239,0.15)'; color = '#00aeef' }
-  else if (status === 'VALIDATING' || status === 'PENDING_PAYMENT') { bg = 'rgba(251,191,36,0.15)'; color = '#fbbf24' }
+  else if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING' || status === 'PENDING_PAYMENT') { bg = 'rgba(251,191,36,0.15)'; color = '#fbbf24' }
   else if (status === 'DISPUTED') { bg = 'rgba(239,68,68,0.15)'; color = '#ef4444' }
   else if (status === 'RELEASED') { bg = 'rgba(74,222,128,0.15)'; color = '#4ade80' }
   else if (status === 'PAYMENT_FAILED' || status === 'CANCELLED') { bg = 'rgba(107,114,128,0.15)'; color = '#6b7280' }
@@ -117,7 +126,7 @@ function roleBadge(role: string) {
 }
 
 function exportCSV(rows: PayoutReportRow[]) {
-  const headers = ['Vendedor', 'Método', 'Cuenta/Dirección', 'Bruto (USD)', 'Comisión 5%', 'Neto a Pagar', 'Moneda', 'Núm. TX', 'IDs Transacciones']
+  const headers = ['Vendedor', 'Método', 'Cuenta/Dirección', 'Bruto (USD)', 'Comisión retenida', 'Neto a Pagar', 'Moneda', 'Núm. TX', 'IDs Transacciones']
   const csv = [
     headers.join(','),
     ...rows.map(r => [
@@ -150,17 +159,23 @@ function KpiCard({
   sub,
   color,
   icon: Icon,
+  onClick,
 }: {
   label: string
   value: string | number
   sub?: string
   color: string
   icon: React.ElementType
+  onClick?: () => void
 }) {
   return (
     <div
-      className="rounded-xl p-4 flex flex-col gap-3"
+      onClick={onClick}
+      className="rounded-xl p-4 flex flex-col gap-3 transition-all"
       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick() } : undefined}
     >
       <div className="flex items-center justify-between">
         <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>{label}</span>
@@ -263,6 +278,10 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
   // Escrow
   const [escrow, setEscrow] = useState<EscrowItem[]>(initialEscrow)
   const [escrowFilter, setEscrowFilter] = useState<EscrowFilter>('all')
+  const [escrowSearch, setEscrowSearch] = useState('')
+  const [senderBankFilter, setSenderBankFilter] = useState('all')
+  const [paymentDayFilter, setPaymentDayFilter] = useState('')
+  const [operationFilter, setOperationFilter] = useState('')
   const [pendingAction, setPendingAction] = useState<PendingAction>(null)
   const [actionMsg, setActionMsg] = useState('')
 
@@ -283,6 +302,11 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
       if (result.success && result.data) setEscrow(result.data)
     })
   }, [])
+
+  const openOperationalView = useCallback((nextTab: AdminTab, filter: EscrowFilter) => {
+    setTab(nextTab)
+    applyEscrowFilter(filter)
+  }, [applyEscrowFilter])
 
   const refreshStats = useCallback(() => {
     startTransition(async () => {
@@ -379,14 +403,14 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
 
       {stats ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard label="Total transacciones" value={stats.totalTransactions} color="#00aeef" icon={BarChart3} />
-          <KpiCard label="Valor en escrow activo" value={fmtUSD(stats.escrowActiveValue)} sub="IN_ESCROW + DELIVERY_CONFIRMED" color="#fbbf24" icon={Lock} />
-          <KpiCard label="Validaciones pendientes" value={stats.pendingValidation} sub="pagos manuales en espera" color="#fb923c" icon={Clock} />
+          <KpiCard label="Total transacciones" value={stats.totalTransactions} color="#00aeef" icon={BarChart3} onClick={() => openOperationalView('transactions', 'operations')} />
+          <KpiCard label="Valor en escrow activo" value={fmtUSD(stats.escrowActiveValue)} sub="IN_ESCROW + DELIVERY_CONFIRMED" color="#fbbf24" icon={Lock} onClick={() => openOperationalView('escrow', 'IN_ESCROW')} />
+          <KpiCard label="Validaciones pendientes" value={stats.pendingValidation} sub="pagos manuales en espera" color="#fb923c" icon={Clock} onClick={() => openOperationalView('validations', 'PAYMENT_RECEIVED')} />
           <KpiCard label="Listings activos" value={stats.activeListings} color="#4ade80" icon={ArrowUpRight} />
           <KpiCard label="Usuarios registrados" value={stats.totalUsers} color="#00aeef" icon={Users} />
-          <KpiCard label="Disputas abiertas" value={stats.openDisputes} color="#ef4444" icon={AlertTriangle} />
-          <KpiCard label="Liberados este mes" value={stats.releasedThisMonth} color="#4ade80" icon={CheckCircle2} />
-          <KpiCard label="Comisiones cobradas" value={fmtUSD(stats.platformFeesEarned)} sub="mes en curso" color="#a855f7" icon={FileText} />
+          <KpiCard label="Disputas abiertas" value={stats.openDisputes} color="#ef4444" icon={AlertTriangle} onClick={() => openOperationalView('transactions', 'DISPUTED')} />
+          <KpiCard label="Liberados este mes" value={stats.releasedThisMonth} color="#4ade80" icon={CheckCircle2} onClick={() => setTab('payouts')} />
+          <KpiCard label="Comisiones cobradas" value={fmtUSD(stats.platformFeesEarned)} sub="mes en curso" color="#a855f7" icon={FileText} onClick={() => setTab('commissions')} />
         </div>
       ) : (
         <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>Cargando estadísticas…</p>
@@ -395,13 +419,13 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
       {/* Quick access */}
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
-          { label: 'Pagos en espera de validación', filter: 'VALIDATING' as EscrowFilter, color: '#fbbf24', icon: Clock, count: stats?.pendingValidation ?? '—' },
-          { label: 'Escrow por vencer (<24 h)', filter: 'expiring' as EscrowFilter, color: '#fb923c', icon: AlertTriangle, count: '!' },
-          { label: 'Disputas abiertas', filter: 'DISPUTED' as EscrowFilter, color: '#ef4444', icon: AlertTriangle, count: stats?.openDisputes ?? '—' },
+          { label: 'Pagos en espera de validacion', filter: 'PAYMENT_RECEIVED' as EscrowFilter, color: '#fbbf24', icon: Clock, count: stats?.pendingValidation ?? '-', tab: 'validations' as AdminTab },
+          { label: 'Escrow por vencer (<24 h)', filter: 'expiring' as EscrowFilter, color: '#fb923c', icon: AlertTriangle, count: '!', tab: 'escrow' as AdminTab },
+          { label: 'Disputas abiertas', filter: 'DISPUTED' as EscrowFilter, color: '#ef4444', icon: AlertTriangle, count: stats?.openDisputes ?? '-', tab: 'transactions' as AdminTab },
         ].map(item => (
           <button
             key={item.filter}
-            onClick={() => { setTab('escrow'); applyEscrowFilter(item.filter) }}
+            onClick={() => openOperationalView(item.tab, item.filter)}
             className="flex items-center justify-between p-3 rounded-xl transition-all hover:opacity-80 text-left"
             style={{ background: `${item.color}10`, border: `1px solid ${item.color}25` }}
           >
@@ -422,8 +446,29 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
   // ─── Tab: Escrow ───────────────────────────────────────────────────────────
 
   const EscrowTab = () => {
+    const viewConfig: Record<Exclude<AdminTab, 'dashboard' | 'payouts' | 'users' | 'commissions'>, { title: string; description: string; defaultFilter: EscrowFilter }> = {
+      transactions: {
+        title: 'Transacciones completas',
+        description: 'Lista operativa completa con filtros por estado para checkout manual y escrow.',
+        defaultFilter: 'operations',
+      },
+      escrow: {
+        title: 'Escrow activo',
+        description: 'Operaciones en custodia y entregas confirmadas pendientes de liberacion.',
+        defaultFilter: 'IN_ESCROW',
+      },
+      validations: {
+        title: 'Validaciones pendientes',
+        description: 'Pagos reportados por compradores pendientes de validacion manual.',
+        defaultFilter: 'PAYMENT_RECEIVED',
+      },
+    }
+
+    const currentView = viewConfig[(tab === 'transactions' || tab === 'escrow' || tab === 'validations') ? tab : 'transactions']
     const filters: { value: EscrowFilter; label: string }[] = [
+      { value: 'operations', label: 'Operativo' },
       { value: 'all', label: 'Todos' },
+      { value: 'PAYMENT_RECEIVED', label: 'Pago recibido' },
       { value: 'VALIDATING', label: 'Validando' },
       { value: 'IN_ESCROW', label: 'En escrow' },
       { value: 'expiring', label: 'Por vencer' },
@@ -432,8 +477,61 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
       { value: 'RELEASED', label: 'Liberados' },
     ]
 
+    const availableSenderBanks = Array.from(
+      new Set(
+        escrow
+          .map(tx => tx.paymentSenderBank)
+          .filter((value): value is string => Boolean(value && value.trim())),
+      ),
+    ).sort((a, b) => a.localeCompare(b, 'es'))
+
+    const visibleEscrow = escrow.filter(tx => {
+      if (senderBankFilter !== 'all' && tx.paymentSenderBank !== senderBankFilter) return false
+      if (paymentDayFilter) {
+        const txPaymentDay = tx.paymentPaidAt ? tx.paymentPaidAt.slice(0, 10) : ''
+        if (txPaymentDay !== paymentDayFilter) return false
+      }
+      if (operationFilter.trim()) {
+        const currentOperation = (tx.paymentReference ?? '').toLowerCase()
+        if (!currentOperation.includes(operationFilter.trim().toLowerCase())) return false
+      }
+      if (!escrowSearch.trim()) return true
+      const haystack = [
+        tx.id,
+        tx.listing.title,
+        tx.buyer.displayName,
+        tx.seller.displayName,
+        tx.paymentMethod,
+        tx.paymentReference ?? '',
+        tx.paymentSenderBank ?? '',
+        tx.paymentPaidAt ? tx.paymentPaidAt.slice(0, 10) : '',
+      ].join(' ').toLowerCase()
+      return haystack.includes(escrowSearch.trim().toLowerCase())
+    })
+
     return (
       <div>
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-white">{currentView.title}</h2>
+            <p className="mt-1 text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              {currentView.description}
+            </p>
+          </div>
+          <div
+            className="flex items-center gap-2 rounded-xl px-3 py-2"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <Search size={12} style={{ color: 'rgba(255,255,255,0.35)' }} />
+            <input
+              value={escrowSearch}
+              onChange={e => setEscrowSearch(e.target.value)}
+              placeholder="Filtrar por TX, listing, comprador o vendedor"
+              className="w-full bg-transparent text-xs text-white outline-none placeholder:text-[rgba(255,255,255,0.2)] lg:w-72"
+            />
+          </div>
+        </div>
+
         <div className="flex flex-wrap gap-1.5 mb-4">
           {filters.map(f => (
             <button
@@ -458,6 +556,54 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
           </button>
         </div>
 
+        <div className="mb-4 grid gap-3 md:grid-cols-3">
+          <select
+            value={senderBankFilter}
+            onChange={(e) => setSenderBankFilter(e.target.value)}
+            className="rounded-xl border px-3 py-2 text-xs outline-none"
+            style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)', color: '#fff' }}
+          >
+            <option value="all">Todos los bancos emisores</option>
+            {availableSenderBanks.map((bank) => (
+              <option key={bank} value={bank}>
+                {bank}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="date"
+            value={paymentDayFilter}
+            onChange={(e) => setPaymentDayFilter(e.target.value)}
+            className="rounded-xl border px-3 py-2 text-xs outline-none"
+            style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)', color: '#fff' }}
+          />
+
+          <input
+            type="text"
+            value={operationFilter}
+            onChange={(e) => setOperationFilter(e.target.value)}
+            placeholder="Numero de operacion"
+            className="rounded-xl border px-3 py-2 text-xs outline-none placeholder:text-[rgba(255,255,255,0.25)]"
+            style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)', color: '#fff' }}
+          />
+        </div>
+
+        <div className="mb-4">
+          <button
+            onClick={() => {
+              setSenderBankFilter('all')
+              setPaymentDayFilter('')
+              setOperationFilter('')
+              setEscrowSearch('')
+            }}
+            className="px-3 py-1.5 rounded-lg text-xs transition-all"
+            style={{ background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            Limpiar filtros de conciliacion
+          </button>
+        </div>
+
         {/* Action confirmation panel */}
         {pendingAction && (
           <ActionPanel
@@ -475,13 +621,13 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
           </p>
         )}
 
-        {escrow.length === 0 ? (
+        {visibleEscrow.length === 0 ? (
           <p className="text-sm text-center py-10" style={{ color: 'rgba(255,255,255,0.25)' }}>
             Sin transacciones para este filtro.
           </p>
         ) : (
           <div className="space-y-3">
-            {escrow.map(tx => {
+            {visibleEscrow.map(tx => {
               const exp = isExpiring(tx)
               return (
                 <div
@@ -507,10 +653,10 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                   </div>
 
                   {/* Details grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-[11px]">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 mb-3 text-[11px]">
                     <div>
                       <p style={{ color: 'rgba(255,255,255,0.3)' }}>Comisión</p>
-                      <p className="text-white">{fmtUSD(tx.platformFeeAmount)} (5%)</p>
+                      <p className="text-white">{fmtUSD(tx.platformFeeAmount)}</p>
                     </div>
                     <div>
                       <p style={{ color: 'rgba(255,255,255,0.3)' }}>Neto vendedor</p>
@@ -526,6 +672,18 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                         {fmtDate(tx.escrowReleaseAt)}
                       </p>
                     </div>
+                    <div>
+                      <p style={{ color: 'rgba(255,255,255,0.3)' }}>Banco emisor</p>
+                      <p className="text-white">{tx.paymentSenderBank ?? '—'}</p>
+                    </div>
+                    <div>
+                      <p style={{ color: 'rgba(255,255,255,0.3)' }}>Fecha de pago</p>
+                      <p className="text-white">{fmtShortDate(tx.paymentPaidAt)}</p>
+                    </div>
+                    <div>
+                      <p style={{ color: 'rgba(255,255,255,0.3)' }}>Numero de operacion</p>
+                      <p className="text-white">{tx.paymentReference ?? '—'}</p>
+                    </div>
                   </div>
 
                   {tx.paymentProofUrl && (
@@ -540,6 +698,12 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                     </p>
                   )}
 
+                  {!tx.seller.defaultPayout && ['IN_ESCROW', 'DELIVERY_CONFIRMED', 'RELEASED'].includes(tx.status) && (
+                    <p className="text-[11px] mb-2" style={{ color: '#f59e0b' }}>
+                      Pendiente de datos de cobro del vendedor.
+                    </p>
+                  )}
+
                   {tx.adminNotes && (
                     <p className="text-[11px] mb-2 italic" style={{ color: 'rgba(255,255,255,0.3)' }}>
                       Nota: {tx.adminNotes}
@@ -548,7 +712,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
 
                   {/* Action buttons */}
                   <div className="flex flex-wrap gap-1.5 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                    {tx.status === 'VALIDATING' && (
+                    {(tx.status === 'PAYMENT_RECEIVED' || tx.status === 'VALIDATING') && (
                       <>
                         <ActionBtn label="Aprobar pago" color="#4ade80" onClick={() => startAction(tx.id, 'approve')} />
                         <ActionBtn label="Rechazar" color="#ef4444" onClick={() => startAction(tx.id, 'reject')} />
@@ -660,7 +824,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                       <p className="text-white">{fmtUSD(row.grossAmount)}</p>
                     </div>
                     <div>
-                      <p style={{ color: 'rgba(255,255,255,0.3)' }}>Comisión 5%</p>
+                      <p style={{ color: 'rgba(255,255,255,0.3)' }}>Comision retenida</p>
                       <p className="text-white">— {fmtUSD(row.feeAmount)}</p>
                     </div>
                     <div>
@@ -681,6 +845,51 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
   }
 
   // ─── Tab: Users ────────────────────────────────────────────────────────────
+
+  const CommissionsTab = () => {
+    const payoutRows = payouts ?? []
+    const gross = payoutRows.reduce((sum, row) => sum + row.grossAmount, 0)
+    const fees = payoutRows.reduce((sum, row) => sum + row.feeAmount, 0)
+    const net = payoutRows.reduce((sum, row) => sum + row.netAmount, 0)
+
+    return (
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold text-white">Comisiones y totales</h2>
+          <p className="text-[11px] mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            Vista consolidada de ventas, comisiones y monto pendiente por pagar a vendedores.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <KpiCard label="Total vendido" value={fmtUSD(stats?.totalSoldValue ?? gross)} color="#4ade80" icon={BarChart3} />
+          <KpiCard label="Comisiones acumuladas" value={fmtUSD(stats?.platformFeesEarned ?? fees)} color="#a855f7" icon={FileText} />
+          <KpiCard label="Pendiente vendedores" value={fmtUSD(stats?.pendingSellerPayoutValue ?? net)} color="#00aeef" icon={Lock} />
+          <KpiCard label="Payouts listos" value={stats?.payoutsReadyCount ?? payoutRows.length} color="#fbbf24" icon={Download} />
+        </div>
+
+        <div
+          className="rounded-xl p-4"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+        >
+          <div className="grid gap-3 text-sm md:grid-cols-3">
+            <div>
+              <p style={{ color: 'rgba(255,255,255,0.35)' }}>Bruto acumulado</p>
+              <p className="mt-1 font-semibold text-white">{fmtUSD(gross)}</p>
+            </div>
+            <div>
+              <p style={{ color: 'rgba(255,255,255,0.35)' }}>Fee retenido</p>
+              <p className="mt-1 font-semibold text-white">{fmtUSD(fees)}</p>
+            </div>
+            <div>
+              <p style={{ color: 'rgba(255,255,255,0.35)' }}>Neto a pagar</p>
+              <p className="mt-1 font-semibold" style={{ color: '#00aeef' }}>{fmtUSD(net)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const UsersTab = () => (
     <div>
@@ -779,8 +988,11 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
 
   const tabs: { id: AdminTab; label: string; icon: React.ElementType }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'transactions', label: 'Transacciones', icon: BarChart3 },
     { id: 'escrow', label: 'Escrow', icon: Lock },
+    { id: 'validations', label: 'Validaciones', icon: Clock },
     { id: 'payouts', label: 'Pagos', icon: FileText },
+    { id: 'commissions', label: 'Comisiones', icon: Download },
     { id: 'users', label: 'Usuarios', icon: Users },
   ]
 
@@ -816,7 +1028,11 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
               key={t.id}
               onClick={() => {
                 setTab(t.id)
+                if (t.id === 'transactions') applyEscrowFilter('operations')
+                if (t.id === 'escrow') applyEscrowFilter('IN_ESCROW')
+                if (t.id === 'validations') applyEscrowFilter('PAYMENT_RECEIVED')
                 if (t.id === 'payouts' && payouts === null) loadPayouts()
+                if (t.id === 'commissions' && payouts === null) loadPayouts()
                 if (t.id === 'users' && users === null) loadUsers()
               }}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all"
@@ -838,8 +1054,9 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
         style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}
       >
         {tab === 'dashboard' && <DashboardTab />}
-        {tab === 'escrow' && <EscrowTab />}
+        {(tab === 'transactions' || tab === 'escrow' || tab === 'validations') && <EscrowTab />}
         {tab === 'payouts' && <PayoutsTab />}
+        {tab === 'commissions' && <CommissionsTab />}
         {tab === 'users' && <UsersTab />}
       </div>
     </div>

@@ -112,7 +112,7 @@ export async function askQuestion(
   try {
     const listing = await db.mpListing.findUnique({
       where: { id: listingId },
-      select: { sellerId: true, status: true },
+      select: { sellerId: true, status: true, title: true },
     })
     if (!listing) return { success: false, message: 'Listing no encontrado' }
     if (listing.status !== 'ACTIVE') return { success: false, message: 'Este listing no está disponible' }
@@ -121,6 +121,51 @@ export async function askQuestion(
       data: { listingId, askerId: session.userId, question: trimmed },
       select: { id: true },
     })
+    
+    // Find or create a chat thread between buyer and seller
+    const existingThread = await db.mpChatThread.findFirst({
+      where: {
+        buyerId: session.userId,
+        sellerId: listing.sellerId,
+        listingId,
+      },
+    })
+    
+    let threadId = existingThread?.id
+    
+    if (!existingThread) {
+      // Create a new thread if one doesn't exist
+      const newThread = await db.mpChatThread.create({
+        data: {
+          buyerId: session.userId,
+          sellerId: listing.sellerId,
+          listingId,
+          isActive: true,
+          lastMessageAt: new Date(),
+        },
+        select: { id: true },
+      })
+      threadId = newThread.id
+    }
+    
+    // Add the question to the chat thread as a message
+    if (threadId) {
+      await db.mpMessage.create({
+        data: {
+          threadId,
+          senderId: session.userId,
+          receiverId: listing.sellerId,
+          content: `[Pregunta pública sobre "${listing.title}"]: ${trimmed}`,
+        },
+      })
+      
+      // Update thread's last message timestamp
+      await db.mpChatThread.update({
+        where: { id: threadId },
+        data: { lastMessageAt: new Date() },
+      })
+    }
+    
     await db.$disconnect()
     revalidatePath('/marketplace')
     revalidatePath('/marketplace/dashboard')
@@ -150,7 +195,10 @@ export async function answerQuestion(
   try {
     const q = await db.mpListingQuestion.findUnique({
       where: { id: questionId },
-      include: { listing: { select: { sellerId: true } } },
+      include: {
+        listing: { select: { id: true, sellerId: true, title: true } },
+        asker: { select: { id: true } }
+      },
     })
     if (!q) return { success: false, message: 'Pregunta no encontrada' }
     if (q.listing.sellerId !== session.userId && session.role !== 'SUPER') {
@@ -162,6 +210,34 @@ export async function answerQuestion(
       where: { id: questionId },
       data: { answer: trimmed, answeredAt: new Date() },
     })
+    
+    // Find the chat thread between buyer and seller
+    const thread = await db.mpChatThread.findFirst({
+      where: {
+        buyerId: q.asker.id,
+        sellerId: q.listing.sellerId,
+        listingId: q.listing.id,
+      },
+    })
+    
+    // If thread exists, add the answer as a message
+    if (thread) {
+      await db.mpMessage.create({
+        data: {
+          threadId: thread.id,
+          senderId: session.userId,
+          receiverId: q.asker.id,
+          content: `[Respuesta a tu pregunta sobre "${q.listing.title}"]: ${trimmed}`,
+        },
+      })
+      
+      // Update thread's last message timestamp
+      await db.mpChatThread.update({
+        where: { id: thread.id },
+        data: { lastMessageAt: new Date() },
+      })
+    }
+    
     await db.$disconnect()
     revalidatePath('/marketplace')
     revalidatePath('/marketplace/dashboard')

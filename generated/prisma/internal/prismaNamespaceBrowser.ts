@@ -348,6 +348,8 @@ export const MpTransactionScalarFieldEnum = {
   sellerNetAmount: 'sellerNetAmount',
   externalTxId: 'externalTxId',
   paymentReference: 'paymentReference',
+  paymentSenderBank: 'paymentSenderBank',
+  paymentPaidAt: 'paymentPaidAt',
   paymentProofUrl: 'paymentProofUrl',
   escrowHeldAt: 'escrowHeldAt',
   escrowReleaseAt: 'escrowReleaseAt',

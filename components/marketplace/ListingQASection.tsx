@@ -10,16 +10,24 @@ import type { QuestionItem } from '@/actions/marketplace/questions'
 function QuestionRow({
   q,
   isSeller,
+  isLoggedIn,
   onAnswered,
+  onFollowUp,
 }: {
   q: QuestionItem
   isSeller: boolean
+  isLoggedIn: boolean
   onAnswered: (id: string, answer: string) => void
+  onFollowUp: (questionId: string, followUpText: string) => void
 }) {
   const [answerText, setAnswerText] = useState('')
+  const [followUpText, setFollowUpText] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [followUpSubmitting, setFollowUpSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [followUpError, setFollowUpError] = useState<string | null>(null)
   const [showInput, setShowInput] = useState(false)
+  const [showFollowUp, setShowFollowUp] = useState(false)
 
   async function handleAnswer() {
     if (!answerText.trim()) return
@@ -35,6 +43,21 @@ function QuestionRow({
     }
     setSubmitting(false)
   }
+  
+  async function handleFollowUp() {
+    if (!followUpText.trim()) return
+    setFollowUpSubmitting(true)
+    setFollowUpError(null)
+    try {
+      await onFollowUp(q.id, followUpText.trim())
+      setFollowUpText('')
+      setShowFollowUp(false)
+    } catch (error) {
+      setFollowUpError(error instanceof Error ? error.message : 'Error al enviar la pregunta')
+    } finally {
+      setFollowUpSubmitting(false)
+    }
+  }
 
   return (
     <div className="space-y-2">
@@ -49,12 +72,71 @@ function QuestionRow({
       </div>
 
       {q.answer ? (
-        <div
-          className="ml-5 rounded-lg px-3 py-2"
-          style={{ background: 'rgba(0,174,239,0.05)', border: '1px solid rgba(0,174,239,0.1)' }}
-        >
-          <p className="text-[10px] font-semibold text-[#00aeef] mb-0.5 uppercase tracking-wide">Vendedor</p>
-          <p className="text-[13px] text-[#c0c0c0] leading-snug">{q.answer}</p>
+        <div className="space-y-3">
+          <div
+            className="ml-5 rounded-lg px-3 py-2"
+            style={{ background: 'rgba(0,174,239,0.05)', border: '1px solid rgba(0,174,239,0.1)' }}
+          >
+            <p className="text-[10px] font-semibold text-[#00aeef] mb-0.5 uppercase tracking-wide">Vendedor</p>
+            <p className="text-[13px] text-[#c0c0c0] leading-snug">{q.answer}</p>
+          </div>
+          
+          {/* Follow-up button for answered questions */}
+          {!isSeller && isLoggedIn && (
+            <div className="ml-5">
+              {!showFollowUp ? (
+                <button
+                  onClick={() => setShowFollowUp(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all"
+                  style={{
+                    background: 'rgba(255,193,7,0.06)',
+                    border: '1px solid rgba(255,193,7,0.18)',
+                    color: '#ffc107',
+                  }}
+                >
+                  <MessageSquare size={11} /> Preguntar más
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <textarea
+                    value={followUpText}
+                    onChange={e => setFollowUpText(e.target.value)}
+                    placeholder="Escribe una pregunta adicional..."
+                    rows={2}
+                    maxLength={500}
+                    className="w-full px-3 py-2 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#3a3a3a] outline-none resize-none"
+                    style={{
+                      background: 'rgba(20,20,20,0.8)',
+                      border: '1px solid rgba(255,193,7,0.2)',
+                    }}
+                  />
+                  {followUpError && <p className="text-[11px] text-[#ef4444]">{followUpError}</p>}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setShowFollowUp(false); setFollowUpText(''); setFollowUpError(null) }}
+                      className="px-3 py-1.5 rounded-lg text-[11px] text-[#5a5a5a] hover:text-[#a0a0a0] transition-colors"
+                      style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleFollowUp}
+                      disabled={followUpSubmitting || !followUpText.trim()}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all disabled:opacity-50"
+                      style={{
+                        background: 'rgba(255,193,7,0.12)',
+                        border: '1px solid rgba(255,193,7,0.25)',
+                        color: '#ffc107',
+                      }}
+                    >
+                      {followUpSubmitting ? <Loader2 size={11} className="animate-spin" /> : <Send size={11} />}
+                      Enviar pregunta
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       ) : (
         <>
@@ -172,6 +254,28 @@ export function ListingQASection({
     }
     setAsking(false)
   }
+  
+  async function handleFollowUp(questionId: string, followUpText: string) {
+    if (!isLoggedIn) return
+    
+    const res = await askQuestion(listingId, followUpText)
+    if (res.success && res.data) {
+      setQuestions(prev => [
+        ...prev,
+        {
+          id: res.data!.id,
+          question: followUpText,
+          answer: null,
+          answeredAt: null,
+          createdAt: new Date().toISOString(),
+          asker: { id: currentUserId!, displayName: 'Tú' },
+        },
+      ])
+      return true
+    } else {
+      throw new Error(res.message || 'Error al enviar la pregunta')
+    }
+  }
 
   return (
     <div
@@ -218,7 +322,13 @@ export function ListingQASection({
             <div className="space-y-4 divide-y divide-[rgba(255,255,255,0.04)]">
               {questions.map(q => (
                 <div key={q.id} className="pt-4 first:pt-0">
-                  <QuestionRow q={q} isSeller={isSeller} onAnswered={handleAnswered} />
+                  <QuestionRow
+                    q={q}
+                    isSeller={isSeller}
+                    isLoggedIn={isLoggedIn}
+                    onAnswered={handleAnswered}
+                    onFollowUp={handleFollowUp}
+                  />
                 </div>
               ))}
             </div>

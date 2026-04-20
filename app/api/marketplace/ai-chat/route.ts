@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
       model: google('gemini-2.5-flash'),
       system: SYSTEM_PROMPT,
       prompt: message,
-      maxTokens: 150,
+      maxOutputTokens: 150,
       temperature: 0.6,
     })
 

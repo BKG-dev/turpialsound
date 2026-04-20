@@ -226,6 +226,13 @@ export default function MarketplacePage() {
     return () => clearInterval(id)
   }, [session])
 
+  // Create a function to update unread count optimistically
+  const updateUnreadCountOptimistically = useCallback((delta: number) => {
+    if (session) {
+      setUnreadCount(prev => Math.max(0, prev + delta))
+    }
+  }, [session])
+
   // Load favorite IDs when session is active
   useEffect(() => {
     if (!session) { setFavoritedIds(new Set()); return }
@@ -307,10 +314,16 @@ export default function MarketplacePage() {
     if (session) {
       const sellerId = listing.type === 'product' ? listing.seller.id : listing.talent.id
       getOrCreateThread(sellerId, listing.id)
-        .then(r => { if (r.success && r.data) setChatThreadId(r.data.threadId) })
+        .then(r => {
+          if (r.success && r.data) {
+            setChatThreadId(r.data.threadId)
+            // Reset unread count for this thread when opening it
+            updateUnreadCountOptimistically(-1) // Approximate reduction
+          }
+        })
         .catch(() => {})
     }
-  }, [session, closeModal])
+  }, [session, closeModal, updateUnreadCountOptimistically])
 
   const openCheckout = useCallback((listing: Listing) => {
     if (!session) {
@@ -519,6 +532,10 @@ export default function MarketplacePage() {
                 currentUserInitials={
                   session ? session.displayName.slice(0, 2).toUpperCase() : undefined
                 }
+                onMessageSent={() => {
+                  // Optimistically update unread count when sending a message
+                  updateUnreadCountOptimistically(0) // No change for own messages
+                }}
                 onClose={() => {
                   setShowChat(false)
                   setChatListing(null)

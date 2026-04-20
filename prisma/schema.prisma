@@ -622,6 +622,8 @@ model MpTransaction {
   // External References
   externalTxId     String? // Mercantil/Binance transaction ID
   paymentReference String? // Zelle reference, wallet hash, etc.
+  paymentSenderBank String? // Issuing bank selected by buyer for manual reconciliation
+  paymentPaidAt     DateTime? // Reported payment date from buyer
   paymentProofUrl  String? // Screenshot/proof upload URL
 
   // Escrow Management
@@ -650,6 +652,9 @@ model MpTransaction {
   @@index([status])
   @@index([paymentMethod])
   @@index([externalTxId])
+  @@index([paymentReference])
+  @@index([paymentSenderBank])
+  @@index([paymentPaidAt])
   @@index([idempotencyKey])
   @@map("mp_transactions")
 }

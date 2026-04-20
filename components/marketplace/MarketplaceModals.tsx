@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -40,31 +40,27 @@ import { MarketplaceCard } from '@/components/marketplace/MarketplaceCard'
 import type { MpCategory } from '@/lib/validations/marketplace'
 import { getListingQuestions, askQuestion, answerQuestion } from '@/actions/marketplace/questions'
 import type { QuestionItem } from '@/actions/marketplace/questions'
+import {
+  prepareMarketplaceUpload,
+  revokeMarketplaceUploadPreview,
+  uploadMarketplaceFile,
+  type PreparedMarketplaceUpload,
+} from '@/lib/marketplace/media-client'
 
 // ─── Image resize util ────────────────────────────────────────────────────────
 // Converts a File to a base64 JPEG data URL, scaled to max 800px on the longest side.
 // Data URLs persist in DB and render everywhere — no CDN required.
 
-function resizeToDataUrl(file: File, maxDim = 800, quality = 0.82): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const blobUrl = URL.createObjectURL(file)
-    const img = new Image()
-    img.onload = () => {
-      let { width, height } = img
-      if (width > maxDim || height > maxDim) {
-        if (width >= height) { height = Math.round(height * maxDim / width); width = maxDim }
-        else { width = Math.round(width * maxDim / height); height = maxDim }
-      }
-      const canvas = document.createElement('canvas')
-      canvas.width = width
-      canvas.height = height
-      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height)
-      URL.revokeObjectURL(blobUrl)
-      resolve(canvas.toDataURL('image/jpeg', quality))
-    }
-    img.onerror = () => { URL.revokeObjectURL(blobUrl); reject(new Error('No se pudo cargar la imagen')) }
-    img.src = blobUrl
-  })
+function slugify(text: string) {
+  return text
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-');
 }
 
 // ─── Icon map ─────────────────────────────────────────────────────────────────
@@ -143,15 +139,15 @@ function ModalShell({
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="relative z-50 w-full max-w-lg mx-auto"
-      style={{ maxHeight: '85vh' }}
+      className="relative z-50 w-full max-w-6xl mx-auto"
+      style={{ maxHeight: '90vh' }}
     >
       <div
         className="card-premium-wrapper rounded-2xl flex flex-col overflow-hidden"
         style={{
           background: 'rgba(11,11,11,0.98)',
           boxShadow: `0 32px 80px rgba(0,0,0,0.85), 0 0 120px ${accent === 'cyan' ? 'rgba(0,174,239,0.08)' : 'rgba(255,193,7,0.06)'}`,
-          maxHeight: '85vh',
+          maxHeight: '90vh',
         }}
       >
         {/* Header */}
@@ -205,7 +201,7 @@ function CategoryGrid<T extends ProductCategory | ServiceCategory>({
   onSelect: (id: T) => void
 }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 p-6">
       {categories.map(cat => {
         const accentColor = cat.accent === 'cyan' ? '#00aeef' : '#ffc107'
         const accentBg = cat.accent === 'cyan' ? 'rgba(0,174,239,0.06)' : 'rgba(255,193,7,0.05)'
@@ -522,7 +518,7 @@ function BuyFlow({ step, direction, listings, onCategory, onCardClick, onBuy, cu
   currentUserId?: string
 }) {
   return (
-    <motion.div key={`buy-${step}`} custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit">
+    <motion.div key={`buy-${step}`} custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" className="w-full">
       {step === 0 && (
         <div className="p-6 space-y-4">
           <p className="text-sm text-[#a0a0a0]">
@@ -535,13 +531,13 @@ function BuyFlow({ step, direction, listings, onCategory, onCardClick, onBuy, cu
         </div>
       )}
       {step === 1 && (
-        <div className="p-4 space-y-3">
-          <div className="flex items-center gap-2 px-2 mb-1">
+        <div className="w-full px-4 py-5 sm:px-6 sm:py-6">
+          <div className="mx-auto mb-3 flex w-full max-w-5xl items-center gap-2 px-1 sm:px-2">
             <AlertCircle size={13} className="text-[#00aeef]" />
             <span className="text-[11px] text-[#5a5a5a]">Listados activos en esta categoría</span>
           </div>
           {listings.length === 0 ? (
-            <div className="rounded-xl flex items-center justify-center py-12"
+            <div className="mx-auto rounded-xl flex w-full max-w-5xl items-center justify-center py-12"
               style={{ background: 'rgba(0,174,239,0.03)', border: '1px dashed rgba(0,174,239,0.15)' }}>
               <div className="text-center">
                 <p className="text-sm text-[#5a5a5a]">Sin listados en esta categoría aún.</p>
@@ -549,9 +545,9 @@ function BuyFlow({ step, direction, listings, onCategory, onCardClick, onBuy, cu
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {listings.map(l => (
-                <div key={l.id} className="space-y-2">
+                <div key={l.id} className="flex h-full min-w-0 flex-col gap-3">
                   <MarketplaceCard listing={l} onClick={() => onCardClick(l)} />
                   <ListingQASection
                     listingId={l.id}
@@ -590,7 +586,7 @@ function SellFlow({
   formValues: Record<string, string>
   onFieldChange: (key: string, value: string) => void
   fieldErrors?: Record<string, string[]>
-  imageFiles: string[]
+  imageFiles: PreparedMarketplaceUpload[]
   onAddImages: (files: FileList) => void
   onRemoveImage: (index: number) => void
 }) {
@@ -677,10 +673,10 @@ function SellFlow({
               </label>
               {imageFiles.length > 0 ? (
                 <div className="grid grid-cols-4 gap-2">
-                  {imageFiles.map((url, i) => (
+                  {imageFiles.map((upload, i) => (
                     <div key={i} className="relative aspect-square rounded-lg overflow-hidden group">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <img src={upload.previewUrl} alt="" className="w-full h-full object-cover" />
                       <button type="button" onClick={() => onRemoveImage(i)}
                         className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <X size={14} className="text-white" />
@@ -766,7 +762,7 @@ function FindTalentFlow({ step, direction, listings, onCategory, onCardClick, on
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {listings.map(l => (
                 <div key={l.id} className="space-y-2">
                   <MarketplaceCard listing={l} onClick={() => onCardClick(l)} />
@@ -936,7 +932,8 @@ export function MarketplaceModals({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
-  const [imageFiles, setImageFiles] = useState<string[]>([])
+  const [imageFiles, setImageFiles] = useState<PreparedMarketplaceUpload[]>([])
+  const imageFilesRef = useRef<PreparedMarketplaceUpload[]>([])
 
   // Reset all state when modal opens or closes
   useEffect(() => {
@@ -946,6 +943,21 @@ export function MarketplaceModals({
     setFieldErrors({})
     setImageFiles([]) // Data URLs — no revoke needed
   }, [flow])
+
+  useEffect(() => {
+    imageFilesRef.current = imageFiles
+  }, [imageFiles])
+
+  useEffect(() => {
+    imageFilesRef.current.forEach(revokeMarketplaceUploadPreview)
+    imageFilesRef.current = []
+  }, [flow])
+
+  useEffect(() => {
+    return () => {
+      imageFilesRef.current.forEach(revokeMarketplaceUploadPreview)
+    }
+  }, [])
 
   const handleFieldChange = useCallback((key: string, value: string) => {
     setFormValues(prev => ({ ...prev, [key]: value }))
@@ -961,18 +973,25 @@ export function MarketplaceModals({
   const handleAddImages = useCallback(async (files: FileList) => {
     const fileArray = Array.from(files).slice(0, 8) // cap to 8 total
     try {
-      const dataUrls = await Promise.all(fileArray.map(f => resizeToDataUrl(f)))
+      const prepared = await Promise.all(
+        fileArray.map(file => prepareMarketplaceUpload(file, 'listing-image')),
+      )
       setImageFiles(prev => {
         const slots = 8 - prev.length
-        return [...prev, ...dataUrls.slice(0, slots)]
+        return [...prev, ...prepared.slice(0, slots)]
       })
-    } catch {
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'No se pudieron preparar las imagenes')
       // Silently ignore resize errors — user can retry
     }
   }, [])
 
   const handleRemoveImage = useCallback((index: number) => {
-    setImageFiles(prev => prev.filter((_, i) => i !== index))
+    setImageFiles(prev => {
+      const removed = prev[index]
+      revokeMarketplaceUploadPreview(removed)
+      return prev.filter((_, i) => i !== index)
+    })
   }, [])
 
   // ── Publish handler ─────────────────────────────────────────────────────────
@@ -986,6 +1005,9 @@ export function MarketplaceModals({
     setFieldErrors({})
     try {
       const rawPrice = formValues.price ?? formValues.priceFrom ?? '0'
+      const uploadedImageUrls = await Promise.all(
+        imageFiles.map(upload => uploadMarketplaceFile(upload.file, 'listing-image').then(result => result.url)),
+      )
       const result = await createListing({
         title: formValues.title ?? '',
         description: formValues.description ?? '',
@@ -994,7 +1016,8 @@ export function MarketplaceModals({
         price: parseFloat(rawPrice) || 0,
         currency: 'USD',
         hasInventory: false,
-        coverImageUrl: imageFiles[0], // persists as data URL in DB
+        coverImageUrl: uploadedImageUrls[0],
+        mediaUrls: uploadedImageUrls.slice(1),
       })
 
       if (result.success) {
@@ -1020,6 +1043,7 @@ export function MarketplaceModals({
               id: result.data.id,
               type: 'service',
               title: formValues.title || 'Sin título',
+              slug: slugify(formValues.title || 'Sin título'),
               description: formValues.description || '',
               category: categoryId as ServiceCategory,
               subcategory: cat?.label ?? (categoryId as string),
@@ -1039,13 +1063,14 @@ export function MarketplaceModals({
               id: result.data.id,
               type: 'product',
               title: formValues.title || 'Sin título',
+              slug: slugify(formValues.title || 'Sin título'),
               description: formValues.description || '',
               category: categoryId as ProductCategory,
               subcategory: cat?.label ?? (categoryId as string),
               price: parseFloat(formValues.price ?? '0') || 0,
               currency: 'USD',
               condition: (formValues.condition as ProductCondition) || 'used-like-new',
-              images: [...imageFiles],
+              images: uploadedImageUrls,
               badge: 'NUEVO',
               seller: me,
               status: 'pending',

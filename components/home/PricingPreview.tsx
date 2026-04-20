@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
 import type { Route } from 'next'
 import {
@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { pricingPackages, type PricingPackage } from '@/content/pricing'
+import { useBcvRate } from '@/lib/hooks/useBcvRate'
 
 /* ── Icon map ─────────────────────────────────────────────────── */
 const iconMap: Record<PricingPackage['iconName'], LucideIcon> = {
@@ -29,34 +30,6 @@ const iconMap: Record<PricingPackage['iconName'], LucideIcon> = {
   SlidersHorizontal,
   Radio,
   Headphones,
-}
-
-/* ── BCV rate hook ────────────────────────────────────────────── */
-interface BcvState {
-  rate: number
-  isFallback: boolean
-  loading: boolean
-}
-
-function useBcvRate(): BcvState {
-  const [state, setState] = useState<BcvState>({ rate: 50, isFallback: true, loading: true })
-
-  useEffect(() => {
-    let cancelled = false
-    fetch('/api/bcv-rate')
-      .then((r) => r.json())
-      .then((data: { rate: number; isFallback: boolean }) => {
-        if (!cancelled) setState({ rate: data.rate, isFallback: data.isFallback, loading: false })
-      })
-      .catch(() => {
-        if (!cancelled) setState((s) => ({ ...s, loading: false }))
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  return state
 }
 
 /* ── Price formatting ─────────────────────────────────────────── */

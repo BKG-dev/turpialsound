@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { ShoppingCart, MessageSquare } from 'lucide-react'
+import { useState, useCallback, useEffect } from 'react'
+import { ShoppingCart, MessageSquare, Heart } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CheckoutModal } from '@/components/marketplace/CheckoutModal'
 import { TransactionChat } from '@/components/marketplace/TransactionChat'
 import { MarketplaceAuthModal } from '@/components/marketplace/MarketplaceAuthModal'
 import { getOrCreateThread } from '@/actions/marketplace'
+import { toggleFavorite, getMyFavoriteIds } from '@/actions/marketplace/favorites'
 import type { Listing } from '@/types/marketplace'
 import type { MpSessionPayload } from '@/lib/marketplace/auth'
 
@@ -25,15 +26,52 @@ export function ListingDetailActions({
   const [userName, setUserName] = useState<string | null>(initialUserName)
 
   const [authOpen, setAuthOpen] = useState(false)
-  const [pendingAction, setPendingAction] = useState<'checkout' | 'chat' | null>(null)
+  const [pendingAction, setPendingAction] = useState<'checkout' | 'chat' | 'favorite' | null>(null)
 
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
   const [chatThreadId, setChatThreadId] = useState<string | null>(null)
+  
+  const [isFavorite, setIsFavorite] = useState(false)
+  const [favoriteLoading, setFavoriteLoading] = useState(false)
+  
+  // Check if listing is in user's favorites
+  useEffect(() => {
+    if (!userId) return
+    
+    const checkFavoriteStatus = async () => {
+      try {
+        const result = await getMyFavoriteIds()
+        if (result.success && result.data) {
+          setIsFavorite(result.data.includes(listing.id))
+        }
+      } catch (error) {
+        console.error('Error checking favorite status:', error)
+      }
+    }
+    
+    checkFavoriteStatus()
+  }, [userId, listing.id])
 
-  function requireAuth(action: 'checkout' | 'chat') {
+  function requireAuth(action: 'checkout' | 'chat' | 'favorite') {
     setPendingAction(action)
     setAuthOpen(true)
+  }
+  
+  async function handleFavorite() {
+    if (!userId) { requireAuth('favorite'); return }
+    
+    setFavoriteLoading(true)
+    try {
+      const result = await toggleFavorite(listing.id)
+      if (result.success) {
+        setIsFavorite(result.data?.isFavorited || false)
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error)
+    } finally {
+      setFavoriteLoading(false)
+    }
   }
 
   function handleAuthSuccess(s: MpSessionPayload) {
@@ -44,6 +82,7 @@ export function ListingDetailActions({
     setPendingAction(null)
     if (p === 'checkout') setCheckoutOpen(true)
     if (p === 'chat') openChat(s.userId)
+    if (p === 'favorite') handleFavorite()
   }
 
   const openChat = useCallback(async (uid = userId) => {
@@ -131,26 +170,69 @@ export function ListingDetailActions({
       {/* CTA Buttons */}
       {!isSeller && (
         <div className="flex flex-col gap-3 pt-2">
-          <button
-            onClick={isSold ? undefined : handleComprar}
-            disabled={isSold}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold transition-all disabled:cursor-not-allowed"
-            style={isSold ? {
-              background: 'rgba(239,68,68,0.08)',
-              color: '#ef4444',
-              border: '1px solid rgba(239,68,68,0.25)',
-            } : {
-              background: 'linear-gradient(135deg, rgba(0,174,239,0.9) 0%, rgba(0,80,200,0.85) 100%)',
-              color: '#fff',
-              border: '1px solid rgba(0,174,239,0.4)',
-              boxShadow: '0 0 28px rgba(0,174,239,0.2)',
-            }}
-            onMouseEnter={e => { if (!isSold) (e.currentTarget as HTMLElement).style.boxShadow = '0 0 40px rgba(0,174,239,0.35)' }}
-            onMouseLeave={e => { if (!isSold) (e.currentTarget as HTMLElement).style.boxShadow = '0 0 28px rgba(0,174,239,0.2)' }}
-          >
-            <ShoppingCart size={16} />
-            {isSold ? 'Artículo Vendido' : 'Comprar Ahora'}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={isSold ? undefined : handleComprar}
+              disabled={isSold}
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold transition-all disabled:cursor-not-allowed"
+              style={isSold ? {
+                background: 'rgba(239,68,68,0.08)',
+                color: '#ef4444',
+                border: '1px solid rgba(239,68,68,0.25)',
+              } : {
+                background: 'linear-gradient(135deg, rgba(0,174,239,0.9) 0%, rgba(0,80,200,0.85) 100%)',
+                color: '#fff',
+                border: '1px solid rgba(0,174,239,0.4)',
+                boxShadow: '0 0 28px rgba(0,174,239,0.2)',
+              }}
+              onMouseEnter={e => { if (!isSold) (e.currentTarget as HTMLElement).style.boxShadow = '0 0 40px rgba(0,174,239,0.35)' }}
+              onMouseLeave={e => { if (!isSold) (e.currentTarget as HTMLElement).style.boxShadow = '0 0 28px rgba(0,174,239,0.2)' }}
+            >
+              <ShoppingCart size={16} />
+              {isSold ? 'Artículo Vendido' : 'Comprar Ahora'}
+            </button>
+            
+            {/* Favorite button */}
+            <button
+              onClick={handleFavorite}
+              disabled={favoriteLoading}
+              className="w-14 flex items-center justify-center rounded-xl transition-all"
+              style={{
+                background: isFavorite
+                  ? 'rgba(239,68,68,0.1)'
+                  : 'rgba(255,255,255,0.04)',
+                color: isFavorite ? '#ef4444' : '#a0a0a0',
+                border: isFavorite
+                  ? '1px solid rgba(239,68,68,0.3)'
+                  : '1px solid rgba(255,255,255,0.1)',
+              }}
+              onMouseEnter={e => {
+                if (!favoriteLoading) {
+                  if (isFavorite) {
+                    (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.15)'
+                  } else {
+                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)'
+                    ;(e.currentTarget as HTMLElement).style.color = '#f2f2f2'
+                  }
+                }
+              }}
+              onMouseLeave={e => {
+                if (!favoriteLoading) {
+                  if (isFavorite) {
+                    (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.1)'
+                  } else {
+                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'
+                    ;(e.currentTarget as HTMLElement).style.color = '#a0a0a0'
+                  }
+                }
+              }}
+            >
+              <Heart
+                size={16}
+                className={`${favoriteLoading ? 'animate-pulse' : ''} ${isFavorite ? 'fill-[#ef4444]' : ''}`}
+              />
+            </button>
+          </div>
 
           <button
             onClick={handleContactar}

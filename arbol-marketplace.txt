@@ -1,0 +1,155 @@
+﻿
+===== app\marketplace =====
+Folder PATH listing for volume DATA
+Volume serial number is 2AA4-1C12
+D:\PROYECTOS\PROYECTOS VISUAL STUDIO\TURPIALSOUND\TURPIALSOUND\APP\MARKETPLACE
+|   page.tsx
+|   
++---admin
+|       page.tsx
+|       
++---dashboard
+|       page.tsx
+|       
++---reset-password
+|       page.tsx
+|       
+\---[slug]
+        page.tsx
+        
+
+===== components\marketplace =====
+Folder PATH listing for volume DATA
+Volume serial number is 2AA4-1C12
+D:\PROYECTOS\PROYECTOS VISUAL STUDIO\TURPIALSOUND\TURPIALSOUND\COMPONENTS\MARKETPLACE
+|   CheckoutModal.tsx
+|   ListingDetailActions.tsx
+|   ListingQASection.tsx
+|   MarketplaceAuthModal.tsx
+|   MarketplaceCard.tsx
+|   MarketplaceModals.tsx
+|   TransactionChat.tsx
+|   
++---admin
+|       AdminDashboard.tsx
+|       
+\---dashboard
+        DashboardClient.tsx
+        
+
+===== actions\marketplace =====
+Folder PATH listing for volume DATA
+Volume serial number is 2AA4-1C12
+D:\PROYECTOS\PROYECTOS VISUAL STUDIO\TURPIALSOUND\TURPIALSOUND\ACTIONS\MARKETPLACE
+    admin.ts
+    auth.ts
+    chat.ts
+    favorites.ts
+    listings.ts
+    questions.ts
+    transactions.ts
+    users.ts
+    
+No subfolders exist 
+
+
+===== lib\marketplace =====
+Folder PATH listing for volume DATA
+Volume serial number is 2AA4-1C12
+D:\PROYECTOS\PROYECTOS VISUAL STUDIO\TURPIALSOUND\TURPIALSOUND\LIB\MARKETPLACE
+    adapters.ts
+    auth.ts
+    db.ts
+    notifications.ts
+    reference-rate.ts
+    
+No subfolders exist 
+
+
+===== prisma =====
+Folder PATH listing for volume DATA
+Volume serial number is 2AA4-1C12
+D:\PROYECTOS\PROYECTOS VISUAL STUDIO\TURPIALSOUND\TURPIALSOUND\PRISMA
+    schema.prisma
+    seed-dev.ts
+    seed.ts
+    
+No subfolders exist 
+
+
+===== docs =====
+Folder PATH listing for volume DATA
+Volume serial number is 2AA4-1C12
+D:\PROYECTOS\PROYECTOS VISUAL STUDIO\TURPIALSOUND\TURPIALSOUND\DOCS
+|   INSTRUCCIONES_REFAC_GLOBAL.md
+|   INSTRUCCIONES_UI_INMERSIVA.md
+|   tree.txt
+|   
++---00_governance
+|       phases-detail.md
+|       roadmap-master.md
+|       session-handoff-template.md
+|       
++---01_strategy
+|       authority-map.md
+|       brand-core.md
+|       competitors-and-gaps.md
+|       customer-profiles.md
+|       market-positioning.md
+|       offers-and-economics.md
+|       
++---02_information_architecture
+|       internal-linking-logic.md
+|       navigation-system.md
+|       sitemap-master.md
+|       url-architecture.md
+|       
++---03_editorial
+|       content-matrix.md
+|       messaging-pillars.md
+|       page-briefs.md
+|       tone-of-voice.md
+|       
++---04_design
+|       component-inventory.md
+|       design-tokens.md
+|       layout-rules.md
+|       motion-rules.md
+|       
++---05_technical
+|       app-architecture.md
+|       asset-requirements.md
+|       ods-reference.md
+|       seo-aeo-implementation.md
+|       shell-implementation-log.md
+|       stack-decision.md
+|       
++---06_delivery
+|       launch-checklist.md
+|       qa-checklist.md
+|       qa-log.md
+|       
++---07_handoffs
+|       next-window-brief.md
+|       session-summary-active.md
+|       
++---control-points
+|       turpial_sound_control_point_01.md
+|       
++---intake
+|       cuestionario_maestro_cliente_turpial_song.md
+|       
++---marketplace
+|       00_IMPLEMENTATION_SUMMARY.md
+|       01_ROADMAP_AND_STATUS.md
+|       02_PAYMENT_ARCHITECTURE.md
+|       03_API_INTEGRATION_PLAN.md
+|       04_DISPUTES_&_SECURITY.md
+|       
+\---obsidian-vault
+        00_CENTRAL_TURPIAL.md
+        ARQUITECTURA_TASAS.md
+        BUGS_CRITICOS.md
+        FLUJO_TASAS_BCV.canvas
+        ROADMAP_RESCATE.md
+        

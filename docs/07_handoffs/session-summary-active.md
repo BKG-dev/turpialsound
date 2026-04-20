@@ -1,116 +1,93 @@
-# Session Summary — Activa
+# Session Summary - Activa
 
-> Fecha de última actualización: 2026-03-26 (sesión 8)
+> Fecha de ultima actualizacion: 2026-04-20
+> Tipo de nota: Punto de control de cierre de sesion
+> Fuente principal: `docs/obsidian-vault/*`
 
 ---
 
-## Objetivo de la sesión
-Crear el shell técnico completo del frente público de Turpial Sound sobre el stack ya decidido.
+## Estado real actual del marketplace
 
-## Decisiones tomadas
+El marketplace sigue funcional y separado del booking. El flujo operativo vigente sigue siendo manual temporal en checkout, conciliacion admin y payout manual al seller, pero ya no usa base64 como camino productivo para imagenes de listings ni para comprobantes: ahora la media se persiste como URL en storage temporal local desacoplado.
 
-1. **Shell creado como escritura manual de archivos** (no `create-next-app`) porque el directorio ya tenía contenido (`CLAUDE.md`, `docs/`). Resultado equivalente.
-2. **clsx + tailwind-merge añadidos** como dependencias para el helper `cn()` en `lib/utils.ts`.
-3. **Design tokens provisionales [SUGGESTED]** incorporados en `tailwind.config.ts` y `styles/globals.css`. Palette: `#0A0A0A` base + `#C9973A` accent gold. Se actualizan cuando el cliente confirme colores oficiales.
-4. **Fuentes: Syne (display) + Inter (body)** vía `next/font/google`. Variables CSS: `--font-syne`, `--font-inter`.
-5. **Hero Home como placeholder** con gradient radial. Se reemplaza con hero inmersivo (video/R3F) cuando el sistema visual esté aprobado.
-6. **Contenido de servicios en `content/services.ts`** como datos tipados. Migration path: cambiar la fuente de importación sin tocar componentes.
-7. **JSON-LD schema en Server Components** directamente (no dependencia externa). Tipos: Organization, LocalBusiness, Service, FAQ, Person, Breadcrumb.
-8. **MobileMenu como Client Component** (`use client`), el resto del header es Server Component.
-9. **FAQList como Client Component** (estado de acordeón local). El resto de secciones son Server Components.
+La referencia viva del estado sigue siendo Obsidian. Este handoff queda sincronizado con:
 
-## Archivos creados esta sesión
+- `docs/obsidian-vault/ROADMAP_RESCATE.md`
+- `docs/obsidian-vault/BUGS_CRITICOS.md`
+- `docs/obsidian-vault/ARQUITECTURA_TASAS.md`
 
-### Config raíz
-- `package.json` (actualizado con clsx + tailwind-merge)
-- `next.config.mjs` (migrado desde `.ts` — Next 14 no soporta `.ts`)
-- `tailwind.config.ts`
-- `tsconfig.json`
-- `postcss.config.mjs`
-- `.eslintrc.json`
-- `.prettierrc`
-- `.gitignore`
+## Que ya quedo resuelto
 
-### Tipos y lib
-- `types/index.ts`
-- `lib/utils.ts`
-- `lib/metadata.ts`
-- `lib/schema.ts`
+- Marketplace funcional y separado del booking.
+- `npx tsc --noEmit` limpio en el checkpoint de hoy.
+- Checkout manual temporal operativo con metodos visibles para el comprador.
+- Conciliacion manual activa con persistencia de banco emisor, fecha de pago y numero de operacion a nivel de codigo.
+- El listing no pasa a `SOLD_OUT` antes de validacion real del pago.
+- El admin ya no puede aprobar desde `PENDING_PAYMENT`; solo desde `PAYMENT_RECEIVED` o `VALIDATING`.
+- El seller ve `Total operativo` con `IN_ESCROW`, `DELIVERY_CONFIRMED` y `RELEASED`.
+- El seller ve `Total a recibir` solo con transacciones `RELEASED`.
+- El dashboard admin ya muestra informacion util para conciliacion y payout pendiente.
+- Las imagenes del marketplace y los comprobantes ya salieron del flujo productivo de base64.
+- La media ahora se guarda como URL en storage temporal bajo `public/uploads/marketplace/*`, con capa desacoplada para migracion futura.
+- El render sigue cubriendo cards, detalle, checkout/comprobante y dashboard sin romper SEO/AEO basico de imagenes.
 
-### Content
-- `content/site.ts`
-- `content/navigation.ts`
-- `content/services.ts`
-- `content/faq.ts`
-- `content/artists.ts`
+## Que sigue bloqueado
 
-### Styles
-- `styles/globals.css`
+### Bloqueos criticos
 
-### Components
-- `components/ui/Button.tsx`
-- `components/layout/SiteHeader.tsx`
-- `components/layout/MobileMenu.tsx`
-- `components/layout/SiteFooter.tsx`
-- `components/sections/PageHero.tsx`
-- `components/sections/SectionShell.tsx`
-- `components/sections/CTASection.tsx`
-- `components/sections/FAQList.tsx`
-- `components/sections/ContactBlock.tsx`
+- El storage actual de media ya no usa base64, pero sigue siendo temporal; falta storage productivo definitivo y durable.
+- Falta QA manual end-to-end del flujo buyer -> admin -> escrow -> payout manual seller.
+- El error o riesgo asociado a `paymentSenderBank` sigue siendo bloqueador operativo hasta confirmar que la migracion de conciliacion manual fue aplicada en la base real.
+- Si la base real todavia no tiene `paymentSenderBank`, `paymentPaidAt` e indices aplicados, el flujo real sigue incompleto aunque el codigo ya este listo.
 
-### App
-- `app/layout.tsx`
-- `app/page.tsx` (Home)
-- `app/not-found.tsx`
-- `app/sitemap.ts`
-- `app/robots.ts`
-- `app/nosotros/page.tsx`
-- `app/salas-de-ensayo/page.tsx`
-- `app/estudio-de-grabacion/page.tsx`
-- `app/produccion-musical/page.tsx`
-- `app/servicios/page.tsx`
-- `app/servicios/podcast-locucion/page.tsx`
-- `app/servicios/video-session/page.tsx`
-- `app/servicios/mezcla-masterizacion/page.tsx`
-- `app/servicios/arreglos-musicales/page.tsx`
-- `app/artistas/page.tsx`
-- `app/recursos/page.tsx`
-- `app/recursos/preguntas-frecuentes/page.tsx`
-- `app/contacto/page.tsx`
-- `app/politica-de-privacidad/page.tsx`
+### Pendientes operativos relevantes
 
-### Docs
-- `docs/05_technical/shell-implementation-log.md` (nuevo)
+- Falta definir el cierre contable del payout despues de `RELEASED`.
+- El cron T+7 para auto-release sigue pendiente.
+- Mercantil y Binance Pay siguen diferidos; no forman parte del flujo operativo actual.
 
-## Estado de fases
+## Que esta pendiente de validar
 
-| Fase | Estado |
-|------|--------|
-| Fase 1 — Intake y verdad base | ABIERTA — bloques A, B, C, D pendientes del cliente |
-| Fase 2 — Arquitectura de autoridad | PROVISIONALMENTE COMPLETA |
-| Fase 3 — Sistema editorial | CERRADA PROVISIONALMENTE |
-| Fase 4 — Shell técnico y ODS boundary | **EN PROGRESO — Shell creado; pendiente build validation + sistema visual** |
-| Fase 5 — Producción guiada | PENDIENTE |
-| Fase 6 — QA y release | PENDIENTE |
+- QA manual completa buyer -> admin -> escrow -> payout manual seller.
+- Confirmacion real de que el upload temporal funciona en el entorno que se vaya a usar al retomar.
+- Confirmacion de que la base real ya tiene aplicada la migracion de conciliacion manual, especialmente `paymentSenderBank`.
+- Revisión visual final de cards, detalle y dashboard con imagenes reales y comprobantes reales.
 
-## Fix aplicado (2026-03-26 — post sesión 8)
-- `next.config.ts` → `next.config.mjs`: Next 14.2.20 no soporta `.ts` como archivo de configuración. Contenido idéntico; tipo TypeScript reemplazado por JSDoc `@type`.
+## Requisito transversal
 
-## Siguiente acción inmediata (bloqueante)
+SEO/AEO es requisito transversal del sitio completo. Todo cambio de contenido, estructura, listings, slugs, metadata o paginas publicas debe evaluarse tambien por indexabilidad, metadata, alt text, lazy loading y descubribilidad organica.
 
-```bash
-cd C:\proyectos\turpialsong
-npm run build
-```
+## Checkpoint guardado
 
-Si el build pasa limpio → Fase 4 avanza al sistema visual o a content real.
+Este cierre de sesion deja guardado el siguiente checkpoint:
 
-## CLIENT_REQUIRED críticos que siguen bloqueando contenido final
-- Dominio oficial (`content/site.ts`)
-- WhatsApp y email (`content/site.ts`)
-- Dirección exacta y horarios (`content/site.ts`, `lib/schema.ts`)
-- Lista de artistas autorizada (`content/artists.ts`, `app/artistas/page.tsx`)
-- Bios Frank Lemus y Susej Vera (`app/nosotros/page.tsx`)
-- Colores de marca oficiales (`tailwind.config.ts`, `styles/globals.css`)
-- Equipamiento del estudio (`content/services.ts`)
-- Texto legal de privacidad (`app/politica-de-privacidad/page.tsx`)
+- marketplace funcional y separado del booking,
+- checkout manual temporal activo,
+- conciliacion manual activa a nivel de codigo,
+- payout manual como foco operativo,
+- media fuera de base64 en el flujo productivo,
+- storage temporal local desacoplado ya implementado,
+- migracion real de conciliacion aun pendiente de confirmar/aplicar en base real.
+
+## Siguiente paso exacto al retomar manana
+
+Retomar en este orden exacto:
+
+1. verificar en la base real si ya existe `paymentSenderBank`, `paymentPaidAt` e indices,
+2. si no estan, aplicar la migracion real de conciliacion manual antes de seguir,
+3. ejecutar QA manual completa del flujo buyer -> admin -> escrow -> payout manual seller usando imagenes y comprobantes reales,
+4. documentar resultados,
+5. luego decidir el storage productivo definitivo para reemplazar el storage temporal actual sin rehacer la capa de media.
+
+## Instruccion breve de reanudacion
+
+Al abrir la proxima sesion:
+
+1. leer Obsidian y estos handoffs,
+2. confirmar en 5 lineas el estado real,
+3. revisar primero la base real y `paymentSenderBank`,
+4. no abrir otro frente antes de cerrar QA o migracion real.
+
+## Nota de gobierno documental
+
+No se toco booking ni logica de negocio en este cierre documental. Si cambia el estado operativo real del marketplace, primero se actualiza Obsidian y luego cualquier doc de resumen tecnico.

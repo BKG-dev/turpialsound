@@ -451,6 +451,8 @@ interface TransactionChatProps {
   listingSlug?: string
   onClose?: () => void
   className?: string
+  /** Called when a message is sent - for optimistic UI updates */
+  onMessageSent?: () => void
 }
 
 export function TransactionChat({
@@ -464,6 +466,7 @@ export function TransactionChat({
   listingSlug,
   onClose = () => {},
   className,
+  onMessageSent,
 }: TransactionChatProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -542,6 +545,8 @@ export function TransactionChat({
       if (res.success) {
         setLocalMessages((res.data as DbMessage[]).map(normalizeDbMessage))
       }
+      // Notify parent component for optimistic UI updates
+      onMessageSent?.()
     } else {
       // Demo mode: call Turpial Assistant AI.
       const typingId = `typing_${Date.now()}`

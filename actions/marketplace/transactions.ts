@@ -4,96 +4,116 @@ import { getDb } from '@/lib/marketplace/db'
 import { getSession } from '@/lib/marketplace/auth'
 import type { ActionResult } from '@/lib/validations/marketplace'
 
-// ─── COMMISSION CALCULATOR ────────────────────────────────────────────────────
-// SOCIO and SUPER roles are exempt from the 5% platform fee.
+type CheckoutPaymentMethod =
+  | 'PAGO_MOVIL'
+  | 'TRANSFERENCIA_BANCARIA'
+  | 'ZELLE'
+  | 'CRYPTO_WALLET'
+  | 'BINANCE_PAY'
+type TxPaymentMethod = 'MERCANTIL_PAGO_MOVIL' | 'ZELLE' | 'CRYPTO_WALLET_MANUAL'
 
-function calcFee(amount: number, sellerRole: string) {
+function calcFee(amount: number, sellerRole: string, paymentMethod: TxPaymentMethod) {
   const exempt = sellerRole === 'SOCIO' || sellerRole === 'SUPER'
-  const feePercent = exempt ? 0 : 5
-  const feeAmount = Math.round(amount * feePercent) / 100
+  const baseFeePercent = exempt ? 0 : 5
+  const baseFeeAmount = Math.round(amount * baseFeePercent) / 100
+  const additionalFeeAmount =
+    paymentMethod === 'MERCANTIL_PAGO_MOVIL'
+      ? Math.round(amount * 0.03) / 100
+      : paymentMethod === 'CRYPTO_WALLET_MANUAL'
+        ? 0.06
+        : 0
+  const feeAmount = Math.round((baseFeeAmount + additionalFeeAmount) * 100) / 100
+  const percentComponent =
+    paymentMethod === 'MERCANTIL_PAGO_MOVIL'
+      ? baseFeePercent + 0.03
+      : baseFeePercent
+
   return {
-    platformFeePercent: feePercent,
+    platformFeePercent: percentComponent,
     platformFeeAmount: feeAmount,
     sellerNetAmount: Math.round((amount - feeAmount) * 100) / 100,
   }
 }
 
-// ─── INITIATE PURCHASE ────────────────────────────────────────────────────────
-// Creates a transaction in INITIATED state. Buyer selects payment method.
-// Valid payment methods: MERCANTIL_C2P | MERCANTIL_PAGO_MOVIL | MERCANTIL_BOTON_PAGO
-//                        BINANCE_PAY | ZELLE | CRYPTO_WALLET_MANUAL
+function mapCheckoutPaymentMethod(method: string): TxPaymentMethod | null {
+  if (method === 'PAGO_MOVIL') return 'MERCANTIL_PAGO_MOVIL'
+  if (method === 'TRANSFERENCIA_BANCARIA') return 'MERCANTIL_PAGO_MOVIL'
+  if (method === 'ZELLE') return 'ZELLE'
+  if (method === 'BINANCE_PAY') return 'CRYPTO_WALLET_MANUAL'
+  if (method === 'CRYPTO_WALLET') return 'CRYPTO_WALLET_MANUAL'
+  return null
+}
 
 export async function initiatePurchase(
   listingId: string,
   paymentMethod: string,
 ): Promise<ActionResult<{ transactionId: string; idempotencyKey: string }>> {
   const session = await getSession()
-  if (!session) return { success: false, message: 'Debes iniciar sesión para comprar' }
+  if (!session) return { success: false, message: 'Debes iniciar sesion para comprar' }
 
   const db = await getDb()
   if (!db) return { success: false, message: 'Base de datos no disponible' }
 
   try {
+    const mappedPaymentMethod = mapCheckoutPaymentMethod(paymentMethod)
+    if (!mappedPaymentMethod) {
+      return { success: false, message: 'Metodo de pago no soportado por el checkout actual' }
+    }
+
     const listing = await db.mpListing.findUnique({
       where: { id: listingId },
       include: { seller: true },
     })
 
     if (!listing) return { success: false, message: 'Listing no encontrado' }
-    if (listing.status !== 'ACTIVE') return { success: false, message: 'Este listing no está disponible' }
+    if (listing.status !== 'ACTIVE') return { success: false, message: 'Este listing no esta disponible' }
     if (listing.sellerId === session.userId) return { success: false, message: 'No puedes comprar tu propio listing' }
 
     const amount = Number(listing.price)
-    const fee = calcFee(amount, listing.seller.role)
+    const fee = calcFee(amount, listing.seller.role, mappedPaymentMethod)
     const idempotencyKey = `${session.userId}_${listingId}_${Date.now()}`
 
-    const [tx] = await db.$transaction([
-      db.mpTransaction.create({
-        data: {
-          idempotencyKey,
-          buyerId: session.userId,
-          sellerId: listing.sellerId,
-          listingId,
-          paymentMethod,
-          status: 'INITIATED',
-          amount: String(amount),
-          currency: listing.currency,
-          platformFeePercent: String(fee.platformFeePercent),
-          platformFeeAmount: String(fee.platformFeeAmount),
-          sellerNetAmount: String(fee.sellerNetAmount),
-        },
-        select: { id: true },
-      }),
-      db.mpListing.update({
-        where: { id: listingId },
-        data: { status: 'SOLD_OUT' },
-      }),
-    ])
+    const tx = await db.mpTransaction.create({
+      data: {
+        idempotencyKey,
+        buyerId: session.userId,
+        sellerId: listing.sellerId,
+        listingId,
+        paymentMethod: mappedPaymentMethod,
+        status: 'PENDING_PAYMENT',
+        amount: String(amount),
+        currency: listing.currency,
+        platformFeePercent: String(fee.platformFeePercent),
+        platformFeeAmount: String(fee.platformFeeAmount),
+        sellerNetAmount: String(fee.sellerNetAmount),
+      },
+      select: { id: true },
+    })
 
     await db.mpTransactionStatusHistory.create({
       data: {
         transactionId: tx.id,
-        toStatus: 'INITIATED',
+        toStatus: 'PENDING_PAYMENT',
         changedBy: session.userId,
-        reason: 'Compra iniciada por el comprador',
+        reason: 'Compra iniciada por el comprador. Esperando comprobante de pago.',
       },
     })
 
     await db.$disconnect()
-    return { success: true, data: { transactionId: tx.id, idempotencyKey }, message: 'Transacción iniciada' }
+    return { success: true, data: { transactionId: tx.id, idempotencyKey }, message: 'Transaccion iniciada' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
-    return { success: false, message: err instanceof Error ? err.message : 'Error al iniciar transacción' }
+    return { success: false, message: err instanceof Error ? err.message : 'Error al iniciar transaccion' }
   }
 }
-
-// ─── SUBMIT PAYMENT PROOF ─────────────────────────────────────────────────────
-// Buyer submits payment reference / proof screenshot URL.
-// Moves INITIATED or PENDING_PAYMENT → PAYMENT_RECEIVED.
 
 export async function submitPaymentProof(
   transactionId: string,
   reference: string,
+  details: {
+    senderBank: string
+    paymentDate: string
+  },
   proofUrl?: string,
 ): Promise<ActionResult> {
   const session = await getSession()
@@ -104,15 +124,32 @@ export async function submitPaymentProof(
 
   try {
     const tx = await db.mpTransaction.findUnique({ where: { id: transactionId } })
-    if (!tx) return { success: false, message: 'Transacción no encontrada' }
+    if (!tx) return { success: false, message: 'Transaccion no encontrada' }
     if (tx.buyerId !== session.userId) return { success: false, message: 'Sin permiso' }
     if (tx.status !== 'INITIATED' && tx.status !== 'PENDING_PAYMENT') {
-      return { success: false, message: `Estado inválido para enviar comprobante: ${tx.status}` }
+      return { success: false, message: `Estado invalido para enviar comprobante: ${tx.status}` }
+    }
+
+    const cleanReference = reference.trim()
+    if (!cleanReference) return { success: false, message: 'La referencia de pago es obligatoria' }
+    const cleanSenderBank = details.senderBank.trim()
+    if (!cleanSenderBank) return { success: false, message: 'El banco emisor es obligatorio' }
+    if (!details.paymentDate.trim()) return { success: false, message: 'La fecha de pago es obligatoria' }
+
+    const paidAt = new Date(`${details.paymentDate}T12:00:00-04:00`)
+    if (Number.isNaN(paidAt.getTime())) {
+      return { success: false, message: 'La fecha de pago no es valida' }
     }
 
     await db.mpTransaction.update({
       where: { id: transactionId },
-      data: { status: 'PAYMENT_RECEIVED', paymentReference: reference, paymentProofUrl: proofUrl ?? null },
+      data: {
+        status: 'PAYMENT_RECEIVED',
+        paymentReference: cleanReference,
+        paymentSenderBank: cleanSenderBank,
+        paymentPaidAt: paidAt,
+        paymentProofUrl: proofUrl ?? null,
+      },
     })
 
     await db.mpTransactionStatusHistory.create({
@@ -121,21 +158,17 @@ export async function submitPaymentProof(
         fromStatus: tx.status,
         toStatus: 'PAYMENT_RECEIVED',
         changedBy: session.userId,
-        reason: `Comprobante enviado. Referencia: ${reference}`,
+        reason: `Comprobante enviado. Banco: ${cleanSenderBank}. Operacion: ${cleanReference}. Fecha: ${details.paymentDate}`,
       },
     })
 
     await db.$disconnect()
-    return { success: true, data: undefined, message: 'Comprobante registrado. El equipo revisará el pago.' }
+    return { success: true, data: undefined, message: 'Comprobante registrado. El equipo revisara el pago.' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
   }
 }
-
-// ─── VALIDATE PAYMENT (ADMIN ONLY) ───────────────────────────────────────────
-// Admin reviews the payment proof and approves or rejects.
-// Approved → IN_ESCROW (T+7 release date set). Rejected → PAYMENT_FAILED.
 
 export async function validatePayment(
   transactionId: string,
@@ -152,9 +185,9 @@ export async function validatePayment(
 
   try {
     const tx = await db.mpTransaction.findUnique({ where: { id: transactionId } })
-    if (!tx) return { success: false, message: 'Transacción no encontrada' }
+    if (!tx) return { success: false, message: 'Transaccion no encontrada' }
     if (tx.status !== 'PAYMENT_RECEIVED' && tx.status !== 'VALIDATING') {
-      return { success: false, message: `Estado inválido para validar: ${tx.status}` }
+      return { success: false, message: `Estado invalido para validar: ${tx.status}` }
     }
 
     const toStatus = approved ? 'IN_ESCROW' : 'PAYMENT_FAILED'
@@ -168,11 +201,18 @@ export async function validatePayment(
         ...(approved
           ? {
               escrowHeldAt: now,
-              escrowReleaseAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), // T+7
+              escrowReleaseAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
             }
           : {}),
       },
     })
+
+    if (approved) {
+      await db.mpListing.update({
+        where: { id: tx.listingId },
+        data: { status: 'SOLD_OUT' },
+      })
+    }
 
     await db.mpTransactionStatusHistory.create({
       data: {
@@ -188,17 +228,13 @@ export async function validatePayment(
     return {
       success: true,
       data: undefined,
-      message: approved ? 'Pago aprobado. Fondos en escrow hasta confirmación de entrega.' : 'Pago rechazado.',
+      message: approved ? 'Pago aprobado. Fondos en escrow hasta confirmacion de entrega.' : 'Pago rechazado.',
     }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
   }
 }
-
-// ─── CONFIRM DELIVERY (BUYER) ─────────────────────────────────────────────────
-// Buyer confirms they received the product/service.
-// Moves IN_ESCROW → RELEASED immediately (funds go to seller).
 
 export async function confirmDelivery(transactionId: string): Promise<ActionResult> {
   const session = await getSession()
@@ -209,7 +245,7 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
 
   try {
     const tx = await db.mpTransaction.findUnique({ where: { id: transactionId } })
-    if (!tx) return { success: false, message: 'Transacción no encontrada' }
+    if (!tx) return { success: false, message: 'Transaccion no encontrada' }
     if (tx.buyerId !== session.userId) return { success: false, message: 'Solo el comprador puede confirmar la entrega' }
     if (tx.status !== 'IN_ESCROW') {
       return { success: false, message: `No se puede confirmar desde el estado: ${tx.status}` }
@@ -221,14 +257,13 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
       data: { status: 'RELEASED', buyerConfirmedAt: now, releasedAt: now },
     })
 
-    // Two-hop history: IN_ESCROW → DELIVERY_CONFIRMED → RELEASED
     await db.mpTransactionStatusHistory.create({
       data: {
         transactionId,
         fromStatus: 'IN_ESCROW',
         toStatus: 'DELIVERY_CONFIRMED',
         changedBy: session.userId,
-        reason: 'Comprador confirmó la entrega',
+        reason: 'Comprador confirmo la entrega',
       },
     })
     await db.mpTransactionStatusHistory.create({
@@ -237,7 +272,7 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
         fromStatus: 'DELIVERY_CONFIRMED',
         toStatus: 'RELEASED',
         changedBy: 'SYSTEM',
-        reason: 'Fondos liberados automáticamente al confirmar entrega',
+        reason: 'Fondos liberados automaticamente al confirmar entrega',
       },
     })
 
@@ -248,10 +283,6 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
   }
 }
-
-// ─── RELEASE ESCROW (ADMIN / T+7 SYSTEM) ─────────────────────────────────────
-// Manual release by admin, or called by a cron job after T+7 auto-release window.
-// Valid from IN_ESCROW or DELIVERY_CONFIRMED.
 
 export async function releaseEscrow(transactionId: string): Promise<ActionResult> {
   const session = await getSession()
@@ -264,7 +295,7 @@ export async function releaseEscrow(transactionId: string): Promise<ActionResult
 
   try {
     const tx = await db.mpTransaction.findUnique({ where: { id: transactionId } })
-    if (!tx) return { success: false, message: 'Transacción no encontrada' }
+    if (!tx) return { success: false, message: 'Transaccion no encontrada' }
     if (tx.status !== 'IN_ESCROW' && tx.status !== 'DELIVERY_CONFIRMED') {
       return { success: false, message: `No se puede liberar desde el estado: ${tx.status}` }
     }
@@ -293,9 +324,6 @@ export async function releaseEscrow(transactionId: string): Promise<ActionResult
   }
 }
 
-// ─── OPEN DISPUTE ─────────────────────────────────────────────────────────────
-// Either buyer or seller can open a dispute while funds are IN_ESCROW.
-
 export async function openDispute(
   transactionId: string,
   reason: string,
@@ -309,10 +337,10 @@ export async function openDispute(
 
   try {
     const tx = await db.mpTransaction.findUnique({ where: { id: transactionId } })
-    if (!tx) return { success: false, message: 'Transacción no encontrada' }
+    if (!tx) return { success: false, message: 'Transaccion no encontrada' }
 
     const isParticipant = tx.buyerId === session.userId || tx.sellerId === session.userId
-    if (!isParticipant) return { success: false, message: 'Sin permiso para disputar esta transacción' }
+    if (!isParticipant) return { success: false, message: 'Sin permiso para disputar esta transaccion' }
     if (tx.status !== 'IN_ESCROW' && tx.status !== 'DELIVERY_CONFIRMED') {
       return { success: false, message: `No se puede disputar desde el estado: ${tx.status}` }
     }
@@ -338,15 +366,12 @@ export async function openDispute(
     })
 
     await db.$disconnect()
-    return { success: true, data: { disputeId: dispute.id }, message: 'Disputa abierta. El equipo revisará el caso en 24–48 h.' }
+    return { success: true, data: { disputeId: dispute.id }, message: 'Disputa abierta. El equipo revisara el caso en 24-48 h.' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
   }
 }
-
-// ─── RESOLVE DISPUTE (ADMIN ONLY) ────────────────────────────────────────────
-// Admin resolves a dispute in favor of buyer (REFUNDED) or seller (RELEASED).
 
 export async function resolveDispute(
   disputeId: string,
@@ -410,9 +435,6 @@ export async function resolveDispute(
   }
 }
 
-// ─── CANCEL TRANSACTION ───────────────────────────────────────────────────────
-// Buyer, seller, or admin can cancel before funds are RELEASED.
-
 export async function cancelTransaction(
   transactionId: string,
   reason?: string,
@@ -425,7 +447,7 @@ export async function cancelTransaction(
 
   try {
     const tx = await db.mpTransaction.findUnique({ where: { id: transactionId } })
-    if (!tx) return { success: false, message: 'Transacción no encontrada' }
+    if (!tx) return { success: false, message: 'Transaccion no encontrada' }
 
     const isParticipant = tx.buyerId === session.userId || tx.sellerId === session.userId
     const isAdmin = session.role === 'SUPER'
@@ -449,15 +471,12 @@ export async function cancelTransaction(
     })
 
     await db.$disconnect()
-    return { success: true, data: undefined, message: 'Transacción cancelada.' }
+    return { success: true, data: undefined, message: 'Transaccion cancelada.' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
   }
 }
-
-// ─── GET TRANSACTION ──────────────────────────────────────────────────────────
-// Returns full transaction with buyer, seller, listing, status history and disputes.
 
 export async function getTransaction(transactionId: string): Promise<ActionResult<object>> {
   const session = await getSession()
@@ -478,7 +497,7 @@ export async function getTransaction(transactionId: string): Promise<ActionResul
       },
     })
 
-    if (!tx) return { success: false, message: 'Transacción no encontrada' }
+    if (!tx) return { success: false, message: 'Transaccion no encontrada' }
 
     const isParticipant = tx.buyerId === session.userId || tx.sellerId === session.userId
     const isAdmin = session.role === 'SUPER'
@@ -491,8 +510,6 @@ export async function getTransaction(transactionId: string): Promise<ActionResul
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
   }
 }
-
-// ─── GET MY TRANSACTIONS ──────────────────────────────────────────────────────
 
 export async function getMyTransactions(
   role: 'buyer' | 'seller' | 'all' = 'all',
@@ -508,8 +525,8 @@ export async function getMyTransactions(
       role === 'buyer'
         ? { buyerId: session.userId }
         : role === 'seller'
-        ? { sellerId: session.userId }
-        : { OR: [{ buyerId: session.userId }, { sellerId: session.userId }] }
+          ? { sellerId: session.userId }
+          : { OR: [{ buyerId: session.userId }, { sellerId: session.userId }] }
 
     const txs = await db.mpTransaction.findMany({
       where,

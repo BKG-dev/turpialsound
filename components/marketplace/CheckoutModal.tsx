@@ -13,40 +13,81 @@ import {
   Smartphone,
   Building2,
   Wallet,
+  CalendarDays,
 } from 'lucide-react'
+import type { ElementType } from 'react'
 import type { Listing } from '@/types/marketplace'
-import { initiatePurchase } from '@/actions/marketplace/transactions'
+import {
+  initiatePurchase,
+  submitPaymentProof,
+} from '@/actions/marketplace/transactions'
+import { useBcvRate } from '@/lib/hooks/useBcvRate'
+import { VENEZUELAN_BANK_OPTIONS } from '@/lib/marketplace/venezuelan-banks'
+import {
+  prepareMarketplaceUpload,
+  revokeMarketplaceUploadPreview,
+  uploadMarketplaceFile,
+  type PreparedMarketplaceUpload,
+} from '@/lib/marketplace/media-client'
 
-// ─── Static Turpial payment details ──────────────────────────────────────────
+type ManualMethodId = 'PAGO_MOVIL' | 'TRANSFERENCIA_BANCARIA' | 'BINANCE_PAY'
 
-const TURPIAL_PAGO_MOVIL = {
-  phone: '04141333305',
-  idNumber: 'V-13864619',
-  bank: 'Mercantil',
+type CheckoutActionMethod = 'PAGO_MOVIL' | 'CRYPTO_WALLET'
+
+type PaymentDetail = {
+  label: string
+  value: string
 }
 
-const TURPIAL_TRANSFER = {
-  accountNumber: '01050187331187028916',
-  idNumber: 'V-13894619',
-  holder: 'Turpial Sound',
+type ManualMethodConfig = {
+  id: ManualMethodId
+  label: string
+  accent: string
+  icon: ElementType
+  actionMethod: CheckoutActionMethod
+  details: PaymentDetail[] | ((priceDisplay: string) => PaymentDetail[])
 }
 
-const TURPIAL_BINANCE = {
-  payId: '117577221',
-}
+const MANUAL_METHODS: ManualMethodConfig[] = [
+  {
+    id: 'PAGO_MOVIL',
+    label: 'Pago movil',
+    accent: '#00aeef',
+    icon: Smartphone,
+    actionMethod: 'PAGO_MOVIL',
+    details: [
+      { label: 'Cedula', value: '13894619' },
+      { label: 'Telefono', value: '04141333305' },
+      { label: 'Banco', value: 'Mercantil' },
+    ],
+  },
+  {
+    id: 'TRANSFERENCIA_BANCARIA',
+    label: 'Transferencia bancaria',
+    accent: '#ffc107',
+    icon: Building2,
+    actionMethod: 'PAGO_MOVIL',
+    details: [
+      { label: 'Cuenta', value: '01050187331187028916' },
+      { label: 'Beneficiario', value: 'Turpial Sound' },
+      { label: 'C.I', value: 'V-13894619' },
+    ],
+  },
+  {
+    id: 'BINANCE_PAY',
+    label: 'Binance Pay',
+    accent: '#f97316',
+    icon: Wallet,
+    actionMethod: 'CRYPTO_WALLET',
+    details: (priceDisplay) => [
+      { label: 'Monto a pagar', value: `${priceDisplay} USDT` },
+      { label: 'Pay ID', value: '11757221' },
+      { label: 'User', value: 'manuelverax' },
+    ],
+  },
+]
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type PaymentMethodId = 'PAGO_MOVIL' | 'BANK_TRANSFER' | 'CRYPTO_WALLET'
-
-export interface CheckoutModalProps {
-  listing: Listing
-  sellerId: string
-  onClose: () => void
-  onOpenChat: (listing: Listing) => void
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+const EXPO: [number, number, number, number] = [0.16, 1, 0.3, 1]
 
 function useCopyField(value: string) {
   const [copied, setCopied] = useState(false)
@@ -55,26 +96,42 @@ function useCopyField(value: string) {
       await navigator.clipboard.writeText(value)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    } catch { /* ignore */ }
+    } catch {
+      // noop
+    }
   }, [value])
+
   return { copied, copy }
 }
 
 function CopyRow({ label, value }: { label: string; value: string }) {
   const { copied, copy } = useCopyField(value)
+
   return (
-    <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl"
-      style={{ background: 'rgba(20,20,20,0.8)', border: '1px solid #1e1e1e' }}>
+    <div
+      className="flex items-center justify-between gap-3 rounded-xl px-4 py-3"
+      style={{ background: 'rgba(20,20,20,0.8)', border: '1px solid #1e1e1e' }}
+    >
       <div className="min-w-0">
-        <p className="text-[10px] text-[#5a5a5a] uppercase tracking-wider">{label}</p>
-        <p className="text-sm text-[#f2f2f2] font-mono mt-0.5 truncate">{value}</p>
+        <p className="text-[10px] uppercase tracking-wider text-[#5a5a5a]">{label}</p>
+        <p className="mt-0.5 truncate font-mono text-sm text-[#f2f2f2]">{value}</p>
       </div>
       <button
         onClick={copy}
-        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium flex-shrink-0 transition-all duration-200"
-        style={copied
-          ? { background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }
-          : { background: 'rgba(0,174,239,0.1)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.2)' }}
+        className="flex flex-shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all duration-200"
+        style={
+          copied
+            ? {
+                background: 'rgba(74,222,128,0.12)',
+                color: '#4ade80',
+                border: '1px solid rgba(74,222,128,0.25)',
+              }
+            : {
+                background: 'rgba(0,174,239,0.1)',
+                color: '#00aeef',
+                border: '1px solid rgba(0,174,239,0.2)',
+              }
+        }
       >
         {copied ? <Check size={11} /> : <Copy size={11} />}
         {copied ? 'Copiado' : 'Copiar'}
@@ -83,89 +140,169 @@ function CopyRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-function InputField({ label, value, onChange, placeholder, type }: {
+function InputField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type,
+  readOnly = false,
+  icon,
+}: {
   label: string
   value: string
-  onChange: (v: string) => void
+  onChange: (value: string) => void
   placeholder: string
   type: string
+  readOnly?: boolean
+  icon?: ElementType
 }) {
+  const Icon = icon
+
   return (
     <div className="space-y-1.5">
       <label className="text-xs text-[#a0a0a0]">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] font-mono placeholder:text-[#2a2a2a] outline-none"
-        style={{ background: 'rgba(20,20,20,0.8)', border: '1px solid #1e1e1e',
-          colorScheme: type === 'date' ? 'dark' : undefined }}
-        onFocus={e => { e.target.style.borderColor = 'rgba(0,174,239,0.4)' }}
-        onBlur={e => { e.target.style.borderColor = '#1e1e1e' }}
-      />
+      <div className="relative">
+        {Icon && (
+          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#5a5a5a]">
+            <Icon size={14} />
+          </div>
+        )}
+        <input
+          type={type}
+          value={value}
+          readOnly={readOnly}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full rounded-xl border border-[#1e1e1e] bg-[rgba(20,20,20,0.8)] px-4 py-2.5 font-mono text-sm text-[#f2f2f2] outline-none placeholder:text-[#2a2a2a] read-only:text-[#ffc107]"
+          style={{ paddingLeft: Icon ? '2.4rem' : undefined }}
+          onFocus={(e) => {
+            if (!readOnly) e.target.style.borderColor = 'rgba(0,174,239,0.4)'
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = '#1e1e1e'
+          }}
+        />
+      </div>
     </div>
   )
 }
 
-// ─── Payment method tab config ────────────────────────────────────────────────
+function getTodayDate() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
-const METHODS: Array<{ id: PaymentMethodId; icon: React.ElementType; label: string; accent: string }> = [
-  { id: 'PAGO_MOVIL',    icon: Smartphone, label: 'Pago Móvil',    accent: '#00aeef' },
-  { id: 'BANK_TRANSFER', icon: Building2,  label: 'Transferencia', accent: '#ffc107' },
-  { id: 'CRYPTO_WALLET', icon: Wallet,     label: 'Binance',       accent: '#f97316' },
-]
-
-const EXPO: [number, number, number, number] = [0.16, 1, 0.3, 1]
-
-// ─── Main Component ───────────────────────────────────────────────────────────
+export interface CheckoutModalProps {
+  listing: Listing
+  sellerId: string
+  onClose: () => void
+  onOpenChat: (listing: Listing) => void
+}
 
 export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodId>('PAGO_MOVIL')
-  const [bcvRate, setBcvRate] = useState<number | null>(null)
-
-  // Form state
-  const [reference, setReference] = useState('')
-  const [bankName, setBankName]   = useState('')
-  const [amountPaid, setAmountPaid] = useState('')
-  const [paymentDate, setPaymentDate] = useState('')
-  const [proofFile, setProofFile] = useState<File | null>(null)
-
+  const { rate: bcvRate, loading: rateLoading } = useBcvRate()
+  const [selectedMethodId, setSelectedMethodId] = useState<ManualMethodId>('PAGO_MOVIL')
+  const [operationNumber, setOperationNumber] = useState('')
+  const [bankName, setBankName] = useState('')
+  const [paymentDate, setPaymentDate] = useState(getTodayDate())
+  const [proofFile, setProofFile] = useState<PreparedMarketplaceUpload | null>(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
   const price = listing.type === 'product' ? listing.price : listing.priceFrom
   const currency = listing.currency ?? 'USD'
+  const selectedMethod =
+    MANUAL_METHODS.find((method) => method.id === selectedMethodId) ?? MANUAL_METHODS[0]
+  const usdAmountDisplay =
+    price != null
+      ? Number(price).toLocaleString('es-VE', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      : '-'
+  const bsAmountValue = price && bcvRate ? (price * bcvRate).toFixed(2) : ''
+  const bsAmountDisplay = bsAmountValue
+    ? Number(bsAmountValue).toLocaleString('es-VE', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    : '-'
+  const selectedMethodDetails =
+    typeof selectedMethod.details === 'function'
+      ? selectedMethod.details(usdAmountDisplay !== '-' ? usdAmountDisplay : '0.00')
+      : selectedMethod.details
 
-  // Fetch BCV rate — no-store to bypass Next.js / CDN caching
-  useEffect(() => {
-    fetch('/api/bcv-rate', { cache: 'no-store' })
-      .then(r => r.json())
-      .then((d: { rate: number }) => setBcvRate(d.rate))
-      .catch(() => { /* show USD only on failure */ })
-  }, [])
-
-  // Scroll lock
   useEffect(() => {
     document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
+    return () => {
+      document.body.style.overflow = ''
+    }
   }, [])
 
-  // Escape key
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    return () => {
+      revokeMarketplaceUploadPreview(proofFile)
+    }
+  }, [proofFile])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [onClose])
 
   async function handleConfirm() {
-    if (!reference.trim()) { setError('Ingresa el número de referencia'); return }
+    if (!operationNumber.trim()) {
+      setError('Ingresa el numero de operacion.')
+      return
+    }
+
+    if (!bankName.trim()) {
+      setError('Selecciona el banco emisor.')
+      return
+    }
+
+    if (!paymentDate.trim()) {
+      setError('Ingresa la fecha de pago.')
+      return
+    }
+
     setLoading(true)
     setError(null)
+
     try {
-      const result = await initiatePurchase(listing.id, selectedMethod)
-      if (!result.success) { setError(result.message); return }
+      const purchase = await initiatePurchase(listing.id, selectedMethod.actionMethod)
+      if (!purchase.success || !purchase.data) {
+        setError(purchase.message)
+        return
+      }
+
+      const proofUrl = proofFile
+        ? (await uploadMarketplaceFile(proofFile.file, 'payment-proof')).url
+        : undefined
+      const proof = await submitPaymentProof(
+        purchase.data.transactionId,
+        operationNumber.trim(),
+        {
+          senderBank: bankName,
+          paymentDate,
+        },
+        proofUrl,
+      )
+
+      if (!proof.success) {
+        setError(proof.message)
+        return
+      }
+
       setSuccess(true)
     } catch {
       setError('Error inesperado. Intenta de nuevo.')
@@ -174,12 +311,12 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
     }
   }
 
-  // ── Success screen ────────────────────────────────────────────────────────
   if (success) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
         <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           className="absolute inset-0"
           style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)' }}
         />
@@ -189,35 +326,55 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
           transition={{ duration: 0.3, ease: EXPO }}
           className="relative z-10 w-full max-w-md"
         >
-          <div className="rounded-2xl flex flex-col items-center justify-center py-16 px-8 text-center gap-5"
+          <div
+            className="flex flex-col items-center justify-center gap-5 rounded-2xl px-8 py-16 text-center"
             style={{
               background: 'rgba(10,10,10,0.99)',
               border: '1px solid rgba(255,255,255,0.07)',
               boxShadow: '0 32px 80px rgba(0,0,0,0.9)',
-            }}>
+            }}
+          >
             <motion.div
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.1, type: 'spring', stiffness: 200, damping: 14 }}>
-              <div className="w-16 h-16 rounded-full flex items-center justify-center"
-                style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)' }}>
-                <CheckCircle2 size={32} className="text-[#4ade80]"
-                  style={{ filter: 'drop-shadow(0 0 12px rgba(74,222,128,0.5))' }} />
+              transition={{ delay: 0.1, type: 'spring', stiffness: 200, damping: 14 }}
+            >
+              <div
+                className="flex h-16 w-16 items-center justify-center rounded-full"
+                style={{
+                  background: 'rgba(74,222,128,0.1)',
+                  border: '1px solid rgba(74,222,128,0.25)',
+                }}
+              >
+                <CheckCircle2
+                  size={32}
+                  className="text-[#4ade80]"
+                  style={{ filter: 'drop-shadow(0 0 12px rgba(74,222,128,0.5))' }}
+                />
               </div>
             </motion.div>
             <div>
-              <p className="text-base font-semibold text-[#f2f2f2] mb-2">¡Pago reportado con éxito!</p>
-              <p className="text-sm text-[#5a5a5a] leading-relaxed">
-                El equipo de Turpial Market revisará tu pago en{' '}
-                <span className="text-[#f2f2f2]">menos de 24 horas</span>.
-              </p>
+              <p className="mb-2 text-base font-semibold text-[#f2f2f2]">Pago procesado</p>
+              <div className="space-y-2 text-sm leading-relaxed text-[#5a5a5a]">
+                <p>Tu comprobante fue recibido y ya quedo reportado para validacion.</p>
+                <p>El equipo operativo sera notificado para confirmar el pago manual.</p>
+                <p>Cuando el pago quede confirmado, la transaccion pasara a escrow y luego se liberaran los fondos al vendedor.</p>
+              </div>
             </div>
             <button
               onClick={onClose}
-              className="py-2.5 px-6 rounded-xl text-sm font-medium transition-colors"
-              style={{ background: 'rgba(0,174,239,0.1)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.25)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,174,239,0.18)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,174,239,0.1)' }}
+              className="rounded-xl px-6 py-2.5 text-sm font-medium transition-colors"
+              style={{
+                background: 'rgba(0,174,239,0.1)',
+                color: '#00aeef',
+                border: '1px solid rgba(0,174,239,0.25)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(0,174,239,0.18)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(0,174,239,0.1)'
+              }}
             >
               Volver al marketplace
             </button>
@@ -227,18 +384,17 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
     )
   }
 
-  // ── Main modal ────────────────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      {/* Overlay */}
       <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
         onClick={onClose}
         className="absolute inset-0"
         style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)' }}
       />
 
-      {/* Shell */}
       <motion.div
         initial={{ opacity: 0, scale: 0.96, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -246,75 +402,100 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
         transition={{ duration: 0.3, ease: EXPO }}
         className="relative z-10 w-full max-w-md"
         style={{ maxHeight: '92vh' }}
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="rounded-2xl flex flex-col overflow-hidden"
+          className="flex max-h-[92vh] flex-col overflow-hidden rounded-2xl"
           style={{
             background: 'rgba(10,10,10,0.99)',
             border: '1px solid rgba(255,255,255,0.07)',
             boxShadow: '0 32px 80px rgba(0,0,0,0.9), 0 0 80px rgba(0,174,239,0.06)',
-            maxHeight: '92vh',
           }}
         >
-          {/* Header */}
-          <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0 border-b border-[#1a1a1a]"
-            style={{ background: 'rgba(0,174,239,0.05)' }}>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-semibold text-[#f2f2f2] truncate">Completar compra</h2>
-              <p className="text-[11px] text-[#5a5a5a] mt-0.5 truncate">{listing.title}</p>
+          <div
+            className="flex flex-shrink-0 items-center gap-3 border-b border-[#1a1a1a] px-5 py-4"
+            style={{ background: 'rgba(0,174,239,0.05)' }}
+          >
+            <div className="min-w-0 flex-1">
+              <h2 className="truncate text-sm font-semibold text-[#f2f2f2]">Completar compra</h2>
+              <p className="mt-0.5 truncate text-[11px] text-[#5a5a5a]">{listing.title}</p>
             </div>
-            <button onClick={onClose} className="text-[#5a5a5a] hover:text-[#f2f2f2] transition-colors flex-shrink-0">
+            <button
+              onClick={onClose}
+              className="flex-shrink-0 text-[#5a5a5a] transition-colors hover:text-[#f2f2f2]"
+            >
               <X size={15} />
             </button>
           </div>
 
-          {/* Scrollable body */}
-          <div className="flex-1 overflow-y-auto scrollbar-none p-5 space-y-5">
-
-            {/* Total + BCV rate */}
-            <div className="rounded-xl p-4"
-              style={{ background: 'rgba(0,174,239,0.04)', border: '1px solid rgba(0,174,239,0.12)' }}>
-              <p className="text-[10px] text-[#5a5a5a] uppercase tracking-widest mb-2">Total a pagar</p>
-              <div className="flex items-baseline gap-3 flex-wrap">
+          <div className="scrollbar-none flex-1 space-y-5 overflow-y-auto p-5">
+            <div
+              className="rounded-xl p-4"
+              style={{ background: 'rgba(0,174,239,0.04)', border: '1px solid rgba(0,174,239,0.12)' }}
+            >
+              <p className="mb-2 text-[10px] uppercase tracking-widest text-[#5a5a5a]">Total a pagar</p>
+              <div className="flex flex-wrap items-baseline gap-3">
                 <span className="text-2xl font-bold text-[#f2f2f2]">
-                  ${price?.toLocaleString('es-VE') ?? '—'}{' '}
+                  ${price?.toLocaleString('es-VE') ?? '-'}{' '}
                   <span className="text-sm font-normal text-[#5a5a5a]">{currency}</span>
                 </span>
-                {bcvRate && price != null && (
-                  <span className="text-sm font-semibold text-[#ffc107]">
-                    / {(price * bcvRate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs
-                  </span>
-                )}
               </div>
-              {bcvRate && (
-                <p className="text-[10px] text-[#5a5a5a] mt-1.5">
-                  Tasa BCV: 1 USD = {bcvRate.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs
+
+              <div
+                className="mt-3 rounded-lg p-3"
+                style={{
+                  background: 'rgba(255,193,7,0.08)',
+                  border: '1px solid rgba(255,193,7,0.15)',
+                }}
+              >
+                <div className="flex items-baseline justify-between">
+                  <p className="text-[10px] uppercase tracking-wider text-[#5a5a5a]">
+                    Total a pagar en Bs
+                  </p>
+                  {rateLoading ? (
+                    <span className="animate-pulse text-sm text-[#5a5a5a]">Cargando...</span>
+                  ) : (
+                    <span className="text-sm font-semibold text-[#ffc107]">{bsAmountDisplay} Bs</span>
+                  )}
+                </div>
+                <p className="mt-1.5 text-[10px] text-[#5a5a5a]">
+                  Tasa BCV: 1 USD ={' '}
+                  {bcvRate?.toLocaleString('es-VE', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  }) ?? '-'}{' '}
+                  Bs
                 </p>
-              )}
+              </div>
             </div>
 
-            {/* Method selector */}
             <div>
-              <p className="text-[10px] text-[#5a5a5a] uppercase tracking-widest mb-3">Método de pago</p>
+              <p className="mb-3 text-[10px] uppercase tracking-widest text-[#5a5a5a]">Metodo de pago</p>
               <div className="grid grid-cols-3 gap-2">
-                {METHODS.map(m => {
-                  const Icon = m.icon
-                  const sel = selectedMethod === m.id
+                {MANUAL_METHODS.map((method) => {
+                  const Icon = method.icon
+                  const selected = selectedMethod.id === method.id
+
                   return (
                     <button
-                      key={m.id}
-                      onClick={() => setSelectedMethod(m.id)}
-                      className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl transition-all duration-200"
+                      key={method.id}
+                      onClick={() => {
+                        setSelectedMethodId(method.id)
+                        setError(null)
+                      }}
+                      className="flex flex-col items-center gap-2 rounded-xl px-2 py-3 text-center transition-all duration-200"
                       style={{
-                        background: sel ? `${m.accent}12` : 'rgba(20,20,20,0.6)',
-                        border: `1px solid ${sel ? m.accent + '40' : '#1e1e1e'}`,
-                        boxShadow: sel ? `0 0 16px ${m.accent}10` : 'none',
+                        background: selected ? `${method.accent}12` : 'rgba(20,20,20,0.6)',
+                        border: `1px solid ${selected ? `${method.accent}40` : '#1e1e1e'}`,
+                        boxShadow: selected ? `0 0 16px ${method.accent}10` : 'none',
                       }}
                     >
-                      <Icon size={16} style={{ color: sel ? m.accent : '#5a5a5a' }} />
-                      <span className="text-[10px] font-medium" style={{ color: sel ? m.accent : '#5a5a5a' }}>
-                        {m.label}
+                      <Icon size={16} style={{ color: selected ? method.accent : '#5a5a5a' }} />
+                      <span
+                        className="text-[10px] font-medium leading-tight"
+                        style={{ color: selected ? method.accent : '#5a5a5a' }}
+                      >
+                        {method.label}
                       </span>
                     </button>
                   )
@@ -322,99 +503,162 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
               </div>
             </div>
 
-            {/* Payment details */}
-            <div className="space-y-2">
-              <p className="text-[10px] text-[#5a5a5a] uppercase tracking-widest">Datos de pago</p>
+            <div
+              className="space-y-3 rounded-xl p-4"
+              style={{
+                background: 'rgba(20,20,20,0.55)',
+                border: `1px solid ${selectedMethod.accent}24`,
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <div
+                  className="flex h-9 w-9 items-center justify-center rounded-lg"
+                  style={{ background: `${selectedMethod.accent}15`, color: selectedMethod.accent }}
+                >
+                  <selectedMethod.icon size={16} />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-[#f2f2f2]">{selectedMethod.label}</p>
+                  <p className="text-[11px] text-[#5a5a5a]">Usa estos datos para completar el pago externo.</p>
+                </div>
+              </div>
 
-              {selectedMethod === 'PAGO_MOVIL' && (
-                <>
-                  <CopyRow label="Teléfono" value={TURPIAL_PAGO_MOVIL.phone} />
-                  <CopyRow label="Cédula" value={TURPIAL_PAGO_MOVIL.idNumber} />
-                  <CopyRow label="Banco" value={TURPIAL_PAGO_MOVIL.bank} />
-                </>
-              )}
-
-              {selectedMethod === 'BANK_TRANSFER' && (
-                <>
-                  <CopyRow label="Número de cuenta" value={TURPIAL_TRANSFER.accountNumber} />
-                  <CopyRow label="Cédula" value={TURPIAL_TRANSFER.idNumber} />
-                  <CopyRow label="Beneficiario" value={TURPIAL_TRANSFER.holder} />
-                </>
-              )}
-
-              {selectedMethod === 'CRYPTO_WALLET' && (
-                <CopyRow label="Binance PayID" value={TURPIAL_BINANCE.payId} />
-              )}
+              <div className="space-y-2">
+                {selectedMethodDetails.map((detail) => (
+                  <CopyRow
+                    key={`${selectedMethod.id}_${detail.label}`}
+                    label={detail.label}
+                    value={detail.value}
+                  />
+                ))}
+                <CopyRow label="Monto en Bs" value={bsAmountDisplay !== '-' ? `${bsAmountDisplay} Bs` : '-'} />
+              </div>
             </div>
 
-            {/* Separator */}
             <div style={{ borderTop: '1px solid #1a1a1a' }} />
 
-            {/* Payment report form */}
             <div className="space-y-3">
-              <p className="text-[10px] text-[#5a5a5a] uppercase tracking-widest">Reportar pago</p>
+              <p className="text-[10px] uppercase tracking-widest text-[#5a5a5a]">
+                Reportar pago
+              </p>
 
-              <div className="overflow-y-auto max-h-[55vh] pr-2 space-y-3">
+              <div className="max-h-[55vh] space-y-3 overflow-y-auto pr-2">
                 <InputField
-                  label="Número de referencia *"
-                  value={reference}
-                  onChange={v => { setReference(v); setError(null) }}
+                  label="Metodo seleccionado"
+                  value={selectedMethod.label}
+                  onChange={() => {}}
+                  placeholder=""
+                  type="text"
+                  readOnly
+                />
+
+                <InputField
+                  label="Monto en Bs"
+                  value={bsAmountDisplay !== '-' ? `${bsAmountDisplay} Bs` : ''}
+                  onChange={() => {}}
+                  placeholder=""
+                  type="text"
+                  readOnly
+                />
+
+                <InputField
+                  label="Numero de operacion *"
+                  value={operationNumber}
+                  onChange={(value) => {
+                    setOperationNumber(value)
+                    setError(null)
+                  }}
                   placeholder="Ej: 012345678901"
                   type="text"
                 />
+
+                <div className="space-y-1.5">
+                  <label className="text-xs text-[#a0a0a0]">Banco emisor *</label>
+                  <select
+                    value={bankName}
+                    onChange={(e) => {
+                      setBankName(e.target.value)
+                      setError(null)
+                    }}
+                    className="w-full rounded-xl border border-[#1e1e1e] bg-[rgba(20,20,20,0.8)] px-4 py-2.5 text-sm text-[#f2f2f2] outline-none"
+                  >
+                    <option value="">Selecciona un banco</option>
+                    {VENEZUELAN_BANK_OPTIONS.map((bank) => (
+                      <option key={bank.code} value={bank.label}>
+                        {bank.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <InputField
-                  label="Banco emisor"
-                  value={bankName}
-                  onChange={setBankName}
-                  placeholder="Ej: Mercantil"
-                  type="text"
-                />
-                <InputField
-                  label="Monto pagado"
-                  value={amountPaid}
-                  onChange={setAmountPaid}
-                  placeholder="Ej: 474.05"
-                  type="number"
-                />
-                <InputField
-                  label="Fecha de pago"
+                  label="Fecha de pago *"
                   value={paymentDate}
-                  onChange={setPaymentDate}
+                  onChange={(value) => {
+                    setPaymentDate(value)
+                    setError(null)
+                  }}
                   placeholder=""
                   type="date"
+                  icon={CalendarDays}
                 />
 
-                {/* File upload */}
                 <div className="space-y-1.5">
                   <label className="text-xs text-[#a0a0a0]">
                     Comprobante <span className="text-[#5a5a5a]">(opcional)</span>
                   </label>
                   <label
-                    className="flex flex-col items-center justify-center py-6 gap-2 rounded-xl cursor-pointer transition-all"
+                    className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl py-6 transition-all"
                     style={{
                       background: 'rgba(20,20,20,0.5)',
                       border: `1px dashed ${proofFile ? 'rgba(74,222,128,0.3)' : '#2a2a2a'}`,
                     }}
-                    onMouseEnter={e => { if (!proofFile) (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,174,239,0.3)' }}
-                    onMouseLeave={e => { if (!proofFile) (e.currentTarget as HTMLElement).style.borderColor = '#2a2a2a' }}
+                    onMouseEnter={(e) => {
+                      if (!proofFile) e.currentTarget.style.borderColor = 'rgba(0,174,239,0.3)'
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!proofFile) e.currentTarget.style.borderColor = '#2a2a2a'
+                    }}
                   >
                     {proofFile ? (
                       <>
                         <Check size={16} className="text-[#4ade80]" />
-                        <span className="text-xs text-[#4ade80] truncate max-w-[200px]">{proofFile.name}</span>
+                        <span className="max-w-[200px] truncate text-xs text-[#4ade80]">
+                          {proofFile.file.name}
+                        </span>
                       </>
                     ) : (
                       <>
                         <Upload size={16} className="text-[#2a2a2a]" />
                         <span className="text-xs text-[#5a5a5a]">Subir comprobante</span>
-                        <span className="text-[10px] text-[#2a2a2a]">JPG, PNG — hasta 10MB</span>
+                        <span className="text-[10px] text-[#2a2a2a]">JPG, PNG, WEBP - hasta 10MB</span>
                       </>
                     )}
                     <input
                       type="file"
                       accept="image/*"
                       className="sr-only"
-                      onChange={e => setProofFile(e.target.files?.[0] ?? null)}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) {
+                          revokeMarketplaceUploadPreview(proofFile)
+                          setProofFile(null)
+                          return
+                        }
+
+                        try {
+                          const prepared = await prepareMarketplaceUpload(file, 'payment-proof')
+                          setError(null)
+                          setProofFile(prev => {
+                            revokeMarketplaceUploadPreview(prev)
+                            return prepared
+                          })
+                        } catch (uploadError) {
+                          setError(uploadError instanceof Error ? uploadError.message : 'No se pudo preparar el comprobante')
+                          revokeMarketplaceUploadPreview(proofFile)
+                          setProofFile(null)
+                        }
+                      }}
                     />
                   </label>
                 </div>
@@ -422,27 +666,44 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
             </div>
 
             {error && (
-              <div className="rounded-xl p-3 flex items-start gap-2"
-                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
-                <AlertCircle size={12} className="text-red-400 mt-0.5 flex-shrink-0" />
+              <div
+                className="flex items-start gap-2 rounded-xl p-3"
+                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
+              >
+                <AlertCircle size={12} className="mt-0.5 flex-shrink-0 text-red-400" />
                 <p className="text-[11px] text-red-400">{error}</p>
               </div>
             )}
           </div>
 
-          {/* Footer CTA */}
-          <div className="px-5 pb-5 pt-4 flex-shrink-0 border-t border-[#1a1a1a]">
+          <div className="flex-shrink-0 border-t border-[#1a1a1a] px-5 pb-5 pt-4">
             <button
               onClick={handleConfirm}
-              disabled={!reference.trim() || loading}
-              className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-              style={{ background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}
-              onMouseEnter={e => { if (reference.trim() && !loading) (e.currentTarget as HTMLElement).style.background = 'rgba(74,222,128,0.18)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(74,222,128,0.1)' }}
+              disabled={!operationNumber.trim() || !bankName.trim() || !paymentDate.trim() || loading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all disabled:opacity-50"
+              style={{
+                background: 'rgba(74,222,128,0.1)',
+                color: '#4ade80',
+                border: '1px solid rgba(74,222,128,0.25)',
+              }}
+              onMouseEnter={(e) => {
+                if (operationNumber.trim() && bankName.trim() && paymentDate.trim() && !loading) {
+                  e.currentTarget.style.background = 'rgba(74,222,128,0.18)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(74,222,128,0.1)'
+              }}
             >
-              {loading
-                ? <><Loader2 size={14} className="animate-spin" /> Procesando...</>
-                : <><Check size={14} /> Confirmar Pago</>}
+              {loading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" /> Procesando...
+                </>
+              ) : (
+                <>
+                  <Check size={14} /> Confirmar pago
+                </>
+              )}
             </button>
           </div>
         </div>

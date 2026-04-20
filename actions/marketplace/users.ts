@@ -4,8 +4,6 @@ import { getDb } from '@/lib/marketplace/db'
 import { getSession, setSessionCookie } from '@/lib/marketplace/auth'
 import type { ActionResult } from '@/lib/validations/marketplace'
 
-// ─── GET MY PROFILE ───────────────────────────────────────────────────────────
-
 export async function getMyProfile(): Promise<ActionResult<object>> {
   const session = await getSession()
   if (!session) return { success: false, message: 'No autenticado' }
@@ -43,10 +41,6 @@ export async function getMyProfile(): Promise<ActionResult<object>> {
   }
 }
 
-// ─── UPDATE PROFILE ───────────────────────────────────────────────────────────
-// Updates displayName, bio, and/or avatarUrl. Also refreshes the session cookie
-// if displayName changed (so the auth bar updates immediately).
-
 export async function updateProfile(data: {
   displayName?: string
   bio?: string
@@ -74,7 +68,6 @@ export async function updateProfile(data: {
 
     await db.mpUser.update({ where: { id: session.userId }, data: updateData })
 
-    // Refresh JWT so displayName in the auth bar updates without re-login
     if (data.displayName !== undefined) {
       await setSessionCookie({
         ...session,
@@ -89,9 +82,6 @@ export async function updateProfile(data: {
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
   }
 }
-
-// ─── GET PUBLIC PROFILE ───────────────────────────────────────────────────────
-// Returns a user's public-facing profile with their active listings.
 
 export async function getUserProfile(userId: string): Promise<ActionResult<object>> {
   const db = await getDb()
@@ -139,10 +129,6 @@ export async function getUserProfile(userId: string): Promise<ActionResult<objec
   }
 }
 
-// ─── BECOME SELLER ────────────────────────────────────────────────────────────
-// Activates the seller profile for the current user.
-// Also refreshes the JWT so isSeller=true appears in the auth bar immediately.
-
 export async function becomeSeller(): Promise<ActionResult> {
   const session = await getSession()
   if (!session) return { success: false, message: 'No autenticado' }
@@ -163,11 +149,6 @@ export async function becomeSeller(): Promise<ActionResult> {
   }
 }
 
-// ─── ADD PAYOUT METHOD ────────────────────────────────────────────────────────
-// Adds a withdrawal method for the seller.
-// encryptedData should be AES-encrypted at the application layer before storing.
-// Valid methodTypes: ZELLE | PAGO_MOVIL | CRYPTO_WALLET | BANK_TRANSFER
-
 export async function addPayoutMethod(data: {
   methodType: string
   encryptedData: string
@@ -178,14 +159,13 @@ export async function addPayoutMethod(data: {
   const session = await getSession()
   if (!session) return { success: false, message: 'No autenticado' }
 
-  if (!data.displayLabel.trim()) return { success: false, message: 'La etiqueta no puede estar vacía' }
+  if (!data.displayLabel.trim()) return { success: false, message: 'La etiqueta no puede estar vacia' }
 
   const db = await getDb()
   if (!db) return { success: false, message: 'Base de datos no disponible' }
 
   try {
     if (data.isDefault) {
-      // Unset current default
       await db.mpPayoutMethod.updateMany({
         where: { userId: session.userId, isDefault: true },
         data: { isDefault: false },
@@ -206,14 +186,12 @@ export async function addPayoutMethod(data: {
     })
 
     await db.$disconnect()
-    return { success: true, data: { id: method.id }, message: 'Método de cobro añadido' }
+    return { success: true, data: { id: method.id }, message: 'Metodo de cobro anadido' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
   }
 }
-
-// ─── GET PAYOUT METHODS ───────────────────────────────────────────────────────
 
 export async function getPayoutMethods(): Promise<ActionResult<object[]>> {
   const session = await getSession()
@@ -229,10 +207,10 @@ export async function getPayoutMethods(): Promise<ActionResult<object[]>> {
         id: true,
         methodType: true,
         displayLabel: true,
+        encryptedData: true,
         currency: true,
         isDefault: true,
         createdAt: true,
-        // NOTE: encryptedData is intentionally omitted from this query
       },
       orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
     })
@@ -245,8 +223,6 @@ export async function getPayoutMethods(): Promise<ActionResult<object[]>> {
   }
 }
 
-// ─── SET DEFAULT PAYOUT METHOD ────────────────────────────────────────────────
-
 export async function setDefaultPayoutMethod(methodId: string): Promise<ActionResult> {
   const session = await getSession()
   if (!session) return { success: false, message: 'No autenticado' }
@@ -256,10 +232,9 @@ export async function setDefaultPayoutMethod(methodId: string): Promise<ActionRe
 
   try {
     const method = await db.mpPayoutMethod.findUnique({ where: { id: methodId } })
-    if (!method) return { success: false, message: 'Método no encontrado' }
+    if (!method) return { success: false, message: 'Metodo no encontrado' }
     if (method.userId !== session.userId) return { success: false, message: 'Sin permiso' }
 
-    // Unset all, then set the new default
     await db.mpPayoutMethod.updateMany({
       where: { userId: session.userId },
       data: { isDefault: false },
@@ -267,25 +242,25 @@ export async function setDefaultPayoutMethod(methodId: string): Promise<ActionRe
     await db.mpPayoutMethod.update({ where: { id: methodId }, data: { isDefault: true } })
 
     await db.$disconnect()
-    return { success: true, data: undefined, message: 'Método por defecto actualizado' }
+    return { success: true, data: undefined, message: 'Metodo por defecto actualizado' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
   }
 }
 
-// ─── GET SELLER PAYOUT METHODS FOR CHECKOUT ──────────────────────────────────
-// Exposes the seller's bank details to the buyer ONLY when:
-//   1. Caller is authenticated
-//   2. transactionId belongs to caller as buyer
-//   3. Transaction is in INITIATED state
-// Returns encryptedData (plain JSON in current implementation) filtered to
-// PAGO_MOVIL | BANK_TRANSFER | CRYPTO_WALLET — never ZELLE.
+export interface SellerCheckoutMethod {
+  id: string
+  methodType: 'PAGO_MOVIL' | 'ZELLE' | 'CRYPTO_WALLET'
+  displayLabel: string
+  currency: string
+  isDefault: boolean
+  encryptedData: string
+}
 
 export async function getSellerPayoutMethodsForCheckout(
   sellerId: string,
-  transactionId: string,
-): Promise<ActionResult<object[]>> {
+): Promise<ActionResult<SellerCheckoutMethod[]>> {
   const session = await getSession()
   if (!session) return { success: false, message: 'No autenticado' }
 
@@ -293,26 +268,23 @@ export async function getSellerPayoutMethodsForCheckout(
   if (!db) return { success: false, message: 'Base de datos no disponible' }
 
   try {
-    // Strict ownership + state verification
-    const tx = await db.mpTransaction.findUnique({
-      where: { id: transactionId },
-      select: { buyerId: true, sellerId: true, status: true },
+    const seller = await db.mpUser.findUnique({
+      where: { id: sellerId },
+      select: { id: true, isBanned: true },
     })
 
-    if (!tx) return { success: false, message: 'Transacción no encontrada' }
-    if (tx.buyerId !== session.userId) return { success: false, message: 'Sin permiso' }
-    if (tx.sellerId !== sellerId) return { success: false, message: 'Vendedor no coincide con la transacción' }
-    if (tx.status !== 'INITIATED' && tx.status !== 'PENDING_PAYMENT') {
-      return { success: false, message: 'Estado de transacción inválido para obtener métodos de pago' }
+    if (!seller || seller.isBanned) {
+      return { success: false, message: 'Vendedor no disponible' }
     }
-
-    const ALLOWED_METHODS = ['PAGO_MOVIL', 'BANK_TRANSFER', 'CRYPTO_WALLET']
+    if (seller.id === session.userId) {
+      return { success: false, message: 'No puedes comprar tus propios listings' }
+    }
 
     const methods = await db.mpPayoutMethod.findMany({
       where: {
         userId: sellerId,
         isActive: true,
-        methodType: { in: ALLOWED_METHODS as ['PAGO_MOVIL', 'BANK_TRANSFER', 'CRYPTO_WALLET'] },
+        methodType: { in: ['PAGO_MOVIL', 'ZELLE', 'CRYPTO_WALLET'] },
       },
       select: {
         id: true,
@@ -326,15 +298,12 @@ export async function getSellerPayoutMethodsForCheckout(
     })
 
     await db.$disconnect()
-    return { success: true, data: methods, message: 'OK' }
+    return { success: true, data: methods as SellerCheckoutMethod[], message: 'OK' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
   }
 }
-
-// ─── REMOVE PAYOUT METHOD ─────────────────────────────────────────────────────
-// Soft-delete: sets isActive=false to preserve audit trail.
 
 export async function removePayoutMethod(methodId: string): Promise<ActionResult> {
   const session = await getSession()
@@ -345,13 +314,13 @@ export async function removePayoutMethod(methodId: string): Promise<ActionResult
 
   try {
     const method = await db.mpPayoutMethod.findUnique({ where: { id: methodId } })
-    if (!method) return { success: false, message: 'Método no encontrado' }
+    if (!method) return { success: false, message: 'Metodo no encontrado' }
     if (method.userId !== session.userId) return { success: false, message: 'Sin permiso' }
 
     await db.mpPayoutMethod.update({ where: { id: methodId }, data: { isActive: false } })
 
     await db.$disconnect()
-    return { success: true, data: undefined, message: 'Método eliminado' }
+    return { success: true, data: undefined, message: 'Metodo eliminado' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }

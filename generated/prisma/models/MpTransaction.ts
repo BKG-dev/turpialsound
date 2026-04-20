@@ -55,6 +55,8 @@ export type MpTransactionMinAggregateOutputType = {
   sellerNetAmount: runtime.Decimal | null
   externalTxId: string | null
   paymentReference: string | null
+  paymentSenderBank: string | null
+  paymentPaidAt: Date | null
   paymentProofUrl: string | null
   escrowHeldAt: Date | null
   escrowReleaseAt: Date | null
@@ -82,6 +84,8 @@ export type MpTransactionMaxAggregateOutputType = {
   sellerNetAmount: runtime.Decimal | null
   externalTxId: string | null
   paymentReference: string | null
+  paymentSenderBank: string | null
+  paymentPaidAt: Date | null
   paymentProofUrl: string | null
   escrowHeldAt: Date | null
   escrowReleaseAt: Date | null
@@ -109,6 +113,8 @@ export type MpTransactionCountAggregateOutputType = {
   sellerNetAmount: number
   externalTxId: number
   paymentReference: number
+  paymentSenderBank: number
+  paymentPaidAt: number
   paymentProofUrl: number
   escrowHeldAt: number
   escrowReleaseAt: number
@@ -152,6 +158,8 @@ export type MpTransactionMinAggregateInputType = {
   sellerNetAmount?: true
   externalTxId?: true
   paymentReference?: true
+  paymentSenderBank?: true
+  paymentPaidAt?: true
   paymentProofUrl?: true
   escrowHeldAt?: true
   escrowReleaseAt?: true
@@ -179,6 +187,8 @@ export type MpTransactionMaxAggregateInputType = {
   sellerNetAmount?: true
   externalTxId?: true
   paymentReference?: true
+  paymentSenderBank?: true
+  paymentPaidAt?: true
   paymentProofUrl?: true
   escrowHeldAt?: true
   escrowReleaseAt?: true
@@ -206,6 +216,8 @@ export type MpTransactionCountAggregateInputType = {
   sellerNetAmount?: true
   externalTxId?: true
   paymentReference?: true
+  paymentSenderBank?: true
+  paymentPaidAt?: true
   paymentProofUrl?: true
   escrowHeldAt?: true
   escrowReleaseAt?: true
@@ -320,6 +332,8 @@ export type MpTransactionGroupByOutputType = {
   sellerNetAmount: runtime.Decimal
   externalTxId: string | null
   paymentReference: string | null
+  paymentSenderBank: string | null
+  paymentPaidAt: Date | null
   paymentProofUrl: string | null
   escrowHeldAt: Date | null
   escrowReleaseAt: Date | null
@@ -370,6 +384,8 @@ export type MpTransactionWhereInput = {
   sellerNetAmount?: Prisma.DecimalFilter<"MpTransaction"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.StringNullableFilter<"MpTransaction"> | string | null
   paymentReference?: Prisma.StringNullableFilter<"MpTransaction"> | string | null
+  paymentSenderBank?: Prisma.StringNullableFilter<"MpTransaction"> | string | null
+  paymentPaidAt?: Prisma.DateTimeNullableFilter<"MpTransaction"> | Date | string | null
   paymentProofUrl?: Prisma.StringNullableFilter<"MpTransaction"> | string | null
   escrowHeldAt?: Prisma.DateTimeNullableFilter<"MpTransaction"> | Date | string | null
   escrowReleaseAt?: Prisma.DateTimeNullableFilter<"MpTransaction"> | Date | string | null
@@ -402,6 +418,8 @@ export type MpTransactionOrderByWithRelationInput = {
   sellerNetAmount?: Prisma.SortOrder
   externalTxId?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentReference?: Prisma.SortOrderInput | Prisma.SortOrder
+  paymentSenderBank?: Prisma.SortOrderInput | Prisma.SortOrder
+  paymentPaidAt?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentProofUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   escrowHeldAt?: Prisma.SortOrderInput | Prisma.SortOrder
   escrowReleaseAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -437,6 +455,8 @@ export type MpTransactionWhereUniqueInput = Prisma.AtLeast<{
   sellerNetAmount?: Prisma.DecimalFilter<"MpTransaction"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.StringNullableFilter<"MpTransaction"> | string | null
   paymentReference?: Prisma.StringNullableFilter<"MpTransaction"> | string | null
+  paymentSenderBank?: Prisma.StringNullableFilter<"MpTransaction"> | string | null
+  paymentPaidAt?: Prisma.DateTimeNullableFilter<"MpTransaction"> | Date | string | null
   paymentProofUrl?: Prisma.StringNullableFilter<"MpTransaction"> | string | null
   escrowHeldAt?: Prisma.DateTimeNullableFilter<"MpTransaction"> | Date | string | null
   escrowReleaseAt?: Prisma.DateTimeNullableFilter<"MpTransaction"> | Date | string | null
@@ -469,6 +489,8 @@ export type MpTransactionOrderByWithAggregationInput = {
   sellerNetAmount?: Prisma.SortOrder
   externalTxId?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentReference?: Prisma.SortOrderInput | Prisma.SortOrder
+  paymentSenderBank?: Prisma.SortOrderInput | Prisma.SortOrder
+  paymentPaidAt?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentProofUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   escrowHeldAt?: Prisma.SortOrderInput | Prisma.SortOrder
   escrowReleaseAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -504,6 +526,8 @@ export type MpTransactionScalarWhereWithAggregatesInput = {
   sellerNetAmount?: Prisma.DecimalWithAggregatesFilter<"MpTransaction"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.StringNullableWithAggregatesFilter<"MpTransaction"> | string | null
   paymentReference?: Prisma.StringNullableWithAggregatesFilter<"MpTransaction"> | string | null
+  paymentSenderBank?: Prisma.StringNullableWithAggregatesFilter<"MpTransaction"> | string | null
+  paymentPaidAt?: Prisma.DateTimeNullableWithAggregatesFilter<"MpTransaction"> | Date | string | null
   paymentProofUrl?: Prisma.StringNullableWithAggregatesFilter<"MpTransaction"> | string | null
   escrowHeldAt?: Prisma.DateTimeNullableWithAggregatesFilter<"MpTransaction"> | Date | string | null
   escrowReleaseAt?: Prisma.DateTimeNullableWithAggregatesFilter<"MpTransaction"> | Date | string | null
@@ -528,6 +552,8 @@ export type MpTransactionCreateInput = {
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: string | null
   paymentReference?: string | null
+  paymentSenderBank?: string | null
+  paymentPaidAt?: Date | string | null
   paymentProofUrl?: string | null
   escrowHeldAt?: Date | string | null
   escrowReleaseAt?: Date | string | null
@@ -560,6 +586,8 @@ export type MpTransactionUncheckedCreateInput = {
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: string | null
   paymentReference?: string | null
+  paymentSenderBank?: string | null
+  paymentPaidAt?: Date | string | null
   paymentProofUrl?: string | null
   escrowHeldAt?: Date | string | null
   escrowReleaseAt?: Date | string | null
@@ -586,6 +614,8 @@ export type MpTransactionUpdateInput = {
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentSenderBank?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentPaidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paymentProofUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   escrowHeldAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -618,6 +648,8 @@ export type MpTransactionUncheckedUpdateInput = {
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentSenderBank?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentPaidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paymentProofUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   escrowHeldAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -647,6 +679,8 @@ export type MpTransactionCreateManyInput = {
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: string | null
   paymentReference?: string | null
+  paymentSenderBank?: string | null
+  paymentPaidAt?: Date | string | null
   paymentProofUrl?: string | null
   escrowHeldAt?: Date | string | null
   escrowReleaseAt?: Date | string | null
@@ -671,6 +705,8 @@ export type MpTransactionUpdateManyMutationInput = {
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentSenderBank?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentPaidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paymentProofUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   escrowHeldAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -698,6 +734,8 @@ export type MpTransactionUncheckedUpdateManyInput = {
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentSenderBank?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentPaidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paymentProofUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   escrowHeldAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -735,6 +773,8 @@ export type MpTransactionCountOrderByAggregateInput = {
   sellerNetAmount?: Prisma.SortOrder
   externalTxId?: Prisma.SortOrder
   paymentReference?: Prisma.SortOrder
+  paymentSenderBank?: Prisma.SortOrder
+  paymentPaidAt?: Prisma.SortOrder
   paymentProofUrl?: Prisma.SortOrder
   escrowHeldAt?: Prisma.SortOrder
   escrowReleaseAt?: Prisma.SortOrder
@@ -769,6 +809,8 @@ export type MpTransactionMaxOrderByAggregateInput = {
   sellerNetAmount?: Prisma.SortOrder
   externalTxId?: Prisma.SortOrder
   paymentReference?: Prisma.SortOrder
+  paymentSenderBank?: Prisma.SortOrder
+  paymentPaidAt?: Prisma.SortOrder
   paymentProofUrl?: Prisma.SortOrder
   escrowHeldAt?: Prisma.SortOrder
   escrowReleaseAt?: Prisma.SortOrder
@@ -796,6 +838,8 @@ export type MpTransactionMinOrderByAggregateInput = {
   sellerNetAmount?: Prisma.SortOrder
   externalTxId?: Prisma.SortOrder
   paymentReference?: Prisma.SortOrder
+  paymentSenderBank?: Prisma.SortOrder
+  paymentPaidAt?: Prisma.SortOrder
   paymentProofUrl?: Prisma.SortOrder
   escrowHeldAt?: Prisma.SortOrder
   escrowReleaseAt?: Prisma.SortOrder
@@ -994,6 +1038,8 @@ export type MpTransactionCreateWithoutBuyerInput = {
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: string | null
   paymentReference?: string | null
+  paymentSenderBank?: string | null
+  paymentPaidAt?: Date | string | null
   paymentProofUrl?: string | null
   escrowHeldAt?: Date | string | null
   escrowReleaseAt?: Date | string | null
@@ -1024,6 +1070,8 @@ export type MpTransactionUncheckedCreateWithoutBuyerInput = {
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: string | null
   paymentReference?: string | null
+  paymentSenderBank?: string | null
+  paymentPaidAt?: Date | string | null
   paymentProofUrl?: string | null
   escrowHeldAt?: Date | string | null
   escrowReleaseAt?: Date | string | null
@@ -1060,6 +1108,8 @@ export type MpTransactionCreateWithoutSellerInput = {
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: string | null
   paymentReference?: string | null
+  paymentSenderBank?: string | null
+  paymentPaidAt?: Date | string | null
   paymentProofUrl?: string | null
   escrowHeldAt?: Date | string | null
   escrowReleaseAt?: Date | string | null
@@ -1090,6 +1140,8 @@ export type MpTransactionUncheckedCreateWithoutSellerInput = {
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: string | null
   paymentReference?: string | null
+  paymentSenderBank?: string | null
+  paymentPaidAt?: Date | string | null
   paymentProofUrl?: string | null
   escrowHeldAt?: Date | string | null
   escrowReleaseAt?: Date | string | null
@@ -1148,6 +1200,8 @@ export type MpTransactionScalarWhereInput = {
   sellerNetAmount?: Prisma.DecimalFilter<"MpTransaction"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.StringNullableFilter<"MpTransaction"> | string | null
   paymentReference?: Prisma.StringNullableFilter<"MpTransaction"> | string | null
+  paymentSenderBank?: Prisma.StringNullableFilter<"MpTransaction"> | string | null
+  paymentPaidAt?: Prisma.DateTimeNullableFilter<"MpTransaction"> | Date | string | null
   paymentProofUrl?: Prisma.StringNullableFilter<"MpTransaction"> | string | null
   escrowHeldAt?: Prisma.DateTimeNullableFilter<"MpTransaction"> | Date | string | null
   escrowReleaseAt?: Prisma.DateTimeNullableFilter<"MpTransaction"> | Date | string | null
@@ -1188,6 +1242,8 @@ export type MpTransactionCreateWithoutListingInput = {
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: string | null
   paymentReference?: string | null
+  paymentSenderBank?: string | null
+  paymentPaidAt?: Date | string | null
   paymentProofUrl?: string | null
   escrowHeldAt?: Date | string | null
   escrowReleaseAt?: Date | string | null
@@ -1218,6 +1274,8 @@ export type MpTransactionUncheckedCreateWithoutListingInput = {
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: string | null
   paymentReference?: string | null
+  paymentSenderBank?: string | null
+  paymentPaidAt?: Date | string | null
   paymentProofUrl?: string | null
   escrowHeldAt?: Date | string | null
   escrowReleaseAt?: Date | string | null
@@ -1270,6 +1328,8 @@ export type MpTransactionCreateWithoutStatusHistoryInput = {
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: string | null
   paymentReference?: string | null
+  paymentSenderBank?: string | null
+  paymentPaidAt?: Date | string | null
   paymentProofUrl?: string | null
   escrowHeldAt?: Date | string | null
   escrowReleaseAt?: Date | string | null
@@ -1301,6 +1361,8 @@ export type MpTransactionUncheckedCreateWithoutStatusHistoryInput = {
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: string | null
   paymentReference?: string | null
+  paymentSenderBank?: string | null
+  paymentPaidAt?: Date | string | null
   paymentProofUrl?: string | null
   escrowHeldAt?: Date | string | null
   escrowReleaseAt?: Date | string | null
@@ -1342,6 +1404,8 @@ export type MpTransactionUpdateWithoutStatusHistoryInput = {
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentSenderBank?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentPaidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paymentProofUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   escrowHeldAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1373,6 +1437,8 @@ export type MpTransactionUncheckedUpdateWithoutStatusHistoryInput = {
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentSenderBank?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentPaidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paymentProofUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   escrowHeldAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1398,6 +1464,8 @@ export type MpTransactionCreateWithoutDisputesInput = {
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: string | null
   paymentReference?: string | null
+  paymentSenderBank?: string | null
+  paymentPaidAt?: Date | string | null
   paymentProofUrl?: string | null
   escrowHeldAt?: Date | string | null
   escrowReleaseAt?: Date | string | null
@@ -1429,6 +1497,8 @@ export type MpTransactionUncheckedCreateWithoutDisputesInput = {
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: string | null
   paymentReference?: string | null
+  paymentSenderBank?: string | null
+  paymentPaidAt?: Date | string | null
   paymentProofUrl?: string | null
   escrowHeldAt?: Date | string | null
   escrowReleaseAt?: Date | string | null
@@ -1470,6 +1540,8 @@ export type MpTransactionUpdateWithoutDisputesInput = {
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentSenderBank?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentPaidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paymentProofUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   escrowHeldAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1501,6 +1573,8 @@ export type MpTransactionUncheckedUpdateWithoutDisputesInput = {
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentSenderBank?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentPaidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paymentProofUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   escrowHeldAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1528,6 +1602,8 @@ export type MpTransactionCreateManyBuyerInput = {
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: string | null
   paymentReference?: string | null
+  paymentSenderBank?: string | null
+  paymentPaidAt?: Date | string | null
   paymentProofUrl?: string | null
   escrowHeldAt?: Date | string | null
   escrowReleaseAt?: Date | string | null
@@ -1554,6 +1630,8 @@ export type MpTransactionCreateManySellerInput = {
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: string | null
   paymentReference?: string | null
+  paymentSenderBank?: string | null
+  paymentPaidAt?: Date | string | null
   paymentProofUrl?: string | null
   escrowHeldAt?: Date | string | null
   escrowReleaseAt?: Date | string | null
@@ -1578,6 +1656,8 @@ export type MpTransactionUpdateWithoutBuyerInput = {
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentSenderBank?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentPaidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paymentProofUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   escrowHeldAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1608,6 +1688,8 @@ export type MpTransactionUncheckedUpdateWithoutBuyerInput = {
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentSenderBank?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentPaidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paymentProofUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   escrowHeldAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1636,6 +1718,8 @@ export type MpTransactionUncheckedUpdateManyWithoutBuyerInput = {
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentSenderBank?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentPaidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paymentProofUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   escrowHeldAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1660,6 +1744,8 @@ export type MpTransactionUpdateWithoutSellerInput = {
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentSenderBank?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentPaidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paymentProofUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   escrowHeldAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1690,6 +1776,8 @@ export type MpTransactionUncheckedUpdateWithoutSellerInput = {
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentSenderBank?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentPaidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paymentProofUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   escrowHeldAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1718,6 +1806,8 @@ export type MpTransactionUncheckedUpdateManyWithoutSellerInput = {
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentSenderBank?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentPaidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paymentProofUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   escrowHeldAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1744,6 +1834,8 @@ export type MpTransactionCreateManyListingInput = {
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: string | null
   paymentReference?: string | null
+  paymentSenderBank?: string | null
+  paymentPaidAt?: Date | string | null
   paymentProofUrl?: string | null
   escrowHeldAt?: Date | string | null
   escrowReleaseAt?: Date | string | null
@@ -1768,6 +1860,8 @@ export type MpTransactionUpdateWithoutListingInput = {
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentSenderBank?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentPaidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paymentProofUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   escrowHeldAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1798,6 +1892,8 @@ export type MpTransactionUncheckedUpdateWithoutListingInput = {
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentSenderBank?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentPaidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paymentProofUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   escrowHeldAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1826,6 +1922,8 @@ export type MpTransactionUncheckedUpdateManyWithoutListingInput = {
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   externalTxId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentReference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentSenderBank?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentPaidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   paymentProofUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   escrowHeldAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1893,6 +1991,8 @@ export type MpTransactionSelect<ExtArgs extends runtime.Types.Extensions.Interna
   sellerNetAmount?: boolean
   externalTxId?: boolean
   paymentReference?: boolean
+  paymentSenderBank?: boolean
+  paymentPaidAt?: boolean
   paymentProofUrl?: boolean
   escrowHeldAt?: boolean
   escrowReleaseAt?: boolean
@@ -1926,6 +2026,8 @@ export type MpTransactionSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   sellerNetAmount?: boolean
   externalTxId?: boolean
   paymentReference?: boolean
+  paymentSenderBank?: boolean
+  paymentPaidAt?: boolean
   paymentProofUrl?: boolean
   escrowHeldAt?: boolean
   escrowReleaseAt?: boolean
@@ -1956,6 +2058,8 @@ export type MpTransactionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   sellerNetAmount?: boolean
   externalTxId?: boolean
   paymentReference?: boolean
+  paymentSenderBank?: boolean
+  paymentPaidAt?: boolean
   paymentProofUrl?: boolean
   escrowHeldAt?: boolean
   escrowReleaseAt?: boolean
@@ -1986,6 +2090,8 @@ export type MpTransactionSelectScalar = {
   sellerNetAmount?: boolean
   externalTxId?: boolean
   paymentReference?: boolean
+  paymentSenderBank?: boolean
+  paymentPaidAt?: boolean
   paymentProofUrl?: boolean
   escrowHeldAt?: boolean
   escrowReleaseAt?: boolean
@@ -1998,7 +2104,7 @@ export type MpTransactionSelectScalar = {
   updatedAt?: boolean
 }
 
-export type MpTransactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "idempotencyKey" | "buyerId" | "sellerId" | "listingId" | "paymentMethod" | "status" | "amount" | "currency" | "platformFeePercent" | "platformFeeAmount" | "sellerNetAmount" | "externalTxId" | "paymentReference" | "paymentProofUrl" | "escrowHeldAt" | "escrowReleaseAt" | "releasedAt" | "buyerConfirmedAt" | "disputeReason" | "disputeOpenedAt" | "adminNotes" | "createdAt" | "updatedAt", ExtArgs["result"]["mpTransaction"]>
+export type MpTransactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "idempotencyKey" | "buyerId" | "sellerId" | "listingId" | "paymentMethod" | "status" | "amount" | "currency" | "platformFeePercent" | "platformFeeAmount" | "sellerNetAmount" | "externalTxId" | "paymentReference" | "paymentSenderBank" | "paymentPaidAt" | "paymentProofUrl" | "escrowHeldAt" | "escrowReleaseAt" | "releasedAt" | "buyerConfirmedAt" | "disputeReason" | "disputeOpenedAt" | "adminNotes" | "createdAt" | "updatedAt", ExtArgs["result"]["mpTransaction"]>
 export type MpTransactionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   buyer?: boolean | Prisma.MpUserDefaultArgs<ExtArgs>
   seller?: boolean | Prisma.MpUserDefaultArgs<ExtArgs>
@@ -2042,6 +2148,8 @@ export type $MpTransactionPayload<ExtArgs extends runtime.Types.Extensions.Inter
     sellerNetAmount: runtime.Decimal
     externalTxId: string | null
     paymentReference: string | null
+    paymentSenderBank: string | null
+    paymentPaidAt: Date | null
     paymentProofUrl: string | null
     escrowHeldAt: Date | null
     escrowReleaseAt: Date | null
@@ -2494,6 +2602,8 @@ export interface MpTransactionFieldRefs {
   readonly sellerNetAmount: Prisma.FieldRef<"MpTransaction", 'Decimal'>
   readonly externalTxId: Prisma.FieldRef<"MpTransaction", 'String'>
   readonly paymentReference: Prisma.FieldRef<"MpTransaction", 'String'>
+  readonly paymentSenderBank: Prisma.FieldRef<"MpTransaction", 'String'>
+  readonly paymentPaidAt: Prisma.FieldRef<"MpTransaction", 'DateTime'>
   readonly paymentProofUrl: Prisma.FieldRef<"MpTransaction", 'String'>
   readonly escrowHeldAt: Prisma.FieldRef<"MpTransaction", 'DateTime'>
   readonly escrowReleaseAt: Prisma.FieldRef<"MpTransaction", 'DateTime'>

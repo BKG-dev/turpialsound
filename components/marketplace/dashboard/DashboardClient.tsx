@@ -22,13 +22,26 @@ import {
   X,
   Loader2,
   HelpCircle,
+  Wallet,
+  Landmark,
+  CircleDollarSign,
+  Copy,
+  Check,
+  Plus,
+  CreditCard,
 } from 'lucide-react'
 import type { MpSessionPayload } from '@/lib/marketplace/auth'
 import { TransactionChat } from '@/components/marketplace/TransactionChat'
 import { getUnreadCount } from '@/actions/marketplace/chat'
 import { openDispute } from '@/actions/marketplace/transactions'
 import { toggleFavorite } from '@/actions/marketplace/favorites'
+import {
+  addPayoutMethod,
+  removePayoutMethod,
+  setDefaultPayoutMethod,
+} from '@/actions/marketplace/users'
 import { cn } from '@/lib/utils'
+import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
 
 // ─── Local Types ──────────────────────────────────────────────────────────────
 
@@ -53,11 +66,25 @@ interface DashTransaction {
   amount: string
   currency: string
   paymentMethod: string
+  platformFeeAmount?: string
+  sellerNetAmount?: string
+  paymentReference?: string | null
+  paymentProofUrl?: string | null
   createdAt: string | Date
   escrowReleaseAt?: string | Date | null
   buyer: { id: string; displayName: string; avatarUrl: string | null }
   seller: { id: string; displayName: string; avatarUrl: string | null }
   listing: { id: string; title: string; slug: string; coverImageUrl: string | null } | null
+}
+
+interface DashPayoutMethod {
+  id: string
+  methodType: string
+  displayLabel: string
+  encryptedData: string
+  currency: string
+  isDefault: boolean
+  createdAt: string | Date
 }
 
 interface DashThread {
@@ -80,7 +107,7 @@ type DashInteracted = any
 
 // ─── Tab Type ─────────────────────────────────────────────────────────────────
 
-type Tab = 'my_store' | 'sales' | 'purchases' | 'messages' | 'favorites'
+type Tab = 'my_store' | 'sales' | 'purchases' | 'messages' | 'favorites' | 'payouts'
 
 // ─── Status Config ────────────────────────────────────────────────────────────
 
@@ -126,8 +153,35 @@ function fmtTime(d: string | Date) {
   return new Date(d).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })
 }
 
+function fmtUSD(n: number) {
+  return `$${n.toFixed(2)}`
+}
+
 function initials(name: string) {
   return name.slice(0, 2).toUpperCase()
+}
+
+function parsePayoutDetails(encryptedData: string) {
+  try {
+    const parsed = JSON.parse(encryptedData)
+    return parsed && typeof parsed === 'object' ? parsed as Record<string, string> : {}
+  } catch {
+    return {}
+  }
+}
+
+function payoutMethodLabel(methodType: string) {
+  const labels: Record<string, string> = {
+    PAGO_MOVIL: 'Pago movil',
+    MERCANTIL_PAGO_MOVIL: 'Pago movil',
+    BANK_TRANSFER: 'Transferencia bancaria',
+    ZELLE: 'Zelle',
+    BINANCE_PAY: 'Binance Pay',
+    CRYPTO_WALLET: 'Wallet crypto',
+    CRYPTO_WALLET_MANUAL: 'Binance Pay',
+  }
+
+  return labels[methodType] ?? methodType
 }
 
 // ─── Section Header ───────────────────────────────────────────────────────────
@@ -374,10 +428,12 @@ function TxCard({
   tx,
   viewAs,
   onDispute,
+  payoutMissing = false,
 }: {
   tx: DashTransaction
   viewAs: 'buyer' | 'seller'
   onDispute?: (tx: DashTransaction) => void
+  payoutMissing?: boolean
 }) {
   const otherParty = viewAs === 'buyer' ? tx.seller : tx.buyer
   const cfg = STATUS_CONFIG[tx.status] ?? STATUS_CONFIG.CANCELLED
@@ -396,7 +452,13 @@ function TxCard({
         style={{ background: 'rgba(30,30,30,0.8)', border: '1px solid rgba(255,255,255,0.06)' }}
       >
         {tx.listing?.coverImageUrl ? (
-          <img src={tx.listing.coverImageUrl} alt={tx.listing.title} className="w-full h-full object-cover" />
+          <MarketplaceImage
+            src={tx.listing.coverImageUrl}
+            alt={tx.listing.title}
+            fill
+            className="w-full h-full object-cover"
+            sizes="80px"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Package size={20} className="text-[#3a3a3a]" />
@@ -458,6 +520,17 @@ function TxCard({
             </button>
           </div>
         )}
+
+        {viewAs === 'seller' && payoutMissing && (
+          <div
+            className="mt-3 rounded-lg px-3 py-2"
+            style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)' }}
+          >
+            <p className="text-[11px] font-medium text-[#f59e0b]">
+              Pendiente de datos de cobro para liberar payout al vendedor.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -489,7 +562,7 @@ function MyListingRow({ listing, onClick }: { listing: DashListing; onClick?: ()
         style={{ background: 'rgba(30,30,30,0.8)', border: '1px solid rgba(255,255,255,0.04)' }}
       >
         {cover ? (
-          <img src={cover} alt={listing.title} className="w-full h-full object-cover" />
+          <MarketplaceImage src={cover} alt={listing.title} fill className="w-full h-full object-cover" sizes="72px" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Package size={16} className="text-[#3a3a3a]" />
@@ -532,7 +605,13 @@ function InteractedRow({ item }: { item: DashInteracted }) {
           style={{ background: 'rgba(30,30,30,0.8)', border: '1px solid rgba(255,255,255,0.04)' }}
         >
           {item.listingCoverImageUrl ? (
-            <img src={item.listingCoverImageUrl} alt={item.listingTitle} className="w-full h-full object-cover" />
+            <MarketplaceImage
+              src={item.listingCoverImageUrl}
+              alt={item.listingTitle}
+              fill
+              className="w-full h-full object-cover"
+              sizes="56px"
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <Package size={14} className="text-[#3a3a3a]" />
@@ -630,7 +709,7 @@ function FavoriteRow({
         style={{ background: 'rgba(30,30,30,0.8)', border: '1px solid rgba(255,255,255,0.04)' }}
       >
         {cover ? (
-          <img src={cover} alt={listing.title} className="w-full h-full object-cover" />
+          <MarketplaceImage src={cover} alt={listing.title} fill className="w-full h-full object-cover" sizes="72px" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Package size={16} className="text-[#3a3a3a]" />
@@ -771,6 +850,7 @@ function TabBar({
     { id: 'purchases', label: 'Mis Compras',  icon: ShoppingBag   },
     { id: 'messages',  label: 'Mensajes',     icon: MessageSquare },
     { id: 'favorites', label: 'Favoritos',    icon: Heart         },
+    { id: 'payouts',   label: 'Cobros',       icon: Wallet        },
   ]
 
   return (
@@ -869,9 +949,11 @@ function ProfileHeader({
       <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="relative flex-shrink-0">
           {profile?.avatarUrl ? (
-            <img
+            <MarketplaceImage
               src={profile.avatarUrl}
               alt={name}
+              width={56}
+              height={56}
               className="w-14 h-14 rounded-2xl object-cover"
               style={{ border: '2px solid rgba(0,174,239,0.3)' }}
             />
@@ -1024,6 +1106,120 @@ function ChatOverlay({
   )
 }
 
+function CopyValueButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false)
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1800)
+    } catch {
+      // noop
+    }
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition-all"
+      style={
+        copied
+          ? { background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.22)' }
+          : { background: 'rgba(0,174,239,0.08)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.18)' }
+      }
+    >
+      {copied ? <Check size={10} /> : <Copy size={10} />}
+      {copied ? 'Copiado' : 'Copiar'}
+    </button>
+  )
+}
+
+function PayoutDetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
+      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
+    >
+      <div className="min-w-0">
+        <p className="text-[10px] uppercase tracking-widest text-[#5a5a5a]">{label}</p>
+        <p className="mt-1 truncate text-[12px] text-[#f2f2f2]">{value}</p>
+      </div>
+      <CopyValueButton value={value} />
+    </div>
+  )
+}
+
+function PayoutMethodCard({
+  method,
+  onSetDefault,
+  onRemove,
+  busyId,
+}: {
+  method: DashPayoutMethod
+  onSetDefault: (methodId: string) => void
+  onRemove: (methodId: string) => void
+  busyId: string | null
+}) {
+  const details = parsePayoutDetails(method.encryptedData)
+  const entries = Object.entries(details).filter(([, value]) => typeof value === 'string' && value.trim().length > 0)
+  const isBusy = busyId === method.id
+
+  return (
+    <div
+      className="rounded-2xl p-4 space-y-3"
+      style={{ background: 'rgba(13,13,13,0.9)', border: '1px solid rgba(255,255,255,0.06)' }}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-[#f2f2f2]">{payoutMethodLabel(method.methodType)}</p>
+            {method.isDefault && (
+              <span
+                className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.2)' }}
+              >
+                Predeterminado
+              </span>
+            )}
+          </div>
+          <p className="mt-1 text-[11px] text-[#5a5a5a]">{method.displayLabel}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {!method.isDefault && (
+            <button
+              onClick={() => onSetDefault(method.id)}
+              disabled={isBusy}
+              className="rounded-xl px-3 py-2 text-[11px] font-semibold transition-all disabled:opacity-50"
+              style={{ background: 'rgba(0,174,239,0.08)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.18)' }}
+            >
+              Usar por defecto
+            </button>
+          )}
+          <button
+            onClick={() => onRemove(method.id)}
+            disabled={isBusy}
+            className="rounded-xl px-3 py-2 text-[11px] font-semibold transition-all disabled:opacity-50"
+            style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.18)' }}
+          >
+            Eliminar
+          </button>
+        </div>
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        {entries.length > 0 ? (
+          entries.map(([label, value]) => (
+            <PayoutDetailRow key={label} label={label} value={value} />
+          ))
+        ) : (
+          <p className="text-xs text-[#5a5a5a]">Sin detalles visibles para este metodo.</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 interface DashboardClientProps {
@@ -1035,6 +1231,7 @@ interface DashboardClientProps {
   myListings: object[]
   myFavorites: object[]
   myInteracted: object[]
+  payoutMethods: object[]
   initialTab?: Tab
 }
 
@@ -1047,6 +1244,7 @@ export function DashboardClient({
   myListings: rawMyListings,
   myFavorites: rawMyFavorites,
   myInteracted: rawMyInteracted,
+  payoutMethods: rawPayoutMethods,
   initialTab,
 }: DashboardClientProps) {
   const router = useRouter()
@@ -1056,6 +1254,7 @@ export function DashboardClient({
   const sales = rawSales as DashTransaction[]
   const threads = rawThreads as DashThread[]
   const myListings = rawMyListings as DashListing[]
+  const initialPayoutMethods = rawPayoutMethods as DashPayoutMethod[]
 
   const [activeTab, setActiveTab] = useState<Tab>(initialTab ?? 'my_store')
   const [openThread, setOpenThread] = useState<DashThread | null>(null)
@@ -1063,6 +1262,23 @@ export function DashboardClient({
   const [disputedTxIds, setDisputedTxIds] = useState<Set<string>>(new Set())
   const [favorites, setFavorites] = useState<DashListing[]>(rawMyFavorites as DashListing[])
   const myInteracted = rawMyInteracted as DashInteracted[]
+  const [payoutMethods, setPayoutMethods] = useState<DashPayoutMethod[]>(initialPayoutMethods)
+  const [payoutBusyId, setPayoutBusyId] = useState<string | null>(null)
+  const [payoutMessage, setPayoutMessage] = useState<string | null>(null)
+  const [payoutSubmitting, setPayoutSubmitting] = useState(false)
+  const [payoutForm, setPayoutForm] = useState({
+    methodType: 'PAGO_MOVIL',
+    displayLabel: '',
+    currency: 'VES',
+    holder: '',
+    identifier: '',
+    phone: '',
+    bank: '',
+    accountNumber: '',
+    payId: '',
+    username: '',
+    wallet: '',
+  })
 
   const initialUnread = threads.filter(t =>
     t.messages[0] && !t.messages[0].isRead && t.messages[0].senderId !== session.userId,
@@ -1082,6 +1298,110 @@ export function DashboardClient({
     purchases: purchases.length,
     messages:  unreadCount,
     favorites: favorites.length,
+    payouts:   payoutMethods.length,
+  }
+
+  const pendingValidationSales = sales.filter(tx => ['PAYMENT_RECEIVED', 'VALIDATING'].includes(tx.status))
+  const escrowSales = sales.filter(tx => ['IN_ESCROW', 'DELIVERY_CONFIRMED'].includes(tx.status))
+  const releasedSales = sales.filter(tx => tx.status === 'RELEASED')
+  const payoutRelevantSales = sales.filter(tx => ['IN_ESCROW', 'DELIVERY_CONFIRMED', 'RELEASED'].includes(tx.status))
+  const payoutReadySales = sales.filter(tx => tx.status === 'RELEASED')
+  const operationalSold = payoutRelevantSales.reduce((sum, tx) => sum + Number(tx.amount ?? 0), 0)
+  const operationalCommissions = payoutRelevantSales.reduce((sum, tx) => sum + Number(tx.platformFeeAmount ?? 0), 0)
+  const operationalSellerNet = payoutRelevantSales.reduce((sum, tx) => sum + Number(tx.sellerNetAmount ?? 0), 0)
+  const payoutReadyNet = payoutReadySales.reduce((sum, tx) => sum + Number(tx.sellerNetAmount ?? 0), 0)
+  const sellerNeedsPayoutProfile = profile?.isSeller && payoutMethods.length === 0 && payoutRelevantSales.length > 0
+
+  function updatePayoutField(field: keyof typeof payoutForm, value: string) {
+    setPayoutForm(prev => ({ ...prev, [field]: value }))
+  }
+
+  async function handleAddPayoutMethod() {
+    const normalizedType = payoutForm.methodType
+    const methodCurrency = normalizedType === 'BINANCE_PAY' ? 'USD' : 'VES'
+
+    const detailPayload =
+      normalizedType === 'PAGO_MOVIL'
+        ? { titular: payoutForm.holder, cedula: payoutForm.identifier, telefono: payoutForm.phone, banco: payoutForm.bank }
+        : normalizedType === 'BANK_TRANSFER'
+          ? { beneficiario: payoutForm.holder, cedula: payoutForm.identifier, cuenta: payoutForm.accountNumber, banco: payoutForm.bank }
+          : normalizedType === 'BINANCE_PAY'
+            ? { pay_id: payoutForm.payId, usuario: payoutForm.username }
+            : { wallet: payoutForm.wallet }
+
+    const detailsAreValid = Object.values(detailPayload).every(value => value.trim().length > 0)
+    if (!payoutForm.displayLabel.trim() || !detailsAreValid) {
+      setPayoutMessage('Completa la etiqueta y todos los datos del metodo.')
+      return
+    }
+
+    setPayoutSubmitting(true)
+    setPayoutMessage(null)
+
+    const result = await addPayoutMethod({
+      methodType: normalizedType,
+      displayLabel: payoutForm.displayLabel.trim(),
+      encryptedData: JSON.stringify(detailPayload),
+      currency: methodCurrency,
+      isDefault: payoutMethods.length === 0,
+    })
+
+    if (result.success && result.data) {
+      const createdMethod: DashPayoutMethod = {
+        id: result.data.id,
+        methodType: normalizedType,
+        displayLabel: payoutForm.displayLabel.trim(),
+        encryptedData: JSON.stringify(detailPayload),
+        currency: methodCurrency,
+        isDefault: payoutMethods.length === 0,
+        createdAt: new Date().toISOString(),
+      }
+      setPayoutMethods(prev => [createdMethod, ...prev.map(method => ({ ...method, isDefault: createdMethod.isDefault ? false : method.isDefault }))])
+      setPayoutForm({
+        methodType: 'PAGO_MOVIL',
+        displayLabel: '',
+        currency: 'VES',
+        holder: '',
+        identifier: '',
+        phone: '',
+        bank: '',
+        accountNumber: '',
+        payId: '',
+        username: '',
+        wallet: '',
+      })
+      setPayoutMessage('Metodo de cobro guardado.')
+    } else {
+      setPayoutMessage(result.message)
+    }
+
+    setPayoutSubmitting(false)
+  }
+
+  async function handleSetDefaultPayout(methodId: string) {
+    setPayoutBusyId(methodId)
+    setPayoutMessage(null)
+    const result = await setDefaultPayoutMethod(methodId)
+    if (result.success) {
+      setPayoutMethods(prev => prev.map(method => ({ ...method, isDefault: method.id === methodId })))
+      setPayoutMessage('Metodo predeterminado actualizado.')
+    } else {
+      setPayoutMessage(result.message)
+    }
+    setPayoutBusyId(null)
+  }
+
+  async function handleRemovePayout(methodId: string) {
+    setPayoutBusyId(methodId)
+    setPayoutMessage(null)
+    const result = await removePayoutMethod(methodId)
+    if (result.success) {
+      setPayoutMethods(prev => prev.filter(method => method.id !== methodId))
+      setPayoutMessage('Metodo eliminado.')
+    } else {
+      setPayoutMessage(result.message)
+    }
+    setPayoutBusyId(null)
   }
 
   return (
@@ -1225,6 +1545,29 @@ export function DashboardClient({
           {/* ─ Mis Ventas ─ */}
           {activeTab === 'sales' && (
             <div className="space-y-3">
+              {sellerNeedsPayoutProfile && (
+                <div
+                  className="rounded-2xl p-4"
+                  style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-[#f2f2f2]">Completa tus datos de cobro para poder recibir la liberacion del escrow</p>
+                      <p className="mt-1 text-xs text-[#a0a0a0]">
+                        Ya tienes transacciones en escrow o payout pendiente. Sin este paso no se puede completar el pago al vendedor.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setActiveTab('payouts')}
+                      className="rounded-xl px-3 py-2 text-[11px] font-semibold"
+                      style={{ background: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.25)' }}
+                    >
+                      Configurar cobro
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <SectionHeader title="Transacciones en Escrow" count={sales.length} />
               {sales.length === 0 ? (
                 <EmptyState
@@ -1236,12 +1579,16 @@ export function DashboardClient({
                 <div className="space-y-3">
                   {sales.map(tx => {
                     const effectiveTx = disputedTxIds.has(tx.id) ? { ...tx, status: 'DISPUTED' } : tx
+                    const payoutMissingForTx =
+                      payoutMethods.length === 0 &&
+                      ['IN_ESCROW', 'DELIVERY_CONFIRMED', 'RELEASED'].includes(effectiveTx.status)
                     return (
                       <TxCard
                         key={tx.id}
                         tx={effectiveTx}
                         viewAs="seller"
                         onDispute={effectiveTx.status === 'IN_ESCROW' ? setDisputeTarget : undefined}
+                        payoutMissing={payoutMissingForTx}
                       />
                     )
                   })}
@@ -1376,6 +1723,212 @@ export function DashboardClient({
           )}
 
           {/* ─ Favoritos ─ */}
+          {activeTab === 'payouts' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <KpiCard icon={CircleDollarSign} label="Total operativo" value={fmtUSD(operationalSold)} sub={`${payoutRelevantSales.length} en escrow o liberadas`} accent="#4ade80" />
+                <KpiCard icon={CreditCard} label="Comisiones" value={fmtUSD(operationalCommissions)} sub="solo transacciones payout-relevantes" accent="#f59e0b" />
+                <KpiCard icon={Wallet} label="Neto operativo" value={fmtUSD(operationalSellerNet)} sub="escrow activo + payout listo" accent="#00aeef" />
+                <KpiCard icon={Landmark} label="Pendiente por pagar" value={fmtUSD(payoutReadyNet)} sub={`${releasedSales.length} liberadas`} accent="#a78bfa" />
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+                <div
+                  className="rounded-2xl p-4 space-y-4"
+                  style={{ background: 'rgba(13,13,13,0.9)', border: '1px solid rgba(255,255,255,0.06)' }}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-[#f2f2f2]">Datos de cobro del vendedor</h3>
+                      <p className="mt-1 text-xs text-[#5a5a5a]">
+                        Este flujo se activa solo cuando ya existe escrow activo o payout pendiente.
+                      </p>
+                    </div>
+                    <span
+                      className="rounded-full px-2 py-1 text-[10px] font-semibold"
+                      style={{ background: 'rgba(0,174,239,0.08)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.15)' }}
+                    >
+                      Flujo manual temporal
+                    </span>
+                  </div>
+
+                  {payoutMessage && (
+                    <div
+                      className="rounded-xl px-3 py-2 text-xs"
+                      style={{ background: 'rgba(0,174,239,0.06)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.14)' }}
+                    >
+                      {payoutMessage}
+                    </div>
+                  )}
+
+                  {sellerNeedsPayoutProfile ? (
+                    <>
+                      <div
+                        className="rounded-xl p-3 text-xs leading-relaxed"
+                        style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)', color: '#f5d08a' }}
+                      >
+                        Completa tus datos de cobro para poder recibir la liberacion del escrow. Ya tienes transacciones operativas que dependen de este paso.
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {[
+                          { id: 'PAGO_MOVIL', label: 'Pago movil' },
+                          { id: 'BANK_TRANSFER', label: 'Transferencia bancaria' },
+                          { id: 'BINANCE_PAY', label: 'Binance Pay' },
+                        ].map(option => (
+                          <button
+                            key={option.id}
+                            onClick={() => updatePayoutField('methodType', option.id)}
+                            className="rounded-xl px-3 py-3 text-sm font-semibold transition-all"
+                            style={
+                              payoutForm.methodType === option.id
+                                ? { background: 'rgba(0,174,239,0.12)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.25)' }
+                                : { background: 'rgba(255,255,255,0.03)', color: '#a0a0a0', border: '1px solid rgba(255,255,255,0.08)' }
+                            }
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <label className="text-xs text-[#a0a0a0]">Etiqueta interna</label>
+                          <input
+                            value={payoutForm.displayLabel}
+                            onChange={e => updatePayoutField('displayLabel', e.target.value)}
+                            placeholder="Ej. Cobro principal"
+                            className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none"
+                          />
+                        </div>
+
+                        {(payoutForm.methodType === 'PAGO_MOVIL' || payoutForm.methodType === 'BANK_TRANSFER') && (
+                          <>
+                            <div className="space-y-1.5">
+                              <label className="text-xs text-[#a0a0a0]">Titular / beneficiario</label>
+                              <input value={payoutForm.holder} onChange={e => updatePayoutField('holder', e.target.value)} className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-xs text-[#a0a0a0]">Cedula / RIF</label>
+                              <input value={payoutForm.identifier} onChange={e => updatePayoutField('identifier', e.target.value)} className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-xs text-[#a0a0a0]">Banco</label>
+                              <input value={payoutForm.bank} onChange={e => updatePayoutField('bank', e.target.value)} className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none" />
+                            </div>
+                            {payoutForm.methodType === 'PAGO_MOVIL' ? (
+                              <div className="space-y-1.5">
+                                <label className="text-xs text-[#a0a0a0]">Telefono</label>
+                                <input value={payoutForm.phone} onChange={e => updatePayoutField('phone', e.target.value)} className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none" />
+                              </div>
+                            ) : (
+                              <div className="space-y-1.5">
+                                <label className="text-xs text-[#a0a0a0]">Cuenta bancaria</label>
+                                <input value={payoutForm.accountNumber} onChange={e => updatePayoutField('accountNumber', e.target.value)} className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none" />
+                              </div>
+                            )}
+                          </>
+                        )}
+
+                        {payoutForm.methodType === 'BINANCE_PAY' && (
+                          <>
+                            <div className="space-y-1.5">
+                              <label className="text-xs text-[#a0a0a0]">Pay ID</label>
+                              <input value={payoutForm.payId} onChange={e => updatePayoutField('payId', e.target.value)} className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none" />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-xs text-[#a0a0a0]">Usuario</label>
+                              <input value={payoutForm.username} onChange={e => updatePayoutField('username', e.target.value)} className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none" />
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      <div
+                        className="rounded-xl p-3 text-xs leading-relaxed"
+                        style={{ background: 'rgba(0,174,239,0.04)', border: '1px solid rgba(0,174,239,0.1)', color: '#a0a0a0' }}
+                      >
+                        Comision base plataforma: 5%. Comision adicional pago movil / transferencia: 0.03%. Comision adicional Binance: $0.06. Neto operativo acumulado: <span className="text-[#f2f2f2]">{fmtUSD(operationalSellerNet)}</span>. Total listo para recibir hoy: <span className="text-[#f2f2f2]">{fmtUSD(payoutReadyNet)}</span>.
+                      </div>
+
+                      <button
+                        onClick={handleAddPayoutMethod}
+                        disabled={payoutSubmitting}
+                        className="inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all disabled:opacity-50"
+                        style={{ background: 'linear-gradient(135deg, rgba(0,174,239,0.9) 0%, rgba(0,80,200,0.88) 100%)', color: '#fff' }}
+                      >
+                        {payoutSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                        Guardar metodo de cobro
+                      </button>
+                    </>
+                  ) : payoutMethods.length === 0 ? (
+                    <div
+                      className="rounded-xl p-4 text-sm"
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#a0a0a0' }}
+                    >
+                      Aun no necesitas registrar datos de cobro. Esta solicitud aparecera cuando una transaccion entre en escrow activo o quede lista para payout.
+                    </div>
+                  ) : (
+                    <div
+                      className="rounded-xl p-3 text-xs leading-relaxed"
+                      style={{ background: 'rgba(0,174,239,0.04)', border: '1px solid rgba(0,174,239,0.1)', color: '#a0a0a0' }}
+                    >
+                      Tus datos de cobro ya estan configurados. El equipo operativo los usara cuando corresponda liberar el escrow o reportar el payout manual.
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <div
+                    className="rounded-2xl p-4"
+                    style={{ background: 'rgba(13,13,13,0.9)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  >
+                    <h3 className="text-sm font-semibold text-[#f2f2f2]">Resumen operativo</h3>
+                    <div className="mt-3 space-y-3 text-xs">
+                      <div className="flex items-center justify-between text-[#a0a0a0]">
+                        <span>Validaciones pendientes</span>
+                        <span className="text-[#f2f2f2]">{pendingValidationSales.length}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[#a0a0a0]">
+                        <span>Escrow activo</span>
+                        <span className="text-[#f2f2f2]">{escrowSales.length}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[#a0a0a0]">
+                        <span>Payouts listos</span>
+                        <span className="text-[#f2f2f2]">{releasedSales.length}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[#a0a0a0]">
+                        <span>Total a recibir</span>
+                        <span className="font-semibold text-[#00aeef]">{fmtUSD(payoutReadyNet)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <SectionHeader title="Metodos registrados" count={payoutMethods.length} />
+                    {payoutMethods.length === 0 ? (
+                      <EmptyState
+                        icon={Wallet}
+                        title="Sin datos de cobro"
+                        sub="Registra un metodo para poder recibir los fondos liberados del escrow."
+                      />
+                    ) : (
+                      payoutMethods.map(method => (
+                        <PayoutMethodCard
+                          key={method.id}
+                          method={method}
+                          onSetDefault={handleSetDefaultPayout}
+                          onRemove={handleRemovePayout}
+                          busyId={payoutBusyId}
+                        />
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'favorites' && (
             <div className="space-y-3">
               {favorites.length === 0 ? (

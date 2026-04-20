@@ -199,7 +199,7 @@ export async function createListing(
         price: String(data.price),
         currency: data.currency,
         coverImageUrl: data.coverImageUrl ?? null,
-        mediaUrls: [],
+        mediaUrls: data.mediaUrls,
         hasInventory: data.hasInventory,
         inventory: data.inventory ?? null,
         status: 'ACTIVE',

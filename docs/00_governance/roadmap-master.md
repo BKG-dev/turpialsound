@@ -4,9 +4,9 @@
 
 ---
 
-## Estado actual: **Fase 4 en progreso — Shell técnico del frente público creado**
+## Estado actual: **Fase 4 Frente Público completada y Marketplace en desarrollo activo**
 
-Última actualización: 2026-03-26
+Última actualización: 2026-04-19
 
 > **Nota sesión 2026-03-26 (sesión 1):** Se han creado los 6 documentos estratégicos de `docs/01_strategy/`. Todos están en estado de consolidación: los datos confirmados del intake están registrados, las inferencias estratégicas están marcadas como [SUGERIDO] y los datos que solo el cliente puede proveer están marcados como [CLIENT_REQUIRED]. Fase 1 permanece abierta hasta que los bloques críticos A, B, C y D estén resueltos con datos reales del cliente.
 >
@@ -26,14 +26,17 @@
 
 ## Fases y estado
 
-| Fase | Nombre | Estado | Bloqueantes |
-|------|--------|--------|-------------|
-| 1 | Intake y verdad base | EN PROGRESO | Ver sección de huecos críticos |
-| 2 | Arquitectura de autoridad | PENDIENTE | Requiere cierre de Fase 1 |
-| 3 | Sistema editorial y visual | PENDIENTE | Requiere cierre de Fase 2 |
-| 4 | Shell técnico y ODS refactor boundary | PENDIENTE | Requiere cierre de Fase 3 |
-| 5 | Producción guiada | PENDIENTE | Requiere cierre de Fase 4 |
-| 6 | QA, compactación y release | PENDIENTE | Requiere cierre de Fase 5 |
+| Fase | Nombre | Dominio | Estado | Bloqueantes |
+|------|--------|---------|--------|-------------|
+| 1    | Intake y verdad base          | Frente Público | COMPLETADA     | Ninguno      |
+| 2    | Arquitectura de autoridad     | Frente Público | COMPLETADA     | Ninguno      |
+| 3    | Sistema editorial y visual    | Frente Público | COMPLETADA     | Ninguno      |
+| 4    | Shell técnico del frente público | Frente Público | COMPLETADA     | Ninguno      |
+| 5    | Componentes primarios y datos | Frente Público | PENDIENTE    | Ninguno      |
+| 6    | QA, compactación y release    | Frente Público | PENDIENTE    | Requiere cierre de Fase 5 |
+| M1   | Diseño Arquitectura Marketplace | Marketplace | EN PROGRESO | Ninguno      |
+| M2   | Implementación Core Marketplace | Marketplace | EN PROGRESO | Ninguno      |
+
 
 ---
 
@@ -65,33 +68,33 @@
 
 ---
 
-## Huecos críticos que bloquean Fase 1
+## Huecos críticos que bloquean Fase 1 (YA NO APLICA: FASE 1 COMPLETADA)
 
-Los siguientes ítems están **PENDIENTES DE VALIDACIÓN** y bloquean el avance a Fase 2:
+Los siguientes ítems estaban **PENDIENTES DE VALIDACIÓN** y bloqueaban el avance a Fase 2, pero **ya han sido resueltos.**
 
 ### Bloque A — Conversión y objetivos del sitio (CRÍTICO)
-- [ ] CTA principal definitivo (¿WhatsApp / reservar / consultar disponibilidad?)
-- [ ] Conversión de mayor valor priorizada (¿renta de sala o producción integral?)
-- [ ] Objetivo principal del sitio en una frase aprobada
-- [ ] Métricas de éxito a 90 días acordadas
+- [x] CTA principal definitivo (¿WhatsApp / reservar / consultar disponibilidad?)
+- [x] Conversión de mayor valor priorizada (¿renta de sala o producción integral?)
+- [x] Objetivo principal del sitio en una frase aprobada
+- [x] Métricas de éxito a 90 días acordadas
 
 ### Bloque B — Ecosistema digital (CRÍTICO)
-- [ ] Dominio actual o dominio deseado
-- [ ] Sitio web existente (URL si existe)
-- [ ] Redes activas y URLs
-- [ ] Google Business Profile: ¿existe?
-- [ ] Canal que más convierte hoy
+- [x] Dominio actual o dominio deseado
+- [x] Sitio web existente (URL si existe)
+- [x] Redes activas y URLs
+- [x] Google Business Profile: ¿existe?
+- [x] Canal que más convierte hoy
 
 ### Bloque C — Entidad y autoridad (CRÍTICO)
-- [ ] Biografía oficial de Frank Lemus (cargo, trayectoria verificable)
-- [ ] Biografía oficial de Susej Vera (cargo, trayectoria)
-- [ ] Artistas/casos autorizados para publicar públicamente
-- [ ] Perfiles externos verificables (LinkedIn, Spotify, medios, etc.)
+- [x] Biografía oficial de Frank Lemus (cargo, trayectoria verificable)
+- [x] Biografía oficial de Susej Vera (cargo, trayectoria)
+- [x] Artistas/casos autorizados para publicar públicamente
+- [x] Perfiles externos verificables (LinkedIn, Spotify, medios, etc.)
 
 ### Bloque D — Competidores y referentes (CRÍTICO)
-- [ ] 5–10 competidores directos con enlaces
-- [ ] 5 referentes aspiracionales con enlaces
-- [ ] Vacío de mercado que Turpial Sound puede adueñarse
+- [x] 5–10 competidores directos con enlaces
+- [x] 5 referentes aspiracionales con enlaces
+- [x] Vacío de mercado que Turpial Sound puede adueñarse
 
 ### Bloque E — Dirección creativa (IMPORTANTE)
 - [ ] Referencias visuales aprobadas (sitios, marcas, campañas)
@@ -106,7 +109,7 @@ Los siguientes ítems están **PENDIENTES DE VALIDACIÓN** y bloquean el avance 
 
 ---
 
-## Criterio de cierre de Fase 1
+## Criterio de cierre de Fase 1 (YA NO APLICA: FASE 1 COMPLETADA)
 
 Fase 1 se considera cerrada cuando estén resueltos los Bloques A, B, C y D (críticos).
 Los bloques E y F pueden resolverse al inicio de Fase 2.

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/marketplace/auth'
 import { getMyProfile } from '@/actions/marketplace/users'
+import { getPayoutMethods } from '@/actions/marketplace/users'
 import { getMyTransactions } from '@/actions/marketplace/transactions'
 import { getMyThreads } from '@/actions/marketplace/chat'
 import { getUserListings } from '@/actions/marketplace/listings'
@@ -18,7 +19,7 @@ export default async function DashboardPage({
   const session = await getSession()
   if (!session) redirect('/marketplace')
 
-  const [profileRes, purchasesRes, salesRes, threadsRes, myListingsRes, myFavoritesRes, myInteractedRes] =
+  const [profileRes, purchasesRes, salesRes, threadsRes, myListingsRes, myFavoritesRes, myInteractedRes, payoutMethodsRes] =
     await Promise.all([
       getMyProfile(),
       getMyTransactions('buyer'),
@@ -27,9 +28,10 @@ export default async function DashboardPage({
       getUserListings(),
       getMyFavorites(),
       getMyInteractedListings(),
+      getPayoutMethods(),
     ])
 
-  const validTabs = ['my_store', 'sales', 'purchases', 'messages', 'favorites'] as const
+  const validTabs = ['my_store', 'sales', 'purchases', 'messages', 'favorites', 'payouts'] as const
   type Tab = typeof validTabs[number]
   const initialTab = validTabs.includes(searchParams.tab as Tab)
     ? (searchParams.tab as Tab)
@@ -45,6 +47,7 @@ export default async function DashboardPage({
       myListings={(myListingsRes.success ? (myListingsRes.data as object[]) : []) ?? []}
       myFavorites={(myFavoritesRes.success ? (myFavoritesRes.data as object[]) : []) ?? []}
       myInteracted={(myInteractedRes.success ? (myInteractedRes.data as object[]) : []) ?? []}
+      payoutMethods={(payoutMethodsRes.success ? (payoutMethodsRes.data as object[]) : []) ?? []}
       initialTab={initialTab}
     />
   )

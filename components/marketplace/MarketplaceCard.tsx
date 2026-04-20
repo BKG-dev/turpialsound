@@ -5,6 +5,7 @@ import { Star, MapPin, Clock, Shield, BadgeCheck, Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Listing, ProductListing, ServiceListing } from '@/types/marketplace'
 import { MARKETPLACE_CONFIG } from '@/types/marketplace'
+import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
 
 // ─── Category fallback images ─────────────────────────────────────────────────
 // Used when a listing has no uploaded photo.
@@ -62,10 +63,10 @@ function UserChip({ name, initials, verified, rating }: {
   rating: number
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 items-center gap-2.5">
       <div className="relative flex-shrink-0">
         <div
-          className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold text-white"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-semibold text-white"
           style={{ background: 'linear-gradient(135deg, #00aeef 0%, #0050c8 100%)' }}
         >
           {initials}
@@ -79,10 +80,10 @@ function UserChip({ name, initials, verified, rating }: {
         )}
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] text-[#f2f2f2] truncate leading-none">{name}</p>
-        <div className="flex items-center gap-1 mt-0.5">
-          <Star size={9} className="text-[#ffc107] fill-[#ffc107]" />
-          <span className="text-[10px] text-[#a0a0a0]">{rating.toFixed(1)}</span>
+        <p className="truncate text-xs leading-none text-[#f2f2f2]">{name}</p>
+        <div className="mt-0.5 flex items-center gap-1">
+          <Star size={10} className="text-[#ffc107] fill-[#ffc107]" />
+          <span className="text-[11px] text-[#a0a0a0]">{rating.toFixed(1)}</span>
         </div>
       </div>
     </div>
@@ -106,17 +107,18 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="card-premium-wrapper rounded-xl text-left w-full group"
+      className="card-premium-wrapper group h-full w-full overflow-hidden rounded-xl text-left"
       style={{ background: 'rgba(17,17,17,0.85)' }}
     >
       {/* Image area */}
-      <div className="relative h-44 rounded-t-xl overflow-hidden bg-[#0d0d0d]">
+      <div className="relative h-52 rounded-t-xl overflow-hidden bg-[#0d0d0d] sm:h-56">
         {cover ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <MarketplaceImage
             src={cover}
             alt={listing.title}
+            fill
             className="w-full h-full object-cover transition-transform duration-500"
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
             style={{ transform: hovered ? 'scale(1.04)' : 'scale(1)' }}
           />
         ) : (
@@ -184,25 +186,25 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-3">
+      <div className="space-y-4 p-5">
         <div>
-          <p className="text-[11px] text-[#5a5a5a] uppercase tracking-widest mb-1">
+          <p className="mb-1.5 text-[11px] uppercase tracking-widest text-[#5a5a5a]">
             {listing.subcategory}
           </p>
-          <h3 className="text-sm text-[#f2f2f2] font-medium leading-snug line-clamp-2 group-hover:text-[#00aeef] transition-colors duration-250">
+          <h3 className="line-clamp-2 text-base font-medium leading-snug text-[#f2f2f2] transition-colors duration-250 group-hover:text-[#00aeef]">
             {listing.title}
           </h3>
         </div>
 
         {/* Price */}
-        <div className="flex items-end justify-between gap-1">
-          <div className="flex items-end gap-1">
-            <span className="text-xl font-semibold text-gradient-gold leading-none">
+        <div className="flex items-end justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-end gap-x-2 gap-y-1">
+            <span className="text-2xl font-semibold text-gradient-gold leading-none">
               ${listing.price.toLocaleString()}
             </span>
             <span className="text-xs text-[#5a5a5a] mb-0.5">{listing.currency}</span>
             {listing.rentalAvailable && listing.rentalPricePerDay && (
-              <span className="text-xs text-[#a0a0a0] mb-0.5 ml-1">
+              <span className="text-xs text-[#a0a0a0] mb-0.5">
                 · ${listing.rentalPricePerDay}/día
               </span>
             )}
@@ -214,7 +216,7 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
                 setLocalFav(p => !p)
                 onToggleFavorite(listing.id)
               }}
-              className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200"
+              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-all duration-200"
               style={{
                 background: localFav ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)',
                 border: `1px solid ${localFav ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`,
@@ -227,22 +229,22 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
         </div>
 
         {/* Meta row */}
-        <div className="flex items-center justify-between pt-1 border-t border-[#1e1e1e]">
+        <div className="flex items-center justify-between gap-3 pt-2 border-t border-[#1e1e1e]">
           <UserChip
             name={listing.seller.name}
             initials={listing.seller.initials}
             verified={listing.seller.verified}
             rating={listing.seller.rating}
           />
-          <div className="flex items-center gap-1 text-[10px] text-[#5a5a5a]">
-            <MapPin size={9} />
-            <span className="truncate max-w-[80px]">{listing.location.split(',')[0]}</span>
+          <div className="flex flex-shrink-0 items-center gap-1 text-[11px] text-[#5a5a5a]">
+            <MapPin size={10} />
+            <span className="truncate max-w-[110px]">{listing.location.split(',')[0]}</span>
           </div>
         </div>
 
         {/* Escrow badge */}
-        <div className="flex items-center gap-1.5 text-[10px] text-[#5a5a5a]">
-          <Shield size={10} className="text-[#00aeef] opacity-70" />
+        <div className="flex items-start gap-2 text-[11px] leading-relaxed text-[#5a5a5a]">
+          <Shield size={11} className="mt-0.5 flex-shrink-0 text-[#00aeef] opacity-70" />
           <span>Pago fiduciario protegido · {(MARKETPLACE_CONFIG.COMMISSION_RATE * 100).toFixed(0)}% comisión al vendedor</span>
         </div>
       </div>
@@ -268,17 +270,18 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="card-premium-wrapper card-premium-wrapper--gold rounded-xl text-left w-full group"
+      className="card-premium-wrapper card-premium-wrapper--gold group h-full w-full overflow-hidden rounded-xl text-left"
       style={{ background: 'rgba(17,17,17,0.85)' }}
     >
       {/* Header band */}
-      <div className="relative h-44 rounded-t-xl overflow-hidden bg-[#0d0d0d] flex items-center justify-center">
+      <div className="relative h-52 rounded-t-xl overflow-hidden bg-[#0d0d0d] flex items-center justify-center sm:h-56">
         {cover ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <MarketplaceImage
             src={cover}
             alt={listing.title}
+            fill
             className="w-full h-full object-cover transition-transform duration-500"
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
             style={{ transform: hovered ? 'scale(1.04)' : 'scale(1)' }}
           />
         ) : (
@@ -349,27 +352,27 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-3">
+      <div className="space-y-4 p-5">
         <div>
-          <p className="text-[11px] text-[#5a5a5a] uppercase tracking-widest mb-1">
+          <p className="mb-1.5 text-[11px] uppercase tracking-widest text-[#5a5a5a]">
             {listing.subcategory}
           </p>
-          <h3 className="text-sm text-[#f2f2f2] font-medium leading-snug line-clamp-2 group-hover:text-[#ffc107] transition-colors duration-250">
+          <h3 className="line-clamp-2 text-base font-medium leading-snug text-[#f2f2f2] transition-colors duration-250 group-hover:text-[#ffc107]">
             {listing.title}
           </h3>
         </div>
 
         {/* Price */}
-        <div className="flex items-end justify-between gap-1">
-          <div className="flex items-end gap-1">
+        <div className="flex items-end justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-end gap-x-2 gap-y-1">
             <span className="text-[11px] text-[#5a5a5a] mb-0.5">Desde</span>
-            <span className="text-xl font-semibold text-gradient-gold leading-none">
+            <span className="text-2xl font-semibold text-gradient-gold leading-none">
               ${listing.priceFrom.toLocaleString()}
             </span>
             {listing.priceTo && (
               <span className="text-xs text-[#5a5a5a] mb-0.5">– ${listing.priceTo}</span>
             )}
-            <span className="text-xs text-[#a0a0a0] mb-0.5 ml-0.5">{listing.priceLabel}</span>
+            <span className="text-xs text-[#a0a0a0] mb-0.5">{listing.priceLabel}</span>
           </div>
           {onToggleFavorite && (
             <button
@@ -378,7 +381,7 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
                 setLocalFav(p => !p)
                 onToggleFavorite(listing.id)
               }}
-              className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200"
+              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-all duration-200"
               style={{
                 background: localFav ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)',
                 border: `1px solid ${localFav ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`,
@@ -391,21 +394,21 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
         </div>
 
         {/* Meta row */}
-        <div className="flex items-center justify-between pt-1 border-t border-[#1e1e1e]">
+        <div className="flex items-center justify-between gap-3 pt-2 border-t border-[#1e1e1e]">
           <UserChip
             name={listing.talent.name}
             initials={listing.talent.initials}
             verified={listing.talent.verified}
             rating={listing.talent.rating}
           />
-          <div className="flex items-center gap-1 text-[10px] text-[#5a5a5a]">
+          <div className="flex flex-shrink-0 items-center gap-1 text-[11px] text-[#5a5a5a]">
             <span>{listing.talent.reviewCount} reseñas</span>
           </div>
         </div>
 
         {/* Escrow badge */}
-        <div className="flex items-center gap-1.5 text-[10px] text-[#5a5a5a]">
-          <Shield size={10} className="text-[#ffc107] opacity-70" />
+        <div className="flex items-start gap-2 text-[11px] leading-relaxed text-[#5a5a5a]">
+          <Shield size={11} className="mt-0.5 flex-shrink-0 text-[#ffc107] opacity-70" />
           <span>Pago fiduciario protegido · {(MARKETPLACE_CONFIG.COMMISSION_RATE * 100).toFixed(0)}% comisión al talento</span>
         </div>
       </div>

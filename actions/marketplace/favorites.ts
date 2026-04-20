@@ -95,7 +95,11 @@ export async function getMyFavoriteIds(): Promise<ActionResult<string[]>> {
       select: { favoriteListings: { select: { id: true } } },
     })
     await db.$disconnect()
-    return { success: true, data: (user?.favoriteListings ?? []).map(l => l.id), message: 'OK' }
+    return {
+      success: true,
+      data: (user?.favoriteListings ?? []).map((l: { id: string }) => l.id),
+      message: 'OK',
+    }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error' }

@@ -7,6 +7,7 @@ import { getSession } from '@/lib/marketplace/auth'
 import { ListingQASection } from '@/components/marketplace/ListingQASection'
 import { ListingDetailActions } from '@/components/marketplace/ListingDetailActions'
 import { MARKETPLACE_CONFIG } from '@/types/marketplace'
+import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const listing = await getListingBySlug(params.slug)
@@ -81,11 +82,13 @@ export default async function ListingPage({ params }: { params: { slug: string }
               style={{ background: 'rgba(17,17,17,0.9)', border: '1px solid rgba(255,255,255,0.06)' }}
             >
               {cover ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <MarketplaceImage
                   src={cover}
                   alt={listing.title}
+                  fill
                   className="w-full h-full object-cover"
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  priority
                 />
               ) : (
                 <div
@@ -119,11 +122,12 @@ export default async function ListingPage({ params }: { params: { slug: string }
             {coverImages.length > 1 && (
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {coverImages.slice(0, 6).map((img, i) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <MarketplaceImage
                     key={i}
                     src={img}
                     alt={`${listing.title} ${i + 1}`}
+                    width={64}
+                    height={64}
                     className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
                     style={{ border: i === 0 ? '2px solid rgba(0,174,239,0.5)' : '1px solid rgba(255,255,255,0.06)' }}
                   />

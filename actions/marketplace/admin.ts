@@ -10,11 +10,15 @@ export interface AdminStats {
   totalTransactions: number
   escrowActiveValue: number
   pendingValidation: number
+  pendingPayments: number
   activeListings: number
   totalUsers: number
   openDisputes: number
   releasedThisMonth: number
   platformFeesEarned: number
+  totalSoldValue: number
+  pendingSellerPayoutValue: number
+  payoutsReadyCount: number
 }
 
 export interface EscrowItem {
@@ -34,6 +38,8 @@ export interface EscrowItem {
   disputeOpenedAt: string | null
   adminNotes: string | null
   paymentReference: string | null
+  paymentSenderBank: string | null
+  paymentPaidAt: string | null
   paymentProofUrl: string | null
   createdAt: string
 }
@@ -69,6 +75,8 @@ export interface AdminUserRow {
 
 export type EscrowFilter =
   | 'all'
+  | 'operations'
+  | 'PAYMENT_RECEIVED'
   | 'IN_ESCROW'
   | 'VALIDATING'
   | 'DELIVERY_CONFIRMED'
@@ -102,14 +110,28 @@ export async function getAdminStats(): Promise<ActionResult<AdminStats>> {
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
-    const [totalTx, escrowAgg, pendingVal, activeListings, totalUsers, openDisputes, relMonth, feesAgg] =
+    const [
+      totalTx,
+      escrowAgg,
+      pendingVal,
+      pendingPayments,
+      activeListings,
+      totalUsers,
+      openDisputes,
+      relMonth,
+      feesAgg,
+      totalSoldAgg,
+      pendingPayoutAgg,
+      payoutsReadyCount,
+    ] =
       await Promise.all([
         db.mpTransaction.count(),
         db.mpTransaction.aggregate({
           where: { status: { in: ['IN_ESCROW', 'DELIVERY_CONFIRMED'] } },
           _sum: { amount: true },
         }),
-        db.mpTransaction.count({ where: { status: 'VALIDATING' } }),
+        db.mpTransaction.count({ where: { status: { in: ['PAYMENT_RECEIVED', 'VALIDATING'] } } }),
+        db.mpTransaction.count({ where: { status: 'PENDING_PAYMENT' } }),
         db.mpListing.count({ where: { status: 'ACTIVE' } }),
         db.mpUser.count(),
         db.mpDispute.count({ where: { status: 'OPEN' } }),
@@ -120,6 +142,15 @@ export async function getAdminStats(): Promise<ActionResult<AdminStats>> {
           where: { status: 'RELEASED', updatedAt: { gte: startOfMonth } },
           _sum: { platformFeeAmount: true },
         }),
+        db.mpTransaction.aggregate({
+          where: { status: { in: ['IN_ESCROW', 'DELIVERY_CONFIRMED', 'RELEASED'] } },
+          _sum: { amount: true },
+        }),
+        db.mpTransaction.aggregate({
+          where: { status: 'RELEASED' },
+          _sum: { sellerNetAmount: true },
+        }),
+        db.mpTransaction.count({ where: { status: 'RELEASED' } }),
       ])
 
     await db.$disconnect()
@@ -129,11 +160,15 @@ export async function getAdminStats(): Promise<ActionResult<AdminStats>> {
         totalTransactions: totalTx,
         escrowActiveValue: Number(escrowAgg._sum.amount ?? 0),
         pendingValidation: pendingVal,
+        pendingPayments,
         activeListings,
         totalUsers,
         openDisputes,
         releasedThisMonth: relMonth,
         platformFeesEarned: Number(feesAgg._sum.platformFeeAmount ?? 0),
+        totalSoldValue: Number(totalSoldAgg._sum.amount ?? 0),
+        pendingSellerPayoutValue: Number(pendingPayoutAgg._sum.sellerNetAmount ?? 0),
+        payoutsReadyCount,
       },
       message: 'OK',
     }
@@ -163,6 +198,12 @@ export async function getEscrowList(filter: EscrowFilter = 'all'): Promise<Actio
       where = {
         status: 'IN_ESCROW',
         escrowReleaseAt: { lte: new Date(now.getTime() + 24 * 60 * 60 * 1000) },
+      }
+    } else if (filter === 'operations') {
+      where = {
+        status: {
+          in: ['PENDING_PAYMENT', 'PAYMENT_RECEIVED', 'VALIDATING', 'IN_ESCROW', 'DELIVERY_CONFIRMED', 'DISPUTED', 'RELEASED'],
+        },
       }
     } else if (filter !== 'all') {
       where = { status: filter }
@@ -213,6 +254,8 @@ export async function getEscrowList(filter: EscrowFilter = 'all'): Promise<Actio
       disputeOpenedAt: t.disputeOpenedAt?.toISOString() ?? null,
       adminNotes: t.adminNotes,
       paymentReference: t.paymentReference,
+      paymentSenderBank: t.paymentSenderBank,
+      paymentPaidAt: t.paymentPaidAt?.toISOString() ?? null,
       paymentProofUrl: t.paymentProofUrl,
       createdAt: t.createdAt.toISOString(),
     }))
@@ -312,35 +355,43 @@ export async function adminValidatePayment(
     try {
       const tx = await db.mpTransaction.findUnique({ where: { id: txId } })
       if (!tx) return { success: false, message: 'Transacción no encontrada' }
-      if (!['VALIDATING', 'PENDING_PAYMENT'].includes(tx.status)) {
+      if (!['PAYMENT_RECEIVED', 'VALIDATING'].includes(tx.status)) {
         return { success: false, message: `No se puede validar en estado ${tx.status}` }
       }
 
       const newStatus = approved ? 'IN_ESCROW' : 'PAYMENT_FAILED'
       const now = new Date()
+      await db.$transaction(async (txDb: typeof db) => {
+        await txDb.mpTransaction.update({
+          where: { id: txId },
+          data: {
+            status: newStatus,
+            adminNotes: note || null,
+            ...(approved
+              ? {
+                  escrowHeldAt: now,
+                  escrowReleaseAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+                }
+              : {}),
+          },
+        })
 
-      await db.mpTransaction.update({
-        where: { id: txId },
-        data: {
-          status: newStatus,
-          adminNotes: note || null,
-          ...(approved
-            ? {
-                escrowHeldAt: now,
-                escrowReleaseAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
-              }
-            : {}),
-        },
-      })
+        if (approved) {
+          await txDb.mpListing.update({
+            where: { id: tx.listingId },
+            data: { status: 'SOLD_OUT' },
+          })
+        }
 
-      await db.mpTransactionStatusHistory.create({
-        data: {
-          transactionId: txId,
-          fromStatus: tx.status,
-          toStatus: newStatus,
-          changedBy: session.userId,
-          reason: note || (approved ? 'Pago validado por admin' : 'Pago rechazado por admin'),
-        },
+        await txDb.mpTransactionStatusHistory.create({
+          data: {
+            transactionId: txId,
+            fromStatus: tx.status,
+            toStatus: newStatus,
+            changedBy: session.userId,
+            reason: note || (approved ? 'Pago validado por admin' : 'Pago rechazado por admin'),
+          },
+        })
       })
 
       await db.$disconnect()
