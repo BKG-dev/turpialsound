@@ -11,6 +11,7 @@ interface GoogleCalendarConfig {
 
 export interface BookingCalendarSyncInput {
   publicCode: string
+  paymentProofId?: string | null
   serviceName: string
   variantName: string
   resourceName: string | null
@@ -94,7 +95,7 @@ function buildEventPayload(input: BookingCalendarSyncInput, timezone: string) {
     input.eventEndDate ?? new Date(input.eventDate.getTime() + 60 * 60 * 1000)
   const paymentProofUrl =
     input.operationalStatus === 'payment_reported'
-      ? buildAdminPaymentProofUrl(input.publicCode)
+      ? buildAdminPaymentProofUrl(input.publicCode, input.paymentProofId)
       : null
 
   const summary = `${input.publicCode} | ${input.serviceName} - ${input.variantName}`

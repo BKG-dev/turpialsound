@@ -598,6 +598,7 @@ export async function reportBookingPayment(
     const primaryItem = booking.items[0]
     const calendarSync = await syncBookingToGoogleCalendar({
       publicCode: booking.publicCode,
+      paymentProofId,
       serviceName: primaryItem?.serviceVariant.service.name ?? 'Sin servicio',
       variantName: primaryItem?.serviceVariant.name ?? 'Sin modalidad',
       resourceName: primaryItem?.resource?.name ?? null,
@@ -632,6 +633,7 @@ export async function reportBookingPayment(
 
     await sendBookingNotifications('booking.payment_reported', {
       publicCode: booking.publicCode,
+      paymentProofId,
       clientName: booking.requesterName,
       clientEmail: booking.requesterEmail,
       serviceName: primaryItem?.serviceVariant.service.name ?? null,

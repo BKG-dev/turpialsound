@@ -13,6 +13,7 @@ export type BookingNotificationEvent =
 
 export interface BookingNotificationPayload {
   publicCode: string
+  paymentProofId?: string | null
   clientName?: string | null
   clientEmail?: string | null
   serviceName?: string | null
@@ -194,7 +195,7 @@ function buildPaymentReportedCustomerText(payload: BookingNotificationPayload): 
 }
 
 function buildPaymentReportedAdminText(payload: BookingNotificationPayload): string {
-  const paymentProofUrl = buildAdminPaymentProofUrl(payload.publicCode)
+  const paymentProofUrl = buildAdminPaymentProofUrl(payload.publicCode, payload.paymentProofId)
 
   return [
     'VERIFICAR PAGO',
