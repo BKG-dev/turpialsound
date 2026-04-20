@@ -556,18 +556,32 @@ export function BookingWizard({
       return
     }
 
+    const whatsappWindow = window.open('about:blank', '_blank')
+    if (whatsappWindow && !whatsappWindow.closed) {
+      whatsappWindow.document.title = 'Abriendo WhatsApp...'
+      whatsappWindow.document.body.innerHTML =
+        '<p style="font-family: Arial, sans-serif; padding: 16px;">Abriendo WhatsApp...</p>'
+    }
+    const closeWhatsappWindow = () => {
+      if (whatsappWindow && !whatsappWindow.closed) {
+        whatsappWindow.close()
+      }
+    }
+
     const trimmedReference = paymentReportReference.trim()
     const requiresProofFile = selectedPaymentMethod.slug !== 'efectivo'
 
     if (!trimmedReference) {
       setPaymentReportError('La referencia de pago es obligatoria.')
       setPaymentReportState('error')
+      closeWhatsappWindow()
       return
     }
 
     if (requiresProofFile && !paymentReportProofFile) {
       setPaymentReportError('Debes adjuntar el comprobante JPG/JPEG.')
       setPaymentReportState('error')
+      closeWhatsappWindow()
       return
     }
 
@@ -576,12 +590,14 @@ export function BookingWizard({
       if (proofType !== 'image/jpeg' && proofType !== 'image/jpg') {
         setPaymentReportError('Solo se acepta comprobante JPG/JPEG.')
         setPaymentReportState('error')
+        closeWhatsappWindow()
         return
       }
 
       if (paymentReportProofFile.size > PAYMENT_PROOF_MAX_SIZE_BYTES) {
         setPaymentReportError('El comprobante supera el maximo permitido de 5 MB.')
         setPaymentReportState('error')
+        closeWhatsappWindow()
         return
       }
     }
@@ -602,6 +618,7 @@ export function BookingWizard({
     if (!result.success) {
       setPaymentReportError(result.error ?? 'No pudimos registrar el pago reportado.')
       setPaymentReportState('error')
+      closeWhatsappWindow()
       return
     }
 
@@ -610,8 +627,13 @@ export function BookingWizard({
     setPaymentReportedAtIso(result.paymentReportedAtIso ?? new Date().toISOString())
     const whatsappLink = result.whatsappDeepLink ?? null
     setPaymentReportedWhatsappLink(whatsappLink)
-    if (whatsappLink) {
-      window.open(whatsappLink, '_blank', 'noopener,noreferrer')
+    if (!whatsappLink) {
+      closeWhatsappWindow()
+      return
+    }
+
+    if (whatsappWindow && !whatsappWindow.closed) {
+      whatsappWindow.location.replace(whatsappLink)
     }
   }
 
