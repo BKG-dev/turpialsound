@@ -1,4 +1,5 @@
 import type { OperationalBookingStatus } from '@/lib/bookings/operations'
+import { buildAdminPaymentProofUrl } from '@/lib/bookings/operational-links'
 
 interface GoogleCalendarConfig {
   clientId: string
@@ -91,6 +92,10 @@ async function getGoogleAccessToken(config: GoogleCalendarConfig): Promise<strin
 function buildEventPayload(input: BookingCalendarSyncInput, timezone: string) {
   const normalizedEndDate =
     input.eventEndDate ?? new Date(input.eventDate.getTime() + 60 * 60 * 1000)
+  const paymentProofUrl =
+    input.operationalStatus === 'payment_reported'
+      ? buildAdminPaymentProofUrl(input.publicCode)
+      : null
 
   const summary = `${input.publicCode} | ${input.serviceName} - ${input.variantName}`
   const description = [
@@ -102,7 +107,10 @@ function buildEventPayload(input: BookingCalendarSyncInput, timezone: string) {
     `Servicio: ${input.serviceName}`,
     `Modalidad: ${input.variantName}`,
     `Limite de pago: ${input.paymentDeadline ? formatCaracasDateTime(input.paymentDeadline) : 'N/A'} (America/Caracas)`,
-  ].join('\n')
+    paymentProofUrl ? `Ver comprobante: ${paymentProofUrl}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n')
 
   return {
     summary,

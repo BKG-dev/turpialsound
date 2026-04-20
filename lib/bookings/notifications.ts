@@ -2,6 +2,7 @@ import { getEnabledPaymentMethods } from '@/lib/bookings/payment-settings'
 import type { OperationalBookingStatus } from '@/lib/bookings/operations'
 import { Resend } from 'resend'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
+import { buildAdminPaymentProofUrl } from '@/lib/bookings/operational-links'
 
 export type BookingNotificationEvent =
   | 'booking.pending_payment.created'
@@ -193,6 +194,8 @@ function buildPaymentReportedCustomerText(payload: BookingNotificationPayload): 
 }
 
 function buildPaymentReportedAdminText(payload: BookingNotificationPayload): string {
+  const paymentProofUrl = buildAdminPaymentProofUrl(payload.publicCode)
+
   return [
     'VERIFICAR PAGO',
     '',
@@ -205,7 +208,10 @@ function buildPaymentReportedAdminText(payload: BookingNotificationPayload): str
     `Sala: ${payload.resourceName ?? 'Por asignar'}`,
     `Monto: ${formatAmount(payload)}`,
     `Metodo reportado: ${payload.paymentMethod ?? 'No especificado'}`,
-  ].join('\n')
+    paymentProofUrl ? `Ver comprobante: ${paymentProofUrl}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n')
 }
 
 function buildConfirmedCustomerText(payload: BookingNotificationPayload): string {
