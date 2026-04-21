@@ -32,8 +32,8 @@ import {
 } from 'lucide-react'
 import type { MpSessionPayload } from '@/lib/marketplace/auth'
 import { TransactionChat } from '@/components/marketplace/TransactionChat'
-import { getUnreadCount } from '@/actions/marketplace/chat'
-import { openDispute } from '@/actions/marketplace/transactions'
+import { getMyThreads, getUnreadCount } from '@/actions/marketplace/chat'
+import { getTransaction, openDispute } from '@/actions/marketplace/transactions'
 import { toggleFavorite } from '@/actions/marketplace/favorites'
 import {
   addPayoutMethod,
@@ -77,6 +77,21 @@ interface DashTransaction {
   listing: { id: string; title: string; slug: string; coverImageUrl: string | null } | null
 }
 
+interface DashTransactionHistory {
+  id: string
+  fromStatus: string | null
+  toStatus: string
+  reason: string | null
+  createdAt: string | Date
+}
+
+interface DashTransactionDetail extends DashTransaction {
+  adminNotes?: string | null
+  paymentSenderBank?: string | null
+  paymentPaidAt?: string | Date | null
+  statusHistory?: DashTransactionHistory[]
+}
+
 interface DashPayoutMethod {
   id: string
   methodType: string
@@ -93,6 +108,7 @@ interface DashThread {
   sellerId: string
   isActive: boolean
   lastMessageAt: string | Date
+  unreadCount?: number
   buyer: { id: string; displayName: string; avatarUrl: string | null }
   seller: { id: string; displayName: string; avatarUrl: string | null }
   listing: { id: string; title: string; slug: string; coverImageUrl: string | null } | null
@@ -182,6 +198,125 @@ function payoutMethodLabel(methodType: string) {
   }
 
   return labels[methodType] ?? methodType
+}
+
+function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
+  const copy: Record<string, { buyer: string; seller: string }> = {
+    PENDING_PAYMENT: {
+      buyer: 'Tu compra fue iniciada. Falta reportar el pago para que el equipo pueda revisarlo.',
+      seller: 'El comprador inicio la compra, pero aun no ha reportado el pago.',
+    },
+    PAYMENT_RECEIVED: {
+      buyer: 'Recibimos tu reporte de pago. La validacion manual esta en curso. Te notificaremos la resolucion y, si procede, la activacion del escrow.',
+      seller: 'El comprador ya reporto el pago. La validacion manual esta en curso y te notificaremos cuando el pago quede conciliado o el escrow sea liberado.',
+    },
+    VALIDATING: {
+      buyer: 'Tu pago sigue en validacion manual. No necesitas repetir el envio mientras revisamos la conciliacion. Te notificaremos la resolucion.',
+      seller: 'La validacion manual sigue en curso. Te notificaremos cuando el pago quede conciliado y los fondos entren en escrow.',
+    },
+    IN_ESCROW: {
+      buyer: 'El pago ya fue validado y los fondos estan protegidos en escrow hasta la entrega o liberacion manual.',
+      seller: 'Los fondos ya estan en escrow. Completa la entrega para avanzar al cierre operativo.',
+    },
+    DELIVERY_CONFIRMED: {
+      buyer: 'La entrega fue confirmada. El payout al vendedor queda en cola operativa.',
+      seller: 'La entrega fue confirmada. El payout manual debe ejecutarse en el siguiente paso operativo.',
+    },
+    RELEASED: {
+      buyer: 'La operacion fue liberada y quedo cerrada a nivel de escrow.',
+      seller: 'La operacion fue liberada desde escrow. Si el payout manual aun no se ha ejecutado, ya quedo lista para pago.',
+    },
+    DISPUTED: {
+      buyer: 'La transaccion entro en disputa. El equipo revisara el caso antes de liberar fondos.',
+      seller: 'La transaccion entro en disputa. Los fondos quedan retenidos hasta la resolucion.',
+    },
+    PAYMENT_FAILED: {
+      buyer: 'El pago fue rechazado o no pudo conciliarse. Revisa los datos antes de intentar de nuevo.',
+      seller: 'El pago del comprador no pudo validarse y la operacion quedo rechazada.',
+    },
+    CANCELLED: {
+      buyer: 'La transaccion fue cancelada.',
+      seller: 'La transaccion fue cancelada.',
+    },
+    REFUNDED: {
+      buyer: 'La disputa se resolvio a favor del comprador y la operacion fue reembolsada.',
+      seller: 'La disputa se resolvio a favor del comprador y no habra payout para esta operacion.',
+    },
+  }
+
+  return copy[status]?.[viewAs] ?? 'Consulta el estado de la transaccion para continuar con el siguiente paso operativo.'
+}
+
+function getOperationalNextStep(status: string, viewAs: 'buyer' | 'seller') {
+  const nextStep: Record<string, { buyer: string; seller: string }> = {
+    PENDING_PAYMENT: {
+      buyer: 'Reporta tu pago con referencia, banco y fecha para iniciar la validacion.',
+      seller: 'Espera a que el comprador reporte el pago para que el equipo pueda validarlo.',
+    },
+    PAYMENT_RECEIVED: {
+      buyer: 'Espera la validacion manual. No hace falta reenviar el comprobante salvo que soporte lo solicite.',
+      seller: 'Espera la conciliacion manual. Te notificaremos cuando entre a escrow o si hace falta revision adicional.',
+    },
+    VALIDATING: {
+      buyer: 'Mantente atento a la confirmacion del equipo mientras termina la conciliacion.',
+      seller: 'Mantente atento a la confirmacion del equipo mientras termina la conciliacion.',
+    },
+    IN_ESCROW: {
+      buyer: 'Coordina la entrega y abre disputa solo si aparece una incidencia real.',
+      seller: 'Completa la entrega para que el flujo pueda avanzar a liberacion o payout manual.',
+    },
+    DELIVERY_CONFIRMED: {
+      buyer: 'La operacion ya quedo lista para cierre operativo.',
+      seller: 'El payout manual queda en cola operativa con tus datos de cobro actuales.',
+    },
+    RELEASED: {
+      buyer: 'La transaccion ya esta cerrada del lado de escrow.',
+      seller: 'Verifica tus datos de cobro si el payout manual aun no ha sido ejecutado.',
+    },
+    DISPUTED: {
+      buyer: 'Espera la resolucion del equipo y conserva el contexto de la entrega.',
+      seller: 'Espera la resolucion del equipo y conserva el contexto de la entrega.',
+    },
+    PAYMENT_FAILED: {
+      buyer: 'Revisa los datos del pago antes de intentar nuevamente.',
+      seller: 'La operacion no seguira hasta que exista un nuevo pago valido.',
+    },
+  }
+
+  return nextStep[status]?.[viewAs] ?? 'Revisa la linea de estado para identificar el siguiente paso operativo.'
+}
+
+function getTxUnreadCount(thread: DashThread, currentUserId: string) {
+  if (typeof thread.unreadCount === 'number') return thread.unreadCount
+  const lastMsg = thread.messages[0]
+  return lastMsg && !lastMsg.isRead && lastMsg.senderId !== currentUserId ? 1 : 0
+}
+
+function getTxExtraFee(tx: DashTransaction) {
+  if (tx.paymentMethod === 'MERCANTIL_PAGO_MOVIL') return Math.round(Number(tx.amount ?? 0) * 0.03) / 100
+  if (tx.paymentMethod === 'CRYPTO_WALLET_MANUAL') return 0.06
+  return 0
+}
+
+function roundCurrency(value: number) {
+  return Math.round(value * 100) / 100
+}
+
+function getTxTotalFee(tx: DashTransaction) {
+  const storedFee = Number(tx.platformFeeAmount ?? 0)
+  if (storedFee > 0) return storedFee
+
+  const amount = Number(tx.amount ?? 0)
+  const sellerNet = Number(tx.sellerNetAmount ?? 0)
+  if (amount > 0 && sellerNet >= 0) {
+    return roundCurrency(Math.max(amount - sellerNet, 0))
+  }
+
+  return getTxExtraFee(tx)
+}
+
+function getTxBasePlatformFee(tx: DashTransaction) {
+  return roundCurrency(Math.max(getTxTotalFee(tx) - getTxExtraFee(tx), 0))
 }
 
 // ─── Section Header ───────────────────────────────────────────────────────────
@@ -428,19 +563,22 @@ function TxCard({
   tx,
   viewAs,
   onDispute,
+  onOpenDetails,
   payoutMissing = false,
 }: {
   tx: DashTransaction
   viewAs: 'buyer' | 'seller'
   onDispute?: (tx: DashTransaction) => void
+  onOpenDetails?: (tx: DashTransaction) => void
   payoutMissing?: boolean
 }) {
   const otherParty = viewAs === 'buyer' ? tx.seller : tx.buyer
-  const cfg = STATUS_CONFIG[tx.status] ?? STATUS_CONFIG.CANCELLED
+  const guidance = getOperationalStatusCopy(tx.status, viewAs)
 
   return (
-    <div
-      className="rounded-xl p-4 flex gap-3 group cursor-default transition-all duration-200 hover:border-[rgba(0,174,239,0.2)]"
+    <button
+      onClick={() => onOpenDetails?.(tx)}
+      className="w-full rounded-xl p-4 flex gap-3 group text-left transition-all duration-200 hover:border-[rgba(0,174,239,0.2)]"
       style={{
         background: 'rgba(13,13,13,0.9)',
         border: '1px solid rgba(255,255,255,0.06)',
@@ -505,7 +643,10 @@ function TxCard({
         {tx.status === 'IN_ESCROW' && onDispute && (
           <div className="mt-3">
             <button
-              onClick={() => onDispute(tx)}
+              onClick={(event) => {
+                event.stopPropagation()
+                onDispute(tx)
+              }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200"
               style={{
                 background: 'rgba(249,115,22,0.06)',
@@ -521,6 +662,14 @@ function TxCard({
           </div>
         )}
 
+        <div
+          className="mt-3 rounded-lg px-3 py-2"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
+        >
+          <p className="text-[11px] text-[#d4d4d4]">{guidance}</p>
+          <p className="mt-1 text-[10px] text-[#5a5a5a]">Haz clic para ver el detalle completo y la linea de estado.</p>
+        </div>
+
         {viewAs === 'seller' && payoutMissing && (
           <div
             className="mt-3 rounded-lg px-3 py-2"
@@ -532,7 +681,7 @@ function TxCard({
           </div>
         )}
       </div>
-    </div>
+    </button>
   )
 }
 
@@ -757,7 +906,8 @@ function ThreadCard({
   const isBuyer = thread.buyerId === currentUserId
   const other = isBuyer ? thread.seller : thread.buyer
   const lastMsg = thread.messages[0]
-  const hasUnread = lastMsg && !lastMsg.isRead && lastMsg.senderId !== currentUserId
+  const unreadCount = getTxUnreadCount(thread, currentUserId)
+  const hasUnread = unreadCount > 0
 
   return (
     <button
@@ -778,9 +928,11 @@ function ThreadCard({
         </div>
         {hasUnread && (
           <span
-            className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0a0a0a]"
-            style={{ background: '#00aeef', boxShadow: '0 0 8px rgba(0,174,239,0.8)' }}
-          />
+            className="absolute -top-1.5 -right-1.5 min-w-[18px] rounded-full border-2 border-[#0a0a0a] px-1 py-0.5 text-center text-[9px] font-bold"
+            style={{ background: '#00aeef', color: '#081018', boxShadow: '0 0 8px rgba(0,174,239,0.8)' }}
+          >
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
         )}
       </div>
 
@@ -923,8 +1075,8 @@ function ProfileHeader({
   onTabClick?: (tab: Tab) => void
 }) {
   const name = profile?.displayName ?? 'Usuario'
-  const totalSales = profile?.totalSales ?? 0
-  const totalPurchases = profile?.totalPurchases ?? 0
+  const totalSales = sales.length
+  const totalPurchases = purchases.length
   const rating = profile?.sellerRating ? parseFloat(profile.sellerRating) : 0
   const isNew = totalSales === 0 && totalPurchases === 0
   const role = profile?.role ?? 'USER'
@@ -1010,13 +1162,15 @@ function ProfileHeader({
         </div>
 
         {unreadCount > 0 && (
-          <div
+          <button
+            onClick={() => onTabClick?.('messages')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl flex-shrink-0 animate-pulse"
             style={{
               background: 'rgba(0,174,239,0.1)',
               border: '1px solid rgba(0,174,239,0.3)',
               boxShadow: '0 0 16px rgba(0,174,239,0.25)',
             }}
+            title="Ir a mensajes"
           >
             <MessageSquare size={12} style={{ color: '#00aeef', filter: 'drop-shadow(0 0 4px rgba(0,174,239,0.8))' }} />
             <span
@@ -1025,7 +1179,7 @@ function ProfileHeader({
             >
               {unreadCount > 99 ? '99+' : unreadCount} sin leer
             </span>
-          </div>
+          </button>
         )}
       </div>
 
@@ -1034,7 +1188,7 @@ function ProfileHeader({
           icon={TrendingUp}
           label="Publicaciones"
           value={myListings.length.toString()}
-          sub={totalSales === 0 ? 'Sin ventas aún' : `${totalSales} vendidos`}
+          sub={totalSales === 0 ? 'Sin ventas aun' : `${totalSales} operaciones`}
           accent="#4ade80"
           onClick={onTabClick ? () => onTabClick('my_store') : undefined}
         />
@@ -1042,7 +1196,7 @@ function ProfileHeader({
           icon={ShoppingBag}
           label="Compras"
           value={totalPurchases.toString()}
-          sub={totalPurchases === 0 ? 'Sin compras aún' : `${purchases.length} activas`}
+          sub={totalPurchases === 0 ? 'Sin compras aun' : `${totalPurchases} registradas`}
           accent="#00aeef"
           onClick={onTabClick ? () => onTabClick('purchases') : undefined}
         />
@@ -1101,6 +1255,135 @@ function ChatOverlay({
           onClose={onClose}
           className="h-full"
         />
+      </div>
+    </div>
+  )
+}
+
+function TransactionDetailModal({
+  tx,
+  viewAs,
+  onClose,
+  onOpenMessages,
+}: {
+  tx: DashTransactionDetail
+  viewAs: 'buyer' | 'seller'
+  onClose: () => void
+  onOpenMessages?: () => void
+}) {
+  const otherParty = viewAs === 'buyer' ? tx.seller : tx.buyer
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)' }}
+    >
+      <div
+        className="w-full max-w-2xl rounded-2xl overflow-hidden"
+        style={{
+          background: 'rgba(11,11,11,0.98)',
+          border: '1px solid rgba(0,174,239,0.16)',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.85), 0 0 80px rgba(0,174,239,0.06)',
+        }}
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-[#1e1e1e] px-6 py-4">
+          <div className="min-w-0">
+            <h3 className="text-base font-semibold text-[#f2f2f2] truncate">
+              {tx.listing?.title ?? 'Transaccion marketplace'}
+            </h3>
+            <p className="mt-1 text-xs text-[#5a5a5a]">
+              {viewAs === 'buyer' ? 'Vendedor' : 'Comprador'}: <span className="text-[#a0a0a0]">{otherParty.displayName}</span>
+            </p>
+          </div>
+          <button onClick={onClose} className="text-[#5a5a5a] hover:text-[#f2f2f2] transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="space-y-5 p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <StatusBadge status={tx.status} />
+              <span className="text-sm font-semibold text-[#f2f2f2]">
+                ${Number(tx.amount).toLocaleString('es-VE')} {tx.currency}
+              </span>
+            </div>
+            <div className="text-xs text-[#5a5a5a]">
+              Creada: <span className="text-[#a0a0a0]">{fmtDate(tx.createdAt)}</span>
+            </div>
+          </div>
+
+          <div
+            className="rounded-xl p-4 text-sm leading-relaxed"
+            style={{ background: 'rgba(0,174,239,0.06)', border: '1px solid rgba(0,174,239,0.16)', color: '#d0eef9' }}
+          >
+            {getOperationalStatusCopy(tx.status, viewAs)}
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <PayoutDetailRow label="ID transaccion" value={tx.id} />
+            <PayoutDetailRow label="Metodo de pago" value={tx.paymentMethod} />
+            <PayoutDetailRow label="Referencia" value={tx.paymentReference ?? 'Sin referencia reportada'} />
+            <PayoutDetailRow label="Banco emisor" value={tx.paymentSenderBank ?? 'Sin banco reportado'} />
+            <PayoutDetailRow label="Fecha de pago" value={tx.paymentPaidAt ? fmtDate(tx.paymentPaidAt) : 'Sin fecha reportada'} />
+            <PayoutDetailRow label="Liberacion estimada" value={tx.escrowReleaseAt ? fmtDate(tx.escrowReleaseAt) : 'Aun sin fecha de liberacion'} />
+            <PayoutDetailRow label="Siguiente paso" value={getOperationalNextStep(tx.status, viewAs)} />
+          </div>
+
+          {tx.adminNotes && (
+            <div
+              className="rounded-xl p-4 text-sm"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <p className="text-[10px] uppercase tracking-widest text-[#5a5a5a]">Nota interna</p>
+              <p className="mt-2 text-[#d4d4d4]">{tx.adminNotes}</p>
+            </div>
+          )}
+
+          {tx.statusHistory && tx.statusHistory.length > 0 && (
+            <div>
+              <SectionHeader title="Linea de Estado" count={tx.statusHistory.length} />
+              <div className="space-y-2">
+                {tx.statusHistory.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="rounded-xl p-3"
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs text-[#f2f2f2]">
+                        {(entry.fromStatus ?? 'Inicio')} <span className="text-[#5a5a5a]">→</span> {entry.toStatus}
+                      </p>
+                      <span className="text-[10px] text-[#5a5a5a]">{fmtDate(entry.createdAt)}</span>
+                    </div>
+                    {entry.reason && <p className="mt-1 text-[11px] text-[#a0a0a0]">{entry.reason}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            {tx.listing?.slug && (
+              <Link
+                href={`/marketplace/${tx.listing.slug}`}
+                className="rounded-xl px-4 py-2 text-sm font-semibold"
+                style={{ background: 'rgba(255,255,255,0.05)', color: '#f2f2f2', border: '1px solid rgba(255,255,255,0.1)' }}
+              >
+                Ver listing
+              </Link>
+            )}
+            {onOpenMessages && (
+              <button
+                onClick={onOpenMessages}
+                className="rounded-xl px-4 py-2 text-sm font-semibold"
+                style={{ background: 'rgba(0,174,239,0.12)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.2)' }}
+              >
+                Ir a mensajes
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -1252,16 +1535,20 @@ export function DashboardClient({
   const profile = rawProfile as DashProfile | null
   const purchases = rawPurchases as DashTransaction[]
   const sales = rawSales as DashTransaction[]
-  const threads = rawThreads as DashThread[]
+  const initialThreads = rawThreads as DashThread[]
   const myListings = rawMyListings as DashListing[]
   const initialPayoutMethods = rawPayoutMethods as DashPayoutMethod[]
 
   const [activeTab, setActiveTab] = useState<Tab>(initialTab ?? 'my_store')
   const [openThread, setOpenThread] = useState<DashThread | null>(null)
+  const [selectedTx, setSelectedTx] = useState<{ tx: DashTransaction; viewAs: 'buyer' | 'seller' } | null>(null)
+  const [selectedTxDetail, setSelectedTxDetail] = useState<DashTransactionDetail | null>(null)
+  const [selectedTxLoading, setSelectedTxLoading] = useState(false)
   const [disputeTarget, setDisputeTarget] = useState<DashTransaction | null>(null)
   const [disputedTxIds, setDisputedTxIds] = useState<Set<string>>(new Set())
   const [favorites, setFavorites] = useState<DashListing[]>(rawMyFavorites as DashListing[])
   const myInteracted = rawMyInteracted as DashInteracted[]
+  const [threads, setThreads] = useState<DashThread[]>(initialThreads)
   const [payoutMethods, setPayoutMethods] = useState<DashPayoutMethod[]>(initialPayoutMethods)
   const [payoutBusyId, setPayoutBusyId] = useState<string | null>(null)
   const [payoutMessage, setPayoutMessage] = useState<string | null>(null)
@@ -1280,26 +1567,23 @@ export function DashboardClient({
     wallet: '',
   })
 
-  const initialUnread = threads.filter(t =>
-    t.messages[0] && !t.messages[0].isRead && t.messages[0].senderId !== session.userId,
-  ).length
+  const initialUnread = initialThreads.reduce((sum, thread) => sum + getTxUnreadCount(thread, session.userId), 0)
   const [unreadCount, setUnreadCount] = useState(initialUnread)
 
   useEffect(() => {
     const id = setInterval(() => {
       getUnreadCount().then(r => { if (r.success && r.data) setUnreadCount(r.data.count) })
+      getMyThreads().then((result) => {
+        if (result.success && result.data) {
+          setThreads(result.data as DashThread[])
+        }
+      })
     }, 20_000)
     return () => clearInterval(id)
   }, [])
 
-  const counts: Record<Tab, number> = {
-    my_store:  myListings.length,
-    sales:     sales.length,
-    purchases: purchases.length,
-    messages:  unreadCount,
-    favorites: favorites.length,
-    payouts:   payoutMethods.length,
-  }
+  const unreadThreads = threads.filter((thread) => getTxUnreadCount(thread, session.userId) > 0)
+  const readThreads = threads.filter(t => !unreadThreads.some(unreadThread => unreadThread.id === t.id))
 
   const pendingValidationSales = sales.filter(tx => ['PAYMENT_RECEIVED', 'VALIDATING'].includes(tx.status))
   const escrowSales = sales.filter(tx => ['IN_ESCROW', 'DELIVERY_CONFIRMED'].includes(tx.status))
@@ -1307,10 +1591,62 @@ export function DashboardClient({
   const payoutRelevantSales = sales.filter(tx => ['IN_ESCROW', 'DELIVERY_CONFIRMED', 'RELEASED'].includes(tx.status))
   const payoutReadySales = sales.filter(tx => tx.status === 'RELEASED')
   const operationalSold = payoutRelevantSales.reduce((sum, tx) => sum + Number(tx.amount ?? 0), 0)
-  const operationalCommissions = payoutRelevantSales.reduce((sum, tx) => sum + Number(tx.platformFeeAmount ?? 0), 0)
+  const operationalBankFees = payoutRelevantSales.reduce((sum, tx) => sum + (tx.paymentMethod === 'MERCANTIL_PAGO_MOVIL' ? getTxExtraFee(tx) : 0), 0)
+  const operationalBinanceFees = payoutRelevantSales.reduce((sum, tx) => sum + (tx.paymentMethod === 'CRYPTO_WALLET_MANUAL' ? getTxExtraFee(tx) : 0), 0)
+  const operationalCommissions = payoutRelevantSales.reduce((sum, tx) => sum + getTxBasePlatformFee(tx), 0)
+  const operationalTotalFees = payoutRelevantSales.reduce((sum, tx) => sum + getTxTotalFee(tx), 0)
   const operationalSellerNet = payoutRelevantSales.reduce((sum, tx) => sum + Number(tx.sellerNetAmount ?? 0), 0)
   const payoutReadyNet = payoutReadySales.reduce((sum, tx) => sum + Number(tx.sellerNetAmount ?? 0), 0)
   const sellerNeedsPayoutProfile = profile?.isSeller && payoutMethods.length === 0 && payoutRelevantSales.length > 0
+  const sellerHasCommissionExemption = profile?.role === 'SOCIO' || profile?.role === 'SUPER'
+  const commissionLabel = sellerHasCommissionExemption ? 'Comision plataforma' : 'Comision 5%'
+  const commissionSub = sellerHasCommissionExemption ? 'exenta por rol actual' : 'base plataforma'
+  const commissionCopy = sellerHasCommissionExemption
+    ? 'Comision base plataforma: exenta por rol actual. Comision adicional pago movil / transferencia: 0.03%. Comision adicional Binance: $0.06.'
+    : 'Comision base plataforma: 5%. Comision adicional pago movil / transferencia: 0.03%. Comision adicional Binance: $0.06.'
+
+  const counts: Record<Tab, number> = {
+    my_store:  myListings.length,
+    sales:     sales.length,
+    purchases: purchases.length,
+    messages:  unreadCount,
+    favorites: favorites.length,
+    payouts:   payoutRelevantSales.length,
+  }
+
+  async function handleOpenTransaction(tx: DashTransaction, viewAs: 'buyer' | 'seller') {
+    setSelectedTx({ tx, viewAs })
+    setSelectedTxDetail(null)
+    setSelectedTxLoading(true)
+    const result = await getTransaction(tx.id)
+    if (result.success && result.data) {
+      setSelectedTxDetail(result.data as DashTransactionDetail)
+    }
+    setSelectedTxLoading(false)
+  }
+
+  function handleOpenThread(thread: DashThread) {
+    const unreadForThread = getTxUnreadCount(thread, session.userId)
+    if (unreadForThread > 0) {
+      setUnreadCount((prev) => Math.max(prev - unreadForThread, 0))
+    }
+    setThreads((prev) =>
+      prev.map((currentThread) =>
+        currentThread.id === thread.id
+          ? {
+              ...currentThread,
+              unreadCount: 0,
+              messages: currentThread.messages.map((message, index) =>
+                index === 0 && message.senderId !== session.userId
+                  ? { ...message, isRead: true }
+                  : message,
+              ),
+            }
+          : currentThread,
+      ),
+    )
+    setOpenThread(thread)
+  }
 
   function updatePayoutField(field: keyof typeof payoutForm, value: string) {
     setPayoutForm(prev => ({ ...prev, [field]: value }))
@@ -1568,7 +1904,7 @@ export function DashboardClient({
                 </div>
               )}
 
-              <SectionHeader title="Transacciones en Escrow" count={sales.length} />
+              <SectionHeader title="Mis ventas" count={sales.length} />
               {sales.length === 0 ? (
                 <EmptyState
                   icon={TrendingUp}
@@ -1587,6 +1923,7 @@ export function DashboardClient({
                         key={tx.id}
                         tx={effectiveTx}
                         viewAs="seller"
+                        onOpenDetails={(currentTx) => void handleOpenTransaction(currentTx, 'seller')}
                         onDispute={effectiveTx.status === 'IN_ESCROW' ? setDisputeTarget : undefined}
                         payoutMissing={payoutMissingForTx}
                       />
@@ -1600,7 +1937,7 @@ export function DashboardClient({
           {/* ─ Mis Compras ─ */}
           {activeTab === 'purchases' && (
             <div className="space-y-3">
-              <SectionHeader title="Compras en Escrow" count={purchases.length} />
+              <SectionHeader title="Mis compras" count={purchases.length} />
               {purchases.length === 0 ? (
                 <EmptyState
                   icon={ShoppingBag}
@@ -1616,6 +1953,7 @@ export function DashboardClient({
                         key={tx.id}
                         tx={effectiveTx}
                         viewAs="buyer"
+                        onOpenDetails={(currentTx) => void handleOpenTransaction(currentTx, 'buyer')}
                         onDispute={effectiveTx.status === 'IN_ESCROW' ? setDisputeTarget : undefined}
                       />
                     )
@@ -1628,8 +1966,31 @@ export function DashboardClient({
           {/* ─ Mensajes ─ */}
           {activeTab === 'messages' && (
             <div className="space-y-6">
+              <div
+                className="rounded-2xl p-4"
+                style={{ background: 'rgba(13,13,13,0.9)', border: '1px solid rgba(255,255,255,0.06)' }}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-[#f2f2f2]">Centro de mensajes</h3>
+                    <p className="mt-1 text-xs text-[#5a5a5a]">
+                      {unreadCount > 0
+                        ? `${unreadCount} mensaje(s) sin leer en ${unreadThreads.length} conversacion(es).`
+                        : 'No tienes mensajes sin leer en este momento.'}
+                    </p>
+                  </div>
+                  {unreadCount > 0 && (
+                    <span
+                      className="rounded-full px-3 py-1 text-[11px] font-semibold"
+                      style={{ background: 'rgba(0,174,239,0.1)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.18)' }}
+                    >
+                      {unreadCount > 99 ? '99+' : unreadCount} sin leer
+                    </span>
+                  )}
+                </div>
+              </div>
 
-              {/* Preguntas por Responder — same block as my_store, for sellers */}
+              {/* Preguntas por Responder */}
               {(() => {
                 const withUnanswered = myListings.filter((l: DashListing) =>
                   Array.isArray(l.questions) &&
@@ -1696,23 +2057,51 @@ export function DashboardClient({
                 )}
               </div>
 
+              <div>
+                <SectionHeader title="Chats por Atender" count={unreadThreads.length} />
+                {unreadThreads.length === 0 ? (
+                  <EmptyState
+                    icon={MessageSquare}
+                    title="Sin chats pendientes"
+                    sub="Cuando entren mensajes nuevos, apareceran primero en esta sección."
+                  />
+                ) : (
+                  <div className="space-y-3">
+                    {unreadThreads.map(t => (
+                      <ThreadCard
+                        key={t.id}
+                        thread={t}
+                        currentUserId={session.userId}
+                        onOpen={() => handleOpenThread(t)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Chats de Negociación */}
               <div>
-                <SectionHeader title="Chats de Negociación" count={threads.length} />
+                <SectionHeader title="Todos los Chats" count={threads.length} />
                 {threads.length === 0 ? (
                   <EmptyState
                     icon={MessageSquare}
                     title="Sin conversaciones"
                     sub="Cuando contactes a un vendedor o alguien te escriba, los hilos aparecerán aquí."
                   />
+                ) : readThreads.length === 0 ? (
+                  <EmptyState
+                    icon={MessageSquare}
+                    title="Todo lo pendiente ya está arriba"
+                    sub="Todas tus conversaciones activas tienen mensajes sin leer o aún no hay chats adicionales."
+                  />
                 ) : (
                   <div className="space-y-3">
-                    {threads.map(t => (
+                    {readThreads.map(t => (
                       <ThreadCard
                         key={t.id}
                         thread={t}
                         currentUserId={session.userId}
-                        onOpen={() => setOpenThread(t)}
+                        onOpen={() => handleOpenThread(t)}
                       />
                     ))}
                   </div>
@@ -1726,9 +2115,14 @@ export function DashboardClient({
           {activeTab === 'payouts' && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <KpiCard icon={CircleDollarSign} label="Total operativo" value={fmtUSD(operationalSold)} sub={`${payoutRelevantSales.length} en escrow o liberadas`} accent="#4ade80" />
-                <KpiCard icon={CreditCard} label="Comisiones" value={fmtUSD(operationalCommissions)} sub="solo transacciones payout-relevantes" accent="#f59e0b" />
-                <KpiCard icon={Wallet} label="Neto operativo" value={fmtUSD(operationalSellerNet)} sub="escrow activo + payout listo" accent="#00aeef" />
+                <KpiCard icon={CircleDollarSign} label="Total de ventas" value={fmtUSD(operationalSold)} sub={`${payoutRelevantSales.length} ventas operativas`} accent="#4ade80" />
+                <KpiCard icon={CreditCard} label={commissionLabel} value={fmtUSD(operationalCommissions)} sub={commissionSub} accent="#f59e0b" />
+                <KpiCard icon={Landmark} label="Fee bancario 0.03%" value={fmtUSD(operationalBankFees)} sub="pago movil / transferencia" accent="#ffc107" />
+                <KpiCard icon={Wallet} label="Fee Binance" value={fmtUSD(operationalBinanceFees)} sub="$0.06 por operacion" accent="#00aeef" />
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <KpiCard icon={Wallet} label="Neto a recibir" value={fmtUSD(operationalSellerNet)} sub={`fees totales ${fmtUSD(operationalTotalFees)}`} accent="#00aeef" />
                 <KpiCard icon={Landmark} label="Pendiente por pagar" value={fmtUSD(payoutReadyNet)} sub={`${releasedSales.length} liberadas`} accent="#a78bfa" />
               </div>
 
@@ -1848,7 +2242,7 @@ export function DashboardClient({
                         className="rounded-xl p-3 text-xs leading-relaxed"
                         style={{ background: 'rgba(0,174,239,0.04)', border: '1px solid rgba(0,174,239,0.1)', color: '#a0a0a0' }}
                       >
-                        Comision base plataforma: 5%. Comision adicional pago movil / transferencia: 0.03%. Comision adicional Binance: $0.06. Neto operativo acumulado: <span className="text-[#f2f2f2]">{fmtUSD(operationalSellerNet)}</span>. Total listo para recibir hoy: <span className="text-[#f2f2f2]">{fmtUSD(payoutReadyNet)}</span>.
+                        {commissionCopy} Neto operativo acumulado: <span className="text-[#f2f2f2]">{fmtUSD(operationalSellerNet)}</span>. Total listo para recibir hoy: <span className="text-[#f2f2f2]">{fmtUSD(payoutReadyNet)}</span>.
                       </div>
 
                       <button
@@ -1967,6 +2361,37 @@ export function DashboardClient({
           currentUserName={session.displayName}
           onClose={() => setOpenThread(null)}
         />
+      )}
+
+      {selectedTx && (
+        selectedTxLoading || !selectedTxDetail ? (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(8px)' }}
+          >
+            <div
+              className="rounded-2xl px-5 py-4 flex items-center gap-3"
+              style={{ background: 'rgba(13,13,13,0.95)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <Loader2 size={16} className="animate-spin text-[#00aeef]" />
+              <span className="text-sm text-[#f2f2f2]">Cargando detalle de transaccion...</span>
+            </div>
+          </div>
+        ) : (
+          <TransactionDetailModal
+            tx={selectedTxDetail}
+            viewAs={selectedTx.viewAs}
+            onClose={() => {
+              setSelectedTx(null)
+              setSelectedTxDetail(null)
+            }}
+            onOpenMessages={() => {
+              setSelectedTx(null)
+              setSelectedTxDetail(null)
+              setActiveTab('messages')
+            }}
+          />
+        )
       )}
 
       {/* Dispute Modal */}
