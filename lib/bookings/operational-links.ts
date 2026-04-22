@@ -7,11 +7,16 @@ function normalizeBaseUrl(value: string | null | undefined): string | null {
   const raw = value?.trim()
   if (!raw) return null
 
-  if (raw.startsWith('http://') || raw.startsWith('https://')) {
-    return raw.replace(/\/+$/, '')
+  // Tolerate misconfigured values like:
+  // "BOOKINGS_APP_BASE_URL=https://www.turpialsound.com"
+  const normalizedRaw = raw.replace(/^[A-Z0-9_]+=/i, '').trim()
+  if (!normalizedRaw) return null
+
+  if (normalizedRaw.startsWith('http://') || normalizedRaw.startsWith('https://')) {
+    return normalizedRaw.replace(/\/+$/, '')
   }
 
-  return `https://${raw.replace(/\/+$/, '')}`
+  return `https://${normalizedRaw.replace(/\/+$/, '')}`
 }
 
 export function getBookingsAppBaseUrl(): string | null {
