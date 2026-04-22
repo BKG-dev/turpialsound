@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import {
@@ -15,7 +14,7 @@ import { validatePaymentReviewAccessToken } from '@/lib/bookings/payment-review-
 import { buildPaymentProofViewerUrl } from '@/lib/bookings/operational-links'
 
 interface PaymentReviewPageProps {
-      searchParams?:
+  searchParams?:
     | Promise<{
         token?: string
         result?: string
@@ -126,7 +125,10 @@ function readJsonObject(source: unknown): Record<string, unknown> | null {
   return source as Record<string, unknown>
 }
 
-function extractActionContext(nextState: unknown): { reviewAction: string | null; reviewTokenJti: string | null } {
+function extractActionContext(nextState: unknown): {
+  reviewAction: string | null
+  reviewTokenJti: string | null
+} {
   const object = readJsonObject(nextState)
   if (!object) {
     return { reviewAction: null, reviewTokenJti: null }
@@ -141,7 +143,8 @@ function buildResultLabel(result: string | null): string | null {
   if (!result) return null
   if (result === 'confirmed') return 'Pago confirmado correctamente.'
   if (result === 'incidence_marked') return 'Incidencia marcada para revision interna.'
-  if (result === 'already_resolved') return 'La solicitud ya estaba resuelta. No se aplicaron cambios.'
+  if (result === 'already_resolved')
+    return 'La solicitud ya estaba resuelta. No se aplicaron cambios.'
   if (result === 'token_used') return 'Este enlace ya fue usado para esta accion.'
   if (result === 'invalid_action') return 'Accion invalida.'
   if (result === 'invalid_token') return 'Token invalido.'
@@ -210,10 +213,7 @@ async function handlePaymentReviewAction(formData: FormData) {
       auditLogs: {
         where: {
           action: {
-            in: [
-              'ops_payment_review_confirmed',
-              'ops_payment_review_incidence_marked',
-            ],
+            in: ['ops_payment_review_confirmed', 'ops_payment_review_incidence_marked'],
           },
         },
         orderBy: { createdAt: 'desc' },
@@ -524,7 +524,9 @@ export default async function OpsPaymentReviewPage({ searchParams }: PaymentRevi
   const operationalStatus = getOperationalStatus(booking)
   const primaryItem = booking.items[0]
   const paymentAuditLog = booking.auditLogs[0]
-  const paymentMethod = normalizeMethodLabel(readStringField(paymentAuditLog?.nextState, 'paymentMethod'))
+  const paymentMethod = normalizeMethodLabel(
+    readStringField(paymentAuditLog?.nextState, 'paymentMethod'),
+  )
   const paymentReportedAt =
     readDateField(paymentAuditLog?.nextState, 'paymentReportedAt') ?? paymentProof.uploadedAt
   const paymentDeadline = getPaymentDeadline(booking.createdAt)
@@ -536,7 +538,9 @@ export default async function OpsPaymentReviewPage({ searchParams }: PaymentRevi
   const estimatedTotal = parseOptionalAmount(booking.estimatedTotal)
   const currency = booking.currency?.trim().toUpperCase() || 'USD'
   const usdAmount =
-    typeof estimatedTotal === 'number' ? `${currency} ${estimatedTotal.toFixed(2)}` : 'Por confirmar'
+    typeof estimatedTotal === 'number'
+      ? `${currency} ${estimatedTotal.toFixed(2)}`
+      : 'Por confirmar'
 
   let bcvRateLabel = 'Por confirmar'
   let bsExpectedLabel = 'Por confirmar'
@@ -567,7 +571,8 @@ export default async function OpsPaymentReviewPage({ searchParams }: PaymentRevi
           <p className="text-xs uppercase tracking-wide text-slate-500">Revision operativa</p>
           <h1 className="mt-1 text-2xl font-semibold text-slate-900">{booking.publicCode}</h1>
           <p className="mt-2 text-sm text-slate-700">
-            Estado: <span className="font-medium">{getOperationalStatusLabel(operationalStatus)}</span>
+            Estado:{' '}
+            <span className="font-medium">{getOperationalStatusLabel(operationalStatus)}</span>
           </p>
           {result ? (
             <p className="mt-3 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
@@ -591,7 +596,10 @@ export default async function OpsPaymentReviewPage({ searchParams }: PaymentRevi
               </div>
             )}
             <p className="mt-2 text-xs text-slate-500">
-              Referencia: {paymentProof.normalizedReference ?? paymentProof.reportedReference ?? 'No especificada'}
+              Referencia:{' '}
+              {paymentProof.normalizedReference ??
+                paymentProof.reportedReference ??
+                'No especificada'}
             </p>
           </article>
 
@@ -618,17 +626,23 @@ export default async function OpsPaymentReviewPage({ searchParams }: PaymentRevi
                 </div>
                 {primaryItem?.resource?.name ? (
                   <div>
-                    <dt className="text-xs uppercase tracking-wide text-slate-500">Sala / recurso</dt>
+                    <dt className="text-xs uppercase tracking-wide text-slate-500">
+                      Sala / recurso
+                    </dt>
                     <dd>{primaryItem.resource.name}</dd>
                   </div>
                 ) : (
                   <div>
-                    <dt className="text-xs uppercase tracking-wide text-slate-500">Sala / recurso</dt>
+                    <dt className="text-xs uppercase tracking-wide text-slate-500">
+                      Sala / recurso
+                    </dt>
                     <dd>Por confirmar</dd>
                   </div>
                 )}
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-500">Fecha reservada</dt>
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">
+                    Fecha reservada
+                  </dt>
                   <dd>{formatDateOnly(booking.eventDate)}</dd>
                 </div>
                 <div>
@@ -644,7 +658,9 @@ export default async function OpsPaymentReviewPage({ searchParams }: PaymentRevi
               <h2 className="text-sm font-semibold text-slate-900">Pago y tiempo</h2>
               <dl className="mt-2 space-y-1 text-sm text-slate-700">
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-500">Metodo reportado</dt>
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">
+                    Metodo reportado
+                  </dt>
                   <dd>{paymentMethod}</dd>
                 </div>
                 <div>
@@ -656,15 +672,21 @@ export default async function OpsPaymentReviewPage({ searchParams }: PaymentRevi
                   <dd>{bcvRateLabel}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-500">Monto esperado Bs</dt>
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">
+                    Monto esperado Bs
+                  </dt>
                   <dd>{bsExpectedLabel}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-500">Solicitud creada</dt>
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">
+                    Solicitud creada
+                  </dt>
                   <dd>{formatDateTime(booking.createdAt)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-500">Vencimiento de pago</dt>
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">
+                    Vencimiento de pago
+                  </dt>
                   <dd>{formatDateTime(paymentDeadline)}</dd>
                 </div>
                 <div>
@@ -672,7 +694,9 @@ export default async function OpsPaymentReviewPage({ searchParams }: PaymentRevi
                   <dd>{formatDateTime(paymentReportedAt)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-wide text-slate-500">Estado temporal</dt>
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">
+                    Estado temporal
+                  </dt>
                   <dd>{temporalStatus}</dd>
                 </div>
               </dl>
@@ -703,17 +727,18 @@ export default async function OpsPaymentReviewPage({ searchParams }: PaymentRevi
                   </button>
                 </form>
                 {proofViewerUrl ? (
-                  <Link
+                  <a
                     href={proofViewerUrl}
                     className="inline-flex h-9 items-center rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                   >
                     Ver comprobante
-                  </Link>
+                  </a>
                 ) : null}
               </div>
               {!canConfirm ? (
                 <p className="mt-2 text-xs text-slate-500">
-                  Esta solicitud ya no esta en estado Pago reportado; no se puede confirmar desde este enlace.
+                  Esta solicitud ya no esta en estado Pago reportado; no se puede confirmar desde
+                  este enlace.
                 </p>
               ) : intent === 'confirm' ? (
                 <p className="mt-2 text-xs text-slate-500">
