@@ -73,7 +73,7 @@ export function HeroSection({
 
   /* canvasH se mide UNA SOLA VEZ en onAnimationComplete del div de CTAs
      (posición final tras la animación de entrada, con el borde inferior del botón
-     "Reservar ahora" ya asentado). Ese valor es permanente para toda la sesión. */
+     "Reserva ahora" ya asentado). Ese valor es permanente para toda la sesión. */
 
   // Video lifecycle — useIsomorphicLayoutEffect is critical here.
   //
@@ -383,8 +383,8 @@ export function HeroSection({
               setCanvasH(Math.max(40, Math.round(window.innerHeight - rect.bottom - 5)))
             }}
           >
-            <Button as="link" href="/contacto" variant="primary" size="lg">
-              Reservar ahora
+            <Button as="link" href="/reservas" variant="primary" size="lg">
+              Reserva ahora
             </Button>
             <Button as="link" href="/servicios" variant="glow-cyan" size="lg">
               Ver servicios

@@ -42,8 +42,8 @@ export default function PodcastLocucionPage() {
         heading="Sonido limpio para contenido que se escucha profesional."
         subheading="Cabina tratada, operación técnica y entrega lista para Spotify, YouTube o cualquier plataforma."
       >
-        <Button as="link" href="/contacto" variant="primary" size="lg">
-          Cotizar sesión
+        <Button as="link" href="/reservas" variant="primary" size="lg">
+          Reserva ahora
         </Button>
       </PageHero>
 

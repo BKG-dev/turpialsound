@@ -42,8 +42,8 @@ export const pricingPackages: PricingPackage[] = [
       'Microfonía y acústica profesional',
     ],
     accent: 'cyan',
-    ctaLabel: 'Reservar sesión',
-    ctaHref: '/contacto',
+    ctaLabel: 'Reserva ahora',
+    ctaHref: '/reservas',
   },
   {
     id: 'grabacion',

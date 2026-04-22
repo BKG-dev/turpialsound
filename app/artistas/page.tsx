@@ -146,8 +146,8 @@ export default function ArtistasPage() {
         <CTASection
           heading="¿Listo para añadir tu nombre a esta lista?"
           subheading="Contáctanos y hablamos de tu proyecto. El estudio está listo."
-          ctaLabel="Iniciar conversación"
-          ctaHref="/contacto"
+          ctaLabel="Reserva ahora"
+          ctaHref="/reservas"
           imageSrc="/images/salas-ensayo10.jpg"
           className="py-20 sm:py-28"
         />

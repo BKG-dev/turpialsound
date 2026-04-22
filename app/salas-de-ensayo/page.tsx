@@ -66,8 +66,8 @@ export default function SalasDeEnsayoPage() {
         eyebrow="Salas de ensayo"
         heading="El Escenario Antes Del Escenario."
         subheading="Acústica milimétrica y backline de élite. Un espacio diseñado para la ejecución perfecta, la práctica profunda y la evolución de tu producción musical."
-        ctaLabel="Consultar disponibilidad"
-        ctaHref="/contacto"
+        ctaLabel="Reserva ahora"
+        ctaHref="/reservas"
       />
 
       {/* Features — con iconografía y borde animado premium */}
@@ -173,8 +173,8 @@ export default function SalasDeEnsayoPage() {
         <CTASection
           heading="¿Cuándo quieres ensayar?"
           subheading="Revisa disponibilidad y reserva tu sala. El espacio está listo cuando tú lo estés."
-          ctaLabel="Reservar sala"
-          ctaHref="/contacto"
+          ctaLabel="Reserva ahora"
+          ctaHref="/reservas"
           imageSrc="/images/SDE2.jpg"
           className="py-20 sm:py-28"
         />
