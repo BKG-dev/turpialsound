@@ -2,7 +2,7 @@ import { getEnabledPaymentMethods } from '@/lib/bookings/payment-settings'
 import type { OperationalBookingStatus } from '@/lib/bookings/operations'
 import { Resend } from 'resend'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
-import { buildAdminPaymentProofUrl } from '@/lib/bookings/operational-links'
+import { buildAdminPaymentProofUrl, buildPaymentProofViewerUrl } from '@/lib/bookings/operational-links'
 
 export type BookingNotificationEvent =
   | 'booking.pending_payment.created'
@@ -16,18 +16,22 @@ export interface BookingNotificationPayload {
   paymentProofId?: string | null
   clientName?: string | null
   clientEmail?: string | null
+  clientWhatsapp?: string | null
   serviceName?: string | null
   variantName?: string | null
   resourceName?: string | null
+  requestCreatedAt?: Date | string | null
   startAt?: Date | string | null
   endAt?: Date | string | null
   deadlineAt?: Date | string | null
+  paymentReportedAt?: Date | string | null
   estimatedTotal?: number | null
   currency?: string | null
   currencyDisplay?: string | null
   bcvRate?: number | null
   bcvAsOf?: Date | string | null
   paymentMethod?: string | null
+  paymentReference?: string | null
   status?: OperationalBookingStatus | null
   notes?: string | null
 }
@@ -36,6 +40,7 @@ interface BookingEmailMessage {
   to: string
   subject: string
   text: string
+  html?: string
 }
 
 function getBookingAdminNotificationsEmail(): string | null {
@@ -89,6 +94,72 @@ function formatSchedule(
     return startLabel
   }
   return `${startLabel} - ${endLabel}`
+}
+
+function formatDateOnly(value: Date | string | null | undefined): string {
+  if (!value) return 'Por confirmar'
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Por confirmar'
+
+  return new Intl.DateTimeFormat('es-VE', {
+    timeZone: 'America/Caracas',
+    dateStyle: 'medium',
+  }).format(date)
+}
+
+function formatTimeOnly(value: Date | string | null | undefined): string {
+  if (!value) return 'Por confirmar'
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Por confirmar'
+
+  return new Intl.DateTimeFormat('es-VE', {
+    timeZone: 'America/Caracas',
+    timeStyle: 'short',
+  }).format(date)
+}
+
+function mapPaymentMethodLabel(value: string | null | undefined): string {
+  const normalized = (value ?? '').trim().toLowerCase()
+  if (normalized === 'pago_movil') return 'Pago Movil'
+  if (normalized === 'transferencia') return 'Transferencia Bancaria'
+  if (normalized === 'binance') return 'Binance Pay'
+  if (normalized === 'efectivo') return 'Efectivo'
+  return value?.trim() || 'No especificado'
+}
+
+function mapOperationalStatusLabel(value: OperationalBookingStatus | null | undefined): string {
+  if (value === 'payment_reported') return 'Pago reportado'
+  if (value === 'confirmed') return 'Confirmada'
+  if (value === 'expired') return 'Vencida'
+  if (value === 'cancelled') return 'Cancelada'
+  if (value === 'pending_payment') return 'Pendiente de pago'
+  if (value === 'payment_verified') return 'Pago verificado'
+  if (value === 'submitted') return 'Enviada'
+  return 'En revision'
+}
+
+function computeTemporalStatusLabel(payload: BookingNotificationPayload): string {
+  if (!payload.deadlineAt || !payload.paymentReportedAt) {
+    return 'Sin contexto temporal suficiente'
+  }
+
+  const deadline = payload.deadlineAt instanceof Date ? payload.deadlineAt : new Date(payload.deadlineAt)
+  const reportedAt =
+    payload.paymentReportedAt instanceof Date
+      ? payload.paymentReportedAt
+      : new Date(payload.paymentReportedAt)
+
+  if (Number.isNaN(deadline.getTime()) || Number.isNaN(reportedAt.getTime())) {
+    return 'Sin contexto temporal suficiente'
+  }
+
+  const deltaMs = reportedAt.getTime() - deadline.getTime()
+  if (deltaMs <= 0) {
+    return 'Reportado dentro del plazo'
+  }
+
+  const deltaMinutes = Math.round(deltaMs / 60000)
+  return `Reportado ${deltaMinutes} min despues del vencimiento`
 }
 
 function formatAmount(payload: BookingNotificationPayload): string {
@@ -196,23 +267,92 @@ function buildPaymentReportedCustomerText(payload: BookingNotificationPayload): 
 
 function buildPaymentReportedAdminText(payload: BookingNotificationPayload): string {
   const paymentProofUrl = buildAdminPaymentProofUrl(payload.publicCode, payload.paymentProofId)
+  const paymentMethodLabel = mapPaymentMethodLabel(payload.paymentMethod)
+  const temporalStatus = computeTemporalStatusLabel(payload)
+  const bsReferenceAmount = formatBsReferenceAmount(payload)
+  const bcvReference = formatBcvReference(payload)
 
   return [
     'VERIFICAR PAGO',
     '',
     `Codigo: ${payload.publicCode}`,
+    `Estado operativo: ${mapOperationalStatusLabel(payload.status)}`,
     `Cliente: ${payload.clientName ?? 'N/A'}`,
     `Email cliente: ${payload.clientEmail ?? 'N/A'}`,
+    `WhatsApp cliente: ${payload.clientWhatsapp ?? 'No disponible'}`,
     `Servicio: ${payload.serviceName ?? 'Por confirmar'}`,
     `Modalidad: ${payload.variantName ?? 'Por confirmar'}`,
-    `Horario: ${formatSchedule(payload.startAt, payload.endAt)}`,
-    `Sala: ${payload.resourceName ?? 'Por asignar'}`,
-    `Monto: ${formatAmount(payload)}`,
-    `Metodo reportado: ${payload.paymentMethod ?? 'No especificado'}`,
-    paymentProofUrl ? `Ver comprobante: ${paymentProofUrl}` : '',
+    payload.resourceName ? `Sala/recurso: ${payload.resourceName}` : 'Sala/recurso: por confirmar',
+    `Fecha reservada: ${formatDateOnly(payload.startAt)}`,
+    `Bloque horario: ${formatTimeOnly(payload.startAt)} - ${formatTimeOnly(payload.endAt)}`,
+    `Monto USD: ${formatAmount(payload)}`,
+    bcvReference ?? 'Referencia BCV: No disponible',
+    bsReferenceAmount ? `Monto esperado Bs: ${bsReferenceAmount}` : 'Monto esperado Bs: No disponible',
+    `Metodo reportado: ${paymentMethodLabel}`,
+    `Referencia operativa: ${payload.paymentReference ?? 'No especificada'}`,
+    `Solicitud creada: ${formatDateTime(payload.requestCreatedAt)}`,
+    `Vencimiento de pago: ${formatDateTime(payload.deadlineAt)}`,
+    `Pago reportado: ${formatDateTime(payload.paymentReportedAt)}`,
+    `Estado temporal: ${temporalStatus}`,
+    paymentProofUrl ? 'Verificacion operativa disponible desde enlace seguro.' : '',
   ]
     .filter(Boolean)
     .join('\n')
+}
+
+function buildActionButtonHtml(label: string, href: string, bgColor: string): string {
+  return `<a href="${href}" style="display:inline-block;padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;color:#ffffff;background:${bgColor};">${label}</a>`
+}
+
+function buildPaymentReportedAdminHtml(payload: BookingNotificationPayload): string | null {
+  const reviewUrl = buildAdminPaymentProofUrl(payload.publicCode, payload.paymentProofId)
+  if (!reviewUrl) return null
+  const proofViewerUrl = payload.paymentProofId
+    ? buildPaymentProofViewerUrl(payload.publicCode, payload.paymentProofId)
+    : null
+  const confirmUrl = `${reviewUrl}&intent=confirm`
+  const incidenceUrl = `${reviewUrl}&intent=incidence`
+
+  const paymentMethodLabel = mapPaymentMethodLabel(payload.paymentMethod)
+  const temporalStatus = computeTemporalStatusLabel(payload)
+  const bcvReference = formatBcvReference(payload) ?? 'Referencia BCV: No disponible'
+  const bsReferenceAmount = formatBsReferenceAmount(payload) ?? 'No disponible'
+
+  return `
+  <div style="font-family:Arial,sans-serif;background:#f8fafc;padding:24px;color:#0f172a;">
+    <div style="max-width:680px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;padding:20px;">
+      <p style="margin:0 0 6px;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;">VERIFICAR PAGO</p>
+      <h1 style="margin:0 0 14px;font-size:24px;line-height:1.2;">${payload.publicCode}</h1>
+      <p style="margin:0 0 14px;font-size:14px;color:#334155;">Estado operativo: <strong>${mapOperationalStatusLabel(payload.status)}</strong></p>
+
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <tr><td style="padding:6px 0;color:#64748b;">Cliente</td><td style="padding:6px 0;">${payload.clientName ?? 'N/A'}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">Email</td><td style="padding:6px 0;">${payload.clientEmail ?? 'N/A'}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">WhatsApp</td><td style="padding:6px 0;">${payload.clientWhatsapp ?? 'No disponible'}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">Servicio</td><td style="padding:6px 0;">${payload.serviceName ?? 'Por confirmar'}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">Modalidad</td><td style="padding:6px 0;">${payload.variantName ?? 'Por confirmar'}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">Sala / recurso</td><td style="padding:6px 0;">${payload.resourceName ?? 'Por confirmar'}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">Fecha reservada</td><td style="padding:6px 0;">${formatDateOnly(payload.startAt)}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">Bloque horario</td><td style="padding:6px 0;">${formatTimeOnly(payload.startAt)} - ${formatTimeOnly(payload.endAt)}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">Metodo reportado</td><td style="padding:6px 0;">${paymentMethodLabel}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">Monto USD</td><td style="padding:6px 0;">${formatAmount(payload)}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">Referencia BCV</td><td style="padding:6px 0;">${bcvReference}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">Monto esperado Bs</td><td style="padding:6px 0;">${bsReferenceAmount}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">Referencia operativa</td><td style="padding:6px 0;">${payload.paymentReference ?? 'No especificada'}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">Solicitud creada</td><td style="padding:6px 0;">${formatDateTime(payload.requestCreatedAt)}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">Vencimiento de pago</td><td style="padding:6px 0;">${formatDateTime(payload.deadlineAt)}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">Pago reportado</td><td style="padding:6px 0;">${formatDateTime(payload.paymentReportedAt)}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">Estado temporal</td><td style="padding:6px 0;"><strong>${temporalStatus}</strong></td></tr>
+      </table>
+
+      <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap;">
+        ${buildActionButtonHtml('Ver comprobante', proofViewerUrl ?? reviewUrl, '#0f172a')}
+        ${buildActionButtonHtml('Abrir solicitud', reviewUrl, '#334155')}
+        ${buildActionButtonHtml('Confirmar pago', confirmUrl, '#065f46')}
+        ${buildActionButtonHtml('Marcar incidencia', incidenceUrl, '#9a3412')}
+      </div>
+    </div>
+  </div>`
 }
 
 function buildConfirmedCustomerText(payload: BookingNotificationPayload): string {
@@ -287,10 +427,12 @@ function buildMessages(
       })
     }
     if (adminEmail) {
+      const adminHtml = buildPaymentReportedAdminHtml(payload)
       messages.push({
         to: adminEmail,
         subject: `VERIFICAR PAGO - ${payload.publicCode}`,
         text: buildPaymentReportedAdminText(payload),
+        html: adminHtml ?? undefined,
       })
     }
   }
@@ -364,6 +506,7 @@ async function sendEmailMessage(
       to: message.to,
       subject: message.subject,
       text: message.text,
+      ...(message.html ? { html: message.html } : {}),
       ...(replyTo ? { replyTo } : {}),
     })
 

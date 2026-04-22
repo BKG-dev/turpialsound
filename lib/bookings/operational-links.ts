@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { buildPaymentProofAccessToken } from '@/lib/bookings/payment-proof-access'
+import { buildPaymentReviewAccessToken } from '@/lib/bookings/payment-review-access'
 
 function normalizeBaseUrl(value: string | null | undefined): string | null {
   const raw = value?.trim()
@@ -33,6 +34,26 @@ export function buildAdminPaymentProofUrl(
 
   const normalizedPaymentProofId = paymentProofId?.trim() ?? ''
   if (!normalizedPaymentProofId) return null
+
+  const token = buildPaymentReviewAccessToken({
+    paymentProofId: normalizedPaymentProofId,
+    bookingPublicCode: normalizedCode,
+  })
+  if (!token) return null
+
+  return `${baseUrl}/ops/payment-review?token=${encodeURIComponent(token)}`
+}
+
+export function buildPaymentProofViewerUrl(
+  publicCode: string,
+  paymentProofId: string,
+): string | null {
+  const baseUrl = getBookingsAppBaseUrl()
+  if (!baseUrl) return null
+
+  const normalizedCode = publicCode.trim().toUpperCase()
+  const normalizedPaymentProofId = paymentProofId.trim()
+  if (!normalizedCode || !normalizedPaymentProofId) return null
 
   const token = buildPaymentProofAccessToken({
     paymentProofId: normalizedPaymentProofId,
