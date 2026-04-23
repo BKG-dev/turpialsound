@@ -41,6 +41,33 @@ function formatCaracasDateTime(value: Date): string {
   }).format(value)
 }
 
+function formatGoogleCalendarSlotDateTime(value: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+    hourCycle: 'h23',
+  }).formatToParts(value)
+
+  const year = parts.find((part) => part.type === 'year')?.value
+  const month = parts.find((part) => part.type === 'month')?.value
+  const day = parts.find((part) => part.type === 'day')?.value
+  const hours = parts.find((part) => part.type === 'hour')?.value
+  const minutes = parts.find((part) => part.type === 'minute')?.value
+  const seconds = parts.find((part) => part.type === 'second')?.value
+
+  if (!year || !month || !day || !hours || !minutes || !seconds) {
+    throw new Error('calendar_slot_parts_missing')
+  }
+
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+}
+
 function readGoogleCalendarConfig(): { config: GoogleCalendarConfig | null; missing: string[] } {
   const config: GoogleCalendarConfig = {
     clientId: process.env.GOOGLE_CLIENT_ID?.trim() ?? '',
@@ -118,11 +145,11 @@ function buildEventPayload(input: BookingCalendarSyncInput, timezone: string) {
     description,
     colorId: getGoogleCalendarColorIdByStatus(input.operationalStatus),
     start: {
-      dateTime: input.eventDate.toISOString(),
+      dateTime: formatGoogleCalendarSlotDateTime(input.eventDate, timezone),
       timeZone: timezone,
     },
     end: {
-      dateTime: normalizedEndDate.toISOString(),
+      dateTime: formatGoogleCalendarSlotDateTime(normalizedEndDate, timezone),
       timeZone: timezone,
     },
   }
