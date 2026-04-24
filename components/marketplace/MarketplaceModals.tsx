@@ -51,18 +51,6 @@ import {
 // Converts a File to a base64 JPEG data URL, scaled to max 800px on the longest side.
 // Data URLs persist in DB and render everywhere — no CDN required.
 
-function slugify(text: string) {
-  return text
-    .toString()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w-]+/g, '')
-    .replace(/--+/g, '-');
-}
-
 // ─── Icon map ─────────────────────────────────────────────────────────────────
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -1026,7 +1014,7 @@ export function MarketplaceModals({
           const categoryId = state.selectedCategory
           const now = new Date().toISOString()
           const me: MarketplaceUser = {
-            id: result.data.id,
+            id: currentUserId ?? result.data.id,
             name: 'Mi publicación',
             initials: 'YO',
             role: flow === 'offer-talent' ? 'talent' : 'seller',
@@ -1043,7 +1031,7 @@ export function MarketplaceModals({
               id: result.data.id,
               type: 'service',
               title: formValues.title || 'Sin título',
-              slug: slugify(formValues.title || 'Sin título'),
+              slug: result.data.slug,
               description: formValues.description || '',
               category: categoryId as ServiceCategory,
               subcategory: cat?.label ?? (categoryId as string),
@@ -1053,7 +1041,7 @@ export function MarketplaceModals({
               currency: 'USD',
               badge: 'NUEVO',
               talent: me,
-              status: 'pending',
+              status: 'active',
               createdAt: now,
               tags: [],
             }
@@ -1063,7 +1051,7 @@ export function MarketplaceModals({
               id: result.data.id,
               type: 'product',
               title: formValues.title || 'Sin título',
-              slug: slugify(formValues.title || 'Sin título'),
+              slug: result.data.slug,
               description: formValues.description || '',
               category: categoryId as ProductCategory,
               subcategory: cat?.label ?? (categoryId as string),
@@ -1073,7 +1061,7 @@ export function MarketplaceModals({
               images: uploadedImageUrls,
               badge: 'NUEVO',
               seller: me,
-              status: 'pending',
+              status: 'active',
               createdAt: now,
               location: 'Venezuela',
               tags: [],
@@ -1095,7 +1083,7 @@ export function MarketplaceModals({
     } finally {
       setIsSubmitting(false)
     }
-  }, [state.selectedCategory, flow, formValues, imageFiles, onNext, onListingCreated])
+  }, [state.selectedCategory, flow, formValues, imageFiles, onNext, onListingCreated, currentUserId])
 
   // ── Keyboard + scroll lock ──────────────────────────────────────────────────
   const handleKey = useCallback((e: KeyboardEvent) => {

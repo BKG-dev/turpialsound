@@ -576,8 +576,16 @@ function TxCard({
   const guidance = getOperationalStatusCopy(tx.status, viewAs)
 
   return (
-    <button
+    <div
       onClick={() => onOpenDetails?.(tx)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onOpenDetails?.(tx)
+        }
+      }}
       className="w-full rounded-xl p-4 flex gap-3 group text-left transition-all duration-200 hover:border-[rgba(0,174,239,0.2)]"
       style={{
         background: 'rgba(13,13,13,0.9)',
@@ -681,7 +689,7 @@ function TxCard({
           </div>
         )}
       </div>
-    </button>
+    </div>
   )
 }
 

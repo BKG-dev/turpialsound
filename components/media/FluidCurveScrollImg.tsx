@@ -60,6 +60,11 @@ export function FluidCurveScrollImg({
   })
   const opacity = fade ? opacityValue : undefined
 
+  const transform = useTransform(
+    scaleY,
+    (s) => `translateX(-50%) translateY(${yOffsetPx}px) scaleY(${s})`,
+  )
+
   const imgSrc =
     direction === 'up' ? '/images/wave-up.webp' : '/images/wave-down.webp'
 
@@ -68,11 +73,6 @@ export function FluidCurveScrollImg({
   const originY = direction === 'up' ? '100%' : '0%'
   const bleed   = Math.max(0, edgeBleedVW)
   const width   = `calc(100vw + ${bleed * 2}vw)`
-
-  const transform = useTransform(
-    scaleY,
-    (s) => `translateX(-50%) translateY(${yOffsetPx}px) scaleY(${s})`,
-  )
 
   return (
     <motion.div

@@ -103,8 +103,16 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
   const cover = getCoverImage(listing.category, listing.images)
 
   return (
-    <button
+    <div
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onClick()
+        }
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className="card-premium-wrapper group h-full w-full overflow-hidden rounded-xl text-left"
@@ -248,7 +256,7 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
           <span>Pago fiduciario protegido · {(MARKETPLACE_CONFIG.COMMISSION_RATE * 100).toFixed(0)}% comisión al vendedor</span>
         </div>
       </div>
-    </button>
+    </div>
   )
 }
 
@@ -266,8 +274,16 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
   const cover = getCoverImage(listing.category, listing.portfolio)
 
   return (
-    <button
+    <div
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onClick()
+        }
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className="card-premium-wrapper card-premium-wrapper--gold group h-full w-full overflow-hidden rounded-xl text-left"
@@ -412,7 +428,7 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
           <span>Pago fiduciario protegido · {(MARKETPLACE_CONFIG.COMMISSION_RATE * 100).toFixed(0)}% comisión al talento</span>
         </div>
       </div>
-    </button>
+    </div>
   )
 }
 
