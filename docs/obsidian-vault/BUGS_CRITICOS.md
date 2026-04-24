@@ -4,86 +4,405 @@ tags: ["#status/live-source", "#area/backend", "#area/ui", "#area/ops"]
 
 # Bugs Criticos
 
-Este archivo registra los bloqueos y riesgos operativos activos del marketplace al 2026-04-20 y sirve como checkpoint de cierre de sesion.
+Este archivo registra los bloqueos y riesgos operativos activos del marketplace al 2026-04-24.
 
-## 1. Migracion real de conciliacion manual pendiente o no confirmada
+## 1. Bloqueador de migracion/schema para `paymentSenderBank`
 
-- **Descripcion**: La conciliacion manual ya usa `paymentSenderBank` y `paymentPaidAt` a nivel de codigo, pero sigue siendo bloqueador hasta confirmar que la migracion fue aplicada en la base real.
-- **Estado real**: Bloqueador critico mientras no se confirme o aplique en entorno operativo real.
-- **Impacto**: Si la base real no tiene esas columnas e indices, el flujo real puede quedar incompleto o romper en admin/checkout aunque el codigo ya este listo.
-- **Prioridad**: Critica.
-- **Accion inmediata**: Verificar la base real; si falta, aplicar migracion antes de seguir.
+- **Descripcion**: El flujo manual ya dependia a nivel de codigo de `paymentSenderBank` y `paymentPaidAt`. La verificacion real confirmo que la DB activa no tenia esas columnas al inicio del chequeo.
+- **Estado real**: Resuelto en la DB activa.
+- **Impacto**: El riesgo operativo de schema faltante para conciliacion manual queda cerrado en la base actualmente conectada.
+- **Accion inmediata**: No reabrir este frente salvo evidencia de otra DB o entorno distinto.
 
-## 2. QA operativa end-to-end no ejecutada
+## 2. QA operativa end-to-end pendiente
 
-- **Descripcion**: El flujo manual actual ya esta funcional, pero falta validacion manual completa buyer -> admin -> escrow -> payout manual seller.
+- **Descripcion**: Falta ejecutar la prueba real buyer -> admin -> escrow -> payout manual seller usando imagenes y comprobantes reales.
+- **Estado real**: Pendiente critica.
+- **Impacto**: Tipos limpios y deploy saneado no reemplazan una validacion operativa completa.
+- **Accion inmediata**: Ejecutar QA solo por ruta despachada en `docs/07_handoffs/qa-dispatcher.json`; no reabrir migracion/schema salvo evidencia de otro entorno.
+
+## 3. Storage productivo definitivo
+
+- **Descripcion**: El problema de base64 ya quedo resuelto. La media publica no-booking del marketplace ya enruta uploads nuevos a Vercel Blob dedicado y fue validada en preview. Los comprobantes sensibles usan una capa separada con proxy autenticado, pero aun falta smoke vivo buyer/admin sobre proof nuevo.
+- **Estado real**: Public media validada; proofs sensibles implementados tecnicamente y pendientes de validacion viva.
+- **Impacto**: El riesgo principal de persistir listings nuevos en base64 queda cerrado. El riesgo abierto esta concentrado en confirmar que `paymentProofUrl` nuevo queda bajo `/api/marketplace/payment-proofs/...` y no en URL publica de Blob.
+- **Accion inmediata**: No reabrir media publica no-booking salvo regresion con evidencia. Ejecutar solo el smoke corto `payment_proof_sensitive_preview` segun dispatcher.
+
+## 4. Base64 fuera del camino productivo
+
+- **Descripcion**: Imagenes de listings y comprobantes ya no deben volver a persistirse en base64.
+- **Estado real**: Resuelto.
+- **Impacto**: Reduce payload, evita presion innecesaria sobre la base y simplifica la migracion posterior a storage definitivo.
+- **Accion inmediata**: No reintroducir data URLs ni blobs base64 en el camino real.
+
+## 5. Checkout manual sigue siendo temporal
+
+- **Descripcion**: El flujo de cobro actual sigue siendo manual por decision operativa.
+- **Estado real**: Vigente y esperado.
+- **Impacto**: No es bug por si mismo, pero condiciona conciliacion, dashboard y QA.
+- **Accion inmediata**: Mantener el foco en operacion manual hasta estabilizar migracion/schema y QA.
+
+## 6. Cierre final de payout aun no auditado
+
+- **Descripcion**: `RELEASED` funciona como cola de payout manual, pero aun falta un cierre contable final explicito de "pagado al vendedor".
+- **Estado real**: Pendiente alta.
+- **Impacto**: Hay trazabilidad operativa, pero no cierre auditado completo del ultimo paso.
+- **Accion inmediata**: Definirlo despues de estabilizar el flujo real.
+
+## 7. Cron T+7 no implementado
+
+- **Descripcion**: El auto-release del escrow sigue pendiente.
 - **Estado real**: Pendiente.
-- **Impacto**: Puede haber fallas de operacion no detectadas por tipado o lectura de codigo.
-- **Prioridad**: Critica.
-- **Accion inmediata**: Ejecutar prueba de punta a punta antes de abrir mas alcance.
+- **Impacto**: La liberacion continua manual por admin.
+- **Accion inmediata**: Mantener liberacion manual hasta cerrar lo critico.
 
-## 3. Storage productivo definitivo de media aun no definido
+## 8. SEO/AEO es restriccion transversal
 
-- **Descripcion**: Imagenes del marketplace y comprobantes ya salieron de base64, pero el storage actual sigue siendo temporal.
-- **Estado real**: Resuelto el problema de base64; pendiente la capa definitiva de storage durable.
-- **Impacto**: El flujo mejora rendimiento y persistencia practica, pero aun no es la solucion final de produccion.
-- **Prioridad**: Alta.
-- **Accion inmediata**: Mantener la capa desacoplada actual y migrar luego el backend de storage sin rehacer el flujo.
+- **Descripcion**: Cualquier cambio publico del marketplace debe evaluarse por SEO/AEO.
+- **Estado real**: Restriccion vigente.
+- **Impacto**: Afecta listings, categorias, metadata, slugs, landings e indexabilidad.
+- **Accion inmediata**: Mantenerlo como criterio transversal, no como frente aislado.
 
-## 4. Base64 fuera del camino productivo, no reabrir
+## 9. Hallazgos funcionales activos de dashboard y operacion marketplace
 
-- **Descripcion**: Base64 ya no debe volver al flujo productivo de listings ni comprobantes.
-- **Estado real**: Resuelto en el checkpoint actual.
-- **Impacto**: Mejora rendimiento, reduce riesgo sobre Neon y evita payloads innecesarios.
-- **Prioridad**: Regla operativa.
-- **Accion inmediata**: Mantener persistencia por URL y no reintroducir data URLs en el camino real.
+### 9.1 Contador de Mis compras en cero con compras existentes
 
-## 5. Payout operativo sin cierre final auditado
+- **Descripcion**: Corregido. El dashboard ahora deriva esa metrica desde transacciones reales en vez de depender del agregado viejo del perfil.
+- **Impacto**: Cierra la inconsistencia visible entre contador y listado.
+- **Prioridad**: Resuelto.
 
-- **Descripcion**: El sistema ya distingue entre monto operativo y monto realmente listo para pago, pero aun no existe el ultimo estado explicito de "pagado al vendedor".
-- **Estado real**: `RELEASED` funciona como cola de payout manual, no como cierre contable final.
-- **Impacto**: El seller summary ya no sobreestima cobros, pero falta trazabilidad completa del ultimo paso.
-- **Prioridad**: Alta.
-- **Accion inmediata**: Mantener `RELEASED` como cola operativa y definir el estado final auditable despues.
+### 9.2 Sin detalle util al abrir una compra o venta
 
-## 6. Cron T+7 no implementado
+- **Descripcion**: Corregido. Compras y ventas ahora abren un detalle con estado, referencia, banco, fechas, nota interna y linea de estado.
+- **Impacto**: Buyer y seller ya pueden entender el paso operativo real.
+- **Prioridad**: Resuelto.
 
-- **Descripcion**: El release automatico del escrow aun no existe.
-- **Estado real**: Pendiente.
-- **Impacto**: La liberacion sigue siendo manual por admin.
+### 9.3 Tabs Operativo y Todos casi duplicados
+
+- **Descripcion**: Los tabs Operativo y Todos muestran practicamente la misma informacion.
+- **Impacto**: El dashboard pierde jerarquia informativa y complica la lectura del flujo real.
 - **Prioridad**: Media-Alta.
-- **Accion inmediata**: Mantener liberacion manual hasta estabilizar flujo y luego implementar cron.
 
-## 7. No reabrir validacion admin desde estados incorrectos
+### 9.4 Export CSV con caracteres corruptos
 
-- **Descripcion**: El backend ya fue endurecido para que la validacion admin no ocurra desde `PENDING_PAYMENT`; solo desde `PAYMENT_RECEIVED` o `VALIDATING`.
-- **Estado real**: Resuelto y vigente.
-- **Impacto**: Reduce el riesgo de aprobar transacciones sin conciliacion real.
-- **Prioridad**: Regla operativa.
-- **Accion inmediata**: Mantener esta restriccion y no reabrir estados previos sin transicion explicita.
+- **Descripcion**: Corregido. El CSV ahora sale con UTF-8 BOM, escape de comillas y columnas alineadas con la vista.
+- **Impacto**: Recupera utilidad para conciliacion y auditoria.
+- **Prioridad**: Resuelto.
 
-## Pendiente de validar
+### 9.5 Datos de cobro del vendedor no visibles en Pagos
 
-- QA completa con imagenes reales en cards, detalle y dashboard.
-- QA completa con comprobantes reales en checkout/admin.
-- Confirmacion real de la migracion `paymentSenderBank` en base operativa.
+- **Descripcion**: Corregido. Pagos muestra metodo, cuenta y detalles visibles del payout method del vendedor.
+- **Impacto**: Reduce friccion sobre payout manual.
+- **Prioridad**: Resuelto.
 
-## Requisito transversal del proyecto
+### 9.6 Totales inconsistentes de ventas, comisiones, neto y pendiente
 
-SEO/AEO es requisito transversal del sitio completo. No es un bug puntual del marketplace, pero si una condicion obligatoria para cualquier cambio de contenido, estructura, slugs, listings o metadata.
+- **Descripcion**: Mitigado. Seller/admin ya calculan mejor totales operativos y comisiones, pero falta validacion con QA real de punta a punta.
+- **Impacto**: Mejora fuerte de lectura contable; aun requiere validacion funcional sobre data real.
+- **Prioridad**: Alta abierta.
+
+### 9.7 Tab de comisiones en cero con flujo operativo existente
+
+- **Descripcion**: Mitigado. Comisiones ya no depende solo de `RELEASED` mensual y toma mejor el flujo operativo actual.
+- **Impacto**: Evita cero falsos mas obvios.
+- **Prioridad**: Media-Alta abierta hasta QA.
+
+### 9.8 Bug de escritura en nota interna
+
+- **Descripcion**: Corregido. El draft de nota ya no se monta sobre el objeto de accion y permite escribir normalmente.
+- **Impacto**: Recupera una herramienta central de operacion admin.
+- **Prioridad**: Resuelto.
+
+### 9.9 Badge de mensajes sin leer no clickeable
+
+- **Descripcion**: Corregido. El badge superior ahora abre el tab de mensajes.
+- **Impacto**: Mejora navegacion operativa.
+- **Prioridad**: Resuelto.
+
+### 9.10 Tab de mensajes no refleja bien los mensajes sin leer
+
+- **Descripcion**: Mitigado. El tab ahora separa `Chats por Atender` y `Todos los Chats`, pero falta confirmar en QA que el conteo real coincide con todos los casos.
+- **Impacto**: Mejora priorizacion; aun requiere validacion.
+- **Prioridad**: Media-Alta abierta.
+
+### 9.11 Falta mensaje de tranquilidad tras Pago recibido
+
+- **Descripcion**: Corregido. Ya existe copy operativo para buyer y seller tras `PAYMENT_RECEIVED`.
+- **Impacto**: Reduce incertidumbre durante validacion manual.
+- **Prioridad**: Resuelto.
+
+### 9.12 Desalineacion funcional entre metricas, tabs y flujo real
+
+- **Descripcion**: Mitigado en gran parte, no cerrado. Ya se corrigieron contadores, detalle clickeable, mensajes, CSV, payout visible y tabla admin. Aun falta QA real para detectar desajustes residuales.
+- **Impacto**: El frente pasa de correccion estructural a validacion y pulido.
+- **Prioridad**: Alta abierta.
+
+## 10. Segunda pasada de QA/pulido pendiente
+
+- **Descripcion**: Hace falta validar con datos reales las diferencias entre `Operativo` y `Todos + terminales`, la consistencia final de comisiones/totales y el comportamiento del tab de mensajes en escenarios reales.
+- **Estado real**: Pendiente alta.
+- **Impacto**: Puede quedar desalineacion residual aunque la base funcional ya fue corregida.
+- **Accion inmediata**: Ejecutar QA manual completa buyer -> admin -> escrow -> payout manual seller y luego ajustar solo hallazgos residuales.
+
+### 10.1 Punto de control colgado en QA automatizada headless - 2026-04-20
+
+- **Descripcion**: La corrida automatizada E2E para buyer/admin/seller quedo colgada durante la ejecucion del script temporal headless `scripts/qa-marketplace-temp.mjs`.
+- **Estado real**: Interrumpida por timeout primero y luego abortada manualmente antes de completar la segunda pasada instrumentada.
+- **Lo ya confirmado antes de la colgada**:
+  - Se levanto la app local en dev para QA.
+  - Se inspecciono el dataset real y se confirmaron usuarios mock operables: `mvera@dev.local`, `igor@dev.local`, `user@dev.local`.
+  - Se creo un listing temporal de QA para seller conocido `user@dev.local`:
+    - slug: `qa-manual-temporal-user-20260420`
+    - id: `cmo7wy8xq0000fonekh97u9oj`
+    - sellerId: `cmnw0qv3600041cnex7s3zqrc`
+    - precio: `100 USD`
+  - Se dejo listo el script temporal de automatizacion con trazas por paso para retomar sin reconstruir contexto.
+- **Sintoma del bloqueo**:
+  - La primera corrida de `node scripts/qa-marketplace-temp.mjs` expiro sin devolver reporte ni screenshots.
+  - La segunda corrida instrumentada se aborto por usuario antes de completar, asi que no hay conclusion funcional cerrada del headless.
+  - Solo quedo creado el directorio `.tmp-qa-downloads`; no se confirmaron artefactos utiles de evidencia.
+- **Hipotesis operativa actual**:
+  - El atasco ocurre en una interaccion UI del flujo headless y no en la preparacion previa.
+  - El ultimo punto estable es la preparacion del entorno + listing QA + script instrumentado.
+- **Riesgo**:
+  - La QA manual/funcional completa sigue abierta; no se debe dar por validado el flujo buyer/admin/seller.
+- **Punto exacto para retomar**:
+  - Reusar `scripts/qa-marketplace-temp.mjs`.
+  - Arrancar desde el paso buyer sobre `/marketplace/qa-manual-temporal-user-20260420`.
+  - Revisar primero en que log se queda la instrumentacion (`LOGIN`, `NAVIGATE`, `CLICK`, `SET`) antes de relanzar la cadena completa.
+
+### 10.2 Etapa A buyer bloqueada por 500 en listing temporal
+
+- **Fecha**: 2026-04-20
+- **Ruta**: `/marketplace/qa-manual-temporal-user-20260420`
+- **Rol objetivo**: Buyer
+- **Resultado**: Bloqueada antes de checkout.
+- **Hallazgo**: La ruta del listing temporal responde `HTTP 500` en la app local. No se pudo abrir detalle, entrar al checkout ni validar el mensaje post-pago.
+- **Decision operativa**: Se detuvo la etapa A sin insistir para evitar loops largos, tal como se pidio para esta nueva pasada por etapas.
+- **Siguiente paso recomendado**: Inspeccionar el error server-side del listing y confirmar si el fallo es del route/page, del dataset de ese listing o de una dependencia del detalle antes de reintentar buyer.
+
+### 10.3 Checkpoint util: 500 aislado, listing valido y buyer retoma en instancia limpia
+
+- **Fecha**: 2026-04-20
+- **Ruta estable**: `http://localhost:3002/marketplace/qa-manual-temporal-user-20260420`
+- **Estado real**: Recuperado el acceso al listing temporal.
+- **Causa raiz del 500**:
+  - No venia del listing ni de sus datos.
+  - El error salia del runtime server-side de Next con referencia faltante a `./vendor-chunks/@opentelemetry.js`.
+  - Se trato de un estado roto/stale de `.next` en la instancia previa.
+- **Lo confirmado en este punto**:
+  - `getListingBySlug('qa-manual-temporal-user-20260420')` responde con datos validos.
+  - El listing temporal sigue siendo util para QA.
+  - La ruta vuelve a responder `200` al levantar una instancia limpia.
+- **Decision operativa**:
+  - Seguir usando el mismo listing temporal.
+  - Reanudar buyer sobre `localhost:3002`.
+- **Ultimo punto seguro para volver si algo se rompe**:
+  - App limpia arriba en `localhost:3002`.
+  - Listing accesible y renderizando detalle.
+
+### 10.4 Checkpoint util: buyer llega hasta submit real de pago manual
+
+- **Fecha**: 2026-04-20
+- **Ruta probada**: `http://localhost:3002/marketplace/qa-manual-temporal-user-20260420`
+- **Rol simulado**: Buyer `igor@dev.local`
+- **Estado real**: Flujo buyer avanza mas alla del login y del checkout.
+- **Lo que ya quedo validado en esta etapa**:
+  - El detalle del listing carga.
+  - `Comprar Ahora` abre el flujo.
+  - El login buyer desde el modal del listing funciona.
+  - El checkout manual abre correctamente.
+  - Se puede elegir `Pago movil`.
+  - Se puede llenar `Numero de operacion` y `Banco emisor`.
+  - `Confirmar pago` dispara submit real y el servidor responde `POST 200` sobre la ruta del listing.
+- **Punto exacto de bloqueo**:
+  - Despues de `Confirmar pago` no aparece de forma visible el estado exitoso esperado del modal.
+  - No se pudo confirmar en UI el mensaje `Pago procesado` ni el copy de validacion/escrow.
+- **Hipotesis operativa**:
+  - El submit sale al backend, pero queda por confirmar si la transaccion persiste y la UI no re-renderiza, o si el frontend no entra al estado `success`.
+- **Ultimo punto seguro para volver si algo se rompe**:
+  - Buyer puede reanudarse desde el checkout del mismo listing en `localhost:3002`.
+  - No hace falta recrear listing ni rehacer el aislamiento del `500`.
+
+### 10.5 Punto de control exacto para retomar buyer sin loops largos
+
+- **Fecha**: 2026-04-20
+- **Objetivo pendiente**: Cerrar la etapa A buyer validando el mensaje tranquilizador post-pago.
+- **Archivo de apoyo creado**:
+  - `scripts/qa-marketplace-buyer.mjs`
+- **Uso previsto**:
+  - Runner corto solo para buyer, sin encadenar admin ni seller.
+  - Pensado para retomar desde listing -> login -> checkout -> reportar pago.
+- **Bloqueo actual a revisar primero**:
+  - Transicion post-`submitPaymentProof` en `components/marketplace/CheckoutModal.tsx`.
+- **Siguiente paso exacto recomendado**:
+  - Verificar si `setSuccess(true)` se ejecuta.
+  - Si se ejecuta, revisar por que el modal no muestra el estado exitoso.
+  - Si no se ejecuta, revisar el resultado real de `submitPaymentProof` y la persistencia de la transaccion.
+- **Regla de retoma**:
+  - No avanzar a admin ni seller hasta cerrar este punto buyer.
+
+### 10.6 Buyer confirmado en UI y persistencia; admin/seller siguen pendientes
+
+- **Fecha**: 2026-04-21
+- **Ruta probada**: `http://localhost:3002/marketplace/qa-manual-temporal-user-20260420`
+- **Estado real**: La etapa buyer ya quedó validada sobre la instancia limpia.
+- **Lo confirmado en esta pasada**:
+  - El runner corto `scripts/qa-marketplace-buyer.mjs` fue corregido para seleccionar bien `Banco emisor` en el checkout.
+  - Buyer `igor@dev.local` completa login, checkout, `Pago movil`, referencia y banco emisor.
+  - La UI sí muestra el estado post-pago esperado:
+    - `Pago procesado`
+    - `Tu pago esta siendo validado.`
+    - `Notificaremos la resolucion o la liberacion del escrow en menos de 24h.`
+  - La transaccion quedó persistida para el slug QA con estado `PAYMENT_RECEIVED`.
+  - Registro confirmado:
+    - transactionId: `cmo827au800002kne6v9ofhk4`
+    - reference: `QA1776741813862`
+    - senderBank: `0105 - Banco Mercantil, C.A. Banco Universal`
+- **Hallazgo importante**:
+  - El bloqueo anterior no era del checkout productivo sino del runner de QA, que estaba aceptando el option vacio del `select` de banco.
+- **Pendiente abierto**:
+  - Seguir con QA admin y seller.
+  - El runner encadenado `scripts/qa-marketplace-temp.mjs` todavía necesita ajuste fino en la navegacion/admin tabs antes de cerrar la pasada completa.
+- **Regla operativa**:
+  - No tocar booking ni reabrir la logica buyer ya validada salvo que aparezca una regresion nueva con evidencia.
+- **Punto exacto de retoma**:
+  - Tomar la transaccion `cmo827au800002kne6v9ofhk4` ya creada para el slug QA.
+  - Entrar por admin y validar aprobacion hacia `IN_ESCROW`.
+  - Luego validar seller sobre `sales` y `payouts` sin volver a correr buyer.
+
+## 11. Pendiente visual pro para hero marketplace
+
+- **Descripcion**: Queda en cola una mejora visual pro para el hero del marketplace con animacion tipo rayo/plasma de alta calidad.
+- **Alcance**: Aplica solo al hero del marketplace; el resto del site no se toca.
+- **Criterio tecnico**: Debe ser ligera en rendimiento y preferiblemente resolverse con implementacion CSS/SVG hibrida o equivalente liviano.
+- **Restricciones**: No reintroducir canvas pesado, no comprometer rendimiento, no afectar SEO/AEO y mantenerse compatible con el hero actual.
+- **Estado real**: Pendiente para una proxima pasada, sin implementacion en esta ventana.
+
+## Siguiente frente recomendado
+
+- Consolidar una pasada de QA funcional del dashboard marketplace para validar las correcciones ya aplicadas.
+- Si QA detecta residuales, hacer segunda pasada puntual sin abrir frentes nuevos.
+- Mantener el frente aislado del booking.
+
+## Resuelto y confirmado
+
+- Marketplace separado del booking.
+- Prefijo `MP_` del marketplace como regla de no colision.
+- Dashboard adaptado al flujo manual actual.
+- `SOLD_OUT` solo despues de pago validado.
+- Aprobacion admin endurecida para no aprobar desde `PENDING_PAYMENT`.
+- Base64 fuera del flujo productivo.
+- Build de Vercel documentado como cerrado en tipos y ESLint.
+- DB activa correcta confirmada: Neon `neondb`.
+- `paymentSenderBank`, `paymentPaidAt` y sus indices ya aplicados en `mp_transactions`.
+- Historial Prisma alineado para `20260419_marketplace_manual_reconciliation`.
+- `npm run build` limpio.
+- `npx tsc --noEmit` limpio.
+
+## 12. Storage productivo publico no-booking
+
+- **Fecha**: 2026-04-23
+- **Estado real**: Media publica no-booking validada en preview; proofs sensibles implementados tecnicamente y pendientes de smoke vivo.
+- **Descripcion**: El flujo productivo ya no debe depender de `public/uploads` para imagenes publicas del marketplace ni futuras imagenes publicas del sitio. La capa publica no-booking usa Vercel Blob solo cuando existe `TS_WEB_BLOB_READ_WRITE_TOKEN`.
+- **Impacto**: Cierra la decision tecnica principal de storage publico de Manuel y evita consumir por accidente el Blob/token de Jean. En produccion, si falta el token dedicado, el upload publico falla explicitamente.
+- **Frontera**:
+  - Jean: `/reservas` y booking, con su propio Blob/token.
+  - Manuel: home, subpaginas, marketplace y frontend publico no-booking.
+  - DB compartida: si.
+  - Blob/token compartido: no.
+- **Media sensible**:
+  - Los comprobantes de pago del marketplace no entran en el Blob publico no-booking.
+  - `payment-proof` queda fuera de `TS_WEB_BLOB_READ_WRITE_TOKEN`.
+  - La capa sensible ya quedo implementada con storage separado + proxy autenticado.
+  - En Preview/Production falla cerrado si falta el token dedicado del storage sensible.
+- **Validacion tecnica**:
+  - `npx tsc --noEmit`: limpio
+  - `npm run build`: limpio
+- **Validacion viva cerrada**:
+  - sellerIA publico listing nuevo en preview vigente.
+  - `/api/marketplace/upload` respondio `200`.
+  - la URL persistida apunta a `https://*.public.blob.vercel-storage.com/public-media/marketplace/listings/...`.
+  - `data:image/...` queda ausente en el listing nuevo.
+- **Pendiente operativo**:
+  - No usar como evidencia el preview viejo `3397rmisp`.
+  - Mantener `TS_WEB_BLOB_READ_WRITE_TOKEN` configurado en Preview/Production.
+  - Correr smoke tecnico corto buyer/admin sobre proofs sensibles.
 
 ## Siguiente paso exacto al retomar
 
-Resolver primero:
+1. mantener cerrado Blob publico no-booking como validado en preview,
+2. correr smoke tecnico corto buyer -> admin sobre proof nuevo por URL interna autenticada,
+3. validar que `paymentProofUrl` nuevo use `/api/marketplace/payment-proofs/...` y no Blob publico,
+4. si proofs sensibles quedan estables, retomar continuidad transaccional buyer -> seller -> admin,
+5. mantener cerrado `paymentSenderBank` y no reabrir booking/reservas.
 
-1. verificar la base real y confirmar `paymentSenderBank`,
-2. aplicar migracion real si falta,
-3. ejecutar QA manual end-to-end,
-4. documentar hallazgos,
-5. luego pasar al storage productivo definitivo.
+## 13. Proofs sensibles marketplace
 
-Despues de eso:
+- **Fecha**: 2026-04-23
+- **Estado real**: Implementado a nivel tecnico; token sensible presente en Preview segun preflight previo; pendiente smoke tecnico corto con browser interactivo funcional.
+- **Descripcion**: `payment-proof` ya no comparte storage con media publica no-booking. Los comprobantes nuevos salen por una capa sensible separada que persiste una URL interna autenticada del app y no una URL publica del store.
+- **Implementacion aplicada**:
+  - `lib/media/marketplace-sensitive-storage.ts`
+  - `app/api/marketplace/payment-proofs/[...proofPath]/route.ts`
+  - validacion de `transactionId` en `/api/marketplace/upload`
+  - fallback local sensible fuera de `public/`
+- **Variable nueva requerida**:
+  - `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN`
+- **Impacto**:
+  - proofs nuevos dejan de exponerse por Blob publico
+  - se mantiene separacion clara entre media publica y media transaccional sensible
+  - no se toca booking ni `/reservas`
+- **Riesgo residual**:
+  - si falta el token sensible en Preview/Production, el upload falla cerrado
+  - proofs legacy no migrados en esta pasada
+- **Siguiente paso**:
+  - mantener `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` cargado en Preview
+  - ejecutar smoke tecnico corto buyer/admin en browser interactivo funcional
+  - si no hay browser interactivo, detenerse y reportar la precondicion; no improvisar CDP ni server actions por HTTP
 
-6. cierre final de payout,
-7. cron T+7,
-8. reabrir pasarelas solo cuando el flujo manual este estable.
+## 14. Reanudacion Codex no interactiva
+
+- **Fecha**: 2026-04-24
+- **Estado real**: `codex resume --last` no pudo reanudar esta sesion desde el agente actual.
+- **Sintoma**:
+  - intento sandbox: `Access is denied` al cargar configuracion.
+  - intento escalado: `Error: stdin is not a terminal`.
+- **Impacto**: No se recupero contexto adicional por CLI. No se ejecuto QA ni se valido ningun frente nuevo en esta sesion.
+- **Decision operativa**: Mantener como fuente viva el vault y el dispatcher ya presentes en repo.
+- **Siguiente paso exacto**: Para QA, resolver primero el `task_id` en `docs/07_handoffs/qa-dispatcher.json`. El frente abierto sigue siendo `payment_proof_sensitive_preview`; requiere browser interactivo funcional y no permite fallbacks ad hoc.
+
+## 15. Smoke proof sensible detenido por capacidad de browser en esta sesion
+
+- **Fecha**: 2026-04-24
+- **Task**: `payment_proof_sensitive_preview`
+- **Preview objetivo**: `https://turpialsound-mpwpxahfc-cerberus77s-projects.vercel.app`
+- **Estado real**: No ejecutado.
+- **Credenciales registradas**:
+  - buyerIA: `buyerIA / BuyerIA_QA_2026!`
+  - SUPER: `mvera / 13894619`
+- **Bloqueo exacto**: La ruta canonica es `manual_preview` y esta sesion no tiene una herramienta de browser interactivo controlable por Codex para hacer login, adjuntar comprobante y abrir el proxy. Usar Playwright/CDP, server actions reverse engineered o HTTP ad hoc seria una ruta no canonica prohibida.
+- **Resultado del proof**:
+  - buyerIA no subio proof.
+  - no hubo status de upload.
+  - no se obtuvo `paymentProofUrl`.
+  - no se valido si quedo fuera del Blob publico.
+  - SUPER no pudo abrir proxy porque no hubo proof nuevo.
+- **Accion inmediata**: Reintentar solo desde una sesion con control real de browser interactivo o ejecutar manualmente en navegador humano siguiendo el dispatcher. No buscar otra cuenta ni otra ruta.
+
+## 16. Smoke proof sensible validado manualmente
+
+- **Fecha**: 2026-04-24
+- **Task**: `payment_proof_sensitive_preview`
+- **Estado real**: Validado manualmente.
+- **Preview usado**: `https://turpialsound-mpwpxahfc-cerberus77s-projects.vercel.app`
+- **Credenciales usadas**:
+  - buyerIA: `buyerIA / BuyerIA_QA_2026!`
+  - SUPER: `mvera / 13894619`
+- **Resultado del proof**:
+  - buyerIA subio proof nuevo.
+  - `paymentProofUrl` final queda bajo `/api/marketplace/payment-proofs/...`.
+  - URL confirmada: `/api/marketplace/payment-proofs/marketplace-sensitive-media/marketplace/payment-proofs/2026/04/1777011359365-8ff99e05-ec49-4178-962b-0295b361eb5d.webp`
+  - no usa `https://*.public.blob.vercel-storage.com/...`.
+  - SUPER pudo abrir el comprobante por proxy autenticado.
+- **Impacto**: Cierra el riesgo abierto de proofs nuevos expuestos en Blob publico para este smoke.
+- **Accion inmediata**: Mantener `payment-proof` fuera del Blob publico no-booking. No reabrir este frente salvo regresion con evidencia.

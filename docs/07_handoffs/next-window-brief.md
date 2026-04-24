@@ -2,12 +2,87 @@
 
 **Fecha de actualizacion:** 2026-04-20  
 **Frente activo:** Marketplace  
-**Tipo de nota:** Punto de control de cierre de sesion  
+**Tipo de nota:** Checkpoint operativo para siguiente ventana  
 **Fuente viva obligatoria:** `docs/obsidian-vault/*`
 
 ---
 
-## Instruccion de arranque
+## Estado resumido
+
+El marketplace esta funcional y separado del booking.
+
+El checkout sigue en modo manual temporal y la conciliacion tambien sigue siendo manual.
+
+Base64 ya salio del flujo productivo de imagenes y comprobantes; la media se maneja por URL en storage/asset externo temporal.
+
+El dashboard ya acompana el flujo manual actual para admin y seller.
+
+En la ultima ventana quedaron aplicados fixes funcionales sobre dashboard/admin: contadores reales, detalle clickeable de compras/ventas, mensajes priorizados, CSV corregido, datos de cobro visibles, nota interna estable y tabla completa para admin.
+
+El bloqueo de `paymentSenderBank` ya quedo resuelto en la DB activa; el siguiente frente real ahora es QA operativa end-to-end.
+
+El build de Vercel habia quedado limpio en tipos y luego se cerraron correcciones ESLint para deploy.
+
+## Bloqueos activos
+
+- Critico: correr QA manual end-to-end buyer -> admin -> escrow -> payout manual seller.
+- Alto: definir luego la migracion desde storage temporal a storage productivo definitivo.
+- Medio-Alto: definir cierre final auditable del payout posterior a `RELEASED`.
+- Medio: implementar cron T+7 despues de estabilizar operacion real.
+- Medio: dejar para proxima pasada el pendiente `Hero marketplace plasma/rayo pro ligero`, solo para el hero del marketplace y sin tocar el resto del site.
+
+## Hallazgos funcionales a tratar primero
+
+- Operativo y Todos muestran casi la misma informacion.
+  Impacto: tabs sin diferenciacion real.
+  Prioridad: media-alta.
+- El tab de mensajes no refleja bien los 3 mensajes sin leer ni su ubicacion real.
+  Impacto: parcialmente mitigado por la nueva segmentacion; falta QA real.
+  Prioridad: media-alta.
+- Totales y comisiones mejoraron, pero requieren QA con flujo real.
+  Impacto: puede quedar residual de metricas.
+  Prioridad: alta.
+- Hay un desajuste transversal entre metricas, tabs y flujo real.
+  Impacto: requiere QA y posible segunda pasada puntual.
+  Prioridad: alta.
+
+## Resuelto en la ventana previa
+
+- Contador de Mis compras corregido.
+- Detalle clickeable de compras/ventas implementado.
+- CSV corregido.
+- Datos de cobro del vendedor visibles en Pagos.
+- Nota interna corregida.
+- Badge de mensajes sin leer clickeable.
+- Mensaje post Pago recibido agregado.
+- Vista admin de tabla completa agregada.
+- Build y TypeScript limpios.
+
+## No reabrir
+
+- No mezclar marketplace con booking.
+- No quitar el prefijo `MP_` del schema del marketplace.
+- No reintroducir base64 en listings ni comprobantes.
+- No abrir pasarelas automaticas antes de cerrar migracion/schema y QA real.
+
+## Checkpoint explicito
+
+- Estado marketplace: funcional, separado y en fase de estabilizacion operativa.
+- Estado checkout manual: vigente como flujo oficial temporal.
+- Estado imagenes/storage: migrado a URLs/asset externo temporal; pendiente storage definitivo.
+- Estado dashboard: suficiente para conciliacion manual y seguimiento operativo.
+- Estado dashboard post-fix: mas coherente con el flujo real; falta QA final para cerrar residuales.
+- Bloqueador `paymentSenderBank`: resuelto en la DB activa; columnas e indices ya presentes.
+
+## Siguiente accion exacta
+
+1. Tomar como cerrado el frente `paymentSenderBank` en la DB activa.
+2. Ejecutar QA manual completa con imagenes y comprobantes reales sobre los fixes ya aplicados.
+3. Documentar hallazgos residuales y hacer segunda pasada solo si hace falta.
+4. Solo despues pasar al storage productivo definitivo.
+5. Cuando se retome el frente visual, definir propuesta ligera para el hero del marketplace con enfoque CSS/SVG hibrido o equivalente liviano, sin canvas pesado ni impacto SEO/AEO.
+
+## Proximo prompt operativo exacto
 
 ```text
 Lee primero:
@@ -17,67 +92,136 @@ Lee primero:
 - docs/obsidian-vault/ARQUITECTURA_TASAS.md
 - docs/07_handoffs/session-summary-active.md
 - docs/07_handoffs/next-window-brief.md
+- docs/marketplace/00_IMPLEMENTATION_SUMMARY.md
+- docs/marketplace/01_ROADMAP_AND_STATUS.md
 
-Resume el estado real del marketplace en 5 lineas maximo.
-Confirma si la base real ya tiene paymentSenderBank/paymentPaidAt.
-No abras otro frente hasta cerrar la siguiente instruccion operativa.
+Resume el estado real en 8-10 lineas.
+Confirma que la DB activa ya tiene paymentSenderBank/paymentPaidAt e indices y no reabras ese frente.
+Confirma que los fixes funcionales ya quedaron aplicados y no reabras ese frente sin evidencia.
+Luego ejecuta QA manual completa buyer -> admin -> escrow -> payout manual seller validando:
+- contador/listado,
+- detalle y mensajes de estado en compras/ventas,
+- diferenciacion real entre tabs,
+- CSV,
+- visibilidad de datos de cobro del vendedor,
+- totales/comisiones/neto/pendiente,
+- nota interna,
+- badge y tab de mensajes,
+- mensaje posterior a Pago recibido.
+Si QA detecta residuales, haz segunda pasada puntual.
+Actualiza Obsidian y handoff con los hallazgos residuales antes de abrir cualquier otro frente.
 ```
+## Actualizacion 2026-04-23 - Storage productivo publico no-booking
 
-## Estado resumido
+- Vercel Blob quedo implementado como storage productivo para media publica no-booking.
+- La ruta `/api/marketplace/upload` sigue siendo la entrada unica autenticada.
+- `lib/media/public-no-booking-storage.ts` usa solo `TS_WEB_BLOB_READ_WRITE_TOKEN`.
+- `lib/marketplace/media.ts` deriva `listing-image` y `avatar` a esa capa publica no-booking.
+- `payment-proof` no usa el Blob publico no-booking; en produccion falla cerrado hasta definir storage sensible.
+- No se usa `BLOB_READ_WRITE_TOKEN` generico ni el token/storage de Jean.
+- En desarrollo sin token, queda fallback local para media publica bajo `public/public-media/*`.
+- `next.config.mjs` permite imagenes remotas desde `*.public.blob.vercel-storage.com`.
+- `npx tsc --noEmit` limpio.
+- `npm run build` limpio.
 
-El marketplace esta funcional y separado del booking. El cobro sigue en checkout manual temporal, la conciliacion sigue siendo manual y el payout al seller tambien sigue siendo manual. Hoy ya salio base64 del flujo productivo de imagenes y comprobantes: la media ahora se persiste como URL en storage temporal local desacoplado. El mayor riesgo activo ahora ya no es base64 sino la operacion real: confirmar/aplicar migracion real de conciliacion, ejecutar QA end-to-end y luego definir storage productivo definitivo.
+## Regla de convivencia
+- DB compartida: si.
+- Blob/token compartido: no.
+- Jean: `/reservas` y booking.
+- Manuel: home, subpaginas, marketplace y frontend publico no-booking.
+- Media publica no-booking comparte `TS_WEB_BLOB_READ_WRITE_TOKEN`.
+- Comprobantes sensibles del marketplace no van en ese Blob publico.
 
-## Que ya esta resuelto
+## Siguiente paso
+- Crear/conectar Vercel Blob Store propio no-booking y asegurar `TS_WEB_BLOB_READ_WRITE_TOKEN` en Preview/Production.
+- Probar media publica viva: sellerIA publica listing con imagen real y recarga detalle.
+- Definir storage sensible/proxy autenticado para comprobantes antes de QA productiva de proofs.
+- Luego retomar continuidad transaccional buyer -> seller -> admin.
 
-- Checkout manual temporal operativo.
-- Conciliacion manual con datos persistidos a nivel de codigo.
-- Dashboard admin util para conciliacion.
-- Seller summary corregido para no sobreestimar cobro.
-- Reglas de aprobacion admin endurecidas.
-- Marketplace desacoplado del booking.
-- Imagenes y comprobantes fuera del flujo productivo de base64.
-- Storage temporal local desacoplado ya implementado con persistencia por URL.
+## Actualizacion 2026-04-23 - Golden path QA/CLI
 
-## Bloqueos activos
+- Runbook canonico: `docs/07_handoffs/qa-canonical-runbook.md`
+- Regla operativa exacta:
+  - usar primero el script canonico documentado,
+  - no buscar scripts alternativos salvo fallo explicito de precondicion,
+  - separar preflight de ejecucion QA,
+  - no redescubrir el flujo si el runbook ya lo define.
+- Para smoke reutilizable por defecto usar `node scripts/qa-marketplace-qa-accounts.mjs`.
+- Para normalizar cuentas QA usar `npx tsx scripts/setup-marketplace-qa-accounts.ts`.
+- Para Blob/media no usar harnesses temporales como primera opcion: la validacion oficial actual es manual en preview con `sellerIA`.
 
-- Prioridad critica: confirmar o aplicar en base real la migracion de conciliacion manual, incluyendo `paymentSenderBank`.
-- Prioridad critica: QA manual buyer -> admin -> escrow -> payout manual seller.
-- Prioridad alta: reemplazar luego el storage temporal por storage productivo definitivo.
-- Pendiente media: definir cierre final de payout al vendedor.
-- Pendiente media: cron T+7 para auto-release.
+## Actualizacion 2026-04-23 - Proof sensible preview smoke bloqueado por harness
 
-## Lo siguiente que se hace
+- Preview intentado:
+  - `https://turpialsound-mpwpxahfc-cerberus77s-projects.vercel.app`
+- Preflight verificado:
+  - preview responde `200`
+  - `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` esta cargado en `Preview`
+  - cuentas QA vigentes siguen siendo `buyerIA`, `sellerIA`, `mvera`
+- Resultado:
+  - el smoke tecnico corto de `payment-proof` sensible quedo `BLOQUEADO`
+  - no por evidencia de fallo de storage/proxy, sino porque esta sesion no pudo conducir el flujo real del preview:
+    - CDP/browser no quedo utilizable
+    - fallback de server actions por HTTP no devolvio `text/x-component`; devolvio HTML normal
+- Consecuencia:
+  - no hay evidencia nueva de regressions en proofs sensibles
+  - el frente queda pendiente de validacion viva corta en una sesion con browser interactivo funcional
+- Siguiente accion exacta:
+  1. abrir preview `mpwpxahfc`
+  2. buyerIA compra listing QA persistente y adjunta comprobante nuevo
+  3. confirmar `/api/marketplace/upload` exitoso
+  4. entrar como `SUPER` a `Validaciones`
+  5. validar que `paymentProofUrl` persistido sea `/api/marketplace/payment-proofs/...` y que abra `200`
 
-1. Revisar la base real y confirmar si existe `paymentSenderBank`, `paymentPaidAt` e indices.
-2. Si no existen, aplicar la migracion real de conciliacion manual.
-3. Ejecutar QA manual completa del flujo marketplace con imagenes y comprobantes reales.
-4. Registrar resultados.
-5. Solo despues decidir y ejecutar la migracion a storage productivo definitivo.
+## Actualizacion 2026-04-23 - Cierre de debilidad operativa QA
 
-No abrir Mercantil, Binance ni nuevos frentes antes de eso.
+- Debilidad cerrada:
+  - faltaba una capa de despacho exacta por objetivo
+  - el runbook narrativo no bastaba para bloquear exploracion fuera de cobertura
+- Capa agregada:
+  - `docs/07_handoffs/qa-dispatcher.json`
+- Regla nueva:
+  - si no existe entrada exacta en el dispatcher, no se improvisa
+  - se detiene la ejecucion y se reporta `GAP OPERATIVO`
+- `payment_proof_sensitive_preview` queda en `manual_preview` hasta tener ruta canonica exacta validada
+- Cuando un script o metodo quede validado para una tarea, debe registrarse primero en el dispatcher y luego en el runbook
 
-## Requisito transversal del sitio
+## Actualizacion 2026-04-24 - Reintento proof sensible detenido antes de QA
 
-SEO/AEO es requisito transversal del sitio completo. Toda decision de contenido, taxonomia, metadata, slugs, listing pages y landings debe revisarse tambien bajo ese criterio.
+- Frente: `payment_proof_sensitive_preview`.
+- Preview vigente usado como objetivo: `https://turpialsound-mpwpxahfc-cerberus77s-projects.vercel.app`.
+- Credenciales de esta sesion:
+  - buyerIA: `buyerIA / BuyerIA_QA_2026!`
+  - SUPER: `mvera / 13894619`
+- Estado: no ejecutado; no hubo login, upload, `paymentProofUrl` ni validacion de proxy.
+- Bloqueo real: la sesion actual no tiene control de browser interactivo para completar manual-preview. No se uso CDP alternativo, server actions reverse engineered ni HTTP ad hoc.
+- Siguiente accion exacta:
+  1. usar una sesion con browser interactivo controlable por Codex o navegador humano,
+  2. abrir preview `mpwpxahfc`,
+  3. buyerIA compra listing QA persistente y adjunta comprobante nuevo,
+  4. SUPER entra a `Validaciones`,
+  5. validar que `paymentProofUrl` use `/api/marketplace/payment-proofs/...`, que el proxy abra y que no haya URL `https://*.public.blob.vercel-storage.com/...` en el proof nuevo.
 
-## Siguiente instruccion operativa exacta
+## Checkpoint corto 2026-04-24
 
-La siguiente ventana debe arrancar asi:
+- `payment_proof_sensitive_preview` sigue pendiente.
+- No se ejecuto QA ni se subio proof nuevo.
+- Preview objetivo: `https://turpialsound-mpwpxahfc-cerberus77s-projects.vercel.app`.
+- Bloqueo: esta sesion no tiene browser interactivo controlable por Codex.
+- Proxima accion minima: reintentar con browser controlable o ejecutar manualmente y documentar evidencia.
 
-1. validar la base real,
-2. confirmar o aplicar migracion de conciliacion,
-3. correr QA manual completa,
-4. documentar hallazgos,
-5. luego pasar al storage productivo definitivo.
+## Cierre 2026-04-24 - payment_proof_sensitive_preview
 
-## Instruccion breve de reanudacion
-
-No retomar por frontend ni por pasarelas. Retomar por base real y operacion real.
-
-## No reabrir sin motivo
-
-- El flujo vigente sigue siendo manual temporal.
-- Conciliacion manual y payout manual siguen siendo el foco.
-- Pasarelas automaticas siguen diferidas.
-- Obsidian sigue siendo la fuente de trazabilidad viva.
-- Base64 ya no debe volver al camino productivo.
+- Estado: validado manualmente.
+- Preview usado: `https://turpialsound-mpwpxahfc-cerberus77s-projects.vercel.app`.
+- Credenciales usadas:
+  - buyerIA: `buyerIA / BuyerIA_QA_2026!`
+  - SUPER: `mvera / 13894619`
+- Resultado:
+  - buyerIA subio proof nuevo.
+  - `paymentProofUrl` final quedo bajo `/api/marketplace/payment-proofs/...`.
+  - ruta confirmada: `/api/marketplace/payment-proofs/marketplace-sensitive-media/marketplace/payment-proofs/2026/04/1777011359365-8ff99e05-ec49-4178-962b-0295b361eb5d.webp`
+  - proof nuevo no usa `https://*.public.blob.vercel-storage.com/...`.
+  - SUPER pudo abrir el proof por proxy autenticado.
+- Dispatcher y runbook actualizados como metodo manual-preview validado.
+- Siguiente minimo: no reabrir proofs sensibles salvo regresion; resolver cualquier nuevo frente primero por `qa-dispatcher.json`.

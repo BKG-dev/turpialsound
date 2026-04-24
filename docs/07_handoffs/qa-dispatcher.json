@@ -1,0 +1,231 @@
+{
+  "version": 1,
+  "updated_at": "2026-04-24",
+  "source_of_truth": {
+    "dispatcher": "docs/07_handoffs/qa-dispatcher.json",
+    "runbook": "docs/07_handoffs/qa-canonical-runbook.md",
+    "rule": "Si un objetivo no tiene entrada exacta en este dispatcher, o su ruta canonica exacta no existe, se debe detener la ejecucion y reportar GAP OPERATIVO. No improvisar metodos alternos."
+  },
+  "global_rules": {
+    "dispatch_first": true,
+    "runbook_is_narrative_only": true,
+    "legacy_or_experimental_not_first_option": true,
+    "record_validated_method_back_into_dispatcher_and_runbook": true
+  },
+  "global_forbidden_fallbacks": [
+    "cdp improvisado",
+    "reverse engineering de server actions",
+    "protocolo HTTP ad hoc para UI flows",
+    "scripts LEGACY como primera opcion",
+    "scripts EXPERIMENTAL como primera opcion",
+    "redescubrir rutas si ya existe entrada exacta en dispatcher"
+  ],
+  "tasks": {
+    "qa_accounts_normalization": {
+      "task_id": "qa_accounts_normalization",
+      "mode": "script",
+      "canonical_script": "npx tsx scripts/setup-marketplace-qa-accounts.ts",
+      "preconditions": [
+        "DATABASE_URL valida disponible",
+        "No requiere app levantada"
+      ],
+      "allowed_fallbacks": [
+        "Corregir solo la precondicion documentada y reintentar el mismo script",
+        "Si la entrada deja de ser valida, detenerse y reportar GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "Seeds alternos",
+        "Scripts viejos no indexados",
+        "Edicion manual de cuentas como sustituto del script"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/obsidian-vault/ROADMAP_RESCATE.md"
+      ],
+      "last_validated_at": "2026-04-21",
+      "notes": "Ruta canonica para normalizar buyerIA, sellerIA, payout QA seller y listing persistente."
+    },
+    "buyer_seller_admin_smoke": {
+      "task_id": "buyer_seller_admin_smoke",
+      "mode": "script",
+      "canonical_script": "node scripts/qa-marketplace-qa-accounts.mjs",
+      "preconditions": [
+        "APP_URL activa",
+        "Cuentas QA ya normalizadas",
+        "Chrome instalado"
+      ],
+      "allowed_fallbacks": [
+        "Si hay drift de datos, correr primero qa_accounts_normalization",
+        "Si falla una precondicion documentada, corregirla y reintentar el mismo script"
+      ],
+      "forbidden_fallbacks": [
+        "Buscar otro smoke general",
+        "Usar scripts LEGACY o EXPERIMENTAL como reemplazo",
+        "Redisenar el flujo fuera del dispatcher"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/obsidian-vault/ROADMAP_RESCATE.md"
+      ],
+      "last_validated_at": "2026-04-21",
+      "notes": "Smoke local reutilizable buyer -> seller -> admin sobre cuentas QA persistentes."
+    },
+    "seller_publish_blob_public_preview": {
+      "task_id": "seller_publish_blob_public_preview",
+      "mode": "manual_preview",
+      "canonical_script": null,
+      "preconditions": [
+        "Preview vigente accesible",
+        "TS_WEB_BLOB_READ_WRITE_TOKEN configurado",
+        "Login sellerIA posible en browser interactivo funcional"
+      ],
+      "allowed_fallbacks": [
+        "Confirmar primero el preview Ready mas reciente",
+        "Si falta browser interactivo funcional, detenerse y reportar GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "Harnesses temporales como primera opcion",
+        "Migrar legacy/base64 en este frente",
+        "CDP improvisado"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/07_handoffs/session-summary-active.md",
+        "docs/obsidian-vault/ROADMAP_RESCATE.md"
+      ],
+      "last_validated_at": "2026-04-23",
+      "notes": "Validacion oficial manual en preview para uploads nuevos de listing image hacia Blob publico no-booking."
+    },
+    "payment_proof_sensitive_preview": {
+      "task_id": "payment_proof_sensitive_preview",
+      "mode": "manual_preview",
+      "canonical_script": null,
+      "preconditions": [
+        "Preview vigente accesible",
+        "TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN configurado en Preview",
+        "buyerIA y SUPER disponibles",
+        "Browser interactivo funcional para conducir buyer y admin"
+      ],
+      "canonical_manual_route": [
+        "Abrir el preview vigente.",
+        "Iniciar sesion como buyerIA.",
+        "Comprar el listing QA persistente y adjuntar un comprobante nuevo.",
+        "Confirmar que el upload del proof completa correctamente.",
+        "Confirmar que el paymentProofUrl final queda bajo /api/marketplace/payment-proofs/.",
+        "Confirmar que el proof nuevo no usa https://*.public.blob.vercel-storage.com/.",
+        "Iniciar sesion como SUPER.",
+        "Entrar a Validaciones y abrir el comprobante por la ruta interna autenticada.",
+        "Confirmar que el proxy abre correctamente con SUPER."
+      ],
+      "allowed_fallbacks": [
+        "Reportar precondicion fallida exacta si falta browser interactivo funcional",
+        "Detenerse y reportar GAP OPERATIVO si no existe ruta canonica exacta ejecutable"
+      ],
+      "forbidden_fallbacks": [
+        "cdp improvisado",
+        "reverse engineering de server actions",
+        "protocolo HTTP ad hoc para UI flows",
+        "QA transaccional extensa fuera del smoke corto"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/07_handoffs/session-summary-active.md",
+        "docs/obsidian-vault/ROADMAP_RESCATE.md"
+      ],
+      "last_validated_at": "2026-04-24",
+      "notes": "Metodo manual-preview validado por ejecucion humana en navegador. Proof nuevo confirmado bajo /api/marketplace/payment-proofs/... y fuera de Blob publico; proxy autenticado confirmado con SUPER. No hay script canonico."
+    },
+    "admin_local_smoke": {
+      "task_id": "admin_local_smoke",
+      "mode": "script",
+      "canonical_script": "node scripts/qa-marketplace-admin-smoke.mjs",
+      "preconditions": [
+        "APP_URL activa",
+        "Credenciales admin vigentes",
+        "Chrome instalado"
+      ],
+      "allowed_fallbacks": [
+        "Corregir la precondicion documentada y reintentar el mismo script"
+      ],
+      "forbidden_fallbacks": [
+        "Otros harnesses no indexados",
+        "CDP improvisado",
+        "LEGACY o EXPERIMENTAL como reemplazo"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md"
+      ],
+      "last_validated_at": "2026-04-21",
+      "notes": "Smoke local del shell admin y tabs principales."
+    },
+    "buyer_only_short": {
+      "task_id": "buyer_only_short",
+      "mode": "script",
+      "canonical_script": "node scripts/qa-marketplace-buyer.mjs",
+      "preconditions": [
+        "APP_URL activa",
+        "Listing QA accesible",
+        "Chrome instalado"
+      ],
+      "allowed_fallbacks": [
+        "Corregir solo la precondicion documentada y reintentar el mismo script"
+      ],
+      "forbidden_fallbacks": [
+        "Encadenar otros scripts por intuicion",
+        "LEGACY o EXPERIMENTAL como reemplazo"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/07_handoffs/session-summary-active.md"
+      ],
+      "last_validated_at": "2026-04-20",
+      "notes": "Buyer-only corto para llegar a Pago procesado."
+    },
+    "seller_shell_local": {
+      "task_id": "seller_shell_local",
+      "mode": "script",
+      "canonical_script": "node scripts/qa-marketplace-seller-smoke.mjs",
+      "preconditions": [
+        "APP_URL activa",
+        "Credenciales seller locales vigentes",
+        "Chrome instalado"
+      ],
+      "allowed_fallbacks": [
+        "Corregir solo la precondicion documentada y reintentar el mismo script"
+      ],
+      "forbidden_fallbacks": [
+        "Otros harnesses no indexados",
+        "LEGACY o EXPERIMENTAL como reemplazo"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/obsidian-vault/ROADMAP_RESCATE.md"
+      ],
+      "last_validated_at": "2026-04-22",
+      "notes": "Smoke local del shell seller para Mi Tienda, Mis Ventas, Mensajes y Cobros."
+    },
+    "reconcile_read_only": {
+      "task_id": "reconcile_read_only",
+      "mode": "script",
+      "canonical_script": "node scripts/qa-marketplace-reconcile.mjs",
+      "preconditions": [
+        "APP_URL activa",
+        "Seller y admin accesibles",
+        "Chrome instalado"
+      ],
+      "allowed_fallbacks": [
+        "Corregir solo la precondicion documentada y reintentar el mismo script"
+      ],
+      "forbidden_fallbacks": [
+        "Rehacer la corrida buyer/seller/admin completa cuando el objetivo es lectura puntual",
+        "LEGACY o EXPERIMENTAL como reemplazo"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/obsidian-vault/ROADMAP_RESCATE.md"
+      ],
+      "last_validated_at": "2026-04-21",
+      "notes": "Lectura puntual de Cobros y superficies de conciliacion sin rerun completo."
+    }
+  }
+}
