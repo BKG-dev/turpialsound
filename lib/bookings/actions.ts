@@ -26,6 +26,47 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const WHATSAPP_REGEX = /^\+58(412|414|416|424|426)\d{7}$/
 const WHATSAPP_CONSENT_ACCEPTED_TAG = '[wa_consent:accepted]'
 const WHATSAPP_CONSENT_AT_PREFIX = '[wa_consent_at:'
+const CARACAS_UTC_OFFSET_MINUTES = -4 * 60
+
+function buildCaracasSlotDateTime(eventDate: string, startTime: string): Date {
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(eventDate)
+  const timeMatch = /^(\d{2}):(\d{2})$/.exec(startTime)
+
+  if (!dateMatch || !timeMatch) {
+    return new Date(Number.NaN)
+  }
+
+  const year = Number(dateMatch[1])
+  const month = Number(dateMatch[2])
+  const day = Number(dateMatch[3])
+  const hours = Number(timeMatch[1])
+  const minutes = Number(timeMatch[2])
+
+  const hasInvalidDateParts =
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day) ||
+    !Number.isInteger(hours) ||
+    !Number.isInteger(minutes) ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31 ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+
+  if (hasInvalidDateParts) {
+    return new Date(Number.NaN)
+  }
+
+  const caracasEpochMs =
+    Date.UTC(year, month - 1, day, hours, minutes, 0, 0) -
+    CARACAS_UTC_OFFSET_MINUTES * 60 * 1000
+
+  return new Date(caracasEpochMs)
+}
 
 function normalizeWhatsappVe(value: string): string {
   const compact = value.replace(/[^\d+]/g, '')
@@ -218,7 +259,7 @@ export async function submitBookingRequest(
     })
     const publicCode = buildPublicCode(year, existing + 1)
 
-    const eventDateTime = new Date(`${input.eventDate}T${input.startTime}:00`)
+    const eventDateTime = buildCaracasSlotDateTime(input.eventDate, input.startTime)
     const eventEndDateTime = new Date(
       eventDateTime.getTime() + input.durationMinutes * 60 * 1000,
     )
