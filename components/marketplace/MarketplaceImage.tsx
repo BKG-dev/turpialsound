@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import type { CSSProperties } from 'react'
+import { isVercelBlobUrl } from '@/lib/marketplace/media-url'
 
 type MarketplaceImageProps = {
   src: string
@@ -23,7 +24,7 @@ type MarketplaceImageProps = {
 )
 
 function shouldUseOptimizedImage(src: string) {
-  return src.startsWith('/') && !src.startsWith('data:')
+  return (src.startsWith('/') && !src.startsWith('data:')) || isVercelBlobUrl(src)
 }
 
 export function MarketplaceImage(props: MarketplaceImageProps) {

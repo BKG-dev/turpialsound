@@ -14,6 +14,7 @@
 # production
 /build
 /public/uploads/
+/.tmp-marketplace-sensitive-media/
 
 # misc
 .DS_Store

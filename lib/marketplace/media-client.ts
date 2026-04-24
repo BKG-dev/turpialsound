@@ -134,10 +134,16 @@ export function revokeMarketplaceUploadPreview(upload: PreparedMarketplaceUpload
 export async function uploadMarketplaceFile(
   file: File,
   purpose: MarketplaceUploadPurpose,
+  options?: {
+    transactionId?: string
+  },
 ): Promise<{ url: string }> {
   const formData = new FormData()
   formData.set('purpose', purpose)
   formData.set('file', file)
+  if (options?.transactionId) {
+    formData.set('transactionId', options.transactionId)
+  }
 
   const response = await fetch('/api/marketplace/upload', {
     method: 'POST',

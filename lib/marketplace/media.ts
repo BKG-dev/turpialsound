@@ -1,6 +1,6 @@
-import { mkdir, writeFile } from 'fs/promises'
 import path from 'path'
-import { randomUUID } from 'crypto'
+import { storePublicNoBookingMedia } from '@/lib/media/public-no-booking-storage'
+import { storeSensitiveMarketplaceMedia } from '@/lib/media/marketplace-sensitive-storage'
 
 export const MARKETPLACE_UPLOAD_PURPOSES = [
   'listing-image',
@@ -34,11 +34,10 @@ export const MARKETPLACE_UPLOAD_RULES: Record<MarketplaceUploadPurpose, UploadRu
   },
 }
 
-const MIME_EXTENSION: Record<string, string> = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-}
+const PUBLIC_MARKETPLACE_UPLOAD_PURPOSES = new Set<MarketplaceUploadPurpose>([
+  'listing-image',
+  'avatar',
+])
 
 export function isMarketplaceUploadPurpose(value: string): value is MarketplaceUploadPurpose {
   return MARKETPLACE_UPLOAD_PURPOSES.includes(value as MarketplaceUploadPurpose)
@@ -86,23 +85,16 @@ export async function storeMarketplaceFile(
   }
 
   const rule = MARKETPLACE_UPLOAD_RULES[purpose]
-  const extension = MIME_EXTENSION[file.type] ?? 'bin'
-  const now = new Date()
-  const year = String(now.getUTCFullYear())
-  const month = String(now.getUTCMonth() + 1).padStart(2, '0')
-  const relativeDir = path.posix.join('uploads', 'marketplace', rule.directory, year, month)
-  const absoluteDir = path.join(process.cwd(), 'public', ...relativeDir.split('/'))
-  const filename = `${Date.now()}-${randomUUID()}.${extension}`
-  const absolutePath = path.join(absoluteDir, filename)
-  const publicUrl = `/${path.posix.join(relativeDir, filename)}`
-  const buffer = Buffer.from(await file.arrayBuffer())
 
-  await mkdir(absoluteDir, { recursive: true })
-  await writeFile(absolutePath, buffer)
-
-  return {
-    url: publicUrl,
-    mimeType: file.type,
-    size: buffer.length,
+  if (PUBLIC_MARKETPLACE_UPLOAD_PURPOSES.has(purpose)) {
+    return storePublicNoBookingMedia({
+      file,
+      directory: path.posix.join('marketplace', rule.directory),
+    })
   }
+
+  return storeSensitiveMarketplaceMedia({
+    file,
+    directory: path.posix.join('marketplace', rule.directory),
+  })
 }

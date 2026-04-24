@@ -212,7 +212,11 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
   const [proofFile, setProofFile] = useState<PreparedMarketplaceUpload | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const [success, setSuccess] = useState<{
+    title: string
+    summary: string
+    detail: string
+  } | null>(null)
 
   const price = listing.type === 'product' ? listing.price : listing.priceFrom
   const currency = listing.currency ?? 'USD'
@@ -286,7 +290,11 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
       }
 
       const proofUrl = proofFile
-        ? (await uploadMarketplaceFile(proofFile.file, 'payment-proof')).url
+        ? (
+            await uploadMarketplaceFile(proofFile.file, 'payment-proof', {
+              transactionId: purchase.data.transactionId,
+            })
+          ).url
         : undefined
       const proof = await submitPaymentProof(
         purchase.data.transactionId,
@@ -303,7 +311,11 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
         return
       }
 
-      setSuccess(true)
+      setSuccess({
+        title: 'Pago procesado',
+        summary: 'Tu pago esta siendo validado.',
+        detail: 'Notificaremos la resolucion o la liberacion del escrow en menos de 24h.',
+      })
     } catch {
       setError('Error inesperado. Intenta de nuevo.')
     } finally {
@@ -354,11 +366,11 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
               </div>
             </motion.div>
             <div>
-              <p className="mb-2 text-base font-semibold text-[#f2f2f2]">Pago procesado</p>
+              <p className="mb-2 text-base font-semibold text-[#f2f2f2]">{success.title}</p>
               <div className="space-y-2 text-sm leading-relaxed text-[#5a5a5a]">
-                <p>Tu comprobante fue recibido y ya quedo reportado para validacion.</p>
-                <p>El equipo operativo sera notificado para confirmar el pago manual.</p>
-                <p>Cuando el pago quede confirmado, la transaccion pasara a escrow y luego se liberaran los fondos al vendedor.</p>
+                <p>{success.summary}</p>
+                <p>Recibimos tu comprobante y el equipo operativo ya fue notificado para revisar la conciliacion manual.</p>
+                <p>{success.detail}</p>
               </div>
             </div>
             <button

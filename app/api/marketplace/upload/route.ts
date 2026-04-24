@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/marketplace/auth'
+import { getDb } from '@/lib/marketplace/db'
 import {
   isMarketplaceUploadPurpose,
   storeMarketplaceFile,
@@ -17,6 +18,7 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData()
     const purpose = String(formData.get('purpose') ?? '')
+    const transactionId = String(formData.get('transactionId') ?? '')
     const file = formData.get('file')
 
     if (!isMarketplaceUploadPurpose(purpose)) {
@@ -25,6 +27,44 @@ export async function POST(request: Request) {
 
     if (!(file instanceof File)) {
       return NextResponse.json({ message: 'Archivo no recibido' }, { status: 400 })
+    }
+
+    if (purpose === 'payment-proof') {
+      if (!transactionId) {
+        return NextResponse.json(
+          { message: 'La transaccion es obligatoria para subir comprobantes' },
+          { status: 400 },
+        )
+      }
+
+      const db = await getDb()
+      if (!db) {
+        return NextResponse.json({ message: 'Base de datos no disponible' }, { status: 503 })
+      }
+
+      try {
+        const tx = await db.mpTransaction.findUnique({
+          where: { id: transactionId },
+          select: { buyerId: true, status: true },
+        })
+
+        if (!tx) {
+          return NextResponse.json({ message: 'Transaccion no encontrada' }, { status: 404 })
+        }
+
+        if (tx.buyerId !== session.userId) {
+          return NextResponse.json({ message: 'Sin permiso para adjuntar este comprobante' }, { status: 403 })
+        }
+
+        if (tx.status !== 'INITIATED' && tx.status !== 'PENDING_PAYMENT') {
+          return NextResponse.json(
+            { message: `Estado invalido para adjuntar comprobante: ${tx.status}` },
+            { status: 400 },
+          )
+        }
+      } finally {
+        await db.$disconnect().catch(() => {})
+      }
     }
 
     const stored = await storeMarketplaceFile(file, purpose)
