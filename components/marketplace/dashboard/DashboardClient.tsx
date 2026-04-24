@@ -594,7 +594,7 @@ function TxCard({
       }}
     >
       <div
-        className="w-14 h-14 rounded-lg flex-shrink-0 overflow-hidden"
+        className="relative w-14 h-14 rounded-lg flex-shrink-0 overflow-hidden"
         style={{ background: 'rgba(30,30,30,0.8)', border: '1px solid rgba(255,255,255,0.06)' }}
       >
         {tx.listing?.coverImageUrl ? (
@@ -715,7 +715,7 @@ function MyListingRow({ listing, onClick }: { listing: DashListing; onClick?: ()
       }}
     >
       <div
-        className="w-12 h-12 rounded-lg flex-shrink-0 overflow-hidden"
+        className="relative w-12 h-12 rounded-lg flex-shrink-0 overflow-hidden"
         style={{ background: 'rgba(30,30,30,0.8)', border: '1px solid rgba(255,255,255,0.04)' }}
       >
         {cover ? (
@@ -758,7 +758,7 @@ function InteractedRow({ item }: { item: DashInteracted }) {
         className="w-full flex items-center gap-3 p-3 text-left"
       >
         <div
-          className="w-10 h-10 rounded-lg flex-shrink-0 overflow-hidden"
+          className="relative w-10 h-10 rounded-lg flex-shrink-0 overflow-hidden"
           style={{ background: 'rgba(30,30,30,0.8)', border: '1px solid rgba(255,255,255,0.04)' }}
         >
           {item.listingCoverImageUrl ? (
@@ -862,7 +862,7 @@ function FavoriteRow({
       }}
     >
       <div
-        className="w-12 h-12 rounded-lg flex-shrink-0 overflow-hidden"
+        className="relative w-12 h-12 rounded-lg flex-shrink-0 overflow-hidden"
         style={{ background: 'rgba(30,30,30,0.8)', border: '1px solid rgba(255,255,255,0.04)' }}
       >
         {cover ? (
@@ -1622,6 +1622,11 @@ export function DashboardClient({
     payouts:   payoutRelevantSales.length,
   }
 
+  function handleTabChange(tab: Tab) {
+    setActiveTab(tab)
+    router.replace(`/marketplace/dashboard?tab=${tab}`, { scroll: false })
+  }
+
   async function handleOpenTransaction(tx: DashTransaction, viewAs: 'buyer' | 'seller') {
     setSelectedTx({ tx, viewAs })
     setSelectedTxDetail(null)
@@ -1802,11 +1807,11 @@ export function DashboardClient({
           myListings={myListings}
           myFavorites={favorites}
           unreadCount={unreadCount}
-          onTabClick={setActiveTab}
+          onTabClick={handleTabChange}
         />
 
         {/* Tab Navigation */}
-        <TabBar active={activeTab} onChange={setActiveTab} counts={counts} />
+        <TabBar active={activeTab} onChange={handleTabChange} counts={counts} />
 
         {/* Tab Content */}
         <div>
@@ -1902,7 +1907,7 @@ export function DashboardClient({
                       </p>
                     </div>
                     <button
-                      onClick={() => setActiveTab('payouts')}
+                      onClick={() => handleTabChange('payouts')}
                       className="rounded-xl px-3 py-2 text-[11px] font-semibold"
                       style={{ background: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.25)' }}
                     >
@@ -2123,15 +2128,15 @@ export function DashboardClient({
           {activeTab === 'payouts' && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <KpiCard icon={CircleDollarSign} label="Total de ventas" value={fmtUSD(operationalSold)} sub={`${payoutRelevantSales.length} ventas operativas`} accent="#4ade80" />
+                <KpiCard icon={CircleDollarSign} label="Ventas operativas" value={fmtUSD(operationalSold)} sub={`${payoutRelevantSales.length} en escrow/liberadas`} accent="#4ade80" />
                 <KpiCard icon={CreditCard} label={commissionLabel} value={fmtUSD(operationalCommissions)} sub={commissionSub} accent="#f59e0b" />
                 <KpiCard icon={Landmark} label="Fee bancario 0.03%" value={fmtUSD(operationalBankFees)} sub="pago movil / transferencia" accent="#ffc107" />
                 <KpiCard icon={Wallet} label="Fee Binance" value={fmtUSD(operationalBinanceFees)} sub="$0.06 por operacion" accent="#00aeef" />
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <KpiCard icon={Wallet} label="Neto a recibir" value={fmtUSD(operationalSellerNet)} sub={`fees totales ${fmtUSD(operationalTotalFees)}`} accent="#00aeef" />
-                <KpiCard icon={Landmark} label="Pendiente por pagar" value={fmtUSD(payoutReadyNet)} sub={`${releasedSales.length} liberadas`} accent="#a78bfa" />
+                <KpiCard icon={Wallet} label="Neto operativo" value={fmtUSD(operationalSellerNet)} sub={`no pagable hasta RELEASED; fees ${fmtUSD(operationalTotalFees)}`} accent="#00aeef" />
+                <KpiCard icon={Landmark} label="Listo para payout" value={fmtUSD(payoutReadyNet)} sub={`${releasedSales.length} liberadas`} accent="#a78bfa" />
               </div>
 
               <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
@@ -2143,7 +2148,7 @@ export function DashboardClient({
                     <div>
                       <h3 className="text-sm font-semibold text-[#f2f2f2]">Datos de cobro del vendedor</h3>
                       <p className="mt-1 text-xs text-[#5a5a5a]">
-                        Este flujo se activa solo cuando ya existe escrow activo o payout pendiente.
+                        El neto operativo incluye escrow activo y liberado; solo RELEASED queda listo para payout manual.
                       </p>
                     </div>
                     <span
@@ -2275,7 +2280,7 @@ export function DashboardClient({
                       className="rounded-xl p-3 text-xs leading-relaxed"
                       style={{ background: 'rgba(0,174,239,0.04)', border: '1px solid rgba(0,174,239,0.1)', color: '#a0a0a0' }}
                     >
-                      Tus datos de cobro ya estan configurados. El equipo operativo los usara cuando corresponda liberar el escrow o reportar el payout manual.
+                      Tus datos de cobro ya estan configurados. El equipo operativo los usara solo cuando una venta quede RELEASED y lista para payout manual.
                     </div>
                   )}
                 </div>
@@ -2296,7 +2301,7 @@ export function DashboardClient({
                         <span className="text-[#f2f2f2]">{escrowSales.length}</span>
                       </div>
                       <div className="flex items-center justify-between text-[#a0a0a0]">
-                        <span>Payouts listos</span>
+                        <span>Listos para payout</span>
                         <span className="text-[#f2f2f2]">{releasedSales.length}</span>
                       </div>
                       <div className="flex items-center justify-between text-[#a0a0a0]">
@@ -2396,7 +2401,7 @@ export function DashboardClient({
             onOpenMessages={() => {
               setSelectedTx(null)
               setSelectedTxDetail(null)
-              setActiveTab('messages')
+              handleTabChange('messages')
             }}
           />
         )
