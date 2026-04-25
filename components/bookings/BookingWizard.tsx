@@ -233,6 +233,7 @@ export function BookingWizard({
 
   const totalSteps = WIZARD_STEPS.length
   const step = WIZARD_STEPS[currentStep]
+  const progressPercentage = ((currentStep + 1) / totalSteps) * 100
   const primaryItem = data.selectedItems[0] ?? null
   const selectedServiceSlug = primaryItem?.serviceSlug ?? null
   const selectedVariantSlug = primaryItem?.variantSlug ?? null
@@ -1147,8 +1148,23 @@ export function BookingWizard({
       aria-busy={submissionState === 'loading'}
     >
       <div className="border-b border-brand-border px-5 py-3 md:px-6 md:py-3">
+        <div className="md:hidden">
+          <p className="text-[11px] uppercase tracking-[0.16em] text-text-muted">
+            Paso {currentStep + 1} de {totalSteps}
+          </p>
+          <h2 className="mt-1 font-display text-base font-semibold leading-tight text-text-primary">
+            {step.title}
+          </h2>
+          <div className="mt-2 h-1 w-full rounded-full bg-brand-border/80">
+            <span
+              className="block h-full rounded-full bg-accent-gold transition-[width] duration-300 ease-out"
+              style={{ width: `${progressPercentage}%` }}
+            />
+          </div>
+        </div>
+
         <ol
-          className="flex gap-2 overflow-x-auto pb-1 lg:grid lg:grid-cols-6 lg:gap-2 xl:gap-3 lg:overflow-visible lg:pb-0"
+          className="hidden gap-2 overflow-x-auto pb-1 md:flex lg:grid lg:grid-cols-6 lg:gap-2 xl:gap-3 lg:overflow-visible lg:pb-0"
           aria-label="Pasos del formulario"
         >
           {WIZARD_STEPS.map((s, index) => {
@@ -1220,27 +1236,10 @@ export function BookingWizard({
 
       <div
         className={cn(
-          'p-4 md:px-6 md:py-3',
+          'p-4 pb-24 md:px-6 md:py-3',
           currentStep === 5 && 'md:py-2.5 lg:py-2',
         )}
       >
-        <div
-          className={cn(
-            'mb-4 md:mb-3',
-            (currentStep === 0 ||
-              currentStep === 1 ||
-              currentStep === 2 ||
-              currentStep === 3 ||
-              currentStep === 4 ||
-              currentStep === 5) &&
-              'md:hidden',
-          )}
-        >
-          <h2 className="font-display text-lg font-bold text-text-primary md:text-xl">
-            {step.title}
-          </h2>
-        </div>
-
         {currentStep === totalSteps - 1 && submissionState === 'loading' && (
           <div className="mb-6 rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-4 py-3">
             <div className="flex items-start gap-3">
@@ -1359,17 +1358,25 @@ export function BookingWizard({
         </div>
       )}
 
-      <div className="flex items-center justify-between border-t border-brand-border px-5 py-3 md:px-6 md:py-3">
+      <div
+        className={cn(
+          'sticky bottom-0 z-20 flex items-center justify-between border-t border-brand-border px-3 py-2.5',
+          'bg-brand-surface/95 backdrop-blur supports-[backdrop-filter]:bg-brand-surface/85',
+          '[padding-bottom:calc(env(safe-area-inset-bottom)+0.625rem)]',
+          'md:static md:z-auto md:bg-transparent md:backdrop-blur-0 md:px-6 md:py-3 md:[padding-bottom:0]',
+        )}
+      >
         <Button
           variant="ghost"
           size="sm"
           onClick={handleBack}
           disabled={currentStep === 0 || submissionState === 'loading'}
         >
-          Anterior
+          <span className="md:hidden">Atras</span>
+          <span className="hidden md:inline">Anterior</span>
         </Button>
 
-        <span className="text-xs text-text-muted">
+        <span className="text-[11px] text-text-muted md:text-xs">
           Paso {currentStep + 1} de {totalSteps}
         </span>
 

@@ -30,49 +30,99 @@ export function VariantSelectStep({ serviceSlug, selected, onChange }: VariantSe
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-2">
         {variants.map((variant) => {
           const isSelected = selected === variant.slug
+          const iconLabel = variant.name.trim().charAt(0).toUpperCase()
+          const variantPriceLabel = getVariantPriceLabel(variant)
           return (
             <button
               key={variant.slug}
               type="button"
               onClick={() => onChange(variant.slug)}
               className={cn(
-                'flex w-full flex-col items-start rounded-lg border p-4 text-left transition-colors duration-200 md:min-h-[7rem] md:px-3.5 md:py-2.5',
+                'flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors duration-200 md:min-h-[7rem] md:flex-col md:items-start md:gap-0 md:px-3.5 md:py-2.5',
                 isSelected
                   ? 'border-accent-gold bg-accent-gold/5 text-text-primary'
                   : 'border-brand-border bg-brand-surface text-text-secondary hover:border-accent-gold/40 hover:text-text-primary',
               )}
               aria-pressed={isSelected}
             >
-              <span
-                className={cn(
-                  'font-display text-sm font-semibold md:text-[0.9rem]',
-                  isSelected ? 'text-accent-gold' : 'text-text-primary',
-                )}
-              >
-                {variant.name}
-              </span>
-              {getVariantPriceLabel(variant) && (
-                <span className="mt-0.5 text-[11px] font-medium text-accent-gold">
-                  {getVariantPriceLabel(variant)}
+              <div className="flex w-full items-center gap-3 md:hidden">
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent-cyan/35 bg-accent-cyan/10 text-xs font-semibold text-accent-cyan">
+                  {iconLabel}
                 </span>
-              )}
-              {variant.description && (
-                <span className="mt-1 line-clamp-4 text-xs leading-relaxed text-text-secondary md:text-[10px] md:leading-4">
-                  {variant.description}
-                </span>
-              )}
-              {variant.badges && variant.badges.length > 0 && (
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {variant.badges.map((badge) => (
-                    <span
-                      key={badge}
-                      className="rounded-full border border-brand-border px-2 py-0.5 text-[10px] text-text-muted"
-                    >
-                      {badge}
-                    </span>
-                  ))}
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-display text-[13px] font-semibold text-text-primary">
+                    {variant.name}
+                  </p>
+                  {variant.description && (
+                    <p className="mt-0.5 line-clamp-1 text-[11px] leading-snug text-text-secondary">
+                      {variant.description}
+                    </p>
+                  )}
                 </div>
-              )}
+
+                <div className="flex shrink-0 items-center gap-2">
+                  {variantPriceLabel && (
+                    <span className="text-right text-[11px] font-medium text-accent-gold">
+                      {variantPriceLabel}
+                    </span>
+                  )}
+                  <span
+                    className={cn(
+                      'inline-flex h-5 w-5 items-center justify-center rounded-full border',
+                      isSelected
+                        ? 'border-accent-gold bg-accent-gold text-brand-bg'
+                        : 'border-brand-border bg-transparent',
+                    )}
+                    aria-hidden="true"
+                  >
+                    {isSelected && (
+                      <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none">
+                        <path
+                          d="M2 6l3 3 5-5"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              <div className="hidden md:flex md:w-full md:flex-col md:items-start">
+                <span
+                  className={cn(
+                    'font-display text-sm font-semibold md:text-[0.9rem]',
+                    isSelected ? 'text-accent-gold' : 'text-text-primary',
+                  )}
+                >
+                  {variant.name}
+                </span>
+                {variantPriceLabel && (
+                  <span className="mt-0.5 text-[11px] font-medium text-accent-gold">
+                    {variantPriceLabel}
+                  </span>
+                )}
+                {variant.description && (
+                  <span className="mt-1 line-clamp-4 text-xs leading-relaxed text-text-secondary md:text-[10px] md:leading-4">
+                    {variant.description}
+                  </span>
+                )}
+                {variant.badges && variant.badges.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {variant.badges.map((badge) => (
+                      <span
+                        key={badge}
+                        className="rounded-full border border-brand-border px-2 py-0.5 text-[10px] text-text-muted"
+                      >
+                        {badge}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </button>
           )
         })}
