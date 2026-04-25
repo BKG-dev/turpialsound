@@ -24,7 +24,6 @@ import {
   HelpCircle,
   Wallet,
   Landmark,
-  CircleDollarSign,
   Copy,
   Check,
   Plus,
@@ -132,9 +131,9 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   PENDING_PAYMENT:     { label: 'Pago Pendiente',    color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  glow: 'rgba(245,158,11,0.25)'  },
   PAYMENT_RECEIVED:    { label: 'Pago Recibido',     color: '#eab308', bg: 'rgba(234,179,8,0.1)',   glow: 'rgba(234,179,8,0.25)'   },
   VALIDATING:          { label: 'Validando',         color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', glow: 'rgba(167,139,250,0.25)' },
-  IN_ESCROW:           { label: 'En Escrow',         color: '#00aeef', bg: 'rgba(0,174,239,0.1)',   glow: 'rgba(0,174,239,0.25)'   },
+  IN_ESCROW:           { label: 'En proceso',        color: '#00aeef', bg: 'rgba(0,174,239,0.1)',   glow: 'rgba(0,174,239,0.25)'   },
   DELIVERY_CONFIRMED:  { label: 'Entrega Confirmada',color: '#34d399', bg: 'rgba(52,211,153,0.1)',  glow: 'rgba(52,211,153,0.25)'  },
-  RELEASED:            { label: 'Liberado',          color: '#4ade80', bg: 'rgba(74,222,128,0.1)',  glow: 'rgba(74,222,128,0.25)'  },
+  RELEASED:            { label: 'Listo para cobrar', color: '#4ade80', bg: 'rgba(74,222,128,0.1)',  glow: 'rgba(74,222,128,0.25)'  },
   PAYMENT_FAILED:      { label: 'Pago Fallido',      color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   glow: 'rgba(239,68,68,0.25)'   },
   DISPUTED:            { label: 'En Disputa',        color: '#f97316', bg: 'rgba(249,115,22,0.1)',  glow: 'rgba(249,115,22,0.25)'  },
   REFUNDED:            { label: 'Reembolsado',       color: '#c084fc', bg: 'rgba(192,132,252,0.1)', glow: 'rgba(192,132,252,0.25)' },
@@ -208,27 +207,27 @@ function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
     },
     PAYMENT_RECEIVED: {
       buyer: 'Recibimos tu reporte de pago. La validacion manual esta en curso. Te notificaremos la resolucion y, si procede, la activacion del escrow.',
-      seller: 'El comprador ya reporto el pago. La validacion manual esta en curso y te notificaremos cuando el pago quede conciliado o el escrow sea liberado.',
+      seller: 'El comprador ya reporto el pago. La revision manual esta en curso y te notificaremos cuando la operacion avance.',
     },
     VALIDATING: {
       buyer: 'Tu pago sigue en validacion manual. No necesitas repetir el envio mientras revisamos la conciliacion. Te notificaremos la resolucion.',
-      seller: 'La validacion manual sigue en curso. Te notificaremos cuando el pago quede conciliado y los fondos entren en escrow.',
+      seller: 'La revision manual sigue en curso. Te notificaremos cuando el pago quede conciliado.',
     },
     IN_ESCROW: {
       buyer: 'El pago ya fue validado y los fondos estan protegidos en escrow hasta la entrega o liberacion manual.',
-      seller: 'Los fondos ya estan en escrow. Completa la entrega para avanzar al cierre operativo.',
+      seller: 'El pago ya fue validado. Completa la entrega para avanzar al cierre de la venta.',
     },
     DELIVERY_CONFIRMED: {
       buyer: 'La entrega fue confirmada. El payout al vendedor queda en cola operativa.',
-      seller: 'La entrega fue confirmada. El payout manual debe ejecutarse en el siguiente paso operativo.',
+      seller: 'La entrega fue confirmada. El pago al vendedor queda como siguiente paso.',
     },
     RELEASED: {
       buyer: 'La operacion fue liberada y quedo cerrada a nivel de escrow.',
-      seller: 'La operacion fue liberada desde escrow. Si el payout manual aun no se ha ejecutado, ya quedo lista para pago.',
+      seller: 'La venta ya esta lista para cobrar. Verifica que tus datos de cobro esten actualizados.',
     },
     DISPUTED: {
       buyer: 'La transaccion entro en disputa. El equipo revisara el caso antes de liberar fondos.',
-      seller: 'La transaccion entro en disputa. Los fondos quedan retenidos hasta la resolucion.',
+      seller: 'La transaccion entro en disputa. El dinero queda retenido hasta la resolucion.',
     },
     PAYMENT_FAILED: {
       buyer: 'El pago fue rechazado o no pudo conciliarse. Revisa los datos antes de intentar de nuevo.',
@@ -240,11 +239,11 @@ function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
     },
     REFUNDED: {
       buyer: 'La disputa se resolvio a favor del comprador y la operacion fue reembolsada.',
-      seller: 'La disputa se resolvio a favor del comprador y no habra payout para esta operacion.',
+      seller: 'La disputa se resolvio a favor del comprador y no habra cobro para esta operacion.',
     },
   }
 
-  return copy[status]?.[viewAs] ?? 'Consulta el estado de la transaccion para continuar con el siguiente paso operativo.'
+  return copy[status]?.[viewAs] ?? 'Consulta el estado de la transaccion para continuar con el siguiente paso.'
 }
 
 function getOperationalNextStep(status: string, viewAs: 'buyer' | 'seller') {
@@ -255,7 +254,7 @@ function getOperationalNextStep(status: string, viewAs: 'buyer' | 'seller') {
     },
     PAYMENT_RECEIVED: {
       buyer: 'Espera la validacion manual. No hace falta reenviar el comprobante salvo que soporte lo solicite.',
-      seller: 'Espera la conciliacion manual. Te notificaremos cuando entre a escrow o si hace falta revision adicional.',
+      seller: 'Espera la conciliacion manual. Te notificaremos cuando la operacion avance o si hace falta revision adicional.',
     },
     VALIDATING: {
       buyer: 'Mantente atento a la confirmacion del equipo mientras termina la conciliacion.',
@@ -263,15 +262,15 @@ function getOperationalNextStep(status: string, viewAs: 'buyer' | 'seller') {
     },
     IN_ESCROW: {
       buyer: 'Coordina la entrega y abre disputa solo si aparece una incidencia real.',
-      seller: 'Completa la entrega para que el flujo pueda avanzar a liberacion o payout manual.',
+      seller: 'Completa la entrega para que la venta pueda avanzar a cierre y cobro.',
     },
     DELIVERY_CONFIRMED: {
       buyer: 'La operacion ya quedo lista para cierre operativo.',
-      seller: 'El payout manual queda en cola operativa con tus datos de cobro actuales.',
+      seller: 'El pago al vendedor queda en cola con tus datos de cobro actuales.',
     },
     RELEASED: {
       buyer: 'La transaccion ya esta cerrada del lado de escrow.',
-      seller: 'Verifica tus datos de cobro si el payout manual aun no ha sido ejecutado.',
+      seller: 'Verifica tus datos de cobro si el pago manual aun no ha sido ejecutado.',
     },
     DISPUTED: {
       buyer: 'Espera la resolucion del equipo y conserva el contexto de la entrega.',
@@ -283,7 +282,7 @@ function getOperationalNextStep(status: string, viewAs: 'buyer' | 'seller') {
     },
   }
 
-  return nextStep[status]?.[viewAs] ?? 'Revisa la linea de estado para identificar el siguiente paso operativo.'
+  return nextStep[status]?.[viewAs] ?? 'Revisa la linea de estado para identificar el siguiente paso.'
 }
 
 function getTxUnreadCount(thread: DashThread, currentUserId: string) {
@@ -476,8 +475,8 @@ function DisputeModal({
           >
             <Shield size={13} className="text-[#f97316] mt-0.5 flex-shrink-0" />
             <p className="text-[11px] text-[#a0a0a0] leading-relaxed">
-              Al abrir una disputa, los fondos en escrow quedan{' '}
-              <span className="text-[#f2f2f2]">retenidos hasta la resolución</span>. El equipo de Turpial
+              Al abrir una disputa, el dinero protegido queda{' '}
+              <span className="text-[#f2f2f2]">retenido hasta la resolucion</span>. El equipo de Turpial
               Market revisará el caso en <span className="text-[#f2f2f2]">24–48 horas</span>.
             </p>
           </div>
@@ -650,7 +649,7 @@ function TxCard({
           <div className="mt-2 flex items-center gap-1.5">
             <Shield size={9} className="text-[#00aeef]" />
             <span className="text-[9px] text-[#5a5a5a]">
-              Liberación automática: {fmtDate(tx.escrowReleaseAt)}
+              Fecha estimada de cierre: {fmtDate(tx.escrowReleaseAt)}
             </span>
           </div>
         )}
@@ -691,7 +690,7 @@ function TxCard({
             style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)' }}
           >
             <p className="text-[11px] font-medium text-[#f59e0b]">
-              Pendiente de datos de cobro para liberar payout al vendedor.
+              Pendiente de datos de cobro para pagar al vendedor.
             </p>
           </div>
         )}
@@ -1341,7 +1340,7 @@ function TransactionDetailModal({
             <PayoutDetailRow label="Referencia" value={tx.paymentReference ?? 'Sin referencia reportada'} />
             <PayoutDetailRow label="Banco emisor" value={tx.paymentSenderBank ?? 'Sin banco reportado'} />
             <PayoutDetailRow label="Fecha de pago" value={tx.paymentPaidAt ? fmtDate(tx.paymentPaidAt) : 'Sin fecha reportada'} />
-            <PayoutDetailRow label="Liberacion estimada" value={tx.escrowReleaseAt ? fmtDate(tx.escrowReleaseAt) : 'Aun sin fecha de liberacion'} />
+            <PayoutDetailRow label="Fecha estimada de cierre" value={tx.escrowReleaseAt ? fmtDate(tx.escrowReleaseAt) : 'Aun sin fecha estimada'} />
             <PayoutDetailRow label="Siguiente paso" value={getOperationalNextStep(tx.status, viewAs)} />
           </div>
 
@@ -1614,20 +1613,21 @@ export function DashboardClient({
   const releasedSales = sales.filter(tx => tx.status === 'RELEASED')
   const payoutRelevantSales = sales.filter(tx => ['IN_ESCROW', 'DELIVERY_CONFIRMED', 'RELEASED'].includes(tx.status))
   const payoutReadySales = sales.filter(tx => tx.status === 'RELEASED')
-  const operationalSold = payoutRelevantSales.reduce((sum, tx) => sum + Number(tx.amount ?? 0), 0)
   const operationalBankFees = payoutRelevantSales.reduce((sum, tx) => sum + (tx.paymentMethod === 'MERCANTIL_PAGO_MOVIL' ? getTxExtraFee(tx) : 0), 0)
   const operationalBinanceFees = payoutRelevantSales.reduce((sum, tx) => sum + (tx.paymentMethod === 'CRYPTO_WALLET_MANUAL' ? getTxExtraFee(tx) : 0), 0)
   const operationalCommissions = payoutRelevantSales.reduce((sum, tx) => sum + getTxBasePlatformFee(tx), 0)
   const operationalTotalFees = payoutRelevantSales.reduce((sum, tx) => sum + getTxTotalFee(tx), 0)
   const operationalSellerNet = payoutRelevantSales.reduce((sum, tx) => sum + Number(tx.sellerNetAmount ?? 0), 0)
+  const pendingValidationNet = pendingValidationSales.reduce((sum, tx) => sum + Number(tx.sellerNetAmount ?? 0), 0)
+  const protectedInProcessNet = escrowSales.reduce((sum, tx) => sum + Number(tx.sellerNetAmount ?? 0), 0)
   const payoutReadyNet = payoutReadySales.reduce((sum, tx) => sum + Number(tx.sellerNetAmount ?? 0), 0)
   const sellerNeedsPayoutProfile = profile?.isSeller && payoutMethods.length === 0 && payoutRelevantSales.length > 0
   const sellerHasCommissionExemption = profile?.role === 'SOCIO' || profile?.role === 'SUPER'
   const commissionLabel = sellerHasCommissionExemption ? 'Comision plataforma' : 'Comision 5%'
   const commissionSub = sellerHasCommissionExemption ? 'exenta por rol actual' : 'base plataforma'
   const commissionCopy = sellerHasCommissionExemption
-    ? 'Comision base plataforma: exenta por rol actual. Comision adicional pago movil / transferencia: 0.03%. Comision adicional Binance: $0.06.'
-    : 'Comision base plataforma: 5%. Comision adicional pago movil / transferencia: 0.03%. Comision adicional Binance: $0.06.'
+    ? 'Comision base plataforma: exenta por rol actual. Cargo adicional pago movil / transferencia: 0.03%. Cargo adicional Binance: $0.06.'
+    : 'Comision base plataforma: 5%. Cargo adicional pago movil / transferencia: 0.03%. Cargo adicional Binance: $0.06.'
 
   const counts: Record<Tab, number> = {
     my_store:  myListings.length,
@@ -1813,7 +1813,7 @@ export function DashboardClient({
       </div>
 
       {/* Content */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+      <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 space-y-5">
 
         {/* Profile + KPIs */}
         <ProfileHeader
@@ -1917,9 +1917,9 @@ export function DashboardClient({
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-[#f2f2f2]">Completa tus datos de cobro para poder recibir la liberacion del escrow</p>
+                      <p className="text-sm font-semibold text-[#f2f2f2]">Completa tus datos de cobro para poder recibir pagos de ventas</p>
                       <p className="mt-1 text-xs text-[#a0a0a0]">
-                        Ya tienes transacciones en escrow o payout pendiente. Sin este paso no se puede completar el pago al vendedor.
+                        Ya tienes ventas en proceso o listas para cobrar. Sin este paso no se puede completar el pago al vendedor.
                       </p>
                     </div>
                     <button
@@ -2156,23 +2156,27 @@ export function DashboardClient({
                     <p className="text-[10px] font-semibold uppercase tracking-normal text-[#00aeef]">Cobros del vendedor</p>
                     <h2 className="mt-2 text-2xl font-semibold leading-tight text-[#f2f2f2]">Estado claro de tus ventas y cobros</h2>
                     <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#a0a0a0]">
-                      Separamos lo que esta en revision, lo que sigue en aprobacion y el monto que ya esta disponible para cobrar.
+                      Separamos pagos en revision, ventas en proceso y dinero listo para cobrar para que sepas que accion corresponde.
                     </p>
                   </div>
 
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                     {[
-                      { label: 'En revision', value: pendingValidationSales.length, color: '#f59e0b' },
-                      { label: 'En aprobacion', value: escrowSales.length, color: '#00aeef' },
-                      { label: 'Listo para cobrar', value: releasedSales.length, color: '#4ade80' },
+                      { label: 'En revision', value: pendingValidationSales.length, amount: fmtUSD(pendingValidationNet), helper: 'pagos reportados', color: '#f59e0b' },
+                      { label: 'En proceso', value: escrowSales.length, amount: fmtUSD(protectedInProcessNet), helper: 'ventas aprobadas', color: '#00aeef' },
+                      { label: 'Listo para cobrar', value: releasedSales.length, amount: fmtUSD(payoutReadyNet), helper: 'disponible ahora', color: '#4ade80' },
                     ].map(item => (
                       <div
                         key={item.label}
-                        className="min-w-0 rounded-xl px-3 py-3 text-center"
+                        className="min-w-0 rounded-xl px-3 py-3 text-left"
                         style={{ background: 'rgba(255,255,255,0.035)', border: `1px solid ${item.color}24` }}
                       >
-                        <p className="text-2xl font-semibold leading-none text-[#f2f2f2] tabular-nums">{item.value}</p>
-                        <p className="mt-2 text-[10px] font-medium leading-tight text-[#8a8a8a]">{item.label}</p>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[10px] font-medium leading-tight text-[#8a8a8a]">{item.label}</p>
+                          <p className="text-xl font-semibold leading-none text-[#f2f2f2] tabular-nums">{item.value}</p>
+                        </div>
+                        <p className="mt-2 text-sm font-semibold text-[#f2f2f2] tabular-nums">{item.amount}</p>
+                        <p className="mt-1 text-[10px] leading-tight text-[#6f6f6f]">{item.helper}</p>
                       </div>
                     ))}
                   </div>
@@ -2180,9 +2184,9 @@ export function DashboardClient({
               </div>
 
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <KpiCard icon={CircleDollarSign} label="Ventas realizadas" value={fmtUSD(operationalSold)} sub={`${payoutRelevantSales.length} en proceso o ya aprobadas`} accent="#4ade80" tone="primary" />
-                <KpiCard icon={Wallet} label="Ganancia estimada" value={fmtUSD(operationalSellerNet)} sub={`incluye cargos por ${fmtUSD(operationalTotalFees)}`} accent="#00aeef" tone="primary" />
-                <KpiCard icon={Landmark} label="Disponible para cobrar" value={fmtUSD(payoutReadyNet)} sub={`${releasedSales.length} venta${releasedSales.length !== 1 ? 's' : ''} lista${releasedSales.length !== 1 ? 's' : ''}`} accent="#a78bfa" tone="primary" />
+                <KpiCard icon={Clock} label="Monto en revision" value={fmtUSD(pendingValidationNet)} sub={`${pendingValidationSales.length} pago${pendingValidationSales.length !== 1 ? 's' : ''} por revisar`} accent="#f59e0b" tone="primary" />
+                <KpiCard icon={Shield} label="Monto en proceso" value={fmtUSD(protectedInProcessNet)} sub={`${escrowSales.length} venta${escrowSales.length !== 1 ? 's' : ''} aprobada${escrowSales.length !== 1 ? 's' : ''}`} accent="#00aeef" tone="primary" />
+                <KpiCard icon={Landmark} label="Listo para cobrar" value={fmtUSD(payoutReadyNet)} sub={`${releasedSales.length} venta${releasedSales.length !== 1 ? 's' : ''} disponible${releasedSales.length !== 1 ? 's' : ''}`} accent="#4ade80" tone="primary" />
               </div>
 
               <div
@@ -2191,10 +2195,10 @@ export function DashboardClient({
               >
                 <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
                   <div>
-                    <h3 className="text-sm font-semibold text-[#f2f2f2]">Desglose de comisiones y cargos</h3>
-                    <p className="mt-1 text-xs text-[#6f6f6f]">Detalle separado del monto principal para que la lectura financiera sea directa.</p>
+                    <h3 className="text-sm font-semibold text-[#f2f2f2]">Cargos y comisiones</h3>
+                    <p className="mt-1 text-xs text-[#6f6f6f]">Informacion secundaria para entender como se calcula el monto estimado.</p>
                   </div>
-                  <p className="text-xs font-semibold text-[#a0a0a0]">Total cargos: <span className="text-[#f2f2f2]">{fmtUSD(operationalTotalFees)}</span></p>
+                  <p className="text-xs font-semibold text-[#a0a0a0]">Total descontado: <span className="text-[#f2f2f2]">{fmtUSD(operationalTotalFees)}</span></p>
                 </div>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
                   <KpiCard icon={CreditCard} label={commissionLabel} value={fmtUSD(operationalCommissions)} sub={commissionSub} accent="#f59e0b" tone="compact" />
@@ -2216,7 +2220,7 @@ export function DashboardClient({
                     <div className="min-w-0">
                       <h3 className="text-sm font-semibold text-[#f2f2f2]">Datos de cobro del vendedor</h3>
                       <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#8a8a8a]">
-                        Tu ganancia estimada incluye ventas en proceso y ventas ya aprobadas; solo lo disponible para cobrar puede pagarse ahora.
+                        Tus datos de cobro se usan solo cuando una venta queda lista para pago al vendedor.
                       </p>
                     </div>
                     <span
@@ -2242,7 +2246,7 @@ export function DashboardClient({
                         className="rounded-xl p-3 text-xs leading-relaxed"
                         style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)', color: '#f5d08a' }}
                       >
-                        Completa tus datos de cobro para poder recibir la liberacion del escrow. Ya tienes transacciones operativas que dependen de este paso.
+                        Completa tus datos de cobro para poder recibir pagos de ventas. Ya tienes ventas en proceso o listas para cobrar que dependen de este paso.
                       </div>
 
                       <div className="grid gap-3 sm:grid-cols-2">
@@ -2323,7 +2327,7 @@ export function DashboardClient({
                         className="rounded-xl p-3 text-xs leading-relaxed"
                         style={{ background: 'rgba(0,174,239,0.04)', border: '1px solid rgba(0,174,239,0.1)', color: '#a0a0a0' }}
                       >
-                        {commissionCopy} Neto operativo acumulado: <span className="text-[#f2f2f2]">{fmtUSD(operationalSellerNet)}</span>. Total listo para recibir hoy: <span className="text-[#f2f2f2]">{fmtUSD(payoutReadyNet)}</span>.
+                        {commissionCopy} Monto estimado despues de cargos: <span className="text-[#f2f2f2]">{fmtUSD(operationalSellerNet)}</span>. Disponible para cobrar ahora: <span className="text-[#f2f2f2]">{fmtUSD(payoutReadyNet)}</span>.
                       </div>
 
                       <button
@@ -2341,14 +2345,14 @@ export function DashboardClient({
                       className="rounded-xl p-4 text-sm"
                       style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#a0a0a0' }}
                     >
-                      Aun no necesitas registrar datos de cobro. Esta solicitud aparecera cuando una transaccion entre en escrow activo o quede lista para payout.
+                      Aun no necesitas registrar datos de cobro. Esta solicitud aparecera cuando una venta entre en proceso o quede lista para cobrar.
                     </div>
                   ) : (
                     <div
                       className="rounded-xl p-3 text-xs leading-relaxed"
                       style={{ background: 'rgba(0,174,239,0.04)', border: '1px solid rgba(0,174,239,0.1)', color: '#a0a0a0' }}
                     >
-                      Tus datos de cobro ya estan configurados. El equipo operativo los usara solo cuando una venta quede RELEASED y lista para payout manual.
+                      Tus datos de cobro ya estan configurados. El equipo los usara solo cuando una venta quede lista para pago al vendedor.
                     </div>
                   )}
                 </div>
@@ -2358,22 +2362,22 @@ export function DashboardClient({
                     className="rounded-2xl p-4"
                     style={{ background: 'rgba(13,13,13,0.9)', border: '1px solid rgba(255,255,255,0.06)' }}
                   >
-                    <h3 className="text-sm font-semibold text-[#f2f2f2]">Resumen operativo</h3>
+                    <h3 className="text-sm font-semibold text-[#f2f2f2]">Resumen de cobros</h3>
                     <div className="mt-3 space-y-3 text-xs">
                       <div className="flex items-center justify-between text-[#a0a0a0]">
                         <span>Validaciones pendientes</span>
                         <span className="text-[#f2f2f2]">{pendingValidationSales.length}</span>
                       </div>
                       <div className="flex items-center justify-between text-[#a0a0a0]">
-                        <span>Escrow activo</span>
+                        <span>Ventas en proceso</span>
                         <span className="text-[#f2f2f2]">{escrowSales.length}</span>
                       </div>
                       <div className="flex items-center justify-between text-[#a0a0a0]">
-                        <span>Listos para payout</span>
+                        <span>Listas para cobrar</span>
                         <span className="text-[#f2f2f2]">{releasedSales.length}</span>
                       </div>
                       <div className="flex items-center justify-between text-[#a0a0a0]">
-                        <span>Total a recibir</span>
+                        <span>Disponible para cobrar</span>
                         <span className="font-semibold text-[#00aeef]">{fmtUSD(payoutReadyNet)}</span>
                       </div>
                     </div>
@@ -2385,7 +2389,7 @@ export function DashboardClient({
                       <EmptyState
                         icon={Wallet}
                         title="Sin datos de cobro"
-                        sub="Registra un metodo para poder recibir los fondos liberados del escrow."
+                        sub="Registra un metodo para poder recibir ventas listas para cobrar."
                       />
                     ) : (
                       payoutMethods.map(method => (
