@@ -6,6 +6,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const routes = [
     { url: base, priority: 1.0, changeFrequency: 'weekly' as const },
+    { url: `${base}/marketplace`, priority: 0.9, changeFrequency: 'daily' as const },
     { url: `${base}/salas-de-ensayo`, priority: 0.9, changeFrequency: 'monthly' as const },
     { url: `${base}/estudio-de-grabacion`, priority: 0.9, changeFrequency: 'monthly' as const },
     { url: `${base}/produccion-musical`, priority: 0.9, changeFrequency: 'monthly' as const },
