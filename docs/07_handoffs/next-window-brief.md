@@ -225,3 +225,40 @@ Actualiza Obsidian y handoff con los hallazgos residuales antes de abrir cualqui
   - SUPER pudo abrir el proof por proxy autenticado.
 - Dispatcher y runbook actualizados como metodo manual-preview validado.
 - Siguiente minimo: no reabrir proofs sensibles salvo regresion; resolver cualquier nuevo frente primero por `qa-dispatcher.json`.
+
+## Checkpoint 2026-04-24 - Git y siguiente frente
+
+- Commits de cierre creados y pusheados.
+- Rama vigente: `UI-UX-finalV3`.
+- Siguiente frente: preview fresco + regresion corta.
+- La regresion corta debe salir primero del dispatcher; si no existe `task_id` exacto, reportar `GAP OPERATIVO`.
+- Mantener prohibidos CDP improvisado, server actions reverse engineered y HTTP ad hoc.
+
+## Actualizacion 2026-04-24 - Glosario UX marketplace
+
+- El lenguaje visible del marketplace quedo simplificado para publico general.
+- Seller Cobros y Admin Pagos usan terminos humanos para ventas, cobros, pagos, comisiones y estados.
+- Existe glosario formal en `docs/marketplace/05_GLOSARIO_DE_TERMINOS_UX.md`.
+- Futuras pantallas del marketplace deben seguir ese glosario para evitar jerga tecnica o interna en UI.
+- No se tocaron booking, `/reservas`, enums ni logica de negocio.
+
+## Actualizacion 2026-04-24 - Seller Cobros UI premium
+
+- Seller Cobros quedo refactorizado visualmente sin cambios de negocio.
+- Se amplio el ancho util del dashboard, se estabilizaron tabs, se separaron KPIs principales de comisiones/cargos y se agrego una lectura clara de: en revision, en aprobacion y listo para cobrar.
+- El bloque de datos de cobro y el resumen ahora se leen como superficie financiera funcional, no como tarjetas apretadas.
+- Admin Pagos no fue tocado.
+- Validacion tecnica cerrada: `npx tsc --noEmit` limpio y `npm run build` limpio.
+
+## Checkpoint inmediato 2026-04-25 - post commit Seller Cobros
+
+- Ultimo commit: `9d44def style(marketplace): polish seller payouts dashboard`.
+- Alcance del commit: solo `components/marketplace/dashboard/DashboardClient.tsx` con polish visual staged de Seller Cobros.
+- Push: pendiente.
+- Build/QA post-commit: pendientes por instruccion explicita; no ejecutar en loop.
+- Worktree: no limpio; quedan cambios unstaged/untracked fuera del commit.
+- Stash existente: `stash@{0}: On UI-UX-finalV3: pre-seller-cobros-polish-unstaged`.
+- Patch temporal existente: `.tmp-seller-cobros-polish-staged.patch`.
+- No limpiar, no aplicar stash, no borrar patch, no borrar `.tmp-preview-dev.log` y no hacer push sin instruccion explicita.
+- Booking y `/reservas`: no tocados.
+- Siguiente accion recomendada: limpieza controlada del worktree, clasificando primero cambios a conservar, basura temporal eliminable y decision sobre stash viejo.

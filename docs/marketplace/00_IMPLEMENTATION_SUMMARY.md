@@ -1,6 +1,6 @@
 # MARKETPLACE - RESUMEN DE IMPLEMENTACION
 
-**Actualizado:** 2026-04-19
+**Actualizado:** 2026-04-23
 **Estado general:** Funcional en modo real sobre Neon/PostgreSQL
 **Separacion:** El dominio `Mp*` del marketplace sigue aislado del sistema de booking
 **Fuente viva de trazabilidad:** `docs/obsidian-vault/*`
@@ -120,10 +120,12 @@ Modelos clave:
 | Pasarelas Mercantil | Diferido hasta credenciales y sprint posterior |
 | Binance Pay | Diferido |
 | Cron T+7 auto-release | Pendiente |
-| Persistencia de imagenes | Pendiente decision practica |
+| Persistencia de imagenes | Implementada con Vercel Blob publico no-booking |
 | Base64 para comprobantes/imagenes | No debe seguir en produccion |
-| Storage productivo | Falta decidir entre S3, Cloudflare Images u otro proveedor |
+| Storage productivo | Vercel Blob no-booking; requiere `TS_WEB_BLOB_READ_WRITE_TOKEN` por entorno |
 | QA manual end-to-end del flujo de compra | Pendiente |
+
+Nota de ownership: el Blob/token de marketplace public images pertenece al dominio publico no-booking de Manuel, compartido con home/subpaginas si migran media publica. No debe usar `BLOB_READ_WRITE_TOKEN` generico ni el Blob/token de Jean para `/reservas`/booking. Los comprobantes de pago no van en este Blob publico.
 
 ---
 

@@ -299,3 +299,50 @@ No tocar:
   - SUPER pudo abrir el proof por proxy autenticado.
 - Dispatcher y runbook quedaron actualizados con la ruta manual-preview validada.
 - No se tocaron booking ni `/reservas`.
+
+## Checkpoint 2026-04-24 - continuidad post-commit/push
+
+- Commits de cierre creados y pusheados.
+- Rama vigente: `UI-UX-finalV3`.
+- `payment_proof_sensitive_preview` queda validado manualmente y no se reabre salvo regresion con evidencia.
+- Siguiente frente minimo: generar preview fresco y correr regresion corta por ruta despachada en `docs/07_handoffs/qa-dispatcher.json`.
+- No improvisar CDP, server actions reverse engineered ni HTTP ad hoc.
+- No tocar booking ni `/reservas`.
+
+## Actualizacion 2026-04-24 - Glosario UX marketplace
+
+- El lenguaje visible del marketplace fue simplificado para publico general en Venezuela.
+- Seller Cobros y Admin Pagos ya evitan jerga como escrow, payout, released, operativo, neto operativo, fee y unknown en el copy principal.
+- Los estados visibles del dashboard se normalizan como: Pago pendiente, Pago en revision, Venta en proceso de aprobacion y Lista para pagar.
+- Se creo el glosario formal `docs/marketplace/05_GLOSARIO_DE_TERMINOS_UX.md`.
+- Futuras pantallas del marketplace deben seguir ese glosario antes de introducir nuevos terminos visibles.
+- No se tocaron booking ni `/reservas`; no se cambiaron enums, estados internos ni logica de negocio.
+
+## Actualizacion 2026-04-24 - Refactor UI Seller Cobros
+
+- Seller Cobros recibio una pasada UI/UX acotada sobre `components/marketplace/dashboard/DashboardClient.tsx`.
+- Causa raiz visual corregida: el dashboard estaba limitado a `max-w-3xl`, los tabs competian en una sola fila estrecha y las metricas de cobro mezclaban montos principales con cargos tecnicos sin jerarquia clara.
+- Cambios aplicados: ancho util ampliado, tabbar en grilla estable, hero de estado de cobros, KPIs principales separados de comisiones/cargos, resumen de estado mas legible y datos de cobro con mejor lectura.
+- No se tocaron booking, `/reservas`, enums ni logica de negocio.
+- No se toco Admin Pagos.
+- `npx tsc --noEmit`: limpio.
+- `npm run build`: limpio.
+
+## Checkpoint 2026-04-25 - Seller Cobros polish commit sin push
+
+- Commit creado: `9d44def style(marketplace): polish seller payouts dashboard`.
+- El commit incluyo unicamente el polish staged de `components/marketplace/dashboard/DashboardClient.tsx`.
+- `git diff --cached --check` estaba sin errores antes del commit.
+- No se hizo push.
+- No se corrio `npm run build` despues del commit por instruccion explicita.
+- No se corrio QA despues del commit por instruccion explicita.
+- No se tocaron booking ni `/reservas`.
+- No se mataron procesos: no habia `Get-Job` activo ni procesos `node` recientes atribuibles a esta sesion.
+- El worktree sigue sucio con cambios unstaged/untracked fuera del commit, incluyendo docs, scripts, `.obsidian`, admin/actions, hunks no staged en `components/marketplace/dashboard/DashboardClient.tsx`, `.tmp-preview-dev.log` y `.tmp-seller-cobros-polish-staged.patch`.
+- Stash viejo intacto: `stash@{0}: On UI-UX-finalV3: pre-seller-cobros-polish-unstaged`.
+- Existe `.tmp-seller-cobros-polish-staged.patch` y no debe borrarse sin instruccion explicita.
+- No limpiar, no aplicar stash, no borrar patch, no borrar `.tmp-preview-dev.log` y no hacer push sin instruccion explicita.
+- Proximo paso recomendado: limpieza controlada del worktree separando:
+  - cambios que deben conservarse,
+  - basura temporal eliminable,
+  - stash viejo pendiente de decision.

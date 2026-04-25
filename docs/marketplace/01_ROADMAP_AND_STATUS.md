@@ -1,6 +1,6 @@
 # MARKETPLACE ROADMAP & STATUS
 
-**Actualizado:** 2026-04-19
+**Actualizado:** 2026-04-23
 **Estado:** Marketplace funcional en produccion tecnica
 **Scope:** Marketplace separado del booking
 **Fuente viva de seguimiento:** `docs/obsidian-vault/*`
@@ -23,7 +23,7 @@
 | Checkout | Completo en modo manual temporal |
 | Pasarelas automaticas | Diferidas |
 | Cron T+7 | Pendiente |
-| Upload de imagenes productivo | Pendiente |
+| Upload de imagenes productivo | Implementado con Vercel Blob publico no-booking; pendiente QA viva |
 | TypeScript | Limpio (`npx tsc --noEmit`) |
 
 ---
@@ -55,7 +55,7 @@ El proyecto entra en una etapa de estabilizacion del marketplace antes de integr
 - Cobro automatico por Mercantil
 - Cobro automatico por Binance
 - Webhooks de pago reales en produccion
-- Storage productivo para comprobantes
+- Storage sensible para comprobantes separado del Blob publico no-booking
 
 ---
 
@@ -72,7 +72,7 @@ El proyecto entra en una etapa de estabilizacion del marketplace antes de integr
 ### Aun no cumplido
 
 - QA manual integral buyer -> admin -> escrow -> release
-- Decidir storage productivo de imagenes/comprobantes
+- Configurar y validar Vercel Blob no-booking con `TS_WEB_BLOB_READ_WRITE_TOKEN`
 - Implementar cron T+7
 - Definir roadmap real de pasarelas
 
@@ -103,7 +103,7 @@ El proyecto entra en una etapa de estabilizacion del marketplace antes de integr
 **Estado:** Pendiente
 
 - cron T+7
-- storage de imagenes/comprobantes
+- QA viva de storage de imagenes/comprobantes
 - endurecimiento operativo
 
 ### Fase D - Pasarelas
@@ -120,8 +120,8 @@ El proyecto entra en una etapa de estabilizacion del marketplace antes de integr
 
 | Item | Tipo | Estado |
 |---|---|---|
-| Storage de imagenes | Decision tecnica | Abierto |
-| Base64 en produccion | Riesgo tecnico | Debe eliminarse |
+| Storage de imagenes | Decision tecnica | Vercel Blob no-booking implementado |
+| Base64 en produccion | Riesgo tecnico | Fuera del flujo productivo |
 | Credenciales Mercantil | Externo | No disponibles |
 | Decision Binance | Producto/negocio | Diferida |
 | Cron T+7 | Infraestructura | Pendiente |
@@ -137,3 +137,12 @@ Desde esta fecha:
 - `docs/obsidian-vault/` es la fuente de trazabilidad viva del proyecto.
 
 Todo cambio operativo, bloqueo o decision practica debe reflejarse primero en Obsidian y luego consolidarse aqui si cambia el estado tecnico del sistema.
+
+## Regla de storage/media
+
+- DB compartida con el equipo: si.
+- Blob/token compartido con booking/reservas: no.
+- Jean mantiene ownership de `/reservas` y booking con su propio Blob/token.
+- Manuel mantiene ownership de home, subpaginas, marketplace y frontend publico no-booking.
+- Media publica no-booking usa `TS_WEB_BLOB_READ_WRITE_TOKEN`.
+- Comprobantes sensibles del marketplace no usan esa capa publica; requieren storage sensible dedicado o proxy autenticado.

@@ -406,3 +406,47 @@ Este archivo registra los bloqueos y riesgos operativos activos del marketplace 
   - SUPER pudo abrir el comprobante por proxy autenticado.
 - **Impacto**: Cierra el riesgo abierto de proofs nuevos expuestos en Blob publico para este smoke.
 - **Accion inmediata**: Mantener `payment-proof` fuera del Blob publico no-booking. No reabrir este frente salvo regresion con evidencia.
+
+## 17. Checkpoint Git y proximo frente
+
+- **Fecha**: 2026-04-24
+- **Estado Git**: Commits de cierre creados y pusheados.
+- **Rama vigente**: `UI-UX-finalV3`.
+- **Estado QA inmediato**: `payment_proof_sensitive_preview` validado manualmente; no reabrir salvo regresion con evidencia.
+- **Siguiente frente**: preview fresco + regresion corta.
+- **Regla de ejecucion**: La regresion corta debe salir primero de `docs/07_handoffs/qa-dispatcher.json`; si no existe `task_id` exacto, detenerse y reportar `GAP OPERATIVO`.
+
+## 18. Lenguaje UX marketplace normalizado
+
+- **Fecha**: 2026-04-24
+- **Estado real**: Resuelto para Seller Cobros y Admin Pagos.
+- **Descripcion**: El copy visible del marketplace fue simplificado para publico general en Venezuela. Se reemplazo jerga tecnica o interna como escrow, payout, released, operativo, neto operativo, fee y unknown por terminos humanos.
+- **Superficies ajustadas**:
+  - Seller Cobros: ventas realizadas, ganancia estimada, disponible para cobrar, cobros listos.
+  - Admin Pagos: pagos pendientes a vendedores, listo para pagar, comisiones y cargos, monto final a pagar, metodo de cobro no configurado.
+- **Glosario formal**: `docs/marketplace/05_GLOSARIO_DE_TERMINOS_UX.md`.
+- **Regla futura**: Toda pantalla nueva del marketplace debe seguir el glosario antes de introducir terminos visibles.
+- **Restricciones respetadas**: No se tocaron booking, `/reservas`, enums, estados internos ni logica de negocio.
+
+## 19. Seller Cobros con debilidad visual y baja jerarquia financiera
+
+- **Fecha**: 2026-04-24
+- **Estado real**: Resuelto a nivel UI/UX y validado tecnicamente.
+- **Descripcion**: Seller Cobros desaprovechaba el viewport, tenia tabs apretados, jerarquia debil entre KPIs principales y cargos, y el bloque de datos/resumen no explicaba con suficiente claridad que estaba en revision y que ya estaba listo para cobrar.
+- **Causa raiz**: Contenedor `max-w-3xl` demasiado estrecho para dashboard financiero, tabbar flex en una sola fila, y KPIs de distinto peso visual tratados como tarjetas equivalentes.
+- **Cambio aplicado**: Ancho util ampliado, tabbar en grilla responsive, encabezado de estado de cobros, KPIs principales separados de comisiones/cargos, resumen mas claro y metodo de cobro con valores legibles.
+- **Validacion**: `npx tsc --noEmit` limpio; `npm run build` limpio.
+- **Restricciones respetadas**: No se tocaron booking, `/reservas`, Admin Pagos, enums ni logica de negocio.
+
+### 19.1 Checkpoint post-commit sin push
+
+- **Fecha**: 2026-04-25
+- **Commit**: `9d44def style(marketplace): polish seller payouts dashboard`
+- **Alcance del commit**: solo `components/marketplace/dashboard/DashboardClient.tsx`.
+- **Estado de push**: pendiente.
+- **Build/QA post-commit**: pendientes por instruccion explicita; no se corrieron despues del commit.
+- **Worktree**: sucio; quedan cambios unstaged/untracked fuera del commit.
+- **Stash**: `stash@{0}: On UI-UX-finalV3: pre-seller-cobros-polish-unstaged` sigue intacto.
+- **Temporales pendientes**: existe `.tmp-seller-cobros-polish-staged.patch`; tambien existe `.tmp-preview-dev.log`.
+- **Regla**: no limpiar, no aplicar stash, no borrar patch ni logs temporales sin instruccion explicita.
+- **Siguiente accion**: limpieza controlada del worktree clasificando cambios a conservar, basura temporal eliminable y decision sobre stash viejo.
