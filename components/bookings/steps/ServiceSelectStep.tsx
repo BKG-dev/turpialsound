@@ -30,56 +30,51 @@ export function ServiceSelectStep({ selected, onChange }: ServiceSelectStepProps
               type="button"
               onClick={() => onChange(service.slug)}
               className={cn(
-                'flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors duration-200 md:min-h-[7rem] md:flex-col md:items-start md:gap-0 md:px-3.5 md:py-2.5',
+                'relative flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors duration-200 md:min-h-[7rem] md:flex-col md:items-start md:gap-0 md:px-3.5 md:py-2.5',
                 isSelected
                   ? 'border-accent-gold bg-accent-gold/5 text-text-primary'
                   : 'border-brand-border bg-brand-surface text-text-secondary hover:border-accent-gold/40 hover:text-text-primary',
               )}
               aria-pressed={isSelected}
             >
-              <div className="flex w-full items-center gap-3 md:hidden">
-                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent-cyan/35 bg-accent-cyan/10 text-xs font-semibold text-accent-cyan">
+              <div className="flex w-full items-start gap-2.5 md:hidden">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-accent-cyan/35 bg-accent-cyan/10 text-[11px] font-semibold text-accent-cyan">
                   {iconLabel}
                 </span>
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-display text-[13px] font-semibold text-text-primary">
+                  <p className="pr-5 font-display text-[13px] font-semibold leading-tight text-text-primary">
                     {service.name}
                   </p>
-                  <p className="mt-0.5 line-clamp-1 text-[11px] leading-snug text-text-secondary">
-                    {service.description}
-                  </p>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-2">
-                  {startingPriceUsd !== null && (
-                    <span className="text-[11px] font-medium text-accent-gold">
-                      Desde {startingPriceUsd} USD
-                    </span>
-                  )}
-                  <span
-                    className={cn(
-                      'inline-flex h-5 w-5 items-center justify-center rounded-full border',
-                      isSelected
-                        ? 'border-accent-gold bg-accent-gold text-brand-bg'
-                        : 'border-brand-border bg-transparent',
+                  <div className="mt-0.5 flex items-end justify-between gap-2">
+                    <p className="line-clamp-2 text-[11px] leading-snug text-text-secondary">
+                      {service.description}
+                    </p>
+                    {startingPriceUsd !== null && (
+                      <span className="shrink-0 whitespace-nowrap text-[11px] font-medium text-accent-gold">
+                        Desde {startingPriceUsd} USD
+                      </span>
                     )}
-                    aria-hidden="true"
-                  >
-                    {isSelected && (
-                      <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none">
-                        <path
-                          d="M2 6l3 3 5-5"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    )}
-                  </span>
+                  </div>
                 </div>
               </div>
+
+              {isSelected && (
+                <span
+                  className="absolute right-2 top-2 inline-flex h-4.5 w-4.5 items-center justify-center rounded-full bg-accent-gold text-brand-bg md:hidden"
+                  aria-hidden="true"
+                >
+                  <svg className="h-2.5 w-2.5" viewBox="0 0 12 12" fill="none">
+                    <path
+                      d="M2 6l3 3 5-5"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+              )}
 
               <div className="hidden md:flex md:w-full md:flex-col md:items-start">
                 <span
