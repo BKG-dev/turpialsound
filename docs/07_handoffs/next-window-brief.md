@@ -262,3 +262,34 @@ Actualiza Obsidian y handoff con los hallazgos residuales antes de abrir cualqui
 - No limpiar, no aplicar stash, no borrar patch, no borrar `.tmp-preview-dev.log` y no hacer push sin instruccion explicita.
 - Booking y `/reservas`: no tocados.
 - Siguiente accion recomendada: limpieza controlada del worktree, clasificando primero cambios a conservar, basura temporal eliminable y decision sobre stash viejo.
+
+## Checkpoint 2026-04-25 - Seller Dashboard UX cerrado
+
+- Ultimo commit cerrado: `21bb346 style(marketplace): clarify seller dashboard payouts UX`.
+- Archivos del commit:
+  - `components/marketplace/dashboard/DashboardClient.tsx`
+  - `docs/marketplace/05_GLOSARIO_DE_TERMINOS_UX.md`
+- Estado actual:
+  - glosario UX creado;
+  - Seller Cobros elimina jerga visible como escrow, payout, RELEASED y neto operativo;
+  - Cobros separa dinero en revision, dinero en proceso, listo para cobrar y datos de cobro;
+  - layout seller aprovecha mejor desktop con `max-w-6xl`;
+  - mobile-first queda preservado;
+  - no hubo cambios de calculos ni logica de negocio.
+- Validacion:
+  - `npx tsc --noEmit`: limpio.
+  - `npm run build`: limpio.
+  - `git status --short` final: limpio.
+- No se toco AdminDashboard, booking, `/reservas`, Prisma/runtime/db/env, APIs/actions ni Blob/storage/paymentProofUrl/proxy SUPER.
+- Push: pendiente; no realizado.
+
+## Siguiente accion recomendada
+
+1. Admin dashboard: alinear lenguaje operacional/financiero con el glosario, sin tocar logica ni calculos.
+2. Luego SEO/AEO del marketplace publico.
+3. Luego disenar el cierre final de payout/pago al vendedor; no implementarlo sin aprobar DB/schema.
+
+Reglas de continuidad:
+- No tocar runtime/Prisma/env sin tarea explicita.
+- No aplicar ni borrar stashes sin inspeccion.
+- No mezclar Admin + SEO + payout final en una sola tarea.

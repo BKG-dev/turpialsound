@@ -450,3 +450,18 @@ Este archivo registra los bloqueos y riesgos operativos activos del marketplace 
 - **Temporales pendientes**: existe `.tmp-seller-cobros-polish-staged.patch`; tambien existe `.tmp-preview-dev.log`.
 - **Regla**: no limpiar, no aplicar stash, no borrar patch ni logs temporales sin instruccion explicita.
 - **Siguiente accion**: limpieza controlada del worktree clasificando cambios a conservar, basura temporal eliminable y decision sobre stash viejo.
+
+## 20. Checkpoint Seller Dashboard + Glosario UX
+
+- **Fecha**: 2026-04-25
+- **Estado real**: Cerrado y validado tecnicamente.
+- **Commit**: `21bb346 style(marketplace): clarify seller dashboard payouts UX`
+- **Archivos**:
+  - `components/marketplace/dashboard/DashboardClient.tsx`
+  - `docs/marketplace/05_GLOSARIO_DE_TERMINOS_UX.md`
+- **Descripcion**: Seller Cobros quedo alineado con lenguaje de usuario final y con el glosario UX. El vendedor ahora ve montos por etapa: `Monto en revision`, `Monto en proceso`, `Listo para cobrar` y `Datos de cobro`.
+- **Impacto**: Reduce confusion financiera y operacional sin tocar calculos ni logica de negocio. El dashboard seller aprovecha mejor desktop con `max-w-6xl` y mantiene lectura mobile-first.
+- **Validacion**: `npx tsc --noEmit` limpio; `npm run build` limpio; `git status --short` final limpio.
+- **Restricciones respetadas**: No se tocaron AdminDashboard, booking, `/reservas`, Prisma/runtime/db/env, APIs/actions ni Blob/storage/paymentProofUrl/proxy SUPER.
+- **Riesgo activo**: No mezclar la siguiente pasada de Admin dashboard con SEO/AEO ni con cierre final de payout. No tocar runtime/Prisma/env ni stashes sin instruccion explicita.
+- **Accion inmediata recomendada**: Admin dashboard, solo para alinear lenguaje operacional/financiero con el glosario y sin tocar logica ni calculos.

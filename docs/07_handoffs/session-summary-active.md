@@ -346,3 +346,41 @@ No tocar:
   - cambios que deben conservarse,
   - basura temporal eliminable,
   - stash viejo pendiente de decision.
+
+## Checkpoint 2026-04-25 - Seller Dashboard + Glosario UX cerrado
+
+- Commit creado: `21bb346 style(marketplace): clarify seller dashboard payouts UX`.
+- Alcance del commit:
+  - `components/marketplace/dashboard/DashboardClient.tsx`
+  - `docs/marketplace/05_GLOSARIO_DE_TERMINOS_UX.md`
+- Estado final registrado:
+  - glosario UX creado en `docs/marketplace/05_GLOSARIO_DE_TERMINOS_UX.md`;
+  - Seller Dashboard/Cobros usa lenguaje mas humano para vendedor;
+  - jerga interna eliminada del frente seller: escrow, payout, RELEASED y neto operativo;
+  - Cobros separa `Monto en revision`, `Monto en proceso`, `Listo para cobrar` y `Datos de cobro`;
+  - contenedor seller ampliado para desktop con `max-w-6xl`;
+  - mobile-first preservado;
+  - no se cambiaron calculos ni logica de negocio.
+- Validacion cerrada:
+  - `npx tsc --noEmit`: limpio.
+  - `npm run build`: limpio.
+  - `git status --short` final: limpio.
+- No se toco:
+  - AdminDashboard;
+  - booking;
+  - `/reservas`;
+  - Prisma/runtime/db/env;
+  - APIs/actions;
+  - Blob/storage/paymentProofUrl/proxy SUPER.
+- Push: no realizado.
+
+## Continuidad recomendada post `21bb346`
+
+1. Siguiente frente recomendado: Admin dashboard, alineando lenguaje operacional/financiero con el glosario sin tocar logica ni calculos.
+2. Despues: SEO/AEO del marketplace publico.
+3. Despues: disenar el cierre final de payout/pago al vendedor solo como diseno, porque implementarlo tocaria DB/schema.
+
+Riesgos activos:
+- No volver a tocar runtime/Prisma/env sin tarea explicita.
+- No aplicar ni borrar stashes sin inspeccion y autorizacion.
+- No mezclar Admin + SEO + payout final en una sola tarea.
