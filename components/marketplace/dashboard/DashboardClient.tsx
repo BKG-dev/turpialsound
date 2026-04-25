@@ -345,6 +345,7 @@ function KpiCard({
   sub,
   accent = '#00aeef',
   onClick,
+  tone = 'default',
 }: {
   icon: LucideIcon
   label: string
@@ -352,6 +353,7 @@ function KpiCard({
   sub?: string
   accent?: string
   onClick?: () => void
+  tone?: 'default' | 'primary' | 'compact'
 }) {
   return (
     <div
@@ -360,19 +362,18 @@ function KpiCard({
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick() } : undefined}
       className={cn(
-        "rounded-2xl p-4 flex flex-col gap-2 relative overflow-hidden",
+        "rounded-2xl flex min-w-0 flex-col justify-between gap-4 relative overflow-hidden",
+        tone === 'primary' ? "p-5 min-h-[148px]" : tone === 'compact' ? "p-4 min-h-[118px]" : "p-4 min-h-[132px]",
         onClick && "cursor-pointer transition-all duration-200 hover:ring-1 ring-[#00aeef] hover:brightness-110 active:scale-[0.98]",
       )}
       style={{
-        background: 'rgba(13,13,13,0.95)',
-        border: '1px solid rgba(255,255,255,0.06)',
-        boxShadow: `0 0 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)`,
+        background: tone === 'primary'
+          ? `linear-gradient(135deg, ${accent}12 0%, rgba(13,13,13,0.96) 58%)`
+          : 'linear-gradient(180deg, rgba(18,18,18,0.96) 0%, rgba(10,10,10,0.96) 100%)',
+        border: `1px solid ${tone === 'primary' ? `${accent}22` : 'rgba(255,255,255,0.065)'}`,
+        boxShadow: '0 18px 42px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.035)',
       }}
     >
-      <div
-        className="absolute -top-4 -right-4 w-20 h-20 rounded-full opacity-20 blur-2xl"
-        style={{ background: accent }}
-      />
       <div className="flex items-center gap-2 relative z-10">
         <div
           className="w-7 h-7 rounded-lg flex items-center justify-center"
@@ -380,11 +381,17 @@ function KpiCard({
         >
           <Icon size={14} color={accent} />
         </div>
-        <span className="text-[10px] font-semibold text-[#5a5a5a] uppercase tracking-widest">{label}</span>
+        <span className="min-w-0 text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-normal leading-snug">{label}</span>
       </div>
-      <div className="relative z-10">
-        <p className="text-2xl font-bold text-[#f2f2f2] leading-none">{value}</p>
-        {sub && <p className="text-[10px] text-[#5a5a5a] mt-1">{sub}</p>}
+      <div className="relative z-10 min-w-0">
+        <p className={cn(
+          "font-bold text-[#f2f2f2] leading-none tracking-normal tabular-nums",
+          tone === 'primary' ? "text-3xl" : "text-2xl",
+          "[overflow-wrap:anywhere]",
+        )}>
+          {value}
+        </p>
+        {sub && <p className="mt-2 text-[11px] leading-relaxed text-[#8a8a8a]">{sub}</p>}
       </div>
     </div>
   )
@@ -1015,7 +1022,7 @@ function TabBar({
 
   return (
     <div
-      className="flex gap-1 p-1 rounded-xl"
+      className="grid grid-cols-3 gap-1 rounded-xl p-1 lg:grid-cols-6"
       style={{ background: 'rgba(13,13,13,0.9)', border: '1px solid rgba(255,255,255,0.06)' }}
     >
       {tabs.map(t => {
@@ -1025,7 +1032,7 @@ function TabBar({
           <button
             key={t.id}
             onClick={() => onChange(t.id)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-medium transition-all duration-200"
+            className="flex min-h-[48px] min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-all duration-200"
             style={
               isActive
                 ? {
@@ -1037,12 +1044,12 @@ function TabBar({
                 : { color: '#5a5a5a', border: '1px solid transparent' }
             }
           >
-            <Icon size={13} />
-            <span className="hidden sm:inline">{t.label}</span>
+            <Icon size={13} className="shrink-0" />
+            <span className="min-w-0 truncate">{t.label}</span>
             {counts[t.id] > 0 && (
               <span
                 className={cn(
-                  'ml-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold tabular-nums',
+                  'ml-0.5 shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold tabular-nums',
                   t.id === 'messages' && !isActive && 'animate-pulse',
                 )}
                 style={
@@ -1429,14 +1436,16 @@ function CopyValueButton({ value }: { value: string }) {
 function PayoutDetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div
-      className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
-      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
+      className="min-w-0 rounded-xl px-3 py-2.5"
+      style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.055)' }}
     >
-      <div className="min-w-0">
-        <p className="text-[10px] uppercase tracking-widest text-[#5a5a5a]">{label}</p>
-        <p className="mt-1 truncate text-[12px] text-[#f2f2f2]">{value}</p>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-normal text-[#6f6f6f]">{label}</p>
+          <p className="mt-1 text-[12px] leading-snug text-[#f2f2f2] [overflow-wrap:anywhere]">{value}</p>
+        </div>
+        <CopyValueButton value={value} />
       </div>
-      <CopyValueButton value={value} />
     </div>
   )
 }
@@ -1458,11 +1467,15 @@ function PayoutMethodCard({
 
   return (
     <div
-      className="rounded-2xl p-4 space-y-3"
-      style={{ background: 'rgba(13,13,13,0.9)', border: '1px solid rgba(255,255,255,0.06)' }}
+      className="rounded-2xl p-5 space-y-4"
+      style={{
+        background: 'linear-gradient(180deg, rgba(17,17,17,0.96) 0%, rgba(10,10,10,0.96) 100%)',
+        border: '1px solid rgba(255,255,255,0.07)',
+        boxShadow: '0 16px 38px rgba(0,0,0,0.32)',
+      }}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
             <p className="text-sm font-semibold text-[#f2f2f2]">{payoutMethodLabel(method.methodType)}</p>
             {method.isDefault && (
@@ -1474,7 +1487,7 @@ function PayoutMethodCard({
               </span>
             )}
           </div>
-          <p className="mt-1 text-[11px] text-[#5a5a5a]">{method.displayLabel}</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-[#7a7a7a] [overflow-wrap:anywhere]">{method.displayLabel}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {!method.isDefault && (
@@ -1498,7 +1511,10 @@ function PayoutMethodCard({
         </div>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div
+        className="grid gap-2 pt-3 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))]"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.055)' }}
+      >
         {entries.length > 0 ? (
           entries.map(([label, value]) => (
             <PayoutDetailRow key={label} label={label} value={value} />
@@ -2124,38 +2140,90 @@ export function DashboardClient({
             </div>
           )}
 
-          {/* ─ Favoritos ─ */}
+          {/* ─ Cobros ─ */}
           {activeTab === 'payouts' && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <KpiCard icon={CircleDollarSign} label="Ventas operativas" value={fmtUSD(operationalSold)} sub={`${payoutRelevantSales.length} en escrow/liberadas`} accent="#4ade80" />
-                <KpiCard icon={CreditCard} label={commissionLabel} value={fmtUSD(operationalCommissions)} sub={commissionSub} accent="#f59e0b" />
-                <KpiCard icon={Landmark} label="Fee bancario 0.03%" value={fmtUSD(operationalBankFees)} sub="pago movil / transferencia" accent="#ffc107" />
-                <KpiCard icon={Wallet} label="Fee Binance" value={fmtUSD(operationalBinanceFees)} sub="$0.06 por operacion" accent="#00aeef" />
+            <div className="space-y-6">
+              <div
+                className="rounded-2xl p-5 sm:p-6"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(0,174,239,0.08) 0%, rgba(13,13,13,0.96) 52%, rgba(74,222,128,0.045) 100%)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  boxShadow: '0 22px 70px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.04)',
+                }}
+              >
+                <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(380px,0.72fr)] lg:items-end">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-normal text-[#00aeef]">Cobros del vendedor</p>
+                    <h2 className="mt-2 text-2xl font-semibold leading-tight text-[#f2f2f2]">Estado claro de tus ventas y cobros</h2>
+                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#a0a0a0]">
+                      Separamos lo que esta en revision, lo que sigue en aprobacion y el monto que ya esta disponible para cobrar.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    {[
+                      { label: 'En revision', value: pendingValidationSales.length, color: '#f59e0b' },
+                      { label: 'En aprobacion', value: escrowSales.length, color: '#00aeef' },
+                      { label: 'Listo para cobrar', value: releasedSales.length, color: '#4ade80' },
+                    ].map(item => (
+                      <div
+                        key={item.label}
+                        className="min-w-0 rounded-xl px-3 py-3 text-center"
+                        style={{ background: 'rgba(255,255,255,0.035)', border: `1px solid ${item.color}24` }}
+                      >
+                        <p className="text-2xl font-semibold leading-none text-[#f2f2f2] tabular-nums">{item.value}</p>
+                        <p className="mt-2 text-[10px] font-medium leading-tight text-[#8a8a8a]">{item.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <KpiCard icon={Wallet} label="Neto operativo" value={fmtUSD(operationalSellerNet)} sub={`no pagable hasta RELEASED; fees ${fmtUSD(operationalTotalFees)}`} accent="#00aeef" />
-                <KpiCard icon={Landmark} label="Listo para payout" value={fmtUSD(payoutReadyNet)} sub={`${releasedSales.length} liberadas`} accent="#a78bfa" />
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <KpiCard icon={CircleDollarSign} label="Ventas realizadas" value={fmtUSD(operationalSold)} sub={`${payoutRelevantSales.length} en proceso o ya aprobadas`} accent="#4ade80" tone="primary" />
+                <KpiCard icon={Wallet} label="Ganancia estimada" value={fmtUSD(operationalSellerNet)} sub={`incluye cargos por ${fmtUSD(operationalTotalFees)}`} accent="#00aeef" tone="primary" />
+                <KpiCard icon={Landmark} label="Disponible para cobrar" value={fmtUSD(payoutReadyNet)} sub={`${releasedSales.length} venta${releasedSales.length !== 1 ? 's' : ''} lista${releasedSales.length !== 1 ? 's' : ''}`} accent="#a78bfa" tone="primary" />
               </div>
 
-              <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+              <div
+                className="rounded-2xl p-5"
+                style={{ background: 'rgba(13,13,13,0.72)', border: '1px solid rgba(255,255,255,0.06)' }}
+              >
+                <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-[#f2f2f2]">Desglose de comisiones y cargos</h3>
+                    <p className="mt-1 text-xs text-[#6f6f6f]">Detalle separado del monto principal para que la lectura financiera sea directa.</p>
+                  </div>
+                  <p className="text-xs font-semibold text-[#a0a0a0]">Total cargos: <span className="text-[#f2f2f2]">{fmtUSD(operationalTotalFees)}</span></p>
+                </div>
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+                  <KpiCard icon={CreditCard} label={commissionLabel} value={fmtUSD(operationalCommissions)} sub={commissionSub} accent="#f59e0b" tone="compact" />
+                  <KpiCard icon={Landmark} label="Cargo bancario 0.03%" value={fmtUSD(operationalBankFees)} sub="pago movil / transferencia" accent="#ffc107" tone="compact" />
+                  <KpiCard icon={Wallet} label="Cargo Binance" value={fmtUSD(operationalBinanceFees)} sub="$0.06 por operacion" accent="#00aeef" tone="compact" />
+                </div>
+              </div>
+
+              <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(380px,0.6fr)]">
                 <div
-                  className="rounded-2xl p-4 space-y-4"
-                  style={{ background: 'rgba(13,13,13,0.9)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  className="rounded-2xl p-5 space-y-5"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(16,16,16,0.94) 0%, rgba(10,10,10,0.94) 100%)',
+                    border: '1px solid rgba(255,255,255,0.065)',
+                    boxShadow: '0 18px 44px rgba(0,0,0,0.3)',
+                  }}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
                       <h3 className="text-sm font-semibold text-[#f2f2f2]">Datos de cobro del vendedor</h3>
-                      <p className="mt-1 text-xs text-[#5a5a5a]">
-                        El neto operativo incluye escrow activo y liberado; solo RELEASED queda listo para payout manual.
+                      <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#8a8a8a]">
+                        Tu ganancia estimada incluye ventas en proceso y ventas ya aprobadas; solo lo disponible para cobrar puede pagarse ahora.
                       </p>
                     </div>
                     <span
                       className="rounded-full px-2 py-1 text-[10px] font-semibold"
                       style={{ background: 'rgba(0,174,239,0.08)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.15)' }}
                     >
-                      Flujo manual temporal
+                      Pago manual
                     </span>
                   </div>
 
