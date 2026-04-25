@@ -19,7 +19,7 @@ import {
   TrendingDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { MessageThread, Message, FormalQuote, ServiceListing } from '@/types/marketplace'
+import type { MessageThread, Message, FormalQuote } from '@/types/marketplace'
 import { MOCK_THREAD } from '@/content/marketplace'
 import {
   sendMessage as sendMessageAction,
@@ -491,8 +491,6 @@ export function TransactionChat({
     if (!threadId) return
 
     let active = true
-    let timer: ReturnType<typeof setInterval>
-
     async function pull() {
       const res = await getThreadMessagesAction(threadId!, 50)
       if (!active || !res.success) return
@@ -501,7 +499,7 @@ export function TransactionChat({
 
     void pull()
     void markMessagesReadAction(threadId)
-    timer = setInterval(pull, 10_000)
+    const timer = setInterval(pull, 10_000)
 
     return () => {
       active = false

@@ -13,7 +13,6 @@ import {
   RefreshCw,
   ChevronRight,
   ShieldCheck,
-  XCircle,
   ArrowUpRight,
   FileText,
   Ban,
@@ -777,7 +776,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
 
         {payouts === null ? (
           <div className="py-10 text-center">
-            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>Haz clic en "Cargar" para ver el reporte.</p>
+            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>Haz clic en Cargar para ver el reporte.</p>
           </div>
         ) : payouts.length === 0 ? (
           <p className="text-sm text-center py-10" style={{ color: 'rgba(255,255,255,0.25)' }}>Sin pagos pendientes.</p>
