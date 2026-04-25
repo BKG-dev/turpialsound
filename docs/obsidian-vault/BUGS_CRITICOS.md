@@ -465,3 +465,20 @@ Este archivo registra los bloqueos y riesgos operativos activos del marketplace 
 - **Restricciones respetadas**: No se tocaron AdminDashboard, booking, `/reservas`, Prisma/runtime/db/env, APIs/actions ni Blob/storage/paymentProofUrl/proxy SUPER.
 - **Riesgo activo**: No mezclar la siguiente pasada de Admin dashboard con SEO/AEO ni con cierre final de payout. No tocar runtime/Prisma/env ni stashes sin instruccion explicita.
 - **Accion inmediata recomendada**: Admin dashboard, solo para alinear lenguaje operacional/financiero con el glosario y sin tocar logica ni calculos.
+
+## 21. Checkpoint Admin Dashboard UX
+
+- **Fecha**: 2026-04-25
+- **Estado real**: Cerrado y validado tecnicamente.
+- **Commit**: `e8ce902 style(marketplace): clarify admin dashboard operations UX`
+- **Archivos**:
+  - `components/marketplace/admin/AdminDashboard.tsx`
+  - `docs/marketplace/05_GLOSARIO_DE_TERMINOS_UX.md`
+- **Descripcion**: Admin Dashboard quedo alineado con el glosario UX. La primera vista prioriza pagos por revisar, dinero en proceso, disputas abiertas y monto listo para pagar.
+- **Impacto**: Reduce confusion operacional/financiera en admin sin tocar calculos, queries, APIs, permisos ni estados backend. Las metricas informativas quedan en segundo nivel.
+- **Cambios de lenguaje**: `Escrow` -> `En proceso` / `Dinero en proceso`; `RELEASED` / `Liberado` -> `Listo para pagar`; `Payouts listos` -> `Ventas listas`; `Neto vendedor` -> `Monto a pagar`; `Fee retenido` -> `Comision plataforma`.
+- **Cambios visuales**: Layout admin ampliado a `max-w-6xl`; tabs admin en grilla responsive.
+- **Validacion**: `npm run build` limpio; lint/type check limpio; build genero 29 paginas; `git status --short` final limpio.
+- **Restricciones respetadas**: No se tocaron seller dashboard, booking, `/reservas`, Prisma/runtime/db/env, APIs/actions ni Blob/storage/paymentProofUrl/proxy SUPER.
+- **Riesgo activo**: No implementar cierre final de payout sin diseno previo. No tocar runtime/Prisma/env sin tarea explicita. No mezclar SEO/AEO con cierre contable.
+- **Accion inmediata recomendada**: SEO/AEO del marketplace publico. Luego disenar cierre final de payout/pago al vendedor sin implementar DB/schema hasta aprobacion explicita.

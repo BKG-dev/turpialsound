@@ -958,3 +958,61 @@ Riesgos de continuidad:
 - no tocar runtime/Prisma/env sin tarea explicita;
 - no aplicar ni borrar stashes sin inspeccion;
 - no mezclar Admin + SEO + payout final en una sola tarea.
+
+## Checkpoint 2026-04-25 - Admin Dashboard UX
+
+Estado:
+- `CERRADO Y VALIDADO TECNICAMENTE`
+
+Commit:
+- `e8ce902 style(marketplace): clarify admin dashboard operations UX`
+
+Alcance confirmado:
+- `components/marketplace/admin/AdminDashboard.tsx`
+- `docs/marketplace/05_GLOSARIO_DE_TERMINOS_UX.md`
+
+Producto cerrado:
+- Admin Dashboard alineado con el glosario UX;
+- jerga interna reducida en superficie admin;
+- KPIs de primera vista orientados a accion operativa:
+  - `Pagos por revisar`;
+  - `Dinero en proceso`;
+  - `Disputas abiertas`;
+  - `Monto listo para pagar`;
+- metricas informativas bajadas de jerarquia:
+  - transacciones totales;
+  - publicaciones activas;
+  - usuarios registrados;
+  - comision plataforma mensual;
+- reemplazos visibles aplicados:
+  - `Escrow` -> `En proceso` / `Dinero en proceso`;
+  - `RELEASED` / `Liberado` -> `Listo para pagar`;
+  - `Payouts listos` -> `Ventas listas`;
+  - `Neto vendedor` -> `Monto a pagar`;
+  - `Fee retenido` -> `Comision plataforma`;
+- layout admin ampliado a `max-w-6xl`;
+- tabs admin pasaron a grilla responsive;
+- glosario UX actualizado con terminos admin.
+
+Validacion:
+- `npm run build`: limpio.
+- lint/type check: limpio.
+- build genero 29 paginas.
+- `git status --short` final: limpio.
+
+No se toco:
+- seller dashboard;
+- booking;
+- `/reservas`;
+- Prisma/runtime/db/env;
+- APIs/actions;
+- Blob/storage/paymentProofUrl/proxy SUPER.
+
+Siguiente frente recomendado:
+1. SEO/AEO del marketplace publico.
+2. Diseno del cierre final de payout/pago al vendedor, solo diseno primero porque implementarlo tocaria DB/schema.
+
+Riesgos de continuidad:
+- no implementar cierre final de payout sin diseno previo;
+- no tocar runtime/Prisma/env sin tarea explicita;
+- no mezclar SEO/AEO con cierre contable.

@@ -293,3 +293,35 @@ Reglas de continuidad:
 - No tocar runtime/Prisma/env sin tarea explicita.
 - No aplicar ni borrar stashes sin inspeccion.
 - No mezclar Admin + SEO + payout final en una sola tarea.
+
+## Checkpoint 2026-04-25 - Admin Dashboard UX cerrado
+
+- Ultimo commit cerrado: `e8ce902 style(marketplace): clarify admin dashboard operations UX`.
+- Archivos del commit:
+  - `components/marketplace/admin/AdminDashboard.tsx`
+  - `docs/marketplace/05_GLOSARIO_DE_TERMINOS_UX.md`
+- Estado actual:
+  - Admin Dashboard quedo alineado con el glosario UX;
+  - se redujo jerga interna visible en la superficie admin;
+  - KPIs principales ahora priorizan `Pagos por revisar`, `Dinero en proceso`, `Disputas abiertas` y `Monto listo para pagar`;
+  - transacciones totales, publicaciones activas, usuarios registrados y comision plataforma mensual quedan como contexto secundario;
+  - layout admin ampliado a `max-w-6xl`;
+  - tabs admin en grilla responsive;
+  - glosario UX actualizado con terminos admin.
+- Validacion:
+  - `npm run build`: limpio.
+  - lint/type check: limpio.
+  - build genero 29 paginas.
+  - `git status --short` final: limpio.
+- No se toco seller dashboard, booking, `/reservas`, Prisma/runtime/db/env, APIs/actions ni Blob/storage/paymentProofUrl/proxy SUPER.
+- Push: pendiente; no realizado.
+
+## Siguiente accion recomendada
+
+1. SEO/AEO del marketplace publico.
+2. Luego diseno del cierre final de payout/pago al vendedor; no implementarlo sin aprobar DB/schema.
+
+Reglas de continuidad:
+- No implementar cierre final de payout sin diseno previo.
+- No tocar runtime/Prisma/env sin tarea explicita.
+- No mezclar SEO/AEO con cierre contable.

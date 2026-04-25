@@ -384,3 +384,42 @@ Riesgos activos:
 - No volver a tocar runtime/Prisma/env sin tarea explicita.
 - No aplicar ni borrar stashes sin inspeccion y autorizacion.
 - No mezclar Admin + SEO + payout final en una sola tarea.
+
+## Checkpoint 2026-04-25 - Admin Dashboard UX cerrado
+
+- Commit creado: `e8ce902 style(marketplace): clarify admin dashboard operations UX`.
+- Alcance del commit:
+  - `components/marketplace/admin/AdminDashboard.tsx`
+  - `docs/marketplace/05_GLOSARIO_DE_TERMINOS_UX.md`
+- Estado final registrado:
+  - Admin Dashboard alineado con el lenguaje del glosario UX;
+  - jerga interna reducida en la superficie admin;
+  - primera vista orientada a accion operativa: `Pagos por revisar`, `Dinero en proceso`, `Disputas abiertas` y `Monto listo para pagar`;
+  - metricas informativas bajadas de jerarquia: transacciones totales, publicaciones activas, usuarios registrados y comision plataforma mensual;
+  - reemplazos visibles: `Escrow` -> `En proceso` / `Dinero en proceso`, `RELEASED` / `Liberado` -> `Listo para pagar`, `Payouts listos` -> `Ventas listas`, `Neto vendedor` -> `Monto a pagar`, `Fee retenido` -> `Comision plataforma`;
+  - layout admin ampliado a `max-w-6xl`;
+  - tabs admin convertidos a grilla responsive;
+  - glosario UX actualizado con terminos admin.
+- Validacion cerrada:
+  - `npm run build`: limpio.
+  - lint/type check: limpio.
+  - build genero 29 paginas.
+  - `git status --short` final: limpio.
+- No se toco:
+  - seller dashboard;
+  - booking;
+  - `/reservas`;
+  - Prisma/runtime/db/env;
+  - APIs/actions;
+  - Blob/storage/paymentProofUrl/proxy SUPER.
+- Push: no realizado.
+
+## Continuidad recomendada post `e8ce902`
+
+1. Siguiente frente recomendado: SEO/AEO del marketplace publico.
+2. Despues: disenar el cierre final de payout/pago al vendedor, solo como diseno primero porque implementarlo tocaria DB/schema.
+
+Riesgos activos:
+- No implementar cierre final de payout sin diseno previo.
+- No tocar runtime/Prisma/env sin tarea explicita.
+- No mezclar SEO/AEO con cierre contable.
