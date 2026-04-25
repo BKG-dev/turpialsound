@@ -14,6 +14,9 @@ Este glosario define el lenguaje visible para usuarios del marketplace. Los term
 | VALIDATING | en revision | Estados intermedios de conciliacion manual | Copy tecnico o filtros visibles al seller | Para seller no distinguir demasiado entre `PAYMENT_RECEIVED` y `VALIDATING` salvo que haya una accion clara |
 | IN_ESCROW | en proceso / operacion aprobada | Seller Cobros y detalle de venta | Copy principal como "escrow activo" | En seller, explicar como venta aprobada que sigue pendiente de entrega o cierre |
 | platform fee / fee | comision / cargo | Desglose financiero secundario | KPI principal sin contexto | Separar comision plataforma de cargos operativos cuando ambos existan |
+| release escrow | marcar listo para pago al vendedor | Accion admin para pasar una operacion a pago pendiente al vendedor | Botones con enums o lenguaje tecnico | No implica que el pago manual ya se ejecuto |
+| payouts ready | ventas listas / listo para pagar | Admin Pagos y Finanzas | Seller Cobros como "payouts" | Para admin significa cola de pago al vendedor; para seller usar "listo para cobrar" |
+| escrow activo | dinero en proceso / operaciones en proceso | Admin Dashboard, filtros y alertas operativas | KPIs principales como palabra tecnica | Usarlo para explicar dinero protegido pendiente de cierre |
 
 ## Regla corta
 
