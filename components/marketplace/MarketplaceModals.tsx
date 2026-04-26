@@ -76,7 +76,7 @@ function ModalOverlay({ onClose }: { onClose: () => void }) {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
       onClick={onClose}
-      className="fixed inset-0 z-40"
+      className="fixed inset-0 z-[80]"
       style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
     />
   )
@@ -127,7 +127,7 @@ function ModalShell({
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="relative z-50 w-full max-w-6xl mx-auto"
+      className="relative z-[90] w-full max-w-6xl mx-auto"
       style={{ maxHeight: '90vh' }}
     >
       <div
@@ -496,10 +496,27 @@ function ListingQASection({
 
 // ─── FLOW: Buy / Browse Products ──────────────────────────────────────────────
 
-function BuyFlow({ step, direction, listings, onCategory, onCardClick, onBuy, currentUserId }: {
+const LISTINGS_ERROR_MESSAGE = 'No pudimos cargar listados en este momento. Intenta de nuevo.'
+
+function ListingsStatus({ tone, message }: { tone: 'cyan' | 'gold'; message: string }) {
+  const color = tone === 'cyan' ? '#00aeef' : '#ffc107'
+
+  return (
+    <div
+      className="mx-auto flex w-full max-w-5xl items-center justify-center rounded-xl px-5 py-12 text-center"
+      style={{ background: `${color}08`, border: `1px dashed ${color}30` }}
+    >
+      <p className="text-sm text-[#7a7a7a]">{message}</p>
+    </div>
+  )
+}
+
+function BuyFlow({ step, direction, listings, listingsLoading, listingsError, onCategory, onCardClick, onBuy, currentUserId }: {
   step: number
   direction: number
   listings: Listing[]
+  listingsLoading?: boolean
+  listingsError?: string | null
   onCategory: (cat: ProductCategory) => void
   onCardClick: (listing: Listing) => void
   onBuy?: (listing: Listing) => void
@@ -510,7 +527,7 @@ function BuyFlow({ step, direction, listings, onCategory, onCardClick, onBuy, cu
       {step === 0 && (
         <div className="p-6 space-y-4">
           <p className="text-sm text-[#a0a0a0]">
-            Encuentra equipos, instrumentos y consumibles verificados. Toda compra está protegida por nuestro sistema de escrow.
+            Encuentra equipos, instrumentos y consumibles verificados. Cada compra usa pago reportado y revision manual antes de avanzar.
           </p>
           <CategoryGrid
             categories={PRODUCT_CATEGORIES as Array<{ id: ProductCategory; label: string; description: string; icon: string; accent: 'gold' | 'cyan'; listingCount?: number }>}
@@ -524,7 +541,11 @@ function BuyFlow({ step, direction, listings, onCategory, onCardClick, onBuy, cu
             <AlertCircle size={13} className="text-[#00aeef]" />
             <span className="text-[11px] text-[#5a5a5a]">Listados activos en esta categoría</span>
           </div>
-          {listings.length === 0 ? (
+          {listingsLoading ? (
+            <ListingsStatus tone="cyan" message="Cargando listados..." />
+          ) : listingsError ? (
+            <ListingsStatus tone="cyan" message={LISTINGS_ERROR_MESSAGE} />
+          ) : listings.length === 0 ? (
             <div className="mx-auto rounded-xl flex w-full max-w-5xl items-center justify-center py-12"
               style={{ background: 'rgba(0,174,239,0.03)', border: '1px dashed rgba(0,174,239,0.15)' }}>
               <div className="text-center">
@@ -672,26 +693,44 @@ function SellFlow({
                     </div>
                   ))}
                   {imageFiles.length < 8 && (
-                    <label className="aspect-square rounded-lg flex items-center justify-center cursor-pointer"
+                    <label className="relative aspect-square rounded-lg flex items-center justify-center cursor-pointer overflow-hidden"
                       style={{ border: '1px dashed #2a2a2a' }}
                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,193,7,0.3)' }}
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#2a2a2a' }}>
                       <Upload size={14} className="text-[#2a2a2a]" />
-                      <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only"
-                        onChange={e => e.target.files && onAddImages(e.target.files)} />
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                        multiple
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                        aria-label="Agregar fotos del equipo"
+                        onChange={e => {
+                          if (e.target.files) onAddImages(e.target.files)
+                          e.currentTarget.value = ''
+                        }}
+                      />
                     </label>
                   )}
                 </div>
               ) : (
-                <label className="rounded-xl flex flex-col items-center justify-center py-8 gap-2 cursor-pointer transition-colors"
+                <label className="relative rounded-xl flex flex-col items-center justify-center py-8 gap-2 cursor-pointer overflow-hidden transition-colors"
                   style={{ background: 'rgba(20,20,20,0.5)', border: '1px dashed #2a2a2a' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,193,7,0.3)' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#2a2a2a' }}>
                   <Upload size={20} className="text-[#2a2a2a]" />
                   <p className="text-xs text-[#5a5a5a]">Subir fotos del equipo (máx. 8)</p>
-                  <p className="text-[10px] text-[#2a2a2a]">JPG, PNG — hasta 10MB cada una</p>
-                  <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only"
-                    onChange={e => e.target.files && onAddImages(e.target.files)} />
+                  <p className="text-[10px] text-[#2a2a2a]">JPG, PNG, WEBP o HEIC</p>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                    multiple
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    aria-label="Subir fotos del equipo"
+                    onChange={e => {
+                      if (e.target.files) onAddImages(e.target.files)
+                      e.currentTarget.value = ''
+                    }}
+                  />
                 </label>
               )}
             </div>
@@ -713,10 +752,12 @@ function SellFlow({
 
 // ─── FLOW: Find Talent ────────────────────────────────────────────────────────
 
-function FindTalentFlow({ step, direction, listings, onCategory, onCardClick, onBuy, currentUserId }: {
+function FindTalentFlow({ step, direction, listings, listingsLoading, listingsError, onCategory, onCardClick, onBuy, currentUserId }: {
   step: number
   direction: number
   listings: Listing[]
+  listingsLoading?: boolean
+  listingsError?: string | null
   onCategory: (cat: ServiceCategory) => void
   onCardClick: (listing: Listing) => void
   onBuy?: (listing: Listing) => void
@@ -727,7 +768,7 @@ function FindTalentFlow({ step, direction, listings, onCategory, onCardClick, on
       {step === 0 && (
         <div className="p-6 space-y-4">
           <p className="text-sm text-[#a0a0a0]">
-            Contrata músicos de sesión, bandas para eventos, técnicos de audio y productores. Pagos protegidos por escrow.
+            Contrata músicos de sesión, bandas para eventos, técnicos de audio y productores con pago reportado y revision manual.
           </p>
           <CategoryGrid
             categories={SERVICE_CATEGORIES as Array<{ id: ServiceCategory; label: string; description: string; icon: string; accent: 'gold' | 'cyan'; listingCount?: number }>}
@@ -741,7 +782,11 @@ function FindTalentFlow({ step, direction, listings, onCategory, onCardClick, on
             <Star size={12} className="text-[#ffc107] fill-[#ffc107]" />
             <span className="text-[11px] text-[#5a5a5a]">Talentos en esta categoría</span>
           </div>
-          {listings.length === 0 ? (
+          {listingsLoading ? (
+            <ListingsStatus tone="gold" message="Cargando listados..." />
+          ) : listingsError ? (
+            <ListingsStatus tone="gold" message={LISTINGS_ERROR_MESSAGE} />
+          ) : listings.length === 0 ? (
             <div className="rounded-xl flex items-center justify-center py-12"
               style={{ background: 'rgba(255,193,7,0.03)', border: '1px dashed rgba(255,193,7,0.15)' }}>
               <div className="text-center">
@@ -893,6 +938,8 @@ export interface MarketplaceModalsProps {
   onListingCreated?: (listing: Listing) => void
   /** Real listings (extraListings + dbListings) to show in buy/find-talent browse steps */
   listings?: Listing[]
+  listingsLoading?: boolean
+  listingsError?: string | null
   /** Called when user clicks a listing in buy/find-talent modal (closes modal + opens chat) */
   onOpenChat?: (listing: Listing) => void
   /** Called when user clicks "Comprar/Contratar ahora" — opens checkout flow */
@@ -909,6 +956,8 @@ export function MarketplaceModals({
   onBack,
   onListingCreated,
   listings = [],
+  listingsLoading = false,
+  listingsError = null,
   onBuy,
   currentUserId,
 }: MarketplaceModalsProps) {
@@ -1124,7 +1173,7 @@ export function MarketplaceModals({
   return (
     <AnimatePresence mode="wait">
       {flow && meta && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center px-4">
           <ModalOverlay onClose={onClose} />
           <ModalShell
             onClose={onClose}
@@ -1148,6 +1197,8 @@ export function MarketplaceModals({
                   step={step === 'category' ? 0 : 1}
                   direction={direction}
                   listings={categoryListings.filter(l => l.type === 'product')}
+                  listingsLoading={listingsLoading}
+                  listingsError={listingsError}
                   onCategory={cat => onNext({ selectedCategory: cat, step: 'form' })}
                   onCardClick={handleCardNavigate}
                   onBuy={onBuy ? l => { onClose(); onBuy(l) } : undefined}
@@ -1172,6 +1223,8 @@ export function MarketplaceModals({
                   step={step === 'category' ? 0 : 1}
                   direction={direction}
                   listings={categoryListings.filter(l => l.type === 'service')}
+                  listingsLoading={listingsLoading}
+                  listingsError={listingsError}
                   onCategory={cat => onNext({ selectedCategory: cat, step: 'form' })}
                   onCardClick={handleCardNavigate}
                   onBuy={onBuy ? l => { onClose(); onBuy(l) } : undefined}

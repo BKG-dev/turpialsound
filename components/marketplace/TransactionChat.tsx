@@ -203,7 +203,7 @@ function QuoteCard({ quote, isOwn, onPay }: {
               ) : (
                 <>
                   <Lock size={14} />
-                  Realizar Pago Fiduciario — ${quote.buyerPays.toLocaleString()} {quote.currency}
+                  Reportar pago - ${quote.buyerPays.toLocaleString()} {quote.currency}
                 </>
               )}
             </button>
@@ -212,7 +212,7 @@ function QuoteCard({ quote, isOwn, onPay }: {
           {!paid && (
             <p className="text-[10px] text-[#5a5a5a] text-center mt-2">
               <Shield size={9} className="inline mr-1 text-[#00aeef]" />
-              Tu pago queda retenido en escrow hasta confirmar la entrega
+              Tu pago queda protegido mientras se confirma la entrega
             </p>
           )}
         </div>

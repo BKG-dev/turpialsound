@@ -10,6 +10,7 @@ type MarketplaceImageProps = {
   priority?: boolean
   loading?: 'lazy' | 'eager'
   style?: CSSProperties
+  onError?: () => void
 } & (
   | {
       fill: true
@@ -28,11 +29,11 @@ function shouldUseOptimizedImage(src: string) {
 }
 
 export function MarketplaceImage(props: MarketplaceImageProps) {
-  const { src, alt, className, sizes, priority, loading = 'lazy', style } = props
+  const { src, alt, className, sizes, priority, loading = 'lazy', style, onError } = props
 
   if (!shouldUseOptimizedImage(src)) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt={alt} className={className} loading={loading} style={style} />
+    return <img src={src} alt={alt} className={className} loading={loading} style={style} onError={onError} />
   }
 
   if (props.fill) {
@@ -45,6 +46,7 @@ export function MarketplaceImage(props: MarketplaceImageProps) {
         sizes={sizes}
         priority={priority}
         style={style}
+        onError={onError}
       />
     )
   }
@@ -60,6 +62,7 @@ export function MarketplaceImage(props: MarketplaceImageProps) {
       priority={priority}
       loading={priority ? undefined : loading}
       style={style}
+      onError={onError}
     />
   )
 }

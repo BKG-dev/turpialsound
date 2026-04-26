@@ -216,7 +216,7 @@ function RegisterForm({ onSuccess }: { onSuccess: (s: MpSessionPayload) => void 
             </span>
           </div>
           <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            Recibe alertas cuando tu pago sea confirmado, tu producto entre en escrow o tus fondos sean liberados. Solo lo importante, sin spam.
+            Recibe alertas cuando tu pago sea confirmado, tu producto avance de estado o tu cobro quede listo. Solo lo importante, sin spam.
           </p>
         </div>
       </button>

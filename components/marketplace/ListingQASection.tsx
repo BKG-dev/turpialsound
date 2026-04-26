@@ -99,6 +99,8 @@ function QuestionRow({
               ) : (
                 <div className="space-y-2">
                   <textarea
+                    id={`listing-follow-up-${q.id}`}
+                    name={`listing-follow-up-${q.id}`}
                     value={followUpText}
                     onChange={e => setFollowUpText(e.target.value)}
                     placeholder="Escribe una pregunta adicional..."
@@ -157,6 +159,8 @@ function QuestionRow({
               ) : (
                 <div className="space-y-2">
                   <textarea
+                    id={`listing-answer-${q.id}`}
+                    name={`listing-answer-${q.id}`}
                     value={answerText}
                     onChange={e => setAnswerText(e.target.value)}
                     placeholder="Escribe tu respuesta pública..."
@@ -209,12 +213,12 @@ export function ListingQASection({
   listingId,
   sellerId,
   currentUserId,
-  initialQuestions,
+  initialQuestions = [],
 }: {
   listingId: string
   sellerId: string
   currentUserId?: string
-  initialQuestions: QuestionItem[]
+  initialQuestions?: QuestionItem[]
 }) {
   const [questions, setQuestions] = useState<QuestionItem[]>(initialQuestions)
   const [newQuestion, setNewQuestion] = useState('')
@@ -344,6 +348,8 @@ export function ListingQASection({
               {isLoggedIn ? (
                 <>
                   <textarea
+                    id={`listing-question-${listingId}`}
+                    name={`listing-question-${listingId}`}
                     value={newQuestion}
                     onChange={e => setNewQuestion(e.target.value)}
                     placeholder="Escribe tu pregunta sobre este listing..."

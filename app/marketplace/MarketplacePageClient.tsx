@@ -99,7 +99,7 @@ const INTENT_CARDS = [
     id: 'sell' as ModalFlow,
     icon: Tag,
     label: 'Quiero Vender',
-    sublabel: 'Publica · Cotiza · Cobra seguro',
+    sublabel: 'Publica · Cotiza · Cobra con revision',
     accent: 'gold' as const,
     accentColor: '#ffc107',
     accentBg: 'rgba(255,193,7,0.06)',
@@ -146,6 +146,8 @@ const TABS = [
   { id: 'products', label: 'Productos' },
   { id: 'services', label: 'Servicios & Talento' },
 ]
+
+const LISTINGS_LOAD_ERROR_MESSAGE = 'No pudimos cargar listados en este momento. Intenta de nuevo.'
 
 // ─── Section heading helper ───────────────────────────────────────────────────
 
@@ -274,9 +276,37 @@ export default function MarketplacePageClient() {
 
   // Listings loaded from DB on mount (persisted across sessions)
   const [dbListings, setDbListings] = useState<Listing[]>([])
+  const [listingsLoading, setListingsLoading] = useState(true)
+  const [listingsError, setListingsError] = useState<string | null>(null)
 
   useEffect(() => {
-    getActiveListings().then(setDbListings).catch(() => {})
+    let active = true
+    const timeoutId = window.setTimeout(() => {
+      if (!active) return
+      setListingsLoading(false)
+      setListingsError(LISTINGS_LOAD_ERROR_MESSAGE)
+    }, 12_000)
+
+    getActiveListings()
+      .then(listings => {
+        if (!active) return
+        setDbListings(listings)
+        setListingsError(null)
+      })
+      .catch(() => {
+        if (!active) return
+        setListingsError(LISTINGS_LOAD_ERROR_MESSAGE)
+      })
+      .finally(() => {
+        if (!active) return
+        window.clearTimeout(timeoutId)
+        setListingsLoading(false)
+      })
+
+    return () => {
+      active = false
+      window.clearTimeout(timeoutId)
+    }
   }, [])
 
   // Extra listings added by the user in this session (appear immediately, before DB refresh)
@@ -474,6 +504,8 @@ export default function MarketplacePageClient() {
         onBack={prevStep}
         onListingCreated={handleListingCreated}
         listings={[...extraListings, ...dbListings]}
+        listingsLoading={listingsLoading}
+        listingsError={listingsError}
         onOpenChat={openChat}
         onBuy={openCheckout}
         currentUserId={session?.userId}
@@ -846,7 +878,15 @@ export default function MarketplacePageClient() {
                 transition={{ duration: 0.3 }}
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
               >
-                {listings.length === 0 ? (
+                {listingsLoading ? (
+                  <div className="col-span-full flex flex-col items-center gap-3 py-20 text-center">
+                    <p className="text-sm text-[#5a5a5a]">Cargando listados...</p>
+                  </div>
+                ) : listingsError ? (
+                  <div className="col-span-full flex flex-col items-center gap-3 py-20 text-center">
+                    <p className="text-sm text-[#5a5a5a]">{LISTINGS_LOAD_ERROR_MESSAGE}</p>
+                  </div>
+                ) : listings.length === 0 ? (
                   <div className="col-span-full flex flex-col items-center gap-3 py-20 text-center">
                     <p className="text-sm text-[#5a5a5a]">No hay listados activos en este momento.</p>
                     <button
@@ -980,9 +1020,9 @@ export default function MarketplacePageClient() {
                 onClick={() => {
                   const demo = listings[0]
                   if (demo) openChat(demo)
-                  else setShowChat(true)
                 }}
-                className="btn-silky-primary px-8 py-3.5 rounded-xl text-sm font-semibold flex items-center gap-2 flex-shrink-0"
+                disabled={listings.length === 0}
+                className="btn-silky-primary px-8 py-3.5 rounded-xl text-sm font-semibold flex items-center gap-2 flex-shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <MessageSquare size={15} />
                 Abrir Chat Demo

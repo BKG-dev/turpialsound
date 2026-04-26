@@ -1,10 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Star, MapPin, Clock, Shield, BadgeCheck, Heart } from 'lucide-react'
+import { Star, MapPin, Clock, Shield, BadgeCheck, Heart, ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Listing, ProductListing, ServiceListing } from '@/types/marketplace'
-import { MARKETPLACE_CONFIG } from '@/types/marketplace'
 import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
 
 // ─── Category fallback images ─────────────────────────────────────────────────
@@ -34,8 +33,25 @@ const CATEGORY_FALLBACK: Record<string, string> = {
 }
 
 function getCoverImage(category: string, images?: string[]): string | null {
-  if (images && images.length > 0) return images[0]
+  const firstImage = images?.find(Boolean)
+  if (firstImage) return firstImage
   return CATEGORY_FALLBACK[category] ?? null
+}
+
+function ImageFallback({ tone = 'cyan' }: { tone?: 'cyan' | 'gold' }) {
+  const color = tone === 'cyan' ? '#00aeef' : '#ffc107'
+
+  return (
+    <div
+      className="flex h-full w-full flex-col items-center justify-center gap-2 text-center"
+      style={{
+        background: `linear-gradient(135deg, ${color}10 0%, rgba(10,10,10,0.92) 100%)`,
+      }}
+    >
+      <ImageIcon size={22} style={{ color, opacity: 0.68 }} />
+      <span className="text-[10px] uppercase tracking-widest text-[#5a5a5a]">Sin foto</span>
+    </div>
+  )
 }
 
 // ─── Condition label map ───────────────────────────────────────────────────────
@@ -100,7 +116,8 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
 }) {
   const [hovered, setHovered] = useState(false)
   const [localFav, setLocalFav] = useState(isFavorited)
-  const cover = getCoverImage(listing.category, listing.images)
+  const [imageFailed, setImageFailed] = useState(false)
+  const cover = imageFailed ? null : getCoverImage(listing.category, listing.images)
 
   return (
     <div
@@ -128,15 +145,12 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
             className="w-full h-full object-cover transition-transform duration-500"
             sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
             style={{ transform: hovered ? 'scale(1.04)' : 'scale(1)' }}
+            onError={() => setImageFailed(true)}
           />
         ) : (
-          <div
-            className="w-full h-full flex items-center justify-center transition-transform duration-500"
-            style={{
-              background: 'linear-gradient(135deg, rgba(0,174,239,0.06) 0%, rgba(0,80,200,0.04) 50%, rgba(255,193,7,0.03) 100%)',
-              transform: hovered ? 'scale(1.04)' : 'scale(1)',
-            }}
-          />
+          <div className="h-full w-full transition-transform duration-500" style={{ transform: hovered ? 'scale(1.04)' : 'scale(1)' }}>
+            <ImageFallback tone="cyan" />
+          </div>
         )}
 
         {/* Badge */}
@@ -253,7 +267,7 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
         {/* Escrow badge */}
         <div className="flex items-start gap-2 text-[11px] leading-relaxed text-[#5a5a5a]">
           <Shield size={11} className="mt-0.5 flex-shrink-0 text-[#00aeef] opacity-70" />
-          <span>Pago fiduciario protegido · {(MARKETPLACE_CONFIG.COMMISSION_RATE * 100).toFixed(0)}% comisión al vendedor</span>
+          <span>Operacion protegida con revision de pago</span>
         </div>
       </div>
     </div>
@@ -270,8 +284,9 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
 }) {
   const [hovered, setHovered] = useState(false)
   const [localFav, setLocalFav] = useState(isFavorited)
+  const [imageFailed, setImageFailed] = useState(false)
   // portfolio[0] takes priority; falls back to category image
-  const cover = getCoverImage(listing.category, listing.portfolio)
+  const cover = imageFailed ? null : getCoverImage(listing.category, listing.portfolio)
 
   return (
     <div
@@ -299,15 +314,12 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
             className="w-full h-full object-cover transition-transform duration-500"
             sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
             style={{ transform: hovered ? 'scale(1.04)' : 'scale(1)' }}
+            onError={() => setImageFailed(true)}
           />
         ) : (
-          <div
-            className="w-full h-full transition-transform duration-500"
-            style={{
-              background: 'linear-gradient(135deg, rgba(255,193,7,0.05) 0%, rgba(0,80,200,0.04) 60%, rgba(0,174,239,0.04) 100%)',
-              transform: hovered ? 'scale(1.04)' : 'scale(1)',
-            }}
-          />
+          <div className="h-full w-full transition-transform duration-500" style={{ transform: hovered ? 'scale(1.04)' : 'scale(1)' }}>
+            <ImageFallback tone="gold" />
+          </div>
         )}
 
         {/* Badge */}
@@ -425,7 +437,7 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
         {/* Escrow badge */}
         <div className="flex items-start gap-2 text-[11px] leading-relaxed text-[#5a5a5a]">
           <Shield size={11} className="mt-0.5 flex-shrink-0 text-[#ffc107] opacity-70" />
-          <span>Pago fiduciario protegido · {(MARKETPLACE_CONFIG.COMMISSION_RATE * 100).toFixed(0)}% comisión al talento</span>
+          <span>Pago reportado y revisado manualmente</span>
         </div>
       </div>
     </div>

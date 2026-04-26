@@ -504,7 +504,7 @@ export const MOCK_THREAD: MessageThread = {
       senderId: 'u1',
       senderName: 'mvera',
       senderInitials: 'MV',
-      content: 'Con gusto. Aquí tienes la cotización formal para proceder con el pago fiduciario:',
+      content: 'Con gusto. Aqui tienes la cotizacion formal para reportar el pago:',
       type: 'text',
       createdAt: '2026-04-02T14:33:00Z',
       read: true,

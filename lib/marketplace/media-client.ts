@@ -14,22 +14,22 @@ type UploadTransformOptions = {
 }
 
 const CLIENT_MAX_BYTES: Record<MarketplaceUploadPurpose, number> = {
-  'listing-image': 8 * 1024 * 1024,
+  'listing-image': 24 * 1024 * 1024,
   'payment-proof': 10 * 1024 * 1024,
   avatar: 4 * 1024 * 1024,
 }
 
-const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
 
 const PURPOSE_TRANSFORMS: Record<MarketplaceUploadPurpose, UploadTransformOptions> = {
-  'listing-image': { maxDimension: 1600, quality: 0.82, outputType: 'image/webp' },
+  'listing-image': { maxDimension: 1600, quality: 0.82, outputType: 'image/jpeg' },
   'payment-proof': { maxDimension: 1800, quality: 0.8, outputType: 'image/webp' },
   avatar: { maxDimension: 800, quality: 0.82, outputType: 'image/webp' },
 }
 
 function validateClientImage(file: File, purpose: MarketplaceUploadPurpose) {
   if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
-    throw new Error('Solo se permiten imagenes JPG, PNG o WEBP')
+    throw new Error('Solo se permiten imagenes JPG, PNG, WEBP o HEIC')
   }
 
   if (file.size > CLIENT_MAX_BYTES[purpose]) {
@@ -103,11 +103,12 @@ async function compressImage(
   ctx.drawImage(image, 0, 0, width, height)
 
   const blob = await canvasToBlob(canvas, options.outputType, options.quality)
-  const extension = options.outputType === 'image/webp' ? 'webp' : 'jpg'
+  const outputType = blob.type === 'image/png' ? 'image/png' : options.outputType
+  const extension = outputType === 'image/webp' ? 'webp' : outputType === 'image/png' ? 'png' : 'jpg'
   const outputName = file.name.replace(/\.[^.]+$/, '') || 'upload'
 
   return new File([blob], `${outputName}.${extension}`, {
-    type: options.outputType,
+    type: outputType,
     lastModified: Date.now(),
   })
 }
