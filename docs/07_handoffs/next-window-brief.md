@@ -386,3 +386,51 @@ Reglas de continuidad:
 - No agregar Product JSON-LD dinamico sin datos consistentes.
 - No consultar DB desde sitemap sin diseno.
 - No implementar cierre final de payout sin especificacion.
+
+## Checkpoint 2026-04-26 - P0 marketplace publico/mobile
+
+- Ultimo commit cerrado: `586663b fix(marketplace): resolve mobile public marketplace regressions`.
+- Archivos del commit:
+  - `app/marketplace/MarketplacePageClient.tsx`
+  - `components/layout/AnimatedLogo.tsx`
+  - `components/layout/MobileMenu.tsx`
+  - `components/layout/SiteHeader.tsx`
+  - `components/marketplace/ListingQASection.tsx`
+  - `components/marketplace/MarketplaceAuthModal.tsx`
+  - `components/marketplace/MarketplaceCard.tsx`
+  - `components/marketplace/MarketplaceImage.tsx`
+  - `components/marketplace/MarketplaceModals.tsx`
+  - `components/marketplace/TransactionChat.tsx`
+  - `content/marketplace.ts`
+  - `lib/marketplace/media-client.ts`
+- Estado actual:
+  - navbar mobile ya no debe desbordarse;
+  - logo/texto mobile tienen constraints;
+  - menu hamburguesa usa fondo solido/opaco y capa correcta;
+  - `Quiero comprar` ya no debe quedar congelado en spinner infinito y muestra error acotado si no cargan listados;
+  - cards/listings ya no muestran copy de pago fiduciario;
+  - listings tienen fallback/error handling visible para imagenes;
+  - upload movil de imagenes de publicaciones quedo mas robusto;
+  - textarea de preguntas del listing tiene `id` y `name`.
+- Validacion:
+  - `git diff --check`: limpio, solo warnings CRLF;
+  - `npx tsc --noEmit`: limpio;
+  - `npm run build`: limpio.
+- No se tocaron booking, `/reservas`, Prisma/runtime/db/env, APIs/actions, dashboards privados ni Blob/storage/paymentProofUrl/proxy SUPER.
+- Commit unico usado porque la separacion parcial de `MarketplaceModals.tsx` no aplico limpio y se evito loop.
+- Push: pendiente; no realizado.
+
+## Validacion pendiente post `586663b`
+
+1. `/marketplace` mobile.
+2. Menu hamburguesa mobile.
+3. `Quiero Comprar`.
+4. `Quiero Vender` + upload de imagen desde movil, idealmente galeria y camara.
+5. Cards/listings con imagenes y fallback.
+6. Listing detail + textarea de preguntas.
+7. Smoke rapido desktop.
+
+Riesgos de continuidad:
+- `lib/marketplace/media-client.ts` cambio para upload movil; validar desde galeria/camara.
+- Si upload visual funciona pero falla backend/storage, reportar antes de tocar storage/backend.
+- No mezclar con payout final.

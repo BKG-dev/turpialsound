@@ -514,3 +514,35 @@ Este archivo registra los bloqueos y riesgos operativos activos del marketplace 
 - **Restricciones respetadas**: No se tocaron sitemap, booking, `/reservas`, Prisma/runtime/db/env, APIs/actions, dashboards privados ni Blob/storage/paymentProofUrl/proxy SUPER.
 - **Riesgo activo**: No agregar Product JSON-LD dinamico sin datos consistentes. No consultar DB desde sitemap sin diseno. No implementar cierre final de payout sin especificacion.
 - **Accion inmediata recomendada**: Disenar el cierre final de payout/pago al vendedor, solo diseno primero porque implementarlo tocaria DB/schema/acciones admin. Alternativa menor: revision visual/manual del marketplace publico despues del deployment.
+
+## 24. Checkpoint P0 marketplace publico/mobile
+
+- **Fecha**: 2026-04-26
+- **Estado real**: Cerrado y validado tecnicamente; pendiente validacion manual en preview.
+- **Commit**: `586663b fix(marketplace): resolve mobile public marketplace regressions`
+- **Archivos**:
+  - `app/marketplace/MarketplacePageClient.tsx`
+  - `components/layout/AnimatedLogo.tsx`
+  - `components/layout/MobileMenu.tsx`
+  - `components/layout/SiteHeader.tsx`
+  - `components/marketplace/ListingQASection.tsx`
+  - `components/marketplace/MarketplaceAuthModal.tsx`
+  - `components/marketplace/MarketplaceCard.tsx`
+  - `components/marketplace/MarketplaceImage.tsx`
+  - `components/marketplace/MarketplaceModals.tsx`
+  - `components/marketplace/TransactionChat.tsx`
+  - `content/marketplace.ts`
+  - `lib/marketplace/media-client.ts`
+- **Descripcion**: Se corrigieron regresiones P0 del marketplace publico en mobile/desktop superficial: navbar mobile desbordado, logo/texto sin constraints, menu hamburguesa transparente/superpuesto, `Quiero comprar` sin salida de carga, copy viejo de pago fiduciario, imagenes sin fallback visible, upload movil poco robusto y textarea de preguntas sin `id/name`.
+- **Cambios cerrados**:
+  - navbar mobile sin overflow;
+  - menu hamburguesa legible con fondo solido/opaco y z-index correcto;
+  - `Quiero comprar` con estado de error acotado si no cargan listados;
+  - cards/listings sin copy de pago fiduciario;
+  - fallback y error handling visible para imagenes;
+  - upload movil mejorado para imagenes de publicaciones;
+  - textarea de preguntas con `id` y `name`.
+- **Validacion**: `git diff --check` limpio con warnings CRLF; `npx tsc --noEmit` limpio; `npm run build` limpio. Commit unico usado porque la separacion parcial de `MarketplaceModals.tsx` no aplico limpio y se evito loop.
+- **Restricciones respetadas**: No se tocaron booking, `/reservas`, Prisma/runtime/db/env, APIs/actions, dashboards privados ni Blob/storage/paymentProofUrl/proxy SUPER.
+- **Validacion pendiente en preview**: `/marketplace` mobile, menu hamburguesa, `Quiero Comprar`, `Quiero Vender` + upload desde movil, cards/listings con imagenes/fallback, listing detail + textarea preguntas y smoke rapido desktop.
+- **Riesgo activo**: `lib/marketplace/media-client.ts` cambio para upload movil; validar desde galeria/camara. Si el upload visual funciona pero falla backend/storage, reportar antes de tocar storage/backend. No mezclar con payout final.

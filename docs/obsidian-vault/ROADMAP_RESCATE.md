@@ -1104,3 +1104,63 @@ Riesgos de continuidad:
 - no agregar Product JSON-LD dinamico sin datos consistentes;
 - no consultar DB desde sitemap sin diseno;
 - no implementar cierre final de payout sin especificacion.
+
+## Checkpoint 2026-04-26 - P0 marketplace publico/mobile
+
+Estado:
+- `CERRADO Y VALIDADO TECNICAMENTE`
+
+Commit:
+- `586663b fix(marketplace): resolve mobile public marketplace regressions`
+
+Alcance confirmado:
+- `app/marketplace/MarketplacePageClient.tsx`
+- `components/layout/AnimatedLogo.tsx`
+- `components/layout/MobileMenu.tsx`
+- `components/layout/SiteHeader.tsx`
+- `components/marketplace/ListingQASection.tsx`
+- `components/marketplace/MarketplaceAuthModal.tsx`
+- `components/marketplace/MarketplaceCard.tsx`
+- `components/marketplace/MarketplaceImage.tsx`
+- `components/marketplace/MarketplaceModals.tsx`
+- `components/marketplace/TransactionChat.tsx`
+- `content/marketplace.ts`
+- `lib/marketplace/media-client.ts`
+
+Producto cerrado:
+- navbar mobile sin overflow;
+- logo/texto mobile con constraints;
+- menu hamburguesa legible con fondo solido/opaco y z-index correcto;
+- `Quiero comprar` ya no debe quedar en spinner infinito; tiene estado de error acotado;
+- cards/listings sin copy de pago fiduciario;
+- fallbacks visibles y manejo de error para imagenes de listings;
+- upload movil mejorado para imagenes de publicaciones;
+- textarea de preguntas de listing con `id` y `name`.
+
+Validacion:
+- `git diff --check`: limpio, solo warnings CRLF.
+- `npx tsc --noEmit`: limpio.
+- `npm run build`: limpio.
+- Commit unico usado porque la separacion parcial de `MarketplaceModals.tsx` no aplico limpio y se evito loop.
+
+No se toco:
+- booking;
+- `/reservas`;
+- Prisma/runtime/db/env;
+- APIs/actions;
+- dashboards privados;
+- Blob/storage/paymentProofUrl/proxy SUPER.
+
+Validacion pendiente en preview:
+- `/marketplace` mobile;
+- menu hamburguesa mobile;
+- `Quiero Comprar`;
+- `Quiero Vender` + upload de imagen desde movil;
+- cards/listings con imagenes/fallback;
+- listing detail + textarea preguntas;
+- smoke rapido desktop.
+
+Riesgos de continuidad:
+- `lib/marketplace/media-client.ts` cambio para upload movil; validar desde galeria/camara.
+- No tocar storage/backend si upload visual funciona pero falla backend; reportar antes.
+- No mezclar con payout final.
