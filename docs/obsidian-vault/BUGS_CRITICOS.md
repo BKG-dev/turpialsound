@@ -482,3 +482,19 @@ Este archivo registra los bloqueos y riesgos operativos activos del marketplace 
 - **Restricciones respetadas**: No se tocaron seller dashboard, booking, `/reservas`, Prisma/runtime/db/env, APIs/actions ni Blob/storage/paymentProofUrl/proxy SUPER.
 - **Riesgo activo**: No implementar cierre final de payout sin diseno previo. No tocar runtime/Prisma/env sin tarea explicita. No mezclar SEO/AEO con cierre contable.
 - **Accion inmediata recomendada**: SEO/AEO del marketplace publico. Luego disenar cierre final de payout/pago al vendedor sin implementar DB/schema hasta aprobacion explicita.
+
+## 22. Checkpoint SEO/AEO publico marketplace
+
+- **Fecha**: 2026-04-26
+- **Estado real**: Cerrado y validado tecnicamente para `/marketplace`.
+- **Commit**: `60be254 feat(marketplace): improve public SEO and AEO`
+- **Archivos**:
+  - `app/marketplace/MarketplacePageClient.tsx`
+  - `app/marketplace/page.tsx`
+  - `app/sitemap.ts`
+- **Descripcion**: `/marketplace` quedo como Server Component con metadata publica. La UI interactiva paso a `MarketplacePageClient.tsx`. Se agregaron title, description, canonical, OpenGraph, Twitter card, JSON-LD estatico `CollectionPage` + `BreadcrumbList`, y la ruta publica al sitemap.
+- **Copy publico**: Ajustado para no prometer escrow, fiduciario ni operacion sin riesgo.
+- **Validacion**: `git diff --check`, `npx tsc --noEmit` y `npm run build` reportados limpios en el cierre; build genero 29 paginas incluyendo `/marketplace` y `/sitemap.xml`.
+- **Restricciones respetadas**: No se tocaron booking, `/reservas`, Prisma/runtime/db/env, APIs/actions, dashboards privados ni Blob/storage/paymentProofUrl/proxy SUPER.
+- **Riesgo activo**: No agregar Product JSON-LD dinamico sin revisar datos reales. No tocar DB/actions para SEO. No mezclar SEO/AEO con payout final.
+- **Accion inmediata recomendada**: SEO/AEO de `/marketplace/[slug]` solo metadata/semantica y sin tocar DB/actions. Luego disenar cierre final de payout/pago al vendedor sin implementar DB/schema hasta aprobacion explicita.

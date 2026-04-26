@@ -1,6 +1,6 @@
 # Next Window Brief - Turpial Sound
 
-**Fecha de actualizacion:** 2026-04-20  
+**Fecha de actualizacion:** 2026-04-26
 **Frente activo:** Marketplace  
 **Tipo de nota:** Checkpoint operativo para siguiente ventana  
 **Fuente viva obligatoria:** `docs/obsidian-vault/*`
@@ -325,3 +325,34 @@ Reglas de continuidad:
 - No implementar cierre final de payout sin diseno previo.
 - No tocar runtime/Prisma/env sin tarea explicita.
 - No mezclar SEO/AEO con cierre contable.
+
+## Checkpoint 2026-04-26 - SEO/AEO publico marketplace
+
+- Ultimo commit cerrado: `60be254 feat(marketplace): improve public SEO and AEO`.
+- Archivos del commit:
+  - `app/marketplace/MarketplacePageClient.tsx`
+  - `app/marketplace/page.tsx`
+  - `app/sitemap.ts`
+- Estado actual:
+  - `/marketplace` quedo como Server Component con metadata;
+  - la UI interactiva vive en `MarketplacePageClient.tsx`;
+  - se agrego metadata publica: title, description, canonical, OpenGraph y Twitter card;
+  - se agrego JSON-LD estatico `CollectionPage` + `BreadcrumbList`;
+  - `/marketplace` quedo incluido en `app/sitemap.ts`;
+  - el copy publico evita prometer escrow, fiduciario o ausencia de riesgo.
+- Validacion:
+  - build validado previamente segun reporte de implementacion;
+  - `npx tsc --noEmit` y `npm run build` reportados limpios en ese cierre;
+  - no hay cambios pendientes en esos archivos.
+- No se tocaron booking, `/reservas`, Prisma/runtime/db/env, APIs/actions, dashboards privados ni Blob/storage/paymentProofUrl/proxy SUPER.
+- Push: pendiente; no realizado.
+
+## Siguiente accion recomendada
+
+1. SEO/AEO de `/marketplace/[slug]`, solo metadata y semantica, sin tocar DB/actions.
+2. Luego diseno del cierre final de payout/pago al vendedor; no implementarlo sin aprobar DB/schema.
+
+Reglas de continuidad:
+- No agregar Product JSON-LD dinamico sin revisar datos reales.
+- No tocar DB/actions para SEO.
+- No mezclar SEO/AEO con payout final.

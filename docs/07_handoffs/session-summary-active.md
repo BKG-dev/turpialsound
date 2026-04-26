@@ -1,6 +1,6 @@
 # Session Summary - Activa
 
-> Fecha de ultima actualizacion: 2026-04-20
+> Fecha de ultima actualizacion: 2026-04-26
 > Tipo de nota: Checkpoint operativo de cierre
 > Fuente principal: `docs/obsidian-vault/*`
 
@@ -423,3 +423,41 @@ Riesgos activos:
 - No implementar cierre final de payout sin diseno previo.
 - No tocar runtime/Prisma/env sin tarea explicita.
 - No mezclar SEO/AEO con cierre contable.
+
+## Checkpoint 2026-04-26 - SEO/AEO publico marketplace cerrado
+
+- Commit creado: `60be254 feat(marketplace): improve public SEO and AEO`.
+- Alcance del commit:
+  - `app/marketplace/MarketplacePageClient.tsx`
+  - `app/marketplace/page.tsx`
+  - `app/sitemap.ts`
+- Estado final registrado:
+  - `/marketplace` quedo convertido a Server Component con metadata publica;
+  - la UI interactiva quedo movida a `MarketplacePageClient.tsx`;
+  - metadata publica agregada: title, description, canonical, OpenGraph y Twitter card;
+  - JSON-LD estatico agregado: `CollectionPage` + `BreadcrumbList`;
+  - `/marketplace` quedo agregado a `app/sitemap.ts`;
+  - el copy publico fue ajustado para no prometer escrow, fiduciario ni operacion sin riesgo.
+- Validacion cerrada segun reporte de implementacion:
+  - `git diff --check`: limpio, solo warnings LF -> CRLF;
+  - `npx tsc --noEmit`: limpio;
+  - `npm run build`: limpio;
+  - build genero 29 paginas, incluyendo `/marketplace` y `/sitemap.xml`.
+- No se toco:
+  - booking;
+  - `/reservas`;
+  - Prisma/runtime/db/env;
+  - APIs/actions;
+  - dashboards privados;
+  - Blob/storage/paymentProofUrl/proxy SUPER.
+- Push: no realizado.
+
+## Continuidad recomendada post `60be254`
+
+1. Siguiente frente recomendado: SEO/AEO de `/marketplace/[slug]`, solo metadata y semantica, sin tocar DB/actions.
+2. Despues: disenar el cierre final de payout/pago al vendedor, solo diseno primero porque implementarlo tocaria DB/schema.
+
+Riesgos activos:
+- No agregar Product JSON-LD dinamico sin revisar datos reales.
+- No tocar DB/actions para SEO.
+- No mezclar SEO/AEO con payout final.
