@@ -356,3 +356,33 @@ Reglas de continuidad:
 - No agregar Product JSON-LD dinamico sin revisar datos reales.
 - No tocar DB/actions para SEO.
 - No mezclar SEO/AEO con payout final.
+
+## Checkpoint 2026-04-26 - SEO/AEO detalle marketplace
+
+- Ultimo commit cerrado: `745068b feat(marketplace): improve listing detail SEO and AEO`.
+- Archivo del commit:
+  - `app/marketplace/[slug]/page.tsx`
+- Estado actual:
+  - SEO/AEO de `/marketplace/[slug]` quedo cerrado;
+  - metadata dinamica ampliada: title, description, canonical, OpenGraph, Twitter card, fallback de imagen y `noindex` para listing no encontrado;
+  - JSON-LD agregado: `ItemPage` + `BreadcrumbList`;
+  - `Product` JSON-LD no fue agregado por prudencia de datos;
+  - copy publico corregido: se elimino "Pago fiduciario protegido" y se explica pago reportado, revision manual, validacion y confirmacion;
+  - sitemap no fue tocado porque slugs dinamicos requeririan DB.
+- Validacion:
+  - `git diff --check`: limpio, solo warning LF -> CRLF;
+  - `npx tsc --noEmit`: limpio;
+  - `npm run build`: limpio;
+  - build genero 29 paginas y `/marketplace/[slug]` quedo dinamico server-rendered.
+- No se tocaron sitemap, booking, `/reservas`, Prisma/runtime/db/env, APIs/actions, dashboards privados ni Blob/storage/paymentProofUrl/proxy SUPER.
+- Push: pendiente; no realizado.
+
+## Siguiente accion recomendada
+
+1. Diseno del cierre final de payout/pago al vendedor, solo diseno primero; no implementarlo sin aprobar DB/schema/acciones admin.
+2. Alternativa menor: revision visual/manual del marketplace publico despues del deployment.
+
+Reglas de continuidad:
+- No agregar Product JSON-LD dinamico sin datos consistentes.
+- No consultar DB desde sitemap sin diseno.
+- No implementar cierre final de payout sin especificacion.

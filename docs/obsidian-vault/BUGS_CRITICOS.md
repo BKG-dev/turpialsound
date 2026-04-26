@@ -498,3 +498,19 @@ Este archivo registra los bloqueos y riesgos operativos activos del marketplace 
 - **Restricciones respetadas**: No se tocaron booking, `/reservas`, Prisma/runtime/db/env, APIs/actions, dashboards privados ni Blob/storage/paymentProofUrl/proxy SUPER.
 - **Riesgo activo**: No agregar Product JSON-LD dinamico sin revisar datos reales. No tocar DB/actions para SEO. No mezclar SEO/AEO con payout final.
 - **Accion inmediata recomendada**: SEO/AEO de `/marketplace/[slug]` solo metadata/semantica y sin tocar DB/actions. Luego disenar cierre final de payout/pago al vendedor sin implementar DB/schema hasta aprobacion explicita.
+
+## 23. Checkpoint SEO/AEO detalle marketplace
+
+- **Fecha**: 2026-04-26
+- **Estado real**: Cerrado y validado tecnicamente para `/marketplace/[slug]`.
+- **Commit**: `745068b feat(marketplace): improve listing detail SEO and AEO`
+- **Archivo**:
+  - `app/marketplace/[slug]/page.tsx`
+- **Descripcion**: La ficha publica dinamica del marketplace ahora tiene metadata dinamica ampliada: title, description, canonical, OpenGraph, Twitter card, fallback de imagen y `noindex` para listing no encontrado.
+- **JSON-LD**: Agregado `ItemPage` + `BreadcrumbList`. `Product` JSON-LD no fue agregado por prudencia de datos.
+- **Copy publico**: Se elimino "Pago fiduciario protegido" y se reemplazo por una explicacion de pago reportado, revision manual, validacion y confirmacion.
+- **Sitemap**: No fue tocado; el sitemap dinamico de slugs queda pendiente porque requeriria consultar DB.
+- **Validacion**: `git diff --check`, `npx tsc --noEmit` y `npm run build` reportados limpios; build genero 29 paginas y `/marketplace/[slug]` quedo dinamico server-rendered.
+- **Restricciones respetadas**: No se tocaron sitemap, booking, `/reservas`, Prisma/runtime/db/env, APIs/actions, dashboards privados ni Blob/storage/paymentProofUrl/proxy SUPER.
+- **Riesgo activo**: No agregar Product JSON-LD dinamico sin datos consistentes. No consultar DB desde sitemap sin diseno. No implementar cierre final de payout sin especificacion.
+- **Accion inmediata recomendada**: Disenar el cierre final de payout/pago al vendedor, solo diseno primero porque implementarlo tocaria DB/schema/acciones admin. Alternativa menor: revision visual/manual del marketplace publico despues del deployment.

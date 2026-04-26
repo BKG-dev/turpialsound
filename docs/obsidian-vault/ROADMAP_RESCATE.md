@@ -1060,3 +1060,47 @@ Riesgos de continuidad:
 - no agregar Product JSON-LD dinamico sin revisar datos reales;
 - no tocar DB/actions para SEO;
 - no mezclar SEO/AEO con payout final.
+
+## Checkpoint 2026-04-26 - SEO/AEO detalle marketplace
+
+Estado:
+- `CERRADO Y VALIDADO TECNICAMENTE`
+
+Commit:
+- `745068b feat(marketplace): improve listing detail SEO and AEO`
+
+Alcance confirmado:
+- `app/marketplace/[slug]/page.tsx`
+
+Producto cerrado:
+- SEO/AEO de `/marketplace/[slug]` quedo cerrado;
+- metadata dinamica ampliada: title, description, canonical, OpenGraph, Twitter card, fallback de imagen y `noindex` para listing no encontrado;
+- JSON-LD conservador agregado: `ItemPage` + `BreadcrumbList`;
+- `Product` JSON-LD omitido por prudencia de datos;
+- copy publico corregido para no prometer pago fiduciario ni escrow;
+- explicacion visible alineada a pago reportado, revision manual, validacion y confirmacion;
+- sitemap dinamico de slugs no se abrio porque requeriria consultar DB.
+
+Validacion:
+- `git diff --check`: limpio, solo warning LF -> CRLF.
+- `npx tsc --noEmit`: limpio.
+- `npm run build`: limpio.
+- build genero 29 paginas y `/marketplace/[slug]` quedo dinamico server-rendered.
+
+No se toco:
+- sitemap;
+- booking;
+- `/reservas`;
+- Prisma/runtime/db/env;
+- APIs/actions;
+- dashboards privados;
+- Blob/storage/paymentProofUrl/proxy SUPER.
+
+Siguiente frente recomendado:
+1. Diseno del cierre final de payout/pago al vendedor, solo diseno primero porque implementarlo tocaria DB/schema/acciones admin.
+2. Revision visual/manual del marketplace publico despues del deployment como alternativa menor.
+
+Riesgos de continuidad:
+- no agregar Product JSON-LD dinamico sin datos consistentes;
+- no consultar DB desde sitemap sin diseno;
+- no implementar cierre final de payout sin especificacion.
