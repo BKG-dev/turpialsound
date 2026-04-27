@@ -1,7 +1,12 @@
-import { mkdir, readFile, writeFile } from 'fs/promises'
-import path from 'path'
+import 'server-only'
 
-export type RateMode = 'live' | 'stale' | 'fallback'
+import {
+  getLastGoodConsensusFromDb,
+  saveLastGoodConsensusToDbIfNeeded,
+  type StoredReferenceRateConsensus,
+} from '@/lib/bookings/reference-rate-store'
+
+export type RateMode = 'live' | 'stale_last_good' | 'emergency_fallback'
 
 export interface RateProviderAttempt {
   name: string
@@ -19,57 +24,49 @@ export interface ReferenceRateResult {
 }
 
 interface ProviderConfig {
+  slot: 'A' | 'B' | 'C'
   name: string
   url: string
-  path: string
+  format: 'csv' | 'json'
+  path?: string
 }
 
-interface PersistedRate {
+interface ProviderFetchResult extends RateProviderAttempt {
+  slot: 'A' | 'B' | 'C'
+  asOf?: string
+}
+
+interface CsvRowRate {
   rate: number
-  source: string
   asOf: string
 }
 
-const DEFAULT_FALLBACK_RATE = 50
+interface ConsensusResult {
+  rate: number
+  source: string
+  providersUsed: string[]
+  asOf: string
+}
+
 const DEFAULT_DELTA_PCT = 0.005
 const DEFAULT_MAX_JUMP_PCT = 0.05
-const DEFAULT_STORAGE_FILE = path.join(process.cwd(), '.cache', 'reference-rate.json')
 const DEFAULT_TIMEOUT_MS = 4000
+const DEFAULT_EMERGENCY_FALLBACK_RATE = 50
+const DEFAULT_PERSIST_MIN_INTERVAL_SECONDS = 300
 
-let inMemoryLastValidRate: PersistedRate | null = null
+const DEFAULT_SOURCE_A_NAME = 'GoogleSheets-BCV'
+const DEFAULT_SOURCE_A_URL =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vSJogl8OrOxNFvrHAcLNtBQsjLswfYkjD_VwxyAju71rC-IDMaoId_As_RCBjRSr--CmBqVjXFqsVUB/pub?gid=0&single=true&output=csv'
+const DEFAULT_SOURCE_B_NAME = 'DolarApi-Oficial'
+const DEFAULT_SOURCE_B_URL = 'https://ve.dolarapi.com/v1/dolares/oficial'
+const DEFAULT_SOURCE_B_PATH = 'promedio'
+
+let inMemoryLastGoodConsensus: StoredReferenceRateConsensus | null = null
 
 function parseEnvNumber(value: string | undefined, fallback: number): number {
   if (!value) return fallback
   const parsed = Number.parseFloat(value)
   return Number.isFinite(parsed) ? parsed : fallback
-}
-
-function normalizeStorageMode(value: string | undefined): 'memory' | 'file' {
-  return value?.toLowerCase() === 'file' ? 'file' : 'memory'
-}
-
-function buildProvidersFromEnv(): ProviderConfig[] {
-  const providerSlots = ['A', 'B', 'C'] as const
-  const providers: ProviderConfig[] = []
-
-  for (const slot of providerSlots) {
-    const name = process.env[`RATE_${slot}_NAME`]?.trim()
-    const url = process.env[`RATE_${slot}_URL`]?.trim()
-    const jsonPath = process.env[`RATE_${slot}_PATH`]?.trim()
-
-    if (!name || !url || !jsonPath) {
-      providers.push({
-        name: name || `Provider ${slot}`,
-        url: url || '',
-        path: jsonPath || '',
-      })
-      continue
-    }
-
-    providers.push({ name, url, path: jsonPath })
-  }
-
-  return providers
 }
 
 function parseNumberishRate(value: unknown): number | null {
@@ -84,7 +81,23 @@ function parseNumberishRate(value: unknown): number | null {
   const compact = value.trim()
   if (!compact) return null
 
-  const normalized = compact.replace(/\./g, '').replace(',', '.')
+  const cleaned = compact.replace(/[^0-9,.-]/g, '')
+  if (!cleaned) return null
+
+  const lastComma = cleaned.lastIndexOf(',')
+  const lastDot = cleaned.lastIndexOf('.')
+
+  let normalized = cleaned
+  if (lastComma >= 0 && lastDot >= 0) {
+    if (lastComma > lastDot) {
+      normalized = cleaned.replace(/\./g, '').replace(',', '.')
+    } else {
+      normalized = cleaned.replace(/,/g, '')
+    }
+  } else if (lastComma >= 0) {
+    normalized = cleaned.replace(',', '.')
+  }
+
   const parsed = Number.parseFloat(normalized)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null
 }
@@ -98,16 +111,9 @@ function getByPath(payload: unknown, dotPath: string): unknown {
 
   let cursor: unknown = payload
   for (const segment of segments) {
-    if (cursor === null || cursor === undefined) {
-      return undefined
-    }
-
-    if (typeof cursor !== 'object') {
-      return undefined
-    }
-
-    const nextCursor = (cursor as Record<string, unknown>)[segment]
-    cursor = nextCursor
+    if (cursor === null || cursor === undefined) return undefined
+    if (typeof cursor !== 'object') return undefined
+    cursor = (cursor as Record<string, unknown>)[segment]
   }
 
   return cursor
@@ -119,101 +125,197 @@ function relativeDifference(a: number, b: number): number {
   return Math.abs(a - b) / baseline
 }
 
-function median(values: number[]): number {
-  const sorted = [...values].sort((a, b) => a - b)
-  const middleIndex = Math.floor(sorted.length / 2)
-  if (sorted.length % 2 === 1) {
-    return sorted[middleIndex]
-  }
-  return (sorted[middleIndex - 1] + sorted[middleIndex]) / 2
+function normalizeUrl(value: string | undefined, fallback: string): string {
+  const normalized = value?.trim()
+  return normalized && normalized.length > 0 ? normalized : fallback
 }
 
-function findConsensus(
-  attempts: Array<{ name: string; rate: number }>,
-  tolerancePct: number,
-): { rate: number; sources: string[] } | null {
-  if (attempts.length < 2) {
-    return null
+function normalizeName(value: string | undefined, fallback: string): string {
+  const normalized = value?.trim()
+  return normalized && normalized.length > 0 ? normalized : fallback
+}
+
+function normalizePath(value: string | undefined, fallback: string): string {
+  const normalized = value?.trim()
+  return normalized && normalized.length > 0 ? normalized : fallback
+}
+
+function buildProvidersFromEnv(): ProviderConfig[] {
+  const sourceA: ProviderConfig = {
+    slot: 'A',
+    name: normalizeName(process.env.RATE_SOURCE_A_NAME, DEFAULT_SOURCE_A_NAME),
+    url: normalizeUrl(process.env.RATE_SOURCE_A_URL, DEFAULT_SOURCE_A_URL),
+    format: 'csv',
   }
 
-  let bestGroup: Array<{ name: string; rate: number }> = []
+  const sourceB: ProviderConfig = {
+    slot: 'B',
+    name: normalizeName(process.env.RATE_SOURCE_B_NAME, DEFAULT_SOURCE_B_NAME),
+    url: normalizeUrl(process.env.RATE_SOURCE_B_URL, DEFAULT_SOURCE_B_URL),
+    format: 'json',
+    path: normalizePath(process.env.RATE_SOURCE_B_PATH, DEFAULT_SOURCE_B_PATH),
+  }
 
-  for (const candidate of attempts) {
-    const group = attempts.filter(
-      (probe) => relativeDifference(candidate.rate, probe.rate) <= tolerancePct,
-    )
+  const sourceCFormat = process.env.RATE_SOURCE_C_FORMAT?.trim().toLowerCase() === 'csv' ? 'csv' : 'json'
+  const sourceC: ProviderConfig = {
+    slot: 'C',
+    name: normalizeName(process.env.RATE_SOURCE_C_NAME, 'Provider C'),
+    url: process.env.RATE_SOURCE_C_URL?.trim() ?? '',
+    format: sourceCFormat,
+    path: sourceCFormat === 'json' ? process.env.RATE_SOURCE_C_PATH?.trim() ?? '' : undefined,
+  }
 
-    if (group.length > bestGroup.length) {
-      bestGroup = group
+  return [sourceA, sourceB, sourceC]
+}
+
+function parseCsvLine(line: string): string[] {
+  const fields: string[] = []
+  let current = ''
+  let inQuotes = false
+
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i]
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"'
+        i += 1
+      } else {
+        inQuotes = !inQuotes
+      }
       continue
     }
 
-    if (group.length === bestGroup.length && group.length > 0) {
-      const groupSpread = Math.max(...group.map((item) => item.rate)) - Math.min(...group.map((item) => item.rate))
-      const bestSpread =
-        Math.max(...bestGroup.map((item) => item.rate)) - Math.min(...bestGroup.map((item) => item.rate))
-      if (groupSpread < bestSpread) {
-        bestGroup = group
-      }
+    if (char === ',' && !inQuotes) {
+      fields.push(current)
+      current = ''
+      continue
+    }
+
+    current += char
+  }
+
+  fields.push(current)
+  return fields
+}
+
+function parseCaracasDateToIso(value: string): string | null {
+  const normalized = value.trim()
+  const match = normalized.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})$/)
+  if (!match) return null
+
+  const [, dd, mm, yyyy, hh, min, sec] = match
+  const isoWithOffset = `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}T${hh.padStart(2, '0')}:${min}:${sec}-04:00`
+  const parsed = new Date(isoWithOffset)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed.toISOString()
+}
+
+function parseLatestCsvRate(csvText: string): CsvRowRate | null {
+  const rows = csvText
+    .split(/\r?\n/)
+    .map((row) => row.trim())
+    .filter((row) => row.length > 0)
+
+  if (rows.length < 2) {
+    return null
+  }
+
+  let latest: CsvRowRate | null = null
+
+  for (let i = 1; i < rows.length; i += 1) {
+    const fields = parseCsvLine(rows[i])
+    if (fields.length < 2) {
+      continue
+    }
+
+    const dateRaw = fields[0]?.trim() ?? ''
+    const bcvRaw = fields[1]?.trim() ?? ''
+    const asOf = parseCaracasDateToIso(dateRaw)
+    const rate = parseNumberishRate(bcvRaw)
+
+    if (!asOf || !rate) {
+      continue
+    }
+
+    if (!latest || new Date(asOf).getTime() > new Date(latest.asOf).getTime()) {
+      latest = { rate, asOf }
     }
   }
 
-  if (bestGroup.length < 2) {
-    return null
-  }
-
-  return {
-    rate: median(bestGroup.map((item) => item.rate)),
-    sources: bestGroup.map((item) => item.name),
-  }
+  return latest
 }
 
-async function readPersistedRate(storageMode: 'memory' | 'file', storageFile: string): Promise<PersistedRate | null> {
-  if (inMemoryLastValidRate) {
-    return inMemoryLastValidRate
-  }
-
-  if (storageMode !== 'file') {
-    return null
+async function fetchCsvProviderRate(provider: ProviderConfig): Promise<ProviderFetchResult> {
+  if (!provider.url) {
+    return {
+      slot: provider.slot,
+      name: provider.name,
+      status: 'skipped',
+      error: 'missing_url',
+    }
   }
 
   try {
-    const raw = await readFile(storageFile, 'utf-8')
-    const parsed = JSON.parse(raw) as PersistedRate
-    if (!Number.isFinite(parsed.rate) || parsed.rate <= 0 || !parsed.source || !parsed.asOf) {
-      return null
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS)
+
+    const response = await fetch(provider.url, {
+      method: 'GET',
+      headers: {
+        Accept: 'text/csv,text/plain;q=0.9,*/*;q=0.8',
+      },
+      cache: 'no-store',
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeout)
+
+    if (!response.ok) {
+      throw new Error(`http_${response.status}`)
     }
-    inMemoryLastValidRate = parsed
-    return parsed
-  } catch {
-    return null
+
+    const csvText = await response.text()
+    const latestRow = parseLatestCsvRate(csvText)
+    if (!latestRow) {
+      throw new Error('invalid_csv_payload')
+    }
+
+    return {
+      slot: provider.slot,
+      name: provider.name,
+      status: 'ok',
+      rate: latestRow.rate,
+      asOf: latestRow.asOf,
+    }
+  } catch (error) {
+    return {
+      slot: provider.slot,
+      name: provider.name,
+      status: 'error',
+      error: (error as Error).message,
+    }
   }
 }
 
-async function writePersistedRate(
-  storageMode: 'memory' | 'file',
-  storageFile: string,
-  payload: PersistedRate,
-): Promise<void> {
-  inMemoryLastValidRate = payload
-
-  if (storageMode !== 'file') {
-    return
-  }
-
-  await mkdir(path.dirname(storageFile), { recursive: true })
-  await writeFile(storageFile, JSON.stringify(payload, null, 2), 'utf-8')
-}
-
-async function fetchProviderRate(
+async function fetchJsonProviderRate(
   provider: ProviderConfig,
   adminApiToken: string | null,
-): Promise<RateProviderAttempt> {
-  if (!provider.url || !provider.path) {
+): Promise<ProviderFetchResult> {
+  if (!provider.url) {
     return {
+      slot: provider.slot,
       name: provider.name,
       status: 'skipped',
-      error: 'missing_url_or_path',
+      error: 'missing_url',
+    }
+  }
+
+  if (!provider.path) {
+    return {
+      slot: provider.slot,
+      name: provider.name,
+      status: 'skipped',
+      error: 'missing_path',
     }
   }
 
@@ -246,18 +348,19 @@ async function fetchProviderRate(
     const payload = (await response.json()) as unknown
     const rawRate = getByPath(payload, provider.path)
     const parsedRate = parseNumberishRate(rawRate)
-
     if (parsedRate === null) {
       throw new Error('invalid_rate_value')
     }
 
     return {
+      slot: provider.slot,
       name: provider.name,
       status: 'ok',
       rate: parsedRate,
     }
   } catch (error) {
     return {
+      slot: provider.slot,
       name: provider.name,
       status: 'error',
       error: (error as Error).message,
@@ -265,41 +368,107 @@ async function fetchProviderRate(
   }
 }
 
+async function fetchProviderRate(
+  provider: ProviderConfig,
+  adminApiToken: string | null,
+): Promise<ProviderFetchResult> {
+  if (provider.format === 'csv') {
+    return fetchCsvProviderRate(provider)
+  }
+
+  return fetchJsonProviderRate(provider, adminApiToken)
+}
+
+function buildConsensusFromAandB(
+  sourceA: ProviderFetchResult | undefined,
+  sourceB: ProviderFetchResult | undefined,
+  tolerancePct: number,
+  fallbackAsOf: string,
+): ConsensusResult | null {
+  if (!sourceA || !sourceB) {
+    return null
+  }
+
+  if (sourceA.status !== 'ok' || sourceB.status !== 'ok') {
+    return null
+  }
+
+  if (typeof sourceA.rate !== 'number' || typeof sourceB.rate !== 'number') {
+    return null
+  }
+
+  if (relativeDifference(sourceA.rate, sourceB.rate) > tolerancePct) {
+    return null
+  }
+
+  return {
+    rate: (sourceA.rate + sourceB.rate) / 2,
+    source: `${sourceA.name} + ${sourceB.name}`,
+    providersUsed: [sourceA.name, sourceB.name],
+    asOf: sourceA.asOf ?? fallbackAsOf,
+  }
+}
+
+async function readLastGoodConsensus(): Promise<StoredReferenceRateConsensus | null> {
+  if (inMemoryLastGoodConsensus) {
+    return inMemoryLastGoodConsensus
+  }
+
+  const fromDb = await getLastGoodConsensusFromDb()
+  if (fromDb) {
+    inMemoryLastGoodConsensus = fromDb
+  }
+
+  return fromDb
+}
+
+function toProviderAttemptList(results: ProviderFetchResult[]): RateProviderAttempt[] {
+  return results.map((item) => ({
+    name: item.name,
+    status: item.status,
+    rate: item.rate,
+    error: item.error,
+  }))
+}
+
 export async function resolveReferenceRate(): Promise<ReferenceRateResult> {
   const providers = buildProvidersFromEnv()
-  const fallbackRate = parseEnvNumber(process.env.BCV_FALLBACK_RATE, DEFAULT_FALLBACK_RATE)
   const deltaPct = parseEnvNumber(process.env.RATE_DELTA_PCT, DEFAULT_DELTA_PCT)
   const maxJumpPct = parseEnvNumber(process.env.RATE_MAX_JUMP_PCT, DEFAULT_MAX_JUMP_PCT)
-  const storageMode = normalizeStorageMode(process.env.RATE_STORAGE)
-  const storageFile = process.env.RATE_STORAGE_FILE || DEFAULT_STORAGE_FILE
+  const minPersistIntervalSeconds = parseEnvNumber(
+    process.env.RATE_LAST_GOOD_MIN_PERSIST_SECONDS,
+    DEFAULT_PERSIST_MIN_INTERVAL_SECONDS,
+  )
+  const emergencyFallbackRate = parseEnvNumber(
+    process.env.BCV_EMERGENCY_FALLBACK_RATE ?? process.env.BCV_FALLBACK_RATE,
+    DEFAULT_EMERGENCY_FALLBACK_RATE,
+  )
   const adminApiToken = process.env.ADMIN_API_TOKEN?.trim() || null
   const nowIso = new Date().toISOString()
 
-  const providersTried = await Promise.all(
-    providers.map((provider) => fetchProviderRate(provider, adminApiToken)),
-  )
+  const providerResults = await Promise.all(providers.map((provider) => fetchProviderRate(provider, adminApiToken)))
+  const providersTried = toProviderAttemptList(providerResults)
 
-  const successfulRates = providersTried
-    .filter((attempt): attempt is RateProviderAttempt & { rate: number } => attempt.status === 'ok' && typeof attempt.rate === 'number')
-    .map((attempt) => ({ name: attempt.name, rate: attempt.rate }))
-
-  const consensus = findConsensus(successfulRates, deltaPct)
-  const lastValid = await readPersistedRate(storageMode, storageFile)
+  const sourceA = providerResults.find((item) => item.slot === 'A')
+  const sourceB = providerResults.find((item) => item.slot === 'B')
+  const consensus = buildConsensusFromAandB(sourceA, sourceB, deltaPct, nowIso)
+  const lastGood = await readLastGoodConsensus()
 
   if (consensus) {
-    const jumpVsLastValid =
-      lastValid && lastValid.rate > 0
-        ? Math.abs(consensus.rate - lastValid.rate) / lastValid.rate
-        : 0
+    const jumpVsLastGood =
+      lastGood && lastGood.rate > 0 ? Math.abs(consensus.rate - lastGood.rate) / lastGood.rate : 0
 
-    if (!lastValid || jumpVsLastValid <= maxJumpPct) {
-      const livePayload: PersistedRate = {
+    if (!lastGood || jumpVsLastGood <= maxJumpPct) {
+      const livePayload: StoredReferenceRateConsensus = {
         rate: consensus.rate,
-        source: consensus.sources.join(' + '),
-        asOf: nowIso,
+        source: consensus.source,
+        asOf: consensus.asOf,
+        providersUsed: consensus.providersUsed,
+        persistedAt: nowIso,
       }
 
-      await writePersistedRate(storageMode, storageFile, livePayload)
+      inMemoryLastGoodConsensus = livePayload
+      await saveLastGoodConsensusToDbIfNeeded(livePayload, minPersistIntervalSeconds)
 
       return {
         rate: livePayload.rate,
@@ -311,20 +480,20 @@ export async function resolveReferenceRate(): Promise<ReferenceRateResult> {
     }
   }
 
-  if (lastValid) {
+  if (lastGood) {
     return {
-      rate: lastValid.rate,
-      mode: 'stale',
-      source: lastValid.source,
-      asOf: lastValid.asOf,
+      rate: lastGood.rate,
+      mode: 'stale_last_good',
+      source: lastGood.source,
+      asOf: lastGood.asOf,
       providersTried,
     }
   }
 
   return {
-    rate: fallbackRate,
-    mode: 'fallback',
-    source: 'configured_fallback',
+    rate: emergencyFallbackRate,
+    mode: 'emergency_fallback',
+    source: 'emergency_fallback',
     asOf: nowIso,
     providersTried,
   }

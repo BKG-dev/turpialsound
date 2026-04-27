@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 
 export type DisplayCurrency = 'usd' | 'bs'
-export type BcvMode = 'live' | 'stale' | 'fallback'
+export type BcvMode = 'live' | 'stale_last_good' | 'emergency_fallback'
 
 export interface BcvState {
   rate: number
@@ -24,8 +24,8 @@ const FALLBACK_BCV_RATE = 50
 export function useBcvRate(): BcvState {
   const [state, setState] = useState<BcvState>({
     rate: FALLBACK_BCV_RATE,
-    mode: 'fallback',
-    source: 'client_fallback',
+    mode: 'emergency_fallback',
+    source: 'client_emergency_fallback',
     asOf: null,
     providersTried: [],
     loading: true,
@@ -44,7 +44,8 @@ export function useBcvRate(): BcvState {
           asOf: string
           providersTried?: Array<{ name: string; status: string; rate?: number }>
         }) => {
-          const modeIsValid = data.mode === 'live' || data.mode === 'stale' || data.mode === 'fallback'
+          const modeIsValid =
+            data.mode === 'live' || data.mode === 'stale_last_good' || data.mode === 'emergency_fallback'
           const rateIsValid = Number.isFinite(data.rate) && data.rate > 0
 
           if (!modeIsValid || !rateIsValid || !data.source) {
@@ -117,7 +118,7 @@ export function formatBcvReferenceLabel(state: BcvState): string {
     return `Tasa de referencia en vivo (${state.source}): ${rateLabel}${asOfLabel}`
   }
 
-  if (state.mode === 'stale') {
+  if (state.mode === 'stale_last_good') {
     return `Tasa de referencia temporal (${state.source}): ${rateLabel}${asOfLabel}`
   }
 
