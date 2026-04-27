@@ -7,9 +7,9 @@ export const siteConfig: SiteConfig = {
     'Hub premium de ensayo, grabación y producción musical en Caracas. Más de 10 años construyendo sonido con artistas reconocidos en Venezuela.', // SUGGESTED
   url: 'https://turpialsound.com', // CLIENT_REQUIRED — confirmar dominio oficial
   locale: 'es',
-  phoneWhatsApp: '+58 416-8017844', // CLIENT_REQUIRED
-  phoneDisplay: '+58 416-8017844', // CLIENT_REQUIRED
-  email: 'contacto@turpialsound.com', // CLIENT_REQUIRED
+  phoneWhatsApp: '+58XXXXXXXXXX', // CLIENT_REQUIRED
+  phoneDisplay: '+58 XXX XXX XXXX', // CLIENT_REQUIRED
+  email: 'info@turpialsound.com', // CLIENT_REQUIRED
   address: {
     street: 'PLACEHOLDER — CLIENT_REQUIRED',
     city: 'Caracas',

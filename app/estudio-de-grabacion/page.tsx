@@ -50,22 +50,12 @@ export default function EstudioDeGrabacionPage() {
         eyebrow="Estudio de grabación"
         heading="Sonido de Estudio. Criterio Sin Concesiones."
         subheading="Consola de referencia, microfonía de alto nivel y sala de control tratada acústicamente. El mismo espacio donde grabaron Oscar D'León, Domingo Quiñones y Dimensión Latina. Más de 30 años de criterio técnico al servicio de tu obra."
-        ctaLabel="Reserva ahora"
-        ctaHref="/reservas"
+        ctaLabel="Cotizar sesión"
+        ctaHref="/contacto"
       />
 
-      {/* Photo gallery — 3D carousel */}
-      <StackingSection index={0} waves>
-        <SectionShell background="none">
-          <Mac3DGallery
-            images={studioImages}
-            title="Estudio de grabación · Turpial Sound"
-          />
-        </SectionShell>
-      </StackingSection>
-
       {/* Equipment */}
-      <StackingSection index={1} background="surface" waves>
+      <StackingSection index={0} background="surface" waves>
         <SectionShell background="none">
           <SectionHeading
             eyebrow="Equipamiento"
@@ -91,10 +81,11 @@ export default function EstudioDeGrabacionPage() {
         </SectionShell>
       </StackingSection>
 
-      {/* Authority signal */}
-      <StackingSection index={2} waves>
+      {/* ── SECCIÓN UNIFICADA: Artistas → Galería → "También puede interesarte" ── */}
+      <StackingSection index={1} waves>
         <SectionShell background="none" size="sm">
-          <div className="flex flex-col items-center gap-4 text-center">
+          {/* PARTE SUPERIOR: Artistas */}
+          <div className="flex flex-col items-center gap-4 text-center mb-4">
             <div className="flex items-center justify-center gap-4">
               <span className="accent-line-animated" aria-hidden="true" />
               <span className="font-display text-xs tracking-[0.3em] uppercase text-gradient-animated">
@@ -108,36 +99,41 @@ export default function EstudioDeGrabacionPage() {
               Ver todos los artistas →
             </Button>
           </div>
-        </SectionShell>
-      </StackingSection>
 
-      {/* Related services */}
-      <StackingSection index={3} background="surface" waves>
-        <SectionShell background="none" size="sm">
-          <div className="flex items-center gap-4">
-            <span className="accent-line-animated" aria-hidden="true" />
-            <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
-              También puede interesarte
-            </span>
-          </div>
-          <div className="mt-6 flex flex-wrap gap-4">
-            <Button as="link" href="/produccion-musical" variant="secondary" size="sm">
-              Producción musical
-            </Button>
-            <Button as="link" href="/servicios/mezcla-masterizacion" variant="secondary" size="sm">
-              Mezcla y masterización
-            </Button>
+          {/* PARTE CENTRAL: Galería 3D */}
+          <Mac3DGallery
+            images={studioImages}
+            title="Estudio de grabación · Turpial Sound"
+            compact
+          />
+
+          {/* PARTE INFERIOR: "También puede interesarte" */}
+          <div className="mt-6 flex flex-col gap-4">
+            <div className="flex items-center gap-4">
+              <span className="accent-line-animated" aria-hidden="true" />
+              <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
+                También puede interesarte
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-4">
+              <Button as="link" href="/produccion-musical" variant="secondary" size="sm">
+                Producción musical
+              </Button>
+              <Button as="link" href="/servicios/mezcla-masterizacion" variant="secondary" size="sm">
+                Mezcla y masterización
+              </Button>
+            </div>
           </div>
         </SectionShell>
       </StackingSection>
 
       {/* CTA — panoramic strip */}
-      <StackingSection index={4}>
+      <StackingSection index={2}>
         <CTASection
           heading="¿Cuándo empezamos a grabar?"
           subheading="Cuéntanos sobre tu proyecto y armamos la sesión ideal para tu obra."
-          ctaLabel="Reserva ahora"
-          ctaHref="/reservas"
+          ctaLabel="Cotizar sesión"
+          ctaHref="/contacto"
           imageSrc="/images/estudio-grabacion.jpg"
           className="py-20 sm:py-28"
         />

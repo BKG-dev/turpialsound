@@ -45,31 +45,22 @@ export function Lightbox({ images, activeIndex, onClose, onPrev, onNext }: Light
       transition={{ duration: 0.22 }}
       onClick={onClose}
     >
-      {/* Close */}
-      <button
-        onClick={onClose}
-        className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white backdrop-blur-sm transition-all hover:border-white/50"
-        aria-label="Cerrar"
-      >
-        <X size={16} />
-      </button>
-
       {/* Prev */}
       {images.length > 1 && (
         <button
           onClick={(e) => { e.stopPropagation(); onPrev() }}
-          className="absolute left-4 z-10 flex h-12 w-12 items-center justify-center rounded-full border border-accent-cyan/30 bg-black/50 text-accent-cyan backdrop-blur-sm transition-all hover:border-accent-cyan/70 hover:shadow-glow-cyan-sm"
+          className="absolute left-4 z-20 flex h-12 w-12 items-center justify-center rounded-full border border-accent-cyan/30 bg-black/60 text-accent-cyan backdrop-blur-sm transition-all hover:border-accent-cyan/70 hover:shadow-glow-cyan-sm"
           aria-label="Imagen anterior"
         >
           <ChevronLeft size={20} />
         </button>
       )}
 
-      {/* Image */}
+      {/* Image container — close button lives INSIDE here */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeIndex}
-          className="relative max-h-[85vh] w-full max-w-[90vw]"
+          className="relative max-h-[85vh] w-full max-w-[90vw] rounded-2xl overflow-hidden"
           style={{ aspectRatio: '16/9' }}
           initial={{ opacity: 0, scale: 0.94 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -85,6 +76,20 @@ export function Lightbox({ images, activeIndex, onClose, onPrev, onNext }: Light
             sizes="90vw"
             priority
           />
+
+          {/* ── Close button — anchored to image top-right corner ── */}
+          <button
+            onClick={onClose}
+            className="absolute right-4 top-4 z-30 flex h-11 w-11 items-center justify-center rounded-full backdrop-blur-sm transition-all duration-250 hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
+            style={{
+              background: 'rgba(10,10,10,0.82)',
+              border: '1px solid rgba(0,174,239,0.45)',
+              boxShadow: '0 0 24px rgba(0,0,0,0.7), 0 0 12px rgba(0,174,239,0.22)',
+            }}
+            aria-label="Cerrar imagen ampliada"
+          >
+            <X size={18} style={{ color: '#F5F5F5' }} strokeWidth={2.5} />
+          </button>
         </motion.div>
       </AnimatePresence>
 
@@ -92,7 +97,7 @@ export function Lightbox({ images, activeIndex, onClose, onPrev, onNext }: Light
       {images.length > 1 && (
         <button
           onClick={(e) => { e.stopPropagation(); onNext() }}
-          className="absolute right-4 z-10 flex h-12 w-12 items-center justify-center rounded-full border border-accent-cyan/30 bg-black/50 text-accent-cyan backdrop-blur-sm transition-all hover:border-accent-cyan/70 hover:shadow-glow-cyan-sm"
+          className="absolute right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full border border-accent-cyan/30 bg-black/60 text-accent-cyan backdrop-blur-sm transition-all hover:border-accent-cyan/70 hover:shadow-glow-cyan-sm"
           aria-label="Imagen siguiente"
         >
           <ChevronRight size={20} />

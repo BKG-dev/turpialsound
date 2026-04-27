@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
 import type { Route } from 'next'
 import {
@@ -20,12 +20,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { pricingPackages, type PricingPackage } from '@/content/pricing'
-import {
-  formatBcvReferenceLabel,
-  formatUsdByCurrencyParts,
-  useBcvRate,
-  type DisplayCurrency,
-} from '@/lib/bookings/currency-display'
+import { useBcvRate } from '@/lib/bookings/currency-display'
 
 /* ── Icon map ─────────────────────────────────────────────────── */
 const iconMap: Record<PricingPackage['iconName'], LucideIcon> = {
@@ -37,7 +32,6 @@ const iconMap: Record<PricingPackage['iconName'], LucideIcon> = {
   Headphones,
 }
 
-/* ── BCV rate hook ────────────────────────────────────────────── */
 /* ── Price formatting ─────────────────────────────────────────── */
 interface PriceDisplay {
   label: string
@@ -45,12 +39,15 @@ interface PriceDisplay {
   amount: string | null
 }
 
-function formatPrice(pkg: PricingPackage, currency: DisplayCurrency, rate: number): PriceDisplay {
+function formatPrice(pkg: PricingPackage, currency: 'usd' | 'bs', rate: number): PriceDisplay {
   if (pkg.priceUSD === null) {
     return { label: pkg.priceLabel, prefix: null, amount: null }
   }
-  const priceParts = formatUsdByCurrencyParts(pkg.priceUSD, currency, rate)
-  return { label: pkg.priceLabel, prefix: priceParts.prefix, amount: priceParts.amount }
+  if (currency === 'usd') {
+    return { label: pkg.priceLabel, prefix: '$', amount: String(pkg.priceUSD) }
+  }
+  const bs = Math.round(pkg.priceUSD * rate)
+  return { label: pkg.priceLabel, prefix: 'Bs.', amount: bs.toLocaleString('es-VE') }
 }
 
 /* ── Card ─────────────────────────────────────────────────────── */
@@ -60,7 +57,7 @@ function PriceCard({
   bcvRate,
 }: {
   pkg: PricingPackage
-  currency: DisplayCurrency
+  currency: 'usd' | 'bs'
   bcvRate: number
 }) {
   const Icon = iconMap[pkg.iconName]
@@ -132,7 +129,7 @@ function PriceCard({
       {/* ── ZONA 3: Bloque de precio — h-[6.5rem] fijo ──────────── */}
       {/* label (9px) · prefijo (text-sm) · monto (2.75rem=44px)    */}
       <div className="mt-3 flex h-[6.5rem] shrink-0 flex-col justify-start overflow-hidden">
-        <span className="font-display text-[9px] tracking-[0.22em] uppercase leading-none text-text-muted">
+        <span className="font-display text-[10px] tracking-[0.22em] uppercase leading-none text-text-muted">
           {label}
         </span>
 
@@ -198,7 +195,7 @@ function PriceCard({
             >
               <Check size={9} style={{ color: accentVar }} aria-hidden="true" />
             </div>
-            <span className="font-display text-[11px] leading-[1.6] text-text-secondary">
+            <span className="font-display text-xs leading-[1.6] text-text-secondary">
               {feat}
             </span>
           </li>
@@ -208,7 +205,7 @@ function PriceCard({
       {/* ── CTA — mt-auto ancla el botón al fondo en todas ─────── */}
       <Link
         href={pkg.ctaHref as Route}
-        className="btn-silky-primary mt-auto inline-flex h-[2.75rem] w-full shrink-0 items-center justify-center rounded-lg font-display text-[10px] tracking-[0.22em] uppercase text-white"
+        className="btn-silky-primary mt-auto inline-flex h-[2.75rem] w-full shrink-0 items-center justify-center rounded-lg font-display text-xs tracking-[0.22em] uppercase text-white"
       >
         {pkg.ctaLabel}
       </Link>
@@ -218,9 +215,12 @@ function PriceCard({
 
 /* ── Main component ───────────────────────────────────────────── */
 export function PricingPreview() {
-  const [currency, setCurrency] = useState<DisplayCurrency>('bs')
-  const bcvState = useBcvRate()
+  const [currency, setCurrency] = useState<'usd' | 'bs'>('bs')
+  const { rate, mode, loading } = useBcvRate()
+  const isFallback = mode !== 'live'
   const carouselRef = useRef<HTMLDivElement>(null)
+  const wrapperRef  = useRef<HTMLDivElement>(null)
+  const wheelThrottle = useRef(false)
 
   function scroll(dir: 'left' | 'right') {
     const el = carouselRef.current
@@ -243,24 +243,41 @@ export function PricingPreview() {
   }
 
   useEffect(() => {
+    const wrapper = wrapperRef.current
     const el = carouselRef.current
-    if (!el) return
+    if (!wrapper || !el) return
+
     const handleWheel = (e: WheelEvent) => {
       const maxScroll = el.scrollWidth - el.clientWidth
-      if (e.deltaY > 0 && el.scrollLeft < maxScroll - 1) {
+      const isAtEnd   = el.scrollLeft >= maxScroll - 2
+      const isAtStart = el.scrollLeft <= 2
+
+      if (e.deltaY > 0 && !isAtEnd) {
         e.preventDefault()
-        el.scrollLeft += e.deltaY
-      } else if (e.deltaY < 0 && el.scrollLeft > 1) {
+        if (!wheelThrottle.current) {
+          wheelThrottle.current = true
+          const cardWidth = el.clientWidth / 3 + 20
+          el.scrollBy({ left: cardWidth, behavior: 'smooth' })
+          setTimeout(() => { wheelThrottle.current = false }, 500)
+        }
+      } else if (e.deltaY < 0 && !isAtStart) {
         e.preventDefault()
-        el.scrollLeft += e.deltaY
+        if (!wheelThrottle.current) {
+          wheelThrottle.current = true
+          const cardWidth = el.clientWidth / 3 + 20
+          el.scrollBy({ left: -cardWidth, behavior: 'smooth' })
+          setTimeout(() => { wheelThrottle.current = false }, 500)
+        }
       }
     }
-    el.addEventListener('wheel', handleWheel, { passive: false })
-    return () => el.removeEventListener('wheel', handleWheel)
+    // Attach to the entire section wrapper — intercepts wheel regardless of
+    // which child element the cursor is over, not just the carousel strip.
+    wrapper.addEventListener('wheel', handleWheel, { passive: false })
+    return () => wrapper.removeEventListener('wheel', handleWheel)
   }, [])
 
   return (
-    <div className="pb-16">
+    <div ref={wrapperRef} className="pb-16">
 
       {/* ── HEADER ROW: texto izq + controles der ─────────────────── */}
       <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between max-w-[1400px] mx-auto">
@@ -338,7 +355,14 @@ export function PricingPreview() {
           <div className="flex items-center gap-1.5">
             <Info size={10} style={{ color: 'var(--color-cyan)' }} aria-hidden="true" />
             <span className="whitespace-nowrap font-display text-[9px] tracking-wider text-text-muted">
-              {formatBcvReferenceLabel(bcvState)}
+              {loading
+                ? 'Obteniendo tasa BCV…'
+                : isFallback
+                  ? 'Tasa de referencia (BCV no disponible)'
+                  : `1 USD = Bs. ${rate.toLocaleString('es-VE', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 4,
+                    })}`}
             </span>
           </div>
         </div>
@@ -355,7 +379,7 @@ export function PricingPreview() {
             key={pkg.id}
             className="flex shrink-0 snap-start flex-col w-[calc(100%-1rem)] sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2.5rem)/3)]"
           >
-            <PriceCard pkg={pkg} currency={currency} bcvRate={bcvState.rate} />
+            <PriceCard pkg={pkg} currency={currency} bcvRate={rate} />
           </div>
         ))}
       </div>
@@ -366,4 +390,3 @@ export function PricingPreview() {
     </div>
   )
 }
-

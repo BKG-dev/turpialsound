@@ -91,9 +91,11 @@ export function SectionHeading({
       {subheading && (
         <motion.p
           className={cn(
-            'mt-4 max-w-prose text-body-base text-text-secondary',
+            'mt-4 max-w-prose text-body-base',
+            align === 'center' && 'mx-auto',
             align === 'right' && 'ml-auto',
           )}
+          style={{ color: '#d0d0d0', textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}
           variants={{ hidden: { opacity: 0, y: 14 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] } } }}
         >
           {subheading}

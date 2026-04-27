@@ -73,7 +73,7 @@ export function HeroSection({
 
   /* canvasH se mide UNA SOLA VEZ en onAnimationComplete del div de CTAs
      (posición final tras la animación de entrada, con el borde inferior del botón
-     "Reserva ahora" ya asentado). Ese valor es permanente para toda la sesión. */
+     "Reservar ahora" ya asentado). Ese valor es permanente para toda la sesión. */
 
   // Video lifecycle — useIsomorphicLayoutEffect is critical here.
   //
@@ -209,12 +209,13 @@ export function HeroSection({
       />
 
       {/* ── Dark overlay gradient ──────────────────────────────────────── */}
+      {/* Cyan radial moved to 68% vertical to avoid colliding with text block */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background: [
             'linear-gradient(to bottom, rgba(10,10,10,0.32) 0%, rgba(10,10,10,0.14) 50%, rgba(10,10,10,0.62) 100%)',
-            'radial-gradient(ellipse 70% 50% at 20% 30%, rgba(0,174,239,0.07) 0%, transparent 60%)',
+            'radial-gradient(ellipse 70% 50% at 20% 68%, rgba(0,174,239,0.07) 0%, transparent 60%)',
             'radial-gradient(ellipse 60% 40% at 80% 70%, rgba(255,193,7,0.06) 0%, transparent 60%)',
           ].join(', '),
         }}
@@ -295,7 +296,15 @@ export function HeroSection({
           </button>
         )}
 
-        <div className="max-w-[900px]">
+        {/* Text anchor gradient — applied directly as background on the text block */}
+        <div
+          className="max-w-[900px]"
+          style={{
+            borderRadius: '0.5rem',
+            padding: '1rem 2rem 1rem 0',
+            marginLeft: '-0.5rem',
+          }}
+        >
 
           {/* Eyebrow */}
           <motion.div
@@ -358,7 +367,12 @@ export function HeroSection({
 
             {/* Subtitle — enters after SOUND settles */}
             <motion.p
-              className="mt-8 max-w-[580px] text-body-lg text-text-secondary"
+              className="mt-8 max-w-[580px] text-body-lg"
+              style={{
+                color: '#F5F5F5',
+                fontWeight: 500,
+                textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+              }}
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.1, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -383,8 +397,8 @@ export function HeroSection({
               setCanvasH(Math.max(40, Math.round(window.innerHeight - rect.bottom - 5)))
             }}
           >
-            <Button as="link" href="/reservas" variant="primary" size="lg">
-              Reserva ahora
+            <Button as="link" href="/contacto" variant="primary" size="lg">
+              Reservar ahora
             </Button>
             <Button as="link" href="/servicios" variant="glow-cyan" size="lg">
               Ver servicios

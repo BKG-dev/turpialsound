@@ -66,48 +66,51 @@ export default function SalasDeEnsayoPage() {
         eyebrow="Salas de ensayo"
         heading="El Escenario Antes Del Escenario."
         subheading="Acústica milimétrica y backline de élite. Un espacio diseñado para la ejecución perfecta, la práctica profunda y la evolución de tu producción musical."
-        ctaLabel="Reserva ahora"
-        ctaHref="/reservas"
+        ctaLabel="Consultar disponibilidad"
+        ctaHref="/contacto"
       />
 
-      {/* Features — con iconografía y borde animado premium */}
+      {/* ── SECCIÓN UNIFICADA: Features + Galería 3D (caben en 1 viewport) ── */}
+      {/*  Desktop: columna flex sin overflow. Móvil: scroll normal.          */}
       <StackingSection index={0} waves>
-        <SectionShell background="none">
-          <SectionHeading
-            eyebrow="Lo que incluye"
-            heading="Equipamiento y espacio diseñados para rendir."
-            accentColor="gold"
-          />
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map(({ Icon, label }) => (
-              <div
-                key={label}
-                className="card-premium-wrapper card-premium-wrapper--gold flex items-start gap-4 rounded-xl bg-brand-surface p-5"
-              >
-                <Icon
-                  size={16}
-                  className="mt-0.5 shrink-0 text-accent-gold"
-                  aria-hidden="true"
-                />
-                <span className="text-sm text-text-secondary">{label}</span>
-              </div>
-            ))}
+        {/* Override del section-padding por uno más compacto */}
+        <div className="container-base py-8 md:py-10">
+          {/* Features — compact */}
+          <div className="flex-shrink-0">
+            <SectionHeading
+              eyebrow="Lo que incluye"
+              heading="Equipamiento y espacio diseñados para rendir."
+              accentColor="gold"
+            />
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {features.map(({ Icon, label }) => (
+                <div
+                  key={label}
+                  className="card-premium-wrapper card-premium-wrapper--gold flex items-start gap-3 rounded-xl bg-brand-surface px-4 py-3"
+                >
+                  <Icon
+                    size={14}
+                    className="mt-0.5 shrink-0 text-accent-gold"
+                    aria-hidden="true"
+                  />
+                  <span className="text-sm text-text-secondary">{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </SectionShell>
+
+          {/* Galería 3D — toma el espacio restante */}
+          <div className="mt-8 flex-grow">
+            <Mac3DGallery
+              images={salasImages}
+              title="Salas de ensayo · Turpial Sound"
+            />
+          </div>
+        </div>
       </StackingSection>
 
-      {/* Galería 3D — wrapped in StackingSection for correct snap */}
+      {/* Artistas */}
       <StackingSection index={1} waves>
-        <SectionShell background="none">
-          <Mac3DGallery
-            images={salasImages}
-            title="Salas de ensayo · Turpial Sound"
-          />
-        </SectionShell>
-      </StackingSection>
-
-      {/* Artistas — clon de la sección del Home */}
-      <StackingSection index={2} waves>
         <SectionShell background="none">
           <SectionHeading
             eyebrow="Trayectoria verificable"
@@ -148,9 +151,18 @@ export default function SalasDeEnsayoPage() {
         </SectionShell>
       </StackingSection>
 
-      {/* Related services */}
-      <StackingSection index={3} background="surface" waves>
-        <SectionShell background="none" size="sm">
+      {/* ── CTA + "También puede interesarte" — bloque unificado sin onda extra ── */}
+      <StackingSection index={2}>
+        <CTASection
+          heading="¿Cuándo quieres ensayar?"
+          subheading="Revisa disponibilidad y reserva tu sala. El espacio está listo cuando tú lo estés."
+          ctaLabel="Reservar sala"
+          ctaHref="/contacto"
+          imageSrc="/images/SDE2.jpg"
+          className="py-20 sm:py-28"
+        />
+        {/* Related services — debajo del CTA, dentro del mismo bloque */}
+        <div className="container-base pb-12">
           <div className="flex items-center gap-4">
             <span className="accent-line-animated" aria-hidden="true" />
             <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
@@ -165,19 +177,7 @@ export default function SalasDeEnsayoPage() {
               Producción musical
             </Button>
           </div>
-        </SectionShell>
-      </StackingSection>
-
-      {/* CTA — panoramic strip with SDE2.jpg */}
-      <StackingSection index={4}>
-        <CTASection
-          heading="¿Cuándo quieres ensayar?"
-          subheading="Revisa disponibilidad y reserva tu sala. El espacio está listo cuando tú lo estés."
-          ctaLabel="Reserva ahora"
-          ctaHref="/reservas"
-          imageSrc="/images/SDE2.jpg"
-          className="py-20 sm:py-28"
-        />
+        </div>
       </StackingSection>
     </>
   )

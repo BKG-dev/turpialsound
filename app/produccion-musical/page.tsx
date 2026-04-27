@@ -5,7 +5,7 @@ import { getServiceBySlug } from '@/content/services'
 import { Wand2, Mic, Sliders, Disc } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { NuminousHero } from '@/components/sections/NuminousHero'
-import { SectionShell, SectionHeading } from '@/components/sections/SectionShell'
+import { SectionShell } from '@/components/sections/SectionShell'
 import { CTASection } from '@/components/sections/CTASection'
 import { StackingSection } from '@/components/home/StackingSection'
 import { Button } from '@/components/ui/Button'
@@ -76,75 +76,94 @@ export default function ProduccionMusicalPage() {
         eyebrow="Producción musical"
         heading="Donde la Idea Se Convierte en Obra."
         subheading="Producción integral de alto nivel: arreglos, grabación, mezcla y masterización bajo un mismo criterio técnico. Más de 30 años materializando visiones musicales con estándar de exportación."
-        ctaLabel="Reserva ahora"
-        ctaHref="/reservas"
+        ctaLabel="Hablar con el equipo"
+        ctaHref="/contacto"
       />
 
-      {/* Proceso */}
+      {/* ── SPLIT LAYOUT: Proceso + "También puede interesarte" (izq) | Galería (der) ── */}
       <StackingSection index={0} waves>
         <SectionShell background="none">
-          <SectionHeading
-            eyebrow="Proceso"
-            heading="Cada etapa cubierta."
-            accentColor="gold"
-          />
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
-            {steps.map((item) => (
-              <div
-                key={item.title}
-                className={`card-premium-wrapper${item.accent === 'gold' ? ' card-premium-wrapper--gold' : ''} rounded-2xl bg-brand-surface p-6`}
-              >
-                <item.Icon
-                  size={22}
-                  className="mb-4"
-                  style={{ color: item.accent === 'cyan' ? 'var(--color-cyan)' : 'var(--color-gold)' }}
-                  aria-hidden="true"
-                />
-                <h3 className="font-display text-sm text-text-primary">{item.title}</h3>
-                <p className="mt-2 text-sm text-text-secondary">{item.body}</p>
+          {/*
+           * Desktop (≥1024px): dos columnas 45% / 55%
+           * Mobile (<1024px): columna única — Proceso → Galería → Links
+           */}
+          <div className="grid gap-10 lg:grid-cols-[28%_72%] lg:gap-20 lg:items-start">
+
+            {/* ── COLUMNA IZQUIERDA: Proceso + Links ── */}
+            <div className="flex flex-col lg:-ml-4">
+              {/* Eyebrow + Título */}
+              <div className="mb-4 flex items-center gap-3">
+                <span className="accent-line-animated" aria-hidden="true" />
+                <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
+                  Proceso
+                </span>
               </div>
-            ))}
-          </div>
-        </SectionShell>
-      </StackingSection>
+              <h2 className="font-display text-display-md text-text-primary mb-8">
+                Cada etapa cubierta.
+              </h2>
 
-      {/* Photo gallery — 3D carousel, wrapped for correct snap */}
-      <StackingSection index={1} waves>
-        <SectionShell background="none">
-          <Mac3DGallery
-            images={produccionImages}
-            title="Producción musical · Turpial Sound"
-          />
-        </SectionShell>
-      </StackingSection>
+              {/* Tarjetas verticales (lista) */}
+              <div className="flex flex-col gap-4">
+                {steps.map((item) => (
+                  <div
+                    key={item.title}
+                    className={`card-premium-wrapper${item.accent === 'gold' ? ' card-premium-wrapper--gold' : ''} rounded-2xl bg-brand-surface px-5 py-4 flex items-start gap-4`}
+                  >
+                    <item.Icon
+                      size={18}
+                      className="mt-0.5 shrink-0"
+                      style={{ color: item.accent === 'cyan' ? 'var(--color-cyan)' : 'var(--color-gold)' }}
+                      aria-hidden="true"
+                    />
+                    <div>
+                      <h3 className="font-display text-sm text-text-primary">{item.title}</h3>
+                      <p className="mt-1 text-sm text-text-secondary">{item.body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-      {/* Related services */}
-      <StackingSection index={2} background="surface" waves>
-        <SectionShell background="none" size="sm">
-          <div className="flex items-center gap-4">
-            <span className="accent-line-animated" aria-hidden="true" />
-            <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
-              También puede interesarte
-            </span>
-          </div>
-          <div className="mt-6 flex flex-wrap gap-4">
-            <Button as="link" href="/estudio-de-grabacion" variant="secondary" size="sm">
-              Estudio de grabación
-            </Button>
-            <Button as="link" href="/servicios/arreglos-musicales" variant="secondary" size="sm">
-              Arreglos musicales
-            </Button>
+            </div>
+
+            {/* ── COLUMNA DERECHA: Galería 3D + "También puede interesarte" ── */}
+            <div className="flex w-full flex-col gap-10">
+              <Mac3DGallery
+                images={produccionImages}
+                title="Producción musical · Turpial Sound"
+                className="w-full"
+              />
+
+              {/* "También puede interesarte" — debajo del carrusel, centrado */}
+              <div className="flex flex-col items-center gap-4">
+                <div className="flex items-center gap-4">
+                  <span className="accent-line-animated" aria-hidden="true" />
+                  <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
+                    También puede interesarte
+                  </span>
+                  <span className="accent-line-animated" aria-hidden="true" />
+                </div>
+                <div className="flex flex-wrap justify-center gap-4">
+                  <Button as="link" href="/estudio-de-grabacion" variant="secondary" size="sm">
+                    Estudio de grabación
+                  </Button>
+                  <Button as="link" href="/servicios/arreglos-musicales" variant="secondary" size="sm">
+                    Arreglos musicales
+                  </Button>
+                </div>
+              </div>
+            </div>
+
           </div>
         </SectionShell>
       </StackingSection>
 
       {/* CTA — panoramic strip with pm1.jpg */}
-      <StackingSection index={3}>
+      <StackingSection index={1}>
         <CTASection
           heading="¿Tienes un proyecto de producción?"
           subheading="Cuéntanos dónde estás y a dónde quieres llegar. Construimos el camino contigo."
-          ctaLabel="Reserva ahora"
-          ctaHref="/reservas"
+          ctaLabel="Iniciar proyecto"
+          ctaHref="/contacto"
           imageSrc="/images/produccion1.jpg"
         />
       </StackingSection>
