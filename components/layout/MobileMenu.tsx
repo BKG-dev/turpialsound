@@ -14,32 +14,30 @@ export function MobileMenu({ hideWhatsAppCta = false }: MobileMenuProps) {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="lg:hidden">
-      {/* Hamburger / Close button */}
+    <div className="relative z-[70] lg:hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="flex h-9 w-9 items-center justify-center rounded text-text-secondary transition-colors duration-250 hover:text-text-primary"
-        aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary transition-colors duration-250 hover:text-text-primary"
+        aria-label={open ? 'Cerrar menu' : 'Abrir menu'}
         aria-expanded={open}
         aria-controls="mobile-nav"
       >
-        <span className="sr-only">{open ? 'Cerrar' : 'Menú'}</span>
+        <span className="sr-only">{open ? 'Cerrar' : 'Menu'}</span>
 
-        {open ? (
-          <X size={20} aria-hidden="true" />
-        ) : (
-          <Menu size={20} aria-hidden="true" />
-        )}
+        {open ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
       </button>
 
-      {/* Slide-down panel */}
       {open && (
         <div
           id="mobile-nav"
-          className="animate-slide-down fixed inset-x-0 top-16 z-40 glass-surface border-b border-white/[0.06] px-6 py-6"
+          className="animate-slide-down fixed left-3 right-3 top-[4.25rem] z-[70] max-h-[calc(100vh-5.25rem)] overflow-y-auto rounded-2xl border border-white/[0.08] px-4 py-5 shadow-2xl sm:left-6 sm:right-6"
+          style={{
+            background: 'rgba(8,8,8,0.98)',
+            boxShadow: '0 24px 70px rgba(0,0,0,0.85)',
+          }}
           onClick={() => setOpen(false)}
         >
-          <nav className="flex flex-col gap-1" aria-label="Menú principal móvil">
+          <nav className="flex flex-col gap-1" aria-label="Menu principal movil">
             {mainNavItems.map((item) => (
               <div key={item.href}>
                 <Link
