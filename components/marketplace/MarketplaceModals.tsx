@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   X,
@@ -20,9 +21,35 @@ import {
   Upload,
   Loader2,
   AlertCircle,
+  HelpCircle,
+  ChevronDown,
+  Send,
 } from 'lucide-react'
-import type { ModalState, ModalFlow, ProductCategory, ServiceCategory } from '@/types/marketplace'
+import type {
+  ModalState,
+  ModalFlow,
+  ProductCategory,
+  ServiceCategory,
+  Listing,
+  MarketplaceUser,
+  ProductCondition,
+} from '@/types/marketplace'
 import { PRODUCT_CATEGORIES, SERVICE_CATEGORIES } from '@/content/marketplace'
+import { createListing } from '@/actions/marketplace'
+import { MarketplaceCard } from '@/components/marketplace/MarketplaceCard'
+import type { MpCategory } from '@/lib/validations/marketplace'
+import { getListingQuestions, askQuestion, answerQuestion } from '@/actions/marketplace/questions'
+import type { QuestionItem } from '@/actions/marketplace/questions'
+import {
+  prepareMarketplaceUpload,
+  revokeMarketplaceUploadPreview,
+  uploadMarketplaceFile,
+  type PreparedMarketplaceUpload,
+} from '@/lib/marketplace/media-client'
+
+// ─── Image resize util ────────────────────────────────────────────────────────
+// Converts a File to a base64 JPEG data URL, scaled to max 800px on the longest side.
+// Data URLs persist in DB and render everywhere — no CDN required.
 
 // ─── Icon map ─────────────────────────────────────────────────────────────────
 
@@ -38,7 +65,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Radio: <Radio size={20} />,
 }
 
-// ─── Overlay + Container ──────────────────────────────────────────────────────
+// ─── Overlay ──────────────────────────────────────────────────────────────────
 
 function ModalOverlay({ onClose }: { onClose: () => void }) {
   return (
@@ -49,7 +76,7 @@ function ModalOverlay({ onClose }: { onClose: () => void }) {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
       onClick={onClose}
-      className="fixed inset-0 z-40"
+      className="fixed inset-0 z-[80]"
       style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
     />
   )
@@ -100,15 +127,15 @@ function ModalShell({
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="relative z-50 w-full max-w-lg mx-auto"
-      style={{ maxHeight: '85vh' }}
+      className="relative z-[90] w-full max-w-6xl mx-auto"
+      style={{ maxHeight: '90vh' }}
     >
       <div
         className="card-premium-wrapper rounded-2xl flex flex-col overflow-hidden"
         style={{
           background: 'rgba(11,11,11,0.98)',
           boxShadow: `0 32px 80px rgba(0,0,0,0.85), 0 0 120px ${accent === 'cyan' ? 'rgba(0,174,239,0.08)' : 'rgba(255,193,7,0.06)'}`,
-          maxHeight: '85vh',
+          maxHeight: '90vh',
         }}
       >
         {/* Header */}
@@ -117,10 +144,7 @@ function ModalShell({
           style={{ background: accentBg }}
         >
           {onBack && (
-            <button
-              onClick={onBack}
-              className="text-[#5a5a5a] hover:text-[#f2f2f2] transition-colors -ml-1"
-            >
+            <button onClick={onBack} className="text-[#5a5a5a] hover:text-[#f2f2f2] transition-colors -ml-1">
               <ChevronLeft size={18} />
             </button>
           )}
@@ -130,8 +154,6 @@ function ModalShell({
             </h2>
             {subtitle && <p className="text-[11px] text-[#5a5a5a] mt-0.5">{subtitle}</p>}
           </div>
-
-          {/* Step indicator */}
           {step !== undefined && totalSteps && (
             <div className="flex items-center gap-1 mr-2 flex-shrink-0">
               {Array.from({ length: totalSteps }).map((_, i) => (
@@ -147,19 +169,11 @@ function ModalShell({
               ))}
             </div>
           )}
-
-          <button
-            onClick={onClose}
-            className="text-[#5a5a5a] hover:text-[#f2f2f2] transition-colors flex-shrink-0"
-          >
+          <button onClick={onClose} className="text-[#5a5a5a] hover:text-[#f2f2f2] transition-colors flex-shrink-0">
             <X size={16} />
           </button>
         </div>
-
-        {/* Body — scrollable */}
-        <div className="flex-1 overflow-y-auto scrollbar-none">
-          {children}
-        </div>
+        <div className="flex-1 overflow-y-auto scrollbar-none">{children}</div>
       </div>
     </motion.div>
   )
@@ -175,41 +189,28 @@ function CategoryGrid<T extends ProductCategory | ServiceCategory>({
   onSelect: (id: T) => void
 }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 p-6">
       {categories.map(cat => {
         const accentColor = cat.accent === 'cyan' ? '#00aeef' : '#ffc107'
         const accentBg = cat.accent === 'cyan' ? 'rgba(0,174,239,0.06)' : 'rgba(255,193,7,0.05)'
         const accentBorder = cat.accent === 'cyan' ? 'rgba(0,174,239,0.18)' : 'rgba(255,193,7,0.18)'
-
         return (
           <button
             key={cat.id}
             onClick={() => onSelect(cat.id)}
             className="group rounded-xl p-4 text-left transition-all duration-250 hover:-translate-y-1"
-            style={{
-              background: accentBg,
-              border: `1px solid ${accentBorder}`,
-              boxShadow: `0 0 0 0 ${accentColor}`,
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 32px rgba(0,0,0,0.4), 0 0 24px ${accentColor}18`
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 0 transparent'
-            }}
+            style={{ background: accentBg, border: `1px solid ${accentBorder}` }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 32px rgba(0,0,0,0.4), 0 0 24px ${accentColor}18` }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '' }}
           >
             <div className="flex items-start gap-3">
-              <div
-                className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ background: `${accentColor}15`, color: accentColor }}
-              >
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: `${accentColor}15`, color: accentColor }}>
                 {ICON_MAP[cat.icon] ?? <Music size={20} />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-[#f2f2f2] group-hover:text-white transition-colors">
-                    {cat.label}
-                  </p>
+                  <p className="text-sm font-medium text-[#f2f2f2] group-hover:text-white transition-colors">{cat.label}</p>
                   {cat.listingCount && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full"
                       style={{ background: `${accentColor}15`, color: accentColor }}>
@@ -233,50 +234,300 @@ function CategoryGrid<T extends ProductCategory | ServiceCategory>({
 function SuccessScreen({ message, onClose }: { message: string; onClose: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-8 text-center gap-6">
-      <motion.div
-        initial={{ scale: 0.5, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.1, type: 'spring', stiffness: 200, damping: 14 }}
-      >
+      <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.1, type: 'spring', stiffness: 200, damping: 14 }}>
         <div className="w-16 h-16 rounded-full flex items-center justify-center"
           style={{ background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)' }}>
-          <CheckCircle2 size={32} className="text-[#4ade80]" style={{ filter: 'drop-shadow(0 0 12px rgba(74,222,128,0.5))' }} />
+          <CheckCircle2 size={32} className="text-[#4ade80]"
+            style={{ filter: 'drop-shadow(0 0 12px rgba(74,222,128,0.5))' }} />
         </div>
       </motion.div>
       <div>
         <p className="text-lg font-semibold text-[#f2f2f2] mb-2">{message}</p>
-        <p className="text-sm text-[#5a5a5a]">
-          El equipo de Turpial Market revisará tu publicación en menos de 24 horas.
-        </p>
+        <p className="text-sm text-[#5a5a5a]">El equipo de Turpial Market revisará tu publicación en menos de 24 horas.</p>
       </div>
-      <button
-        onClick={onClose}
-        className="btn-silky-primary px-8 py-3 rounded-xl text-sm font-semibold"
-      >
+      <button onClick={onClose} className="btn-silky-primary px-8 py-3 rounded-xl text-sm font-semibold">
         Explorar el Marketplace
       </button>
     </div>
   )
 }
 
+// ─── Field error + input style helpers ───────────────────────────────────────
+
+function FieldError({ errors, field }: { errors?: Record<string, string[]>; field: string }) {
+  const msg = errors?.[field]?.[0]
+  if (!msg) return null
+  return (
+    <p className="text-[11px] text-red-400 flex items-center gap-1 mt-1">
+      <AlertCircle size={10} className="flex-shrink-0" />
+      {msg}
+    </p>
+  )
+}
+
+function fieldInputStyle(field: string, fieldErrors?: Record<string, string[]>) {
+  const hasError = !!fieldErrors?.[field]?.length
+  return {
+    background: 'rgba(20,20,20,0.8)',
+    border: `1px solid ${hasError ? 'rgba(239,68,68,0.5)' : '#1e1e1e'}`,
+  }
+}
+
+// ─── LISTING Q&A SECTION ─────────────────────────────────────────────────────
+
+function ListingQASection({
+  listingId,
+  sellerId,
+  currentUserId,
+}: {
+  listingId: string
+  sellerId?: string
+  currentUserId?: string
+}) {
+  const [expanded, setExpanded] = useState(true)
+  const [questions, setQuestions] = useState<QuestionItem[]>([])
+  const [loading, setLoading] = useState(false)
+  const [newQ, setNewQ] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null)
+  const [replyStates, setReplyStates] = useState<Record<string, { text: string; submitting: boolean }>>({})
+
+  const isSeller = !!currentUserId && !!sellerId && currentUserId === sellerId
+
+  useEffect(() => {
+    if (questions.length > 0) return
+    setLoading(true)
+    getListingQuestions(listingId)
+      .then(res => { if (res.success) setQuestions(res.data) })
+      .finally(() => setLoading(false))
+  }, [listingId, questions.length])
+
+  async function handleAsk() {
+    const trimmed = newQ.trim()
+    if (!trimmed || submitting) return
+    setSubmitting(true)
+    setFeedback(null)
+    const res = await askQuestion(listingId, trimmed)
+    if (res.success) {
+      setNewQ('')
+      const refresh = await getListingQuestions(listingId)
+      if (refresh.success) setQuestions(refresh.data)
+      setFeedback({ ok: true, msg: res.message })
+    } else {
+      setFeedback({ ok: false, msg: res.message })
+    }
+    setSubmitting(false)
+  }
+
+  async function handleAnswer(questionId: string) {
+    const state = replyStates[questionId]
+    if (!state?.text?.trim() || state.submitting) return
+    setReplyStates(prev => ({ ...prev, [questionId]: { ...prev[questionId], submitting: true } }))
+    const res = await answerQuestion(questionId, state.text.trim())
+    if (res.success) {
+      const refresh = await getListingQuestions(listingId)
+      if (refresh.success) setQuestions(refresh.data)
+      setReplyStates(prev => { const next = { ...prev }; delete next[questionId]; return next })
+    } else {
+      setReplyStates(prev => ({ ...prev, [questionId]: { ...prev[questionId], submitting: false } }))
+    }
+  }
+
+  return (
+    <div className="mt-2 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,174,239,0.12)' }}>
+      {/* Toggle header */}
+      <button
+        onClick={() => setExpanded(p => !p)}
+        className="w-full flex items-center gap-2 px-4 py-2.5 text-left transition-colors"
+        style={{ background: expanded ? 'rgba(0,174,239,0.06)' : 'rgba(0,174,239,0.03)' }}
+      >
+        <HelpCircle size={13} className="text-[#00aeef] flex-shrink-0" />
+        <span className="text-[11px] font-semibold text-[#00aeef] tracking-wide uppercase flex-1">
+          Preguntas y Respuestas
+          {questions.length > 0 && (
+            <span className="ml-2 text-[9px] text-[#5a5a5a] font-normal normal-case">
+              ({questions.length})
+            </span>
+          )}
+        </span>
+        {isSeller && questions.filter(q => !q.answer).length > 0 && (
+          <span
+            className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold mr-1"
+            style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}
+          >
+            {questions.filter(q => !q.answer).length} sin responder
+          </span>
+        )}
+        <ChevronDown
+          size={13}
+          className="text-[#5a5a5a] transition-transform duration-200"
+          style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        />
+      </button>
+
+      {/* Body */}
+      {expanded && (
+        <div className="px-4 py-3 space-y-3" style={{ background: 'rgba(0,0,0,0.2)' }}>
+          {loading && (
+            <div className="flex items-center gap-2 py-2">
+              <Loader2 size={12} className="animate-spin text-[#5a5a5a]" />
+              <span className="text-[11px] text-[#5a5a5a]">Cargando preguntas...</span>
+            </div>
+          )}
+          {!loading && questions.length === 0 && (
+            <p className="text-[11px] text-[#3a3a3a] italic py-1">Sin preguntas aún. ¡Sé el primero en preguntar!</p>
+          )}
+          {questions.map(q => (
+            <div key={q.id} className="space-y-1.5">
+              <div className="flex items-start gap-2">
+                <HelpCircle size={11} className="text-[#00aeef] mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-[12px] text-[#d4d4d4] leading-snug">{q.question}</p>
+                  <p className="text-[10px] text-[#3a3a3a] mt-0.5">{q.asker.displayName}</p>
+                </div>
+              </div>
+              {q.answer ? (
+                <div
+                  className="ml-5 rounded-lg px-3 py-2"
+                  style={{ background: 'rgba(0,174,239,0.05)', border: '1px solid rgba(0,174,239,0.1)' }}
+                >
+                  <p className="text-[10px] font-semibold text-[#00aeef] mb-0.5 uppercase tracking-wide">
+                    Vendedor
+                  </p>
+                  <p className="text-[12px] text-[#c0c0c0] leading-snug">{q.answer}</p>
+                </div>
+              ) : isSeller ? (
+                // Seller reply form for unanswered questions
+                <div
+                  className="ml-5 rounded-lg px-3 py-2 space-y-2"
+                  style={{ background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.15)' }}
+                >
+                  <p className="text-[10px] font-semibold text-[#f59e0b] uppercase tracking-wide">
+                    Tu respuesta
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      value={replyStates[q.id]?.text ?? ''}
+                      onChange={e => setReplyStates(prev => ({
+                        ...prev,
+                        [q.id]: { text: e.target.value, submitting: false },
+                      }))}
+                      onKeyDown={e => { if (e.key === 'Enter') handleAnswer(q.id) }}
+                      placeholder="Escribe tu respuesta..."
+                      className="flex-1 text-[12px] text-[#f2f2f2] placeholder:text-[#3a3a3a] rounded-lg px-3 py-1.5 outline-none"
+                      style={{ background: 'rgba(20,20,20,0.8)', border: '1px solid rgba(245,158,11,0.2)' }}
+                      maxLength={1000}
+                      disabled={replyStates[q.id]?.submitting}
+                    />
+                    <button
+                      onClick={() => handleAnswer(q.id)}
+                      disabled={!replyStates[q.id]?.text?.trim() || replyStates[q.id]?.submitting}
+                      className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 disabled:opacity-40"
+                      style={{
+                        background: replyStates[q.id]?.text?.trim() && !replyStates[q.id]?.submitting
+                          ? 'linear-gradient(135deg, rgba(245,158,11,0.9) 0%, rgba(234,179,8,0.8) 100%)'
+                          : 'rgba(30,30,30,0.8)',
+                        border: replyStates[q.id]?.text?.trim() ? 'none' : '1px solid rgba(255,255,255,0.06)',
+                      }}
+                    >
+                      {replyStates[q.id]?.submitting
+                        ? <Loader2 size={12} className="animate-spin text-[#5a5a5a]" />
+                        : <Send size={12} className={replyStates[q.id]?.text?.trim() ? 'text-white' : 'text-[#5a5a5a]'} />
+                      }
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="ml-5 text-[10px] text-[#3a3a3a] italic">Pendiente de respuesta</p>
+              )}
+            </div>
+          ))}
+
+          {/* Ask form — only for non-sellers */}
+          {!isSeller && (
+            <div
+              className="rounded-xl p-3 space-y-2 mt-2"
+              style={{ background: 'rgba(0,174,239,0.03)', border: '1px solid rgba(0,174,239,0.1)' }}
+            >
+              <p className="text-[10px] text-[#5a5a5a] uppercase tracking-wide font-semibold">
+                Hacer una pregunta
+              </p>
+              <div className="flex gap-2">
+                <input
+                  value={newQ}
+                  onChange={e => setNewQ(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleAsk() }}
+                  placeholder="¿Qué quieres saber sobre este producto?"
+                  className="flex-1 text-[12px] text-[#f2f2f2] placeholder:text-[#3a3a3a] rounded-lg px-3 py-2 outline-none"
+                  style={{ background: 'rgba(20,20,20,0.8)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  maxLength={500}
+                  disabled={submitting}
+                />
+                <button
+                  onClick={handleAsk}
+                  disabled={!newQ.trim() || submitting}
+                  className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 disabled:opacity-40"
+                  style={{
+                    background: newQ.trim() && !submitting
+                      ? 'linear-gradient(135deg, #00aeef 0%, #0050c8 100%)'
+                      : 'rgba(30,30,30,0.8)',
+                    border: newQ.trim() && !submitting ? 'none' : '1px solid rgba(255,255,255,0.06)',
+                  }}
+                >
+                  {submitting
+                    ? <Loader2 size={12} className="animate-spin text-[#5a5a5a]" />
+                    : <Send size={12} className={newQ.trim() ? 'text-white' : 'text-[#5a5a5a]'} />
+                  }
+                </button>
+              </div>
+              {feedback && (
+                <p className={`text-[11px] ${feedback.ok ? 'text-[#4ade80]' : 'text-[#ef4444]'}`}>
+                  {feedback.msg}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── FLOW: Buy / Browse Products ──────────────────────────────────────────────
 
-function BuyFlow({
-  step,
-  direction,
-  onCategory,
-}: {
+const LISTINGS_ERROR_MESSAGE = 'No pudimos cargar listados en este momento. Intenta de nuevo.'
+
+function ListingsStatus({ tone, message }: { tone: 'cyan' | 'gold'; message: string }) {
+  const color = tone === 'cyan' ? '#00aeef' : '#ffc107'
+
+  return (
+    <div
+      className="mx-auto flex w-full max-w-5xl items-center justify-center rounded-xl px-5 py-12 text-center"
+      style={{ background: `${color}08`, border: `1px dashed ${color}30` }}
+    >
+      <p className="text-sm text-[#7a7a7a]">{message}</p>
+    </div>
+  )
+}
+
+function BuyFlow({ step, direction, listings, listingsLoading, listingsError, onCategory, onCardClick, onBuy, currentUserId }: {
   step: number
   direction: number
+  listings: Listing[]
+  listingsLoading?: boolean
+  listingsError?: string | null
   onCategory: (cat: ProductCategory) => void
+  onCardClick: (listing: Listing) => void
+  onBuy?: (listing: Listing) => void
+  currentUserId?: string
 }) {
   return (
-    <motion.div key={`buy-${step}`} custom={direction} variants={stepVariants}
-      initial="enter" animate="center" exit="exit">
+    <motion.div key={`buy-${step}`} custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" className="w-full">
       {step === 0 && (
         <div className="p-6 space-y-4">
           <p className="text-sm text-[#a0a0a0]">
-            Encuentra equipos, instrumentos y consumibles verificados. Toda compra está protegida por nuestro sistema de escrow.
+            Encuentra equipos, instrumentos y consumibles verificados. Cada compra usa pago reportado y revision manual antes de avanzar.
           </p>
           <CategoryGrid
             categories={PRODUCT_CATEGORIES as Array<{ id: ProductCategory; label: string; description: string; icon: string; accent: 'gold' | 'cyan'; listingCount?: number }>}
@@ -285,19 +536,48 @@ function BuyFlow({
         </div>
       )}
       {step === 1 && (
-        <div className="p-6">
-          <div className="flex items-center gap-2 mb-4">
+        <div className="w-full px-4 py-5 sm:px-6 sm:py-6">
+          <div className="mx-auto mb-3 flex w-full max-w-5xl items-center gap-2 px-1 sm:px-2">
             <AlertCircle size={13} className="text-[#00aeef]" />
-            <span className="text-[11px] text-[#5a5a5a]">Mostrando todos los listados activos en esta categoría</span>
+            <span className="text-[11px] text-[#5a5a5a]">Listados activos en esta categoría</span>
           </div>
-          <div className="rounded-xl flex items-center justify-center py-12"
-            style={{ background: 'rgba(0,174,239,0.03)', border: '1px dashed rgba(0,174,239,0.15)' }}>
-            <div className="text-center">
-              <Loader2 size={24} className="text-[#00aeef] animate-spin mx-auto mb-3" />
-              <p className="text-sm text-[#5a5a5a]">Cargando listados...</p>
-              <p className="text-[11px] text-[#2a2a2a] mt-1">Conectar con API en producción</p>
+          {listingsLoading ? (
+            <ListingsStatus tone="cyan" message="Cargando listados..." />
+          ) : listingsError ? (
+            <ListingsStatus tone="cyan" message={LISTINGS_ERROR_MESSAGE} />
+          ) : listings.length === 0 ? (
+            <div className="mx-auto rounded-xl flex w-full max-w-5xl items-center justify-center py-12"
+              style={{ background: 'rgba(0,174,239,0.03)', border: '1px dashed rgba(0,174,239,0.15)' }}>
+              <div className="text-center">
+                <p className="text-sm text-[#5a5a5a]">Sin listados en esta categoría aún.</p>
+                <p className="text-[11px] text-[#2a2a2a] mt-1">¡Sé el primero en publicar!</p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {listings.map(l => (
+                <div key={l.id} className="flex h-full min-w-0 flex-col gap-3">
+                  <MarketplaceCard listing={l} onClick={() => onCardClick(l)} />
+                  <ListingQASection
+                    listingId={l.id}
+                    sellerId={l.type === 'product' ? l.seller.id : l.talent.id}
+                    currentUserId={currentUserId}
+                  />
+                  {onBuy && (
+                    <button
+                      onClick={() => onBuy(l)}
+                      className="w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all"
+                      style={{ background: 'rgba(0,174,239,0.1)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.2)' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,174,239,0.18)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,174,239,0.1)' }}
+                    >
+                      Comprar ahora
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </motion.div>
@@ -307,17 +587,30 @@ function BuyFlow({
 // ─── FLOW: Sell a Product ─────────────────────────────────────────────────────
 
 function SellFlow({
-  step,
-  direction,
-  onCategory,
+  step, direction, onCategory, formValues, onFieldChange, fieldErrors, imageFiles, onAddImages, onRemoveImage,
 }: {
   step: number
   direction: number
   onCategory: (cat: ProductCategory) => void
+  formValues: Record<string, string>
+  onFieldChange: (key: string, value: string) => void
+  fieldErrors?: Record<string, string[]>
+  imageFiles: PreparedMarketplaceUpload[]
+  onAddImages: (files: FileList) => void
+  onRemoveImage: (index: number) => void
 }) {
+  const GOLD_FOCUS = 'rgba(255,193,7,0.4)'
+  const ERR_COLOR = 'rgba(239,68,68,0.5)'
+
+  const onFocus = (field: string) => (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    e.target.style.borderColor = fieldErrors?.[field]?.length ? ERR_COLOR : GOLD_FOCUS
+  }
+  const onBlur = (field: string) => (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    e.target.style.borderColor = fieldErrors?.[field]?.length ? ERR_COLOR : '#1e1e1e'
+  }
+
   return (
-    <motion.div key={`sell-${step}`} custom={direction} variants={stepVariants}
-      initial="enter" animate="center" exit="exit">
+    <motion.div key={`sell-${step}`} custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit">
       {step === 0 && (
         <div className="p-6 space-y-4">
           <p className="text-sm text-[#a0a0a0]">
@@ -334,42 +627,47 @@ function SellFlow({
         <div className="p-6 space-y-4">
           <p className="text-xs text-[#5a5a5a] uppercase tracking-widest">Detalles del producto</p>
           <div className="space-y-3">
-            {[
-              { label: 'Título del listado', placeholder: 'Ej: Fender Stratocaster Player 2022' },
-              { label: 'Precio (USD)', placeholder: '0.00', type: 'number' },
-            ].map(field => (
-              <div key={field.label} className="space-y-1.5">
-                <label className="text-xs text-[#a0a0a0]">{field.label}</label>
-                <input
-                  type={field.type ?? 'text'}
-                  placeholder={field.placeholder}
-                  className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none transition-all duration-250"
-                  style={{
-                    background: 'rgba(20,20,20,0.8)',
-                    border: '1px solid #1e1e1e',
-                  }}
-                  onFocus={e => { e.target.style.borderColor = 'rgba(255,193,7,0.4)' }}
-                  onBlur={e => { e.target.style.borderColor = '#1e1e1e' }}
-                />
-              </div>
-            ))}
-            <div className="space-y-1.5">
-              <label className="text-xs text-[#a0a0a0]">Descripción</label>
-              <textarea
-                rows={3}
-                placeholder="Describe el estado, accesorios incluidos, historial..."
-                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none resize-none transition-all duration-250"
-                style={{ background: 'rgba(20,20,20,0.8)', border: '1px solid #1e1e1e' }}
-                onFocus={e => { e.target.style.borderColor = 'rgba(255,193,7,0.4)' }}
-                onBlur={e => { e.target.style.borderColor = '#1e1e1e' }}
-              />
+
+            {/* Title */}
+            <div className="space-y-1">
+              <label className="text-xs text-[#a0a0a0]">Título del listado</label>
+              <input type="text" value={formValues.title ?? ''} onChange={e => onFieldChange('title', e.target.value)}
+                placeholder="Ej: Fender Stratocaster Player 2022"
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none"
+                style={fieldInputStyle('title', fieldErrors)}
+                onFocus={onFocus('title')} onBlur={onBlur('title')} />
+              <FieldError errors={fieldErrors} field="title" />
             </div>
+
+            {/* Price */}
+            <div className="space-y-1">
+              <label className="text-xs text-[#a0a0a0]">Precio (USD)</label>
+              <input type="number" value={formValues.price ?? ''} onChange={e => onFieldChange('price', e.target.value)}
+                placeholder="0.00"
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none"
+                style={fieldInputStyle('price', fieldErrors)}
+                onFocus={onFocus('price')} onBlur={onBlur('price')} />
+              <FieldError errors={fieldErrors} field="price" />
+            </div>
+
+            {/* Description */}
+            <div className="space-y-1">
+              <label className="text-xs text-[#a0a0a0]">Descripción</label>
+              <textarea rows={3} value={formValues.description ?? ''} onChange={e => onFieldChange('description', e.target.value)}
+                placeholder="Describe el estado, accesorios incluidos, historial..."
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none resize-none"
+                style={fieldInputStyle('description', fieldErrors)}
+                onFocus={onFocus('description')} onBlur={onBlur('description')} />
+              <FieldError errors={fieldErrors} field="description" />
+            </div>
+
+            {/* Condition */}
             <div className="space-y-1.5">
               <label className="text-xs text-[#a0a0a0]">Estado del equipo</label>
-              <select
+              <select value={formValues.condition ?? 'used-like-new'} onChange={e => onFieldChange('condition', e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] outline-none"
                 style={{ background: 'rgba(20,20,20,0.8)', border: '1px solid #1e1e1e' }}
-              >
+                onFocus={onFocus('condition')} onBlur={onBlur('condition')}>
                 <option value="new">Nuevo</option>
                 <option value="used-like-new">Como nuevo</option>
                 <option value="used-good">Buen estado</option>
@@ -377,12 +675,64 @@ function SellFlow({
               </select>
             </div>
 
-            {/* Image upload placeholder */}
-            <div className="rounded-xl flex flex-col items-center justify-center py-8 gap-2 cursor-pointer hover:border-[rgba(255,193,7,0.3)] transition-colors"
-              style={{ background: 'rgba(20,20,20,0.5)', border: '1px dashed #2a2a2a' }}>
-              <Upload size={20} className="text-[#2a2a2a]" />
-              <p className="text-xs text-[#5a5a5a]">Subir fotos del equipo (máx. 8)</p>
-              <p className="text-[10px] text-[#2a2a2a]">JPG, PNG — hasta 10MB cada una</p>
+            {/* Image upload */}
+            <div className="space-y-2">
+              <label className="text-xs text-[#a0a0a0]">
+                Fotos del equipo <span className="text-[#5a5a5a]">({imageFiles.length}/8)</span>
+              </label>
+              {imageFiles.length > 0 ? (
+                <div className="grid grid-cols-4 gap-2">
+                  {imageFiles.map((upload, i) => (
+                    <div key={i} className="relative aspect-square rounded-lg overflow-hidden group">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={upload.previewUrl} alt="" className="w-full h-full object-cover" />
+                      <button type="button" onClick={() => onRemoveImage(i)}
+                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <X size={14} className="text-white" />
+                      </button>
+                    </div>
+                  ))}
+                  {imageFiles.length < 8 && (
+                    <label className="relative aspect-square rounded-lg flex items-center justify-center cursor-pointer overflow-hidden"
+                      style={{ border: '1px dashed #2a2a2a' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,193,7,0.3)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#2a2a2a' }}>
+                      <Upload size={14} className="text-[#2a2a2a]" />
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                        multiple
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                        aria-label="Agregar fotos del equipo"
+                        onChange={e => {
+                          if (e.target.files) onAddImages(e.target.files)
+                          e.currentTarget.value = ''
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+              ) : (
+                <label className="relative rounded-xl flex flex-col items-center justify-center py-8 gap-2 cursor-pointer overflow-hidden transition-colors"
+                  style={{ background: 'rgba(20,20,20,0.5)', border: '1px dashed #2a2a2a' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,193,7,0.3)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#2a2a2a' }}>
+                  <Upload size={20} className="text-[#2a2a2a]" />
+                  <p className="text-xs text-[#5a5a5a]">Subir fotos del equipo (máx. 8)</p>
+                  <p className="text-[10px] text-[#2a2a2a]">JPG, PNG, WEBP o HEIC</p>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                    multiple
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    aria-label="Subir fotos del equipo"
+                    onChange={e => {
+                      if (e.target.files) onAddImages(e.target.files)
+                      e.currentTarget.value = ''
+                    }}
+                  />
+                </label>
+              )}
             </div>
 
             {/* Commission notice */}
@@ -390,7 +740,7 @@ function SellFlow({
               style={{ background: 'rgba(255,193,7,0.05)', border: '1px solid rgba(255,193,7,0.12)' }}>
               <AlertCircle size={13} className="text-[#ffc107] mt-0.5 flex-shrink-0" />
               <p className="text-[11px] text-[#a0a0a0]">
-                Turpial Market cobra el <span className="text-[#ffc107]">5% de comisión sobre el precio de venta</span>, descontado de tu liquidación al completarse la transacción. El comprador no paga comisión adicional.
+                Turpial Market cobra el <span className="text-[#ffc107]">5% de comisión sobre el precio de venta</span>, descontado de tu liquidación al completarse la transacción.
               </p>
             </div>
           </div>
@@ -402,22 +752,23 @@ function SellFlow({
 
 // ─── FLOW: Find Talent ────────────────────────────────────────────────────────
 
-function FindTalentFlow({
-  step,
-  direction,
-  onCategory,
-}: {
+function FindTalentFlow({ step, direction, listings, listingsLoading, listingsError, onCategory, onCardClick, onBuy, currentUserId }: {
   step: number
   direction: number
+  listings: Listing[]
+  listingsLoading?: boolean
+  listingsError?: string | null
   onCategory: (cat: ServiceCategory) => void
+  onCardClick: (listing: Listing) => void
+  onBuy?: (listing: Listing) => void
+  currentUserId?: string
 }) {
   return (
-    <motion.div key={`find-${step}`} custom={direction} variants={stepVariants}
-      initial="enter" animate="center" exit="exit">
+    <motion.div key={`find-${step}`} custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit">
       {step === 0 && (
         <div className="p-6 space-y-4">
           <p className="text-sm text-[#a0a0a0]">
-            Contrata músicos de sesión, bandas para eventos, técnicos de audio y productores. Pagos protegidos por escrow.
+            Contrata músicos de sesión, bandas para eventos, técnicos de audio y productores con pago reportado y revision manual.
           </p>
           <CategoryGrid
             categories={SERVICE_CATEGORIES as Array<{ id: ServiceCategory; label: string; description: string; icon: string; accent: 'gold' | 'cyan'; listingCount?: number }>}
@@ -426,19 +777,48 @@ function FindTalentFlow({
         </div>
       )}
       {step === 1 && (
-        <div className="p-6">
-          <div className="flex items-center gap-2 mb-4">
+        <div className="p-4 space-y-3">
+          <div className="flex items-center gap-2 px-2 mb-1">
             <Star size={12} className="text-[#ffc107] fill-[#ffc107]" />
-            <span className="text-[11px] text-[#5a5a5a]">Talentos verificados — ordenados por calificación</span>
+            <span className="text-[11px] text-[#5a5a5a]">Talentos en esta categoría</span>
           </div>
-          <div className="rounded-xl flex items-center justify-center py-12"
-            style={{ background: 'rgba(255,193,7,0.03)', border: '1px dashed rgba(255,193,7,0.15)' }}>
-            <div className="text-center">
-              <Loader2 size={24} className="text-[#ffc107] animate-spin mx-auto mb-3" />
-              <p className="text-sm text-[#5a5a5a]">Cargando talentos...</p>
-              <p className="text-[11px] text-[#2a2a2a] mt-1">Conectar con API en producción</p>
+          {listingsLoading ? (
+            <ListingsStatus tone="gold" message="Cargando listados..." />
+          ) : listingsError ? (
+            <ListingsStatus tone="gold" message={LISTINGS_ERROR_MESSAGE} />
+          ) : listings.length === 0 ? (
+            <div className="rounded-xl flex items-center justify-center py-12"
+              style={{ background: 'rgba(255,193,7,0.03)', border: '1px dashed rgba(255,193,7,0.15)' }}>
+              <div className="text-center">
+                <p className="text-sm text-[#5a5a5a]">Sin talentos en esta categoría aún.</p>
+                <p className="text-[11px] text-[#2a2a2a] mt-1">¡Registra tu perfil de talento!</p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {listings.map(l => (
+                <div key={l.id} className="space-y-2">
+                  <MarketplaceCard listing={l} onClick={() => onCardClick(l)} />
+                  <ListingQASection
+                    listingId={l.id}
+                    sellerId={l.type === 'product' ? l.seller.id : l.talent.id}
+                    currentUserId={currentUserId}
+                  />
+                  {onBuy && (
+                    <button
+                      onClick={() => onBuy(l)}
+                      className="w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all"
+                      style={{ background: 'rgba(255,193,7,0.08)', color: '#ffc107', border: '1px solid rgba(255,193,7,0.2)' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,193,7,0.15)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,193,7,0.08)' }}
+                    >
+                      Contratar ahora
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </motion.div>
@@ -448,17 +828,27 @@ function FindTalentFlow({
 // ─── FLOW: Offer Talent ───────────────────────────────────────────────────────
 
 function OfferTalentFlow({
-  step,
-  direction,
-  onCategory,
+  step, direction, onCategory, formValues, onFieldChange, fieldErrors,
 }: {
   step: number
   direction: number
   onCategory: (cat: ServiceCategory) => void
+  formValues: Record<string, string>
+  onFieldChange: (key: string, value: string) => void
+  fieldErrors?: Record<string, string[]>
 }) {
+  const GOLD_FOCUS = 'rgba(255,193,7,0.4)'
+  const ERR_COLOR = 'rgba(239,68,68,0.5)'
+
+  const onFocus = (field: string) => (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    e.target.style.borderColor = fieldErrors?.[field]?.length ? ERR_COLOR : GOLD_FOCUS
+  }
+  const onBlur = (field: string) => (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    e.target.style.borderColor = fieldErrors?.[field]?.length ? ERR_COLOR : '#1e1e1e'
+  }
+
   return (
-    <motion.div key={`offer-${step}`} custom={direction} variants={stepVariants}
-      initial="enter" animate="center" exit="exit">
+    <motion.div key={`offer-${step}`} custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit">
       {step === 0 && (
         <div className="p-6 space-y-4">
           <p className="text-sm text-[#a0a0a0]">
@@ -475,34 +865,60 @@ function OfferTalentFlow({
         <div className="p-6 space-y-4">
           <p className="text-xs text-[#5a5a5a] uppercase tracking-widest">Perfil de Talento</p>
           <div className="space-y-3">
-            {[
-              { label: 'Título de tu servicio', placeholder: 'Ej: Guitarrista de Sesión — Rock & Blues' },
-              { label: 'Precio desde (USD)', placeholder: '50', type: 'number' },
-              { label: 'Precio hasta (USD) — opcional', placeholder: '200', type: 'number' },
-              { label: 'Etiqueta de precio', placeholder: 'Ej: por sesión, por canción, por evento' },
-            ].map(field => (
-              <div key={field.label} className="space-y-1.5">
-                <label className="text-xs text-[#a0a0a0]">{field.label}</label>
-                <input
-                  type={field.type ?? 'text'}
-                  placeholder={field.placeholder}
-                  className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none transition-all duration-250"
-                  style={{ background: 'rgba(20,20,20,0.8)', border: '1px solid #1e1e1e' }}
-                  onFocus={e => { e.target.style.borderColor = 'rgba(255,193,7,0.4)' }}
-                  onBlur={e => { e.target.style.borderColor = '#1e1e1e' }}
-                />
-              </div>
-            ))}
+
+            {/* Title */}
+            <div className="space-y-1">
+              <label className="text-xs text-[#a0a0a0]">Título de tu servicio</label>
+              <input type="text" value={formValues.title ?? ''} onChange={e => onFieldChange('title', e.target.value)}
+                placeholder="Ej: Guitarrista de Sesión — Rock & Blues"
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none"
+                style={fieldInputStyle('title', fieldErrors)}
+                onFocus={onFocus('title')} onBlur={onBlur('title')} />
+              <FieldError errors={fieldErrors} field="title" />
+            </div>
+
+            {/* Price from */}
+            <div className="space-y-1">
+              <label className="text-xs text-[#a0a0a0]">Precio desde (USD)</label>
+              <input type="number" value={formValues.priceFrom ?? ''} onChange={e => onFieldChange('priceFrom', e.target.value)}
+                placeholder="50"
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none"
+                style={fieldInputStyle('price', fieldErrors)}
+                onFocus={onFocus('price')} onBlur={onBlur('price')} />
+              <FieldError errors={fieldErrors} field="price" />
+            </div>
+
+            {/* Price to — optional, no validation */}
             <div className="space-y-1.5">
-              <label className="text-xs text-[#a0a0a0]">Bio / descripción del servicio</label>
-              <textarea
-                rows={4}
-                placeholder="Cuéntanos sobre tu experiencia, géneros, equipos y lo que ofreces..."
-                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none resize-none transition-all duration-250"
+              <label className="text-xs text-[#a0a0a0]">Precio hasta (USD) — opcional</label>
+              <input type="number" value={formValues.priceTo ?? ''} onChange={e => onFieldChange('priceTo', e.target.value)}
+                placeholder="200"
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none"
                 style={{ background: 'rgba(20,20,20,0.8)', border: '1px solid #1e1e1e' }}
-                onFocus={e => { e.target.style.borderColor = 'rgba(255,193,7,0.4)' }}
-                onBlur={e => { e.target.style.borderColor = '#1e1e1e' }}
-              />
+                onFocus={e => { e.target.style.borderColor = GOLD_FOCUS }}
+                onBlur={e => { e.target.style.borderColor = '#1e1e1e' }} />
+            </div>
+
+            {/* Price label */}
+            <div className="space-y-1.5">
+              <label className="text-xs text-[#a0a0a0]">Etiqueta de precio</label>
+              <input type="text" value={formValues.priceLabel ?? ''} onChange={e => onFieldChange('priceLabel', e.target.value)}
+                placeholder="Ej: por sesión, por canción, por evento"
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none"
+                style={{ background: 'rgba(20,20,20,0.8)', border: '1px solid #1e1e1e' }}
+                onFocus={e => { e.target.style.borderColor = GOLD_FOCUS }}
+                onBlur={e => { e.target.style.borderColor = '#1e1e1e' }} />
+            </div>
+
+            {/* Description */}
+            <div className="space-y-1">
+              <label className="text-xs text-[#a0a0a0]">Bio / descripción del servicio</label>
+              <textarea rows={4} value={formValues.description ?? ''} onChange={e => onFieldChange('description', e.target.value)}
+                placeholder="Cuéntanos sobre tu experiencia, géneros, equipos y lo que ofreces..."
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none resize-none"
+                style={fieldInputStyle('description', fieldErrors)}
+                onFocus={onFocus('description')} onBlur={onBlur('description')} />
+              <FieldError errors={fieldErrors} field="description" />
             </div>
           </div>
         </div>
@@ -519,6 +935,17 @@ export interface MarketplaceModalsProps {
   onClose: () => void
   onNext: (payload?: Partial<ModalState>) => void
   onBack: () => void
+  onListingCreated?: (listing: Listing) => void
+  /** Real listings (extraListings + dbListings) to show in buy/find-talent browse steps */
+  listings?: Listing[]
+  listingsLoading?: boolean
+  listingsError?: string | null
+  /** Called when user clicks a listing in buy/find-talent modal (closes modal + opens chat) */
+  onOpenChat?: (listing: Listing) => void
+  /** Called when user clicks "Comprar/Contratar ahora" — opens checkout flow */
+  onBuy?: (listing: Listing) => void
+  /** Logged-in user ID — enables seller reply UI in Q&A sections */
+  currentUserId?: string
 }
 
 export function MarketplaceModals({
@@ -527,10 +954,187 @@ export function MarketplaceModals({
   onClose,
   onNext,
   onBack,
+  onListingCreated,
+  listings = [],
+  listingsLoading = false,
+  listingsError = null,
+  onBuy,
+  currentUserId,
 }: MarketplaceModalsProps) {
   const { flow, step } = state
+  const router = useRouter()
 
-  // Close on Escape
+  // ── State ───────────────────────────────────────────────────────────────────
+  const [formValues, setFormValues] = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
+  const [imageFiles, setImageFiles] = useState<PreparedMarketplaceUpload[]>([])
+  const imageFilesRef = useRef<PreparedMarketplaceUpload[]>([])
+
+  // Reset all state when modal opens or closes
+  useEffect(() => {
+    setFormValues({})
+    setSubmitError(null)
+    setIsSubmitting(false)
+    setFieldErrors({})
+    setImageFiles([]) // Data URLs — no revoke needed
+  }, [flow])
+
+  useEffect(() => {
+    imageFilesRef.current = imageFiles
+  }, [imageFiles])
+
+  useEffect(() => {
+    imageFilesRef.current.forEach(revokeMarketplaceUploadPreview)
+    imageFilesRef.current = []
+  }, [flow])
+
+  useEffect(() => {
+    return () => {
+      imageFilesRef.current.forEach(revokeMarketplaceUploadPreview)
+    }
+  }, [])
+
+  const handleFieldChange = useCallback((key: string, value: string) => {
+    setFormValues(prev => ({ ...prev, [key]: value }))
+    // Clear per-field error as user types
+    setFieldErrors(prev => {
+      if (!prev[key]) return prev
+      const next = { ...prev }
+      delete next[key]
+      return next
+    })
+  }, [])
+
+  const handleAddImages = useCallback(async (files: FileList) => {
+    const fileArray = Array.from(files).slice(0, 8) // cap to 8 total
+    try {
+      const prepared = await Promise.all(
+        fileArray.map(file => prepareMarketplaceUpload(file, 'listing-image')),
+      )
+      setImageFiles(prev => {
+        const slots = 8 - prev.length
+        return [...prev, ...prepared.slice(0, slots)]
+      })
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'No se pudieron preparar las imagenes')
+      // Silently ignore resize errors — user can retry
+    }
+  }, [])
+
+  const handleRemoveImage = useCallback((index: number) => {
+    setImageFiles(prev => {
+      const removed = prev[index]
+      revokeMarketplaceUploadPreview(removed)
+      return prev.filter((_, i) => i !== index)
+    })
+  }, [])
+
+  // ── Publish handler ─────────────────────────────────────────────────────────
+  const handlePublish = useCallback(async () => {
+    if (!state.selectedCategory) {
+      setSubmitError('Selecciona una categoría primero')
+      return
+    }
+    setIsSubmitting(true)
+    setSubmitError(null)
+    setFieldErrors({})
+    try {
+      const rawPrice = formValues.price ?? formValues.priceFrom ?? '0'
+      const uploadedImageUrls = await Promise.all(
+        imageFiles.map(upload => uploadMarketplaceFile(upload.file, 'listing-image').then(result => result.url)),
+      )
+      const result = await createListing({
+        title: formValues.title ?? '',
+        description: formValues.description ?? '',
+        category: state.selectedCategory as MpCategory,
+        tags: [],
+        price: parseFloat(rawPrice) || 0,
+        currency: 'USD',
+        hasInventory: false,
+        coverImageUrl: uploadedImageUrls[0],
+        mediaUrls: uploadedImageUrls.slice(1),
+      })
+
+      if (result.success) {
+        // Build a display-compatible listing so the grid updates immediately
+        if (onListingCreated) {
+          const categoryId = state.selectedCategory
+          const now = new Date().toISOString()
+          const me: MarketplaceUser = {
+            id: currentUserId ?? result.data.id,
+            name: 'Mi publicación',
+            initials: 'YO',
+            role: flow === 'offer-talent' ? 'talent' : 'seller',
+            verified: false,
+            rating: 0,
+            reviewCount: 0,
+            joinedAt: now,
+            location: 'Venezuela',
+          }
+          let newListing: Listing
+          if (flow === 'offer-talent') {
+            const cat = SERVICE_CATEGORIES.find(c => (c.id as string) === (categoryId as string))
+            newListing = {
+              id: result.data.id,
+              type: 'service',
+              title: formValues.title || 'Sin título',
+              slug: result.data.slug,
+              description: formValues.description || '',
+              category: categoryId as ServiceCategory,
+              subcategory: cat?.label ?? (categoryId as string),
+              priceFrom: parseFloat(formValues.priceFrom ?? '0') || 0,
+              priceTo: formValues.priceTo ? parseFloat(formValues.priceTo) : undefined,
+              priceLabel: formValues.priceLabel || 'por proyecto',
+              currency: 'USD',
+              badge: 'NUEVO',
+              talent: me,
+              status: 'active',
+              createdAt: now,
+              tags: [],
+            }
+          } else {
+            const cat = PRODUCT_CATEGORIES.find(c => (c.id as string) === (categoryId as string))
+            newListing = {
+              id: result.data.id,
+              type: 'product',
+              title: formValues.title || 'Sin título',
+              slug: result.data.slug,
+              description: formValues.description || '',
+              category: categoryId as ProductCategory,
+              subcategory: cat?.label ?? (categoryId as string),
+              price: parseFloat(formValues.price ?? '0') || 0,
+              currency: 'USD',
+              condition: (formValues.condition as ProductCondition) || 'used-like-new',
+              images: uploadedImageUrls,
+              badge: 'NUEVO',
+              seller: me,
+              status: 'active',
+              createdAt: now,
+              location: 'Venezuela',
+              tags: [],
+            }
+          }
+          onListingCreated(newListing)
+        }
+        onNext({ step: 'success' })
+      } else {
+        if (result.errors) {
+          setFieldErrors(result.errors)
+          setSubmitError('Corrige los campos marcados')
+        } else {
+          setSubmitError(result.message)
+        }
+      }
+    } catch {
+      setSubmitError('Error inesperado. Intenta de nuevo.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [state.selectedCategory, flow, formValues, imageFiles, onNext, onListingCreated, currentUserId])
+
+  // ── Keyboard + scroll lock ──────────────────────────────────────────────────
   const handleKey = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
   }, [onClose])
@@ -540,134 +1144,138 @@ export function MarketplaceModals({
     return () => document.removeEventListener('keydown', handleKey)
   }, [handleKey])
 
-  // Block scroll when modal is open
   useEffect(() => {
-    if (flow) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
+    document.body.style.overflow = flow ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [flow])
 
-  const FLOW_META: Record<NonNullable<ModalFlow>, {
-    title: string
-    subtitle?: string
-    accent: 'cyan' | 'gold'
-    totalSteps: number
-  }> = {
-    buy: {
-      title: 'Quiero Comprar',
-      subtitle: 'Equipos, instrumentos y consumibles',
-      accent: 'cyan',
-      totalSteps: 2,
-    },
-    sell: {
-      title: 'Quiero Vender',
-      subtitle: 'Publica tu producto en el marketplace',
-      accent: 'gold',
-      totalSteps: 3,
-    },
-    'find-talent': {
-      title: 'Busco Talento',
-      subtitle: 'Músicos, técnicos y productores',
-      accent: 'gold',
-      totalSteps: 2,
-    },
-    'offer-talent': {
-      title: 'Ofrezco mi Talento',
-      subtitle: 'Crea tu perfil de servicios',
-      accent: 'gold',
-      totalSteps: 3,
-    },
+  // ── Flow metadata ───────────────────────────────────────────────────────────
+  const FLOW_META: Record<NonNullable<ModalFlow>, { title: string; subtitle?: string; accent: 'cyan' | 'gold'; totalSteps: number }> = {
+    buy:           { title: 'Quiero Comprar',    subtitle: 'Equipos, instrumentos y consumibles', accent: 'cyan', totalSteps: 2 },
+    sell:          { title: 'Quiero Vender',     subtitle: 'Publica tu producto en el marketplace', accent: 'gold', totalSteps: 3 },
+    'find-talent': { title: 'Busco Talento',     subtitle: 'Músicos, técnicos y productores',      accent: 'gold', totalSteps: 2 },
+    'offer-talent':{ title: 'Ofrezco mi Talento',subtitle: 'Crea tu perfil de servicios',          accent: 'gold', totalSteps: 3 },
   }
 
   const meta = flow ? FLOW_META[flow] : null
+  const currentStepIndex = step === 'category' ? 0 : step === 'form' ? 1 : step === 'success' ? 2 : 0
 
-  const getCurrentStep = () => {
-    if (step === 'category') return 0
-    if (step === 'form') return 1
-    if (step === 'success') return 2
-    return 0
-  }
+  // Filter real listings to the selected category for browse steps
+  const selectedCat = state.selectedCategory as string | undefined
+  const categoryListings = selectedCat
+    ? listings.filter(l => (l.category as string) === selectedCat)
+    : []
+  const handleCardNavigate = useCallback((l: Listing) => {
+    onClose()
+    router.push(`/marketplace/${(l as Listing & { slug?: string }).slug ?? l.id}`)
+  }, [onClose, router])
 
   return (
     <AnimatePresence mode="wait">
-      {flow && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center px-4">
+      {flow && meta && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center px-4">
           <ModalOverlay onClose={onClose} />
+          <ModalShell
+            onClose={onClose}
+            title={meta.title}
+            subtitle={meta.subtitle}
+            accent={meta.accent}
+            onBack={step !== 'category' ? onBack : undefined}
+            step={currentStepIndex}
+            totalSteps={meta.totalSteps}
+          >
+            <AnimatePresence mode="wait" custom={direction}>
+              {step === 'success' ? (
+                <SuccessScreen
+                  key="success"
+                  message={flow === 'sell' ? '¡Tu producto fue publicado!' : '¡Tu perfil de talento fue creado!'}
+                  onClose={onClose}
+                />
+              ) : flow === 'buy' ? (
+                <BuyFlow
+                  key="buy"
+                  step={step === 'category' ? 0 : 1}
+                  direction={direction}
+                  listings={categoryListings.filter(l => l.type === 'product')}
+                  listingsLoading={listingsLoading}
+                  listingsError={listingsError}
+                  onCategory={cat => onNext({ selectedCategory: cat, step: 'form' })}
+                  onCardClick={handleCardNavigate}
+                  onBuy={onBuy ? l => { onClose(); onBuy(l) } : undefined}
+                  currentUserId={currentUserId}
+                />
+              ) : flow === 'sell' ? (
+                <SellFlow
+                  key="sell"
+                  step={step === 'category' ? 0 : 1}
+                  direction={direction}
+                  onCategory={cat => onNext({ selectedCategory: cat, step: 'form' })}
+                  formValues={formValues}
+                  onFieldChange={handleFieldChange}
+                  fieldErrors={fieldErrors}
+                  imageFiles={imageFiles}
+                  onAddImages={handleAddImages}
+                  onRemoveImage={handleRemoveImage}
+                />
+              ) : flow === 'find-talent' ? (
+                <FindTalentFlow
+                  key="find"
+                  step={step === 'category' ? 0 : 1}
+                  direction={direction}
+                  listings={categoryListings.filter(l => l.type === 'service')}
+                  listingsLoading={listingsLoading}
+                  listingsError={listingsError}
+                  onCategory={cat => onNext({ selectedCategory: cat, step: 'form' })}
+                  onCardClick={handleCardNavigate}
+                  onBuy={onBuy ? l => { onClose(); onBuy(l) } : undefined}
+                  currentUserId={currentUserId}
+                />
+              ) : (
+                <OfferTalentFlow
+                  key="offer"
+                  step={step === 'category' ? 0 : 1}
+                  direction={direction}
+                  onCategory={cat => onNext({ selectedCategory: cat, step: 'form' })}
+                  formValues={formValues}
+                  onFieldChange={handleFieldChange}
+                  fieldErrors={fieldErrors}
+                />
+              )}
+            </AnimatePresence>
 
-          {flow && meta && (
-            <ModalShell
-              onClose={onClose}
-              title={meta.title}
-              subtitle={meta.subtitle}
-              accent={meta.accent}
-              onBack={step !== 'category' ? onBack : undefined}
-              step={getCurrentStep()}
-              totalSteps={meta.totalSteps}
-            >
-              <AnimatePresence mode="wait" custom={direction}>
-                {step === 'success' ? (
-                  <SuccessScreen
-                    key="success"
-                    message={
-                      flow === 'sell'
-                        ? '¡Tu producto fue publicado!'
-                        : '¡Tu perfil de talento fue creado!'
-                    }
-                    onClose={onClose}
-                  />
-                ) : flow === 'buy' ? (
-                  <BuyFlow
-                    key="buy"
-                    step={step === 'category' ? 0 : 1}
-                    direction={direction}
-                    onCategory={cat => onNext({ selectedCategory: cat, step: 'form' })}
-                  />
-                ) : flow === 'sell' ? (
-                  <SellFlow
-                    key="sell"
-                    step={step === 'category' ? 0 : 1}
-                    direction={direction}
-                    onCategory={cat => onNext({ selectedCategory: cat, step: 'form' })}
-                  />
-                ) : flow === 'find-talent' ? (
-                  <FindTalentFlow
-                    key="find"
-                    step={step === 'category' ? 0 : 1}
-                    direction={direction}
-                    onCategory={cat => onNext({ selectedCategory: cat, step: 'form' })}
-                  />
-                ) : (
-                  <OfferTalentFlow
-                    key="offer"
-                    step={step === 'category' ? 0 : 1}
-                    direction={direction}
-                    onCategory={cat => onNext({ selectedCategory: cat, step: 'form' })}
-                  />
+            {/* Footer CTA — shown on form step for sell + offer-talent */}
+            {step === 'form' && (flow === 'sell' || flow === 'offer-talent') && (
+              <div className="px-6 pb-6 flex flex-col gap-3">
+                {submitError && (
+                  <div className="rounded-xl p-3 flex items-start gap-2"
+                    style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
+                    <AlertCircle size={13} className="text-red-400 mt-0.5 flex-shrink-0" />
+                    <p className="text-[11px] text-red-400">{submitError}</p>
+                  </div>
                 )}
-              </AnimatePresence>
-
-              {/* Footer CTA for form step */}
-              {step === 'form' && (flow === 'sell' || flow === 'offer-talent') && (
-                <div className="px-6 pb-6 flex gap-3">
+                <div className="flex gap-3">
                   <button
                     onClick={onBack}
-                    className="btn-gradient-outline px-5 py-3 rounded-xl text-sm text-[#a0a0a0] hover:text-[#f2f2f2] transition-colors"
+                    disabled={isSubmitting}
+                    className="btn-gradient-outline px-5 py-3 rounded-xl text-sm text-[#a0a0a0] hover:text-[#f2f2f2] transition-colors disabled:opacity-50"
                   >
                     Atrás
                   </button>
                   <button
-                    onClick={() => onNext({ step: 'success' })}
-                    className="btn-silky-primary flex-1 py-3 rounded-xl text-sm font-semibold"
+                    onClick={handlePublish}
+                    disabled={isSubmitting}
+                    className="btn-silky-primary flex-1 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-70"
                   >
-                    {flow === 'sell' ? 'Publicar Producto' : 'Crear Perfil'}
+                    {isSubmitting ? (
+                      <><Loader2 size={14} className="animate-spin" />Publicando...</>
+                    ) : (
+                      flow === 'sell' ? 'Publicar Producto' : 'Crear Perfil'
+                    )}
                   </button>
                 </div>
-              )}
-            </ModalShell>
-          )}
+              </div>
+            )}
+          </ModalShell>
         </div>
       )}
     </AnimatePresence>

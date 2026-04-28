@@ -14,8 +14,8 @@ import type {
 export const MOCK_USERS: MarketplaceUser[] = [
   {
     id: 'u1',
-    name: 'Carlos Mendoza',
-    initials: 'CM',
+    name: 'mvera',
+    initials: 'MV',
     role: 'seller',
     verified: true,
     rating: 4.9,
@@ -100,6 +100,7 @@ export const MOCK_USERS: MarketplaceUser[] = [
 export const MOCK_PRODUCT_LISTINGS: ProductListing[] = [
   {
     id: 'p1',
+    slug: 'guitarra-electrica-fender-stratocaster-player-series',
     type: 'product',
     title: 'Guitarra Eléctrica Fender Stratocaster Player Series',
     description:
@@ -109,7 +110,7 @@ export const MOCK_PRODUCT_LISTINGS: ProductListing[] = [
     price: 680,
     currency: 'USD',
     condition: 'used-like-new',
-    images: [],
+    images: ['/images/artista9.jpg'],
     seller: MOCK_USERS[0],
     status: 'active',
     createdAt: '2026-03-20',
@@ -119,6 +120,7 @@ export const MOCK_PRODUCT_LISTINGS: ProductListing[] = [
   },
   {
     id: 'p2',
+    slug: 'interface-de-audio-focusrite-scarlett-2i2-4ta-gen',
     type: 'product',
     title: 'Interface de Audio Focusrite Scarlett 2i2 (4ta Gen)',
     description:
@@ -128,7 +130,7 @@ export const MOCK_PRODUCT_LISTINGS: ProductListing[] = [
     price: 175,
     currency: 'USD',
     condition: 'new',
-    images: [],
+    images: ['/images/estudio-grabacion3.jpg'],
     seller: MOCK_USERS[2],
     status: 'active',
     createdAt: '2026-03-28',
@@ -138,6 +140,7 @@ export const MOCK_PRODUCT_LISTINGS: ProductListing[] = [
   },
   {
     id: 'p3',
+    slug: 'pack-cuerdas-ernie-ball-regular-slinky-x-12-unidades',
     type: 'product',
     title: 'Pack Cuerdas Ernie Ball Regular Slinky x 12 unidades',
     description:
@@ -147,7 +150,7 @@ export const MOCK_PRODUCT_LISTINGS: ProductListing[] = [
     price: 72,
     currency: 'USD',
     condition: 'new',
-    images: [],
+    images: ['/images/estudio-grabacion8.jpg'],
     seller: MOCK_USERS[0],
     status: 'active',
     createdAt: '2026-04-01',
@@ -156,6 +159,7 @@ export const MOCK_PRODUCT_LISTINGS: ProductListing[] = [
   },
   {
     id: 'p4',
+    slug: 'bateria-pearl-export-exx-5-piezas-alquiler-por-dia',
     type: 'product',
     title: 'Batería Pearl Export EXX 5 piezas — Alquiler por día',
     description:
@@ -165,7 +169,7 @@ export const MOCK_PRODUCT_LISTINGS: ProductListing[] = [
     price: 45,
     currency: 'USD',
     condition: 'used-good',
-    images: [],
+    images: ['/images/estudio-grabacion12.jpg'],
     seller: MOCK_USERS[2],
     status: 'active',
     createdAt: '2026-03-15',
@@ -178,6 +182,7 @@ export const MOCK_PRODUCT_LISTINGS: ProductListing[] = [
   },
   {
     id: 'p5',
+    slug: 'microfono-shure-sm7b-nuevo-sellado',
     type: 'product',
     title: 'Micrófono Shure SM7B — Nuevo sellado',
     description:
@@ -187,7 +192,7 @@ export const MOCK_PRODUCT_LISTINGS: ProductListing[] = [
     price: 395,
     currency: 'USD',
     condition: 'new',
-    images: [],
+    images: ['/images/estudio-grabacion15.jpg'],
     seller: MOCK_USERS[0],
     status: 'active',
     createdAt: '2026-04-02',
@@ -197,6 +202,7 @@ export const MOCK_PRODUCT_LISTINGS: ProductListing[] = [
   },
   {
     id: 'p6',
+    slug: 'piano-digital-yamaha-p-125-con-soporte-y-pedal-triple',
     type: 'product',
     title: 'Piano Digital Yamaha P-125 con soporte y pedal triple',
     description:
@@ -206,7 +212,7 @@ export const MOCK_PRODUCT_LISTINGS: ProductListing[] = [
     price: 520,
     currency: 'USD',
     condition: 'used-good',
-    images: [],
+    images: ['/images/artista5.jpg'],
     seller: MOCK_USERS[2],
     status: 'active',
     createdAt: '2026-03-10',
@@ -220,6 +226,7 @@ export const MOCK_PRODUCT_LISTINGS: ProductListing[] = [
 export const MOCK_SERVICE_LISTINGS: ServiceListing[] = [
   {
     id: 's1',
+    slug: 'violin-de-sesion-clasico-jazz-and-latin',
     type: 'service',
     title: 'Violín de Sesión — Clásico, Jazz & Latin',
     description:
@@ -237,10 +244,12 @@ export const MOCK_SERVICE_LISTINGS: ServiceListing[] = [
     tags: ['violín', 'sesión', 'cuerdas', 'clásico', 'jazz'],
     instruments: ['Violín'],
     genres: ['Clásico', 'Jazz', 'Salsa', 'Pop Latino'],
+    portfolio: ['/images/artista2.jpg'],
     badge: '5 ESTRELLAS',
   },
   {
     id: 's2',
+    slug: 'produccion-musical-urbana-beat-arreglo-mezcla',
     type: 'service',
     title: 'Producción Musical Urbana — Beat + Arreglo + Mezcla',
     description:
@@ -257,10 +266,12 @@ export const MOCK_SERVICE_LISTINGS: ServiceListing[] = [
     createdAt: '2026-01-30',
     tags: ['producción', 'beat', 'reggaeton', 'trap', 'urbano'],
     genres: ['Reggaeton', 'Trap', 'R&B', 'Afrobeats'],
+    portfolio: ['/images/artista4.jpg'],
     badge: 'RECOMENDADO',
   },
   {
     id: 's3',
+    slug: 'tecnico-de-sonido-live-foh-monitor',
     type: 'service',
     title: 'Técnico de Sonido Live — FOH & Monitor',
     description:
@@ -275,10 +286,12 @@ export const MOCK_SERVICE_LISTINGS: ServiceListing[] = [
     status: 'active',
     createdAt: '2026-03-05',
     tags: ['técnico', 'sonido', 'live', 'FOH', 'monitor', 'evento'],
+    portfolio: ['/images/estudio-grabacion5.jpg'],
     badge: 'TOP VENDEDOR',
   },
   {
     id: 's4',
+    slug: 'banda-versatil-para-bodas-y-eventos-corporativos',
     type: 'service',
     title: 'Banda Versátil para Bodas y Eventos Corporativos',
     description:
@@ -294,9 +307,11 @@ export const MOCK_SERVICE_LISTINGS: ServiceListing[] = [
     createdAt: '2026-02-20',
     tags: ['banda', 'boda', 'evento', 'salsa', 'bolero', 'versatil'],
     genres: ['Salsa', 'Bolero', 'Pop', 'Bossa Nova'],
+    portfolio: ['/images/artista1.jpg'],
   },
   {
     id: 's5',
+    slug: 'arreglista-orquestacion-para-cine-y-publicidad',
     type: 'service',
     title: 'Arreglista — Orquestación para Cine y Publicidad',
     description:
@@ -312,9 +327,11 @@ export const MOCK_SERVICE_LISTINGS: ServiceListing[] = [
     createdAt: '2026-03-18',
     tags: ['arreglista', 'orquesta', 'cine', 'publicidad', 'score'],
     genres: ['Cinematográfico', 'Publicidad', 'Videojuegos'],
+    portfolio: ['/images/estudio-grabacion20.jpg'],
   },
   {
     id: 's6',
+    slug: 'guitarrista-de-sesion-rock-blues-funk-and-jazz',
     type: 'service',
     title: 'Guitarrista de Sesión — Rock, Blues, Funk & Jazz',
     description:
@@ -332,6 +349,7 @@ export const MOCK_SERVICE_LISTINGS: ServiceListing[] = [
     tags: ['guitarrista', 'sesión', 'rock', 'blues', 'funk', 'jazz'],
     instruments: ['Guitarra eléctrica', 'Guitarra acústica'],
     genres: ['Rock', 'Blues', 'Funk', 'Jazz'],
+    portfolio: ['/images/artista7.jpg'],
   },
 ]
 
@@ -440,8 +458,8 @@ export const MOCK_THREAD: MessageThread = {
       id: 'm2',
       threadId: 'thread-001',
       senderId: 'u1',
-      senderName: 'Carlos Mendoza',
-      senderInitials: 'CM',
+      senderName: 'mvera',
+      senderInitials: 'MV',
       content: 'Hola! Sí, está disponible. La tengo en perfecto estado, con todos los ajustes al día. ¿Tienes alguna pregunta sobre el instrumento?',
       type: 'text',
       createdAt: '2026-04-02T10:18:00Z',
@@ -462,8 +480,8 @@ export const MOCK_THREAD: MessageThread = {
       id: 'm4',
       threadId: 'thread-001',
       senderId: 'u1',
-      senderName: 'Carlos Mendoza',
-      senderInitials: 'CM',
+      senderName: 'mvera',
+      senderInitials: 'MV',
       content: 'La acción está configurada en 2mm graves / 1.5mm agudos. Cuerdas Ernie Ball .010 nuevas hace 2 semanas. Te la puedo mostrar por videollamada antes de cerrar.',
       type: 'text',
       createdAt: '2026-04-02T11:40:00Z',
@@ -484,9 +502,9 @@ export const MOCK_THREAD: MessageThread = {
       id: 'm6',
       threadId: 'thread-001',
       senderId: 'u1',
-      senderName: 'Carlos Mendoza',
-      senderInitials: 'CM',
-      content: 'Con gusto. Aquí tienes la cotización formal para proceder con el pago fiduciario:',
+      senderName: 'mvera',
+      senderInitials: 'MV',
+      content: 'Con gusto. Aqui tienes la cotizacion formal para reportar el pago:',
       type: 'text',
       createdAt: '2026-04-02T14:33:00Z',
       read: true,
@@ -495,8 +513,8 @@ export const MOCK_THREAD: MessageThread = {
       id: 'm7',
       threadId: 'thread-001',
       senderId: 'u1',
-      senderName: 'Carlos Mendoza',
-      senderInitials: 'CM',
+      senderName: 'mvera',
+      senderInitials: 'MV',
       content: '',
       type: 'quote',
       quote: {

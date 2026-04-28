@@ -60,6 +60,7 @@ export interface MarketplaceUser {
 
 export interface ProductListing {
   id: string
+  slug: string
   type: 'product'
   title: string
   description: string
@@ -82,6 +83,7 @@ export interface ProductListing {
 
 export interface ServiceListing {
   id: string
+  slug: string
   type: 'service'
   title: string
   description: string

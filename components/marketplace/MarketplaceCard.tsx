@@ -1,10 +1,58 @@
 'use client'
 
 import { useState } from 'react'
-import { Star, MapPin, Clock, Shield, BadgeCheck, Package, Mic2 } from 'lucide-react'
+import { Star, MapPin, Clock, Shield, BadgeCheck, Heart, ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Listing, ProductListing, ServiceListing } from '@/types/marketplace'
-import { MARKETPLACE_CONFIG } from '@/types/marketplace'
+import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
+
+// ─── Category fallback images ─────────────────────────────────────────────────
+// Used when a listing has no uploaded photo.
+// Maps to real images already present in /public/images/.
+
+const CATEGORY_FALLBACK: Record<string, string> = {
+  // Physical products
+  'instrumentos-nuevos':         '/images/artista9.jpg',
+  'instrumentos-usados':         '/images/artista9.jpg',
+  'audio-pro-estudio':           '/images/estudio-grabacion3.jpg',
+  'consumibles':                 '/images/estudio-grabacion8.jpg',
+  'alquiler-equipos':            '/images/estudio-grabacion12.jpg',
+  // Services & talent
+  'musicos-sesion':              '/images/artista2.jpg',
+  'bandas-eventos':              '/images/artista1.jpg',
+  'tecnicos-audio-iluminacion':  '/images/estudio-grabacion5.jpg',
+  'productores-arreglistas':     '/images/artista4.jpg',
+  // Digital
+  'beats':                       '/images/estudio-grabacion15.jpg',
+  'mixing':                      '/images/estudio-grabacion20.jpg',
+  'mastering':                   '/images/estudio-grabacion20.jpg',
+  'vocals':                      '/images/artista7.jpg',
+  'production':                  '/images/artista4.jpg',
+  'arreglos':                    '/images/artista5.jpg',
+  'podcast':                     '/images/estudio-grabacion15.jpg',
+}
+
+function getCoverImage(category: string, images?: string[]): string | null {
+  const firstImage = images?.find(Boolean)
+  if (firstImage) return firstImage
+  return CATEGORY_FALLBACK[category] ?? null
+}
+
+function ImageFallback({ tone = 'cyan' }: { tone?: 'cyan' | 'gold' }) {
+  const color = tone === 'cyan' ? '#00aeef' : '#ffc107'
+
+  return (
+    <div
+      className="flex h-full w-full flex-col items-center justify-center gap-2 text-center"
+      style={{
+        background: `linear-gradient(135deg, ${color}10 0%, rgba(10,10,10,0.92) 100%)`,
+      }}
+    >
+      <ImageIcon size={22} style={{ color, opacity: 0.68 }} />
+      <span className="text-[10px] uppercase tracking-widest text-[#5a5a5a]">Sin foto</span>
+    </div>
+  )
+}
 
 // ─── Condition label map ───────────────────────────────────────────────────────
 
@@ -31,10 +79,10 @@ function UserChip({ name, initials, verified, rating }: {
   rating: number
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 items-center gap-2.5">
       <div className="relative flex-shrink-0">
         <div
-          className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold text-white"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-semibold text-white"
           style={{ background: 'linear-gradient(135deg, #00aeef 0%, #0050c8 100%)' }}
         >
           {initials}
@@ -48,10 +96,10 @@ function UserChip({ name, initials, verified, rating }: {
         )}
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] text-[#f2f2f2] truncate leading-none">{name}</p>
-        <div className="flex items-center gap-1 mt-0.5">
-          <Star size={9} className="text-[#ffc107] fill-[#ffc107]" />
-          <span className="text-[10px] text-[#a0a0a0]">{rating.toFixed(1)}</span>
+        <p className="truncate text-xs leading-none text-[#f2f2f2]">{name}</p>
+        <div className="mt-0.5 flex items-center gap-1">
+          <Star size={10} className="text-[#ffc107] fill-[#ffc107]" />
+          <span className="text-[11px] text-[#a0a0a0]">{rating.toFixed(1)}</span>
         </div>
       </div>
     </div>
@@ -60,29 +108,50 @@ function UserChip({ name, initials, verified, rating }: {
 
 // ─── Product Card ─────────────────────────────────────────────────────────────
 
-function ProductCard({ listing, onClick }: { listing: ProductListing; onClick: () => void }) {
+function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }: {
+  listing: ProductListing
+  onClick: () => void
+  isFavorited?: boolean
+  onToggleFavorite?: (id: string) => void
+}) {
   const [hovered, setHovered] = useState(false)
+  const [localFav, setLocalFav] = useState(isFavorited)
+  const [imageFailed, setImageFailed] = useState(false)
+  const cover = imageFailed ? null : getCoverImage(listing.category, listing.images)
 
   return (
-    <button
+    <div
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onClick()
+        }
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="card-premium-wrapper rounded-xl text-left w-full group"
+      className="card-premium-wrapper group h-full w-full overflow-hidden rounded-xl text-left"
       style={{ background: 'rgba(17,17,17,0.85)' }}
     >
       {/* Image area */}
-      <div className="relative h-44 rounded-t-xl overflow-hidden bg-[#0d0d0d] flex items-center justify-center">
-        {/* Placeholder visual */}
-        <div
-          className="w-full h-full flex items-center justify-center transition-transform duration-500"
-          style={{
-            background: 'linear-gradient(135deg, rgba(0,174,239,0.06) 0%, rgba(0,80,200,0.04) 50%, rgba(255,193,7,0.03) 100%)',
-            transform: hovered ? 'scale(1.04)' : 'scale(1)',
-          }}
-        >
-          <Package size={40} className="text-[#2a2a2a]" />
-        </div>
+      <div className="relative h-52 rounded-t-xl overflow-hidden bg-[#0d0d0d] sm:h-56">
+        {cover ? (
+          <MarketplaceImage
+            src={cover}
+            alt={listing.title}
+            fill
+            className="w-full h-full object-cover transition-transform duration-500"
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            style={{ transform: hovered ? 'scale(1.04)' : 'scale(1)' }}
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          <div className="h-full w-full transition-transform duration-500" style={{ transform: hovered ? 'scale(1.04)' : 'scale(1)' }}>
+            <ImageFallback tone="cyan" />
+          </div>
+        )}
 
         {/* Badge */}
         {listing.badge && (
@@ -95,6 +164,24 @@ function ProductCard({ listing, onClick }: { listing: ProductListing; onClick: (
           >
             {listing.badge}
           </span>
+        )}
+
+        {/* VENDIDO overlay */}
+        {listing.status === 'sold' && (
+          <div className="absolute inset-0 flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)' }}>
+            <span
+              className="px-4 py-1.5 rounded-lg text-sm font-bold tracking-widest rotate-[-8deg]"
+              style={{
+                background: 'rgba(239,68,68,0.15)',
+                border: '2px solid rgba(239,68,68,0.7)',
+                color: '#ef4444',
+                boxShadow: '0 0 20px rgba(239,68,68,0.3)',
+              }}
+            >
+              VENDIDO
+            </span>
+          </div>
         )}
 
         {/* Condition */}
@@ -121,77 +208,119 @@ function ProductCard({ listing, onClick }: { listing: ProductListing; onClick: (
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-3">
+      <div className="space-y-4 p-5">
         <div>
-          <p className="text-[11px] text-[#5a5a5a] uppercase tracking-widest mb-1">
+          <p className="mb-1.5 text-[11px] uppercase tracking-widest text-[#5a5a5a]">
             {listing.subcategory}
           </p>
-          <h3 className="text-sm text-[#f2f2f2] font-medium leading-snug line-clamp-2 group-hover:text-[#00aeef] transition-colors duration-250">
+          <h3 className="line-clamp-2 text-base font-medium leading-snug text-[#f2f2f2] transition-colors duration-250 group-hover:text-[#00aeef]">
             {listing.title}
           </h3>
         </div>
 
         {/* Price */}
-        <div className="flex items-end gap-1">
-          <span className="text-xl font-semibold text-gradient-gold leading-none">
-            ${listing.price.toLocaleString()}
-          </span>
-          <span className="text-xs text-[#5a5a5a] mb-0.5">{listing.currency}</span>
-          {listing.rentalAvailable && listing.rentalPricePerDay && (
-            <span className="text-xs text-[#a0a0a0] mb-0.5 ml-1">
-              · ${listing.rentalPricePerDay}/día
+        <div className="flex items-end justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-end gap-x-2 gap-y-1">
+            <span className="text-2xl font-semibold text-gradient-gold leading-none">
+              ${listing.price.toLocaleString()}
             </span>
+            <span className="text-xs text-[#5a5a5a] mb-0.5">{listing.currency}</span>
+            {listing.rentalAvailable && listing.rentalPricePerDay && (
+              <span className="text-xs text-[#a0a0a0] mb-0.5">
+                · ${listing.rentalPricePerDay}/día
+              </span>
+            )}
+          </div>
+          {onToggleFavorite && (
+            <button
+              onClick={e => {
+                e.stopPropagation()
+                setLocalFav(p => !p)
+                onToggleFavorite(listing.id)
+              }}
+              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-all duration-200"
+              style={{
+                background: localFav ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${localFav ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`,
+              }}
+              title={localFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+            >
+              <Heart size={12} className={localFav ? 'text-[#ef4444] fill-[#ef4444]' : 'text-[#5a5a5a]'} />
+            </button>
           )}
         </div>
 
         {/* Meta row */}
-        <div className="flex items-center justify-between pt-1 border-t border-[#1e1e1e]">
+        <div className="flex items-center justify-between gap-3 pt-2 border-t border-[#1e1e1e]">
           <UserChip
             name={listing.seller.name}
             initials={listing.seller.initials}
             verified={listing.seller.verified}
             rating={listing.seller.rating}
           />
-          <div className="flex items-center gap-1 text-[10px] text-[#5a5a5a]">
-            <MapPin size={9} />
-            <span className="truncate max-w-[80px]">{listing.location.split(',')[0]}</span>
+          <div className="flex flex-shrink-0 items-center gap-1 text-[11px] text-[#5a5a5a]">
+            <MapPin size={10} />
+            <span className="truncate max-w-[110px]">{listing.location.split(',')[0]}</span>
           </div>
         </div>
 
         {/* Escrow badge */}
-        <div className="flex items-center gap-1.5 text-[10px] text-[#5a5a5a]">
-          <Shield size={10} className="text-[#00aeef] opacity-70" />
-          <span>Pago fiduciario protegido · {(MARKETPLACE_CONFIG.COMMISSION_RATE * 100).toFixed(0)}% comisión al vendedor</span>
+        <div className="flex items-start gap-2 text-[11px] leading-relaxed text-[#5a5a5a]">
+          <Shield size={11} className="mt-0.5 flex-shrink-0 text-[#00aeef] opacity-70" />
+          <span>Operacion protegida con revision de pago</span>
         </div>
       </div>
-    </button>
+    </div>
   )
 }
 
 // ─── Service Card ─────────────────────────────────────────────────────────────
 
-function ServiceCard({ listing, onClick }: { listing: ServiceListing; onClick: () => void }) {
+function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }: {
+  listing: ServiceListing
+  onClick: () => void
+  isFavorited?: boolean
+  onToggleFavorite?: (id: string) => void
+}) {
   const [hovered, setHovered] = useState(false)
+  const [localFav, setLocalFav] = useState(isFavorited)
+  const [imageFailed, setImageFailed] = useState(false)
+  // portfolio[0] takes priority; falls back to category image
+  const cover = imageFailed ? null : getCoverImage(listing.category, listing.portfolio)
 
   return (
-    <button
+    <div
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onClick()
+        }
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="card-premium-wrapper card-premium-wrapper--gold rounded-xl text-left w-full group"
+      className="card-premium-wrapper card-premium-wrapper--gold group h-full w-full overflow-hidden rounded-xl text-left"
       style={{ background: 'rgba(17,17,17,0.85)' }}
     >
       {/* Header band */}
-      <div className="relative h-44 rounded-t-xl overflow-hidden bg-[#0d0d0d] flex items-center justify-center">
-        <div
-          className="w-full h-full flex items-center justify-center transition-transform duration-500"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255,193,7,0.05) 0%, rgba(0,80,200,0.04) 60%, rgba(0,174,239,0.04) 100%)',
-            transform: hovered ? 'scale(1.04)' : 'scale(1)',
-          }}
-        >
-          <Mic2 size={40} className="text-[#2a2a2a]" />
-        </div>
+      <div className="relative h-52 rounded-t-xl overflow-hidden bg-[#0d0d0d] flex items-center justify-center sm:h-56">
+        {cover ? (
+          <MarketplaceImage
+            src={cover}
+            alt={listing.title}
+            fill
+            className="w-full h-full object-cover transition-transform duration-500"
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            style={{ transform: hovered ? 'scale(1.04)' : 'scale(1)' }}
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          <div className="h-full w-full transition-transform duration-500" style={{ transform: hovered ? 'scale(1.04)' : 'scale(1)' }}>
+            <ImageFallback tone="gold" />
+          </div>
+        )}
 
         {/* Badge */}
         {listing.badge && (
@@ -204,6 +333,24 @@ function ServiceCard({ listing, onClick }: { listing: ServiceListing; onClick: (
           >
             {listing.badge}
           </span>
+        )}
+
+        {/* VENDIDO overlay */}
+        {listing.status === 'sold' && (
+          <div className="absolute inset-0 flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)' }}>
+            <span
+              className="px-4 py-1.5 rounded-lg text-sm font-bold tracking-widest rotate-[-8deg]"
+              style={{
+                background: 'rgba(239,68,68,0.15)',
+                border: '2px solid rgba(239,68,68,0.7)',
+                color: '#ef4444',
+                boxShadow: '0 0 20px rgba(239,68,68,0.3)',
+              }}
+            >
+              VENDIDO
+            </span>
+          </div>
         )}
 
         {/* Delivery */}
@@ -233,61 +380,82 @@ function ServiceCard({ listing, onClick }: { listing: ServiceListing; onClick: (
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-3">
+      <div className="space-y-4 p-5">
         <div>
-          <p className="text-[11px] text-[#5a5a5a] uppercase tracking-widest mb-1">
+          <p className="mb-1.5 text-[11px] uppercase tracking-widest text-[#5a5a5a]">
             {listing.subcategory}
           </p>
-          <h3 className="text-sm text-[#f2f2f2] font-medium leading-snug line-clamp-2 group-hover:text-[#ffc107] transition-colors duration-250">
+          <h3 className="line-clamp-2 text-base font-medium leading-snug text-[#f2f2f2] transition-colors duration-250 group-hover:text-[#ffc107]">
             {listing.title}
           </h3>
         </div>
 
         {/* Price */}
-        <div className="flex items-end gap-1">
-          <span className="text-[11px] text-[#5a5a5a] mb-0.5">Desde</span>
-          <span className="text-xl font-semibold text-gradient-gold leading-none">
-            ${listing.priceFrom.toLocaleString()}
-          </span>
-          {listing.priceTo && (
-            <span className="text-xs text-[#5a5a5a] mb-0.5">– ${listing.priceTo}</span>
+        <div className="flex items-end justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-end gap-x-2 gap-y-1">
+            <span className="text-[11px] text-[#5a5a5a] mb-0.5">Desde</span>
+            <span className="text-2xl font-semibold text-gradient-gold leading-none">
+              ${listing.priceFrom.toLocaleString()}
+            </span>
+            {listing.priceTo && (
+              <span className="text-xs text-[#5a5a5a] mb-0.5">– ${listing.priceTo}</span>
+            )}
+            <span className="text-xs text-[#a0a0a0] mb-0.5">{listing.priceLabel}</span>
+          </div>
+          {onToggleFavorite && (
+            <button
+              onClick={e => {
+                e.stopPropagation()
+                setLocalFav(p => !p)
+                onToggleFavorite(listing.id)
+              }}
+              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-all duration-200"
+              style={{
+                background: localFav ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${localFav ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`,
+              }}
+              title={localFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+            >
+              <Heart size={12} className={localFav ? 'text-[#ef4444] fill-[#ef4444]' : 'text-[#5a5a5a]'} />
+            </button>
           )}
-          <span className="text-xs text-[#a0a0a0] mb-0.5 ml-0.5">{listing.priceLabel}</span>
         </div>
 
         {/* Meta row */}
-        <div className="flex items-center justify-between pt-1 border-t border-[#1e1e1e]">
+        <div className="flex items-center justify-between gap-3 pt-2 border-t border-[#1e1e1e]">
           <UserChip
             name={listing.talent.name}
             initials={listing.talent.initials}
             verified={listing.talent.verified}
             rating={listing.talent.rating}
           />
-          <div className="flex items-center gap-1 text-[10px] text-[#5a5a5a]">
+          <div className="flex flex-shrink-0 items-center gap-1 text-[11px] text-[#5a5a5a]">
             <span>{listing.talent.reviewCount} reseñas</span>
           </div>
         </div>
 
         {/* Escrow badge */}
-        <div className="flex items-center gap-1.5 text-[10px] text-[#5a5a5a]">
-          <Shield size={10} className="text-[#ffc107] opacity-70" />
-          <span>Pago fiduciario protegido · {(MARKETPLACE_CONFIG.COMMISSION_RATE * 100).toFixed(0)}% comisión al talento</span>
+        <div className="flex items-start gap-2 text-[11px] leading-relaxed text-[#5a5a5a]">
+          <Shield size={11} className="mt-0.5 flex-shrink-0 text-[#ffc107] opacity-70" />
+          <span>Pago reportado y revisado manualmente</span>
         </div>
       </div>
-    </button>
+    </div>
   )
 }
 
 // ─── Unified export ───────────────────────────────────────────────────────────
 
-export function MarketplaceCard({ listing, onClick }: {
+export function MarketplaceCard({ listing, onClick, isFavorited = false, onToggleFavorite }: {
   listing: Listing
   onClick?: () => void
+  isFavorited?: boolean
+  onToggleFavorite?: (id: string) => void
 }) {
   const handleClick = onClick ?? (() => {})
 
   if (listing.type === 'product') {
-    return <ProductCard listing={listing} onClick={handleClick} />
+    return <ProductCard listing={listing} onClick={handleClick} isFavorited={isFavorited} onToggleFavorite={onToggleFavorite} />
   }
-  return <ServiceCard listing={listing} onClick={handleClick} />
+  return <ServiceCard listing={listing} onClick={handleClick} isFavorited={isFavorited} onToggleFavorite={onToggleFavorite} />
 }

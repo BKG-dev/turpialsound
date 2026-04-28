@@ -1,10 +1,13 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import Link from 'next/link'
 import {
   AlertTriangle,
   Shield,
   CheckCircle2,
+  Check,
+  CheckCheck,
   Send,
   X,
   ChevronLeft,
@@ -16,8 +19,40 @@ import {
   TrendingDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { MessageThread, Message, FormalQuote, ServiceListing } from '@/types/marketplace'
+import type { MessageThread, Message, FormalQuote } from '@/types/marketplace'
 import { MOCK_THREAD } from '@/content/marketplace'
+import {
+  sendMessage as sendMessageAction,
+  getThreadMessages as getThreadMessagesAction,
+  markMessagesRead as markMessagesReadAction,
+} from '@/actions/marketplace/chat'
+
+// ─── DB Message normalizer (real mode) ───────────────────────────────────────
+
+interface DbMessage {
+  id: string
+  threadId: string
+  senderId: string
+  content: string
+  createdAt: string | Date
+  isRead: boolean
+  sender: { id: string; displayName: string; avatarUrl?: string | null }
+}
+
+function normalizeDbMessage(m: DbMessage): Message {
+  const name = m.sender?.displayName ?? 'Usuario'
+  return {
+    id: m.id,
+    threadId: m.threadId,
+    senderId: m.senderId,
+    senderName: name,
+    senderInitials: name.slice(0, 2).toUpperCase(),
+    content: m.content,
+    type: 'text',
+    createdAt: typeof m.createdAt === 'string' ? m.createdAt : m.createdAt.toISOString(),
+    read: m.isRead,
+  }
+}
 
 // ─── Security Warning Banner ──────────────────────────────────────────────────
 
@@ -168,7 +203,7 @@ function QuoteCard({ quote, isOwn, onPay }: {
               ) : (
                 <>
                   <Lock size={14} />
-                  Realizar Pago Fiduciario — ${quote.buyerPays.toLocaleString()} {quote.currency}
+                  Reportar pago - ${quote.buyerPays.toLocaleString()} {quote.currency}
                 </>
               )}
             </button>
@@ -177,7 +212,7 @@ function QuoteCard({ quote, isOwn, onPay }: {
           {!paid && (
             <p className="text-[10px] text-[#5a5a5a] text-center mt-2">
               <Shield size={9} className="inline mr-1 text-[#00aeef]" />
-              Tu pago queda retenido en escrow hasta confirmar la entrega
+              Tu pago queda protegido mientras se confirma la entrega
             </p>
           )}
         </div>
@@ -222,9 +257,13 @@ function MessageBubble({ message, isOwn }: { message: Message; isOwn: boolean })
       >
         {message.content}
       </div>
-      <span className="text-[9px] text-[#5a5a5a] px-1">
+      <span className="text-[9px] text-[#5a5a5a] px-1 flex items-center gap-0.5">
         {new Date(message.createdAt).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })}
-        {isOwn && <CheckCircle2 size={9} className="inline ml-1 text-[#00aeef]" />}
+        {isOwn && (
+          message.read
+            ? <CheckCheck size={11} style={{ color: '#00aeef' }} />
+            : <Check size={11} className="text-[#5a5a5a]" />
+        )}
       </span>
     </div>
   )
@@ -232,9 +271,32 @@ function MessageBubble({ message, isOwn }: { message: Message; isOwn: boolean })
 
 // ─── Chat Header ──────────────────────────────────────────────────────────────
 
-function ChatHeader({ thread, onClose }: { thread: MessageThread; onClose: () => void }) {
-  const listing = thread.listing
-  const otherUser = thread.participants[1]
+interface RealChatUser {
+  displayName: string
+  avatarUrl?: string | null
+  isVerified?: boolean
+  sellerRating?: string | null
+}
+
+function ChatHeader({
+  thread,
+  realUser,
+  listingTitle,
+  listingSlug,
+  onClose,
+}: {
+  thread: MessageThread
+  realUser?: RealChatUser
+  listingTitle?: string
+  listingSlug?: string
+  onClose: () => void
+}) {
+  const mockUser = thread.participants[1]
+  const name = realUser?.displayName ?? mockUser.name
+  const initials = name.slice(0, 2).toUpperCase()
+  const verified = realUser?.isVerified ?? mockUser.verified
+  const rating = realUser?.sellerRating ? parseFloat(realUser.sellerRating) : mockUser.rating
+  const title = listingTitle ?? (thread.listing as { title: string }).title
 
   return (
     <div
@@ -254,9 +316,9 @@ function ChatHeader({ thread, onClose }: { thread: MessageThread; onClose: () =>
           className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold text-white"
           style={{ background: 'linear-gradient(135deg, #00aeef 0%, #0050c8 100%)' }}
         >
-          {otherUser.initials}
+          {initials}
         </div>
-        {otherUser.verified && (
+        {verified && (
           <BadgeCheck size={13} className="absolute -bottom-0.5 -right-0.5 text-[#00aeef]"
             style={{ filter: 'drop-shadow(0 0 4px rgba(0,174,239,0.7))' }} />
         )}
@@ -265,15 +327,25 @@ function ChatHeader({ thread, onClose }: { thread: MessageThread; onClose: () =>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <p className="text-sm font-medium text-[#f2f2f2] truncate">{otherUser.name}</p>
-          <div className="flex items-center gap-0.5">
-            <Star size={10} className="text-[#ffc107] fill-[#ffc107]" />
-            <span className="text-[10px] text-[#a0a0a0]">{otherUser.rating.toFixed(1)}</span>
-          </div>
+          <p className="text-sm font-medium text-[#f2f2f2] truncate">{name}</p>
+          {rating > 0 && (
+            <div className="flex items-center gap-0.5">
+              <Star size={10} className="text-[#ffc107] fill-[#ffc107]" />
+              <span className="text-[10px] text-[#a0a0a0]">{rating.toFixed(1)}</span>
+            </div>
+          )}
         </div>
-        <p className="text-[10px] text-[#5a5a5a] truncate">
-          {listing.type === 'product' ? listing.title : (listing as ServiceListing).title}
-        </p>
+        {listingSlug ? (
+          <Link
+            href={`/marketplace/${listingSlug}`}
+            className="text-[10px] text-[#00aeef] truncate hover:underline"
+            onClick={e => e.stopPropagation()}
+          >
+            Sobre: {title}
+          </Link>
+        ) : (
+          <p className="text-[10px] text-[#5a5a5a] truncate">{title}</p>
+        )}
       </div>
 
       {/* Escrow chip */}
@@ -292,8 +364,28 @@ function ChatHeader({ thread, onClose }: { thread: MessageThread; onClose: () =>
 
 // ─── Input Area ───────────────────────────────────────────────────────────────
 
-function ChatInput() {
+function ChatInput({ onSend }: { onSend: (content: string) => Promise<void> }) {
   const [value, setValue] = useState('')
+  const [sending, setSending] = useState(false)
+
+  async function handleSubmit() {
+    const trimmed = value.trim()
+    if (!trimmed || sending) return
+    setSending(true)
+    setValue('')
+    try {
+      await onSend(trimmed)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit()
+    }
+  }
 
   return (
     <div
@@ -304,9 +396,11 @@ function ChatInput() {
         <textarea
           value={value}
           onChange={e => setValue(e.target.value)}
-          placeholder="Escribe un mensaje..."
+          onKeyDown={handleKeyDown}
+          disabled={sending}
+          placeholder="Escribe un mensaje…"
           rows={1}
-          className="w-full resize-none rounded-xl px-4 py-2.5 text-sm text-[#f2f2f2] placeholder:text-[#5a5a5a] outline-none transition-all duration-250"
+          className="w-full resize-none rounded-xl px-4 py-2.5 text-sm text-[#f2f2f2] placeholder:text-[#5a5a5a] outline-none transition-all duration-250 disabled:opacity-60"
           style={{
             background: 'rgba(30,30,30,0.8)',
             border: '1px solid rgba(255,255,255,0.06)',
@@ -322,15 +416,18 @@ function ChatInput() {
       <button
         className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-250 disabled:opacity-40"
         style={{
-          background: value.trim()
+          background: value.trim() && !sending
             ? 'linear-gradient(135deg, #00aeef 0%, #0050c8 100%)'
             : 'rgba(30,30,30,0.8)',
-          border: value.trim() ? 'none' : '1px solid rgba(255,255,255,0.06)',
+          border: value.trim() && !sending ? 'none' : '1px solid rgba(255,255,255,0.06)',
         }}
-        disabled={!value.trim()}
-        onClick={() => setValue('')}
+        disabled={!value.trim() || sending}
+        onClick={handleSubmit}
       >
-        <Send size={15} className={value.trim() ? 'text-white' : 'text-[#5a5a5a]'} />
+        {sending
+          ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          : <Send size={15} className={value.trim() ? 'text-white' : 'text-[#5a5a5a]'} />
+        }
       </button>
     </div>
   )
@@ -339,24 +436,160 @@ function ChatInput() {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 interface TransactionChatProps {
+  /** Full pre-built thread (legacy demo or real). */
   thread?: MessageThread
+  /** Real DB thread ID — enables actual message persistence + polling. */
+  threadId?: string
+  /** Logged-in user's data — determines message ownership. */
+  currentUserId?: string
+  currentUserName?: string
+  currentUserInitials?: string
+  /** Real-mode: replaces mock participant data in the header. */
+  otherUser?: RealChatUser
+  /** Real-mode: listing context shown in the header. */
+  listingTitle?: string
+  listingSlug?: string
   onClose?: () => void
   className?: string
+  /** Called when a message is sent - for optimistic UI updates */
+  onMessageSent?: () => void
 }
 
 export function TransactionChat({
   thread = MOCK_THREAD,
+  threadId,
+  currentUserId,
+  currentUserName,
+  currentUserInitials,
+  otherUser,
+  listingTitle,
+  listingSlug,
   onClose = () => {},
   className,
+  onMessageSent,
 }: TransactionChatProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
-  const currentUserId = 'u6' // Mock: buyer is the current user
 
+  // The effective viewer ID — falls back to the mock buyer for the demo thread.
+  const effectiveUserId = currentUserId ?? 'u6'
+
+  // Real mode starts empty; mock mode starts with thread messages.
+  const [localMessages, setLocalMessages] = useState<Message[]>(
+    threadId ? [] : thread.messages,
+  )
+
+  // Mock mode: sync when thread changes. Real mode: managed by the DB effect below.
+  useEffect(() => {
+    if (!threadId) {
+      setLocalMessages(thread.messages)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [thread.id, threadId])
+
+  // Real mode: load messages from DB on mount and poll every 10 s.
+  useEffect(() => {
+    if (!threadId) return
+
+    let active = true
+    async function pull() {
+      const res = await getThreadMessagesAction(threadId!, 50)
+      if (!active || !res.success) return
+      setLocalMessages((res.data as DbMessage[]).map(normalizeDbMessage))
+    }
+
+    void pull()
+    void markMessagesReadAction(threadId)
+    const timer = setInterval(pull, 10_000)
+
+    return () => {
+      active = false
+      clearInterval(timer)
+    }
+  }, [threadId])
+
+  // Auto-scroll to bottom whenever messages change.
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [thread.messages])
+  }, [localMessages])
+
+  async function handleSend(content: string) {
+    if (!content.trim()) return
+
+    const senderName = currentUserName ?? 'Tú'
+    const senderInitials =
+      currentUserInitials ?? senderName.slice(0, 2).toUpperCase()
+
+    // Optimistic: show the message immediately in the UI.
+    const optimistic: Message = {
+      id: `local_${Date.now()}`,
+      threadId: threadId ?? thread.id,
+      senderId: effectiveUserId,
+      senderName,
+      senderInitials,
+      content,
+      type: 'text',
+      createdAt: new Date().toISOString(),
+      read: false,
+    }
+    setLocalMessages(prev => [...prev, optimistic])
+
+    if (threadId) {
+      // Persist to DB + trigger WhatsApp notification (server action handles both).
+      await sendMessageAction(threadId, content)
+      // Immediately refresh from DB to replace the optimistic message with the real one.
+      const res = await getThreadMessagesAction(threadId, 50)
+      if (res.success) {
+        setLocalMessages((res.data as DbMessage[]).map(normalizeDbMessage))
+      }
+      // Notify parent component for optimistic UI updates
+      onMessageSent?.()
+    } else {
+      // Demo mode: call Turpial Assistant AI.
+      const typingId = `typing_${Date.now()}`
+      const typingMsg: Message = {
+        id: typingId,
+        threadId: thread.id,
+        senderId: 'turpial-assistant',
+        senderName: 'Turpial Assistant',
+        senderInitials: 'TA',
+        content: '...',
+        type: 'text',
+        createdAt: new Date().toISOString(),
+        read: true,
+      }
+      setLocalMessages(prev => [...prev, typingMsg])
+
+      try {
+        const res = await fetch('/api/marketplace/ai-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: content }),
+        })
+        const json = (await res.json()) as { reply?: string; error?: string }
+        const replyText =
+          json.reply ??
+          json.error ??
+          'No pude procesar tu mensaje. Intenta de nuevo.'
+
+        const aiMsg: Message = {
+          id: `ai_${Date.now()}`,
+          threadId: thread.id,
+          senderId: 'turpial-assistant',
+          senderName: 'Turpial Assistant',
+          senderInitials: 'TA',
+          content: replyText,
+          type: 'text',
+          createdAt: new Date().toISOString(),
+          read: true,
+        }
+        setLocalMessages(prev => prev.filter(m => m.id !== typingId).concat(aiMsg))
+      } catch {
+        setLocalMessages(prev => prev.filter(m => m.id !== typingId))
+      }
+    }
+  }
 
   return (
     <div
@@ -372,7 +605,7 @@ export function TransactionChat({
       }}
     >
       {/* Header */}
-      <ChatHeader thread={thread} onClose={onClose} />
+      <ChatHeader thread={thread} realUser={otherUser} listingTitle={listingTitle} listingSlug={listingSlug} onClose={onClose} />
 
       {/* Security Warning — always visible */}
       <div className="flex-shrink-0">
@@ -385,20 +618,25 @@ export function TransactionChat({
         className="flex-1 overflow-y-auto px-4 py-3 space-y-4 scrollbar-none"
         style={{ scrollBehavior: 'smooth' }}
       >
-        {thread.messages.map(message => (
+        {localMessages.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full gap-2 py-8">
+            <p className="text-[11px] text-[#5a5a5a]">
+              Inicia la conversación con el vendedor.
+            </p>
+          </div>
+        )}
+        {localMessages.map(message => (
           <MessageBubble
             key={message.id}
             message={message}
-            isOwn={message.senderId === currentUserId}
+            isOwn={message.senderId === effectiveUserId}
           />
         ))}
-
-        {/* Padding bottom for comfortable scroll */}
         <div className="h-2" />
       </div>
 
       {/* Input */}
-      <ChatInput />
+      <ChatInput onSend={handleSend} />
     </div>
   )
 }
