@@ -550,3 +550,22 @@ Riesgos activos:
   - si el upload visual funciona pero falla backend/storage, reportar antes de tocar storage/backend;
   - no mezclar con payout final.
 - Push: no realizado.
+
+## Checkpoint 2026-04-28 - UX publico responsive marketplace
+
+- Sprint ejecutado: UX publico responsive mobile + desktop, sin schema ni cambios de negocio.
+- Cambios UX cerrados:
+  - contraste reforzado en `/marketplace`, cards/listings, ficha `/marketplace/[slug]`, Q&A, checkout y chat;
+  - preguntas/respuestas con texto mas legible, mejor espaciado y fondos con mayor separacion visual;
+  - cajas de preguntas/respuestas en detalle y modales convertidas a superficies tactiles mas altas, con `id/name` donde aplica;
+  - dropdown de banco emisor muestra label compacto `0105-Mercantil` sin cambiar el valor interno enviado;
+  - horas visibles del chat marketplace pasan a formato 12h con `hour12`;
+  - auth bar de marketplace ajustada para no degradar mobile ni desktop.
+- Dark/light: no implementado. No existe infraestructura de tema segura y el marketplace tiene colores inline/hardcodeados; hacerlo bien requiere diseno/refactor de theme system en sprint separado.
+- Validacion tecnica:
+  - `git diff --check`: limpio, solo warnings CRLF;
+  - `npx tsc --noEmit`: limpio;
+  - `npm run build`: limpio, 29 paginas generadas.
+- No se ejecuto Playwright, QA automatizada, CDP ni flujos UI ad hoc.
+- No se tocaron booking, `/reservas`, main/produccion, stashes, schema/migrations, tasas, carrito, finanzas, conformidad/fondos ni `paymentProofUrl`/proxy SUPER.
+- Siguiente frente recomendado: Sprint 2 de bugs internos acotados, empezando por validar el `task_id` exacto en `docs/07_handoffs/qa-dispatcher.json`; si no existe, reportar `GAP OPERATIVO`.

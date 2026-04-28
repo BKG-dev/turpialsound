@@ -23,7 +23,19 @@ export const VENEZUELAN_BANKS = [
   { code: '0177', name: 'Banco de la Fuerza Armada Nacional Bolivariana, B.U.' },
 ] as const
 
+function compactBankName(name: string) {
+  return name
+    .replace(/^Banco\s+de\s+/i, '')
+    .replace(/^Banco\s+/i, '')
+    .replace(/,\s*S\.A\..*$/i, '')
+    .replace(/\s*C\.A\..*$/i, '')
+    .replace(/\s*Banco Universal.*$/i, '')
+    .replace(/\s*B\.U\..*$/i, '')
+    .trim()
+}
+
 export const VENEZUELAN_BANK_OPTIONS = VENEZUELAN_BANKS.map((bank) => ({
   ...bank,
   label: `${bank.code} - ${bank.name}`,
+  displayLabel: `${bank.code}-${compactBankName(bank.name)}`,
 }))

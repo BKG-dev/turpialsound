@@ -546,3 +546,21 @@ Este archivo registra los bloqueos y riesgos operativos activos del marketplace 
 - **Restricciones respetadas**: No se tocaron booking, `/reservas`, Prisma/runtime/db/env, APIs/actions, dashboards privados ni Blob/storage/paymentProofUrl/proxy SUPER.
 - **Validacion pendiente en preview**: `/marketplace` mobile, menu hamburguesa, `Quiero Comprar`, `Quiero Vender` + upload desde movil, cards/listings con imagenes/fallback, listing detail + textarea preguntas y smoke rapido desktop.
 - **Riesgo activo**: `lib/marketplace/media-client.ts` cambio para upload movil; validar desde galeria/camara. Si el upload visual funciona pero falla backend/storage, reportar antes de tocar storage/backend. No mezclar con payout final.
+
+## 25. Sprint UX publico responsive marketplace
+
+- **Fecha**: 2026-04-28
+- **Estado real**: Cerrado y validado tecnicamente; pendiente solo revision visual humana si se quiere evidencia UI.
+- **Descripcion**: Se corrigio el frente publico responsive del marketplace sin tocar schema ni logica de negocio. El foco fue legibilidad real en fondos oscuros, Q&A usable en mobile/desktop, labels compactos de bancos y horas no militares en chat.
+- **Cambios cerrados**:
+  - contraste reforzado en `/marketplace`, ficha publica, cards/listings, Q&A, checkout, modales y chat;
+  - preguntas/respuestas mas legibles, con texto mayor, fondos mas contrastados y mejor espaciado;
+  - inputs de preguntas/respuestas en detalle y modales pasan a areas tactiles mas comodas, con `id/name` donde aplica;
+  - banco emisor del checkout se presenta como `0105-Mercantil` sin cambiar el valor completo enviado internamente;
+  - horas visibles del chat marketplace pasan a formato 12h;
+  - auth bar publica se ajusta con wrapping/truncado para mobile sin degradar desktop.
+- **Dark/light**: Pendiente separado. No hay infraestructura de tema segura y los colores del marketplace estan hardcodeados en multiples superficies; implementarlo bien requiere sprint de diseno/refactor, no parche local.
+- **Validacion**: `git diff --check` limpio con warnings CRLF; `npx tsc --noEmit` limpio; `npm run build` limpio, 29 paginas generadas.
+- **Restricciones respetadas**: No se tocaron booking, `/reservas`, main/produccion, stashes, Prisma schema/migrations, tasas, carrito, finanzas/P&L, conformidad/fondos ni `paymentProofUrl`/proxy SUPER.
+- **Riesgo activo**: La validacion ejecutada fue tecnica, no QA visual/manual. Si se pide QA visual futura, debe salir primero de `docs/07_handoffs/qa-dispatcher.json`; sin `task_id` exacto corresponde `GAP OPERATIVO`.
+- **Accion inmediata recomendada**: Sprint 2 de bugs internos acotados, empezando por validar ruta dispatcher para `Guardar metodo de cobro` y nota interna admin.

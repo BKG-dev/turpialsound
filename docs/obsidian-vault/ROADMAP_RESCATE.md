@@ -1164,3 +1164,57 @@ Riesgos de continuidad:
 - `lib/marketplace/media-client.ts` cambio para upload movil; validar desde galeria/camara.
 - No tocar storage/backend si upload visual funciona pero falla backend; reportar antes.
 - No mezclar con payout final.
+
+## Checkpoint 2026-04-28 - Sprint UX publico responsive marketplace
+
+Estado:
+- `CERRADO Y VALIDADO TECNICAMENTE`
+
+Alcance:
+- UX publico del marketplace en mobile + desktop.
+- No se tocaron schema, negocio, carrito, tasas, finanzas ni flujo de conformidad/fondos.
+
+Archivos:
+- `app/marketplace/MarketplacePageClient.tsx`
+- `app/marketplace/[slug]/page.tsx`
+- `components/marketplace/CheckoutModal.tsx`
+- `components/marketplace/ListingQASection.tsx`
+- `components/marketplace/MarketplaceCard.tsx`
+- `components/marketplace/MarketplaceModals.tsx`
+- `components/marketplace/TransactionChat.tsx`
+- `lib/marketplace/venezuelan-banks.ts`
+
+Producto cerrado:
+- contraste general reforzado en marketplace publico, ficha de listing, cards, modales, Q&A, checkout y chat;
+- preguntas/respuestas con mayor legibilidad, fondos mas separados y mejor espaciado;
+- caja de preguntas/respuestas usable en telefono y desktop, con areas tactiles mas altas e identificadores `id/name`;
+- dropdown de banco emisor muestra `0105-Mercantil`/`0102-Venezuela` como presentacion compacta, sin cambiar el valor interno enviado;
+- horas visibles del chat marketplace en formato 12h;
+- auth bar ajustada para no desbordar en mobile y no degradar desktop.
+
+Dark/light:
+- no implementado en este sprint;
+- no existe infraestructura de tema segura para marketplace;
+- el frente requiere diseno/refactor especifico por colores inline/hardcodeados, por lo que queda como pendiente separado.
+
+Validacion:
+- `git diff --check`: limpio, solo warnings CRLF.
+- `npx tsc --noEmit`: limpio.
+- `npm run build`: limpio, 29 paginas generadas.
+
+No se toco:
+- booking;
+- `/reservas`;
+- main/produccion;
+- stashes;
+- Prisma schema/migrations;
+- tasas;
+- carrito;
+- finanzas/P&L;
+- conformidad/fondos;
+- paymentProofUrl/proxy SUPER.
+
+Siguiente frente recomendado:
+- Sprint 2 de bugs internos acotados: `Guardar metodo de cobro` y nota interna admin.
+- Antes de cualquier QA futura, resolver `task_id` exacto en `docs/07_handoffs/qa-dispatcher.json`.
+- Si no existe ruta exacta, reportar `GAP OPERATIVO` y no improvisar.

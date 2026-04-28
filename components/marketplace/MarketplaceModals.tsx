@@ -152,7 +152,7 @@ function ModalShell({
             <h2 className="text-sm font-semibold text-[#f2f2f2] truncate" style={{ letterSpacing: '0.03em' }}>
               {title}
             </h2>
-            {subtitle && <p className="text-[11px] text-[#5a5a5a] mt-0.5">{subtitle}</p>}
+            {subtitle && <p className="text-[11px] text-[#b8b8b8] mt-0.5">{subtitle}</p>}
           </div>
           {step !== undefined && totalSteps && (
             <div className="flex items-center gap-1 mr-2 flex-shrink-0">
@@ -218,7 +218,7 @@ function CategoryGrid<T extends ProductCategory | ServiceCategory>({
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-[#5a5a5a] mt-0.5 leading-relaxed">{cat.description}</p>
+                <p className="text-[11px] text-[#b8b8b8] mt-0.5 leading-relaxed">{cat.description}</p>
               </div>
               <ChevronRight size={14} className="text-[#5a5a5a] group-hover:text-[#a0a0a0] transition-colors flex-shrink-0 mt-1" />
             </div>
@@ -244,7 +244,7 @@ function SuccessScreen({ message, onClose }: { message: string; onClose: () => v
       </motion.div>
       <div>
         <p className="text-lg font-semibold text-[#f2f2f2] mb-2">{message}</p>
-        <p className="text-sm text-[#5a5a5a]">El equipo de Turpial Market revisará tu publicación en menos de 24 horas.</p>
+        <p className="text-sm text-[#b8b8b8]">El equipo de Turpial Market revisará tu publicación en menos de 24 horas.</p>
       </div>
       <button onClick={onClose} className="btn-silky-primary px-8 py-3 rounded-xl text-sm font-semibold">
         Explorar el Marketplace
@@ -346,7 +346,7 @@ function ListingQASection({
         <span className="text-[11px] font-semibold text-[#00aeef] tracking-wide uppercase flex-1">
           Preguntas y Respuestas
           {questions.length > 0 && (
-            <span className="ml-2 text-[9px] text-[#5a5a5a] font-normal normal-case">
+            <span className="ml-2 text-[9px] text-[#b8b8b8] font-normal normal-case">
               ({questions.length})
             </span>
           )}
@@ -361,7 +361,7 @@ function ListingQASection({
         )}
         <ChevronDown
           size={13}
-          className="text-[#5a5a5a] transition-transform duration-200"
+          className="text-[#9a9a9a] transition-transform duration-200"
           style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
         />
       </button>
@@ -372,58 +372,61 @@ function ListingQASection({
           {loading && (
             <div className="flex items-center gap-2 py-2">
               <Loader2 size={12} className="animate-spin text-[#5a5a5a]" />
-              <span className="text-[11px] text-[#5a5a5a]">Cargando preguntas...</span>
+              <span className="text-[11px] text-[#b8b8b8]">Cargando preguntas...</span>
             </div>
           )}
           {!loading && questions.length === 0 && (
-            <p className="text-[11px] text-[#3a3a3a] italic py-1">Sin preguntas aún. ¡Sé el primero en preguntar!</p>
+            <p className="py-1 text-[11px] italic text-[#9a9a9a]">Sin preguntas aún. ¡Sé el primero en preguntar!</p>
           )}
           {questions.map(q => (
             <div key={q.id} className="space-y-1.5">
               <div className="flex items-start gap-2">
                 <HelpCircle size={11} className="text-[#00aeef] mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-[12px] text-[#d4d4d4] leading-snug">{q.question}</p>
-                  <p className="text-[10px] text-[#3a3a3a] mt-0.5">{q.asker.displayName}</p>
+                  <p className="text-sm leading-relaxed text-[#f2f2f2]">{q.question}</p>
+                  <p className="mt-1 text-[10px] text-[#9a9a9a]">{q.asker.displayName}</p>
                 </div>
               </div>
               {q.answer ? (
                 <div
-                  className="ml-5 rounded-lg px-3 py-2"
-                  style={{ background: 'rgba(0,174,239,0.05)', border: '1px solid rgba(0,174,239,0.1)' }}
+                  className="ml-0 rounded-xl px-3 py-3 sm:ml-5"
+                  style={{ background: 'rgba(0,174,239,0.08)', border: '1px solid rgba(0,174,239,0.18)' }}
                 >
                   <p className="text-[10px] font-semibold text-[#00aeef] mb-0.5 uppercase tracking-wide">
                     Vendedor
                   </p>
-                  <p className="text-[12px] text-[#c0c0c0] leading-snug">{q.answer}</p>
+                  <p className="text-sm leading-relaxed text-[#e6e6e6]">{q.answer}</p>
                 </div>
               ) : isSeller ? (
                 // Seller reply form for unanswered questions
                 <div
-                  className="ml-5 rounded-lg px-3 py-2 space-y-2"
-                  style={{ background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.15)' }}
+                  className="ml-0 space-y-2 rounded-xl px-3 py-3 sm:ml-5"
+                  style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.22)' }}
                 >
                   <p className="text-[10px] font-semibold text-[#f59e0b] uppercase tracking-wide">
                     Tu respuesta
                   </p>
-                  <div className="flex gap-2">
-                    <input
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <textarea
+                      id={`modal-listing-answer-${q.id}`}
+                      name={`modal-listing-answer-${q.id}`}
                       value={replyStates[q.id]?.text ?? ''}
                       onChange={e => setReplyStates(prev => ({
                         ...prev,
                         [q.id]: { text: e.target.value, submitting: false },
                       }))}
-                      onKeyDown={e => { if (e.key === 'Enter') handleAnswer(q.id) }}
                       placeholder="Escribe tu respuesta..."
-                      className="flex-1 text-[12px] text-[#f2f2f2] placeholder:text-[#3a3a3a] rounded-lg px-3 py-1.5 outline-none"
-                      style={{ background: 'rgba(20,20,20,0.8)', border: '1px solid rgba(245,158,11,0.2)' }}
+                      rows={2}
+                      className="min-h-[88px] flex-1 resize-y rounded-lg px-3 py-2 text-sm text-[#f2f2f2] outline-none placeholder:text-[#8a8a8a] sm:min-h-[52px]"
+                      style={{ background: 'rgba(20,20,20,0.94)', border: '1px solid rgba(245,158,11,0.28)' }}
                       maxLength={1000}
                       disabled={replyStates[q.id]?.submitting}
                     />
                     <button
                       onClick={() => handleAnswer(q.id)}
                       disabled={!replyStates[q.id]?.text?.trim() || replyStates[q.id]?.submitting}
-                      className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 disabled:opacity-40"
+                      aria-label="Enviar respuesta"
+                      className="flex h-10 w-full flex-shrink-0 items-center justify-center rounded-lg transition-all duration-200 disabled:opacity-40 sm:h-8 sm:w-8"
                       style={{
                         background: replyStates[q.id]?.text?.trim() && !replyStates[q.id]?.submitting
                           ? 'linear-gradient(135deg, rgba(245,158,11,0.9) 0%, rgba(234,179,8,0.8) 100%)'
@@ -439,7 +442,7 @@ function ListingQASection({
                   </div>
                 </div>
               ) : (
-                <p className="ml-5 text-[10px] text-[#3a3a3a] italic">Pendiente de respuesta</p>
+                <p className="ml-0 text-[11px] italic text-[#9a9a9a] sm:ml-5">Pendiente de respuesta</p>
               )}
             </div>
           ))}
@@ -447,27 +450,30 @@ function ListingQASection({
           {/* Ask form — only for non-sellers */}
           {!isSeller && (
             <div
-              className="rounded-xl p-3 space-y-2 mt-2"
-              style={{ background: 'rgba(0,174,239,0.03)', border: '1px solid rgba(0,174,239,0.1)' }}
+              className="mt-2 space-y-2 rounded-xl p-3"
+              style={{ background: 'rgba(0,174,239,0.05)', border: '1px solid rgba(0,174,239,0.16)' }}
             >
-              <p className="text-[10px] text-[#5a5a5a] uppercase tracking-wide font-semibold">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#d4d4d4]">
                 Hacer una pregunta
               </p>
-              <div className="flex gap-2">
-                <input
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <textarea
+                  id={`modal-listing-question-${listingId}`}
+                  name={`modal-listing-question-${listingId}`}
                   value={newQ}
                   onChange={e => setNewQ(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleAsk() }}
                   placeholder="¿Qué quieres saber sobre este producto?"
-                  className="flex-1 text-[12px] text-[#f2f2f2] placeholder:text-[#3a3a3a] rounded-lg px-3 py-2 outline-none"
-                  style={{ background: 'rgba(20,20,20,0.8)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  rows={2}
+                  className="min-h-[88px] flex-1 resize-y rounded-lg px-3 py-2.5 text-sm text-[#f2f2f2] outline-none placeholder:text-[#8a8a8a] sm:min-h-[52px]"
+                  style={{ background: 'rgba(20,20,20,0.94)', border: '1px solid rgba(255,255,255,0.12)' }}
                   maxLength={500}
                   disabled={submitting}
                 />
                 <button
                   onClick={handleAsk}
                   disabled={!newQ.trim() || submitting}
-                  className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 disabled:opacity-40"
+                  aria-label="Enviar pregunta"
+                  className="flex h-10 w-full flex-shrink-0 items-center justify-center rounded-lg transition-all duration-200 disabled:opacity-40 sm:h-8 sm:w-8"
                   style={{
                     background: newQ.trim() && !submitting
                       ? 'linear-gradient(135deg, #00aeef 0%, #0050c8 100%)'
@@ -539,7 +545,7 @@ function BuyFlow({ step, direction, listings, listingsLoading, listingsError, on
         <div className="w-full px-4 py-5 sm:px-6 sm:py-6">
           <div className="mx-auto mb-3 flex w-full max-w-5xl items-center gap-2 px-1 sm:px-2">
             <AlertCircle size={13} className="text-[#00aeef]" />
-            <span className="text-[11px] text-[#5a5a5a]">Listados activos en esta categoría</span>
+            <span className="text-[11px] text-[#b8b8b8]">Listados activos en esta categoría</span>
           </div>
           {listingsLoading ? (
             <ListingsStatus tone="cyan" message="Cargando listados..." />
@@ -549,7 +555,7 @@ function BuyFlow({ step, direction, listings, listingsLoading, listingsError, on
             <div className="mx-auto rounded-xl flex w-full max-w-5xl items-center justify-center py-12"
               style={{ background: 'rgba(0,174,239,0.03)', border: '1px dashed rgba(0,174,239,0.15)' }}>
               <div className="text-center">
-                <p className="text-sm text-[#5a5a5a]">Sin listados en esta categoría aún.</p>
+                <p className="text-sm text-[#b8b8b8]">Sin listados en esta categoría aún.</p>
                 <p className="text-[11px] text-[#2a2a2a] mt-1">¡Sé el primero en publicar!</p>
               </div>
             </div>
@@ -625,7 +631,7 @@ function SellFlow({
       )}
       {step === 1 && (
         <div className="p-6 space-y-4">
-          <p className="text-xs text-[#5a5a5a] uppercase tracking-widest">Detalles del producto</p>
+          <p className="text-xs text-[#9a9a9a] uppercase tracking-widest">Detalles del producto</p>
           <div className="space-y-3">
 
             {/* Title */}
@@ -678,7 +684,7 @@ function SellFlow({
             {/* Image upload */}
             <div className="space-y-2">
               <label className="text-xs text-[#a0a0a0]">
-                Fotos del equipo <span className="text-[#5a5a5a]">({imageFiles.length}/8)</span>
+                Fotos del equipo <span className="text-[#9a9a9a]">({imageFiles.length}/8)</span>
               </label>
               {imageFiles.length > 0 ? (
                 <div className="grid grid-cols-4 gap-2">
@@ -718,7 +724,7 @@ function SellFlow({
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,193,7,0.3)' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#2a2a2a' }}>
                   <Upload size={20} className="text-[#2a2a2a]" />
-                  <p className="text-xs text-[#5a5a5a]">Subir fotos del equipo (máx. 8)</p>
+                  <p className="text-xs text-[#b8b8b8]">Subir fotos del equipo (máx. 8)</p>
                   <p className="text-[10px] text-[#2a2a2a]">JPG, PNG, WEBP o HEIC</p>
                   <input
                     type="file"
@@ -780,7 +786,7 @@ function FindTalentFlow({ step, direction, listings, listingsLoading, listingsEr
         <div className="p-4 space-y-3">
           <div className="flex items-center gap-2 px-2 mb-1">
             <Star size={12} className="text-[#ffc107] fill-[#ffc107]" />
-            <span className="text-[11px] text-[#5a5a5a]">Talentos en esta categoría</span>
+            <span className="text-[11px] text-[#b8b8b8]">Talentos en esta categoría</span>
           </div>
           {listingsLoading ? (
             <ListingsStatus tone="gold" message="Cargando listados..." />
@@ -790,7 +796,7 @@ function FindTalentFlow({ step, direction, listings, listingsLoading, listingsEr
             <div className="rounded-xl flex items-center justify-center py-12"
               style={{ background: 'rgba(255,193,7,0.03)', border: '1px dashed rgba(255,193,7,0.15)' }}>
               <div className="text-center">
-                <p className="text-sm text-[#5a5a5a]">Sin talentos en esta categoría aún.</p>
+                <p className="text-sm text-[#b8b8b8]">Sin talentos en esta categoría aún.</p>
                 <p className="text-[11px] text-[#2a2a2a] mt-1">¡Registra tu perfil de talento!</p>
               </div>
             </div>
@@ -863,7 +869,7 @@ function OfferTalentFlow({
       )}
       {step === 1 && (
         <div className="p-6 space-y-4">
-          <p className="text-xs text-[#5a5a5a] uppercase tracking-widest">Perfil de Talento</p>
+          <p className="text-xs text-[#9a9a9a] uppercase tracking-widest">Perfil de Talento</p>
           <div className="space-y-3">
 
             {/* Title */}

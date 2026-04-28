@@ -166,10 +166,10 @@ function SectionHeading({
     <div className="flex flex-col gap-3 mb-10">
       <div className="flex items-center gap-3">
         <span className="accent-line-animated" />
-        <span className="text-[11px] uppercase tracking-[0.2em] text-[#5a5a5a]">{eyebrow}</span>
+        <span className="text-[11px] uppercase tracking-[0.2em] text-[#9a9a9a]">{eyebrow}</span>
       </div>
       <h2 className={`text-2xl md:text-3xl font-semibold ${accentClass}`}>{heading}</h2>
-      {sub && <p className="text-sm text-[#5a5a5a] max-w-xl">{sub}</p>}
+      {sub && <p className="text-sm text-[#b8b8b8] max-w-xl">{sub}</p>}
     </div>
   )
 }
@@ -410,7 +410,7 @@ export default function MarketplacePageClient() {
       />
 
       {/* ── Auth Bar ───────────────────────────────────────────────────────── */}
-      <div className="w-full flex items-center justify-end px-6 py-2 gap-3"
+      <div className="flex w-full flex-wrap items-center justify-end gap-2 px-4 py-2 sm:gap-3 sm:px-6"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.3)' }}>
         {session ? (
           <>
@@ -429,7 +429,7 @@ export default function MarketplacePageClient() {
               className="relative flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-90"
               style={{
                 background: unreadCount > 0 ? 'rgba(0,174,239,0.1)' : 'transparent',
-                color: unreadCount > 0 ? '#00aeef' : 'rgba(255,255,255,0.35)',
+                color: unreadCount > 0 ? '#00aeef' : 'rgba(255,255,255,0.68)',
                 border: unreadCount > 0 ? '1px solid rgba(0,174,239,0.25)' : '1px solid transparent',
                 boxShadow: unreadCount > 0 ? '0 0 12px rgba(0,174,239,0.2)' : 'none',
               }}
@@ -447,7 +447,7 @@ export default function MarketplacePageClient() {
 
             <div className="flex items-center gap-2">
               <UserCircle2 size={15} style={{ color: '#00aeef' }} />
-              <span className="text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>
+              <span className="max-w-[42vw] truncate text-xs sm:max-w-none" style={{ color: 'rgba(255,255,255,0.7)' }}>
                 {session.displayName}
                 {session.role === 'SUPER' ? (
                   <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded"
@@ -470,7 +470,7 @@ export default function MarketplacePageClient() {
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-colors hover:bg-white/5"
-              style={{ color: 'rgba(255,255,255,0.35)' }}
+              style={{ color: 'rgba(255,255,255,0.68)' }}
             >
               <LogOut size={12} /> Salir
             </button>
@@ -480,7 +480,7 @@ export default function MarketplacePageClient() {
             <button
               onClick={() => openAuth('login')}
               className="text-xs px-3 py-1 rounded-lg transition-colors hover:bg-white/5"
-              style={{ color: 'rgba(255,255,255,0.4)' }}
+              style={{ color: 'rgba(255,255,255,0.72)' }}
             >
               Iniciar sesión
             </button>
@@ -616,7 +616,7 @@ export default function MarketplacePageClient() {
             className="flex items-center gap-3 mb-8"
           >
             <span className="accent-line-animated" />
-            <span className="text-[11px] uppercase tracking-[0.25em] text-[#5a5a5a]">
+            <span className="text-[11px] uppercase tracking-[0.25em] text-[#9a9a9a]">
               Turpial Market Beta
             </span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold"
@@ -644,7 +644,7 @@ export default function MarketplacePageClient() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-center text-sm text-[#5a5a5a] max-w-xl mb-12"
+            className="text-center text-sm text-[#b8b8b8] max-w-xl mb-12"
           >
             Compra, vende y contrata talento musical con pagos reportados y revisados manualmente.
             Instrumentos, equipos de audio, accesorios y servicios para la comunidad musical.
@@ -698,7 +698,7 @@ export default function MarketplacePageClient() {
                     <p className="text-sm font-semibold text-[#f2f2f2] mb-1 group-hover:text-white transition-colors">
                       {card.label}
                     </p>
-                    <p className="text-[11px] text-[#5a5a5a] leading-relaxed">{card.sublabel}</p>
+                    <p className="text-[11px] text-[#b8b8b8] leading-relaxed">{card.sublabel}</p>
                   </div>
 
                   {/* Arrow indicator */}
@@ -735,7 +735,7 @@ export default function MarketplacePageClient() {
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
               >
                 <chip.icon size={12} className="text-[#00aeef]" />
-                <span className="text-xs text-[#5a5a5a]">{chip.text}</span>
+                <span className="text-xs text-[#b8b8b8]">{chip.text}</span>
               </div>
             ))}
           </motion.div>
@@ -773,7 +773,7 @@ export default function MarketplacePageClient() {
                     </div>
                     <div>
                       <p className="text-base font-semibold text-[#f2f2f2]">{stat.value}</p>
-                      <p className="text-[10px] text-[#5a5a5a]">{stat.label}</p>
+                      <p className="text-[10px] text-[#b8b8b8]">{stat.label}</p>
                     </div>
                   </div>
                 )
@@ -786,7 +786,7 @@ export default function MarketplacePageClient() {
           <div className="container-base">
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.8fr)] lg:items-start">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-[#5a5a5a]">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-[#9a9a9a]">
                   Marketplace musical en Venezuela
                 </p>
                 <h2 className="mt-3 text-2xl md:text-3xl font-semibold text-[#f2f2f2]">
@@ -823,7 +823,7 @@ export default function MarketplacePageClient() {
                     style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
                   >
                     <h3 className="text-sm font-semibold text-[#f2f2f2]">{item.title}</h3>
-                    <p className="mt-2 text-xs leading-relaxed text-[#6f6f6f]">{item.text}</p>
+                    <p className="mt-2 text-xs leading-relaxed text-[#b8b8b8]">{item.text}</p>
                   </div>
                 ))}
               </div>
@@ -859,7 +859,7 @@ export default function MarketplacePageClient() {
                     : {
                         background: 'transparent',
                         border: '1px solid transparent',
-                        color: '#5a5a5a',
+                        color: '#9a9a9a',
                       }
                   }
                 >
@@ -880,15 +880,15 @@ export default function MarketplacePageClient() {
               >
                 {listingsLoading ? (
                   <div className="col-span-full flex flex-col items-center gap-3 py-20 text-center">
-                    <p className="text-sm text-[#5a5a5a]">Cargando listados...</p>
+                    <p className="text-sm text-[#b8b8b8]">Cargando listados...</p>
                   </div>
                 ) : listingsError ? (
                   <div className="col-span-full flex flex-col items-center gap-3 py-20 text-center">
-                    <p className="text-sm text-[#5a5a5a]">{LISTINGS_LOAD_ERROR_MESSAGE}</p>
+                    <p className="text-sm text-[#b8b8b8]">{LISTINGS_LOAD_ERROR_MESSAGE}</p>
                   </div>
                 ) : listings.length === 0 ? (
                   <div className="col-span-full flex flex-col items-center gap-3 py-20 text-center">
-                    <p className="text-sm text-[#5a5a5a]">No hay listados activos en este momento.</p>
+                    <p className="text-sm text-[#b8b8b8]">No hay listados activos en este momento.</p>
                     <button
                       onClick={() => openFlow('sell')}
                       className="text-xs underline"
@@ -986,7 +986,7 @@ export default function MarketplacePageClient() {
                         </span>
                       </div>
                       <h3 className="text-sm font-semibold text-[#f2f2f2]">{item.title}</h3>
-                      <p className="text-xs text-[#5a5a5a] leading-relaxed">{item.desc}</p>
+                      <p className="text-xs text-[#b8b8b8] leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
                 )
@@ -1007,12 +1007,12 @@ export default function MarketplacePageClient() {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-3">
                   <Sparkles size={14} className="text-[#00aeef]" style={{ filter: 'drop-shadow(0 0 6px rgba(0,174,239,0.6))' }} />
-                  <span className="text-[11px] uppercase tracking-widest text-[#5a5a5a]">Demo en vivo</span>
+                  <span className="text-[11px] uppercase tracking-widest text-[#9a9a9a]">Demo en vivo</span>
                 </div>
                 <h3 className="text-lg font-semibold text-[#f2f2f2] mb-2">
                   Ve el chat de compra en accion
                 </h3>
-                <p className="text-sm text-[#5a5a5a]">
+                <p className="text-sm text-[#b8b8b8]">
                   Explora como se ve una conversacion real entre comprador y vendedor, con acuerdo, pago reportado y revision manual.
                 </p>
               </div>

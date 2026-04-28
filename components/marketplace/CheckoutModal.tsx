@@ -113,7 +113,7 @@ function CopyRow({ label, value }: { label: string; value: string }) {
       style={{ background: 'rgba(20,20,20,0.8)', border: '1px solid #1e1e1e' }}
     >
       <div className="min-w-0">
-        <p className="text-[10px] uppercase tracking-wider text-[#5a5a5a]">{label}</p>
+        <p className="text-[10px] uppercase tracking-wider text-[#9a9a9a]">{label}</p>
         <p className="mt-0.5 truncate font-mono text-sm text-[#f2f2f2]">{value}</p>
       </div>
       <button
@@ -161,7 +161,7 @@ function InputField({
 
   return (
     <div className="space-y-1.5">
-      <label className="text-xs text-[#a0a0a0]">{label}</label>
+      <label className="text-xs text-[#c8c8c8]">{label}</label>
       <div className="relative">
         {Icon && (
           <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#5a5a5a]">
@@ -174,7 +174,7 @@ function InputField({
           readOnly={readOnly}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full rounded-xl border border-[#1e1e1e] bg-[rgba(20,20,20,0.8)] px-4 py-2.5 font-mono text-sm text-[#f2f2f2] outline-none placeholder:text-[#2a2a2a] read-only:text-[#ffc107]"
+          className="w-full rounded-xl border border-[#2a2a2a] bg-[rgba(20,20,20,0.92)] px-4 py-2.5 font-mono text-sm text-[#f2f2f2] outline-none placeholder:text-[#7a7a7a] read-only:text-[#ffc107]"
           style={{ paddingLeft: Icon ? '2.4rem' : undefined }}
           onFocus={(e) => {
             if (!readOnly) e.target.style.borderColor = 'rgba(0,174,239,0.4)'
@@ -367,7 +367,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
             </motion.div>
             <div>
               <p className="mb-2 text-base font-semibold text-[#f2f2f2]">{success.title}</p>
-              <div className="space-y-2 text-sm leading-relaxed text-[#5a5a5a]">
+              <div className="space-y-2 text-sm leading-relaxed text-[#b8b8b8]">
                 <p>{success.summary}</p>
                 <p>Recibimos tu comprobante y el equipo operativo ya fue notificado para revisar la conciliacion manual.</p>
                 <p>{success.detail}</p>
@@ -430,7 +430,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
           >
             <div className="min-w-0 flex-1">
               <h2 className="truncate text-sm font-semibold text-[#f2f2f2]">Completar compra</h2>
-              <p className="mt-0.5 truncate text-[11px] text-[#5a5a5a]">{listing.title}</p>
+              <p className="mt-0.5 truncate text-[11px] text-[#b8b8b8]">{listing.title}</p>
             </div>
             <button
               onClick={onClose}
@@ -445,11 +445,11 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
               className="rounded-xl p-4"
               style={{ background: 'rgba(0,174,239,0.04)', border: '1px solid rgba(0,174,239,0.12)' }}
             >
-              <p className="mb-2 text-[10px] uppercase tracking-widest text-[#5a5a5a]">Total a pagar</p>
+              <p className="mb-2 text-[10px] uppercase tracking-widest text-[#9a9a9a]">Total a pagar</p>
               <div className="flex flex-wrap items-baseline gap-3">
                 <span className="text-2xl font-bold text-[#f2f2f2]">
                   ${price?.toLocaleString('es-VE') ?? '-'}{' '}
-                  <span className="text-sm font-normal text-[#5a5a5a]">{currency}</span>
+                  <span className="text-sm font-normal text-[#b8b8b8]">{currency}</span>
                 </span>
               </div>
 
@@ -461,16 +461,16 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
                 }}
               >
                 <div className="flex items-baseline justify-between">
-                  <p className="text-[10px] uppercase tracking-wider text-[#5a5a5a]">
+                  <p className="text-[10px] uppercase tracking-wider text-[#9a9a9a]">
                     Total a pagar en Bs
                   </p>
                   {rateLoading ? (
-                    <span className="animate-pulse text-sm text-[#5a5a5a]">Cargando...</span>
+                    <span className="animate-pulse text-sm text-[#b8b8b8]">Cargando...</span>
                   ) : (
                     <span className="text-sm font-semibold text-[#ffc107]">{bsAmountDisplay} Bs</span>
                   )}
                 </div>
-                <p className="mt-1.5 text-[10px] text-[#5a5a5a]">
+                <p className="mt-1.5 text-[10px] text-[#b8b8b8]">
                   Tasa BCV: 1 USD ={' '}
                   {bcvRate?.toLocaleString('es-VE', {
                     minimumFractionDigits: 2,
@@ -482,7 +482,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
             </div>
 
             <div>
-              <p className="mb-3 text-[10px] uppercase tracking-widest text-[#5a5a5a]">Metodo de pago</p>
+              <p className="mb-3 text-[10px] uppercase tracking-widest text-[#9a9a9a]">Metodo de pago</p>
               <div className="grid grid-cols-3 gap-2">
                 {MANUAL_METHODS.map((method) => {
                   const Icon = method.icon
@@ -531,7 +531,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-[#f2f2f2]">{selectedMethod.label}</p>
-                  <p className="text-[11px] text-[#5a5a5a]">Usa estos datos para completar el pago externo.</p>
+                  <p className="text-[11px] text-[#b8b8b8]">Usa estos datos para completar el pago externo.</p>
                 </div>
               </div>
 
@@ -550,7 +550,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
             <div style={{ borderTop: '1px solid #1a1a1a' }} />
 
             <div className="space-y-3">
-              <p className="text-[10px] uppercase tracking-widest text-[#5a5a5a]">
+              <p className="text-[10px] uppercase tracking-widest text-[#9a9a9a]">
                 Reportar pago
               </p>
 
@@ -585,19 +585,23 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
                 />
 
                 <div className="space-y-1.5">
-                  <label className="text-xs text-[#a0a0a0]">Banco emisor *</label>
+                  <label className="text-xs text-[#c8c8c8]" htmlFor="marketplace-payment-sender-bank">
+                    Banco emisor *
+                  </label>
                   <select
+                    id="marketplace-payment-sender-bank"
+                    name="marketplace-payment-sender-bank"
                     value={bankName}
                     onChange={(e) => {
                       setBankName(e.target.value)
                       setError(null)
                     }}
-                    className="w-full rounded-xl border border-[#1e1e1e] bg-[rgba(20,20,20,0.8)] px-4 py-2.5 text-sm text-[#f2f2f2] outline-none"
+                    className="w-full rounded-xl border border-[#2a2a2a] bg-[rgba(20,20,20,0.92)] px-4 py-3 text-sm text-[#f2f2f2] outline-none focus:border-[rgba(0,174,239,0.45)] sm:py-2.5"
                   >
                     <option value="">Selecciona un banco</option>
                     {VENEZUELAN_BANK_OPTIONS.map((bank) => (
                       <option key={bank.code} value={bank.label}>
-                        {bank.label}
+                        {bank.displayLabel}
                       </option>
                     ))}
                   </select>
@@ -617,7 +621,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
 
                 <div className="space-y-1.5">
                   <label className="text-xs text-[#a0a0a0]">
-                    Comprobante <span className="text-[#5a5a5a]">(opcional)</span>
+                    Comprobante <span className="text-[#9a9a9a]">(opcional)</span>
                   </label>
                   <label
                     className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl py-6 transition-all"
@@ -642,7 +646,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
                     ) : (
                       <>
                         <Upload size={16} className="text-[#2a2a2a]" />
-                        <span className="text-xs text-[#5a5a5a]">Subir comprobante</span>
+                        <span className="text-xs text-[#b8b8b8]">Subir comprobante</span>
                         <span className="text-[10px] text-[#2a2a2a]">JPG, PNG, WEBP - hasta 10MB</span>
                       </>
                     )}

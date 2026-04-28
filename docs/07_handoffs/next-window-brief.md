@@ -434,3 +434,35 @@ Riesgos de continuidad:
 - `lib/marketplace/media-client.ts` cambio para upload movil; validar desde galeria/camara.
 - Si upload visual funciona pero falla backend/storage, reportar antes de tocar storage/backend.
 - No mezclar con payout final.
+
+## Checkpoint 2026-04-28 - UX publico responsive cerrado tecnicamente
+
+- Sprint cerrado: UX publico responsive mobile + desktop.
+- Archivos tocados en codigo:
+  - `app/marketplace/MarketplacePageClient.tsx`
+  - `app/marketplace/[slug]/page.tsx`
+  - `components/marketplace/CheckoutModal.tsx`
+  - `components/marketplace/ListingQASection.tsx`
+  - `components/marketplace/MarketplaceCard.tsx`
+  - `components/marketplace/MarketplaceModals.tsx`
+  - `components/marketplace/TransactionChat.tsx`
+  - `lib/marketplace/venezuelan-banks.ts`
+- Resultado:
+  - contraste publico reforzado sin tocar negocio;
+  - Q&A legible y mas usable en telefono y desktop;
+  - caja de preguntas/respuestas tactil, con `id/name` en formularios publicos/modales;
+  - banco emisor visible como label compacto, manteniendo el valor interno completo;
+  - horas del chat en formato 12h;
+  - auth bar y textos secundarios ajustados para responsive.
+- Dark/light queda pendiente disenado: requiere infraestructura de tema y refactor de colores inline/hardcodeados; no se improviso en este sprint.
+- Validacion:
+  - `git diff --check`: limpio, solo warnings CRLF;
+  - `npx tsc --noEmit`: limpio;
+  - `npm run build`: limpio, 29 paginas generadas.
+- No se ejecuto QA automatizada ni Playwright.
+
+## Siguiente accion recomendada
+
+1. Sprint 2: bugs internos acotados (`Guardar metodo de cobro` y nota interna admin), resolviendo primero `task_id` exacto en `qa-dispatcher.json`.
+2. Si no existe `task_id` exacto para la validacion futura, detenerse y reportar `GAP OPERATIVO`.
+3. Mantener fuera de alcance: carrito, tasas, finanzas, conformidad/fondos, schema/migrations, booking y `/reservas`.

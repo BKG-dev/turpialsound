@@ -54,6 +54,14 @@ function normalizeDbMessage(m: DbMessage): Message {
   }
 }
 
+function formatMarketplaceTime(value: string | Date) {
+  return new Date(value).toLocaleTimeString('es-VE', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
+}
+
 // ─── Security Warning Banner ──────────────────────────────────────────────────
 
 function SecurityBanner() {
@@ -80,7 +88,7 @@ function SecurityBanner() {
         </p>
         <div className="flex items-center gap-1.5 mt-1">
           <Shield size={10} className="text-[#00aeef]" />
-          <span className="text-[10px] text-[#5a5a5a]">Turpial Market protege tu dinero hasta confirmar la entrega.</span>
+          <span className="text-[10px] text-[#b8b8b8]">Turpial Market protege tu dinero hasta confirmar la entrega.</span>
         </div>
       </div>
     </div>
@@ -120,14 +128,14 @@ function QuoteCard({ quote, isOwn, onPay }: {
         <span className="text-[11px] font-semibold text-[#00aeef] tracking-wider uppercase">
           Cotización Formal
         </span>
-        <span className="ml-auto text-[10px] text-[#5a5a5a]">#{quote.id.toUpperCase()}</span>
+        <span className="ml-auto text-[10px] text-[#9a9a9a]">#{quote.id.toUpperCase()}</span>
       </div>
 
       {/* Listing title */}
       <div className="px-4 pt-3 pb-2">
         <p className="text-xs text-[#a0a0a0] mb-1">Artículo</p>
         <p className="text-sm text-[#f2f2f2] font-medium leading-snug">{quote.listingTitle}</p>
-        <p className="text-[11px] text-[#5a5a5a] mt-1">{quote.description}</p>
+        <p className="text-[11px] text-[#b8b8b8] mt-1">{quote.description}</p>
       </div>
 
       {/* Price breakdown */}
@@ -143,7 +151,7 @@ function QuoteCard({ quote, isOwn, onPay }: {
             <span className="text-base font-semibold text-gradient-gold">
               ${quote.buyerPays.toLocaleString()}
             </span>
-            <span className="text-[10px] text-[#5a5a5a] ml-1">{quote.currency}</span>
+            <span className="text-[10px] text-[#b8b8b8] ml-1">{quote.currency}</span>
           </div>
         </div>
 
@@ -153,13 +161,13 @@ function QuoteCard({ quote, isOwn, onPay }: {
         {!isOwn && (
           <>
             <div className="px-3 py-2 flex items-center justify-between bg-[rgba(0,0,0,0.2)]">
-              <span className="text-[10px] text-[#5a5a5a]">Precio base</span>
+              <span className="text-[10px] text-[#b8b8b8]">Precio base</span>
               <span className="text-xs text-[#a0a0a0]">${quote.basePrice.toLocaleString()}</span>
             </div>
             <div className="px-3 py-2 flex items-center justify-between bg-[rgba(0,0,0,0.2)]">
               <div className="flex items-center gap-1">
                 <TrendingDown size={10} className="text-[#ef4444]" />
-                <span className="text-[10px] text-[#5a5a5a]">Comisión Turpial ({(quote.commissionRate * 100).toFixed(0)}%)</span>
+                <span className="text-[10px] text-[#b8b8b8]">Comisión Turpial ({(quote.commissionRate * 100).toFixed(0)}%)</span>
               </div>
               <span className="text-xs text-[#ef4444]">− ${quote.commissionAmount.toLocaleString()}</span>
             </div>
@@ -175,7 +183,7 @@ function QuoteCard({ quote, isOwn, onPay }: {
       </div>
 
       {/* Expiry */}
-      <div className="px-4 pb-3 flex items-center gap-1.5 text-[10px] text-[#5a5a5a]">
+      <div className="px-4 pb-3 flex items-center gap-1.5 text-[10px] text-[#9a9a9a]">
         <Clock size={9} />
         <span>Válida hasta {new Date(quote.validUntil).toLocaleDateString('es-VE', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
       </div>
@@ -210,7 +218,7 @@ function QuoteCard({ quote, isOwn, onPay }: {
           )}
 
           {!paid && (
-            <p className="text-[10px] text-[#5a5a5a] text-center mt-2">
+            <p className="text-[10px] text-[#b8b8b8] text-center mt-2">
               <Shield size={9} className="inline mr-1 text-[#00aeef]" />
               Tu pago queda protegido mientras se confirma la entrega
             </p>
@@ -228,8 +236,8 @@ function MessageBubble({ message, isOwn }: { message: Message; isOwn: boolean })
     return (
       <div className={cn('flex flex-col gap-1', isOwn ? 'items-end' : 'items-start')}>
         <QuoteCard quote={message.quote!} isOwn={isOwn} />
-        <span className="text-[9px] text-[#5a5a5a] px-1">
-          {new Date(message.createdAt).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })}
+        <span className="text-[9px] text-[#9a9a9a] px-1">
+          {formatMarketplaceTime(message.createdAt)}
         </span>
       </div>
     )
@@ -257,8 +265,8 @@ function MessageBubble({ message, isOwn }: { message: Message; isOwn: boolean })
       >
         {message.content}
       </div>
-      <span className="text-[9px] text-[#5a5a5a] px-1 flex items-center gap-0.5">
-        {new Date(message.createdAt).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })}
+      <span className="text-[9px] text-[#9a9a9a] px-1 flex items-center gap-0.5">
+        {formatMarketplaceTime(message.createdAt)}
         {isOwn && (
           message.read
             ? <CheckCheck size={11} style={{ color: '#00aeef' }} />
@@ -344,7 +352,7 @@ function ChatHeader({
             Sobre: {title}
           </Link>
         ) : (
-          <p className="text-[10px] text-[#5a5a5a] truncate">{title}</p>
+          <p className="text-[10px] text-[#9a9a9a] truncate">{title}</p>
         )}
       </div>
 
@@ -400,7 +408,7 @@ function ChatInput({ onSend }: { onSend: (content: string) => Promise<void> }) {
           disabled={sending}
           placeholder="Escribe un mensaje…"
           rows={1}
-          className="w-full resize-none rounded-xl px-4 py-2.5 text-sm text-[#f2f2f2] placeholder:text-[#5a5a5a] outline-none transition-all duration-250 disabled:opacity-60"
+          className="w-full resize-none rounded-xl px-4 py-2.5 text-sm text-[#f2f2f2] placeholder:text-[#8a8a8a] outline-none transition-all duration-250 disabled:opacity-60"
           style={{
             background: 'rgba(30,30,30,0.8)',
             border: '1px solid rgba(255,255,255,0.06)',
@@ -620,7 +628,7 @@ export function TransactionChat({
       >
         {localMessages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-2 py-8">
-            <p className="text-[11px] text-[#5a5a5a]">
+            <p className="text-[11px] text-[#b8b8b8]">
               Inicia la conversación con el vendedor.
             </p>
           </div>
@@ -678,12 +686,12 @@ export function SellerPaymentBreakdown({ quote }: { quote: FormalQuote }) {
             <span className="text-lg font-bold text-[#4ade80]">
               ${quote.sellerReceives.toLocaleString()}
             </span>
-            <span className="text-xs text-[#5a5a5a] ml-1">{quote.currency}</span>
+            <span className="text-xs text-[#b8b8b8] ml-1">{quote.currency}</span>
           </div>
         </div>
       </div>
 
-      <p className="text-[10px] text-[#5a5a5a]">
+      <p className="text-[10px] text-[#b8b8b8]">
         <Shield size={9} className="inline mr-1 text-[#00aeef]" />
         Los fondos son liberados {7} días después de que el comprador confirme la entrega.
       </p>

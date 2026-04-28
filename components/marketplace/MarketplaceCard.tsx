@@ -49,7 +49,7 @@ function ImageFallback({ tone = 'cyan' }: { tone?: 'cyan' | 'gold' }) {
       }}
     >
       <ImageIcon size={22} style={{ color, opacity: 0.68 }} />
-      <span className="text-[10px] uppercase tracking-widest text-[#5a5a5a]">Sin foto</span>
+      <span className="text-[10px] uppercase tracking-widest text-[#9a9a9a]">Sin foto</span>
     </div>
   )
 }
@@ -210,7 +210,7 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
       {/* Content */}
       <div className="space-y-4 p-5">
         <div>
-          <p className="mb-1.5 text-[11px] uppercase tracking-widest text-[#5a5a5a]">
+          <p className="mb-1.5 text-[11px] uppercase tracking-widest text-[#9a9a9a]">
             {listing.subcategory}
           </p>
           <h3 className="line-clamp-2 text-base font-medium leading-snug text-[#f2f2f2] transition-colors duration-250 group-hover:text-[#00aeef]">
@@ -224,7 +224,7 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
             <span className="text-2xl font-semibold text-gradient-gold leading-none">
               ${listing.price.toLocaleString()}
             </span>
-            <span className="text-xs text-[#5a5a5a] mb-0.5">{listing.currency}</span>
+            <span className="text-xs text-[#b8b8b8] mb-0.5">{listing.currency}</span>
             {listing.rentalAvailable && listing.rentalPricePerDay && (
               <span className="text-xs text-[#a0a0a0] mb-0.5">
                 · ${listing.rentalPricePerDay}/día
@@ -258,14 +258,14 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
             verified={listing.seller.verified}
             rating={listing.seller.rating}
           />
-          <div className="flex flex-shrink-0 items-center gap-1 text-[11px] text-[#5a5a5a]">
+          <div className="flex flex-shrink-0 items-center gap-1 text-[11px] text-[#9a9a9a]">
             <MapPin size={10} />
             <span className="truncate max-w-[110px]">{listing.location.split(',')[0]}</span>
           </div>
         </div>
 
         {/* Escrow badge */}
-        <div className="flex items-start gap-2 text-[11px] leading-relaxed text-[#5a5a5a]">
+        <div className="flex items-start gap-2 text-[11px] leading-relaxed text-[#b8b8b8]">
           <Shield size={11} className="mt-0.5 flex-shrink-0 text-[#00aeef] opacity-70" />
           <span>Operacion protegida con revision de pago</span>
         </div>
@@ -371,7 +371,7 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
           <div className="absolute bottom-3 left-3 right-3 flex gap-1 flex-wrap">
             {listing.genres.slice(0, 3).map(g => (
               <span key={g} className="text-[9px] px-1.5 py-0.5 rounded"
-                style={{ background: 'rgba(0,0,0,0.7)', color: '#5a5a5a', border: '1px solid #1e1e1e' }}>
+                style={{ background: 'rgba(0,0,0,0.7)', color: '#b8b8b8', border: '1px solid #1e1e1e' }}>
                 {g}
               </span>
             ))}
@@ -382,7 +382,7 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
       {/* Content */}
       <div className="space-y-4 p-5">
         <div>
-          <p className="mb-1.5 text-[11px] uppercase tracking-widest text-[#5a5a5a]">
+          <p className="mb-1.5 text-[11px] uppercase tracking-widest text-[#9a9a9a]">
             {listing.subcategory}
           </p>
           <h3 className="line-clamp-2 text-base font-medium leading-snug text-[#f2f2f2] transition-colors duration-250 group-hover:text-[#ffc107]">
@@ -393,12 +393,12 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
         {/* Price */}
         <div className="flex items-end justify-between gap-3">
           <div className="flex min-w-0 flex-wrap items-end gap-x-2 gap-y-1">
-            <span className="text-[11px] text-[#5a5a5a] mb-0.5">Desde</span>
+            <span className="text-[11px] text-[#b8b8b8] mb-0.5">Desde</span>
             <span className="text-2xl font-semibold text-gradient-gold leading-none">
               ${listing.priceFrom.toLocaleString()}
             </span>
             {listing.priceTo && (
-              <span className="text-xs text-[#5a5a5a] mb-0.5">– ${listing.priceTo}</span>
+              <span className="text-xs text-[#b8b8b8] mb-0.5">– ${listing.priceTo}</span>
             )}
             <span className="text-xs text-[#a0a0a0] mb-0.5">{listing.priceLabel}</span>
           </div>
@@ -429,13 +429,13 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
             verified={listing.talent.verified}
             rating={listing.talent.rating}
           />
-          <div className="flex flex-shrink-0 items-center gap-1 text-[11px] text-[#5a5a5a]">
+          <div className="flex flex-shrink-0 items-center gap-1 text-[11px] text-[#9a9a9a]">
             <span>{listing.talent.reviewCount} reseñas</span>
           </div>
         </div>
 
         {/* Escrow badge */}
-        <div className="flex items-start gap-2 text-[11px] leading-relaxed text-[#5a5a5a]">
+        <div className="flex items-start gap-2 text-[11px] leading-relaxed text-[#b8b8b8]">
           <Shield size={11} className="mt-0.5 flex-shrink-0 text-[#ffc107] opacity-70" />
           <span>Pago reportado y revisado manualmente</span>
         </div>

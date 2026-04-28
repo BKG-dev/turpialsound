@@ -226,13 +226,13 @@ export default async function ListingPage({ params }: ListingPageParams) {
         >
           <Link
             href="/marketplace"
-            className="flex items-center gap-2 text-[#5a5a5a] hover:text-[#f2f2f2] transition-colors"
+            className="flex items-center gap-2 text-[#9a9a9a] hover:text-[#f2f2f2] transition-colors"
           >
             <ArrowLeft size={16} />
             <span className="text-xs hidden sm:inline">Marketplace</span>
           </Link>
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-[#3a3a3a] truncate">{listing.title}</p>
+            <p className="text-xs text-[#9a9a9a] truncate">{listing.title}</p>
           </div>
         </div>
 
@@ -299,7 +299,7 @@ export default async function ListingPage({ params }: ListingPageParams) {
             </div>
 
             <div className="space-y-5">
-              <p className="text-[11px] text-[#5a5a5a] uppercase tracking-widest">
+              <p className="text-[11px] text-[#9a9a9a] uppercase tracking-widest">
                 {listing.subcategory}
               </p>
 
@@ -309,17 +309,17 @@ export default async function ListingPage({ params }: ListingPageParams) {
 
               <div className="flex items-end gap-2">
                 {listing.type === 'service' && (
-                  <span className="text-sm text-[#5a5a5a] mb-0.5">Desde</span>
+                  <span className="text-sm text-[#b8b8b8] mb-0.5">Desde</span>
                 )}
                 <span className="text-3xl font-bold text-gradient-gold">
                   ${price.toLocaleString()}
                 </span>
                 {priceTo && (
-                  <span className="text-sm text-[#5a5a5a] mb-0.5">- ${priceTo.toLocaleString()}</span>
+                  <span className="text-sm text-[#b8b8b8] mb-0.5">- ${priceTo.toLocaleString()}</span>
                 )}
                 <span className="text-sm text-[#a0a0a0] mb-0.5">{currency}</span>
                 {priceLabel && (
-                  <span className="text-sm text-[#5a5a5a] mb-0.5">{priceLabel}</span>
+                  <span className="text-sm text-[#b8b8b8] mb-0.5">{priceLabel}</span>
                 )}
               </div>
 
@@ -390,9 +390,9 @@ export default async function ListingPage({ params }: ListingPageParams) {
                   <div className="flex items-center gap-2 mt-0.5">
                     <Star size={10} className="text-[#ffc107] fill-[#ffc107]" />
                     <span className="text-[11px] text-[#a0a0a0]">{seller.rating.toFixed(1)}</span>
-                    <span className="text-[#3a3a3a]">/</span>
-                    <MapPin size={9} className="text-[#5a5a5a]" />
-                    <span className="text-[11px] text-[#5a5a5a]">{seller.location}</span>
+                    <span className="text-[#7a7a7a]">/</span>
+                    <MapPin size={9} className="text-[#9a9a9a]" />
+                    <span className="text-[11px] text-[#9a9a9a]">{seller.location}</span>
                   </div>
                 </div>
               </div>
@@ -412,7 +412,7 @@ export default async function ListingPage({ params }: ListingPageParams) {
                     Como funciona la compra
                   </h2>
                 </div>
-                <p className="text-[11px] text-[#7a7a7a] leading-relaxed">
+                <p className="text-[11px] text-[#b8b8b8] leading-relaxed">
                   El comprador reporta el pago y Turpial Sound realiza una revision manual antes
                   de avanzar la operacion. El pago al vendedor se gestiona despues de la validacion
                   y la confirmacion correspondiente.
