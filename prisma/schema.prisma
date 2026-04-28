@@ -282,3 +282,416 @@ model AuditLog {
   @@index([createdAt])
   @@map("audit_log")
 }
+
+// Marketplace domain (additive)
+// NOTE: This block is intentionally isolated from booking/admin tables.
+
+enum MpPaymentMethodType {
+  MERCANTIL_C2P
+  MERCANTIL_PAGO_MOVIL
+  MERCANTIL_BOTON_PAGO
+  BINANCE_PAY
+  ZELLE
+  CRYPTO_WALLET_MANUAL
+
+  @@map("mp_payment_method_type")
+}
+
+enum MpTransactionStatus {
+  INITIATED
+  PENDING_PAYMENT
+  PAYMENT_RECEIVED
+  VALIDATING
+  PAYMENT_FAILED
+  IN_ESCROW
+  DELIVERY_CONFIRMED
+  RELEASED
+  REFUNDED
+  DISPUTED
+  CANCELLED
+
+  @@map("mp_transaction_status")
+}
+
+enum MpPayoutMethodType {
+  ZELLE
+  PAGO_MOVIL
+  CRYPTO_WALLET
+  BANK_TRANSFER
+
+  @@map("mp_payout_method_type")
+}
+
+enum MpPayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+
+  @@map("mp_payout_status")
+}
+
+enum MpDisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED_BUYER
+  RESOLVED_SELLER
+  CLOSED
+
+  @@map("mp_dispute_status")
+}
+
+enum MpListingStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  SOLD_OUT
+  ARCHIVED
+
+  @@map("mp_listing_status")
+}
+
+enum MpUserRole {
+  USER
+  SOCIO
+  SUPER
+
+  @@map("mp_user_role")
+}
+
+model SiteCounter {
+  id        Int      @id
+  count     Int      @default(81000)
+  updatedAt DateTime @updatedAt
+
+  @@map("site_counter")
+}
+
+model MpUser {
+  id String @id @default(cuid())
+
+  email           String    @unique
+  emailVerified   Boolean   @default(false)
+  emailVerifiedAt DateTime?
+
+  displayName String
+  bio         String?
+  avatarUrl   String?
+
+  isVerified        Boolean   @default(false)
+  verifiedAt        DateTime?
+  verificationLevel String    @default("none")
+
+  isSeller     Boolean  @default(true)
+  sellerRating Decimal? @db.Decimal(3, 2)
+  totalSales   Int      @default(0)
+
+  totalPurchases Int @default(0)
+
+  passwordHash String?
+  role         MpUserRole @default(USER)
+
+  phone             String?
+  whatsappConsent   Boolean   @default(false)
+  whatsappConsentAt DateTime?
+
+  passwordResetToken          String?   @unique
+  passwordResetTokenExpiresAt DateTime?
+
+  isBanned     Boolean   @default(false)
+  bannedAt     DateTime?
+  bannedReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  listings            MpListing[]
+  payoutMethods       MpPayoutMethod[]
+  buyerTransactions   MpTransaction[]    @relation("MpBuyerTransactions")
+  sellerTransactions  MpTransaction[]    @relation("MpSellerTransactions")
+  sentMessages        MpMessage[]        @relation("MpMessageSender")
+  receivedMessages    MpMessage[]        @relation("MpMessageReceiver")
+  chatThreadsAsBuyer  MpChatThread[]     @relation("MpChatBuyer")
+  chatThreadsAsSeller MpChatThread[]     @relation("MpChatSeller")
+  disputes            MpDispute[]
+  mpPayouts           MpPayout[]
+  askedQuestions      MpListingQuestion[] @relation("MpAskedQuestions")
+  favoriteListings    MpListing[]        @relation("UserFavorites")
+
+  @@index([email])
+  @@index([isSeller])
+  @@index([isVerified])
+  @@index([role])
+  @@map("mp_users")
+}
+
+model MpPayoutMethod {
+  id     String @id @default(cuid())
+  userId String
+  user   MpUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  methodType MpPayoutMethodType
+  isDefault  Boolean            @default(false)
+  isActive   Boolean            @default(true)
+
+  encryptedData String
+  displayLabel  String
+  currency      String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("mp_payout_methods")
+}
+
+model MpListing {
+  id       String @id @default(cuid())
+  sellerId String
+  seller   MpUser @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String
+  category    String
+  tags        String[]
+
+  price    Decimal @db.Decimal(10, 2)
+  currency String  @default("USD")
+
+  coverImageUrl String?
+  mediaUrls     String[]
+
+  hasInventory Boolean @default(false)
+  inventory    Int?
+
+  status MpListingStatus @default(DRAFT)
+  slug   String          @unique
+
+  viewCount     Int @default(0)
+  favoriteCount Int @default(0)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+
+  transactions MpTransaction[]
+  questions    MpListingQuestion[]
+  favoritedBy  MpUser[]            @relation("UserFavorites")
+
+  @@index([sellerId])
+  @@index([status])
+  @@index([category])
+  @@index([slug])
+  @@map("mp_listings")
+}
+
+model MpListingQuestion {
+  id        String    @id @default(cuid())
+  listingId String
+  listing   MpListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  askerId   String
+  asker     MpUser    @relation("MpAskedQuestions", fields: [askerId], references: [id], onDelete: Cascade)
+
+  question   String
+  answer     String?
+  answeredAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([listingId])
+  @@index([askerId])
+  @@map("mp_listing_questions")
+}
+
+model MpChatThread {
+  id String @id @default(cuid())
+
+  buyerId String
+  buyer   MpUser @relation("MpChatBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+
+  sellerId String
+  seller   MpUser @relation("MpChatSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  listingId String?
+
+  isActive      Boolean   @default(true)
+  lastMessageAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  messages MpMessage[]
+
+  @@unique([buyerId, sellerId, listingId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@map("mp_chat_threads")
+}
+
+model MpMessage {
+  id       String       @id @default(cuid())
+  threadId String
+  thread   MpChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  senderId String
+  sender   MpUser @relation("MpMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  receiverId String
+  receiver   MpUser @relation("MpMessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  content       String
+  attachmentUrl String?
+  isRead        Boolean   @default(false)
+  readAt        DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([threadId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
+  @@map("mp_messages")
+}
+
+model MpTransaction {
+  id String @id @default(cuid())
+
+  idempotencyKey String @unique
+
+  buyerId String
+  buyer   MpUser @relation("MpBuyerTransactions", fields: [buyerId], references: [id])
+
+  sellerId String
+  seller   MpUser @relation("MpSellerTransactions", fields: [sellerId], references: [id])
+
+  listingId String
+  listing   MpListing @relation(fields: [listingId], references: [id])
+
+  paymentMethod MpPaymentMethodType
+  status        MpTransactionStatus @default(INITIATED)
+  amount        Decimal             @db.Decimal(10, 2)
+  currency      String              @default("USD")
+
+  platformFeePercent Decimal @db.Decimal(5, 2)
+  platformFeeAmount  Decimal @db.Decimal(10, 2)
+  sellerNetAmount    Decimal @db.Decimal(10, 2)
+
+  externalTxId      String?
+  paymentReference  String?
+  paymentSenderBank String?
+  paymentPaidAt     DateTime?
+  paymentProofUrl   String?
+
+  escrowHeldAt      DateTime?
+  escrowReleaseAt   DateTime?
+  releasedAt        DateTime?
+  buyerConfirmedAt  DateTime?
+
+  disputeReason   String?
+  disputeOpenedAt DateTime?
+  adminNotes      String?
+
+  statusHistory MpTransactionStatusHistory[]
+  disputes      MpDispute[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([listingId])
+  @@index([status])
+  @@index([paymentMethod])
+  @@index([externalTxId])
+  @@index([paymentReference])
+  @@index([paymentSenderBank])
+  @@index([paymentPaidAt])
+  @@index([idempotencyKey])
+  @@map("mp_transactions")
+}
+
+model MpTransactionStatusHistory {
+  id            String        @id @default(cuid())
+  transactionId String
+  transaction   MpTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  fromStatus MpTransactionStatus?
+  toStatus   MpTransactionStatus
+  changedBy  String?
+  reason     String?
+  metadata   Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([transactionId])
+  @@index([createdAt])
+  @@map("mp_transaction_status_history")
+}
+
+model MpDispute {
+  id            String        @id @default(cuid())
+  transactionId String
+  transaction   MpTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  openedById String
+  openedBy   MpUser @relation(fields: [openedById], references: [id])
+
+  reason       String
+  description  String
+  evidenceUrls String[]
+  status       MpDisputeStatus @default(OPEN)
+
+  resolvedAt   DateTime?
+  resolution   String?
+  refundAmount Decimal?  @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([transactionId])
+  @@index([openedById])
+  @@index([status])
+  @@map("mp_disputes")
+}
+
+model MpPayout {
+  id       String @id @default(cuid())
+  sellerId String
+  seller   MpUser @relation(fields: [sellerId], references: [id])
+
+  amount   Decimal        @db.Decimal(10, 2)
+  currency String
+  method   MpPayoutMethodType
+  status   MpPayoutStatus @default(PENDING)
+
+  transactionIds String[]
+
+  externalPayoutId String?
+  completedAt      DateTime?
+  failureReason    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sellerId])
+  @@index([status])
+  @@map("mp_payouts")
+}
+
+model MpWebhookLog {
+  id            String  @id @default(cuid())
+  provider      String
+  event         String
+  payload       Json
+  signature     String?
+  verified      Boolean @default(false)
+  processed     Boolean @default(false)
+  transactionId String?
+  error         String?
+
+  createdAt DateTime @default(now())
+
+  @@index([provider])
+  @@index([transactionId])
+  @@index([processed])
+  @@index([createdAt])
+  @@map("mp_webhook_logs")
+}
