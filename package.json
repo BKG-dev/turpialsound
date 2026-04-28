@@ -10,13 +10,17 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.64",
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
     "@react-three/fiber": "^8.18.0",
     "@vercel/blob": "^2.3.3",
+    "ai": "^6.0.168",
+    "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "flipclock": "^1.0.1",
     "framer-motion": "^12.38.0",
+    "jose": "^6.2.3",
     "lucide-react": "^1.7.0",
     "next": "14.2.20",
     "pg": "^8.20.0",
@@ -24,9 +28,11 @@
     "react-dom": "^18.3.1",
     "resend": "^6.12.0",
     "tailwind-merge": "^2.5.4",
-    "three": "^0.170.0"
+    "three": "^0.170.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
