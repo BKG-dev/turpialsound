@@ -564,3 +564,79 @@ Este archivo registra los bloqueos y riesgos operativos activos del marketplace 
 - **Restricciones respetadas**: No se tocaron booking, `/reservas`, main/produccion, stashes, Prisma schema/migrations, tasas, carrito, finanzas/P&L, conformidad/fondos ni `paymentProofUrl`/proxy SUPER.
 - **Riesgo activo**: La validacion ejecutada fue tecnica, no QA visual/manual. Si se pide QA visual futura, debe salir primero de `docs/07_handoffs/qa-dispatcher.json`; sin `task_id` exacto corresponde `GAP OPERATIVO`.
 - **Accion inmediata recomendada**: Sprint 2 de bugs internos acotados, empezando por validar ruta dispatcher para `Guardar metodo de cobro` y nota interna admin.
+
+## 26. Dark/light marketplace publico
+
+- **Fecha**: 2026-04-28
+- **Estado real**: Resuelto a nivel tecnico para superficies publicas principales del marketplace.
+- **Descripcion**: El pendiente dark/light del Sprint UX publico queda implementado con theme scoped local, sin tocar booking, `/reservas`, negocio, pagos, schema ni dashboards financieros.
+- **Cobertura**:
+  - `/marketplace`;
+  - `/marketplace/[slug]`;
+  - cards/listings;
+  - Q&A;
+  - auth modal;
+  - modales;
+  - checkout;
+  - chat/transaccion;
+  - acciones de detalle.
+- **Persistencia**: `localStorage` con key `turpial-marketplace-theme`; si no existe preferencia guardada, se respeta `prefers-color-scheme`.
+- **Validacion**: `git diff --check` limpio con warnings LF -> CRLF; `npx tsc --noEmit` limpio; `npm run build` limpio con 29 paginas generadas.
+- **Riesgo residual**: Pendiente solo revision visual humana opcional mobile/desktop. No ejecutar QA automatizada sin `task_id` exacto en `docs/07_handoffs/qa-dispatcher.json`.
+- **Restricciones respetadas**: No se tocaron carrito, tasas, finanzas, conformidad/fondos, schema/migrations ni `paymentProofUrl`/proxy SUPER.
+
+## 27. Dark/light incompleto en dashboard/admin marketplace
+
+- **Fecha**: 2026-04-28
+- **Estado real**: Resuelto tecnicamente; sin commit y sin push.
+- **Sintoma**: El theme dark/light funcionaba en superficies publicas, pero dashboard usuario/seller, admin y tabs quedaban fuera del root themeado.
+- **Causa**: `MarketplaceThemeProvider` estaba montado localmente en landing y detalle; no existia `app/marketplace/layout.tsx`.
+- **Fix**:
+  - provider centralizado en `app/marketplace/layout.tsx`;
+  - providers duplicados removidos de landing y detalle;
+  - toggle agregado a dashboard y admin;
+  - CSS scoped ampliado para tabs, cards, badges, tablas nativas, inputs, forms, paneles y modales;
+  - toggle convertido a switch con label de accion disponible.
+- **Validacion**:
+  - `git diff --check`: limpio, solo warnings LF -> CRLF.
+  - `npx tsc --noEmit`: limpio.
+  - `npm run build`: limpio, 29 paginas generadas.
+- **Restricciones respetadas**: No se ejecuto Playwright, QA automatizada ni CDP. No se tocaron booking, `/reservas`, main/produccion, stashes, schema/migrations, carrito, tasas, finanzas, conformidad/fondos, pagos ni `paymentProofUrl`/proxy SUPER.
+
+## 28. Residuos visuales theme marketplace
+
+- **Fecha**: 2026-04-28
+- **Estado real**: Resuelto tecnicamente; sin commit y sin push.
+- **Sintomas**:
+  - banda negra superior en home marketplace light mode;
+  - cards/paneles con fondo oscuro fijo en light;
+  - bloques admin lavados o poco visibles;
+  - textos secundarios demasiado tenues en dark;
+  - tabs/paneles/inputs/modales con contraste irregular.
+- **Causa principal**:
+  - el `pt-16` global del `<main>` dejaba expuesto el fondo global oscuro antes del provider de marketplace;
+  - coexistian estilos inline hardcodeados con el nuevo theme scoped.
+- **Fix**:
+  - `mp-route-shell` cubre el hueco superior con el fondo del theme;
+  - tokens `--mp-*` ajustados para contraste;
+  - compatibilidad CSS scoped ampliada para estilos inline, clases legacy, inputs, tablas, cards, panels, tabs y modales.
+- **Validacion**:
+  - `git diff --check`: limpio, solo warnings LF -> CRLF.
+  - `npx tsc --noEmit`: limpio.
+  - `npm run build`: limpio, 29 paginas generadas.
+- **Restricciones respetadas**: No se ejecuto Playwright, QA automatizada ni CDP. No se tocaron booking, `/reservas`, main/produccion, stashes, schema/migrations, carrito, tasas, finanzas, conformidad/fondos, pagos, SOLD_OUT ni `paymentProofUrl`/proxy SUPER.
+
+## 29. Cards negras residuales en dashboard usuario/seller
+
+- **Fecha**: 2026-04-28
+- **Estado real**: Resuelto tecnicamente; sin commit y sin push.
+- **Sintomas**:
+  - KPI superiores negros en light mode;
+  - Cobros con cards internas oscuras: comision plataforma, cargo bancario, cargo Binance, datos de cobro, resumen y metodos registrados;
+  - Mensajes con contenido mejorado pero KPI/listados superiores aun inconsistentes;
+  - textos secundarios con contraste bajo.
+- **Causa**: fondos y gradientes inline hardcodeados en `DashboardClient.tsx`, mas textos secundarios fijos demasiado tenues.
+- **Fix**:
+  - migracion directa a tokens `--mp-*` en las superficies criticas del dashboard usuario/seller;
+  - cards, listados, TabBar, Mensajes y Cobros ahora dependen del theme scoped.
+- **Restricciones respetadas**: No se ejecuto Playwright, QA automatizada ni CDP. No se tocaron admin, home, booking, `/reservas`, schema/migrations, carrito, tasas, finanzas/P&L, conformidad/fondos, acciones server, pagos, SOLD_OUT ni `paymentProofUrl`/proxy SUPER.

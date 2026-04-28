@@ -110,7 +110,7 @@ function CopyRow({ label, value }: { label: string; value: string }) {
   return (
     <div
       className="flex items-center justify-between gap-3 rounded-xl px-4 py-3"
-      style={{ background: 'rgba(20,20,20,0.8)', border: '1px solid #1e1e1e' }}
+      style={{ background: 'var(--mp-input)', border: '1px solid var(--mp-input-border)' }}
     >
       <div className="min-w-0">
         <p className="text-[10px] uppercase tracking-wider text-[#9a9a9a]">{label}</p>
@@ -174,13 +174,13 @@ function InputField({
           readOnly={readOnly}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full rounded-xl border border-[#2a2a2a] bg-[rgba(20,20,20,0.92)] px-4 py-2.5 font-mono text-sm text-[#f2f2f2] outline-none placeholder:text-[#7a7a7a] read-only:text-[#ffc107]"
+          className="mp-themed-input w-full rounded-xl border px-4 py-2.5 font-mono text-sm outline-none read-only:text-[#ffc107]"
           style={{ paddingLeft: Icon ? '2.4rem' : undefined }}
           onFocus={(e) => {
             if (!readOnly) e.target.style.borderColor = 'rgba(0,174,239,0.4)'
           }}
           onBlur={(e) => {
-            e.target.style.borderColor = '#1e1e1e'
+            e.target.style.borderColor = 'var(--mp-input-border)'
           }}
         />
       </div>
@@ -330,7 +330,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="absolute inset-0"
-          style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)' }}
+          style={{ background: 'var(--mp-overlay)', backdropFilter: 'blur(10px)' }}
         />
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 16 }}
@@ -341,9 +341,9 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
           <div
             className="flex flex-col items-center justify-center gap-5 rounded-2xl px-8 py-16 text-center"
             style={{
-              background: 'rgba(10,10,10,0.99)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              boxShadow: '0 32px 80px rgba(0,0,0,0.9)',
+              background: 'var(--mp-panel-solid)',
+              border: '1px solid var(--mp-border)',
+              boxShadow: 'var(--mp-shadow)',
             }}
           >
             <motion.div
@@ -404,7 +404,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
         exit={{ opacity: 0 }}
         onClick={onClose}
         className="absolute inset-0"
-        style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)' }}
+        style={{ background: 'var(--mp-overlay)', backdropFilter: 'blur(10px)' }}
       />
 
       <motion.div
@@ -419,14 +419,14 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
         <div
           className="flex max-h-[92vh] flex-col overflow-hidden rounded-2xl"
           style={{
-            background: 'rgba(10,10,10,0.99)',
-            border: '1px solid rgba(255,255,255,0.07)',
-            boxShadow: '0 32px 80px rgba(0,0,0,0.9), 0 0 80px rgba(0,174,239,0.06)',
+            background: 'var(--mp-panel-solid)',
+            border: '1px solid var(--mp-border)',
+            boxShadow: 'var(--mp-shadow), 0 0 80px rgba(0,174,239,0.06)',
           }}
         >
           <div
-            className="flex flex-shrink-0 items-center gap-3 border-b border-[#1a1a1a] px-5 py-4"
-            style={{ background: 'rgba(0,174,239,0.05)' }}
+            className="flex flex-shrink-0 items-center gap-3 border-b px-5 py-4"
+            style={{ background: 'rgba(0,174,239,0.05)', borderColor: 'var(--mp-border)' }}
           >
             <div className="min-w-0 flex-1">
               <h2 className="truncate text-sm font-semibold text-[#f2f2f2]">Completar compra</h2>
@@ -497,15 +497,15 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
                       }}
                       className="flex flex-col items-center gap-2 rounded-xl px-2 py-3 text-center transition-all duration-200"
                       style={{
-                        background: selected ? `${method.accent}12` : 'rgba(20,20,20,0.6)',
-                        border: `1px solid ${selected ? `${method.accent}40` : '#1e1e1e'}`,
+                        background: selected ? `${method.accent}12` : 'var(--mp-input)',
+                        border: `1px solid ${selected ? `${method.accent}40` : 'var(--mp-border)'}`,
                         boxShadow: selected ? `0 0 16px ${method.accent}10` : 'none',
                       }}
                     >
-                      <Icon size={16} style={{ color: selected ? method.accent : '#5a5a5a' }} />
+                      <Icon size={16} style={{ color: selected ? method.accent : 'var(--mp-text-faint)' }} />
                       <span
                         className="text-[10px] font-medium leading-tight"
-                        style={{ color: selected ? method.accent : '#5a5a5a' }}
+                        style={{ color: selected ? method.accent : 'var(--mp-text-faint)' }}
                       >
                         {method.label}
                       </span>
@@ -518,7 +518,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
             <div
               className="space-y-3 rounded-xl p-4"
               style={{
-                background: 'rgba(20,20,20,0.55)',
+                background: 'var(--mp-card-subtle)',
                 border: `1px solid ${selectedMethod.accent}24`,
               }}
             >
@@ -547,7 +547,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
               </div>
             </div>
 
-            <div style={{ borderTop: '1px solid #1a1a1a' }} />
+            <div style={{ borderTop: '1px solid var(--mp-border)' }} />
 
             <div className="space-y-3">
               <p className="text-[10px] uppercase tracking-widest text-[#9a9a9a]">
@@ -596,7 +596,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
                       setBankName(e.target.value)
                       setError(null)
                     }}
-                    className="w-full rounded-xl border border-[#2a2a2a] bg-[rgba(20,20,20,0.92)] px-4 py-3 text-sm text-[#f2f2f2] outline-none focus:border-[rgba(0,174,239,0.45)] sm:py-2.5"
+                    className="mp-themed-input w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-[rgba(0,174,239,0.45)] sm:py-2.5"
                   >
                     <option value="">Selecciona un banco</option>
                     {VENEZUELAN_BANK_OPTIONS.map((bank) => (
@@ -626,14 +626,14 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
                   <label
                     className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl py-6 transition-all"
                     style={{
-                      background: 'rgba(20,20,20,0.5)',
-                      border: `1px dashed ${proofFile ? 'rgba(74,222,128,0.3)' : '#2a2a2a'}`,
+                      background: 'var(--mp-card-subtle)',
+                      border: `1px dashed ${proofFile ? 'rgba(74,222,128,0.3)' : 'var(--mp-input-border)'}`,
                     }}
                     onMouseEnter={(e) => {
                       if (!proofFile) e.currentTarget.style.borderColor = 'rgba(0,174,239,0.3)'
                     }}
                     onMouseLeave={(e) => {
-                      if (!proofFile) e.currentTarget.style.borderColor = '#2a2a2a'
+                      if (!proofFile) e.currentTarget.style.borderColor = 'var(--mp-input-border)'
                     }}
                   >
                     {proofFile ? (
@@ -645,9 +645,9 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
                       </>
                     ) : (
                       <>
-                        <Upload size={16} className="text-[#2a2a2a]" />
+                        <Upload size={16} className="text-[var(--mp-text-faint)]" />
                         <span className="text-xs text-[#b8b8b8]">Subir comprobante</span>
-                        <span className="text-[10px] text-[#2a2a2a]">JPG, PNG, WEBP - hasta 10MB</span>
+                        <span className="text-[10px] text-[var(--mp-text-faint)]">JPG, PNG, WEBP - hasta 10MB</span>
                       </>
                     )}
                     <input
@@ -692,7 +692,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
             )}
           </div>
 
-          <div className="flex-shrink-0 border-t border-[#1a1a1a] px-5 pb-5 pt-4">
+          <div className="flex-shrink-0 border-t px-5 pb-5 pt-4" style={{ borderColor: 'var(--mp-border)' }}>
             <button
               onClick={handleConfirm}
               disabled={!operationNumber.trim() || !bankName.trim() || !paymentDate.trim() || loading}

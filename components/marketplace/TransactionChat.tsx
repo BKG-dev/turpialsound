@@ -116,14 +116,14 @@ function QuoteCard({ quote, isOwn, onPay }: {
     <div
       className="rounded-xl overflow-hidden w-full max-w-sm"
       style={{
-        background: 'rgba(13,13,13,0.95)',
+        background: 'var(--mp-card)',
         border: '1px solid rgba(0,174,239,0.2)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 48px rgba(0,174,239,0.06)',
+        boxShadow: 'var(--mp-card-shadow), 0 0 48px rgba(0,174,239,0.06)',
       }}
     >
       {/* Header */}
-      <div className="px-4 py-3 flex items-center gap-2 border-b border-[#1e1e1e]"
-        style={{ background: 'rgba(0,174,239,0.04)' }}>
+      <div className="px-4 py-3 flex items-center gap-2 border-b"
+        style={{ background: 'rgba(0,174,239,0.04)', borderColor: 'var(--mp-border)' }}>
         <Lock size={13} className="text-[#00aeef]" />
         <span className="text-[11px] font-semibold text-[#00aeef] tracking-wider uppercase">
           Cotización Formal
@@ -140,7 +140,7 @@ function QuoteCard({ quote, isOwn, onPay }: {
 
       {/* Price breakdown */}
       <div className="mx-4 mb-3 rounded-lg overflow-hidden"
-        style={{ border: '1px solid #1e1e1e', background: 'rgba(0,0,0,0.3)' }}>
+        style={{ border: '1px solid var(--mp-border)', background: 'var(--mp-card-subtle)' }}>
         {/* Buyer pays */}
         <div className="px-3 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -155,7 +155,7 @@ function QuoteCard({ quote, isOwn, onPay }: {
           </div>
         </div>
 
-        <div className="h-px bg-[#1e1e1e]" />
+        <div className="h-px" style={{ background: 'var(--mp-border)' }} />
 
         {/* Seller receives (only shown to seller side for demo) */}
         {!isOwn && (
@@ -171,7 +171,7 @@ function QuoteCard({ quote, isOwn, onPay }: {
               </div>
               <span className="text-xs text-[#ef4444]">− ${quote.commissionAmount.toLocaleString()}</span>
             </div>
-            <div className="h-px bg-[#1e1e1e]" />
+            <div className="h-px" style={{ background: 'var(--mp-border)' }} />
             <div className="px-3 py-2.5 flex items-center justify-between">
               <span className="text-xs font-medium text-[#f2f2f2]">Vendedor recibe</span>
               <span className="text-sm font-semibold text-[#4ade80]">
@@ -256,9 +256,9 @@ function MessageBubble({ message, isOwn }: { message: Message; isOwn: boolean })
                 borderBottomRightRadius: '4px',
               }
             : {
-                background: 'rgba(30,30,30,0.8)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                color: '#d4d4d4',
+                background: 'var(--mp-input)',
+                border: '1px solid var(--mp-input-border)',
+                color: 'var(--mp-text-soft)',
                 borderBottomLeftRadius: '4px',
               }
         }
@@ -308,8 +308,8 @@ function ChatHeader({
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3 border-b border-[#1e1e1e] flex-shrink-0"
-      style={{ background: 'rgba(13,13,13,0.95)', backdropFilter: 'blur(12px)' }}
+      className="flex items-center gap-3 px-4 py-3 border-b flex-shrink-0"
+      style={{ background: 'var(--mp-panel-solid)', borderColor: 'var(--mp-border)', backdropFilter: 'blur(12px)' }}
     >
       <button
         onClick={onClose}
@@ -397,8 +397,8 @@ function ChatInput({ onSend }: { onSend: (content: string) => Promise<void> }) {
 
   return (
     <div
-      className="flex items-end gap-2 px-4 py-3 border-t border-[#1e1e1e] flex-shrink-0"
-      style={{ background: 'rgba(13,13,13,0.95)' }}
+      className="flex items-end gap-2 px-4 py-3 border-t flex-shrink-0"
+      style={{ background: 'var(--mp-panel-solid)', borderColor: 'var(--mp-border)' }}
     >
       <div className="flex-1 relative">
         <textarea
@@ -408,10 +408,9 @@ function ChatInput({ onSend }: { onSend: (content: string) => Promise<void> }) {
           disabled={sending}
           placeholder="Escribe un mensaje…"
           rows={1}
-          className="w-full resize-none rounded-xl px-4 py-2.5 text-sm text-[#f2f2f2] placeholder:text-[#8a8a8a] outline-none transition-all duration-250 disabled:opacity-60"
+          className="mp-themed-input w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none transition-all duration-250 disabled:opacity-60"
           style={{
-            background: 'rgba(30,30,30,0.8)',
-            border: '1px solid rgba(255,255,255,0.06)',
+            border: '1px solid var(--mp-input-border)',
             maxHeight: '120px',
           }}
           onInput={e => {
@@ -426,8 +425,8 @@ function ChatInput({ onSend }: { onSend: (content: string) => Promise<void> }) {
         style={{
           background: value.trim() && !sending
             ? 'linear-gradient(135deg, #00aeef 0%, #0050c8 100%)'
-            : 'rgba(30,30,30,0.8)',
-          border: value.trim() && !sending ? 'none' : '1px solid rgba(255,255,255,0.06)',
+            : 'var(--mp-input)',
+          border: value.trim() && !sending ? 'none' : '1px solid var(--mp-input-border)',
         }}
         disabled={!value.trim() || sending}
         onClick={handleSubmit}
@@ -606,9 +605,9 @@ export function TransactionChat({
         className,
       )}
       style={{
-        background: 'rgba(10,10,10,0.97)',
-        border: '1px solid rgba(255,255,255,0.06)',
-        boxShadow: '0 24px 80px rgba(0,0,0,0.8), 0 0 120px rgba(0,174,239,0.06)',
+        background: 'var(--mp-panel-solid)',
+        border: '1px solid var(--mp-border)',
+        boxShadow: 'var(--mp-shadow), 0 0 120px rgba(0,174,239,0.06)',
         height: '100%',
       }}
     >
@@ -657,8 +656,8 @@ export function SellerPaymentBreakdown({ quote }: { quote: FormalQuote }) {
     <div
       className="rounded-xl p-4 space-y-3"
       style={{
-        background: 'rgba(13,13,13,0.9)',
-        border: '1px solid rgba(255,255,255,0.06)',
+        background: 'var(--mp-card)',
+        border: '1px solid var(--mp-border)',
       }}
     >
       <div className="flex items-center gap-2 mb-2">
@@ -679,7 +678,7 @@ export function SellerPaymentBreakdown({ quote }: { quote: FormalQuote }) {
           </span>
           <span className="text-[#ef4444]">− ${quote.commissionAmount.toLocaleString()}</span>
         </div>
-        <div className="h-px bg-[#1e1e1e]" />
+        <div className="h-px" style={{ background: 'var(--mp-border)' }} />
         <div className="flex justify-between">
           <span className="text-sm font-medium text-[#f2f2f2]">Recibirás</span>
           <div className="text-right">

@@ -41,6 +41,7 @@ import {
 } from '@/actions/marketplace/users'
 import { cn } from '@/lib/utils'
 import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
+import { MarketplaceThemeToggle } from '@/components/marketplace/MarketplaceTheme'
 
 // ─── Local Types ──────────────────────────────────────────────────────────────
 
@@ -323,14 +324,14 @@ function getTxBasePlatformFee(tx: DashTransaction) {
 function SectionHeader({ title, count }: { title: string; count?: number }) {
   return (
     <div className="flex items-center gap-2 mb-3">
-      <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.05)' }} />
-      <span className="text-[10px] font-semibold text-[#3a3a3a] uppercase tracking-widest whitespace-nowrap">
+      <div className="h-px flex-1" style={{ background: 'var(--mp-border)' }} />
+      <span className="text-[10px] font-semibold uppercase tracking-widest whitespace-nowrap" style={{ color: 'var(--mp-text-faint)' }}>
         {title}
         {count !== undefined && count > 0 && (
-          <span className="ml-1.5 text-[#5a5a5a]">({count})</span>
+          <span className="ml-1.5" style={{ color: 'var(--mp-text-muted)' }}>({count})</span>
         )}
       </span>
-      <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.05)' }} />
+      <div className="h-px flex-1" style={{ background: 'var(--mp-border)' }} />
     </div>
   )
 }
@@ -367,10 +368,10 @@ function KpiCard({
       )}
       style={{
         background: tone === 'primary'
-          ? `linear-gradient(135deg, ${accent}12 0%, rgba(13,13,13,0.96) 58%)`
-          : 'linear-gradient(180deg, rgba(18,18,18,0.96) 0%, rgba(10,10,10,0.96) 100%)',
-        border: `1px solid ${tone === 'primary' ? `${accent}22` : 'rgba(255,255,255,0.065)'}`,
-        boxShadow: '0 18px 42px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.035)',
+          ? `linear-gradient(135deg, ${accent}14 0%, var(--mp-card) 66%)`
+          : 'var(--mp-card)',
+        border: `1px solid ${tone === 'primary' ? `${accent}30` : 'var(--mp-border)'}`,
+        boxShadow: 'var(--mp-card-shadow)',
       }}
     >
       <div className="flex items-center gap-2 relative z-10">
@@ -380,17 +381,19 @@ function KpiCard({
         >
           <Icon size={14} color={accent} />
         </div>
-        <span className="min-w-0 text-[10px] font-semibold text-[#8a8a8a] uppercase tracking-normal leading-snug">{label}</span>
+        <span className="min-w-0 text-[10px] font-semibold uppercase tracking-normal leading-snug" style={{ color: 'var(--mp-text-faint)' }}>{label}</span>
       </div>
       <div className="relative z-10 min-w-0">
         <p className={cn(
-          "font-bold text-[#f2f2f2] leading-none tracking-normal tabular-nums",
+          "font-bold leading-none tracking-normal tabular-nums",
           tone === 'primary' ? "text-3xl" : "text-2xl",
           "[overflow-wrap:anywhere]",
-        )}>
+        )}
+          style={{ color: 'var(--mp-text-strong)' }}
+        >
           {value}
         </p>
-        {sub && <p className="mt-2 text-[11px] leading-relaxed text-[#8a8a8a]">{sub}</p>}
+        {sub && <p className="mt-2 text-[11px] leading-relaxed" style={{ color: 'var(--mp-text-muted)' }}>{sub}</p>}
       </div>
     </div>
   )
@@ -594,14 +597,14 @@ function TxCard({
       }}
       className="w-full rounded-xl p-4 flex gap-3 group text-left transition-all duration-200 hover:border-[rgba(0,174,239,0.2)]"
       style={{
-        background: 'rgba(13,13,13,0.9)',
-        border: '1px solid rgba(255,255,255,0.06)',
-        boxShadow: '0 2px 16px rgba(0,0,0,0.4)',
+        background: 'var(--mp-card)',
+        border: '1px solid var(--mp-border)',
+        boxShadow: 'var(--mp-card-shadow)',
       }}
     >
       <div
         className="relative w-14 h-14 rounded-lg flex-shrink-0 overflow-hidden"
-        style={{ background: 'rgba(30,30,30,0.8)', border: '1px solid rgba(255,255,255,0.06)' }}
+        style={{ background: 'var(--mp-media-bg)', border: '1px solid var(--mp-border)' }}
       >
         {tx.listing?.coverImageUrl ? (
           <MarketplaceImage
@@ -613,7 +616,7 @@ function TxCard({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Package size={20} className="text-[#3a3a3a]" />
+            <Package size={20} style={{ color: 'var(--mp-text-disabled)' }} />
           </div>
         )}
       </div>
@@ -621,25 +624,25 @@ function TxCard({
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-sm font-medium text-[#f2f2f2] truncate">
+            <p className="text-sm font-medium truncate" style={{ color: 'var(--mp-text-strong)' }}>
               {tx.listing?.title ?? 'Listing eliminado'}
             </p>
-            <p className="text-[11px] text-[#5a5a5a] mt-0.5">
+            <p className="text-[11px] mt-0.5" style={{ color: 'var(--mp-text-faint)' }}>
               {viewAs === 'buyer' ? 'Vendedor: ' : 'Comprador: '}
               <span className="text-[#a0a0a0]">{otherParty.displayName}</span>
             </p>
           </div>
           <div className="text-right flex-shrink-0">
-            <p className="text-sm font-semibold text-[#f2f2f2]">
+            <p className="text-sm font-semibold" style={{ color: 'var(--mp-text-strong)' }}>
               ${Number(tx.amount).toLocaleString('es-VE')}
             </p>
-            <p className="text-[10px] text-[#5a5a5a]">{tx.currency}</p>
+            <p className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>{tx.currency}</p>
           </div>
         </div>
 
         <div className="flex items-center justify-between mt-3">
           <StatusBadge status={tx.status} />
-          <div className="flex items-center gap-1 text-[10px] text-[#5a5a5a]">
+          <div className="flex items-center gap-1 text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
             <Clock size={9} />
             <span>{fmtDate(tx.createdAt)}</span>
           </div>
@@ -648,7 +651,7 @@ function TxCard({
         {tx.status === 'IN_ESCROW' && tx.escrowReleaseAt && (
           <div className="mt-2 flex items-center gap-1.5">
             <Shield size={9} className="text-[#00aeef]" />
-            <span className="text-[9px] text-[#5a5a5a]">
+            <span className="text-[9px]" style={{ color: 'var(--mp-text-faint)' }}>
               Fecha estimada de cierre: {fmtDate(tx.escrowReleaseAt)}
             </span>
           </div>
@@ -681,7 +684,7 @@ function TxCard({
           style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
         >
           <p className="text-[11px] text-[#d4d4d4]">{guidance}</p>
-          <p className="mt-1 text-[10px] text-[#5a5a5a]">Haz clic para ver el detalle completo y la linea de estado.</p>
+          <p className="mt-1 text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>Haz clic para ver el detalle completo y la linea de estado.</p>
         </div>
 
         {viewAs === 'seller' && payoutMissing && (
@@ -716,26 +719,26 @@ function MyListingRow({ listing, onClick }: { listing: DashListing; onClick?: ()
         onClick && "cursor-pointer hover:border-[rgba(0,174,239,0.2)] hover:bg-[rgba(0,174,239,0.02)] active:scale-[0.99]",
       )}
       style={{
-        background: 'rgba(13,13,13,0.9)',
-        border: '1px solid rgba(255,255,255,0.06)',
+        background: 'var(--mp-card)',
+        border: '1px solid var(--mp-border)',
       }}
     >
       <div
         className="relative w-12 h-12 rounded-lg flex-shrink-0 overflow-hidden"
-        style={{ background: 'rgba(30,30,30,0.8)', border: '1px solid rgba(255,255,255,0.04)' }}
+        style={{ background: 'var(--mp-media-bg)', border: '1px solid var(--mp-border)' }}
       >
         {cover ? (
           <MarketplaceImage src={cover} alt={listing.title} fill className="w-full h-full object-cover" sizes="72px" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Package size={16} className="text-[#3a3a3a]" />
+            <Package size={16} style={{ color: 'var(--mp-text-disabled)' }} />
           </div>
         )}
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[#f2f2f2] truncate">{listing.title}</p>
-        <p className="text-[10px] text-[#5a5a5a] mt-0.5">{listing.subcategory ?? listing.category}</p>
+        <p className="text-sm font-medium truncate" style={{ color: 'var(--mp-text-strong)' }}>{listing.title}</p>
+        <p className="text-[10px] mt-0.5" style={{ color: 'var(--mp-text-faint)' }}>{listing.subcategory ?? listing.category}</p>
       </div>
 
       <div className="flex items-center gap-2 flex-shrink-0">
@@ -757,7 +760,7 @@ function InteractedRow({ item }: { item: DashInteracted }) {
   return (
     <div
       className="rounded-xl overflow-hidden"
-      style={{ border: '1px solid rgba(0,174,239,0.1)', background: 'rgba(13,13,13,0.9)' }}
+      style={{ border: '1px solid rgba(0,174,239,0.16)', background: 'var(--mp-card)', boxShadow: 'var(--mp-card-shadow)' }}
     >
       <button
         onClick={() => setExpanded(p => !p)}
@@ -765,7 +768,7 @@ function InteractedRow({ item }: { item: DashInteracted }) {
       >
         <div
           className="relative w-10 h-10 rounded-lg flex-shrink-0 overflow-hidden"
-          style={{ background: 'rgba(30,30,30,0.8)', border: '1px solid rgba(255,255,255,0.04)' }}
+          style={{ background: 'var(--mp-media-bg)', border: '1px solid var(--mp-border)' }}
         >
           {item.listingCoverImageUrl ? (
             <MarketplaceImage
@@ -777,16 +780,16 @@ function InteractedRow({ item }: { item: DashInteracted }) {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <Package size={14} className="text-[#3a3a3a]" />
+              <Package size={14} style={{ color: 'var(--mp-text-disabled)' }} />
             </div>
           )}
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-[#f2f2f2] truncate">{item.listingTitle}</p>
+          <p className="text-sm font-medium truncate" style={{ color: 'var(--mp-text-strong)' }}>{item.listingTitle}</p>
           <div className="flex items-center gap-2 mt-0.5">
             <HelpCircle size={10} className="text-[#00aeef]" />
-            <span className="text-[10px] text-[#5a5a5a]">
+            <span className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
               {item.questions.length} pregunta{item.questions.length !== 1 ? 's' : ''}
               {unanswered > 0 && (
                 <span className="ml-1 text-[#f59e0b]">· {unanswered} sin respuesta</span>
@@ -797,8 +800,8 @@ function InteractedRow({ item }: { item: DashInteracted }) {
 
         <ChevronRight
           size={14}
-          className="text-[#3a3a3a] transition-transform duration-200 flex-shrink-0"
-          style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+          className="transition-transform duration-200 flex-shrink-0"
+          style={{ color: 'var(--mp-text-disabled)', transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
         />
       </button>
 
@@ -819,7 +822,7 @@ function InteractedRow({ item }: { item: DashInteracted }) {
                   <p className="text-[12px] text-[#c0c0c0] leading-snug">{q.answer}</p>
                 </div>
               ) : (
-                <p className="ml-4 text-[10px] text-[#3a3a3a] italic">Pendiente de respuesta del vendedor</p>
+                <p className="ml-4 text-[10px] italic" style={{ color: 'var(--mp-text-disabled)' }}>Pendiente de respuesta del vendedor</p>
               )}
             </div>
           ))}
@@ -862,27 +865,28 @@ function FavoriteRow({
         onClick && !removing && "cursor-pointer hover:border-[rgba(239,68,68,0.2)] hover:bg-[rgba(239,68,68,0.02)] active:scale-[0.99]",
       )}
       style={{
-        background: 'rgba(13,13,13,0.9)',
-        border: '1px solid rgba(255,255,255,0.06)',
+        background: 'var(--mp-card)',
+        border: '1px solid var(--mp-border)',
+        boxShadow: 'var(--mp-card-shadow)',
         opacity: removing ? 0.5 : 1,
       }}
     >
       <div
         className="relative w-12 h-12 rounded-lg flex-shrink-0 overflow-hidden"
-        style={{ background: 'rgba(30,30,30,0.8)', border: '1px solid rgba(255,255,255,0.04)' }}
+        style={{ background: 'var(--mp-media-bg)', border: '1px solid var(--mp-border)' }}
       >
         {cover ? (
           <MarketplaceImage src={cover} alt={listing.title} fill className="w-full h-full object-cover" sizes="72px" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Package size={16} className="text-[#3a3a3a]" />
+            <Package size={16} style={{ color: 'var(--mp-text-disabled)' }} />
           </div>
         )}
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[#f2f2f2] truncate">{listing.title}</p>
-        <p className="text-[10px] text-[#5a5a5a] mt-0.5">{listing.subcategory ?? listing.category}</p>
+        <p className="text-sm font-medium truncate" style={{ color: 'var(--mp-text-strong)' }}>{listing.title}</p>
+        <p className="text-[10px] mt-0.5" style={{ color: 'var(--mp-text-faint)' }}>{listing.subcategory ?? listing.category}</p>
       </div>
 
       <div className="flex items-center gap-2 flex-shrink-0">
@@ -928,9 +932,9 @@ function ThreadCard({
       onClick={onOpen}
       className="w-full text-left rounded-xl p-4 flex gap-3 group transition-all duration-200 hover:border-[rgba(0,174,239,0.25)]"
       style={{
-        background: 'rgba(13,13,13,0.9)',
-        border: `1px solid ${hasUnread ? 'rgba(0,174,239,0.2)' : 'rgba(255,255,255,0.06)'}`,
-        boxShadow: hasUnread ? '0 0 20px rgba(0,174,239,0.08)' : '0 2px 16px rgba(0,0,0,0.4)',
+        background: 'var(--mp-card)',
+        border: `1px solid ${hasUnread ? 'rgba(0,174,239,0.28)' : 'var(--mp-border)'}`,
+        boxShadow: hasUnread ? '0 0 20px rgba(0,174,239,0.12)' : 'var(--mp-card-shadow)',
       }}
     >
       <div className="relative flex-shrink-0">
@@ -952,20 +956,20 @@ function ThreadCard({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-0.5">
-          <p className={cn('text-sm font-medium truncate', hasUnread ? 'text-[#f2f2f2]' : 'text-[#c0c0c0]')}>
+          <p className="text-sm font-medium truncate" style={{ color: hasUnread ? 'var(--mp-text-strong)' : 'var(--mp-text-soft)' }}>
             {other.displayName}
           </p>
           {lastMsg && (
-            <span className="text-[9px] text-[#5a5a5a] flex-shrink-0 ml-2">
+            <span className="text-[9px] flex-shrink-0 ml-2" style={{ color: 'var(--mp-text-faint)' }}>
               {fmtTime(lastMsg.createdAt)}
             </span>
           )}
         </div>
-        <p className="text-[11px] text-[#5a5a5a] truncate mb-1">
+        <p className="text-[11px] truncate mb-1" style={{ color: 'var(--mp-text-faint)' }}>
           {other.displayName}{thread.listing?.title ? ` • ${thread.listing.title}` : ''}
         </p>
         {lastMsg ? (
-          <p className={cn('text-xs truncate', hasUnread ? 'text-[#a0a0a0] font-medium' : 'text-[#5a5a5a]')}>
+          <p className={cn('text-xs truncate', hasUnread && 'font-medium')} style={{ color: hasUnread ? 'var(--mp-text-muted)' : 'var(--mp-text-faint)' }}>
             {lastMsg.senderId === currentUserId ? 'Tú: ' : ''}{lastMsg.content}
           </p>
         ) : (
@@ -973,7 +977,7 @@ function ThreadCard({
         )}
       </div>
 
-      <ChevronRight size={14} className="text-[#3a3a3a] group-hover:text-[#00aeef] transition-colors flex-shrink-0 self-center" />
+      <ChevronRight size={14} className="group-hover:text-[#00aeef] transition-colors flex-shrink-0 self-center" style={{ color: 'var(--mp-text-disabled)' }} />
     </button>
   )
 }
@@ -991,10 +995,10 @@ function EmptyState({ icon: Icon, title, sub }: {
         className="w-14 h-14 rounded-2xl flex items-center justify-center"
         style={{ background: 'rgba(0,174,239,0.06)', border: '1px solid rgba(0,174,239,0.12)' }}
       >
-        <Icon size={24} className="text-[#2a2a2a]" />
+        <Icon size={24} style={{ color: 'var(--mp-text-disabled)' }} />
       </div>
-      <p className="text-sm font-medium text-[#5a5a5a]">{title}</p>
-      <p className="text-xs text-[#3a3a3a] text-center max-w-xs">{sub}</p>
+      <p className="text-sm font-medium" style={{ color: 'var(--mp-text-muted)' }}>{title}</p>
+      <p className="text-xs text-center max-w-xs" style={{ color: 'var(--mp-text-faint)' }}>{sub}</p>
     </div>
   )
 }
@@ -1022,7 +1026,7 @@ function TabBar({
   return (
     <div
       className="grid grid-cols-3 gap-1 rounded-xl p-1 lg:grid-cols-6"
-      style={{ background: 'rgba(13,13,13,0.9)', border: '1px solid rgba(255,255,255,0.06)' }}
+      style={{ background: 'var(--mp-panel)', border: '1px solid var(--mp-border)' }}
     >
       {tabs.map(t => {
         const isActive = active === t.id
@@ -1040,7 +1044,7 @@ function TabBar({
                     color: '#00aeef',
                     boxShadow: '0 0 16px rgba(0,174,239,0.15)',
                   }
-                : { color: '#5a5a5a', border: '1px solid transparent' }
+                : { color: 'var(--mp-text-faint)', border: '1px solid transparent' }
             }
           >
             <Icon size={13} className="shrink-0" />
@@ -1056,7 +1060,7 @@ function TabBar({
                     ? { background: 'rgba(0,174,239,0.2)', color: '#00aeef', boxShadow: '0 0 8px rgba(0,174,239,0.5)' }
                     : isActive
                       ? { background: 'rgba(0,174,239,0.3)', color: '#00aeef' }
-                      : { background: 'rgba(255,255,255,0.06)', color: '#5a5a5a' }
+                      : { background: 'var(--mp-card-subtle)', color: 'var(--mp-text-faint)' }
                 }
               >
                 {counts[t.id] > 99 ? '99+' : counts[t.id]}
@@ -1102,9 +1106,9 @@ function ProfileHeader({
     <div
       className="rounded-2xl p-5 relative overflow-hidden"
       style={{
-        background: 'linear-gradient(135deg, rgba(13,13,13,0.98) 0%, rgba(0,20,40,0.95) 100%)',
-        border: '1px solid rgba(0,174,239,0.12)',
-        boxShadow: '0 0 60px rgba(0,174,239,0.06), 0 8px 40px rgba(0,0,0,0.6)',
+        background: 'linear-gradient(135deg, var(--mp-card) 0%, var(--mp-panel-soft) 100%)',
+        border: '1px solid rgba(0,174,239,0.18)',
+        boxShadow: 'var(--mp-card-shadow)',
       }}
     >
       <div
@@ -1145,7 +1149,7 @@ function ProfileHeader({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center flex-wrap gap-2 mb-1">
-            <h2 className="text-lg font-bold text-[#f2f2f2]">{name}</h2>
+            <h2 className="text-lg font-bold" style={{ color: 'var(--mp-text-strong)' }}>{name}</h2>
             {profile?.isVerified && (
               <span
                 className="px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide"
@@ -1156,7 +1160,7 @@ function ProfileHeader({
             )}
             <span
               className="px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: roleColor[role] }}
+              style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)', color: roleColor[role] }}
             >
               {roleLabel[role] ?? role}
             </span>
@@ -1171,7 +1175,7 @@ function ProfileHeader({
             )}
           </div>
           {profile?.bio && (
-            <p className="text-xs text-[#5a5a5a] truncate max-w-xs">{profile.bio}</p>
+            <p className="text-xs truncate max-w-xs" style={{ color: 'var(--mp-text-faint)' }}>{profile.bio}</p>
           )}
         </div>
 
@@ -1436,12 +1440,12 @@ function PayoutDetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div
       className="min-w-0 rounded-xl px-3 py-2.5"
-      style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.055)' }}
+      style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-normal text-[#6f6f6f]">{label}</p>
-          <p className="mt-1 text-[12px] leading-snug text-[#f2f2f2] [overflow-wrap:anywhere]">{value}</p>
+          <p className="text-[10px] uppercase tracking-normal" style={{ color: 'var(--mp-text-faint)' }}>{label}</p>
+          <p className="mt-1 text-[12px] leading-snug [overflow-wrap:anywhere]" style={{ color: 'var(--mp-text-strong)' }}>{value}</p>
         </div>
         <CopyValueButton value={value} />
       </div>
@@ -1468,15 +1472,15 @@ function PayoutMethodCard({
     <div
       className="rounded-2xl p-5 space-y-4"
       style={{
-        background: 'linear-gradient(180deg, rgba(17,17,17,0.96) 0%, rgba(10,10,10,0.96) 100%)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        boxShadow: '0 16px 38px rgba(0,0,0,0.32)',
+        background: 'var(--mp-card)',
+        border: '1px solid var(--mp-border)',
+        boxShadow: 'var(--mp-card-shadow)',
       }}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-[#f2f2f2]">{payoutMethodLabel(method.methodType)}</p>
+            <p className="text-sm font-semibold" style={{ color: 'var(--mp-text-strong)' }}>{payoutMethodLabel(method.methodType)}</p>
             {method.isDefault && (
               <span
                 className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
@@ -1486,7 +1490,7 @@ function PayoutMethodCard({
               </span>
             )}
           </div>
-          <p className="mt-1 text-[11px] leading-relaxed text-[#7a7a7a] [overflow-wrap:anywhere]">{method.displayLabel}</p>
+          <p className="mt-1 text-[11px] leading-relaxed [overflow-wrap:anywhere]" style={{ color: 'var(--mp-text-faint)' }}>{method.displayLabel}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {!method.isDefault && (
@@ -1771,15 +1775,15 @@ export function DashboardClient({
 
   return (
     <div
-      className="min-h-screen"
-      style={{ background: 'radial-gradient(ellipse at top, rgba(0,20,40,0.5) 0%, #0a0a0a 60%)' }}
+      className="mp-dashboard-surface min-h-screen"
+      style={{ background: 'var(--mp-page-bg)' }}
     >
       {/* Top bar */}
       <div
         className="sticky top-0 z-40 flex items-center gap-4 px-4 sm:px-6 py-3"
         style={{
-          background: 'rgba(8,8,8,0.95)',
-          borderBottom: '1px solid rgba(255,255,255,0.04)',
+          background: 'var(--mp-panel-solid)',
+          borderBottom: '1px solid var(--mp-border)',
           backdropFilter: 'blur(16px)',
         }}
       >
@@ -1804,7 +1808,9 @@ export function DashboardClient({
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5 text-[10px] text-[#5a5a5a]">
+        <MarketplaceThemeToggle compact />
+
+        <div className="hidden items-center gap-1.5 text-[10px] text-[#5a5a5a] sm:flex">
           <Activity size={10} className="text-[#4ade80]" />
           <span>
             {new Date().toLocaleDateString('es-VE', { weekday: 'short', day: 'numeric', month: 'short' })}
@@ -1997,12 +2003,12 @@ export function DashboardClient({
             <div className="space-y-6">
               <div
                 className="rounded-2xl p-4"
-                style={{ background: 'rgba(13,13,13,0.9)', border: '1px solid rgba(255,255,255,0.06)' }}
+                style={{ background: 'var(--mp-card)', border: '1px solid var(--mp-border)', boxShadow: 'var(--mp-card-shadow)' }}
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-sm font-semibold text-[#f2f2f2]">Centro de mensajes</h3>
-                    <p className="mt-1 text-xs text-[#5a5a5a]">
+                    <h3 className="text-sm font-semibold" style={{ color: 'var(--mp-text-strong)' }}>Centro de mensajes</h3>
+                    <p className="mt-1 text-xs" style={{ color: 'var(--mp-text-faint)' }}>
                       {unreadCount > 0
                         ? `${unreadCount} mensaje(s) sin leer en ${unreadThreads.length} conversacion(es).`
                         : 'No tienes mensajes sin leer en este momento.'}
@@ -2146,16 +2152,16 @@ export function DashboardClient({
               <div
                 className="rounded-2xl p-5 sm:p-6"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(0,174,239,0.08) 0%, rgba(13,13,13,0.96) 52%, rgba(74,222,128,0.045) 100%)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  boxShadow: '0 22px 70px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.04)',
+                  background: 'linear-gradient(135deg, rgba(0,174,239,0.1) 0%, var(--mp-card) 58%, rgba(74,222,128,0.06) 100%)',
+                  border: '1px solid var(--mp-border)',
+                  boxShadow: 'var(--mp-card-shadow)',
                 }}
               >
                 <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(380px,0.72fr)] lg:items-end">
                   <div className="min-w-0">
                     <p className="text-[10px] font-semibold uppercase tracking-normal text-[#00aeef]">Cobros del vendedor</p>
-                    <h2 className="mt-2 text-2xl font-semibold leading-tight text-[#f2f2f2]">Estado claro de tus ventas y cobros</h2>
-                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#a0a0a0]">
+                    <h2 className="mt-2 text-2xl font-semibold leading-tight" style={{ color: 'var(--mp-text-strong)' }}>Estado claro de tus ventas y cobros</h2>
+                    <p className="mt-2 max-w-2xl text-sm leading-relaxed" style={{ color: 'var(--mp-text-muted)' }}>
                       Separamos pagos en revision, ventas en proceso y dinero listo para cobrar para que sepas que accion corresponde.
                     </p>
                   </div>
@@ -2169,14 +2175,14 @@ export function DashboardClient({
                       <div
                         key={item.label}
                         className="min-w-0 rounded-xl px-3 py-3 text-left"
-                        style={{ background: 'rgba(255,255,255,0.035)', border: `1px solid ${item.color}24` }}
+                        style={{ background: 'var(--mp-card-subtle)', border: `1px solid ${item.color}30` }}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-[10px] font-medium leading-tight text-[#8a8a8a]">{item.label}</p>
-                          <p className="text-xl font-semibold leading-none text-[#f2f2f2] tabular-nums">{item.value}</p>
+                          <p className="text-[10px] font-medium leading-tight" style={{ color: 'var(--mp-text-faint)' }}>{item.label}</p>
+                          <p className="text-xl font-semibold leading-none tabular-nums" style={{ color: 'var(--mp-text-strong)' }}>{item.value}</p>
                         </div>
-                        <p className="mt-2 text-sm font-semibold text-[#f2f2f2] tabular-nums">{item.amount}</p>
-                        <p className="mt-1 text-[10px] leading-tight text-[#6f6f6f]">{item.helper}</p>
+                        <p className="mt-2 text-sm font-semibold tabular-nums" style={{ color: 'var(--mp-text-strong)' }}>{item.amount}</p>
+                        <p className="mt-1 text-[10px] leading-tight" style={{ color: 'var(--mp-text-faint)' }}>{item.helper}</p>
                       </div>
                     ))}
                   </div>
@@ -2191,14 +2197,14 @@ export function DashboardClient({
 
               <div
                 className="rounded-2xl p-5"
-                style={{ background: 'rgba(13,13,13,0.72)', border: '1px solid rgba(255,255,255,0.06)' }}
+                style={{ background: 'var(--mp-panel)', border: '1px solid var(--mp-border)' }}
               >
                 <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
                   <div>
-                    <h3 className="text-sm font-semibold text-[#f2f2f2]">Cargos y comisiones</h3>
-                    <p className="mt-1 text-xs text-[#6f6f6f]">Informacion secundaria para entender como se calcula el monto estimado.</p>
+                    <h3 className="text-sm font-semibold" style={{ color: 'var(--mp-text-strong)' }}>Cargos y comisiones</h3>
+                    <p className="mt-1 text-xs" style={{ color: 'var(--mp-text-faint)' }}>Informacion secundaria para entender como se calcula el monto estimado.</p>
                   </div>
-                  <p className="text-xs font-semibold text-[#a0a0a0]">Total descontado: <span className="text-[#f2f2f2]">{fmtUSD(operationalTotalFees)}</span></p>
+                  <p className="text-xs font-semibold" style={{ color: 'var(--mp-text-muted)' }}>Total descontado: <span style={{ color: 'var(--mp-text-strong)' }}>{fmtUSD(operationalTotalFees)}</span></p>
                 </div>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
                   <KpiCard icon={CreditCard} label={commissionLabel} value={fmtUSD(operationalCommissions)} sub={commissionSub} accent="#f59e0b" tone="compact" />
@@ -2211,15 +2217,15 @@ export function DashboardClient({
                 <div
                   className="rounded-2xl p-5 space-y-5"
                   style={{
-                    background: 'linear-gradient(180deg, rgba(16,16,16,0.94) 0%, rgba(10,10,10,0.94) 100%)',
-                    border: '1px solid rgba(255,255,255,0.065)',
-                    boxShadow: '0 18px 44px rgba(0,0,0,0.3)',
+                    background: 'var(--mp-card)',
+                    border: '1px solid var(--mp-border)',
+                    boxShadow: 'var(--mp-card-shadow)',
                   }}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <h3 className="text-sm font-semibold text-[#f2f2f2]">Datos de cobro del vendedor</h3>
-                      <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#8a8a8a]">
+                      <h3 className="text-sm font-semibold" style={{ color: 'var(--mp-text-strong)' }}>Datos de cobro del vendedor</h3>
+                      <p className="mt-1 max-w-2xl text-xs leading-relaxed" style={{ color: 'var(--mp-text-muted)' }}>
                         Tus datos de cobro se usan solo cuando una venta queda lista para pago al vendedor.
                       </p>
                     </div>
@@ -2262,7 +2268,7 @@ export function DashboardClient({
                             style={
                               payoutForm.methodType === option.id
                                 ? { background: 'rgba(0,174,239,0.12)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.25)' }
-                                : { background: 'rgba(255,255,255,0.03)', color: '#a0a0a0', border: '1px solid rgba(255,255,255,0.08)' }
+                                : { background: 'var(--mp-card-subtle)', color: 'var(--mp-text-muted)', border: '1px solid var(--mp-border)' }
                             }
                           >
                             {option.label}
@@ -2272,7 +2278,7 @@ export function DashboardClient({
 
                       <div className="grid gap-3 sm:grid-cols-2">
                         <div className="space-y-1.5 sm:col-span-2">
-                          <label className="text-xs text-[#a0a0a0]">Etiqueta interna</label>
+                          <label className="text-xs" style={{ color: 'var(--mp-text-muted)' }}>Etiqueta interna</label>
                           <input
                             value={payoutForm.displayLabel}
                             onChange={e => updatePayoutField('displayLabel', e.target.value)}
@@ -2284,25 +2290,25 @@ export function DashboardClient({
                         {(payoutForm.methodType === 'PAGO_MOVIL' || payoutForm.methodType === 'BANK_TRANSFER') && (
                           <>
                             <div className="space-y-1.5">
-                              <label className="text-xs text-[#a0a0a0]">Titular / beneficiario</label>
+                              <label className="text-xs" style={{ color: 'var(--mp-text-muted)' }}>Titular / beneficiario</label>
                               <input value={payoutForm.holder} onChange={e => updatePayoutField('holder', e.target.value)} className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none" />
                             </div>
                             <div className="space-y-1.5">
-                              <label className="text-xs text-[#a0a0a0]">Cedula / RIF</label>
+                              <label className="text-xs" style={{ color: 'var(--mp-text-muted)' }}>Cedula / RIF</label>
                               <input value={payoutForm.identifier} onChange={e => updatePayoutField('identifier', e.target.value)} className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none" />
                             </div>
                             <div className="space-y-1.5">
-                              <label className="text-xs text-[#a0a0a0]">Banco</label>
+                              <label className="text-xs" style={{ color: 'var(--mp-text-muted)' }}>Banco</label>
                               <input value={payoutForm.bank} onChange={e => updatePayoutField('bank', e.target.value)} className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none" />
                             </div>
                             {payoutForm.methodType === 'PAGO_MOVIL' ? (
                               <div className="space-y-1.5">
-                                <label className="text-xs text-[#a0a0a0]">Telefono</label>
+                                <label className="text-xs" style={{ color: 'var(--mp-text-muted)' }}>Telefono</label>
                                 <input value={payoutForm.phone} onChange={e => updatePayoutField('phone', e.target.value)} className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none" />
                               </div>
                             ) : (
                               <div className="space-y-1.5">
-                                <label className="text-xs text-[#a0a0a0]">Cuenta bancaria</label>
+                                <label className="text-xs" style={{ color: 'var(--mp-text-muted)' }}>Cuenta bancaria</label>
                                 <input value={payoutForm.accountNumber} onChange={e => updatePayoutField('accountNumber', e.target.value)} className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none" />
                               </div>
                             )}
@@ -2312,11 +2318,11 @@ export function DashboardClient({
                         {payoutForm.methodType === 'BINANCE_PAY' && (
                           <>
                             <div className="space-y-1.5">
-                              <label className="text-xs text-[#a0a0a0]">Pay ID</label>
+                              <label className="text-xs" style={{ color: 'var(--mp-text-muted)' }}>Pay ID</label>
                               <input value={payoutForm.payId} onChange={e => updatePayoutField('payId', e.target.value)} className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none" />
                             </div>
                             <div className="space-y-1.5">
-                              <label className="text-xs text-[#a0a0a0]">Usuario</label>
+                              <label className="text-xs" style={{ color: 'var(--mp-text-muted)' }}>Usuario</label>
                               <input value={payoutForm.username} onChange={e => updatePayoutField('username', e.target.value)} className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none" />
                             </div>
                           </>
@@ -2325,9 +2331,9 @@ export function DashboardClient({
 
                       <div
                         className="rounded-xl p-3 text-xs leading-relaxed"
-                        style={{ background: 'rgba(0,174,239,0.04)', border: '1px solid rgba(0,174,239,0.1)', color: '#a0a0a0' }}
+                        style={{ background: 'rgba(0,174,239,0.06)', border: '1px solid rgba(0,174,239,0.14)', color: 'var(--mp-text-muted)' }}
                       >
-                        {commissionCopy} Monto estimado despues de cargos: <span className="text-[#f2f2f2]">{fmtUSD(operationalSellerNet)}</span>. Disponible para cobrar ahora: <span className="text-[#f2f2f2]">{fmtUSD(payoutReadyNet)}</span>.
+                        {commissionCopy} Monto estimado despues de cargos: <span style={{ color: 'var(--mp-text-strong)' }}>{fmtUSD(operationalSellerNet)}</span>. Disponible para cobrar ahora: <span style={{ color: 'var(--mp-text-strong)' }}>{fmtUSD(payoutReadyNet)}</span>.
                       </div>
 
                       <button
@@ -2343,14 +2349,14 @@ export function DashboardClient({
                   ) : payoutMethods.length === 0 ? (
                     <div
                       className="rounded-xl p-4 text-sm"
-                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#a0a0a0' }}
+                      style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)', color: 'var(--mp-text-muted)' }}
                     >
                       Aun no necesitas registrar datos de cobro. Esta solicitud aparecera cuando una venta entre en proceso o quede lista para cobrar.
                     </div>
                   ) : (
                     <div
                       className="rounded-xl p-3 text-xs leading-relaxed"
-                      style={{ background: 'rgba(0,174,239,0.04)', border: '1px solid rgba(0,174,239,0.1)', color: '#a0a0a0' }}
+                      style={{ background: 'rgba(0,174,239,0.06)', border: '1px solid rgba(0,174,239,0.14)', color: 'var(--mp-text-muted)' }}
                     >
                       Tus datos de cobro ya estan configurados. El equipo los usara solo cuando una venta quede lista para pago al vendedor.
                     </div>
@@ -2360,21 +2366,21 @@ export function DashboardClient({
                 <div className="space-y-4">
                   <div
                     className="rounded-2xl p-4"
-                    style={{ background: 'rgba(13,13,13,0.9)', border: '1px solid rgba(255,255,255,0.06)' }}
+                    style={{ background: 'var(--mp-card)', border: '1px solid var(--mp-border)', boxShadow: 'var(--mp-card-shadow)' }}
                   >
-                    <h3 className="text-sm font-semibold text-[#f2f2f2]">Resumen de cobros</h3>
+                    <h3 className="text-sm font-semibold" style={{ color: 'var(--mp-text-strong)' }}>Resumen de cobros</h3>
                     <div className="mt-3 space-y-3 text-xs">
                       <div className="flex items-center justify-between text-[#a0a0a0]">
                         <span>Validaciones pendientes</span>
-                        <span className="text-[#f2f2f2]">{pendingValidationSales.length}</span>
+                        <span style={{ color: 'var(--mp-text-strong)' }}>{pendingValidationSales.length}</span>
                       </div>
                       <div className="flex items-center justify-between text-[#a0a0a0]">
                         <span>Ventas en proceso</span>
-                        <span className="text-[#f2f2f2]">{escrowSales.length}</span>
+                        <span style={{ color: 'var(--mp-text-strong)' }}>{escrowSales.length}</span>
                       </div>
                       <div className="flex items-center justify-between text-[#a0a0a0]">
                         <span>Listas para cobrar</span>
-                        <span className="text-[#f2f2f2]">{releasedSales.length}</span>
+                        <span style={{ color: 'var(--mp-text-strong)' }}>{releasedSales.length}</span>
                       </div>
                       <div className="flex items-center justify-between text-[#a0a0a0]">
                         <span>Disponible para cobrar</span>

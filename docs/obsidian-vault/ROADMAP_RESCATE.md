@@ -1218,3 +1218,117 @@ Siguiente frente recomendado:
 - Sprint 2 de bugs internos acotados: `Guardar metodo de cobro` y nota interna admin.
 - Antes de cualquier QA futura, resolver `task_id` exacto en `docs/07_handoffs/qa-dispatcher.json`.
 - Si no existe ruta exacta, reportar `GAP OPERATIVO` y no improvisar.
+
+## 26. Dark/light marketplace publico
+
+- **Fecha**: 2026-04-28
+- **Estado real**: Implementado y validado tecnicamente; sin commit y sin push al momento del cierre de la tarea.
+- **Rama**: `Marketplace-Pure`.
+- **Descripcion**: Se agrego dark/light mode scoped al marketplace publico, evitando un theme system global y sin tocar booking, `/reservas`, negocio, schema ni pagos.
+- **Estrategia tecnica**:
+  - `MarketplaceThemeProvider` local en `components/marketplace/MarketplaceTheme.tsx`;
+  - `data-marketplace-theme` y `.mp-theme-root` con variables CSS `--mp-*`;
+  - preferencia persistida en `localStorage` (`turpial-marketplace-theme`);
+  - fallback inicial a `prefers-color-scheme`;
+  - bootstrap inline para reducir parpadeo antes de hidratacion;
+  - toggle en `/marketplace` y `/marketplace/[slug]`.
+- **Superficies cubiertas**:
+  - home publico de marketplace;
+  - ficha publica de listing;
+  - cards/listings;
+  - Q&A;
+  - auth modal;
+  - modales de marketplace;
+  - checkout modal;
+  - chat/transaccion;
+  - acciones de detalle.
+- **Archivos modificados**:
+  - `app/marketplace/MarketplacePageClient.tsx`
+  - `app/marketplace/[slug]/page.tsx`
+  - `components/marketplace/MarketplaceTheme.tsx`
+  - `components/marketplace/MarketplaceAuthModal.tsx`
+  - `components/marketplace/ListingDetailActions.tsx`
+  - `components/marketplace/CheckoutModal.tsx`
+  - `components/marketplace/ListingQASection.tsx`
+  - `components/marketplace/MarketplaceCard.tsx`
+  - `components/marketplace/MarketplaceModals.tsx`
+  - `components/marketplace/TransactionChat.tsx`
+  - `styles/globals.css`
+- **Validacion**:
+  - `git diff --check`: limpio, solo warnings LF -> CRLF.
+  - `npx tsc --noEmit`: limpio.
+  - `npm run build`: limpio, 29 paginas generadas.
+- **Restricciones respetadas**: No se tocaron booking, `/reservas`, main/produccion, stashes, Prisma schema/migrations, carrito, tasas, finanzas, conformidad/fondos ni `paymentProofUrl`/proxy SUPER.
+- **Riesgo activo**: Falta revision visual humana si se quiere evidencia pixel/UX; no ejecutar QA automatizada sin `task_id` exacto en dispatcher.
+- **Accion inmediata recomendada**: Commit checkpoint de dark/light si el usuario aprueba el diff; luego continuar con el siguiente sprint aprobado sin mezclar frentes.
+
+## 27. Dark/light marketplace completo
+
+- **Fecha**: 2026-04-28
+- **Estado real**: Implementado y validado tecnicamente; sin commit y sin push.
+- **Rama**: `Marketplace-Pure`.
+- **Descripcion**: El theme dark/light scoped ahora cubre todo `/marketplace`, incluyendo dashboards de usuario/seller y admin. El provider se centralizo en `app/marketplace/layout.tsx` y se removieron providers locales para evitar conflictos.
+- **Toggle UX**: El control ahora se comporta como switch deslizante y muestra la accion disponible: `Modo oscuro` cuando el tema actual es claro, `Modo claro` cuando el tema actual es oscuro.
+- **Cobertura**:
+  - landing marketplace;
+  - ficha de listing;
+  - dashboard usuario/seller;
+  - dashboard admin;
+  - tabs;
+  - cards/badges;
+  - tablas nativas si aparecen;
+  - modales/forms/inputs/paneles.
+- **Archivos principales**:
+  - `app/marketplace/layout.tsx`
+  - `components/marketplace/MarketplaceTheme.tsx`
+  - `styles/globals.css`
+  - `components/marketplace/dashboard/DashboardClient.tsx`
+  - `components/marketplace/admin/AdminDashboard.tsx`
+  - `app/marketplace/admin/page.tsx`
+- **Validacion**:
+  - `git diff --check`: limpio, solo warnings LF -> CRLF.
+  - `npx tsc --noEmit`: limpio.
+  - `npm run build`: limpio, 29 paginas generadas.
+- **Restricciones respetadas**: No se tocaron booking, `/reservas`, main/produccion, stashes, Prisma schema/migrations, carrito, tasas, finanzas, conformidad/fondos, logica de pagos, SOLD_OUT ni `paymentProofUrl`/proxy SUPER.
+
+## 28. Barrido final theme/contraste marketplace
+
+- **Fecha**: 2026-04-28
+- **Estado real**: Implementado y validado tecnicamente; sin commit y sin push.
+- **Rama**: `Marketplace-Pure`.
+- **Descripcion**: Pulido final del sistema dark/light en `/marketplace`, enfocado en contraste, coherencia de cards/paneles/tabs/modales, limpieza de residuos oscuros en light mode y secundarios mas legibles en dark mode.
+- **Causa corregida**: La banda negra superior del home venia del `pt-16` global del `<main>` en `app/layout.tsx`; el provider de marketplace comenzaba despues de ese padding. `mp-route-shell` cubre ese espacio con el fondo themeado.
+- **Cambios visuales**:
+  - tokens `--mp-*` reajustados para mayor contraste;
+  - cards/paneles lavados en light pasan a superficies con borde y sombra coherente;
+  - textos secundarios y labels inline se elevan a tokens legibles;
+  - tablas nativas, inputs, textareas, selects, badges, tabs y modales quedan bajo el scope del marketplace;
+  - fondos hardcodeados oscuros principales quedan mapeados a superficies claras cuando `data-marketplace-theme='light'`.
+- **Archivos principales**:
+  - `app/marketplace/layout.tsx`
+  - `styles/globals.css`
+- **Validacion**:
+  - `git diff --check`: limpio, solo warnings LF -> CRLF.
+  - `npx tsc --noEmit`: limpio.
+  - `npm run build`: limpio, 29 paginas generadas.
+- **Restricciones respetadas**: No se tocaron booking, `/reservas`, main/produccion, stashes, Prisma schema/migrations, carrito, tasas, finanzas, conformidad/fondos, logica de pagos, SOLD_OUT ni `paymentProofUrl`/proxy SUPER.
+
+## 29. Theme residual dashboard usuario/seller
+
+- **Fecha**: 2026-04-28
+- **Estado real**: Implementado tecnicamente; sin commit y sin push.
+- **Rama**: `Marketplace-Pure`.
+- **Descripcion**: Correccion acotada de cards negras/residuos visuales en `/marketplace/dashboard`, especialmente KPI superiores, Mensajes y Cobros.
+- **Causa**: `DashboardClient.tsx` conservaba estilos inline oscuros y textos secundarios demasiado tenues en cards/listados internos; el compatibility layer no era suficiente para dejar estas cards con la misma calidad visual que admin/home.
+- **Superficies corregidas**:
+  - KPI superiores;
+  - TabBar;
+  - Mensajes;
+  - Cobros;
+  - cards financieras de comisiones/cargos;
+  - Datos de cobro;
+  - Resumen de cobros;
+  - Metodos registrados;
+  - listados internos principales.
+- **Archivo principal**: `components/marketplace/dashboard/DashboardClient.tsx`.
+- **Restricciones respetadas**: No se tocaron admin, home, booking, `/reservas`, schema/migrations, carrito, tasas, finanzas/P&L, conformidad/fondos, acciones server, pagos, SOLD_OUT ni `paymentProofUrl`/proxy SUPER.

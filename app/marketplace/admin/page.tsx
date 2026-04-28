@@ -15,7 +15,7 @@ export default async function AdminPage() {
   ])
 
   return (
-    <div className="min-h-screen" style={{ background: '#080808' }}>
+    <div className="min-h-screen" style={{ background: 'var(--mp-page-bg)' }}>
       <AdminDashboard
         initialStats={statsResult.data ?? null}
         initialEscrow={escrowResult.data ?? []}

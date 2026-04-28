@@ -133,10 +133,10 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className="card-premium-wrapper group h-full w-full overflow-hidden rounded-xl text-left"
-      style={{ background: 'rgba(17,17,17,0.85)' }}
+      style={{ background: 'var(--mp-card)' }}
     >
       {/* Image area */}
-      <div className="relative h-52 rounded-t-xl overflow-hidden bg-[#0d0d0d] sm:h-56">
+      <div className="relative h-52 rounded-t-xl overflow-hidden bg-[#0d0d0d] sm:h-56" style={{ backgroundColor: 'var(--mp-media-bg)' }}>
         {cover ? (
           <MarketplaceImage
             src={cover}
@@ -251,7 +251,7 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
         </div>
 
         {/* Meta row */}
-        <div className="flex items-center justify-between gap-3 pt-2 border-t border-[#1e1e1e]">
+        <div className="flex items-center justify-between gap-3 pt-2 border-t" style={{ borderColor: 'var(--mp-border)' }}>
           <UserChip
             name={listing.seller.name}
             initials={listing.seller.initials}
@@ -302,10 +302,13 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className="card-premium-wrapper card-premium-wrapper--gold group h-full w-full overflow-hidden rounded-xl text-left"
-      style={{ background: 'rgba(17,17,17,0.85)' }}
+      style={{ background: 'var(--mp-card)' }}
     >
       {/* Header band */}
-      <div className="relative h-52 rounded-t-xl overflow-hidden bg-[#0d0d0d] flex items-center justify-center sm:h-56">
+      <div
+        className="relative h-52 rounded-t-xl overflow-hidden bg-[#0d0d0d] flex items-center justify-center sm:h-56"
+        style={{ backgroundColor: 'var(--mp-media-bg)' }}
+      >
         {cover ? (
           <MarketplaceImage
             src={cover}
@@ -371,7 +374,7 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
           <div className="absolute bottom-3 left-3 right-3 flex gap-1 flex-wrap">
             {listing.genres.slice(0, 3).map(g => (
               <span key={g} className="text-[9px] px-1.5 py-0.5 rounded"
-                style={{ background: 'rgba(0,0,0,0.7)', color: '#b8b8b8', border: '1px solid #1e1e1e' }}>
+                style={{ background: 'var(--mp-chip-bg)', color: 'var(--mp-text-muted)', border: '1px solid var(--mp-border)' }}>
                 {g}
               </span>
             ))}
@@ -422,7 +425,7 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
         </div>
 
         {/* Meta row */}
-        <div className="flex items-center justify-between gap-3 pt-2 border-t border-[#1e1e1e]">
+        <div className="flex items-center justify-between gap-3 pt-2 border-t" style={{ borderColor: 'var(--mp-border)' }}>
           <UserChip
             name={listing.talent.name}
             initials={listing.talent.initials}

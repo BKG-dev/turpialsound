@@ -143,7 +143,7 @@ export function ListingDetailActions({
               exit={{ opacity: 0 }}
               onClick={() => setChatOpen(false)}
               className="absolute inset-0"
-              style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
+              style={{ background: 'var(--mp-overlay)', backdropFilter: 'blur(8px)' }}
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.96, y: 16 }}
@@ -200,19 +200,19 @@ export function ListingDetailActions({
               style={{
                 background: isFavorite
                   ? 'rgba(239,68,68,0.1)'
-                  : 'rgba(255,255,255,0.04)',
-                color: isFavorite ? '#ef4444' : '#a0a0a0',
+                  : 'var(--mp-card-subtle)',
+                color: isFavorite ? '#ef4444' : 'var(--mp-text-muted)',
                 border: isFavorite
                   ? '1px solid rgba(239,68,68,0.3)'
-                  : '1px solid rgba(255,255,255,0.1)',
+                  : '1px solid var(--mp-border)',
               }}
               onMouseEnter={e => {
                 if (!favoriteLoading) {
                   if (isFavorite) {
                     (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.15)'
                   } else {
-                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)'
-                    ;(e.currentTarget as HTMLElement).style.color = '#f2f2f2'
+                    (e.currentTarget as HTMLElement).style.background = 'var(--mp-card)'
+                    ;(e.currentTarget as HTMLElement).style.color = 'var(--mp-text)'
                   }
                 }
               }}
@@ -221,8 +221,8 @@ export function ListingDetailActions({
                   if (isFavorite) {
                     (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.1)'
                   } else {
-                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'
-                    ;(e.currentTarget as HTMLElement).style.color = '#a0a0a0'
+                    (e.currentTarget as HTMLElement).style.background = 'var(--mp-card-subtle)'
+                    ;(e.currentTarget as HTMLElement).style.color = 'var(--mp-text-muted)'
                   }
                 }
               }}
@@ -238,17 +238,17 @@ export function ListingDetailActions({
             onClick={handleContactar}
             className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-medium transition-all"
             style={{
-              background: 'rgba(255,255,255,0.04)',
-              color: '#a0a0a0',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'var(--mp-card-subtle)',
+              color: 'var(--mp-text-muted)',
+              border: '1px solid var(--mp-border)',
             }}
             onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)'
-              ;(e.currentTarget as HTMLElement).style.color = '#f2f2f2'
+              (e.currentTarget as HTMLElement).style.background = 'var(--mp-card)'
+              ;(e.currentTarget as HTMLElement).style.color = 'var(--mp-text)'
             }}
             onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'
-              ;(e.currentTarget as HTMLElement).style.color = '#a0a0a0'
+              (e.currentTarget as HTMLElement).style.background = 'var(--mp-card-subtle)'
+              ;(e.currentTarget as HTMLElement).style.color = 'var(--mp-text-muted)'
             }}
           >
             <MessageSquare size={15} />

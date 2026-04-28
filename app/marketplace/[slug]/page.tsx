@@ -9,6 +9,7 @@ import { getSession } from '@/lib/marketplace/auth'
 import { ListingQASection } from '@/components/marketplace/ListingQASection'
 import { ListingDetailActions } from '@/components/marketplace/ListingDetailActions'
 import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
+import { MarketplaceThemeToggle } from '@/components/marketplace/MarketplaceTheme'
 import type { Listing } from '@/types/marketplace'
 
 type ListingPageParams = { params: { slug: string } }
@@ -212,15 +213,12 @@ export default async function ListingPage({ params }: ListingPageParams) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(listingJsonLd) }}
       />
-      <div
-        className="min-h-screen"
-        style={{ background: 'radial-gradient(ellipse at top, rgba(0,20,40,0.4) 0%, #0a0a0a 55%)' }}
-      >
+      <div className="min-h-screen">
         <div
           className="sticky top-0 z-40 flex items-center gap-4 px-4 sm:px-6 py-3"
           style={{
-            background: 'rgba(8,8,8,0.95)',
-            borderBottom: '1px solid rgba(255,255,255,0.04)',
+            background: 'var(--mp-panel-solid)',
+            borderBottom: '1px solid var(--mp-border)',
             backdropFilter: 'blur(16px)',
           }}
         >
@@ -234,6 +232,7 @@ export default async function ListingPage({ params }: ListingPageParams) {
           <div className="flex-1 min-w-0">
             <p className="text-xs text-[#9a9a9a] truncate">{listing.title}</p>
           </div>
+          <MarketplaceThemeToggle compact />
         </div>
 
         <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
@@ -241,7 +240,7 @@ export default async function ListingPage({ params }: ListingPageParams) {
             <div className="space-y-3">
               <div
                 className="w-full aspect-[4/3] rounded-2xl overflow-hidden relative"
-                style={{ background: 'rgba(17,17,17,0.9)', border: '1px solid rgba(255,255,255,0.06)' }}
+                style={{ background: 'var(--mp-media-bg)', border: '1px solid var(--mp-border)' }}
               >
                 {cover ? (
                   <MarketplaceImage
@@ -291,7 +290,7 @@ export default async function ListingPage({ params }: ListingPageParams) {
                       width={64}
                       height={64}
                       className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-                      style={{ border: i === 0 ? '2px solid rgba(0,174,239,0.5)' : '1px solid rgba(255,255,255,0.06)' }}
+                      style={{ border: i === 0 ? '2px solid rgba(0,174,239,0.5)' : '1px solid var(--mp-border)' }}
                     />
                   ))}
                 </div>
@@ -358,7 +357,7 @@ export default async function ListingPage({ params }: ListingPageParams) {
 
               <div
                 className="flex items-center gap-3 p-4 rounded-xl"
-                style={{ background: 'rgba(17,17,17,0.9)', border: '1px solid rgba(255,255,255,0.06)' }}
+                style={{ background: 'var(--mp-card)', border: '1px solid var(--mp-border)' }}
               >
                 <div className="relative flex-shrink-0">
                   <div
@@ -404,7 +403,7 @@ export default async function ListingPage({ params }: ListingPageParams) {
               <section
                 aria-labelledby="purchase-process-title"
                 className="space-y-2 px-3 py-3 rounded-xl"
-                style={{ background: 'rgba(0,174,239,0.04)', border: '1px solid rgba(0,174,239,0.1)' }}
+                style={{ background: 'rgba(0,174,239,0.06)', border: '1px solid rgba(0,174,239,0.16)' }}
               >
                 <div className="flex items-center gap-2">
                   <Shield size={12} className="text-[#00aeef] flex-shrink-0" />

@@ -569,3 +569,137 @@ Riesgos activos:
 - No se ejecuto Playwright, QA automatizada, CDP ni flujos UI ad hoc.
 - No se tocaron booking, `/reservas`, main/produccion, stashes, schema/migrations, tasas, carrito, finanzas, conformidad/fondos ni `paymentProofUrl`/proxy SUPER.
 - Siguiente frente recomendado: Sprint 2 de bugs internos acotados, empezando por validar el `task_id` exacto en `docs/07_handoffs/qa-dispatcher.json`; si no existe, reportar `GAP OPERATIVO`.
+
+## Checkpoint 2026-04-28 - Dark/light marketplace implementado
+
+- Rama de trabajo: `Marketplace-Pure`.
+- Estado: implementado sin commit y sin push.
+- Estrategia tecnica:
+  - `MarketplaceThemeProvider` local al marketplace, sin tema global en `html/body`;
+  - atributo scoped `data-marketplace-theme` sobre `.mp-theme-root`;
+  - variables CSS `--mp-*` en `styles/globals.css`;
+  - persistencia en `localStorage` con key `turpial-marketplace-theme`;
+  - preferencia inicial desde `prefers-color-scheme` cuando no hay preferencia guardada;
+  - script bootstrap inline dentro del provider para reducir parpadeo antes de hidratacion;
+  - toggle visible en la auth bar publica de `/marketplace` y en la barra sticky de `/marketplace/[slug]`.
+- Archivos de codigo tocados:
+  - `app/marketplace/MarketplacePageClient.tsx`
+  - `app/marketplace/[slug]/page.tsx`
+  - `components/marketplace/MarketplaceTheme.tsx`
+  - `components/marketplace/MarketplaceAuthModal.tsx`
+  - `components/marketplace/ListingDetailActions.tsx`
+  - `components/marketplace/CheckoutModal.tsx`
+  - `components/marketplace/ListingQASection.tsx`
+  - `components/marketplace/MarketplaceCard.tsx`
+  - `components/marketplace/MarketplaceModals.tsx`
+  - `components/marketplace/TransactionChat.tsx`
+  - `styles/globals.css`
+- Superficies cubiertas por codigo:
+  - `/marketplace`;
+  - `/marketplace/[slug]`;
+  - cards/listings;
+  - Q&A;
+  - auth modal;
+  - modales de marketplace;
+  - checkout modal;
+  - chat/transaccion;
+  - acciones de compra/contacto/favorito en detalle.
+- `SiteHeader` y `MobileMenu` fueron inspeccionados y no se modificaron para evitar impacto global fuera del marketplace.
+- Validacion tecnica:
+  - `git diff --check`: limpio, solo warnings LF -> CRLF;
+  - `npx tsc --noEmit`: limpio;
+  - `npm run build`: limpio, 29 paginas generadas.
+- No se ejecuto Playwright, QA automatizada, CDP ni flujos UI ad hoc.
+- No se tocaron booking, `/reservas`, main/produccion, stashes, schema/migrations, carrito, tasas, finanzas, conformidad/fondos ni `paymentProofUrl`/proxy SUPER.
+- Pendiente residual: revision visual humana opcional en mobile y desktop; si se pide QA automatizada futura, debe resolverse primero un `task_id` exacto en `qa-dispatcher.json`.
+
+## Checkpoint 2026-04-28 - Dark/light marketplace extendido a todo /marketplace
+
+- Rama de trabajo: `Marketplace-Pure`.
+- Estado: implementado sin commit y sin push.
+- Correccion principal:
+  - se creo `app/marketplace/layout.tsx`;
+  - `MarketplaceThemeProvider` ahora envuelve todo el arbol `/marketplace`;
+  - se retiraron providers locales de `/marketplace` y `/marketplace/[slug]` para evitar contextos duplicados;
+  - dashboard usuario/seller y admin quedan dentro del mismo `data-marketplace-theme`.
+- Toggle UX:
+  - si el tema actual es claro, el label muestra `Modo oscuro`;
+  - si el tema actual es oscuro, el label muestra `Modo claro`;
+  - el control ahora usa apariencia de switch deslizante con thumb, track, foco visible y texto accesible.
+- Superficies cubiertas:
+  - landing marketplace;
+  - detalle de listing;
+  - dashboard usuario/seller;
+  - dashboard admin;
+  - tabs de dashboard/admin;
+  - cards, badges, tablas nativas si aparecen, paneles, inputs, forms y modales.
+- Archivos nuevos/modificados de esta extension:
+  - `app/marketplace/layout.tsx`
+  - `app/marketplace/MarketplacePageClient.tsx`
+  - `app/marketplace/[slug]/page.tsx`
+  - `app/marketplace/admin/page.tsx`
+  - `components/marketplace/MarketplaceTheme.tsx`
+  - `components/marketplace/dashboard/DashboardClient.tsx`
+  - `components/marketplace/admin/AdminDashboard.tsx`
+  - `styles/globals.css`
+- Validacion tecnica:
+  - `git diff --check`: limpio, solo warnings LF -> CRLF;
+  - `npx tsc --noEmit`: limpio;
+  - `npm run build`: limpio, 29 paginas generadas.
+- No se ejecuto Playwright, QA automatizada ni CDP.
+- No se tocaron booking, `/reservas`, main/produccion, stashes, schema/migrations, carrito, tasas, finanzas, conformidad/fondos, logica de pagos, SOLD_OUT ni `paymentProofUrl`/proxy SUPER.
+
+## Checkpoint 2026-04-28 - Barrido final theme/contraste marketplace
+
+- Rama de trabajo: `Marketplace-Pure`.
+- Estado: implementado sin commit y sin push.
+- Objetivo cerrado:
+  - pulido final de contraste y consistencia visual del theme en todo `/marketplace`;
+  - light mode con superficies limpias y legibles;
+  - dark mode con secundarios menos tenues;
+  - residuos oscuros inline cubiertos por tokens scoped.
+- Causa de la banda negra superior:
+  - `app/layout.tsx` aplica `pt-16` al `<main>` global;
+  - el provider de `/marketplace` empezaba despues de ese padding;
+  - en light mode quedaba visible el fondo global oscuro en el hueco superior.
+- Fix de banda superior:
+  - `app/marketplace/layout.tsx` usa `mp-route-shell`;
+  - `.mp-route-shell` compensa el `pt-16` global con `margin-top: -4rem` y `padding-top: 4rem`, cubriendo el hueco con `--mp-page-bg`.
+- Barrido visual:
+  - tokens `--mp-*` ajustados para mejor contraste en dark/light;
+  - compatibilidad scoped ampliada para fondos inline oscuros y superficies lavadas;
+  - colores secundarios inline `rgba(255,255,255,0.x)` elevados en dark y mapeados a tokens legibles en light;
+  - tablas nativas, inputs, textareas, selects, cards, badges, panels y tabs quedan bajo el sistema visual del marketplace;
+  - `reset-password` queda cubierto por el CSS scoped del provider sin tocar logica.
+- Archivos modificados en este barrido:
+  - `app/marketplace/layout.tsx`
+  - `styles/globals.css`
+- Validacion tecnica:
+  - `git diff --check`: limpio, solo warnings LF -> CRLF;
+  - `npx tsc --noEmit`: limpio;
+  - `npm run build`: limpio, 29 paginas generadas.
+- No se ejecuto Playwright, QA automatizada ni CDP.
+- No se tocaron booking, `/reservas`, main/produccion, stashes, schema/migrations, carrito, tasas, finanzas, conformidad/fondos, logica de pagos, SOLD_OUT ni `paymentProofUrl`/proxy SUPER.
+
+## Checkpoint 2026-04-28 - Theme residual dashboard usuario/seller
+
+- Rama de trabajo: `Marketplace-Pure`.
+- Estado: implementado sin commit y sin push.
+- Causa encontrada:
+  - `components/marketplace/dashboard/DashboardClient.tsx` conservaba fondos/gradientes inline oscuros en KPI, TabBar, Mensajes, listados internos, Cobros y metodos de cobro;
+  - varias etiquetas secundarias seguian usando `#3a3a3a`, `#5a5a5a`, `#8a8a8a` o superficies `rgba(13,13,13)`/`rgba(30,30,30)`;
+  - el barrido CSS global ayudaba, pero estas cards necesitaban tokens directos para quedar igual de consistentes que home/admin.
+- Correccion:
+  - KPI cards superiores migradas a `--mp-card`, `--mp-border`, `--mp-card-shadow`, `--mp-text-*`;
+  - TabBar y cards de Mensajes migradas a tokens del theme;
+  - Cobros, Cargos/comisiones, Datos de cobro, Resumen y Metodos registrados migrados a superficies claras/oscuras themeadas;
+  - listados internos (`TxCard`, publicaciones, favoritos, preguntas/interacciones) dejan fondos negros fijos en las superficies principales.
+- Archivos de este pase:
+  - `components/marketplace/dashboard/DashboardClient.tsx`
+  - docs de handoff/roadmap/bugs.
+- Validacion tecnica:
+  - `git diff --check`: pendiente post-docs;
+  - `npx tsc --noEmit`: limpio antes de docs;
+  - `npm run build`: pendiente post-docs.
+- No se ejecuto Playwright, QA automatizada ni CDP.
+- No se tocaron admin, home, booking, `/reservas`, schema/migrations, carrito, tasas, finanzas/P&L, conformidad/fondos, acciones server, pagos, SOLD_OUT ni `paymentProofUrl`/proxy SUPER.

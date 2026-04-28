@@ -27,6 +27,7 @@ import { MarketplaceCard } from '@/components/marketplace/MarketplaceCard'
 import { TransactionChat } from '@/components/marketplace/TransactionChat'
 import { MarketplaceAuthModal } from '@/components/marketplace/MarketplaceAuthModal'
 import { CheckoutModal } from '@/components/marketplace/CheckoutModal'
+import { MarketplaceThemeToggle } from '@/components/marketplace/MarketplaceTheme'
 import { getMpSession, logoutMpUser } from '@/actions/marketplace/auth'
 import { getActiveListings, getOrCreateThread } from '@/actions/marketplace'
 import { getUnreadCount } from '@/actions/marketplace/chat'
@@ -410,8 +411,11 @@ export default function MarketplacePageClient() {
       />
 
       {/* ── Auth Bar ───────────────────────────────────────────────────────── */}
-      <div className="flex w-full flex-wrap items-center justify-end gap-2 px-4 py-2 sm:gap-3 sm:px-6"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.3)' }}>
+      <div
+        className="flex w-full flex-wrap items-center justify-end gap-2 px-4 py-2 sm:gap-3 sm:px-6"
+        style={{ borderBottom: '1px solid var(--mp-border)', background: 'var(--mp-panel)' }}
+      >
+        <MarketplaceThemeToggle className="mr-auto" />
         {session ? (
           <>
             {session.role === 'SUPER' && (
@@ -429,7 +433,7 @@ export default function MarketplacePageClient() {
               className="relative flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-90"
               style={{
                 background: unreadCount > 0 ? 'rgba(0,174,239,0.1)' : 'transparent',
-                color: unreadCount > 0 ? '#00aeef' : 'rgba(255,255,255,0.68)',
+                color: unreadCount > 0 ? '#00aeef' : 'var(--mp-text-muted)',
                 border: unreadCount > 0 ? '1px solid rgba(0,174,239,0.25)' : '1px solid transparent',
                 boxShadow: unreadCount > 0 ? '0 0 12px rgba(0,174,239,0.2)' : 'none',
               }}
@@ -447,7 +451,7 @@ export default function MarketplacePageClient() {
 
             <div className="flex items-center gap-2">
               <UserCircle2 size={15} style={{ color: '#00aeef' }} />
-              <span className="max-w-[42vw] truncate text-xs sm:max-w-none" style={{ color: 'rgba(255,255,255,0.7)' }}>
+              <span className="max-w-[42vw] truncate text-xs sm:max-w-none" style={{ color: 'var(--mp-text-muted)' }}>
                 {session.displayName}
                 {session.role === 'SUPER' ? (
                   <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded"
@@ -470,7 +474,7 @@ export default function MarketplacePageClient() {
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-colors hover:bg-white/5"
-              style={{ color: 'rgba(255,255,255,0.68)' }}
+              style={{ color: 'var(--mp-text-muted)' }}
             >
               <LogOut size={12} /> Salir
             </button>
@@ -480,7 +484,7 @@ export default function MarketplacePageClient() {
             <button
               onClick={() => openAuth('login')}
               className="text-xs px-3 py-1 rounded-lg transition-colors hover:bg-white/5"
-              style={{ color: 'rgba(255,255,255,0.72)' }}
+              style={{ color: 'var(--mp-text-muted)' }}
             >
               Iniciar sesión
             </button>
@@ -541,7 +545,7 @@ export default function MarketplacePageClient() {
               exit={{ opacity: 0 }}
               onClick={() => setShowChat(false)}
               className="absolute inset-0"
-              style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
+              style={{ background: 'var(--mp-overlay)', backdropFilter: 'blur(8px)' }}
             />
             <motion.div
               key="chat-modal"
@@ -587,7 +591,7 @@ export default function MarketplacePageClient() {
         <section
           className="relative min-h-screen flex flex-col items-center justify-center px-4 pt-24 pb-16 overflow-hidden"
           style={{
-            background: 'linear-gradient(180deg, rgba(0,50,120,0.08) 0%, transparent 60%)',
+            background: 'var(--mp-hero-bg)',
           }}
         >
           {/* Ambient orbs */}
@@ -747,12 +751,12 @@ export default function MarketplacePageClient() {
             transition={{ delay: 1, duration: 0.6 }}
             className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
           >
-            <span className="text-[10px] text-[#2a2a2a] uppercase tracking-widest">Explorar</span>
+            <span className="text-[10px] text-[var(--mp-text-faint)] uppercase tracking-widest">Explorar</span>
             <motion.div
               animate={{ y: [0, 6, 0] }}
               transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <ChevronDown size={16} className="text-[#2a2a2a]" />
+              <ChevronDown size={16} className="text-[var(--mp-text-faint)]" />
             </motion.div>
           </motion.div>
         </section>
@@ -760,7 +764,7 @@ export default function MarketplacePageClient() {
         {/* ═══════════════════════════════════════════════════════════════════
             TRUST STATS BAR
         ═══════════════════════════════════════════════════════════════════ */}
-        <section className="border-y border-[#1e1e1e]" style={{ background: 'rgba(17,17,17,0.7)', backdropFilter: 'blur(12px)' }}>
+        <section className="border-y" style={{ background: 'var(--mp-panel)', borderColor: 'var(--mp-border)', backdropFilter: 'blur(12px)' }}>
           <div className="container-base py-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
               {TRUST_STATS.map(stat => {
@@ -782,7 +786,7 @@ export default function MarketplacePageClient() {
           </div>
         </section>
 
-        <section className="section-padding-sm border-b border-[#1e1e1e]">
+        <section className="section-padding-sm border-b" style={{ borderColor: 'var(--mp-border)' }}>
           <div className="container-base">
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.8fr)] lg:items-start">
               <div>
@@ -820,7 +824,7 @@ export default function MarketplacePageClient() {
                   <div
                     key={item.title}
                     className="rounded-lg p-4"
-                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+                    style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
                   >
                     <h3 className="text-sm font-semibold text-[#f2f2f2]">{item.title}</h3>
                     <p className="mt-2 text-xs leading-relaxed text-[#b8b8b8]">{item.text}</p>
@@ -844,7 +848,7 @@ export default function MarketplacePageClient() {
 
             {/* Tab filter */}
             <div className="flex gap-1 mb-8 p-1 rounded-xl w-fit"
-              style={{ background: 'rgba(17,17,17,0.8)', border: '1px solid #1e1e1e' }}>
+              style={{ background: 'var(--mp-panel)', border: '1px solid var(--mp-border)' }}>
               {TABS.map(tab => (
                 <button
                   key={tab.id}
@@ -920,8 +924,10 @@ export default function MarketplacePageClient() {
         {/* ═══════════════════════════════════════════════════════════════════
             HOW IT WORKS — FLOW
         ═══════════════════════════════════════════════════════════════════ */}
-        <section className="section-padding border-t border-[#1e1e1e]"
-          style={{ background: 'rgba(17,17,17,0.4)' }}>
+        <section
+          className="section-padding border-t"
+          style={{ background: 'var(--mp-panel-soft)', borderColor: 'var(--mp-border)' }}
+        >
           <div className="container-base">
             <SectionHeading
               eyebrow="Como funciona"
@@ -967,7 +973,7 @@ export default function MarketplacePageClient() {
                     {/* Connector */}
                     {i < 3 && (
                       <div className="hidden md:block absolute top-7 left-full w-full h-px z-0"
-                        style={{ background: 'linear-gradient(90deg, #1e1e1e 0%, transparent 100%)', width: 'calc(100% - 2rem)' }} />
+                        style={{ background: 'var(--mp-line-gradient)', width: 'calc(100% - 2rem)' }} />
                     )}
                     <div className="relative z-10 flex flex-col gap-3">
                       <div className="flex items-center gap-3">
@@ -998,11 +1004,11 @@ export default function MarketplacePageClient() {
         {/* ═══════════════════════════════════════════════════════════════════
             DEMO CHAT CTA
         ═══════════════════════════════════════════════════════════════════ */}
-        <section className="section-padding-sm border-t border-[#1e1e1e]">
+        <section className="section-padding-sm border-t" style={{ borderColor: 'var(--mp-border)' }}>
           <div className="container-base">
             <div
               className="card-premium-wrapper rounded-2xl p-8 flex flex-col sm:flex-row items-center gap-6"
-              style={{ background: 'rgba(17,17,17,0.8)' }}
+              style={{ background: 'var(--mp-card)' }}
             >
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-3">

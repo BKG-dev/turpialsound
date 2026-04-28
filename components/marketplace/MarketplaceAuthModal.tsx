@@ -54,7 +54,7 @@ function Input({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.55)' }}>
+      <label className="text-xs font-medium" style={{ color: 'var(--mp-text-muted)' }}>
         {label}
       </label>
       <div className="relative">
@@ -65,15 +65,15 @@ function Input({
           placeholder={placeholder}
           className="w-full px-3 py-2.5 rounded-lg text-sm outline-none transition-all pr-10"
           style={{
-            background: 'rgba(255,255,255,0.06)',
-            border: error ? '1px solid rgba(239,68,68,0.6)' : '1px solid rgba(255,255,255,0.1)',
-            color: '#fff',
+            background: 'var(--mp-input)',
+            border: error ? '1px solid rgba(239,68,68,0.6)' : '1px solid var(--mp-input-border)',
+            color: 'var(--mp-text)',
           }}
           onFocus={(e) => {
             e.currentTarget.style.borderColor = error ? 'rgba(239,68,68,0.8)' : 'rgba(0,174,239,0.5)'
           }}
           onBlur={(e) => {
-            e.currentTarget.style.borderColor = error ? 'rgba(239,68,68,0.6)' : 'rgba(255,255,255,0.1)'
+            e.currentTarget.style.borderColor = error ? 'rgba(239,68,68,0.6)' : 'var(--mp-input-border)'
           }}
         />
         {rightSlot && (
@@ -169,7 +169,7 @@ function RegisterForm({ onSuccess }: { onSuccess: (s: MpSessionPayload) => void 
           <button
             type="button"
             onClick={() => setShowPw((v) => !v)}
-            style={{ color: 'rgba(255,255,255,0.35)' }}
+            style={{ color: 'var(--mp-text-faint)' }}
           >
             {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
@@ -191,15 +191,15 @@ function RegisterForm({ onSuccess }: { onSuccess: (s: MpSessionPayload) => void 
         onClick={() => setWhatsappConsent(v => !v)}
         className="flex items-start gap-3 p-3 rounded-xl text-left transition-all w-full"
         style={{
-          background: whatsappConsent ? 'rgba(37,211,102,0.08)' : 'rgba(255,255,255,0.03)',
-          border: whatsappConsent ? '1px solid rgba(37,211,102,0.3)' : '1px solid rgba(255,255,255,0.08)',
+          background: whatsappConsent ? 'rgba(37,211,102,0.08)' : 'var(--mp-card-subtle)',
+          border: whatsappConsent ? '1px solid rgba(37,211,102,0.3)' : '1px solid var(--mp-border)',
         }}
       >
         <div
           className="mt-0.5 w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all"
           style={{
-            background: whatsappConsent ? 'rgba(37,211,102,0.9)' : 'rgba(255,255,255,0.08)',
-            border: whatsappConsent ? 'none' : '1px solid rgba(255,255,255,0.2)',
+            background: whatsappConsent ? 'rgba(37,211,102,0.9)' : 'var(--mp-card)',
+            border: whatsappConsent ? 'none' : '1px solid var(--mp-border-strong)',
           }}
         >
           {whatsappConsent && (
@@ -210,12 +210,12 @@ function RegisterForm({ onSuccess }: { onSuccess: (s: MpSessionPayload) => void 
         </div>
         <div>
           <div className="flex items-center gap-1.5 mb-0.5">
-            <MessageCircle size={12} style={{ color: whatsappConsent ? '#25D366' : 'rgba(255,255,255,0.35)' }} />
-            <span className="text-xs font-medium" style={{ color: whatsappConsent ? '#25D366' : 'rgba(255,255,255,0.6)' }}>
+            <MessageCircle size={12} style={{ color: whatsappConsent ? '#25D366' : 'var(--mp-text-faint)' }} />
+            <span className="text-xs font-medium" style={{ color: whatsappConsent ? '#25D366' : 'var(--mp-text-muted)' }}>
               Avísame en WhatsApp
             </span>
           </div>
-          <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.3)' }}>
+          <p className="text-[11px] leading-relaxed" style={{ color: 'var(--mp-text-faint)' }}>
             Recibe alertas cuando tu pago sea confirmado, tu producto avance de estado o tu cobro quede listo. Solo lo importante, sin spam.
           </p>
         </div>
@@ -270,8 +270,8 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
         className="flex flex-col items-center gap-3 py-6 text-center"
       >
         <CheckCircle2 size={40} style={{ color: '#00aeef', filter: 'drop-shadow(0 0 12px rgba(0,174,239,0.6))' }} />
-        <p className="text-sm text-white font-medium">Enlace enviado</p>
-        <p className="text-xs leading-relaxed max-w-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>
+        <p className="text-sm font-medium" style={{ color: 'var(--mp-text)' }}>Enlace enviado</p>
+        <p className="text-xs leading-relaxed max-w-xs" style={{ color: 'var(--mp-text-muted)' }}>
           Si el email está registrado, recibirás un enlace de recuperación en los próximos minutos.
         </p>
         <button
@@ -287,12 +287,12 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
+      <p className="text-xs leading-relaxed" style={{ color: 'var(--mp-text-muted)' }}>
         Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña. El enlace expira en 1 hora.
       </p>
 
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.55)' }}>Email</label>
+        <label className="text-xs font-medium" style={{ color: 'var(--mp-text-muted)' }}>Email</label>
         <input
           type="email"
           value={email}
@@ -300,12 +300,12 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
           placeholder="tu@email.com"
           className="w-full px-3 py-2.5 rounded-lg text-sm outline-none transition-all"
           style={{
-            background: 'rgba(255,255,255,0.06)',
-            border: error ? '1px solid rgba(239,68,68,0.6)' : '1px solid rgba(255,255,255,0.1)',
-            color: '#fff',
+            background: 'var(--mp-input)',
+            border: error ? '1px solid rgba(239,68,68,0.6)' : '1px solid var(--mp-input-border)',
+            color: 'var(--mp-text)',
           }}
           onFocus={e => (e.currentTarget.style.borderColor = 'rgba(0,174,239,0.5)')}
-          onBlur={e => (e.currentTarget.style.borderColor = error ? 'rgba(239,68,68,0.6)' : 'rgba(255,255,255,0.1)')}
+          onBlur={e => (e.currentTarget.style.borderColor = error ? 'rgba(239,68,68,0.6)' : 'var(--mp-input-border)')}
         />
       </div>
 
@@ -330,7 +330,7 @@ function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
         type="button"
         onClick={onBack}
         className="flex items-center justify-center gap-1.5 text-xs transition-opacity hover:opacity-70"
-        style={{ color: 'rgba(255,255,255,0.35)' }}
+        style={{ color: 'var(--mp-text-faint)' }}
       >
         <ArrowLeft size={12} /> Volver
       </button>
@@ -400,7 +400,7 @@ function LoginForm({ onSuccess, onForgot }: { onSuccess: (s: MpSessionPayload) =
           <button
             type="button"
             onClick={() => setShowPw((v) => !v)}
-            style={{ color: 'rgba(255,255,255,0.35)' }}
+            style={{ color: 'var(--mp-text-faint)' }}
           >
             {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
@@ -475,7 +475,7 @@ export function MarketplaceAuthModal({ isOpen, onClose, onSuccess, defaultTab = 
             exit="exit"
             onClick={onClose}
             className="fixed inset-0 z-40"
-            style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
+            style={{ background: 'var(--mp-overlay)', backdropFilter: 'blur(8px)' }}
           />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
@@ -485,21 +485,21 @@ export function MarketplaceAuthModal({ isOpen, onClose, onSuccess, defaultTab = 
               animate="visible"
               exit="exit"
               className="w-full max-w-sm rounded-2xl overflow-hidden"
-              style={{ background: '#0d1117', border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{ background: 'var(--mp-panel-solid)', border: '1px solid var(--mp-border)' }}
             >
               {/* Header */}
               <div className="flex items-center justify-between px-5 pt-5 pb-4"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                style={{ borderBottom: '1px solid var(--mp-border)' }}>
                 <div>
-                  <h2 className="text-base font-semibold text-white">
+                  <h2 className="text-base font-semibold" style={{ color: 'var(--mp-text-strong)' }}>
                     {done ? 'Listo' : HEADER_TITLE[tab]}
                   </h2>
-                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--mp-text-faint)' }}>
                     Turpial Sound Marketplace
                   </p>
                 </div>
                 <button onClick={onClose} className="p-1.5 rounded-lg transition-colors hover:bg-white/5">
-                  <X size={16} style={{ color: 'rgba(255,255,255,0.4)' }} />
+                  <X size={16} style={{ color: 'var(--mp-text-faint)' }} />
                 </button>
               </div>
 
@@ -511,14 +511,14 @@ export function MarketplaceAuthModal({ isOpen, onClose, onSuccess, defaultTab = 
                     className="flex flex-col items-center gap-3 py-6 text-center"
                   >
                     <CheckCircle2 size={40} style={{ color: '#00aeef', filter: 'drop-shadow(0 0 16px rgba(0,174,239,0.6))' }} />
-                    <p className="text-sm text-white">{doneMsg}</p>
+                    <p className="text-sm" style={{ color: 'var(--mp-text)' }}>{doneMsg}</p>
                   </motion.div>
                 ) : (
                   <>
                     {/* Tab switcher — only shown for login/register */}
                     {tab !== 'forgot' && (
                       <div className="flex gap-1 p-1 rounded-xl mb-5"
-                        style={{ background: 'rgba(255,255,255,0.04)' }}>
+                        style={{ background: 'var(--mp-card-subtle)' }}>
                         {(['login', 'register'] as const).map((t) => (
                           <button
                             key={t}
@@ -526,7 +526,7 @@ export function MarketplaceAuthModal({ isOpen, onClose, onSuccess, defaultTab = 
                             className="flex-1 py-2 rounded-lg text-xs font-medium transition-all"
                             style={{
                               background: tab === t ? 'rgba(0,174,239,0.15)' : 'transparent',
-                              color: tab === t ? '#00aeef' : 'rgba(255,255,255,0.4)',
+                              color: tab === t ? '#00aeef' : 'var(--mp-text-faint)',
                               border: tab === t ? '1px solid rgba(0,174,239,0.3)' : '1px solid transparent',
                             }}
                           >
@@ -555,7 +555,7 @@ export function MarketplaceAuthModal({ isOpen, onClose, onSuccess, defaultTab = 
 
                     {/* Footer link — only for login/register */}
                     {tab !== 'forgot' && (
-                      <p className="text-center text-xs mt-4" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                      <p className="text-center text-xs mt-4" style={{ color: 'var(--mp-text-faint)' }}>
                         {tab === 'login' ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
                         <button
                           onClick={() => setTab(tab === 'login' ? 'register' : 'login')}

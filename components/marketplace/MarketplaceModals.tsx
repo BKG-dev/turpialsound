@@ -77,7 +77,7 @@ function ModalOverlay({ onClose }: { onClose: () => void }) {
       transition={{ duration: 0.25 }}
       onClick={onClose}
       className="fixed inset-0 z-[80]"
-      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
+      style={{ background: 'var(--mp-overlay)', backdropFilter: 'blur(8px)' }}
     />
   )
 }
@@ -133,15 +133,16 @@ function ModalShell({
       <div
         className="card-premium-wrapper rounded-2xl flex flex-col overflow-hidden"
         style={{
-          background: 'rgba(11,11,11,0.98)',
-          boxShadow: `0 32px 80px rgba(0,0,0,0.85), 0 0 120px ${accent === 'cyan' ? 'rgba(0,174,239,0.08)' : 'rgba(255,193,7,0.06)'}`,
+          background: 'var(--mp-panel-solid)',
+          border: '1px solid var(--mp-border)',
+          boxShadow: `var(--mp-shadow), 0 0 120px ${accent === 'cyan' ? 'rgba(0,174,239,0.08)' : 'rgba(255,193,7,0.06)'}`,
           maxHeight: '90vh',
         }}
       >
         {/* Header */}
         <div
-          className="flex items-center gap-3 px-6 py-4 flex-shrink-0 border-b border-[#1e1e1e]"
-          style={{ background: accentBg }}
+          className="flex items-center gap-3 px-6 py-4 flex-shrink-0 border-b"
+          style={{ background: accentBg, borderColor: 'var(--mp-border)' }}
         >
           {onBack && (
             <button onClick={onBack} className="text-[#5a5a5a] hover:text-[#f2f2f2] transition-colors -ml-1">
@@ -163,7 +164,7 @@ function ModalShell({
                   style={{
                     width: i === step ? '16px' : '6px',
                     height: '6px',
-                    background: i <= step ? accentColor : '#2a2a2a',
+                    background: i <= step ? accentColor : 'var(--mp-input-border)',
                   }}
                 />
               ))}
@@ -269,8 +270,8 @@ function FieldError({ errors, field }: { errors?: Record<string, string[]>; fiel
 function fieldInputStyle(field: string, fieldErrors?: Record<string, string[]>) {
   const hasError = !!fieldErrors?.[field]?.length
   return {
-    background: 'rgba(20,20,20,0.8)',
-    border: `1px solid ${hasError ? 'rgba(239,68,68,0.5)' : '#1e1e1e'}`,
+    background: 'var(--mp-input)',
+    border: `1px solid ${hasError ? 'rgba(239,68,68,0.5)' : 'var(--mp-input-border)'}`,
   }
 }
 
@@ -368,7 +369,7 @@ function ListingQASection({
 
       {/* Body */}
       {expanded && (
-        <div className="px-4 py-3 space-y-3" style={{ background: 'rgba(0,0,0,0.2)' }}>
+        <div className="px-4 py-3 space-y-3" style={{ background: 'var(--mp-card-subtle)' }}>
           {loading && (
             <div className="flex items-center gap-2 py-2">
               <Loader2 size={12} className="animate-spin text-[#5a5a5a]" />
@@ -417,8 +418,8 @@ function ListingQASection({
                       }))}
                       placeholder="Escribe tu respuesta..."
                       rows={2}
-                      className="min-h-[88px] flex-1 resize-y rounded-lg px-3 py-2 text-sm text-[#f2f2f2] outline-none placeholder:text-[#8a8a8a] sm:min-h-[52px]"
-                      style={{ background: 'rgba(20,20,20,0.94)', border: '1px solid rgba(245,158,11,0.28)' }}
+                      className="min-h-[88px] flex-1 resize-y rounded-lg px-3 py-2 text-sm text-[#f2f2f2] outline-none placeholder:text-[var(--mp-text-faint)] sm:min-h-[52px]"
+                      style={{ background: 'var(--mp-input)', border: '1px solid rgba(245,158,11,0.28)' }}
                       maxLength={1000}
                       disabled={replyStates[q.id]?.submitting}
                     />
@@ -464,8 +465,8 @@ function ListingQASection({
                   onChange={e => setNewQ(e.target.value)}
                   placeholder="¿Qué quieres saber sobre este producto?"
                   rows={2}
-                  className="min-h-[88px] flex-1 resize-y rounded-lg px-3 py-2.5 text-sm text-[#f2f2f2] outline-none placeholder:text-[#8a8a8a] sm:min-h-[52px]"
-                  style={{ background: 'rgba(20,20,20,0.94)', border: '1px solid rgba(255,255,255,0.12)' }}
+                  className="min-h-[88px] flex-1 resize-y rounded-lg px-3 py-2.5 text-sm text-[#f2f2f2] outline-none placeholder:text-[var(--mp-text-faint)] sm:min-h-[52px]"
+                  style={{ background: 'var(--mp-input)', border: '1px solid var(--mp-input-border)' }}
                   maxLength={500}
                   disabled={submitting}
                 />
@@ -556,7 +557,7 @@ function BuyFlow({ step, direction, listings, listingsLoading, listingsError, on
               style={{ background: 'rgba(0,174,239,0.03)', border: '1px dashed rgba(0,174,239,0.15)' }}>
               <div className="text-center">
                 <p className="text-sm text-[#b8b8b8]">Sin listados en esta categoría aún.</p>
-                <p className="text-[11px] text-[#2a2a2a] mt-1">¡Sé el primero en publicar!</p>
+                <p className="text-[11px] text-[var(--mp-text-faint)] mt-1">¡Sé el primero en publicar!</p>
               </div>
             </div>
           ) : (
@@ -612,7 +613,7 @@ function SellFlow({
     e.target.style.borderColor = fieldErrors?.[field]?.length ? ERR_COLOR : GOLD_FOCUS
   }
   const onBlur = (field: string) => (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    e.target.style.borderColor = fieldErrors?.[field]?.length ? ERR_COLOR : '#1e1e1e'
+    e.target.style.borderColor = fieldErrors?.[field]?.length ? ERR_COLOR : 'var(--mp-input-border)'
   }
 
   return (
@@ -639,7 +640,7 @@ function SellFlow({
               <label className="text-xs text-[#a0a0a0]">Título del listado</label>
               <input type="text" value={formValues.title ?? ''} onChange={e => onFieldChange('title', e.target.value)}
                 placeholder="Ej: Fender Stratocaster Player 2022"
-                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none"
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[var(--mp-text-faint)] outline-none"
                 style={fieldInputStyle('title', fieldErrors)}
                 onFocus={onFocus('title')} onBlur={onBlur('title')} />
               <FieldError errors={fieldErrors} field="title" />
@@ -650,7 +651,7 @@ function SellFlow({
               <label className="text-xs text-[#a0a0a0]">Precio (USD)</label>
               <input type="number" value={formValues.price ?? ''} onChange={e => onFieldChange('price', e.target.value)}
                 placeholder="0.00"
-                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none"
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[var(--mp-text-faint)] outline-none"
                 style={fieldInputStyle('price', fieldErrors)}
                 onFocus={onFocus('price')} onBlur={onBlur('price')} />
               <FieldError errors={fieldErrors} field="price" />
@@ -661,7 +662,7 @@ function SellFlow({
               <label className="text-xs text-[#a0a0a0]">Descripción</label>
               <textarea rows={3} value={formValues.description ?? ''} onChange={e => onFieldChange('description', e.target.value)}
                 placeholder="Describe el estado, accesorios incluidos, historial..."
-                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none resize-none"
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[var(--mp-text-faint)] outline-none resize-none"
                 style={fieldInputStyle('description', fieldErrors)}
                 onFocus={onFocus('description')} onBlur={onBlur('description')} />
               <FieldError errors={fieldErrors} field="description" />
@@ -672,7 +673,7 @@ function SellFlow({
               <label className="text-xs text-[#a0a0a0]">Estado del equipo</label>
               <select value={formValues.condition ?? 'used-like-new'} onChange={e => onFieldChange('condition', e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] outline-none"
-                style={{ background: 'rgba(20,20,20,0.8)', border: '1px solid #1e1e1e' }}
+                style={{ background: 'var(--mp-input)', border: '1px solid var(--mp-input-border)' }}
                 onFocus={onFocus('condition')} onBlur={onBlur('condition')}>
                 <option value="new">Nuevo</option>
                 <option value="used-like-new">Como nuevo</option>
@@ -700,10 +701,10 @@ function SellFlow({
                   ))}
                   {imageFiles.length < 8 && (
                     <label className="relative aspect-square rounded-lg flex items-center justify-center cursor-pointer overflow-hidden"
-                      style={{ border: '1px dashed #2a2a2a' }}
+                      style={{ border: '1px dashed var(--mp-input-border)' }}
                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,193,7,0.3)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#2a2a2a' }}>
-                      <Upload size={14} className="text-[#2a2a2a]" />
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--mp-input-border)' }}>
+                      <Upload size={14} className="text-[var(--mp-text-faint)]" />
                       <input
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
@@ -720,12 +721,12 @@ function SellFlow({
                 </div>
               ) : (
                 <label className="relative rounded-xl flex flex-col items-center justify-center py-8 gap-2 cursor-pointer overflow-hidden transition-colors"
-                  style={{ background: 'rgba(20,20,20,0.5)', border: '1px dashed #2a2a2a' }}
+                  style={{ background: 'var(--mp-card-subtle)', border: '1px dashed var(--mp-input-border)' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,193,7,0.3)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#2a2a2a' }}>
-                  <Upload size={20} className="text-[#2a2a2a]" />
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--mp-input-border)' }}>
+                  <Upload size={20} className="text-[var(--mp-text-faint)]" />
                   <p className="text-xs text-[#b8b8b8]">Subir fotos del equipo (máx. 8)</p>
-                  <p className="text-[10px] text-[#2a2a2a]">JPG, PNG, WEBP o HEIC</p>
+                  <p className="text-[10px] text-[var(--mp-text-faint)]">JPG, PNG, WEBP o HEIC</p>
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
@@ -797,7 +798,7 @@ function FindTalentFlow({ step, direction, listings, listingsLoading, listingsEr
               style={{ background: 'rgba(255,193,7,0.03)', border: '1px dashed rgba(255,193,7,0.15)' }}>
               <div className="text-center">
                 <p className="text-sm text-[#b8b8b8]">Sin talentos en esta categoría aún.</p>
-                <p className="text-[11px] text-[#2a2a2a] mt-1">¡Registra tu perfil de talento!</p>
+                <p className="text-[11px] text-[var(--mp-text-faint)] mt-1">¡Registra tu perfil de talento!</p>
               </div>
             </div>
           ) : (
@@ -850,7 +851,7 @@ function OfferTalentFlow({
     e.target.style.borderColor = fieldErrors?.[field]?.length ? ERR_COLOR : GOLD_FOCUS
   }
   const onBlur = (field: string) => (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    e.target.style.borderColor = fieldErrors?.[field]?.length ? ERR_COLOR : '#1e1e1e'
+    e.target.style.borderColor = fieldErrors?.[field]?.length ? ERR_COLOR : 'var(--mp-input-border)'
   }
 
   return (
@@ -877,7 +878,7 @@ function OfferTalentFlow({
               <label className="text-xs text-[#a0a0a0]">Título de tu servicio</label>
               <input type="text" value={formValues.title ?? ''} onChange={e => onFieldChange('title', e.target.value)}
                 placeholder="Ej: Guitarrista de Sesión — Rock & Blues"
-                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none"
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[var(--mp-text-faint)] outline-none"
                 style={fieldInputStyle('title', fieldErrors)}
                 onFocus={onFocus('title')} onBlur={onBlur('title')} />
               <FieldError errors={fieldErrors} field="title" />
@@ -888,7 +889,7 @@ function OfferTalentFlow({
               <label className="text-xs text-[#a0a0a0]">Precio desde (USD)</label>
               <input type="number" value={formValues.priceFrom ?? ''} onChange={e => onFieldChange('priceFrom', e.target.value)}
                 placeholder="50"
-                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none"
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[var(--mp-text-faint)] outline-none"
                 style={fieldInputStyle('price', fieldErrors)}
                 onFocus={onFocus('price')} onBlur={onBlur('price')} />
               <FieldError errors={fieldErrors} field="price" />
@@ -899,10 +900,10 @@ function OfferTalentFlow({
               <label className="text-xs text-[#a0a0a0]">Precio hasta (USD) — opcional</label>
               <input type="number" value={formValues.priceTo ?? ''} onChange={e => onFieldChange('priceTo', e.target.value)}
                 placeholder="200"
-                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none"
-                style={{ background: 'rgba(20,20,20,0.8)', border: '1px solid #1e1e1e' }}
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[var(--mp-text-faint)] outline-none"
+                style={{ background: 'var(--mp-input)', border: '1px solid var(--mp-input-border)' }}
                 onFocus={e => { e.target.style.borderColor = GOLD_FOCUS }}
-                onBlur={e => { e.target.style.borderColor = '#1e1e1e' }} />
+                onBlur={e => { e.target.style.borderColor = 'var(--mp-input-border)' }} />
             </div>
 
             {/* Price label */}
@@ -910,10 +911,10 @@ function OfferTalentFlow({
               <label className="text-xs text-[#a0a0a0]">Etiqueta de precio</label>
               <input type="text" value={formValues.priceLabel ?? ''} onChange={e => onFieldChange('priceLabel', e.target.value)}
                 placeholder="Ej: por sesión, por canción, por evento"
-                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none"
-                style={{ background: 'rgba(20,20,20,0.8)', border: '1px solid #1e1e1e' }}
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[var(--mp-text-faint)] outline-none"
+                style={{ background: 'var(--mp-input)', border: '1px solid var(--mp-input-border)' }}
                 onFocus={e => { e.target.style.borderColor = GOLD_FOCUS }}
-                onBlur={e => { e.target.style.borderColor = '#1e1e1e' }} />
+                onBlur={e => { e.target.style.borderColor = 'var(--mp-input-border)' }} />
             </div>
 
             {/* Description */}
@@ -921,7 +922,7 @@ function OfferTalentFlow({
               <label className="text-xs text-[#a0a0a0]">Bio / descripción del servicio</label>
               <textarea rows={4} value={formValues.description ?? ''} onChange={e => onFieldChange('description', e.target.value)}
                 placeholder="Cuéntanos sobre tu experiencia, géneros, equipos y lo que ofreces..."
-                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#2a2a2a] outline-none resize-none"
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[var(--mp-text-faint)] outline-none resize-none"
                 style={fieldInputStyle('description', fieldErrors)}
                 onFocus={onFocus('description')} onBlur={onBlur('description')} />
               <FieldError errors={fieldErrors} field="description" />

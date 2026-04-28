@@ -75,7 +75,7 @@ function QuestionRow({
         <div className="space-y-3">
           <div
             className="ml-0 rounded-xl px-3 py-3 sm:ml-5"
-            style={{ background: 'rgba(0,174,239,0.08)', border: '1px solid rgba(0,174,239,0.18)' }}
+            style={{ background: 'rgba(0,174,239,0.08)', border: '1px solid rgba(0,174,239,0.2)' }}
           >
             <p className="text-[10px] font-semibold text-[#00aeef] mb-0.5 uppercase tracking-wide">Vendedor</p>
             <p className="text-sm leading-relaxed text-[#e6e6e6]">{q.answer}</p>
@@ -106,9 +106,8 @@ function QuestionRow({
                     placeholder="Escribe una pregunta adicional..."
                     rows={3}
                     maxLength={500}
-                    className="min-h-[96px] w-full resize-y rounded-xl px-3 py-3 text-sm text-[#f2f2f2] outline-none placeholder:text-[#8a8a8a] focus:border-[rgba(255,193,7,0.45)] sm:min-h-[72px]"
+                    className="mp-themed-input min-h-[96px] w-full resize-y rounded-xl px-3 py-3 text-sm outline-none focus:border-[rgba(255,193,7,0.45)] sm:min-h-[72px]"
                     style={{
-                      background: 'rgba(20,20,20,0.94)',
                       border: '1px solid rgba(255,193,7,0.28)',
                     }}
                   />
@@ -166,9 +165,8 @@ function QuestionRow({
                     placeholder="Escribe tu respuesta pública..."
                     rows={3}
                     maxLength={1000}
-                    className="min-h-[96px] w-full resize-y rounded-xl px-3 py-3 text-sm text-[#f2f2f2] outline-none placeholder:text-[#8a8a8a] focus:border-[rgba(0,174,239,0.45)] sm:min-h-[72px]"
+                    className="mp-themed-input min-h-[96px] w-full resize-y rounded-xl px-3 py-3 text-sm outline-none focus:border-[rgba(0,174,239,0.45)] sm:min-h-[72px]"
                     style={{
-                      background: 'rgba(20,20,20,0.94)',
                       border: '1px solid rgba(0,174,239,0.28)',
                     }}
                   />
@@ -284,13 +282,13 @@ export function ListingQASection({
   return (
     <div
       className="overflow-hidden rounded-2xl"
-      style={{ background: 'rgba(13,13,13,0.98)', border: '1px solid rgba(255,255,255,0.1)' }}
+      style={{ background: 'var(--mp-panel-solid)', border: '1px solid var(--mp-border-strong)' }}
     >
       {/* Header */}
       <button
         onClick={() => setExpanded(p => !p)}
         className="w-full flex items-center justify-between px-5 py-4"
-        style={{ borderBottom: expanded ? '1px solid rgba(255,255,255,0.05)' : 'none' }}
+        style={{ borderBottom: expanded ? '1px solid var(--mp-border)' : 'none' }}
       >
         <div className="flex items-center gap-2.5">
           <div
@@ -342,7 +340,7 @@ export function ListingQASection({
           {!isSeller && (
             <div
               className="space-y-3 rounded-xl p-4"
-              style={{ background: 'rgba(20,20,20,0.82)', border: '1px solid rgba(255,255,255,0.09)' }}
+              style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
             >
               <p className="text-xs font-semibold uppercase tracking-wider text-[#d4d4d4]">Hacer una pregunta</p>
               {isLoggedIn ? (
@@ -355,8 +353,8 @@ export function ListingQASection({
                     placeholder="Escribe tu pregunta sobre este listing..."
                     rows={3}
                     maxLength={500}
-                    className="min-h-[112px] w-full resize-y rounded-xl px-3 py-3 text-sm text-[#f2f2f2] outline-none placeholder:text-[#8a8a8a] focus:border-[rgba(0,174,239,0.45)] sm:min-h-[88px]"
-                    style={{ background: 'rgba(10,10,10,0.92)', border: '1px solid rgba(255,255,255,0.12)' }}
+                    className="mp-themed-input min-h-[112px] w-full resize-y rounded-xl px-3 py-3 text-sm outline-none focus:border-[rgba(0,174,239,0.45)] sm:min-h-[88px]"
+                    style={{ border: '1px solid var(--mp-input-border)' }}
                   />
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     {askError && <p className="text-[11px] text-[#ef4444]">{askError}</p>}
