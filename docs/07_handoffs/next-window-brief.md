@@ -575,3 +575,59 @@ Riesgos de continuidad:
   - Cobros, cards financieras, datos de cobro, resumen y metodos registrados usan tokens;
   - listados internos principales migrados a superficies themeadas.
 - Validacion final de este pase: ejecutar `git diff --check`, `npx tsc --noEmit`, `npm run build` antes de cerrar.
+
+## Checkpoint 2026-04-28 - Sprint 2 bugs internos
+
+- Rama vigente: `Marketplace-Pure`.
+- Estado: implementado sin commit y sin push.
+- Alcance:
+  - `Guardar metodo de cobro` en `/marketplace/dashboard`;
+  - nota interna del admin en operaciones/validaciones/escrow.
+- Metodo de cobro:
+  - causa: mismatch entre opcion UI `BINANCE_PAY` y enum persistible `CRYPTO_WALLET`, mas falta de validacion server para tipo/payload/duplicado;
+  - fix: normalizacion cliente/server, validacion de campos, deduplicacion y actualizacion local de `payoutMethods` sin refresh manual.
+- Nota interna admin:
+  - causa: tabs definidos como componentes internos renderizados con JSX, lo que remontaba el panel al cambiar el draft;
+  - fix: tabs renderizados como helpers para mantener foco y valor controlado mientras se escribe.
+- Archivos:
+  - `components/marketplace/dashboard/DashboardClient.tsx`;
+  - `components/marketplace/admin/AdminDashboard.tsx`;
+  - `actions/marketplace/users.ts`.
+- Validacion pendiente al cierre de la tarea:
+  - `git diff --check`;
+  - `npx tsc --noEmit`;
+  - `npm run build`.
+- Restricciones:
+  - no Playwright;
+  - no CDP;
+  - no QA automatizada sin `task_id` exacto y autorizacion;
+  - no commit ni push;
+  - no tocar booking, `/reservas`, schema/migrations, carrito, tasas, finanzas/P&L, conformidad/fondos, pagos/escrow, SOLD_OUT ni `paymentProofUrl`/proxy SUPER.
+
+## Checkpoint 2026-04-28 - Ajuste metodos de cobro
+
+- Rama vigente: `Marketplace-Pure`.
+- Estado: implementado sin commit y sin push.
+- Cambio:
+  - Banco de metodo de cobro ahora es select con `VENEZUELAN_BANK_OPTIONS`;
+  - visible compacto tipo `0105-Mercantil`;
+  - valor guardado estandarizado igual al checkout, no texto libre.
+- Telefono:
+  - helper nuevo `lib/marketplace/venezuelan-phone.ts`;
+  - formato final `04XXXXXXXXX`;
+  - prefijos validos: `0412`, `0414`, `0416`, `0422`, `0424`, `0426`;
+  - cliente y server validan y normalizan.
+- UI:
+  - se quitaron botones `Copiar` de datos propios en `Metodos registrados`;
+  - se mantienen `Usar por defecto` y `Eliminar`.
+- Validacion pendiente al cierre:
+  - `git diff --check`;
+  - `npx tsc --noEmit`;
+  - `npm run build`.
+- Validacion manual sugerida:
+  - `/marketplace/dashboard?tab=payouts`;
+  - crear Pago Movil con banco del dropdown;
+  - probar telefonos `+584141333305`, `584141333305`, `4141333305`, `0414-133-33-05`, `+584221234567`, `4221234567`;
+  - confirmar guardado como `04141333305` o `04221234567`;
+  - probar telefono invalido y confirmar error;
+  - confirmar que no aparecen botones `Copiar`.

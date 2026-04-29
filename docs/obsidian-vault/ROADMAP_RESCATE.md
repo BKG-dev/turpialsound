@@ -1332,3 +1332,64 @@ Siguiente frente recomendado:
   - listados internos principales.
 - **Archivo principal**: `components/marketplace/dashboard/DashboardClient.tsx`.
 - **Restricciones respetadas**: No se tocaron admin, home, booking, `/reservas`, schema/migrations, carrito, tasas, finanzas/P&L, conformidad/fondos, acciones server, pagos, SOLD_OUT ni `paymentProofUrl`/proxy SUPER.
+
+## 30. Sprint 2 bugs internos marketplace
+
+- **Fecha**: 2026-04-28
+- **Estado real**: Implementado tecnicamente; sin commit y sin push.
+- **Rama**: `Marketplace-Pure`.
+- **Descripcion**: Correccion acotada de dos bugs internos: guardar metodo de cobro del seller/usuario y escritura continua de nota interna admin.
+- **Metodo de cobro - causa**:
+  - la UI usaba `BINANCE_PAY` como tipo, pero Prisma persiste `CRYPTO_WALLET`;
+  - `addPayoutMethod` no normalizaba ni validaba el tipo recibido;
+  - faltaba defensa contra duplicados activos exactos;
+  - el formulario solo aparecia cuando habia ventas relevantes, aunque el seller podia necesitar dejar datos listos.
+- **Metodo de cobro - fix**:
+  - normalizacion `BINANCE_PAY` -> `CRYPTO_WALLET`;
+  - validacion de etiqueta, moneda y payload JSON en server;
+  - deduplicacion cliente/server;
+  - primer metodo activo marcado como predeterminado;
+  - UI local actualizada tras guardar sin refresh manual.
+- **Nota interna admin - causa**:
+  - los tabs internos de `AdminDashboard` se declaraban dentro del componente y se renderizaban como componentes JSX;
+  - cada cambio de `pendingAction.note` podia remountar el panel y provocar foco perdido o escritura interrumpida.
+- **Nota interna admin - fix**:
+  - tabs internos renderizados como helpers para preservar el input controlado;
+  - el draft local de nota se mantiene hasta confirmar accion admin.
+- **Archivos principales**:
+  - `components/marketplace/dashboard/DashboardClient.tsx`;
+  - `components/marketplace/admin/AdminDashboard.tsx`;
+  - `actions/marketplace/users.ts`.
+- **Validacion**:
+  - `npx tsc --noEmit`: limpio antes de documentar;
+  - validacion final completa pendiente al cierre de la tarea.
+- **Restricciones respetadas**: No se tocaron booking, `/reservas`, main/produccion, stashes, Prisma schema/migrations, carrito, tasas, finanzas/P&L, conformidad/fondos, pagos/escrow, SOLD_OUT, Blob/token de Jean ni `paymentProofUrl`/proxy SUPER.
+
+## 31. Metodos de cobro con banco select y telefono normalizado
+
+- **Fecha**: 2026-04-28
+- **Estado real**: Implementado tecnicamente; sin commit y sin push.
+- **Rama**: `Marketplace-Pure`.
+- **Descripcion**: Cierre complementario del bugfix de metodos de cobro antes del commit de Sprint 2.
+- **Banco select**:
+  - el campo Banco deja de ser texto libre;
+  - reutiliza `VENEZUELAN_BANK_OPTIONS` de `lib/marketplace/venezuelan-banks.ts`;
+  - UI muestra formato compacto tipo `0105-Mercantil`;
+  - se guarda el label estandarizado usado por checkout (`0105 - Banco Mercantil, C.A. Banco Universal`).
+- **Telefono Venezuela**:
+  - helper nuevo `lib/marketplace/venezuelan-phone.ts`;
+  - normaliza a `04XXXXXXXXX`;
+  - acepta prefijos `0412`, `0414`, `0416`, `0422`, `0424`, `0426`;
+  - soporta entradas con `+58`, `58`, sin cero inicial, guiones y espacios.
+- **Validacion cliente/server**:
+  - cliente normaliza al blur y antes de guardar;
+  - server vuelve a validar banco de lista, payload JSON y telefono movil venezolano;
+  - numeros invalidos no se guardan.
+- **UI Metodos registrados**:
+  - se quitan botones `Copiar` de datos propios;
+  - se mantienen acciones utiles existentes: predeterminado y eliminar.
+- **Archivos principales**:
+  - `components/marketplace/dashboard/DashboardClient.tsx`;
+  - `actions/marketplace/users.ts`;
+  - `lib/marketplace/venezuelan-phone.ts`.
+- **Restricciones respetadas**: No se tocaron booking, `/reservas`, main/produccion, stashes, Prisma schema/migrations, carrito, tasas, finanzas/P&L, conformidad/fondos, pagos/escrow, SOLD_OUT, Blob/token de Jean ni `paymentProofUrl`/proxy SUPER.

@@ -1066,11 +1066,11 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
         className="rounded-2xl p-4 sm:p-6"
         style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}
       >
-        {tab === 'dashboard' && <DashboardTab />}
-        {(tab === 'transactions' || tab === 'escrow' || tab === 'validations') && <EscrowTab />}
-        {tab === 'payouts' && <PayoutsTab />}
-        {tab === 'commissions' && <CommissionsTab />}
-        {tab === 'users' && <UsersTab />}
+        {tab === 'dashboard' && DashboardTab()}
+        {(tab === 'transactions' || tab === 'escrow' || tab === 'validations') && EscrowTab()}
+        {tab === 'payouts' && PayoutsTab()}
+        {tab === 'commissions' && CommissionsTab()}
+        {tab === 'users' && UsersTab()}
       </div>
     </div>
   )

@@ -24,8 +24,6 @@ import {
   HelpCircle,
   Wallet,
   Landmark,
-  Copy,
-  Check,
   Plus,
   CreditCard,
 } from 'lucide-react'
@@ -42,6 +40,8 @@ import {
 import { cn } from '@/lib/utils'
 import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
 import { MarketplaceThemeToggle } from '@/components/marketplace/MarketplaceTheme'
+import { VENEZUELAN_BANK_OPTIONS } from '@/lib/marketplace/venezuelan-banks'
+import { normalizeVenezuelanMobilePhone } from '@/lib/marketplace/venezuelan-phone'
 
 // ─── Local Types ──────────────────────────────────────────────────────────────
 
@@ -193,11 +193,15 @@ function payoutMethodLabel(methodType: string) {
     BANK_TRANSFER: 'Transferencia bancaria',
     ZELLE: 'Zelle',
     BINANCE_PAY: 'Binance Pay',
-    CRYPTO_WALLET: 'Wallet crypto',
+    CRYPTO_WALLET: 'Binance Pay / wallet crypto',
     CRYPTO_WALLET_MANUAL: 'Binance Pay',
   }
 
   return labels[methodType] ?? methodType
+}
+
+function normalizePayoutMethodType(methodType: string) {
+  return methodType === 'BINANCE_PAY' ? 'CRYPTO_WALLET' : methodType
 }
 
 function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
@@ -1407,47 +1411,15 @@ function TransactionDetailModal({
   )
 }
 
-function CopyValueButton({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false)
-
-  async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(value)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1800)
-    } catch {
-      // noop
-    }
-  }
-
-  return (
-    <button
-      onClick={handleCopy}
-      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition-all"
-      style={
-        copied
-          ? { background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.22)' }
-          : { background: 'rgba(0,174,239,0.08)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.18)' }
-      }
-    >
-      {copied ? <Check size={10} /> : <Copy size={10} />}
-      {copied ? 'Copiado' : 'Copiar'}
-    </button>
-  )
-}
-
 function PayoutDetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div
       className="min-w-0 rounded-xl px-3 py-2.5"
       style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-normal" style={{ color: 'var(--mp-text-faint)' }}>{label}</p>
-          <p className="mt-1 text-[12px] leading-snug [overflow-wrap:anywhere]" style={{ color: 'var(--mp-text-strong)' }}>{value}</p>
-        </div>
-        <CopyValueButton value={value} />
+      <div className="min-w-0">
+        <p className="text-[10px] uppercase tracking-normal" style={{ color: 'var(--mp-text-faint)' }}>{label}</p>
+        <p className="mt-1 text-[12px] leading-snug [overflow-wrap:anywhere]" style={{ color: 'var(--mp-text-strong)' }}>{value}</p>
       </div>
     </div>
   )
@@ -1625,7 +1597,8 @@ export function DashboardClient({
   const pendingValidationNet = pendingValidationSales.reduce((sum, tx) => sum + Number(tx.sellerNetAmount ?? 0), 0)
   const protectedInProcessNet = escrowSales.reduce((sum, tx) => sum + Number(tx.sellerNetAmount ?? 0), 0)
   const payoutReadyNet = payoutReadySales.reduce((sum, tx) => sum + Number(tx.sellerNetAmount ?? 0), 0)
-  const sellerNeedsPayoutProfile = profile?.isSeller && payoutMethods.length === 0 && payoutRelevantSales.length > 0
+  const sellerCanAddPayoutProfile = Boolean(profile?.isSeller && payoutMethods.length === 0)
+  const sellerNeedsPayoutProfile = sellerCanAddPayoutProfile && payoutRelevantSales.length > 0
   const sellerHasCommissionExemption = profile?.role === 'SOCIO' || profile?.role === 'SUPER'
   const commissionLabel = sellerHasCommissionExemption ? 'Comision plataforma' : 'Comision 5%'
   const commissionSub = sellerHasCommissionExemption ? 'exenta por rol actual' : 'base plataforma'
@@ -1686,21 +1659,41 @@ export function DashboardClient({
   }
 
   async function handleAddPayoutMethod() {
-    const normalizedType = payoutForm.methodType
-    const methodCurrency = normalizedType === 'BINANCE_PAY' ? 'USD' : 'VES'
+    const formType = payoutForm.methodType
+    const normalizedType = normalizePayoutMethodType(formType)
+    const methodCurrency = formType === 'BINANCE_PAY' ? 'USD' : 'VES'
+    const displayLabel = payoutForm.displayLabel.trim()
+    const normalizedPhone = formType === 'PAGO_MOVIL'
+      ? normalizeVenezuelanMobilePhone(payoutForm.phone)
+      : payoutForm.phone.trim()
+
+    if (formType === 'PAGO_MOVIL' && !normalizedPhone) {
+      setPayoutMessage('Ingresa un telefono movil venezolano valido en formato 04XXXXXXXXX.')
+      return
+    }
 
     const detailPayload =
-      normalizedType === 'PAGO_MOVIL'
-        ? { titular: payoutForm.holder, cedula: payoutForm.identifier, telefono: payoutForm.phone, banco: payoutForm.bank }
-        : normalizedType === 'BANK_TRANSFER'
+      formType === 'PAGO_MOVIL'
+        ? { titular: payoutForm.holder, cedula: payoutForm.identifier, telefono: normalizedPhone ?? '', banco: payoutForm.bank }
+        : formType === 'BANK_TRANSFER'
           ? { beneficiario: payoutForm.holder, cedula: payoutForm.identifier, cuenta: payoutForm.accountNumber, banco: payoutForm.bank }
-          : normalizedType === 'BINANCE_PAY'
+          : formType === 'BINANCE_PAY'
             ? { pay_id: payoutForm.payId, usuario: payoutForm.username }
             : { wallet: payoutForm.wallet }
 
-    const detailsAreValid = Object.values(detailPayload).every(value => value.trim().length > 0)
-    if (!payoutForm.displayLabel.trim() || !detailsAreValid) {
+    const detailsAreValid = Object.values(detailPayload).every(value => String(value).trim().length > 0)
+    if (!displayLabel || !detailsAreValid) {
       setPayoutMessage('Completa la etiqueta y todos los datos del metodo.')
+      return
+    }
+
+    const serializedDetails = JSON.stringify(detailPayload)
+    const alreadyRegistered = payoutMethods.some(method =>
+      method.methodType === normalizedType &&
+      method.encryptedData === serializedDetails,
+    )
+    if (alreadyRegistered) {
+      setPayoutMessage('Este metodo de cobro ya esta registrado.')
       return
     }
 
@@ -1709,8 +1702,8 @@ export function DashboardClient({
 
     const result = await addPayoutMethod({
       methodType: normalizedType,
-      displayLabel: payoutForm.displayLabel.trim(),
-      encryptedData: JSON.stringify(detailPayload),
+      displayLabel,
+      encryptedData: serializedDetails,
       currency: methodCurrency,
       isDefault: payoutMethods.length === 0,
     })
@@ -1719,8 +1712,8 @@ export function DashboardClient({
       const createdMethod: DashPayoutMethod = {
         id: result.data.id,
         methodType: normalizedType,
-        displayLabel: payoutForm.displayLabel.trim(),
-        encryptedData: JSON.stringify(detailPayload),
+        displayLabel,
+        encryptedData: serializedDetails,
         currency: methodCurrency,
         isDefault: payoutMethods.length === 0,
         createdAt: new Date().toISOString(),
@@ -2246,14 +2239,23 @@ export function DashboardClient({
                     </div>
                   )}
 
-                  {sellerNeedsPayoutProfile ? (
+                  {sellerCanAddPayoutProfile ? (
                     <>
-                      <div
-                        className="rounded-xl p-3 text-xs leading-relaxed"
-                        style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)', color: '#f5d08a' }}
-                      >
-                        Completa tus datos de cobro para poder recibir pagos de ventas. Ya tienes ventas en proceso o listas para cobrar que dependen de este paso.
-                      </div>
+                      {sellerNeedsPayoutProfile ? (
+                        <div
+                          className="rounded-xl p-3 text-xs leading-relaxed"
+                          style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)', color: '#f5d08a' }}
+                        >
+                          Completa tus datos de cobro para poder recibir pagos de ventas. Ya tienes ventas en proceso o listas para cobrar que dependen de este paso.
+                        </div>
+                      ) : (
+                        <div
+                          className="rounded-xl p-3 text-xs leading-relaxed"
+                          style={{ background: 'rgba(0,174,239,0.06)', border: '1px solid rgba(0,174,239,0.14)', color: 'var(--mp-text-muted)' }}
+                        >
+                          Puedes dejar tus datos de cobro registrados ahora para que el equipo los tenga listos cuando una venta avance.
+                        </div>
+                      )}
 
                       <div className="grid gap-3 sm:grid-cols-2">
                         {[
@@ -2299,12 +2301,33 @@ export function DashboardClient({
                             </div>
                             <div className="space-y-1.5">
                               <label className="text-xs" style={{ color: 'var(--mp-text-muted)' }}>Banco</label>
-                              <input value={payoutForm.bank} onChange={e => updatePayoutField('bank', e.target.value)} className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none" />
+                              <select
+                                value={payoutForm.bank}
+                                onChange={e => updatePayoutField('bank', e.target.value)}
+                                className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none"
+                              >
+                                <option value="">Selecciona banco</option>
+                                {VENEZUELAN_BANK_OPTIONS.map((bank) => (
+                                  <option key={bank.code} value={bank.label}>
+                                    {bank.displayLabel}
+                                  </option>
+                                ))}
+                              </select>
                             </div>
                             {payoutForm.methodType === 'PAGO_MOVIL' ? (
                               <div className="space-y-1.5">
                                 <label className="text-xs" style={{ color: 'var(--mp-text-muted)' }}>Telefono</label>
-                                <input value={payoutForm.phone} onChange={e => updatePayoutField('phone', e.target.value)} className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none" />
+                                <input
+                                  value={payoutForm.phone}
+                                  onChange={e => updatePayoutField('phone', e.target.value)}
+                                  onBlur={() => {
+                                    const normalized = normalizeVenezuelanMobilePhone(payoutForm.phone)
+                                    if (normalized) updatePayoutField('phone', normalized)
+                                  }}
+                                  inputMode="tel"
+                                  placeholder="04XXXXXXXXX"
+                                  className="w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(20,20,20,0.8)] px-4 py-3 text-sm text-[#f2f2f2] outline-none"
+                                />
                               </div>
                             ) : (
                               <div className="space-y-1.5">

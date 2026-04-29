@@ -703,3 +703,65 @@ Riesgos activos:
   - `npm run build`: pendiente post-docs.
 - No se ejecuto Playwright, QA automatizada ni CDP.
 - No se tocaron admin, home, booking, `/reservas`, schema/migrations, carrito, tasas, finanzas/P&L, conformidad/fondos, acciones server, pagos, SOLD_OUT ni `paymentProofUrl`/proxy SUPER.
+
+## Checkpoint 2026-04-28 - Sprint 2 bugs internos marketplace
+
+- Rama de trabajo: `Marketplace-Pure`.
+- Estado: implementado sin commit y sin push.
+- Bugs corregidos:
+  - `Guardar metodo de cobro` en dashboard usuario/seller;
+  - escritura continua de nota interna en dashboard admin.
+- Causa metodo de cobro:
+  - la UI ofrecia `BINANCE_PAY`, pero el enum persistible de payout methods usa `CRYPTO_WALLET`;
+  - la accion server aceptaba string sin normalizar ni validar payload;
+  - el formulario solo aparecia cuando habia ventas relevantes, impidiendo registrar datos por adelantado.
+- Correccion metodo de cobro:
+  - `BINANCE_PAY` se normaliza a `CRYPTO_WALLET` antes de persistir;
+  - el cliente valida datos requeridos, evita duplicados exactos y actualiza la UI local tras guardar;
+  - el server valida tipo, moneda, payload JSON y duplicados activos antes de crear;
+  - el primer metodo activo queda como predeterminado.
+- Causa nota interna admin:
+  - los tabs internos estaban definidos como componentes dentro de `AdminDashboard` y se renderizaban como JSX;
+  - al actualizar `pendingAction.note` en cada tecla, cambiaba la identidad del componente y React remountaba el subtree, provocando perdida de foco.
+- Correccion nota interna:
+  - los tabs internos se renderizan como helpers (`EscrowTab()`, etc.) para preservar el input controlado durante cada re-render;
+  - el draft de nota sigue local en `pendingAction.note` y solo se envia al confirmar.
+- Archivos de codigo:
+  - `components/marketplace/dashboard/DashboardClient.tsx`;
+  - `components/marketplace/admin/AdminDashboard.tsx`;
+  - `actions/marketplace/users.ts`.
+- Validacion tecnica:
+  - `npx tsc --noEmit`: limpio antes de documentar;
+  - validacion final completa pendiente al cierre (`git diff --check`, `npx tsc --noEmit`, `npm run build`).
+- No se ejecuto Playwright, QA automatizada ni CDP.
+- No se tocaron booking, `/reservas`, main/produccion, stashes, Prisma schema/migrations, carrito, tasas, finanzas/P&L, conformidad/fondos, pagos/escrow, SOLD_OUT, Blob/token de Jean ni `paymentProofUrl`/proxy SUPER.
+
+## Checkpoint 2026-04-28 - Metodo de cobro banco/telefono
+
+- Rama de trabajo: `Marketplace-Pure`.
+- Estado: implementado sin commit y sin push.
+- Ajustes cerrados:
+  - el campo Banco de metodos de cobro pasa de texto libre a select;
+  - el select reutiliza `VENEZUELAN_BANK_OPTIONS` de `lib/marketplace/venezuelan-banks.ts`;
+  - el valor guardado usa el mismo formato estandar del checkout (`0105 - Banco Mercantil, C.A. Banco Universal`) y muestra opcion compacta tipo `0105-Mercantil`;
+  - se agrego `lib/marketplace/venezuelan-phone.ts` con `normalizeVenezuelanMobilePhone`;
+  - telefonos se normalizan a `04XXXXXXXXX` y aceptan `0412`, `0414`, `0416`, `0422`, `0424`, `0426`;
+  - validacion cliente/server bloquea telefonos invalidos y bancos fuera de lista;
+  - `Metodos registrados` ya no muestra botones `Copiar` en datos propios.
+- Ejemplos soportados:
+  - `+584141333305` -> `04141333305`;
+  - `584141333305` -> `04141333305`;
+  - `4141333305` -> `04141333305`;
+  - `0414-133-33-05` -> `04141333305`;
+  - `0414 133 33 05` -> `04141333305`;
+  - `+584221234567` -> `04221234567`;
+  - `4221234567` -> `04221234567`.
+- Archivos de codigo:
+  - `components/marketplace/dashboard/DashboardClient.tsx`;
+  - `actions/marketplace/users.ts`;
+  - `lib/marketplace/venezuelan-phone.ts`.
+- Validacion tecnica:
+  - `npx tsc --noEmit`: limpio antes de documentar;
+  - validacion final completa pendiente al cierre.
+- No se ejecuto Playwright, QA automatizada ni CDP.
+- No se tocaron booking, `/reservas`, main/produccion, stashes, Prisma schema/migrations, carrito, tasas, finanzas/P&L, conformidad/fondos, pagos/escrow, SOLD_OUT, Blob/token de Jean ni `paymentProofUrl`/proxy SUPER.

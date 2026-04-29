@@ -3,6 +3,18 @@
 import { getDb } from '@/lib/marketplace/db'
 import { getSession, setSessionCookie } from '@/lib/marketplace/auth'
 import type { ActionResult } from '@/lib/validations/marketplace'
+import { VENEZUELAN_BANK_OPTIONS } from '@/lib/marketplace/venezuelan-banks'
+import { normalizeVenezuelanMobilePhone } from '@/lib/marketplace/venezuelan-phone'
+
+const PAYOUT_METHOD_TYPES = ['PAGO_MOVIL', 'BANK_TRANSFER', 'ZELLE', 'CRYPTO_WALLET'] as const
+type PayoutMethodType = (typeof PAYOUT_METHOD_TYPES)[number]
+
+function normalizePayoutMethodType(methodType: string): PayoutMethodType | null {
+  const normalized = methodType === 'BINANCE_PAY' ? 'CRYPTO_WALLET' : methodType
+  return PAYOUT_METHOD_TYPES.includes(normalized as PayoutMethodType)
+    ? normalized as PayoutMethodType
+    : null
+}
 
 export async function getMyProfile(): Promise<ActionResult<object>> {
   const session = await getSession()
@@ -159,13 +171,68 @@ export async function addPayoutMethod(data: {
   const session = await getSession()
   if (!session) return { success: false, message: 'No autenticado' }
 
-  if (!data.displayLabel.trim()) return { success: false, message: 'La etiqueta no puede estar vacia' }
+  const methodType = normalizePayoutMethodType(data.methodType)
+  const displayLabel = data.displayLabel.trim()
+  let normalizedEncryptedData = data.encryptedData
+
+  if (!methodType) return { success: false, message: 'Metodo de cobro no soportado' }
+  if (!displayLabel) return { success: false, message: 'La etiqueta no puede estar vacia' }
+  if (!data.currency.trim()) return { success: false, message: 'La moneda es obligatoria' }
+
+  try {
+    const details = JSON.parse(data.encryptedData) as Record<string, unknown>
+    const detailsAreValid =
+      details &&
+      typeof details === 'object' &&
+      Object.values(details).every(value => String(value ?? '').trim().length > 0)
+
+    if (!detailsAreValid) return { success: false, message: 'Completa todos los datos del metodo' }
+
+    if ('banco' in details) {
+      const bank = String(details.banco ?? '').trim()
+      if (!VENEZUELAN_BANK_OPTIONS.some(option => option.label === bank)) {
+        return { success: false, message: 'Selecciona un banco valido' }
+      }
+    }
+
+    if (methodType === 'PAGO_MOVIL') {
+      const phone = normalizeVenezuelanMobilePhone(String(details.telefono ?? ''))
+      if (!phone) {
+        return { success: false, message: 'Ingresa un telefono movil venezolano valido en formato 04XXXXXXXXX' }
+      }
+      details.telefono = phone
+    }
+
+    normalizedEncryptedData = JSON.stringify(details)
+  } catch {
+    return { success: false, message: 'Datos del metodo invalidos' }
+  }
 
   const db = await getDb()
   if (!db) return { success: false, message: 'Base de datos no disponible' }
 
   try {
-    if (data.isDefault) {
+    const existingMethod = await db.mpPayoutMethod.findFirst({
+      where: {
+        userId: session.userId,
+        isActive: true,
+        methodType,
+        encryptedData: normalizedEncryptedData,
+      },
+      select: { id: true },
+    })
+
+    if (existingMethod) {
+      await db.$disconnect()
+      return { success: false, message: 'Este metodo de cobro ya esta registrado' }
+    }
+
+    const activeMethodCount = await db.mpPayoutMethod.count({
+      where: { userId: session.userId, isActive: true },
+    })
+    const shouldBeDefault = data.isDefault || activeMethodCount === 0
+
+    if (shouldBeDefault) {
       await db.mpPayoutMethod.updateMany({
         where: { userId: session.userId, isDefault: true },
         data: { isDefault: false },
@@ -175,11 +242,11 @@ export async function addPayoutMethod(data: {
     const method = await db.mpPayoutMethod.create({
       data: {
         userId: session.userId,
-        methodType: data.methodType,
-        encryptedData: data.encryptedData,
-        displayLabel: data.displayLabel.trim(),
+        methodType,
+        encryptedData: normalizedEncryptedData,
+        displayLabel,
         currency: data.currency,
-        isDefault: data.isDefault ?? false,
+        isDefault: shouldBeDefault,
         isActive: true,
       },
       select: { id: true },

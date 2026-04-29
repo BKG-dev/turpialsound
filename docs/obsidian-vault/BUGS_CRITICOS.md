@@ -640,3 +640,61 @@ Este archivo registra los bloqueos y riesgos operativos activos del marketplace 
   - migracion directa a tokens `--mp-*` en las superficies criticas del dashboard usuario/seller;
   - cards, listados, TabBar, Mensajes y Cobros ahora dependen del theme scoped.
 - **Restricciones respetadas**: No se ejecuto Playwright, QA automatizada ni CDP. No se tocaron admin, home, booking, `/reservas`, schema/migrations, carrito, tasas, finanzas/P&L, conformidad/fondos, acciones server, pagos, SOLD_OUT ni `paymentProofUrl`/proxy SUPER.
+
+## 30. Guardar metodo de cobro y nota interna admin
+
+- **Fecha**: 2026-04-28
+- **Estado real**: Resuelto tecnicamente; sin commit y sin push.
+- **Sintomas**:
+  - el boton `Guardar metodo de cobro` podia fallar al guardar ciertos metodos del seller/usuario;
+  - la nota interna admin podia perder foco, escribir un caracter por render o comportarse de forma erratica.
+- **Causa metodo de cobro**:
+  - mismatch entre `BINANCE_PAY` visible en UI y `CRYPTO_WALLET` como enum persistible;
+  - falta de validacion server para tipo, moneda, payload y duplicado;
+  - formulario condicionado a ventas en proceso, limitando el registro preventivo de datos.
+- **Fix metodo de cobro**:
+  - normalizacion de tipo antes de persistir;
+  - validacion cliente/server de campos requeridos;
+  - bloqueo de duplicados activos exactos;
+  - actualizacion local de UI tras crear metodo y default automatico para el primer metodo.
+- **Causa nota interna admin**:
+  - `AdminDashboard` renderizaba tabs internos definidos dentro del componente como JSX (`<EscrowTab />`);
+  - cada actualizacion del draft de nota podia crear una nueva identidad de componente y remountar el input.
+- **Fix nota interna admin**:
+  - tabs internos renderizados como helpers (`EscrowTab()`), preservando foco y value controlado;
+  - el guardado sigue ocurriendo solo al confirmar la accion admin.
+- **Archivos**:
+  - `components/marketplace/dashboard/DashboardClient.tsx`;
+  - `components/marketplace/admin/AdminDashboard.tsx`;
+  - `actions/marketplace/users.ts`.
+- **Restricciones respetadas**: No se ejecuto Playwright, QA automatizada ni CDP. No se tocaron booking, `/reservas`, schema/migrations, carrito, tasas, finanzas/P&L, conformidad/fondos, pagos/escrow fuera de la nota, SOLD_OUT, Blob/token de Jean ni `paymentProofUrl`/proxy SUPER.
+
+## 31. Metodo de cobro con banco libre y telefono no normalizado
+
+- **Fecha**: 2026-04-28
+- **Estado real**: Resuelto tecnicamente; sin commit y sin push.
+- **Sintomas**:
+  - Banco en metodos de cobro aceptaba texto libre;
+  - telefono podia guardarse con formatos inconsistentes;
+  - `Metodos registrados` mostraba botones `Copiar` para datos propios del usuario.
+- **Causa**:
+  - el formulario de Cobros no reutilizaba la lista bancaria ya usada por checkout;
+  - no existia helper reutilizable para normalizar movil venezolano;
+  - la vista heredaba una accion de copia que no aporta valor en datos propios.
+- **Fix**:
+  - Banco pasa a select con `VENEZUELAN_BANK_OPTIONS`;
+  - se agrega `normalizeVenezuelanMobilePhone` con prefijos `0412`, `0414`, `0416`, `0422`, `0424`, `0426`;
+  - cliente y server validan/normalizan telefono y banco;
+  - se quitan botones `Copiar` de los detalles registrados.
+- **Ejemplos soportados**:
+  - `+584141333305` -> `04141333305`;
+  - `584141333305` -> `04141333305`;
+  - `4141333305` -> `04141333305`;
+  - `0414-133-33-05` -> `04141333305`;
+  - `+584221234567` -> `04221234567`;
+  - `4221234567` -> `04221234567`.
+- **Archivos**:
+  - `components/marketplace/dashboard/DashboardClient.tsx`;
+  - `actions/marketplace/users.ts`;
+  - `lib/marketplace/venezuelan-phone.ts`.
+- **Restricciones respetadas**: No se ejecuto Playwright, QA automatizada ni CDP. No se tocaron booking, `/reservas`, schema/migrations, carrito, tasas, finanzas/P&L, conformidad/fondos, pagos/escrow, SOLD_OUT, Blob/token de Jean ni `paymentProofUrl`/proxy SUPER.
