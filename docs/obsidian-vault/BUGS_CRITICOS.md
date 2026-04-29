@@ -1,4 +1,4 @@
----
+﻿---
 tags: ["#status/live-source", "#area/backend", "#area/ui", "#area/ops"]
 ---
 
@@ -245,15 +245,15 @@ Este archivo registra los bloqueos y riesgos operativos activos del marketplace 
 
 - **Fecha**: 2026-04-21
 - **Ruta probada**: `http://localhost:3002/marketplace/qa-manual-temporal-user-20260420`
-- **Estado real**: La etapa buyer ya quedó validada sobre la instancia limpia.
+- **Estado real**: La etapa buyer ya quedÃ³ validada sobre la instancia limpia.
 - **Lo confirmado en esta pasada**:
   - El runner corto `scripts/qa-marketplace-buyer.mjs` fue corregido para seleccionar bien `Banco emisor` en el checkout.
   - Buyer `igor@dev.local` completa login, checkout, `Pago movil`, referencia y banco emisor.
-  - La UI sí muestra el estado post-pago esperado:
+  - La UI sÃ­ muestra el estado post-pago esperado:
     - `Pago procesado`
     - `Tu pago esta siendo validado.`
     - `Notificaremos la resolucion o la liberacion del escrow en menos de 24h.`
-  - La transaccion quedó persistida para el slug QA con estado `PAYMENT_RECEIVED`.
+  - La transaccion quedÃ³ persistida para el slug QA con estado `PAYMENT_RECEIVED`.
   - Registro confirmado:
     - transactionId: `cmo827au800002kne6v9ofhk4`
     - reference: `QA1776741813862`
@@ -262,7 +262,7 @@ Este archivo registra los bloqueos y riesgos operativos activos del marketplace 
   - El bloqueo anterior no era del checkout productivo sino del runner de QA, que estaba aceptando el option vacio del `select` de banco.
 - **Pendiente abierto**:
   - Seguir con QA admin y seller.
-  - El runner encadenado `scripts/qa-marketplace-temp.mjs` todavía necesita ajuste fino en la navegacion/admin tabs antes de cerrar la pasada completa.
+  - El runner encadenado `scripts/qa-marketplace-temp.mjs` todavÃ­a necesita ajuste fino en la navegacion/admin tabs antes de cerrar la pasada completa.
 - **Regla operativa**:
   - No tocar booking ni reabrir la logica buyer ya validada salvo que aparezca una regresion nueva con evidencia.
 - **Punto exacto de retoma**:
@@ -699,15 +699,66 @@ Este archivo registra los bloqueos y riesgos operativos activos del marketplace 
   - `lib/marketplace/venezuelan-phone.ts`.
 - **Restricciones respetadas**: No se ejecuto Playwright, QA automatizada ni CDP. No se tocaron booking, `/reservas`, schema/migrations, carrito, tasas, finanzas/P&L, conformidad/fondos, pagos/escrow, SOLD_OUT, Blob/token de Jean ni `paymentProofUrl`/proxy SUPER.
 
-## 32. Hallazgos Diagnóstico Sprint 3A - Marketplace-Pure
+## 32. Hallazgos DiagnÃ³stico Sprint 3A - Marketplace-Pure
 
 - **Fecha:** 2026-04-28
-- **Estado real:** Diagnosticado; pendiente implementación en Sprint 3B.
-- **Hallazgo 32.1: Mensajes/badges intra-sesión:**
-  - El refresh del chat no propaga el estado leído/no leído al dashboard global inmediatamente sin recarga o polling largo.
+- **Estado real:** Diagnosticado; pendiente implementaciÃ³n en Sprint 3B.
+- **Hallazgo 32.1: Mensajes/badges intra-sesiÃ³n:**
+  - El refresh del chat no propaga el estado leÃ­do/no leÃ­do al dashboard global inmediatamente sin recarga o polling largo.
   - Se recomienda centralizar en `getMessageSummary()` y usar callbacks desde el chat.
-- **Hallazgo 32.2: Disponibilidad por transacción activa:**
-  - El sistema permite iniciar compra aunque ya exista una transacción activa (ej. `PENDING_PAYMENT`).
+- **Hallazgo 32.2: Disponibilidad por transacciÃ³n activa:**
+  - El sistema permite iniciar compra aunque ya exista una transacciÃ³n activa (ej. `PENDING_PAYMENT`).
   - Falta refuerzo en `initiatePurchase()` y bloqueo visual en UI.
-- **Impacto:** Riesgo de ventas duplicadas y confusión en notificaciones en tiempo real.
-- **Acción inmediata:** Implementar bloqueos y sincronización de estado en Sprint 3B.
+- **Impacto:** Riesgo de ventas duplicadas y confusiÃ³n en notificaciones en tiempo real.
+- **AcciÃ³n inmediata:** Implementar bloqueos y sincronizaciÃ³n de estado en Sprint 3B.
+
+## Checkpoint Sprint 3B1 - disponibilidad por transacción activa
+
+**Fecha:** 2026-04-28
+**Rama:** Marketplace-Pure
+**Estado:** completado técnicamente, pendiente validación manual local antes de commit.
+
+### Implementado
+- Se agregó bloqueo de compra duplicada cuando un listing tiene una transacción activa.
+- initiatePurchase() ahora rechaza nuevas compras si existe ctiveTx para el listing.
+- La disponibilidad pública se deriva de ctiveTransactionStatus.
+- MarketplaceCard muestra overlay de disponibilidad según estado.
+- ListingDetailActions deshabilita el CTA de compra y muestra copy informativo.
+- No se marca SOLD_OUT antes de validación real por admin.
+
+### Estados bloqueantes
+- PENDING_PAYMENT
+- PAYMENT_RECEIVED
+- VALIDATING
+- IN_ESCROW
+- DELIVERY_CONFIRMED
+- DISPUTED
+
+### Estados terminales
+- RELEASED
+- REFUNDED
+- PAYMENT_FAILED
+- CANCELLED
+
+### Copy operativo
+- PENDING_PAYMENT: Reservado temporalmente
+- PAYMENT_RECEIVED / VALIDATING: Pago en revisión
+- IN_ESCROW: Venta en proceso
+- DELIVERY_CONFIRMED: Entrega confirmada
+- DISPUTED: Operación en disputa
+- SOLD_OUT / RELEASED: Vendido
+- ACTIVE sin transacción activa: Disponible
+
+### Validación técnica reportada
+-
+px tsc --noEmit: OK.
+-
+pm run build: OK.
+- Pendiente confirmar git diff --check tras esta sincronización documental.
+
+### Restricciones respetadas
+- No se tocó schema.prisma.
+- No se aplicaron migraciones.
+- No se tocó booking ni /reservas.
+- No se tocó main ni producción.
+- No se tocaron pasarelas, carrito, tasas, finanzas, conformidad/fondos ni paymentProofUrl/proxy SUPER.

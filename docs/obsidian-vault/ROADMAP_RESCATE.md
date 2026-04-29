@@ -1,4 +1,4 @@
----
+﻿---
 tags: ["#roadmap", "#status/urgent", "#status/live-source"]
 ---
 
@@ -183,7 +183,7 @@ Resultado operativo sintetico:
 - seller `mvera / 13894619` entro a `Mis Ventas`, abrio `Mensajes`, respondio en el hilo de `prueva de venta fluijo completo` y valido `Cobros`,
 - `Cobros` seller quedo coherente con metodo registrado visible `Pago movil / Cobro QA mvera / Mercantil / 04141234567`,
 - admin `mvera / 13894619` entro al shell, `Dashboard`, `Comisiones` y `Pagos`,
-- `Pagos` sigue mostrando bloque viejo de payout `manuel vera p` con `UNKNOWN · Sin método configurado`,
+- `Pagos` sigue mostrando bloque viejo de payout `manuel vera p` con `UNKNOWN Â· Sin mÃ©todo configurado`,
 - intento de localizar `prueva de venta fluijo completo` en `Validaciones` durante esta corrida no encontro el registro en esa vista; ese frente sigue abierto como inconsistencia operativa,
 - buyer/seller si muestran `prueva de venta fluijo completo` en superficies propias con estado visible `En Escrow`,
 - los warnings de hidratacion persisten en `MarketplaceCard.tsx` y `DashboardClient.tsx`, pero no bloquearon el flujo principal,
@@ -205,7 +205,7 @@ Foco 2 `admin/Validaciones`:
 
 Foco 3 `seller/Cobros` vs `admin/Pagos`:
 - `seller/Cobros` muestra metodo de cobro configurado para `mvera` (`Pago movil`, `Cobro QA mvera`, `Mercantil`, `04141234567`),
-- `admin/Pagos` sigue mostrando un bloque distinto de payout historico para `manuel vera p` con `UNKNOWN · Sin método configurado`,
+- `admin/Pagos` sigue mostrando un bloque distinto de payout historico para `manuel vera p` con `UNKNOWN Â· Sin mÃ©todo configurado`,
 - no hay evidencia suficiente para tratarlos como el mismo payout; hoy parecen superficies de registros distintos.
 
 ## Checkpoint claro para reanudar manana
@@ -270,7 +270,7 @@ Verificacion funcional local cerrada:
 
 Como regenerarlas o reusarlas:
 - regenerar/normalizar: `npx tsx scripts/setup-marketplace-qa-accounts.ts`
-- QA UI rápida: `node scripts/qa-marketplace-qa-accounts.mjs`
+- QA UI rÃ¡pida: `node scripts/qa-marketplace-qa-accounts.mjs`
 - flujo base futuro:
   1. login buyerIA,
   2. abrir `/marketplace/selleria-qa-e2e-persistente`,
@@ -1398,8 +1398,8 @@ Siguiente frente recomendado:
 
 **Rama de trabajo:** `Marketplace-Pure`
 
-### 1. Sprint 1: UX Responsive Pública (Completado)
-- Contraste reforzado en `/marketplace` y ficha técnica.
+### 1. Sprint 1: UX Responsive PÃºblica (Completado)
+- Contraste reforzado en `/marketplace` y ficha tÃ©cnica.
 - Q&A optimizado para mobile/desktop.
 - Labels de bancos compactos en checkout.
 - Formato 12h en chat marketplace.
@@ -1408,19 +1408,70 @@ Siguiente frente recomendado:
 - `MarketplaceThemeProvider` en `app/marketplace/layout.tsx`.
 - Persistencia en `localStorage` y respeto a `prefers-color-scheme`.
 - Cobertura total de `/marketplace` incluyendo dashboard y admin.
-- Corrección de banda superior (padding global) con `mp-route-shell`.
+- CorrecciÃ³n de banda superior (padding global) con `mp-route-shell`.
 
 ### 3. Sprint 2: Payouts y Nota Interna (Completado)
 - Banco como select con opciones venezolanas estandarizadas.
-- Normalización de teléfono venezolano (`04XXXXXXXXX`) en cliente/server.
-- Nota interna admin corregida (foco estable durante edición).
+- NormalizaciÃ³n de telÃ©fono venezolano (`04XXXXXXXXX`) en cliente/server.
+- Nota interna admin corregida (foco estable durante ediciÃ³n).
 
-### 4. Diagnóstico Sprint 3A: Mensajes y Disponibilidad (Pendiente)
-- **Frente Mensajes:** Crear `getMessageSummary()` para badges intra-sesión y ajustar polling.
-- **Frente Disponibilidad:** Bloquear compras nuevas si el listing tiene una transacción activa.
-- **Regla:** NO marcar `SOLD_OUT` antes de validación real por admin.
+### 4. DiagnÃ³stico Sprint 3A: Mensajes y Disponibilidad (Pendiente)
+- **Frente Mensajes:** Crear `getMessageSummary()` para badges intra-sesiÃ³n y ajustar polling.
+- **Frente Disponibilidad:** Bloquear compras nuevas si el listing tiene una transacciÃ³n activa.
+- **Regla:** NO marcar `SOLD_OUT` antes de validaciÃ³n real por admin.
 
-### 5. Límites y Restricciones
+### 5. LÃ­mites y Restricciones
 - No tocar `booking` ni `/reservas`.
 - No tocar `schema` ni `migrations`.
 - No tocar `paymentProofUrl` ni proxy `SUPER`.
+
+## Checkpoint Sprint 3B1 - disponibilidad por transacción activa
+
+**Fecha:** 2026-04-28
+**Rama:** Marketplace-Pure
+**Estado:** completado técnicamente, pendiente validación manual local antes de commit.
+
+### Implementado
+- Se agregó bloqueo de compra duplicada cuando un listing tiene una transacción activa.
+- initiatePurchase() ahora rechaza nuevas compras si existe ctiveTx para el listing.
+- La disponibilidad pública se deriva de ctiveTransactionStatus.
+- MarketplaceCard muestra overlay de disponibilidad según estado.
+- ListingDetailActions deshabilita el CTA de compra y muestra copy informativo.
+- No se marca SOLD_OUT antes de validación real por admin.
+
+### Estados bloqueantes
+- PENDING_PAYMENT
+- PAYMENT_RECEIVED
+- VALIDATING
+- IN_ESCROW
+- DELIVERY_CONFIRMED
+- DISPUTED
+
+### Estados terminales
+- RELEASED
+- REFUNDED
+- PAYMENT_FAILED
+- CANCELLED
+
+### Copy operativo
+- PENDING_PAYMENT: Reservado temporalmente
+- PAYMENT_RECEIVED / VALIDATING: Pago en revisión
+- IN_ESCROW: Venta en proceso
+- DELIVERY_CONFIRMED: Entrega confirmada
+- DISPUTED: Operación en disputa
+- SOLD_OUT / RELEASED: Vendido
+- ACTIVE sin transacción activa: Disponible
+
+### Validación técnica reportada
+-
+px tsc --noEmit: OK.
+-
+pm run build: OK.
+- Pendiente confirmar git diff --check tras esta sincronización documental.
+
+### Restricciones respetadas
+- No se tocó schema.prisma.
+- No se aplicaron migraciones.
+- No se tocó booking ni /reservas.
+- No se tocó main ni producción.
+- No se tocaron pasarelas, carrito, tasas, finanzas, conformidad/fondos ni paymentProofUrl/proxy SUPER.

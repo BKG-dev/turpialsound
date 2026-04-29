@@ -106,6 +106,73 @@ function UserChip({ name, initials, verified, rating }: {
   )
 }
 
+function AvailabilityOverlay({ listing }: { listing: Listing }) {
+  const isSold = listing.status === 'sold'
+  const txStatus = listing.activeTransactionStatus
+
+  if (!isSold && !txStatus) return null
+
+  let label = ''
+  let color = '#ef4444' // default red
+  let borderColor = 'rgba(239,68,68,0.7)'
+  let bgColor = 'rgba(239,68,68,0.15)'
+  let glowColor = 'rgba(239,68,68,0.3)'
+
+  if (isSold) {
+    label = 'VENDIDO'
+  } else if (txStatus === 'PENDING_PAYMENT') {
+    label = 'RESERVADO'
+    color = '#ffc107'
+    borderColor = 'rgba(255,193,7,0.7)'
+    bgColor = 'rgba(255,193,7,0.15)'
+    glowColor = 'rgba(255,193,7,0.3)'
+  } else if (txStatus === 'PAYMENT_RECEIVED' || txStatus === 'VALIDATING') {
+    label = 'PAGO EN REVISIÓN'
+    color = '#00aeef'
+    borderColor = 'rgba(0,174,239,0.7)'
+    bgColor = 'rgba(0,174,239,0.15)'
+    glowColor = 'rgba(0,174,239,0.3)'
+  } else if (txStatus === 'IN_ESCROW') {
+    label = 'VENTA EN PROCESO'
+    color = '#4ade80'
+    borderColor = 'rgba(74,222,128,0.7)'
+    bgColor = 'rgba(74,222,128,0.15)'
+    glowColor = 'rgba(74,222,128,0.3)'
+  } else if (txStatus === 'DELIVERY_CONFIRMED') {
+    label = 'ENTREGA CONFIRMADA'
+    color = '#4ade80'
+    borderColor = 'rgba(74,222,128,0.7)'
+    bgColor = 'rgba(74,222,128,0.15)'
+    glowColor = 'rgba(74,222,128,0.3)'
+  } else if (txStatus === 'DISPUTED') {
+    label = 'EN DISPUTA'
+    color = '#f97316'
+    borderColor = 'rgba(249,115,22,0.7)'
+    bgColor = 'rgba(249,115,22,0.15)'
+    glowColor = 'rgba(249,115,22,0.3)'
+  } else {
+    // Other active states (like INITIATED if we ever use it as blocking)
+    label = 'NO DISPONIBLE'
+  }
+
+  return (
+    <div className="absolute inset-0 z-10 flex items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)' }}>
+      <span
+        className="px-4 py-1.5 rounded-lg text-sm font-bold tracking-widest rotate-[-8deg] text-center"
+        style={{
+          background: bgColor,
+          border: `2px solid ${borderColor}`,
+          color: color,
+          boxShadow: `0 0 20px ${glowColor}`,
+        }}
+      >
+        {label}
+      </span>
+    </div>
+  )
+}
+
 // ─── Product Card ─────────────────────────────────────────────────────────────
 
 function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }: {
@@ -166,27 +233,12 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
           </span>
         )}
 
-        {/* VENDIDO overlay */}
-        {listing.status === 'sold' && (
-          <div className="absolute inset-0 flex items-center justify-center"
-            style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)' }}>
-            <span
-              className="px-4 py-1.5 rounded-lg text-sm font-bold tracking-widest rotate-[-8deg]"
-              style={{
-                background: 'rgba(239,68,68,0.15)',
-                border: '2px solid rgba(239,68,68,0.7)',
-                color: '#ef4444',
-                boxShadow: '0 0 20px rgba(239,68,68,0.3)',
-              }}
-            >
-              VENDIDO
-            </span>
-          </div>
-        )}
+        {/* Availability overlay */}
+        <AvailabilityOverlay listing={listing} />
 
         {/* Condition */}
         <span className={cn(
-          'absolute top-3 right-3 px-2 py-0.5 rounded text-[10px] font-medium',
+          'absolute top-3 right-3 px-2 py-0.5 rounded text-[10px] font-medium z-20',
           'bg-[rgba(10,10,10,0.8)] backdrop-blur-sm',
           CONDITION_COLORS[listing.condition],
         )}>
@@ -195,7 +247,7 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
 
         {/* Rental tag */}
         {listing.rentalAvailable && (
-          <span className="absolute bottom-3 left-3 flex items-center gap-1 px-2 py-0.5 rounded text-[10px]"
+          <span className="absolute bottom-3 left-3 flex items-center gap-1 px-2 py-0.5 rounded text-[10px] z-20"
             style={{
               background: 'rgba(255,193,7,0.15)',
               border: '1px solid rgba(255,193,7,0.3)',

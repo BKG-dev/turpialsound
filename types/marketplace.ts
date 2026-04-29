@@ -58,6 +58,19 @@ export interface MarketplaceUser {
 
 // ─── Listings ─────────────────────────────────────────────────────────────────
 
+export type MpTransactionStatus =
+  | 'INITIATED'
+  | 'PENDING_PAYMENT'
+  | 'PAYMENT_RECEIVED'
+  | 'VALIDATING'
+  | 'PAYMENT_FAILED'
+  | 'IN_ESCROW'
+  | 'DELIVERY_CONFIRMED'
+  | 'RELEASED'
+  | 'REFUNDED'
+  | 'DISPUTED'
+  | 'CANCELLED'
+
 export interface ProductListing {
   id: string
   slug: string
@@ -72,6 +85,7 @@ export interface ProductListing {
   images: string[]          // URLs o placeholders
   seller: MarketplaceUser
   status: ListingStatus
+  activeTransactionStatus?: MpTransactionStatus
   createdAt: string
   location: string
   tags: string[]
@@ -96,6 +110,7 @@ export interface ServiceListing {
   deliveryDays?: number
   talent: MarketplaceUser
   status: ListingStatus
+  activeTransactionStatus?: MpTransactionStatus
   createdAt: string
   tags: string[]
   portfolio?: string[]

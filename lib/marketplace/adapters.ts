@@ -64,6 +64,19 @@ export function adaptDbListing(l: any): Listing {
     ? [l.coverImageUrl, ...l.mediaUrls]
     : l.mediaUrls
 
+  // Derive active transaction status
+  // We expect l.transactions to be included in the query if we want this to work.
+  const activeTx = (l.transactions as Array<{ status: string }> | undefined)?.find((tx) =>
+    ![
+      'RELEASED',
+      'REFUNDED',
+      'PAYMENT_FAILED',
+      'CANCELLED',
+    ].includes(tx.status),
+  )
+
+  const activeTransactionStatus = activeTx?.status
+
   if (isService) {
     return {
       id: l.id,
@@ -81,6 +94,7 @@ export function adaptDbListing(l: any): Listing {
       badge: 'NUEVO',
       talent: user,
       status: l.status === 'SOLD_OUT' ? 'sold' : 'active',
+      activeTransactionStatus,
       createdAt: createdAtStr,
       tags: l.tags ?? [],
     } as ServiceListing
@@ -102,6 +116,7 @@ export function adaptDbListing(l: any): Listing {
     badge: 'NUEVO',
     seller: user,
     status: l.status === 'SOLD_OUT' ? 'sold' : 'active',
+    activeTransactionStatus,
     createdAt: createdAtStr,
     location: 'Venezuela',
     tags: l.tags ?? [],

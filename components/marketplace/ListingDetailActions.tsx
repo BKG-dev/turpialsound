@@ -107,6 +107,21 @@ export function ListingDetailActions({
 
   const isSeller = userId === sellerId
   const isSold = listing.status === 'sold'
+  const txStatus = listing.activeTransactionStatus
+
+  const getStatusLabel = () => {
+    switch (txStatus) {
+      case 'PENDING_PAYMENT': return 'Reservado temporalmente'
+      case 'PAYMENT_RECEIVED':
+      case 'VALIDATING': return 'Pago en revisión'
+      case 'IN_ESCROW': return 'Venta en proceso'
+      case 'DELIVERY_CONFIRMED': return 'Entrega confirmada'
+      case 'DISPUTED': return 'Operación en disputa'
+      default: return 'Artículo no disponible'
+    }
+  }
+
+  const isUnavailable = !!txStatus || isSold
 
   return (
     <>
@@ -172,10 +187,10 @@ export function ListingDetailActions({
         <div className="flex flex-col gap-3 pt-2">
           <div className="flex gap-3">
             <button
-              onClick={isSold ? undefined : handleComprar}
-              disabled={isSold}
+              onClick={isUnavailable ? undefined : handleComprar}
+              disabled={isUnavailable}
               className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold transition-all disabled:cursor-not-allowed"
-              style={isSold ? {
+              style={isUnavailable ? {
                 background: 'rgba(239,68,68,0.08)',
                 color: '#ef4444',
                 border: '1px solid rgba(239,68,68,0.25)',
@@ -185,11 +200,11 @@ export function ListingDetailActions({
                 border: '1px solid rgba(0,174,239,0.4)',
                 boxShadow: '0 0 28px rgba(0,174,239,0.2)',
               }}
-              onMouseEnter={e => { if (!isSold) (e.currentTarget as HTMLElement).style.boxShadow = '0 0 40px rgba(0,174,239,0.35)' }}
-              onMouseLeave={e => { if (!isSold) (e.currentTarget as HTMLElement).style.boxShadow = '0 0 28px rgba(0,174,239,0.2)' }}
+              onMouseEnter={e => { if (!isUnavailable) (e.currentTarget as HTMLElement).style.boxShadow = '0 0 40px rgba(0,174,239,0.35)' }}
+              onMouseLeave={e => { if (!isUnavailable) (e.currentTarget as HTMLElement).style.boxShadow = '0 0 28px rgba(0,174,239,0.2)' }}
             >
               <ShoppingCart size={16} />
-              {isSold ? 'Artículo Vendido' : 'Comprar Ahora'}
+              {isSold ? 'Artículo Vendido' : isUnavailable ? getStatusLabel() : 'Comprar Ahora'}
             </button>
             
             {/* Favorite button */}

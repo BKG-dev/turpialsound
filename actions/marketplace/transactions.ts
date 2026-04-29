@@ -69,6 +69,27 @@ export async function initiatePurchase(
     if (listing.status !== 'ACTIVE') return { success: false, message: 'Este listing no esta disponible' }
     if (listing.sellerId === session.userId) return { success: false, message: 'No puedes comprar tu propio listing' }
 
+    // Check for active transactions
+    const activeTx = await db.mpTransaction.findFirst({
+      where: {
+        listingId,
+        status: {
+          in: [
+            'PENDING_PAYMENT',
+            'PAYMENT_RECEIVED',
+            'VALIDATING',
+            'IN_ESCROW',
+            'DELIVERY_CONFIRMED',
+            'DISPUTED',
+          ],
+        },
+      },
+    })
+
+    if (activeTx) {
+      return { success: false, message: 'Este articulo ya tiene una operacion en curso y no esta disponible para la compra' }
+    }
+
     const amount = Number(listing.price)
     const fee = calcFee(amount, listing.seller.role, mappedPaymentMethod)
     const idempotencyKey = `${session.userId}_${listingId}_${Date.now()}`

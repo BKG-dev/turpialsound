@@ -1,8 +1,8 @@
-# Next Window Brief - Turpial Sound
+﻿# Next Window Brief - Turpial Sound
 
 **Fecha de actualizacion:** 2026-04-26
-**Frente activo:** Marketplace  
-**Tipo de nota:** Checkpoint operativo para siguiente ventana  
+**Frente activo:** Marketplace
+**Tipo de nota:** Checkpoint operativo para siguiente ventana
 **Fuente viva obligatoria:** `docs/obsidian-vault/*`
 
 ---
@@ -637,14 +637,65 @@ Riesgos de continuidad:
 - **Rama:** `Marketplace-Pure`.
 - **Estado:** Sprint 1 (UX Responsive) y Dark/Light Mode completados. Sprint 2 (Payouts/Nota Admin) completado.
 - **Commits:** `18c5eec`, `deef9f4`, `70045a6`.
-- **Diagnóstico Sprint 3A:**
+- **DiagnÃ³stico Sprint 3A:**
   - **Frente A (Mensajes):** Necesidad de polling optimizado y fuente de datos unificada para badges.
-  - **Frente B (Disponibilidad):** Bloquear compra si existe transacción activa (PENDING_PAYMENT, etc.).
-- **Próximo Paso:** Iniciar Sprint 3B de implementación según diagnóstico 3A.
-- **Límites:** Sin booking, sin /reservas, sin schema migrations.
+  - **Frente B (Disponibilidad):** Bloquear compra si existe transacciÃ³n activa (PENDING_PAYMENT, etc.).
+- **PrÃ³ximo Paso:** Iniciar Sprint 3B de implementaciÃ³n segÃºn diagnÃ³stico 3A.
+- **LÃ­mites:** Sin booking, sin /reservas, sin schema migrations.
 
 ## Checkpoint final 2026-04-28
 - Rama final: `Marketplace-Pure`.
 - Git status: Limpio.
 - Docs actualizados: `session-summary-active.md`, `next-window-brief.md`, `ROADMAP_RESCATE.md`, `BUGS_CRITICOS.md`.
 - Handoff nuevo: `marketplace-pure-gemini-resume.md`.
+
+## Checkpoint Sprint 3B1 - disponibilidad por transacción activa
+
+**Fecha:** 2026-04-28
+**Rama:** Marketplace-Pure
+**Estado:** completado técnicamente, pendiente validación manual local antes de commit.
+
+### Implementado
+- Se agregó bloqueo de compra duplicada cuando un listing tiene una transacción activa.
+- initiatePurchase() ahora rechaza nuevas compras si existe ctiveTx para el listing.
+- La disponibilidad pública se deriva de ctiveTransactionStatus.
+- MarketplaceCard muestra overlay de disponibilidad según estado.
+- ListingDetailActions deshabilita el CTA de compra y muestra copy informativo.
+- No se marca SOLD_OUT antes de validación real por admin.
+
+### Estados bloqueantes
+- PENDING_PAYMENT
+- PAYMENT_RECEIVED
+- VALIDATING
+- IN_ESCROW
+- DELIVERY_CONFIRMED
+- DISPUTED
+
+### Estados terminales
+- RELEASED
+- REFUNDED
+- PAYMENT_FAILED
+- CANCELLED
+
+### Copy operativo
+- PENDING_PAYMENT: Reservado temporalmente
+- PAYMENT_RECEIVED / VALIDATING: Pago en revisión
+- IN_ESCROW: Venta en proceso
+- DELIVERY_CONFIRMED: Entrega confirmada
+- DISPUTED: Operación en disputa
+- SOLD_OUT / RELEASED: Vendido
+- ACTIVE sin transacción activa: Disponible
+
+### Validación técnica reportada
+-
+px tsc --noEmit: OK.
+-
+pm run build: OK.
+- Pendiente confirmar git diff --check tras esta sincronización documental.
+
+### Restricciones respetadas
+- No se tocó schema.prisma.
+- No se aplicaron migraciones.
+- No se tocó booking ni /reservas.
+- No se tocó main ni producción.
+- No se tocaron pasarelas, carrito, tasas, finanzas, conformidad/fondos ni paymentProofUrl/proxy SUPER.

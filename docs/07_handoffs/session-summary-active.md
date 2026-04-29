@@ -1,4 +1,4 @@
-# Session Summary - Activa
+﻿# Session Summary - Activa
 
 > Fecha de ultima actualizacion: 2026-04-26
 > Tipo de nota: Checkpoint operativo de cierre
@@ -129,27 +129,27 @@ Luego ejecuta QA manual completa buyer -> admin -> escrow -> payout manual selle
 Si aparece algun residual, haz una segunda pasada puntual.
 Documenta hallazgos residuales en Obsidian y handoff antes de tocar cualquier otra cosa.
 ```
-# Checkpoint — QA marketplace / sesión Codex rota por modelo
+# Checkpoint â€” QA marketplace / sesiÃ³n Codex rota por modelo
 
 Fecha: 2026-04-21
 
 Estado actual:
-- El marketplace ya tiene checkout buyer con post-submit más explícito:
-  - “Pago procesado”
-  - “Tu pago está siendo validado”
-  - “Notificaremos la resolución o la liberación del escrow en menos de 24h”
-- La migración/schema de conciliación ya quedó aplicada y validada.
-- La segunda pasada de tabs/métricas/mensajes/payout/CSV quedó estabilizada y con build limpio.
-- La QA automática buyer llegó hasta submit real, pero la sesión de Codex quedó rota por error de modelo.
+- El marketplace ya tiene checkout buyer con post-submit mÃ¡s explÃ­cito:
+  - â€œPago procesadoâ€
+  - â€œTu pago estÃ¡ siendo validadoâ€
+  - â€œNotificaremos la resoluciÃ³n o la liberaciÃ³n del escrow en menos de 24hâ€
+- La migraciÃ³n/schema de conciliaciÃ³n ya quedÃ³ aplicada y validada.
+- La segunda pasada de tabs/mÃ©tricas/mensajes/payout/CSV quedÃ³ estabilizada y con build limpio.
+- La QA automÃ¡tica buyer llegÃ³ hasta submit real, pero la sesiÃ³n de Codex quedÃ³ rota por error de modelo.
 
 Bloqueo actual:
-- Codex terminó con `404 Not Found: Model not found gpt-5.4`.
-- La sesión no debe seguir tal como está.
+- Codex terminÃ³ con `404 Not Found: Model not found gpt-5.4`.
+- La sesiÃ³n no debe seguir tal como estÃ¡.
 - No seguir insistiendo en esta thread con el mismo modelo.
 
 Siguiente paso:
-1) cerrar o limpiar la sesión actual;
-2) abrir una sesión nueva o reanudar con un modelo disponible;
+1) cerrar o limpiar la sesiÃ³n actual;
+2) abrir una sesiÃ³n nueva o reanudar con un modelo disponible;
 3) reintentar buyer-only corto sobre la instancia estable;
 4) luego pasar a admin y seller solo si buyer queda estable.
 
@@ -168,9 +168,9 @@ Actualizacion 2026-04-20:
 No tocar:
 - booking
 - checkout manual temporal
-- lógica de negocio ya validada
+- lÃ³gica de negocio ya validada
 - base64 / media ya resuelto
- 
+
 ## Actualizacion 2026-04-21 - Recuperacion de entorno / Preview
 
 - `.env.local` local quedo realineado con `DATABASE_URL` valida, `NEXT_PUBLIC_APP_URL=http://localhost:3000`, `USE_MOCK_DATA=false`, `MP_JWT_SECRET` local y `GOOGLE_GENERATIVE_AI_API_KEY` restaurada.
@@ -221,7 +221,7 @@ No tocar:
   - `/api/marketplace/upload` respondio `200`
   - payload devuelto por upload:
     - `https://6nylezvxxx1yjqtr.public.blob.vercel-storage.com/public-media/marketplace/listings/2026/04/1776975421901-dcdbb698-5517-46bd-9eb4-88f1e28e630f.webp`
-- Señales de cierre:
+- SeÃ±ales de cierre:
   - `bodyHasSellerNotice = true`
   - `bodyHasBlob = true`
   - `bodyHasDataUrl = false`
@@ -770,13 +770,71 @@ Riesgos activos:
 
 - **Rama actual:** `Marketplace-Pure` (creada desde `UI-UX-finalV3`).
 - **Commits cerrados:**
-  - `18c5eec`: Mejora UX responsive pública (contraste, Q&A, dropdown bancos compacto, formato 12h).
+  - `18c5eec`: Mejora UX responsive pÃºblica (contraste, Q&A, dropdown bancos compacto, formato 12h).
   - `deef9f4`: Dark/light mode scoped a `/marketplace` con persistencia en `localStorage`.
-  - `70045a6`: Fix en método de cobro (select de bancos, normalización teléfono) y nota interna admin (foco estable).
-- **Diagnóstico Sprint 3A (Pendiente):**
-  - **Mensajes/badges:** Se requiere fuente única `getMessageSummary()` y polling optimizado (30s/15s).
-  - **Disponibilidad por Transacción Activa:** Impedir nuevas compras si existe transacción activa. Regla de NO marcar `SOLD_OUT` antes de validación real.
-- **GAP Operativo QA:**
-  - `marketplace_messages_badges_session_refresh`
-  - `marketplace_listing_availability_active_transaction`
+  - `70045a6`: Fix en mÃ©todo de cobro (select de bancos, normalizaciÃ³n telÃ©fono) y nota interna admin (foco estable).
+- **DiagnÃ³stico Sprint 3A (Pendiente):**
+  - **Mensajes/badges:** Se requiere fuente Ãºnica `getMessageSummary()` y polling optimizado (30s/15s).
+  - **Disponibilidad por TransacciÃ³n Activa:** Impedir nuevas compras si existe transacciÃ³n activa. Regla de NO marcar `SOLD_OUT` antes de validaciÃ³n real.
+## SPRINT 3B1: DISPONIBILIDAD DE LISTING POR TRANSACCIÃ“N ACTIVA
+Completado tÃ©cnicamente al 2026-04-28.
+- Se implementÃ³ bloqueo de compra duplicada por transacciÃ³n activa: `initiatePurchase` rechaza nuevas compras si existe `activeTx`.
+- `Listings/cards/detail` reciben `activeTransactionStatus`.
+- `MarketplaceCard` muestra overlay y `ListingDetailActions` deshabilita CTA.
+- Estados bloqueantes: PENDING_PAYMENT, PAYMENT_RECEIVED, VALIDATING, IN_ESCROW, DELIVERY_CONFIRMED, DISPUTED.
+- Estados terminales: RELEASED, REFUNDED, PAYMENT_FAILED, CANCELLED.
+- No se marca SOLD_OUT antes de validaciÃ³n admin.
+- ValidaciÃ³n `npx tsc --noEmit` y `npm run build` OK. Pendiente validaciÃ³n manual local.
+
 - **Estado final:** Rama pusheada, working tree limpio, listo para Sprint 3B.
+
+## Checkpoint Sprint 3B1 - disponibilidad por transacción activa
+
+**Fecha:** 2026-04-28
+**Rama:** Marketplace-Pure
+**Estado:** completado técnicamente, pendiente validación manual local antes de commit.
+
+### Implementado
+- Se agregó bloqueo de compra duplicada cuando un listing tiene una transacción activa.
+- initiatePurchase() ahora rechaza nuevas compras si existe ctiveTx para el listing.
+- La disponibilidad pública se deriva de ctiveTransactionStatus.
+- MarketplaceCard muestra overlay de disponibilidad según estado.
+- ListingDetailActions deshabilita el CTA de compra y muestra copy informativo.
+- No se marca SOLD_OUT antes de validación real por admin.
+
+### Estados bloqueantes
+- PENDING_PAYMENT
+- PAYMENT_RECEIVED
+- VALIDATING
+- IN_ESCROW
+- DELIVERY_CONFIRMED
+- DISPUTED
+
+### Estados terminales
+- RELEASED
+- REFUNDED
+- PAYMENT_FAILED
+- CANCELLED
+
+### Copy operativo
+- PENDING_PAYMENT: Reservado temporalmente
+- PAYMENT_RECEIVED / VALIDATING: Pago en revisión
+- IN_ESCROW: Venta en proceso
+- DELIVERY_CONFIRMED: Entrega confirmada
+- DISPUTED: Operación en disputa
+- SOLD_OUT / RELEASED: Vendido
+- ACTIVE sin transacción activa: Disponible
+
+### Validación técnica reportada
+-
+px tsc --noEmit: OK.
+-
+pm run build: OK.
+- Pendiente confirmar git diff --check tras esta sincronización documental.
+
+### Restricciones respetadas
+- No se tocó schema.prisma.
+- No se aplicaron migraciones.
+- No se tocó booking ni /reservas.
+- No se tocó main ni producción.
+- No se tocaron pasarelas, carrito, tasas, finanzas, conformidad/fondos ni paymentProofUrl/proxy SUPER.

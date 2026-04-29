@@ -32,7 +32,16 @@ export async function getActiveListings(): Promise<Listing[]> {
     const listings = await db.mpListing.findMany({
       where: { status: 'ACTIVE' },
       orderBy: { createdAt: 'desc' },
-      include: { seller: true },
+      include: {
+        seller: true,
+        transactions: {
+          where: {
+            status: {
+              notIn: ['RELEASED', 'REFUNDED', 'PAYMENT_FAILED', 'CANCELLED'],
+            },
+          },
+        },
+      },
     })
     await db.$disconnect()
     return listings.map(adaptDbListing)
@@ -49,7 +58,16 @@ export async function getListingById(id: string): Promise<Listing | null> {
   try {
     const l = await db.mpListing.findUnique({
       where: { id, status: 'ACTIVE' },
-      include: { seller: true },
+      include: {
+        seller: true,
+        transactions: {
+          where: {
+            status: {
+              notIn: ['RELEASED', 'REFUNDED', 'PAYMENT_FAILED', 'CANCELLED'],
+            },
+          },
+        },
+      },
     })
     if (!l) { await db.$disconnect(); return null }
     await db.$disconnect()
@@ -67,7 +85,16 @@ export async function getListingBySlug(slug: string): Promise<Listing | null> {
   try {
     const l = await db.mpListing.findUnique({
       where: { slug, status: { in: ['ACTIVE', 'SOLD_OUT'] } },
-      include: { seller: true },
+      include: {
+        seller: true,
+        transactions: {
+          where: {
+            status: {
+              notIn: ['RELEASED', 'REFUNDED', 'PAYMENT_FAILED', 'CANCELLED'],
+            },
+          },
+        },
+      },
     })
     if (!l) { await db.$disconnect(); return null }
     await db.$disconnect()
@@ -90,7 +117,16 @@ export async function getListingsByCategory(
       where: { category, status: 'ACTIVE' },
       orderBy: { createdAt: 'desc' },
       take: limit,
-      include: { seller: true },
+      include: {
+        seller: true,
+        transactions: {
+          where: {
+            status: {
+              notIn: ['RELEASED', 'REFUNDED', 'PAYMENT_FAILED', 'CANCELLED'],
+            },
+          },
+        },
+      },
     })
     await db.$disconnect()
     return listings.map(adaptDbListing)
