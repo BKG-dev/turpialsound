@@ -864,3 +864,17 @@ pm run build: OK.
 - Fallback final Binance: ultimo snapshot valido en DB; no se inventa tasa Binance.
 - Queda pendiente aplicar migracion controlada y asociar tasa/snapshot a `MpTransaction` antes de liquidacion/CSV seller auditables.
 - No se tocaron booking, `/reservas`, liquidacion seller final, CSV final, payout final, carrito ni conformidad/fondos.
+
+## Checkpoint 2026-04-29 - Asistente IA publico marketplace
+
+- Rama vigente: `Marketplace-Pure`.
+- Estado: implementado sin commit y sin push.
+- Se reemplazo visualmente la seccion `Ve el chat de compra en accion` por un asistente IA publico desacoplado de chats reales.
+- Endpoint nuevo: `/api/marketplace/assistant`, server-side, con Vercel AI SDK y `@ai-sdk/google`.
+- API key: solo se lee desde `GOOGLE_GENERATIVE_AI_API_KEY`; no se escribio ni mostro ninguna clave y no se uso `NEXT_PUBLIC`.
+- Modelo configurable por `MARKETPLACE_ASSISTANT_MODEL`, default `gemini-2.5-flash`.
+- Feature flag: `MARKETPLACE_ASSISTANT_ENABLED=false` responde 503 controlado.
+- KB publico creado en `docs/marketplace/PUBLIC_ASSISTANT_KB.md` y version consumible en `lib/marketplace/assistant-knowledge.ts`.
+- Guardrails: rechaza secretos, arquitectura, rutas internas, Prisma/schema/tablas, antifraude, proof/proxy SUPER, notas admin, datos personales/bancarios privados, handoffs, roadmap, bugs, commits, ramas y finanzas/tasas internas.
+- UI nueva: `components/marketplace/MarketplaceAssistant.tsx`, mobile/desktop y dark/light por tokens `--mp-*`.
+- No se tocaron booking, `/reservas`, schema/migrations, tasas/Binance rate, liquidacion seller, payout final, carrito, conformidad/fondos, paymentProofUrl/proxy SUPER, env files, logica de transacciones, main ni produccion.

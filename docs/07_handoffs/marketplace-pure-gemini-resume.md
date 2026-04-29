@@ -1,50 +1,59 @@
-﻿# Marketplace-Pure - Gemini Resume Handoff
+# Marketplace-Pure - Gemini Resume Handoff
 
-**Fecha:** 2026-04-28
+**Fecha:** 2026-04-29
 **Rama actual:** `Marketplace-Pure`
-**Objetivo:** Retomar el trabajo tras el cierre de Codex, manteniendo el foco en Marketplace-Pure.
+**Objetivo:** Sincronización final del sprint "Asistente IA público marketplace".
 
 ## Contexto de Rama y Commits
-Rama creada desde `UI-UX-finalV3`. Commits cerrados y pusheados:
-1. `18c5eec` style(marketplace): improve responsive public UX
-2. `deef9f4` feat(marketplace): add scoped dark light theme
-3. `70045a6` fix(marketplace): repair payout method and admin note editing
+Rama creada desde `UI-UX-finalV3`.
 
-## QuÃ© quedÃ³ completado
-- **UX PÃºblica Responsive:** Contraste mejorado, Q&A legible, cajas de preguntas mÃ³viles/desktop optimizadas, dropdown de bancos compacto, formato 12h AM/PM.
-- **Dark/Light Mode Scoped:** `MarketplaceThemeProvider` aplicado a todo `/marketplace`. Toggle deslizante con labels dinÃ¡micos ("Modo oscuro"/"Modo claro"). Persistencia en `localStorage` (`turpial-marketplace-theme`). CorrecciÃ³n de banda negra superior en `app/layout.tsx`.
-- **Sprint 2 Fixes:** Guardar mÃ©todo de cobro corregido. Banco como select (`VENEZUELAN_BANK_OPTIONS`). TelÃ©fono venezolano normalizado (`04XXXXXXXXX`). Nota interna admin estable (sin pÃ©rdida de foco).
+## Qué quedó completado
+- **UX Pública Responsive:** Contraste mejorado, Q&A legible, componentes móviles/desktop optimizados, selectores de banco y normalización de teléfonos venezolanos.
+- **Dark/Light Mode Scoped:** Implementación global en `/marketplace` con persistencia en `localStorage`.
+- **Asistente IA Público:** Implementación completa en `/api/marketplace/assistant` y `components/marketplace/MarketplaceAssistant.tsx`.
+  - Corrección de truncamiento (ajuste a 900 tokens).
+  - Ampliación de KB y guardrails (foco musical, sin fugas de datos internos).
+  - QA Matrix: `docs/marketplace/ASSISTANT_QA_MATRIX.md`.
+  - Smoke Script: `scripts/qa-marketplace-assistant-smoke.mjs`.
+- **Sprint 2/3 Fixes:** Payout methods corregidos, nota interna admin estable, bloqueo de compra por transacción activa, tasas Binance persistidas, Admin Pagos mejorado.
 
-## Hallazgos DiagnÃ³stico Sprint 3A (Pendiente ImplementaciÃ³n)
-### A. Mensajes/badges intra-sesiÃ³n
-- Necesidad de fuente Ãºnica `getMessageSummary()` para unreadCount total y por thread.
-- Polling liviano (30s general, 10-15s en chat abierto).
-- Callbacks desde `TransactionChat` hacia `DashboardClient` al enviar/leer.
-
-### B. Disponibilidad de listing por transacciÃ³n activa
-- Bloquear `initiatePurchase()` si existe transacciÃ³n activa (PENDING_PAYMENT, PAYMENT_RECEIVED, etc.).
-- Regla: NO marcar `SOLD_OUT` antes de validaciÃ³n real por admin.
-- Copy recomendado por estado (Reservado temporalmente, Pago en revisiÃ³n, Venta en proceso, etc.).
-
-## PrÃ³ximo Sprint Recomendado
-**Sprint 3B: ImplementaciÃ³n de Mensajes/Badges y Disponibilidad por TransacciÃ³n Activa.**
+## Próximo Sprint Recomendado
+**Sprint 4: QA End-to-End manual y polish de lanzamiento.**
 
 ## LÃ­mites Operativos
 - NO tocar `booking`.
 - NO tocar `/reservas`.
 - NO tocar `main` ni producciÃ³n.
 - NO usar `stashes`.
-- NO tocar `schema` ni `migrations`.
-- NO implementar carrito, tasas, finanzas ni conformidad de fondos.
+- NO tocar `schema` ni `migrations` (salvo la de Binance, pendiente de aplicación controlada).
+- NO implementar carrito, tasas automáticas, finanzas ni conformidad de fondos.
 - NO tocar `paymentProofUrl` ni proxy `SUPER`.
 
-## QA GAP OPERATIVO
-Tasks propuestos (no registrar rutas falsas):
-- `marketplace_messages_badges_session_refresh`
-- `marketplace_listing_availability_active_transaction`
+## QA MATRIZ Y DISPATCHER
+- Seguir estrictamente `docs/marketplace/ASSISTANT_QA_MATRIX.md` para validar el asistente.
+- Seguir `docs/07_handoffs/qa-dispatcher.json` para nuevos frentes. Si un objetivo no está en el dispatcher, reportar `GAP OPERATIVO`.
 
 ---
 *Este documento sincroniza el estado real para Gemini CLI.*
+
+## Checkpoint 2026-04-29 - Asistente IA publico marketplace
+
+**Rama:** `Marketplace-Pure`
+**Estado:** implementado sin commit/push.
+
+### Implementado
+- Reemplazo de CTA público por `MarketplaceAssistant`.
+- Endpoint `app/api/marketplace/assistant/route.ts` con Vercel AI SDK.
+- KB y Guardrails públicos curados (`docs/marketplace/PUBLIC_ASSISTANT_KB.md`).
+- UI responsiva con tokens ` --mp-*` para dark/light mode.
+
+### Seguridad
+- API key (`GOOGLE_GENERATIVE_AI_API_KEY`) solo en servidor.
+- Guardrails estrictos contra fuga de secretos, arquitectura, datos privados o finanzas internas.
+
+### Limites
+- No accede a datos privados, cuentas o transacciones.
+- Sin cambios en booking, schema/migrations, tasas, liquidación o finanzas.
 
 ## Checkpoint Sprint 3B1 - disponibilidad por transacción activa
 
@@ -148,3 +157,24 @@ pm run build: OK.
 - No hay URL Google Sheets configurada todavia; usar `MP_RATES_GOOGLE_SHEETS_CSV_URL`.
 - No se implemento liquidacion seller final, CSV final ni payout final.
 - Falta asociar snapshot/tasa Binance a `MpTransaction` en un sprint posterior.
+
+## Checkpoint 2026-04-29 - Asistente IA publico marketplace
+
+**Rama:** `Marketplace-Pure`
+**Estado:** implementado sin commit/push.
+
+### Implementado
+- Se reemplazo la seccion publica `Ve el chat de compra en accion` por `MarketplaceAssistant`.
+- Endpoint nuevo `app/api/marketplace/assistant/route.ts`.
+- KB publico creado en `docs/marketplace/PUBLIC_ASSISTANT_KB.md`.
+- Guardrails y prompt publico en `lib/marketplace/assistant-knowledge.ts`.
+- UI mobile/desktop y dark/light en `components/marketplace/MarketplaceAssistant.tsx`.
+
+### Seguridad
+- La API key solo se lee en servidor desde `GOOGLE_GENERATIVE_AI_API_KEY`.
+- No se uso `NEXT_PUBLIC` ni se escribieron secretos.
+- El asistente rechaza informacion interna, tecnica o sensible y responde solo sobre uso publico del marketplace.
+
+### Limites
+- No accede a cuentas, transacciones reales, proofs, datos bancarios privados ni decisiones admin.
+- No se tocaron booking, `/reservas`, schema/migrations, tasas, liquidacion seller, payout final, carrito, conformidad/fondos ni `paymentProofUrl`/proxy SUPER.

@@ -14,7 +14,6 @@ import {
   CheckCircle2,
   MessageSquare,
   ChevronDown,
-  Sparkles,
   Lock,
   BadgeCheck,
   UserCircle2,
@@ -25,6 +24,7 @@ import type { ModalFlow, ModalState, Listing, MarketplaceUser, MessageThread } f
 import { MarketplaceModals } from '@/components/marketplace/MarketplaceModals'
 import { MarketplaceCard } from '@/components/marketplace/MarketplaceCard'
 import { TransactionChat } from '@/components/marketplace/TransactionChat'
+import { useMarketplaceAssistantLauncher } from '@/components/marketplace/MarketplaceAssistantFab'
 import { MarketplaceAuthModal } from '@/components/marketplace/MarketplaceAuthModal'
 import { CheckoutModal } from '@/components/marketplace/CheckoutModal'
 import { MarketplaceThemeToggle } from '@/components/marketplace/MarketplaceTheme'
@@ -179,6 +179,7 @@ function SectionHeading({
 
 export default function MarketplacePageClient() {
   const router = useRouter()
+  const { openAssistant } = useMarketplaceAssistantLauncher()
 
   // Scroll restoration — ensure page always loads from the top.
   // Prevents focus hijacking from footer inputs or other elements.
@@ -1002,36 +1003,121 @@ export default function MarketplacePageClient() {
         </section>
 
         {/* ═══════════════════════════════════════════════════════════════════
-            DEMO CHAT CTA
+            PUBLIC ASSISTANT
         ═══════════════════════════════════════════════════════════════════ */}
         <section className="section-padding-sm border-t" style={{ borderColor: 'var(--mp-border)' }}>
           <div className="container-base">
             <div
-              className="card-premium-wrapper rounded-2xl p-8 flex flex-col sm:flex-row items-center gap-6"
-              style={{ background: 'var(--mp-card)' }}
+              className="grid gap-6 rounded-2xl p-4 sm:p-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,1.1fr)] lg:items-stretch"
+              style={{
+                background: 'var(--mp-card)',
+                border: '1px solid var(--mp-border)',
+                boxShadow: 'var(--mp-card-shadow)',
+              }}
             >
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles size={14} className="text-[#00aeef]" style={{ filter: 'drop-shadow(0 0 6px rgba(0,174,239,0.6))' }} />
-                  <span className="text-[11px] uppercase tracking-widest text-[#9a9a9a]">Demo en vivo</span>
+              <div className="flex flex-col justify-between gap-6">
+                <div>
+                  <div className="mb-3 flex items-center gap-2">
+                    <div
+                      className="flex h-9 w-9 items-center justify-center rounded-xl"
+                      style={{ background: 'rgba(0,174,239,0.12)', border: '1px solid rgba(0,174,239,0.24)' }}
+                    >
+                      <MessageSquare size={18} className="text-[#00aeef]" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] uppercase tracking-widest" style={{ color: 'var(--mp-text-faint)' }}>
+                        Asistente publico
+                      </p>
+                      <h3 className="text-lg font-semibold" style={{ color: 'var(--mp-text)' }}>
+                        Pregunta como usar el marketplace
+                      </h3>
+                    </div>
+                  </div>
+                  <p className="max-w-xl text-sm leading-relaxed" style={{ color: 'var(--mp-text-muted)' }}>
+                    Responde sobre compras, ventas, pago reportado, estados publicos, metodos visibles,
+                    cobro del vendedor en terminos generales y disputas. No accede a cuentas, pagos reales
+                    ni informacion privada.
+                  </p>
                 </div>
-                <h3 className="text-lg font-semibold text-[#f2f2f2] mb-2">
-                  Ve el chat de compra en accion
-                </h3>
-                <p className="text-sm text-[#b8b8b8]">
-                  Explora como se ve una conversacion real entre comprador y vendedor, con acuerdo, pago reportado y revision manual.
-                </p>
+
+                <div className="grid gap-2">
+                  <div
+                    className="flex items-start gap-2 rounded-xl p-3"
+                    style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
+                  >
+                    <Shield size={16} className="mt-0.5 shrink-0 text-[#4ade80]" />
+                    <p className="text-xs leading-relaxed" style={{ color: 'var(--mp-text-muted)' }}>
+                      Usa solo una base publica curada y rechaza datos internos, secretos, datos bancarios privados y detalles operativos sensibles.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={openAssistant}
+                    className="w-fit rounded-full px-4 py-2 text-xs font-semibold transition hover:-translate-y-0.5"
+                    style={{
+                      background: 'rgba(0,174,239,0.14)',
+                      border: '1px solid rgba(0,174,239,0.28)',
+                      color: '#00aeef',
+                    }}
+                  >
+                    Abrir Asistente Turpial
+                  </button>
+                </div>
               </div>
+
               <button
-                onClick={() => {
-                  const demo = listings[0]
-                  if (demo) openChat(demo)
-                }}
-                disabled={listings.length === 0}
-                className="btn-silky-primary px-8 py-3.5 rounded-xl text-sm font-semibold flex items-center gap-2 flex-shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
+                type="button"
+                onClick={openAssistant}
+                className="group flex min-h-[320px] flex-col justify-between rounded-2xl p-4 text-left transition hover:-translate-y-1"
+                style={{ background: 'var(--mp-panel-solid)', border: '1px solid var(--mp-border)' }}
+                aria-label="Abrir Asistente Turpial para preguntar sobre comprar o vender"
               >
-                <MessageSquare size={15} />
-                Abrir Chat Demo
+                <div className="flex items-center justify-between gap-3 border-b pb-3" style={{ borderColor: 'var(--mp-border)' }}>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Star size={15} className="shrink-0 text-[#ffc107]" />
+                    <p className="truncate text-sm font-semibold" style={{ color: 'var(--mp-text)' }}>
+                      Turpial Marketplace Assistant
+                    </p>
+                  </div>
+                  <span className="rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wide" style={{ background: 'rgba(74,222,128,0.1)', color: '#4ade80' }}>
+                    Publico
+                  </span>
+                </div>
+
+                <div className="space-y-3 py-5">
+                  <div
+                    className="max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-relaxed"
+                    style={{
+                      background: 'var(--mp-card-subtle)',
+                      color: 'var(--mp-text-muted)',
+                      border: '1px solid var(--mp-border)',
+                    }}
+                  >
+                    Hola. Puedo ayudarte con comprar, vender, reportar pagos, estados y disputas.
+                  </div>
+                  <div
+                    className="ml-auto max-w-[82%] rounded-2xl px-4 py-3 text-sm leading-relaxed"
+                    style={{
+                      background: 'rgba(0,174,239,0.16)',
+                      color: 'var(--mp-text)',
+                      border: '1px solid rgba(0,174,239,0.24)',
+                    }}
+                  >
+                    Como compro en Turpial Market?
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 border-t pt-3" style={{ borderColor: 'var(--mp-border)' }}>
+                  <span className="text-xs" style={{ color: 'var(--mp-text-faint)' }}>
+                    Toca para abrir el chat seguro
+                  </span>
+                  <span
+                    className="rounded-xl px-3 py-2 text-xs font-semibold transition group-hover:scale-105"
+                    style={{ background: '#00aeef', color: '#020617' }}
+                  >
+                    Preguntar
+                  </span>
+                </div>
               </button>
             </div>
           </div>
