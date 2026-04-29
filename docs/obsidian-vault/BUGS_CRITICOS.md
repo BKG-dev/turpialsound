@@ -698,3 +698,16 @@ Este archivo registra los bloqueos y riesgos operativos activos del marketplace 
   - `actions/marketplace/users.ts`;
   - `lib/marketplace/venezuelan-phone.ts`.
 - **Restricciones respetadas**: No se ejecuto Playwright, QA automatizada ni CDP. No se tocaron booking, `/reservas`, schema/migrations, carrito, tasas, finanzas/P&L, conformidad/fondos, pagos/escrow, SOLD_OUT, Blob/token de Jean ni `paymentProofUrl`/proxy SUPER.
+
+## 32. Hallazgos Diagnóstico Sprint 3A - Marketplace-Pure
+
+- **Fecha:** 2026-04-28
+- **Estado real:** Diagnosticado; pendiente implementación en Sprint 3B.
+- **Hallazgo 32.1: Mensajes/badges intra-sesión:**
+  - El refresh del chat no propaga el estado leído/no leído al dashboard global inmediatamente sin recarga o polling largo.
+  - Se recomienda centralizar en `getMessageSummary()` y usar callbacks desde el chat.
+- **Hallazgo 32.2: Disponibilidad por transacción activa:**
+  - El sistema permite iniciar compra aunque ya exista una transacción activa (ej. `PENDING_PAYMENT`).
+  - Falta refuerzo en `initiatePurchase()` y bloqueo visual en UI.
+- **Impacto:** Riesgo de ventas duplicadas y confusión en notificaciones en tiempo real.
+- **Acción inmediata:** Implementar bloqueos y sincronización de estado en Sprint 3B.

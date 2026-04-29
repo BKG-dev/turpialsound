@@ -765,3 +765,18 @@ Riesgos activos:
   - validacion final completa pendiente al cierre.
 - No se ejecuto Playwright, QA automatizada ni CDP.
 - No se tocaron booking, `/reservas`, main/produccion, stashes, Prisma schema/migrations, carrito, tasas, finanzas/P&L, conformidad/fondos, pagos/escrow, SOLD_OUT, Blob/token de Jean ni `paymentProofUrl`/proxy SUPER.
+
+## Actualizacion 2026-04-28 - Marketplace-Pure Sync (Gemini)
+
+- **Rama actual:** `Marketplace-Pure` (creada desde `UI-UX-finalV3`).
+- **Commits cerrados:**
+  - `18c5eec`: Mejora UX responsive pública (contraste, Q&A, dropdown bancos compacto, formato 12h).
+  - `deef9f4`: Dark/light mode scoped a `/marketplace` con persistencia en `localStorage`.
+  - `70045a6`: Fix en método de cobro (select de bancos, normalización teléfono) y nota interna admin (foco estable).
+- **Diagnóstico Sprint 3A (Pendiente):**
+  - **Mensajes/badges:** Se requiere fuente única `getMessageSummary()` y polling optimizado (30s/15s).
+  - **Disponibilidad por Transacción Activa:** Impedir nuevas compras si existe transacción activa. Regla de NO marcar `SOLD_OUT` antes de validación real.
+- **GAP Operativo QA:**
+  - `marketplace_messages_badges_session_refresh`
+  - `marketplace_listing_availability_active_transaction`
+- **Estado final:** Rama pusheada, working tree limpio, listo para Sprint 3B.

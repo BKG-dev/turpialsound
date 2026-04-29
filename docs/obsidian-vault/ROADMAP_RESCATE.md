@@ -1393,3 +1393,34 @@ Siguiente frente recomendado:
   - `actions/marketplace/users.ts`;
   - `lib/marketplace/venezuelan-phone.ts`.
 - **Restricciones respetadas**: No se tocaron booking, `/reservas`, main/produccion, stashes, Prisma schema/migrations, carrito, tasas, finanzas/P&L, conformidad/fondos, pagos/escrow, SOLD_OUT, Blob/token de Jean ni `paymentProofUrl`/proxy SUPER.
+
+## Sprint Marketplace-Pure - 2026-04-28 (Gemini)
+
+**Rama de trabajo:** `Marketplace-Pure`
+
+### 1. Sprint 1: UX Responsive Pública (Completado)
+- Contraste reforzado en `/marketplace` y ficha técnica.
+- Q&A optimizado para mobile/desktop.
+- Labels de bancos compactos en checkout.
+- Formato 12h en chat marketplace.
+
+### 2. Dark/Light Mode Scoped (Completado)
+- `MarketplaceThemeProvider` en `app/marketplace/layout.tsx`.
+- Persistencia en `localStorage` y respeto a `prefers-color-scheme`.
+- Cobertura total de `/marketplace` incluyendo dashboard y admin.
+- Corrección de banda superior (padding global) con `mp-route-shell`.
+
+### 3. Sprint 2: Payouts y Nota Interna (Completado)
+- Banco como select con opciones venezolanas estandarizadas.
+- Normalización de teléfono venezolano (`04XXXXXXXXX`) en cliente/server.
+- Nota interna admin corregida (foco estable durante edición).
+
+### 4. Diagnóstico Sprint 3A: Mensajes y Disponibilidad (Pendiente)
+- **Frente Mensajes:** Crear `getMessageSummary()` para badges intra-sesión y ajustar polling.
+- **Frente Disponibilidad:** Bloquear compras nuevas si el listing tiene una transacción activa.
+- **Regla:** NO marcar `SOLD_OUT` antes de validación real por admin.
+
+### 5. Límites y Restricciones
+- No tocar `booking` ni `/reservas`.
+- No tocar `schema` ni `migrations`.
+- No tocar `paymentProofUrl` ni proxy `SUPER`.

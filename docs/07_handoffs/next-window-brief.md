@@ -631,3 +631,20 @@ Riesgos de continuidad:
   - confirmar guardado como `04141333305` o `04221234567`;
   - probar telefono invalido y confirmar error;
   - confirmar que no aparecen botones `Copiar`.
+
+## Actualizacion 2026-04-28 - Marketplace-Pure Sync (Gemini)
+
+- **Rama:** `Marketplace-Pure`.
+- **Estado:** Sprint 1 (UX Responsive) y Dark/Light Mode completados. Sprint 2 (Payouts/Nota Admin) completado.
+- **Commits:** `18c5eec`, `deef9f4`, `70045a6`.
+- **Diagnóstico Sprint 3A:**
+  - **Frente A (Mensajes):** Necesidad de polling optimizado y fuente de datos unificada para badges.
+  - **Frente B (Disponibilidad):** Bloquear compra si existe transacción activa (PENDING_PAYMENT, etc.).
+- **Próximo Paso:** Iniciar Sprint 3B de implementación según diagnóstico 3A.
+- **Límites:** Sin booking, sin /reservas, sin schema migrations.
+
+## Checkpoint final 2026-04-28
+- Rama final: `Marketplace-Pure`.
+- Git status: Limpio.
+- Docs actualizados: `session-summary-active.md`, `next-window-brief.md`, `ROADMAP_RESCATE.md`, `BUGS_CRITICOS.md`.
+- Handoff nuevo: `marketplace-pure-gemini-resume.md`.
