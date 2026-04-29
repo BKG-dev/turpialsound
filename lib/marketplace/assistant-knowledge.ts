@@ -114,9 +114,9 @@ Limites:
 - No confirma pagos, no aprueba ventas, no libera dinero, no resuelve disputas y no edita publicaciones.
 
 FAQ publica:
-- Como compro: explora un listado, conversa con el vendedor, inicia la compra, sigue las instrucciones de pago y reporta el pago desde el flujo del marketplace.
-- Como vendo: publica un producto o servicio, conversa con compradores dentro del marketplace y manten tus datos de cobro actualizados.
-- Cuando cobra el vendedor: cuando la operacion queda lista para pago al vendedor y el vendedor tiene datos de cobro usables.
+- Como compro: explora los listados visibles, elige un producto, inicia la compra con el CTA disponible, sigue las instrucciones de pago visibles, reporta el pago, espera validacion y coordina entrega segun la publicacion o el vendedor.
+- Como vendo: crea una cuenta, publica un producto o servicio relacionado con musica/audio, completa titulo, descripcion, precio, imagenes y categoria visible, espera contacto o compra, configura un metodo de cobro y cobra cuando el flujo corresponda.
+- Cuando cobra el vendedor: el vendedor no cobra apenas el comprador paga. Primero el pago se valida, luego el comprador confirma recepcion o conformidad, y si no hay disputa los fondos pasan a liberacion para que el equipo gestione el pago al vendedor. No prometas tiempos exactos.
 - Que pasa si hay una disputa: la operacion entra en revision. Las partes deben mantener informacion clara dentro del marketplace y el equipo revisa el caso.
 - Que metodos de pago aceptan: el marketplace puede mostrar Pago movil, transferencia bancaria y Binance/USDT segun la configuracion visible. El usuario debe seguir las opciones que aparezcan en el flujo de compra.
 - Que puedo vender aqui: principalmente productos y servicios del ecosistema musical. Si algo no es musical, hay que aclarar que hoy no es el foco principal.
@@ -127,6 +127,43 @@ FAQ publica:
 - Soy artesano, donde vendo mi artesania: si la artesania esta relacionada con musica o audio, puede redactarse para esa categoria; si no, aclara que el marketplace esta orientado a musica y que puede elevarse como solicitud futura.
 - Quiero hablar con una persona: Si quieres hablar con una persona del equipo, puedo orientarte por los canales oficiales.
 `
+
+const QUICK_REPLY_BY_INTENT = {
+  buy: [
+    'Para comprar, navega las publicaciones visibles del marketplace y abre el producto que te interesa.',
+    'Revisa descripcion, precio, fotos e informacion publica del vendedor. Cuando estes listo, inicia la compra con "Quiero comprar" o el CTA disponible en el listado.',
+    'Sigue las instrucciones del metodo de pago que aparezca en el flujo, reporta o confirma el pago desde el marketplace y espera la validacion.',
+    'Despues coordina la entrega o el servicio segun lo indicado en la publicacion y lo que confirme el vendedor dentro del flujo disponible.',
+  ].join('\n'),
+  sell: [
+    'Para vender, crea o entra a tu cuenta del marketplace y usa la opcion disponible para publicar.',
+    'Publica productos o servicios relacionados con musica, instrumentos, audio, estudio, produccion o servicios creativos vinculados.',
+    'Completa titulo, descripcion, precio, imagenes y la categoria visible que mejor aplique. Luego mantente atento a contactos o compras dentro del marketplace.',
+    'Configura un metodo de cobro usable cuando corresponda; el cobro al vendedor ocurre cuando la operacion avance segun el flujo del marketplace.',
+  ].join('\n'),
+  sellerPayout: [
+    'El vendedor no cobra apenas el comprador paga.',
+    'Primero el pago reportado pasa por validacion. Luego el comprador debe confirmar recepcion o conformidad con la entrega o el servicio.',
+    'Si no hay disputa, la operacion pasa a una etapa de liberacion y el equipo administra o gestiona el pago al vendedor.',
+    'No hay un tiempo exacto publico garantizado; depende de que la operacion avance correctamente y de que el vendedor tenga datos de cobro usables.',
+  ].join('\n'),
+  paymentMethods: [
+    'Los metodos de pago pueden variar segun el flujo o el listado visible.',
+    'Como referencia general, el marketplace puede mostrar Pago Movil, transferencia bancaria o Binance/USDT cuando esas opciones esten disponibles.',
+    'La regla segura es seguir siempre los metodos que aparezcan dentro del flujo de compra del producto concreto. No todos los metodos aplican necesariamente a todos los listados.',
+  ].join('\n'),
+  citySearch: [
+    'Si la busqueda por ciudad o filtros avanzados de ubicacion no estan visibles en la interfaz, no debes asumir que ya existen.',
+    'Por ahora, revisa la descripcion del listado, cualquier ubicacion publica disponible y los detalles que muestre el vendedor.',
+    'Si el flujo lo permite, contacta al vendedor desde el marketplace para confirmar entrega, retiro o coordinacion desde tu ciudad.',
+  ].join('\n'),
+  sellableScope: [
+    'El marketplace esta enfocado en el ecosistema musical.',
+    'Puedes publicar instrumentos, equipos de audio, accesorios, articulos para estudio o escenario, productos vinculados con produccion musical y servicios creativos relacionados.',
+    'Tambien pueden encajar servicios de audio, produccion, grabacion, mezcla, masterizacion, artistas o soporte creativo musical.',
+    'Si algo no tiene relacion con musica, audio, estudio o produccion, hoy no es el foco principal del marketplace.',
+  ].join('\n'),
+} as const
 
 const forbiddenPatterns = [
   /\b(api\s*key|apikey|token|secret|secreto|clave|env|variable de entorno|contrasena)\b/i,
@@ -144,6 +181,56 @@ export function shouldRefuseMarketplaceAssistantInput(input: string): boolean {
   const normalized = input.trim()
   if (!normalized) return false
   return forbiddenPatterns.some((pattern) => pattern.test(normalized))
+}
+
+function normalizeForIntent(input: string): string {
+  return input
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[¿?¡!.,;:()"']/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+export function getDeterministicMarketplaceAssistantReply(input: string): string | null {
+  const text = normalizeForIntent(input)
+  if (!text) return null
+
+  if (/\bcomo compro\b/.test(text) || (/\bcomprar\b/.test(text) && /\bcomo\b/.test(text))) {
+    return QUICK_REPLY_BY_INTENT.buy
+  }
+
+  if (/\bcomo vendo\b/.test(text) || (/\bvender\b/.test(text) && /\bcomo\b/.test(text))) {
+    return QUICK_REPLY_BY_INTENT.sell
+  }
+
+  if (/\bcuando cobra el vendedor\b/.test(text) || (/\bcobra\b/.test(text) && /\bvendedor\b/.test(text))) {
+    return QUICK_REPLY_BY_INTENT.sellerPayout
+  }
+
+  if (/\bmetodos? de pago\b/.test(text) || (/\bque metodos\b/.test(text) && /\bpago\b/.test(text))) {
+    return QUICK_REPLY_BY_INTENT.paymentMethods
+  }
+
+  if (
+    /\bbusco por ciudad\b/.test(text) ||
+    /\bbusqueda por ciudad\b/.test(text) ||
+    (/\bciudad\b/.test(text) && /\b(busco|buscar|filtro|ubicacion)\b/.test(text))
+  ) {
+    return QUICK_REPLY_BY_INTENT.citySearch
+  }
+
+  if (
+    /\bque puedo vender\b/.test(text) ||
+    /\bpuedo vender\b/.test(text) ||
+    /\bservicios de audio\b/.test(text) ||
+    /\bvenden instrumentos\b/.test(text)
+  ) {
+    return QUICK_REPLY_BY_INTENT.sellableScope
+  }
+
+  return null
 }
 
 export function buildMarketplaceAssistantPrompt(messages: AssistantMessage[]): string {

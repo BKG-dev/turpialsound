@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import {
   AssistantMessage,
   buildMarketplaceAssistantPrompt,
+  getDeterministicMarketplaceAssistantReply,
   MARKETPLACE_ASSISTANT_SYSTEM_PROMPT,
   SAFE_REFUSAL,
   shouldRefuseMarketplaceAssistantInput,
@@ -137,10 +138,6 @@ export async function POST(req: NextRequest) {
     return jsonError('El asistente publico no esta disponible en este momento.', 503, 'ASSISTANT_DISABLED')
   }
 
-  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-    return jsonError('El asistente publico no esta configurado en este momento.', 503, 'ASSISTANT_NOT_CONFIGURED')
-  }
-
   const rateLimit = readRateLimit(req)
   if (rateLimit.count >= MAX_CALLS) {
     const response = NextResponse.json(
@@ -176,6 +173,18 @@ export async function POST(req: NextRequest) {
     const response = NextResponse.json({ reply: SAFE_REFUSAL, kind: 'refusal' })
     writeRateLimit(req, response, { ...rateLimit, count: rateLimit.count + 1 })
     return response
+  }
+
+  const latestUserText = [...messages].reverse().find((message) => message.role === 'user')?.content ?? ''
+  const deterministicReply = getDeterministicMarketplaceAssistantReply(latestUserText)
+  if (deterministicReply) {
+    const response = NextResponse.json({ reply: deterministicReply, kind: 'answer' })
+    writeRateLimit(req, response, { ...rateLimit, count: rateLimit.count + 1 })
+    return response
+  }
+
+  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    return jsonError('El asistente publico no esta configurado en este momento.', 503, 'ASSISTANT_NOT_CONFIGURED')
   }
 
   try {
