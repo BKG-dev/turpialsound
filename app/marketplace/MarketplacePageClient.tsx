@@ -32,6 +32,7 @@ import { getMpSession, logoutMpUser } from '@/actions/marketplace/auth'
 import { getActiveListings, getOrCreateThread } from '@/actions/marketplace'
 import { getUnreadCount } from '@/actions/marketplace/chat'
 import { toggleFavorite, getMyFavoriteIds } from '@/actions/marketplace/favorites'
+import { trackMarketplaceClientEvent } from '@/lib/marketplace/analytics-client'
 import type { MpSessionPayload } from '@/lib/marketplace/auth'
 import Link from 'next/link'
 
@@ -246,6 +247,7 @@ export default function MarketplacePageClient() {
   }, [session])
 
   const handleToggleFavorite = useCallback(async (id: string) => {
+    trackMarketplaceClientEvent({ eventType: 'favorite_click', listingId: id })
     if (!session) { openAuth('login'); return }
     setFavoritedIds(prev => {
       const next = new Set(prev)
@@ -254,6 +256,11 @@ export default function MarketplacePageClient() {
     })
     await toggleFavorite(id)
   }, [session])
+
+  const handleListingClick = useCallback((listing: Listing) => {
+    trackMarketplaceClientEvent({ eventType: 'listing_click', listingId: listing.id })
+    router.push(`/marketplace/${listing.slug}`)
+  }, [router])
 
   function openAuth(tab: 'login' | 'register' = 'login') {
     setAuthTab(tab)
@@ -911,7 +918,7 @@ export default function MarketplacePageClient() {
                   >
                     <MarketplaceCard
                       listing={listing}
-                      onClick={() => router.push(`/marketplace/${listing.slug}`)}
+                      onClick={() => handleListingClick(listing)}
                       isFavorited={favoritedIds.has(listing.id)}
                       onToggleFavorite={handleToggleFavorite}
                     />

@@ -70,6 +70,8 @@ export const ModelName = {
   MpTransactionStatusHistory: 'MpTransactionStatusHistory',
   MpDispute: 'MpDispute',
   MpPayout: 'MpPayout',
+  MpAnalyticsEvent: 'MpAnalyticsEvent',
+  MpBlobObjectMetadata: 'MpBlobObjectMetadata',
   MpBinanceRateSnapshot: 'MpBinanceRateSnapshot',
   MpWebhookLog: 'MpWebhookLog'
 } as const
@@ -414,6 +416,39 @@ export const MpPayoutScalarFieldEnum = {
 } as const
 
 export type MpPayoutScalarFieldEnum = (typeof MpPayoutScalarFieldEnum)[keyof typeof MpPayoutScalarFieldEnum]
+
+
+export const MpAnalyticsEventScalarFieldEnum = {
+  id: 'id',
+  eventType: 'eventType',
+  listingId: 'listingId',
+  transactionId: 'transactionId',
+  userId: 'userId',
+  sessionId: 'sessionId',
+  path: 'path',
+  referrer: 'referrer',
+  device: 'device',
+  metadataJson: 'metadataJson',
+  createdAt: 'createdAt'
+} as const
+
+export type MpAnalyticsEventScalarFieldEnum = (typeof MpAnalyticsEventScalarFieldEnum)[keyof typeof MpAnalyticsEventScalarFieldEnum]
+
+
+export const MpBlobObjectMetadataScalarFieldEnum = {
+  id: 'id',
+  url: 'url',
+  pathname: 'pathname',
+  sizeBytes: 'sizeBytes',
+  contentType: 'contentType',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  uploadedAt: 'uploadedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MpBlobObjectMetadataScalarFieldEnum = (typeof MpBlobObjectMetadataScalarFieldEnum)[keyof typeof MpBlobObjectMetadataScalarFieldEnum]
 
 
 export const MpBinanceRateSnapshotScalarFieldEnum = {

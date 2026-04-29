@@ -8,6 +8,7 @@ import { TransactionChat } from '@/components/marketplace/TransactionChat'
 import { MarketplaceAuthModal } from '@/components/marketplace/MarketplaceAuthModal'
 import { getOrCreateThread } from '@/actions/marketplace'
 import { toggleFavorite, getMyFavoriteIds } from '@/actions/marketplace/favorites'
+import { trackMarketplaceClientEvent } from '@/lib/marketplace/analytics-client'
 import type { Listing } from '@/types/marketplace'
 import type { MpSessionPayload } from '@/lib/marketplace/auth'
 
@@ -53,12 +54,17 @@ export function ListingDetailActions({
     checkFavoriteStatus()
   }, [userId, listing.id])
 
+  useEffect(() => {
+    trackMarketplaceClientEvent({ eventType: 'listing_view', listingId: listing.id })
+  }, [listing.id])
+
   function requireAuth(action: 'checkout' | 'chat' | 'favorite') {
     setPendingAction(action)
     setAuthOpen(true)
   }
   
   async function handleFavorite() {
+    trackMarketplaceClientEvent({ eventType: 'favorite_click', listingId: listing.id })
     if (!userId) { requireAuth('favorite'); return }
     
     setFavoriteLoading(true)
@@ -80,7 +86,10 @@ export function ListingDetailActions({
     setAuthOpen(false)
     const p = pendingAction
     setPendingAction(null)
-    if (p === 'checkout') setCheckoutOpen(true)
+    if (p === 'checkout') {
+      trackMarketplaceClientEvent({ eventType: 'checkout_start', listingId: listing.id })
+      setCheckoutOpen(true)
+    }
     if (p === 'chat') openChat(s.userId)
     if (p === 'favorite') handleFavorite()
   }
@@ -96,7 +105,9 @@ export function ListingDetailActions({
   }, [userId, sellerId, listing.id])
 
   function handleComprar() {
+    trackMarketplaceClientEvent({ eventType: 'buy_click', listingId: listing.id })
     if (!userId) { requireAuth('checkout'); return }
+    trackMarketplaceClientEvent({ eventType: 'checkout_start', listingId: listing.id })
     setCheckoutOpen(true)
   }
 

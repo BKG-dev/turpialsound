@@ -24,7 +24,7 @@ export * as $Enums from './enums'
 export * from "./enums"
 /**
  * ## Prisma Client
- * 
+ *
  * Type-safe database client for TypeScript
  * @example
  * ```
@@ -34,7 +34,7 @@ export * from "./enums"
  * // Fetch zero or more SiteCounters
  * const siteCounters = await prisma.siteCounter.findMany()
  * ```
- * 
+ *
  * Read more in our [docs](https://pris.ly/d/client).
  */
 export const PrismaClient = $Class.getPrismaClientClass()
@@ -136,6 +136,16 @@ export type MpDispute = Prisma.MpDisputeModel
  * 
  */
 export type MpPayout = Prisma.MpPayoutModel
+/**
+ * Model MpAnalyticsEvent
+ *
+ */
+export type MpAnalyticsEvent = Prisma.MpAnalyticsEventModel
+/**
+ * Model MpBlobObjectMetadata
+ *
+ */
+export type MpBlobObjectMetadata = Prisma.MpBlobObjectMetadataModel
 /**
  * Model MpBinanceRateSnapshot
  * 

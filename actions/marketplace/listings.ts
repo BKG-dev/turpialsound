@@ -9,6 +9,7 @@ import { getDb } from '@/lib/marketplace/db'
 import { getSession } from '@/lib/marketplace/auth'
 import type { Listing } from '@/types/marketplace'
 import { adaptDbListing } from '@/lib/marketplace/adapters'
+import { attachMarketplaceBlobMetadataToEntity } from '@/lib/marketplace/blob-metadata'
 
 // ─── SLUG GENERATOR ───────────────────────────────────────────────────────────
 function generateSlug(title: string): string {
@@ -246,6 +247,11 @@ export async function createListing(
     })
 
     await db.$disconnect()
+    await attachMarketplaceBlobMetadataToEntity(
+      [data.coverImageUrl, ...data.mediaUrls].filter((url): url is string => Boolean(url)),
+      'listing_image',
+      listing.id,
+    )
     return { success: true, data: listing, message: 'Listing creado correctamente' }
   } catch (err) {
     await db.$disconnect().catch(() => {})

@@ -5,6 +5,7 @@ import {
   isMarketplaceUploadPurpose,
   storeMarketplaceFile,
 } from '@/lib/marketplace/media'
+import { recordMarketplaceBlobMetadata, type MarketplaceBlobEntityType } from '@/lib/marketplace/blob-metadata'
 
 export const runtime = 'nodejs'
 
@@ -68,6 +69,18 @@ export async function POST(request: Request) {
     }
 
     const stored = await storeMarketplaceFile(file, purpose)
+    const entityType: MarketplaceBlobEntityType =
+      purpose === 'payment-proof' ? 'payment_proof' : purpose === 'avatar' ? 'avatar' : 'listing_image'
+
+    await recordMarketplaceBlobMetadata({
+      url: stored.url,
+      pathname: stored.pathname,
+      sizeBytes: stored.size,
+      contentType: stored.mimeType,
+      entityType,
+      entityId: purpose === 'payment-proof' ? transactionId : purpose === 'avatar' ? session.userId : null,
+      uploadedAt: new Date(),
+    })
 
     return NextResponse.json({
       url: stored.url,

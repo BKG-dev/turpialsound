@@ -746,6 +746,55 @@ model MpPayout {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// MARKETPLACE ANALYTICS EVENTS (LIGHTWEIGHT, NON-SENSITIVE)
+// ─────────────────────────────────────────────────────────────────
+
+model MpAnalyticsEvent {
+  id            String   @id @default(cuid())
+  eventType     String
+  listingId     String?
+  transactionId String?
+  userId        String?
+  sessionId     String?
+  path          String
+  referrer      String?
+  device        String?
+  metadataJson  Json?
+  createdAt     DateTime @default(now())
+
+  @@index([eventType])
+  @@index([listingId])
+  @@index([transactionId])
+  @@index([userId])
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("mp_analytics_events")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// MARKETPLACE BLOB METADATA (SAFE STORAGE OBSERVABILITY)
+// ─────────────────────────────────────────────────────────────────
+
+model MpBlobObjectMetadata {
+  id          String   @id @default(cuid())
+  url         String   @unique
+  pathname    String?
+  sizeBytes   BigInt?
+  contentType String?
+  entityType  String
+  entityId    String?
+  uploadedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([entityType])
+  @@index([entityId])
+  @@index([pathname])
+  @@index([uploadedAt])
+  @@map("mp_blob_object_metadata")
+}
+
+// ─────────────────────────────────────────────────────────────────
 // BINANCE RATE SNAPSHOTS (MARKETPLACE AUDIT TRAIL)
 // ─────────────────────────────────────────────────────────────────
 

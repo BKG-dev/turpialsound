@@ -76,6 +76,7 @@ export async function storeMarketplaceFile(
   purpose: MarketplaceUploadPurpose,
 ): Promise<{
   url: string
+  pathname: string
   mimeType: string
   size: number
 }> {

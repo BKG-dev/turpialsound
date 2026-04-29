@@ -403,6 +403,8 @@ export const ModelName = {
   MpTransactionStatusHistory: 'MpTransactionStatusHistory',
   MpDispute: 'MpDispute',
   MpPayout: 'MpPayout',
+  MpAnalyticsEvent: 'MpAnalyticsEvent',
+  MpBlobObjectMetadata: 'MpBlobObjectMetadata',
   MpBinanceRateSnapshot: 'MpBinanceRateSnapshot',
   MpWebhookLog: 'MpWebhookLog'
 } as const
@@ -420,7 +422,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "siteCounter" | "service" | "serviceVariant" | "resource" | "user" | "bookingRequest" | "bookingRequestItem" | "approval" | "auditLog" | "mpUser" | "mpPayoutMethod" | "mpListing" | "mpListingQuestion" | "mpChatThread" | "mpMessage" | "mpTransaction" | "mpTransactionStatusHistory" | "mpDispute" | "mpPayout" | "mpBinanceRateSnapshot" | "mpWebhookLog"
+    modelProps: "siteCounter" | "service" | "serviceVariant" | "resource" | "user" | "bookingRequest" | "bookingRequestItem" | "approval" | "auditLog" | "mpUser" | "mpPayoutMethod" | "mpListing" | "mpListingQuestion" | "mpChatThread" | "mpMessage" | "mpTransaction" | "mpTransactionStatusHistory" | "mpDispute" | "mpPayout" | "mpAnalyticsEvent" | "mpBlobObjectMetadata" | "mpBinanceRateSnapshot" | "mpWebhookLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1830,6 +1832,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    MpAnalyticsEvent: {
+      payload: Prisma.$MpAnalyticsEventPayload<ExtArgs>
+      fields: Prisma.MpAnalyticsEventFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MpAnalyticsEventFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpAnalyticsEventPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MpAnalyticsEventFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpAnalyticsEventPayload>
+        }
+        findFirst: {
+          args: Prisma.MpAnalyticsEventFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpAnalyticsEventPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MpAnalyticsEventFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpAnalyticsEventPayload>
+        }
+        findMany: {
+          args: Prisma.MpAnalyticsEventFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpAnalyticsEventPayload>[]
+        }
+        create: {
+          args: Prisma.MpAnalyticsEventCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpAnalyticsEventPayload>
+        }
+        createMany: {
+          args: Prisma.MpAnalyticsEventCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MpAnalyticsEventCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpAnalyticsEventPayload>[]
+        }
+        delete: {
+          args: Prisma.MpAnalyticsEventDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpAnalyticsEventPayload>
+        }
+        update: {
+          args: Prisma.MpAnalyticsEventUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpAnalyticsEventPayload>
+        }
+        deleteMany: {
+          args: Prisma.MpAnalyticsEventDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MpAnalyticsEventUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MpAnalyticsEventUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpAnalyticsEventPayload>[]
+        }
+        upsert: {
+          args: Prisma.MpAnalyticsEventUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpAnalyticsEventPayload>
+        }
+        aggregate: {
+          args: Prisma.MpAnalyticsEventAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMpAnalyticsEvent>
+        }
+        groupBy: {
+          args: Prisma.MpAnalyticsEventGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpAnalyticsEventGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MpAnalyticsEventCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpAnalyticsEventCountAggregateOutputType> | number
+        }
+      }
+    }
+    MpBlobObjectMetadata: {
+      payload: Prisma.$MpBlobObjectMetadataPayload<ExtArgs>
+      fields: Prisma.MpBlobObjectMetadataFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MpBlobObjectMetadataFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBlobObjectMetadataPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MpBlobObjectMetadataFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBlobObjectMetadataPayload>
+        }
+        findFirst: {
+          args: Prisma.MpBlobObjectMetadataFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBlobObjectMetadataPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MpBlobObjectMetadataFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBlobObjectMetadataPayload>
+        }
+        findMany: {
+          args: Prisma.MpBlobObjectMetadataFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBlobObjectMetadataPayload>[]
+        }
+        create: {
+          args: Prisma.MpBlobObjectMetadataCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBlobObjectMetadataPayload>
+        }
+        createMany: {
+          args: Prisma.MpBlobObjectMetadataCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MpBlobObjectMetadataCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBlobObjectMetadataPayload>[]
+        }
+        delete: {
+          args: Prisma.MpBlobObjectMetadataDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBlobObjectMetadataPayload>
+        }
+        update: {
+          args: Prisma.MpBlobObjectMetadataUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBlobObjectMetadataPayload>
+        }
+        deleteMany: {
+          args: Prisma.MpBlobObjectMetadataDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MpBlobObjectMetadataUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MpBlobObjectMetadataUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBlobObjectMetadataPayload>[]
+        }
+        upsert: {
+          args: Prisma.MpBlobObjectMetadataUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBlobObjectMetadataPayload>
+        }
+        aggregate: {
+          args: Prisma.MpBlobObjectMetadataAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMpBlobObjectMetadata>
+        }
+        groupBy: {
+          args: Prisma.MpBlobObjectMetadataGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpBlobObjectMetadataGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MpBlobObjectMetadataCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpBlobObjectMetadataCountAggregateOutputType> | number
+        }
+      }
+    }
     MpBinanceRateSnapshot: {
       payload: Prisma.$MpBinanceRateSnapshotPayload<ExtArgs>
       fields: Prisma.MpBinanceRateSnapshotFieldRefs
@@ -2343,6 +2493,39 @@ export const MpPayoutScalarFieldEnum = {
 export type MpPayoutScalarFieldEnum = (typeof MpPayoutScalarFieldEnum)[keyof typeof MpPayoutScalarFieldEnum]
 
 
+export const MpAnalyticsEventScalarFieldEnum = {
+  id: 'id',
+  eventType: 'eventType',
+  listingId: 'listingId',
+  transactionId: 'transactionId',
+  userId: 'userId',
+  sessionId: 'sessionId',
+  path: 'path',
+  referrer: 'referrer',
+  device: 'device',
+  metadataJson: 'metadataJson',
+  createdAt: 'createdAt'
+} as const
+
+export type MpAnalyticsEventScalarFieldEnum = (typeof MpAnalyticsEventScalarFieldEnum)[keyof typeof MpAnalyticsEventScalarFieldEnum]
+
+
+export const MpBlobObjectMetadataScalarFieldEnum = {
+  id: 'id',
+  url: 'url',
+  pathname: 'pathname',
+  sizeBytes: 'sizeBytes',
+  contentType: 'contentType',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  uploadedAt: 'uploadedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MpBlobObjectMetadataScalarFieldEnum = (typeof MpBlobObjectMetadataScalarFieldEnum)[keyof typeof MpBlobObjectMetadataScalarFieldEnum]
+
+
 export const MpBinanceRateSnapshotScalarFieldEnum = {
   id: 'id',
   rate: 'rate',
@@ -2659,6 +2842,20 @@ export type ListEnumMpPayoutStatusFieldRefInput<$PrismaModel> = FieldRefInputTyp
 
 
 /**
+ * Reference to a field of type 'BigInt'
+ */
+export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
+
+
+
+/**
+ * Reference to a field of type 'BigInt[]'
+ */
+export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt[]'>
+
+
+
+/**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -2785,6 +2982,8 @@ export type GlobalOmitConfig = {
   mpTransactionStatusHistory?: Prisma.MpTransactionStatusHistoryOmit
   mpDispute?: Prisma.MpDisputeOmit
   mpPayout?: Prisma.MpPayoutOmit
+  mpAnalyticsEvent?: Prisma.MpAnalyticsEventOmit
+  mpBlobObjectMetadata?: Prisma.MpBlobObjectMetadataOmit
   mpBinanceRateSnapshot?: Prisma.MpBinanceRateSnapshotOmit
   mpWebhookLog?: Prisma.MpWebhookLogOmit
 }
@@ -2849,4 +3048,3 @@ export type PrismaAction =
  * `PrismaClient` proxy available in interactive transactions.
  */
 export type TransactionClient = Omit<DefaultPrismaClient, runtime.ITXClientDenyList>
-

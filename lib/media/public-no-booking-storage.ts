@@ -12,6 +12,7 @@ type StorePublicNoBookingMediaInput = {
 
 type StoredPublicNoBookingMedia = {
   url: string
+  pathname: string
   mimeType: string
   size: number
 }
@@ -54,6 +55,7 @@ export async function storePublicNoBookingMedia({
 
     return {
       url: blob.url,
+      pathname: objectPath,
       mimeType: file.type,
       size: buffer.length,
     }
@@ -74,6 +76,7 @@ export async function storePublicNoBookingMedia({
 
   return {
     url: publicUrl,
+    pathname: objectPath,
     mimeType: file.type,
     size: buffer.length,
   }

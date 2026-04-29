@@ -13,6 +13,7 @@ type StoreSensitiveMarketplaceMediaInput = {
 
 type StoredSensitiveMarketplaceMedia = {
   storagePath: string
+  pathname: string
   url: string
   mimeType: string
   size: number
@@ -97,6 +98,7 @@ export async function storeSensitiveMarketplaceMedia({
 
   return {
     storagePath,
+    pathname: storagePath,
     url: buildProxyUrl(storagePath),
     mimeType: file.type,
     size: buffer.length,
