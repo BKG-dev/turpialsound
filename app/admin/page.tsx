@@ -25,6 +25,7 @@ import {
   getBookingNotificationEventForOperationalStatus,
   sendBookingNotifications,
 } from '@/lib/bookings/notifications'
+import { buildAdminPaymentProofUrl } from '@/lib/bookings/operational-links'
 
 type SearchParamValue = string | string[] | undefined
 
@@ -33,11 +34,13 @@ interface AdminPageProps {
     | Promise<{
         date?: SearchParamValue
         status?: SearchParamValue
+        resource?: SearchParamValue
         calendarSync?: SearchParamValue
       }>
     | {
         date?: SearchParamValue
         status?: SearchParamValue
+        resource?: SearchParamValue
         calendarSync?: SearchParamValue
       }
 }
@@ -443,15 +446,36 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const params = (await searchParams) ?? {}
   const dateFilter = getSingleValue(params.date)
   const requestedStatus = getSingleValue(params.status)
+  const resourceFilter = getSingleValue(params.resource)
   const calendarSyncState = getSingleValue(params.calendarSync)
   const statusFilter: OperationalBookingStatus | 'all' =
     requestedStatus && isOperationalBookingStatus(requestedStatus) ? requestedStatus : 'all'
 
   await expireOverduePendingPayments()
 
+  const resources = await prisma.resource.findMany({
+    where: { isActive: true },
+    orderBy: { name: 'asc' },
+  })
+
   const eventDateRange = getDateRangeFromInput(dateFilter)
   const rows = await prisma.bookingRequest.findMany({
-    where: eventDateRange ? { eventDate: eventDateRange } : undefined,
+    where: {
+      AND: [
+        eventDateRange ? { eventDate: eventDateRange } : {},
+        resourceFilter
+          ? {
+              items: {
+                some: {
+                  resource: {
+                    slug: resourceFilter,
+                  },
+                },
+              },
+            }
+          : {},
+      ],
+    },
     include: {
       items: {
         take: 1,
@@ -469,6 +493,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           },
         },
       },
+      paymentProofs: {
+        where: { isActive: true },
+        take: 1,
+        orderBy: { uploadedAt: 'desc' },
+        select: { id: true },
+      },
     },
     orderBy: [{ createdAt: 'desc' }],
     take: 200,
@@ -477,11 +507,17 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const bookings = rows
     .map((booking) => {
       const primaryItem = booking.items[0]
+      const latestPaymentProof = booking.paymentProofs[0]
       const operationalStatus = getOperationalStatus(booking)
       const operationalStatusLabel =
         operationalStatus === 'payment_verified'
           ? OPERATIONAL_STATUS_LABELS.confirmed
           : OPERATIONAL_STATUS_LABELS[operationalStatus]
+
+      const paymentProofUrl = latestPaymentProof
+        ? buildAdminPaymentProofUrl(booking.publicCode, latestPaymentProof.id)
+        : null
+
       return {
         id: booking.id,
         publicCode: booking.publicCode,
@@ -496,6 +532,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         paymentDeadline: getPaymentDeadline(booking.createdAt),
         operationalStatus,
         operationalStatusLabel,
+        paymentProofUrl,
       }
     })
     .filter((booking) => statusFilter === 'all' || booking.operationalStatus === statusFilter)
@@ -507,6 +544,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     }
     if (statusFilter !== 'all') {
       nextParams.set('status', statusFilter)
+    }
+    if (resourceFilter) {
+      nextParams.set('resource', resourceFilter)
     }
     const encoded = nextParams.toString()
     return encoded ? `/admin?${encoded}` : '/admin'
@@ -550,7 +590,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         ) : null}
 
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-          <form className="grid gap-4 md:grid-cols-[220px_220px_auto] md:items-end">
+          <form className="grid gap-4 md:grid-cols-[200px_180px_180px_auto_auto] md:items-end">
             <label className="space-y-1.5 text-sm text-slate-700">
               <span className="font-medium">Fecha solicitada</span>
               <input
@@ -577,12 +617,35 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               </select>
             </label>
 
+            <label className="space-y-1.5 text-sm text-slate-700">
+              <span className="font-medium">Sala / Recurso</span>
+              <select
+                name="resource"
+                defaultValue={resourceFilter ?? ''}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+              >
+                <option value="">Todas</option>
+                {resources.map((res) => (
+                  <option key={res.id} value={res.slug}>
+                    {res.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             <button
               type="submit"
               className="inline-flex h-10 items-center justify-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white transition hover:bg-slate-800"
             >
               Filtrar
             </button>
+
+            <a
+              href={withQueryParam(returnPath, 'date', new Date().toISOString().split('T')[0])}
+              className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Hoy
+            </a>
           </form>
         </section>
 
@@ -627,10 +690,25 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                         <p className="text-xs text-slate-500">
                           Limite: <span className="font-medium text-slate-700">{formatPaymentDeadline(booking.createdAt)}</span>
                         </p>
-                        <div className="mt-1.5">
+                        <div className="mt-1.5 flex flex-wrap items-center gap-2">
                           <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
                             {booking.operationalStatusLabel}
                           </span>
+
+                          {booking.paymentProofUrl && (
+                            <a
+                              href={booking.paymentProofUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              Ver pago
+                            </a>
+                          )}
                         </div>
                       </td>
                       <td className="px-3 py-2.5">

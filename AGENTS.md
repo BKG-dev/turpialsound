@@ -3,6 +3,24 @@
 ## Proyecto
 Turpial Sound — Next.js 14 + React 18 + TypeScript + Tailwind.
 
+## Filosofía ORESHNIK 6D — MODO PRODUCTIVIDAD MÁXIMA
+OBJETIVO: Ejecutar desarrollo acelerado usando Codex como cerebro y Gemini como músculo de ejecución masiva.
+
+### Distribución de Roles
+- **AGENTE 1 — CODEX (CEREBRO):** Backend crítico, DB, Seguridad, Arquitectura, Pagos, Auth.
+- **AGENTE 2 — GEMINI (EJECUTOR UI):** Componentes, Layout, Dashboards, Render dinámico.
+- **AGENTE 3 — GEMINI (EJECUTOR DATA):** Scripts, Parsers, Helpers, Utils.
+- **AGENTE 4 — GEMINI (QA + TESTS):** Matrices QA, Smoke tests, Edge cases.
+- **AGENTE 5 — GEMINI (DOCS + ROADMAP):** Documentación, Handoffs, Roadmap.
+- **AGENTE 6 — GEMINI (SECURITY + RED TEAM):** Pruebas de abuso, Validaciones.
+
+### Reglas de Oro
+- **Un solo agente por zona de código activa.**
+- **Gemini escribe libremente** en zonas no prohibidas (UI, Docs, Scripts, QA).
+- **Codex define, Gemini ejecuta.**
+
+---
+
 ## Estado actual
 ### 1A — completada
 - Prisma 7 configurado
