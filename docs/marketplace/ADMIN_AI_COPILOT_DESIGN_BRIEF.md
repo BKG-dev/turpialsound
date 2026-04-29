@@ -38,3 +38,31 @@ Cualquier acción de escritura debe seguir el patrón **[IA -> Propuesta -> UI C
 1. Implementar infraestructura de *Read-only* para consulta de datos.
 2. Establecer el sistema de logs de auditoría.
 3. (Opcional/Futuro) Implementar flujo de confirmación UI para acciones de escritura.
+
+## 7. Implementacion Fase 1 Read-only
+
+- Ruta privada: `/marketplace/admin/copilot`.
+- Endpoint privado: `/api/marketplace/admin/copilot`.
+- Rol autorizado actual: `SUPER`, siguiendo el dashboard admin existente.
+- Separacion: no reutiliza el asistente publico ni su prompt. En rutas `/marketplace/admin` se oculta el FAB del asistente publico.
+- Contexto: efimero en cliente y request. No pide credenciales y no guarda secretos.
+- Herramientas read-only:
+  - `getAdminMarketplaceOverview()`
+  - `getRegisteredUsersCount()`
+  - `getPendingOperationsSummary()`
+  - `getSalesTodaySummary()`
+  - `getSellerPayoutReadinessSummary()`
+  - `getTopSellingCategoriesSummary()`
+  - `getTopListingsActivitySummary()`
+  - `getMarketplaceAnalyticsAvailability()`
+  - `getFinanceReadinessSummary()`
+  - `explainDashboardKpis()`
+  - `summarizeTransactionReadOnly(transactionId)`
+- Acciones rechazadas: validar pagos, liberar fondos, cambiar estados, cancelar operaciones, resolver disputas, editar usuarios, enviar notificaciones, SQL libre, schema/Prisma, secretos, tokens o rutas internas.
+- Nota financiera: las cifras se presentan como apoyo operativo y deben verificarse contra el dashboard antes de acciones administrativas.
+- Analitica actual: puede consultar vistas, favoritos, transacciones, categorias, montos y estados. Clicks por boton/zona, CTR, embudos y fuentes de trafico no estan instrumentados todavia.
+- Finanzas actual: puede resumir bruto vendido, comision de plataforma, neto vendedor y readiness de fondos read-only. Costos operativos, impuestos estimados, rentabilidad neta y proyeccion fiscal quedan para un modulo financiero futuro.
+
+### Blocker Pendiente
+
+El brief original pide auditoria persistente en base de datos. Esa parte requiere tabla/modelo nuevo y por regla del sprint no se tocaron schema ni migraciones. Fase 1 usa logs de error sanitizados y no registra prompts/respuestas en DB.

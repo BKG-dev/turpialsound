@@ -6,35 +6,31 @@
 
 ---
 
-## Estado real actual del proyecto
+## Estado real actual del proyecto (2026-04-29)
 
-El marketplace esta funcional y sigue separado del booking; no se cruza con el backend de booking de Jean.
+El marketplace está funcional, separado del booking y con foco en estabilización operativa.
 
-El esquema del marketplace mantiene prefijo `MP_` en Prisma como regla de separacion y no colision.
+### Sprint "Admin AI Copilot + BI/Analytics" Implementado
+- **Admin AI Copilot (Read-only):** Implementado en `/marketplace/admin/copilot` y `/api/marketplace/admin/copilot`.
+  - Acceso restringido a `SUPER` (roles admin).
+  - Herramientas read-only: usuarios, ventas, operaciones pendientes, fondos, KPIs, resumen de transacción, métricas de listings, DB status y Blob metadata.
+  - Seguridad estricta: sin acciones de escritura, sin exposición de secretos, sin logs de prompts/respuestas en DB, sin logs de datos bancarios.
+- **Instrumentación Analytics/BI:**
+  - Modelo `MpAnalyticsEvent` y `MpBlobObjectMetadata`.
+  - Endpoint `/api/marketplace/analytics/event` con payload allowlist.
+  - Eventos: `listing_view`, `listing_click`, `buy_click`, `favorite_click`, `checkout_start`, `admin_copilot_db_status_view`.
+  - Limpieza de metadata: sin query/hash en URLs, sin `paymentProofUrl` privado.
+- **Validaciones:** `npx prisma generate` OK, `npx tsc --noEmit` OK, `npm run build` OK.
 
-El checkout del marketplace sigue en modo manual temporal: buyer reporta pago, admin concilia, luego entra a escrow y el payout al seller sigue siendo manual.
+### Bloqueos activos
+- Crítico: QA manual final del Admin Copilot y el nuevo DB Status.
+- No realizar commit/push hasta la validación funcional.
 
-El flujo ya no debe usar base64 para imagenes ni comprobantes. La media quedo migrada a URLs con storage/asset externo temporal desacoplado.
-
-La capa nueva de storage publico no-booking pertenece al frente de Manuel: home, subpaginas, marketplace y frontend publico no-booking. Usa `TS_WEB_BLOB_READ_WRITE_TOKEN`, no `BLOB_READ_WRITE_TOKEN`, y no debe compartir Blob/token con Jean.
-
-Jean mantiene ownership separado sobre booking/reservas y cualquier superficie nacida de `/reservas`. No tocar ni consumir su Blob/token desde este frente.
-
-Los comprobantes sensibles del marketplace no entran en el Blob publico no-booking. Quedan fuera de esa capa hasta definir storage sensible dedicado o proxy autenticado.
-
-El dashboard admin y seller ya quedaron orientados al flujo manual actual y a la conciliacion operativa.
-
-En esta ventana quedaron aplicadas correcciones funcionales del dashboard buyer/seller y del panel admin: contadores derivados del dataset real, detalle clickeable de compras/ventas, badge de mensajes navegable, mensajes priorizados, CSV corregido, datos de cobro visibles, nota interna estable y vista de tabla completa para admin.
-
-TypeScript habia quedado limpio y luego se hicieron correcciones ESLint para cerrar el deploy de Vercel, por lo que el build quedo documentado como saneado.
-
-El bloqueador de migracion/schema asociado a `paymentSenderBank` y `paymentPaidAt` ya quedo resuelto en la DB activa.
-
-Falta QA manual end-to-end buyer -> admin -> escrow -> payout manual seller con imagenes y comprobantes reales.
-
-SEO/AEO sigue siendo requisito transversal para todo el sitio, tambien en listings, slugs, metadata, landings y estructura publica del marketplace.
-
-No se debe abrir otro frente antes de cerrar migracion real o confirmacion de schema y QA operativa.
+### Pendientes (Fase futura)
+- Automatización de acciones de escritura (requiere confirmación UI).
+- Tráfico/bandwidth real (requiere Vercel Observability).
+- Módulo financiero/P&L.
+- Orquestador Oreshnik.
 
 ## Bloqueos activos
 

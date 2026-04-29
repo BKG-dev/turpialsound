@@ -8,27 +8,23 @@ Obsidian es la fuente de trazabilidad viva del proyecto. Este archivo refleja el
 
 ## Estado actual real del marketplace (2026-04-29)
 
-El marketplace está funcional y separado del booking.
+El marketplace está funcional y separado del booking. El flujo operativo vigente es manual temporal.
 
-El flujo operativo vigente es manual temporal: checkout manual para buyer, conciliación manual por admin, escrow manual y payout manual al seller.
-
-### Hitos completados (Sprint IA & Marketplace)
-- **Asistente IA Público:** Implementado y técnicamente validado (`/api/marketplace/assistant`). KB y guardrails configurados. QA Matrix y smoke script creados.
-- **UX Responsive:** Marketplace público responsive (mobile/desktop), dark/light mode scoped, contraste mejorado, Q&A legible, banco select y normalización de teléfonos venezolanos.
-- **Sprint 2/3 Fixes:** Payout methods corregidos, nota interna admin estable, bloqueo de compra por transacción activa, tasas Binance persistidas, Admin Pagos alineado.
+### Hitos completados (Sprint "Admin AI Copilot + BI/Analytics")
+- **Admin AI Copilot (Read-only):** Implementado en `/marketplace/admin/copilot`. Acceso restringido a `SUPER`. Herramientas de lectura operativa y BI.
+- **Instrumentación Analytics/BI:** Modelos `MpAnalyticsEvent` y `MpBlobObjectMetadata` creados. Endpoints y eventos instrumentados.
+- **Seguridad:** Aislamiento total de escritura en Copilot y limpieza de metadata sensible.
 
 ### Bloqueos activos
 - [ ] Ejecutar QA manual E2E buyer -> admin -> escrow -> payout seller siguiendo runbook.
-- [ ] Validar asistente IA en entorno real según `docs/marketplace/ASSISTANT_QA_MATRIX.md`.
-- [ ] Aplicar polish final de UX/copy.
-- [ ] Commit y push a `Marketplace-Pure`.
+- [ ] Validar Admin AI Copilot (restricciones de lectura y acceso).
+- [ ] Verificar build con `git diff --check`, `tsc` y `npm run build`.
 
 ### Pendientes posteriores (Nivel 2)
-- [ ] Ubicación/filtros (Brief: `docs/marketplace/LOCATION_FILTERS_DESIGN_BRIEF.md`, no implementar aún).
-- [ ] Flujo de conformidad/fondos por liberar.
-- [ ] Liquidación seller y tasa snapshot (Migración pendiente).
-- [ ] Plan contable/P&L.
-- [ ] SEO/AEO dinámico.
+- [ ] Automatización de acciones de escritura (requiere confirmación UI).
+- [ ] Tráfico/bandwidth real (requiere Vercel Observability).
+- [ ] Módulo financiero/P&L.
+- [ ] Orquestador Oreshnik.
 
 ## Reglas de oro
 - No tocar `booking` ni `/reservas`.

@@ -3,48 +3,32 @@
 **Fecha de actualizacion:** 2026-04-29
 **Frente activo:** Marketplace
 **Tipo de nota:** Checkpoint operativo para siguiente ventana
-**Estado de sincronización:** Asistente IA público implementado y validado.
+**Estado de sincronización:** Admin AI Copilot (read-only) y BI/Analytics implementados y validados técnicamente.
 
 ---
 
 ## Estado resumido
 
-El asistente IA público del marketplace está implementado y técnicamente validado. El marketplace sigue funcional y separado del booking.
-
-El checkout y la conciliación siguen siendo manuales temporales. La media se maneja correctamente por URLs de storage.
-
-## Estado Asistente IA (Sprint Actual)
-- Implementación completa en `/api/marketplace/assistant` y `components/marketplace/MarketplaceAssistant.tsx`.
-- Corrección de truncamiento (ajuste a 900 tokens).
-- Ampliación de KB (foco musical, guardrails, métodos de pago públicos, artesanía musical/no musical).
-- UI responsiva (sin cortes, light/dark mode nativo).
-- Validaciones: `npm run build`, `tsc`, `lint` OK.
-- QA Matrix: `docs/marketplace/ASSISTANT_QA_MATRIX.md` creada.
-- Smoke Script: `scripts/qa-marketplace-assistant-smoke.mjs` creado.
-- Pendiente QA manual, commit y push a rama `Marketplace-Pure`.
+El Admin AI Copilot (read-only) y la instrumentación inicial de Analytics/Blob están implementados y validados técnicamente. El marketplace sigue funcional y separado del booking.
 
 ## Bloqueos activos
 - Critico: Ejecutar QA manual completa buyer -> admin -> escrow -> payout manual seller.
-- Alto: QA manual del asistente IA (verificación de guardrails y tono).
-- Pendiente: Polish UX/copy (chips musicales).
+- Alto: QA manual del Admin AI Copilot (verificación de restricciones de acceso y lectura).
+- Pendiente: Ejecutar smoke tests técnicos con `git diff --check`, `tsc` y `npm run build`.
 
 ## Resuelto (Hitos clave)
-- Separación marketplace/booking.
-- Checkout manual temporal operativo.
-- Asistente IA público implementado y validado.
-- Polish visual completo (Dark/Light mode, responsive).
-- Bloqueo de compra por transacción activa implementado.
-- Admin Pagos/Vendedores UX alineada.
-- Binance rate snapshot implementado (migración pendiente).
-- SEO/AEO público implementado.
+- Implementación de Admin AI Copilot (read-only) y APIs asociadas.
+- Instrumentación técnica de Analytics (`MpAnalyticsEvent`) y Blob Metadata (`MpBlobObjectMetadata`).
+- Normalización de seguridad: sin acciones de escritura, sin exposición de secretos.
+- Validaciones de construcción (`tsc`, `build`) exitosas.
 
 ## Siguiente accion exacta
 
 1. Ejecutar QA manual E2E (buyer -> admin -> escrow -> payout seller) siguiendo el runbook.
-2. Validar el asistente IA público en entorno real usando la matriz de QA.
-3. Aplicar polish de UX/copy sugerido en auditoría previa.
+2. Validar Admin AI Copilot (restricciones de lectura y acceso) según el diseño.
+3. Verificar integridad del build con `git diff --check`.
 4. Una vez validado, realizar el commit y push a `Marketplace-Pure`.
-5. NO implementar filtros por ciudad/categoría hasta nuevo sprint (brief de diseño creado en `docs/marketplace/LOCATION_FILTERS_DESIGN_BRIEF.md`).
+5. NO implementar acciones de escritura en el Copilot hasta nuevo aviso.
 6. NO tocar booking ni `/reservas`.
 
 ## Proximo prompt operativo exacto
@@ -55,9 +39,9 @@ Lee primero:
 - docs/07_handoffs/session-summary-active.md
 - docs/07_handoffs/qa-dispatcher.json
 
-Confirma el estado del marketplace y el asistente IA.
+Confirma el estado del marketplace y el Admin AI Copilot.
 Ejecuta QA manual E2E (buyer -> admin -> escrow -> payout seller) siguiendo el runbook.
-Valida el asistente IA usando la matriz de QA (docs/marketplace/ASSISTANT_QA_MATRIX.md).
+Valida el Admin AI Copilot (restricciones de lectura y acceso) según el diseño.
 Si hay residuales, documenta en Obsidian y handoff antes de hacer commits.
 No toques booking ni /reservas.
 ```
