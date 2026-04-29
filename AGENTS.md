@@ -8,16 +8,46 @@ OBJETIVO: Ejecutar desarrollo acelerado usando Codex como cerebro y Gemini como 
 
 ### Distribución de Roles
 - **AGENTE 1 — CODEX (CEREBRO):** Backend crítico, DB, Seguridad, Arquitectura, Pagos, Auth.
-- **AGENTE 2 — GEMINI (EJECUTOR UI):** Componentes, Layout, Dashboards, Render dinámico.
-- **AGENTE 3 — GEMINI (EJECUTOR DATA):** Scripts, Parsers, Helpers, Utils.
+- **AGENTE 2 — GEMINI (UI):** Componentes, Layout, Dashboards, Render dinámico.
+- **AGENTE 3 — GEMINI (DOCS Y HANDOFF):** Documentación, Handoffs, Roadmap.
 - **AGENTE 4 — GEMINI (QA + TESTS):** Matrices QA, Smoke tests, Edge cases.
-- **AGENTE 5 — GEMINI (DOCS + ROADMAP):** Documentación, Handoffs, Roadmap.
+- **AGENTE 5 — GEMINI (SCRIPTS + HELPERS):** Scripts, Parsers, Helpers, Utils.
 - **AGENTE 6 — GEMINI (SECURITY + RED TEAM):** Pruebas de abuso, Validaciones.
 
 ### Reglas de Oro
 - **Un solo agente por zona de código activa.**
-- **Gemini escribe libremente** en zonas no prohibidas (UI, Docs, Scripts, QA).
+- **Gemini escribe solo en zonas autorizadas y acotadas** (UI aislada, Docs, Scripts no destructivos, QA).
 - **Codex define, Gemini ejecuta.**
+
+### Zonas autorizadas para Gemini
+- `components/` solo para UI aislada y componentes no críticos.
+- `app/` solo para vistas UI explícitamente asignadas; nunca `app/api/**` ni flujos auth/pagos.
+- `docs/**` para documentación, handoffs, roadmap y QA.
+- `scripts/**` solo para scripts no destructivos, sin instalación de dependencias.
+- `tests/**` o matrices QA si existen.
+- Helpers no críticos, siempre que no caigan en zonas prohibidas.
+
+### Zonas prohibidas para Gemini sin autorización explícita
+- `lib/bookings/actions*`
+- `lib/bookings/payment*`
+- `lib/bookings/reference-rate*`
+- `lib/bookings/google-calendar*`
+- `lib/storage/payment-proofs*`
+- `app/api/**`
+- auth, permisos y sesiones (`lib/auth/**`, `middleware.ts`, login interno).
+- `prisma/**`
+- `generated/**`
+- migraciones.
+- `.env*`
+- `package.json`
+- `pnpm-lock.yaml`
+- marketplace.
+- modelos, tablas o archivos `Mp*`.
+- archivos activos de Codex.
+
+### Responsabilidades externas
+- **Marketplace:** Manejado por Manuel. Fuera del alcance directo de Gemini.
+- **Usuario:** Responsable de integración en `main`, `DB merge`, `UI/UX integration`, `marketplace integration`.
 
 ---
 
@@ -41,6 +71,19 @@ OBJETIVO: Ejecutar desarrollo acelerado usando Codex como cerebro y Gemini como 
 - catálogo tarifario / pricing aprobado cargado en código
 - wizard ya trabaja con pricing visible y breakdown preliminar
 - persistencia mínima actual validada manualmente por el usuario
+
+### 1B.6c — alcanzada
+- motor de cotización derivada en memoria implementado
+- `SummaryStep` recibe y muestra estimate preliminar
+- submit se bloquea cuando el estimate reporta issues bloqueantes
+
+### 1C — implementación parcial funcional tras sprint ORESHNIK
+- `/admin` ya existe como Booking Command Center mínimo
+- Google Calendar central ya tiene integración create/update según estado operativo
+- disponibilidad por recurso existe en submit para servicios con sala física definida
+- pago manual asistido ya muestra instrucciones, deadline, método y reporte de pago
+- `payment_reported`, comprobantes privados, emails Resend y enlaces firmados ya existen
+- pendiente real: hardening, QA operativo, expiración programada, incidencias, atomicidad de slots y documento operativo
 
 ## Nuevo objetivo inmediato
 Cerrar una V1 operativa real para producción.
@@ -156,9 +199,6 @@ Nota operativa:
 - `submitted` puede mantenerse como estado técnico/transitorio, no como estado operativo principal visible
 
 ## Fase posterior aplazada
-### 1B.6c
-Motor de cotización derivada en memoria más robusto.
-
 ### 1B.6d
 Conexión extendida del estimate derivado al `SummaryStep`.
 

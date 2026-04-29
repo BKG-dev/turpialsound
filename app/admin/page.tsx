@@ -341,25 +341,6 @@ async function updateOperationalStatus(formData: FormData) {
       : getBookingNotificationEventForOperationalStatus(effectiveNextStatus)
   const primaryItem = current.items[0]
 
-  // TEMP DEBUG: trace DB datetime source used by admin transitions.
-  console.info('[booking.debug.admin.update_status]', {
-    bookingRequestId,
-    publicCode: current.publicCode,
-    fromOperationalStatus: currentOperationalStatus,
-    toOperationalStatus: effectiveNextStatus,
-    notificationEvent,
-    runtime: {
-      processTz: process.env.TZ ?? null,
-      resolvedTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    },
-    dbDates: {
-      eventDateIso: current.eventDate.toISOString(),
-      eventEndDateIso: current.eventEndDate?.toISOString() ?? null,
-      createdAtIso: current.createdAt.toISOString(),
-      paymentDeadlineIso: getPaymentDeadline(current.createdAt).toISOString(),
-    },
-  })
-
   if (notificationEvent) {
     await sendBookingNotifications(notificationEvent, {
       publicCode: current.publicCode,

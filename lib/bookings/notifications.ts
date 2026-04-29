@@ -568,45 +568,6 @@ export async function sendBookingNotifications(
   payload: BookingNotificationPayload,
 ): Promise<void> {
   const enrichedPayload = await enrichPayloadWithReferenceRate(event, payload)
-  // TEMP DEBUG: trace notification time rendering inputs/outputs.
-  console.info('[booking.debug.notifications.payload]', {
-    event,
-    publicCode: enrichedPayload.publicCode,
-    runtime: {
-      processTz: process.env.TZ ?? null,
-      resolvedTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      renderTimeZone: 'America/Caracas',
-    },
-    raw: {
-      startAt: enrichedPayload.startAt
-        ? enrichedPayload.startAt instanceof Date
-          ? enrichedPayload.startAt.toISOString()
-          : enrichedPayload.startAt
-        : null,
-      endAt: enrichedPayload.endAt
-        ? enrichedPayload.endAt instanceof Date
-          ? enrichedPayload.endAt.toISOString()
-          : enrichedPayload.endAt
-        : null,
-      deadlineAt: enrichedPayload.deadlineAt
-        ? enrichedPayload.deadlineAt instanceof Date
-          ? enrichedPayload.deadlineAt.toISOString()
-          : enrichedPayload.deadlineAt
-        : null,
-      paymentReportedAt: enrichedPayload.paymentReportedAt
-        ? enrichedPayload.paymentReportedAt instanceof Date
-          ? enrichedPayload.paymentReportedAt.toISOString()
-          : enrichedPayload.paymentReportedAt
-        : null,
-    },
-    rendered: {
-      schedule: formatSchedule(enrichedPayload.startAt, enrichedPayload.endAt),
-      startDateOnly: formatDateOnly(enrichedPayload.startAt),
-      startTimeOnly: formatTimeOnly(enrichedPayload.startAt),
-      endTimeOnly: formatTimeOnly(enrichedPayload.endAt),
-    },
-  })
-
   const messages = buildMessages(event, enrichedPayload)
   if (messages.length === 0) {
     return

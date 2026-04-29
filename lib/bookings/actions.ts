@@ -264,27 +264,6 @@ export async function submitBookingRequest(
       eventDateTime.getTime() + input.durationMinutes * 60 * 1000,
     )
 
-    // TEMP DEBUG: trace timezone-sensitive parsing for production/local drift.
-    console.info('[booking.debug.submit.datetime_parse]', {
-      stage: 'submitBookingRequest',
-      publicCodeCandidate: publicCode,
-      rawInput: {
-        eventDate: input.eventDate,
-        startTime: input.startTime,
-        durationMinutes: input.durationMinutes,
-      },
-      runtime: {
-        processTz: process.env.TZ ?? null,
-        resolvedTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      },
-      parsed: {
-        eventDateTimeIso: eventDateTime.toISOString(),
-        eventEndDateTimeIso: eventEndDateTime.toISOString(),
-        eventDateTimeEpochMs: eventDateTime.getTime(),
-        eventEndDateTimeEpochMs: eventEndDateTime.getTime(),
-      },
-    })
-
     if (Number.isNaN(eventDateTime.getTime()) || Number.isNaN(eventEndDateTime.getTime())) {
       return { success: false, error: 'La fecha u hora seleccionada no es valida.' }
     }
@@ -353,18 +332,6 @@ export async function submitBookingRequest(
           estimatedTotal: estimatedTotalUsd,
           internalNotes,
           submittedAt: new Date(),
-        },
-      })
-
-      // TEMP DEBUG: trace persisted datetime source of truth.
-      console.info('[booking.debug.submit.persisted_values]', {
-        stage: 'submitBookingRequest',
-        publicCode: booking.publicCode,
-        bookingId: booking.id,
-        persisted: {
-          eventDateIso: booking.eventDate.toISOString(),
-          eventEndDateIso: booking.eventEndDate?.toISOString() ?? null,
-          createdAtIso: booking.createdAt.toISOString(),
         },
       })
 
@@ -545,24 +512,6 @@ export async function reportBookingPayment(
     if (!booking) {
       return { success: false, error: 'Solicitud no encontrada.' }
     }
-
-    // TEMP DEBUG: trace DB datetimes reused by email/calendar on payment report.
-    console.info('[booking.debug.report_payment.db_values]', {
-      stage: 'reportBookingPayment',
-      publicCode: booking.publicCode,
-      bookingId: booking.id,
-      status: booking.status,
-      internalOperationalStatus: getOperationalStatus(booking),
-      runtime: {
-        processTz: process.env.TZ ?? null,
-        resolvedTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      },
-      dbDates: {
-        eventDateIso: booking.eventDate.toISOString(),
-        eventEndDateIso: booking.eventEndDate?.toISOString() ?? null,
-        createdAtIso: booking.createdAt.toISOString(),
-      },
-    })
 
     const currentOperationalStatus = getOperationalStatus(booking)
 

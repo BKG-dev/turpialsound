@@ -376,33 +376,6 @@ export function BookingWizard({
     onSubmissionStateChange?.(submissionState)
   }, [onSubmissionStateChange, submissionState])
 
-  useEffect(() => {
-    if (submissionState !== 'success' || !publicCode) return
-
-    // TEMP DEBUG: trace client-side source displayed in post-submit UI.
-    console.info('[booking.debug.ui.post_submit_source]', {
-      publicCode,
-      displayed: {
-        eventDate: data.eventDate,
-        startTime: data.startTime,
-        endTime: bookingEndTime,
-        durationMinutes: data.durationMinutes,
-        bookingDateLabel,
-      },
-      paymentDeadlineIso,
-      browserTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    })
-  }, [
-    submissionState,
-    publicCode,
-    data.eventDate,
-    data.startTime,
-    data.durationMinutes,
-    bookingEndTime,
-    bookingDateLabel,
-    paymentDeadlineIso,
-  ])
-
   const canProceed =
     currentStep === 0
       ? selectedServiceSlug !== null

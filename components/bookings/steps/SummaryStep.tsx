@@ -203,9 +203,14 @@ export function SummaryStep({
 
           {estimate && estimate.blockingIssues.length > 0 && (
             <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2 md:px-2.5 md:py-1.5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-red-300 md:text-[10px]">
-                Requiere ajuste antes de enviar
-              </p>
+              <div className="flex items-center gap-2">
+                <svg className="h-4 w-4 text-red-400" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-red-300 md:text-[10px]">
+                  Requiere ajuste antes de enviar
+                </p>
+              </div>
               <ul className="mt-1 space-y-1 text-[13px] text-red-200 md:text-[12px]">
                 {estimate.blockingIssues.map((issue) => (
                   <li key={issue.code}>{issue.message}</li>

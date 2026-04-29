@@ -154,25 +154,6 @@ function buildEventPayload(input: BookingCalendarSyncInput, timezone: string) {
     },
   }
 
-  // TEMP DEBUG: trace final Google Calendar serialization.
-  console.info('[booking.debug.calendar.payload]', {
-    publicCode: input.publicCode,
-    operationalStatus: input.operationalStatus,
-    runtime: {
-      processTz: process.env.TZ ?? null,
-      resolvedTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    },
-    inputDates: {
-      eventDateIso: input.eventDate.toISOString(),
-      eventEndDateIso: normalizedEndDate.toISOString(),
-    },
-    payloadDates: {
-      startDateTime: payload.start.dateTime,
-      endDateTime: payload.end.dateTime,
-      timeZone: timezone,
-    },
-  })
-
   return payload
 }
 
@@ -242,15 +223,6 @@ export async function syncBookingToGoogleCalendar(
   }
 
   try {
-    // TEMP DEBUG: trace calendar sync entrypoint.
-    console.info('[booking.debug.calendar.sync_start]', {
-      publicCode: input.publicCode,
-      operationalStatus: input.operationalStatus,
-      existingCalendarEventId: input.existingCalendarEventId,
-      eventDateIso: input.eventDate.toISOString(),
-      eventEndDateIso: input.eventEndDate?.toISOString() ?? null,
-    })
-
     const accessToken = await getGoogleAccessToken(config)
     const shouldHaveEvent = shouldMaintainCalendarEvent(input.operationalStatus)
 
