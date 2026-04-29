@@ -123,3 +123,28 @@ pm run build: OK.
 - Sin conformidad/fondos.
 - Sin booking ni `/reservas`.
 - Sin Playwright/CDP/QA automatizada.
+
+## Checkpoint 2026-04-29 - Binance rate persistente
+
+**Rama:** `Marketplace-Pure`
+**Estado:** implementado sin commit/push.
+
+### Diagnostico
+- El diff amplio anterior habia reescrito BCV y el contrato de `/api/bcv-rate`; fue reconciliado.
+- BCV queda con el flujo previo de `reference-rate.ts`: 3 fuentes, storage memory/file y fallback `BCV_FALLBACK_RATE`.
+- Binance no estaba persistida.
+- La tasa Binance no estaba asociada a `MpTransaction`.
+
+### Implementado
+- Modelo `MpBinanceRateSnapshot` y tabla `mp_binance_rate_snapshots`.
+- Migracion `20260429_marketplace_binance_rate_snapshots`.
+- Helper `lib/marketplace/binance-rate.ts` con `resolveBinanceRate()`.
+- Fuente primaria: Binance P2P API USDT/VES BUY, mediana de `data[].adv.price` top 10.
+- Google Sheets CSV queda como fallback opcional solo para Binance.
+- `/api/bcv-rate` no agrega campos Binance y mantiene contrato previo.
+
+### Limites
+- No se aplico migracion contra produccion desde esta tarea.
+- No hay URL Google Sheets configurada todavia; usar `MP_RATES_GOOGLE_SHEETS_CSV_URL`.
+- No se implemento liquidacion seller final, CSV final ni payout final.
+- Falta asociar snapshot/tasa Binance a `MpTransaction` en un sprint posterior.

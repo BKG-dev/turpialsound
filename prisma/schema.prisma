@@ -746,6 +746,31 @@ model MpPayout {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// BINANCE RATE SNAPSHOTS (MARKETPLACE AUDIT TRAIL)
+// ─────────────────────────────────────────────────────────────────
+
+model MpBinanceRateSnapshot {
+  id String @id @default(cuid())
+
+  rate       Decimal  @db.Decimal(12, 4)
+  fechaValor DateTime
+
+  source String
+  mode   String
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([fechaValor])
+  @@index([createdAt])
+  @@index([source])
+  @@index([mode])
+  @@map("mp_binance_rate_snapshots")
+}
+
+// ─────────────────────────────────────────────────────────────────
 // WEBHOOK LOGS (SECURITY & DEBUGGING)
 // ─────────────────────────────────────────────────────────────────
 

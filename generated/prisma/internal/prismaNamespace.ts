@@ -403,6 +403,7 @@ export const ModelName = {
   MpTransactionStatusHistory: 'MpTransactionStatusHistory',
   MpDispute: 'MpDispute',
   MpPayout: 'MpPayout',
+  MpBinanceRateSnapshot: 'MpBinanceRateSnapshot',
   MpWebhookLog: 'MpWebhookLog'
 } as const
 
@@ -419,7 +420,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "siteCounter" | "service" | "serviceVariant" | "resource" | "user" | "bookingRequest" | "bookingRequestItem" | "approval" | "auditLog" | "mpUser" | "mpPayoutMethod" | "mpListing" | "mpListingQuestion" | "mpChatThread" | "mpMessage" | "mpTransaction" | "mpTransactionStatusHistory" | "mpDispute" | "mpPayout" | "mpWebhookLog"
+    modelProps: "siteCounter" | "service" | "serviceVariant" | "resource" | "user" | "bookingRequest" | "bookingRequestItem" | "approval" | "auditLog" | "mpUser" | "mpPayoutMethod" | "mpListing" | "mpListingQuestion" | "mpChatThread" | "mpMessage" | "mpTransaction" | "mpTransactionStatusHistory" | "mpDispute" | "mpPayout" | "mpBinanceRateSnapshot" | "mpWebhookLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1829,6 +1830,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    MpBinanceRateSnapshot: {
+      payload: Prisma.$MpBinanceRateSnapshotPayload<ExtArgs>
+      fields: Prisma.MpBinanceRateSnapshotFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MpBinanceRateSnapshotFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBinanceRateSnapshotPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MpBinanceRateSnapshotFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBinanceRateSnapshotPayload>
+        }
+        findFirst: {
+          args: Prisma.MpBinanceRateSnapshotFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBinanceRateSnapshotPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MpBinanceRateSnapshotFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBinanceRateSnapshotPayload>
+        }
+        findMany: {
+          args: Prisma.MpBinanceRateSnapshotFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBinanceRateSnapshotPayload>[]
+        }
+        create: {
+          args: Prisma.MpBinanceRateSnapshotCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBinanceRateSnapshotPayload>
+        }
+        createMany: {
+          args: Prisma.MpBinanceRateSnapshotCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MpBinanceRateSnapshotCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBinanceRateSnapshotPayload>[]
+        }
+        delete: {
+          args: Prisma.MpBinanceRateSnapshotDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBinanceRateSnapshotPayload>
+        }
+        update: {
+          args: Prisma.MpBinanceRateSnapshotUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBinanceRateSnapshotPayload>
+        }
+        deleteMany: {
+          args: Prisma.MpBinanceRateSnapshotDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MpBinanceRateSnapshotUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MpBinanceRateSnapshotUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBinanceRateSnapshotPayload>[]
+        }
+        upsert: {
+          args: Prisma.MpBinanceRateSnapshotUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpBinanceRateSnapshotPayload>
+        }
+        aggregate: {
+          args: Prisma.MpBinanceRateSnapshotAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMpBinanceRateSnapshot>
+        }
+        groupBy: {
+          args: Prisma.MpBinanceRateSnapshotGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpBinanceRateSnapshotGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MpBinanceRateSnapshotCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpBinanceRateSnapshotCountAggregateOutputType> | number
+        }
+      }
+    }
     MpWebhookLog: {
       payload: Prisma.$MpWebhookLogPayload<ExtArgs>
       fields: Prisma.MpWebhookLogFieldRefs
@@ -2268,6 +2343,20 @@ export const MpPayoutScalarFieldEnum = {
 export type MpPayoutScalarFieldEnum = (typeof MpPayoutScalarFieldEnum)[keyof typeof MpPayoutScalarFieldEnum]
 
 
+export const MpBinanceRateSnapshotScalarFieldEnum = {
+  id: 'id',
+  rate: 'rate',
+  fechaValor: 'fechaValor',
+  source: 'source',
+  mode: 'mode',
+  metadata: 'metadata',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MpBinanceRateSnapshotScalarFieldEnum = (typeof MpBinanceRateSnapshotScalarFieldEnum)[keyof typeof MpBinanceRateSnapshotScalarFieldEnum]
+
+
 export const MpWebhookLogScalarFieldEnum = {
   id: 'id',
   provider: 'provider',
@@ -2696,6 +2785,7 @@ export type GlobalOmitConfig = {
   mpTransactionStatusHistory?: Prisma.MpTransactionStatusHistoryOmit
   mpDispute?: Prisma.MpDisputeOmit
   mpPayout?: Prisma.MpPayoutOmit
+  mpBinanceRateSnapshot?: Prisma.MpBinanceRateSnapshotOmit
   mpWebhookLog?: Prisma.MpWebhookLogOmit
 }
 

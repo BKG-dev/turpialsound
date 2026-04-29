@@ -70,6 +70,7 @@ export const ModelName = {
   MpTransactionStatusHistory: 'MpTransactionStatusHistory',
   MpDispute: 'MpDispute',
   MpPayout: 'MpPayout',
+  MpBinanceRateSnapshot: 'MpBinanceRateSnapshot',
   MpWebhookLog: 'MpWebhookLog'
 } as const
 
@@ -413,6 +414,20 @@ export const MpPayoutScalarFieldEnum = {
 } as const
 
 export type MpPayoutScalarFieldEnum = (typeof MpPayoutScalarFieldEnum)[keyof typeof MpPayoutScalarFieldEnum]
+
+
+export const MpBinanceRateSnapshotScalarFieldEnum = {
+  id: 'id',
+  rate: 'rate',
+  fechaValor: 'fechaValor',
+  source: 'source',
+  mode: 'mode',
+  metadata: 'metadata',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MpBinanceRateSnapshotScalarFieldEnum = (typeof MpBinanceRateSnapshotScalarFieldEnum)[keyof typeof MpBinanceRateSnapshotScalarFieldEnum]
 
 
 export const MpWebhookLogScalarFieldEnum = {

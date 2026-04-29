@@ -708,3 +708,13 @@ pm run build: OK.
 - Datos visibles para pago manual cuando existen: metodo, etiqueta, banco, telefono, cedula, titular/beneficiario, cuenta, email o wallet.
 - No se implemento pago final ni cierre contable; no se tocaron schema/migrations, finanzas, conformidad/fondos, booking, `/reservas`, Playwright ni CDP.
 - Siguiente ventana: si se valida manualmente esta pantalla, documentar solo hallazgos residuales; cualquier QA automatizada nueva sigue requiriendo `task_id` exacto en `qa-dispatcher.json`.
+
+## Checkpoint 2026-04-29 - Binance rate persistente sin tocar BCV
+
+- Se reconcilio el sprint de tasas: BCV no fue reescrito y vuelve a su flujo previo en `reference-rate.ts` y `/api/bcv-rate` con 3 fuentes, storage memory/file y `BCV_FALLBACK_RATE`.
+- Se agrego persistencia minima solo para Binance: `MpBinanceRateSnapshot` / `mp_binance_rate_snapshots`.
+- Se creo migracion SQL `20260429_marketplace_binance_rate_snapshots`; queda pendiente aplicarla con flujo controlado de DB.
+- Helper nuevo `lib/marketplace/binance-rate.ts`: `resolveBinanceRate()` consulta Binance P2P USDT/VES BUY, toma `data[].adv.price` y calcula mediana top 10.
+- Google Sheets CSV publico queda como fallback opcional solo para Binance con `MP_RATES_GOOGLE_SHEETS_CSV_URL` o alias equivalentes.
+- Si Binance/Sheets fallan, el helper usa ultimo snapshot DB como `stale`; si no existe, falla explicitamente.
+- Siguiente paso financiero seguro: aplicar migracion y asociar snapshot/tasa a cada `MpTransaction` antes de implementar liquidacion seller y CSV final.

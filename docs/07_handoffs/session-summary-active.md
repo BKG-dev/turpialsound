@@ -849,3 +849,18 @@ pm run build: OK.
 - Datos visibles cuando existen: metodo, etiqueta, banco, telefono, cedula, titular/beneficiario, cuenta, email o wallet segun aplique.
 - No se tocaron calculos financieros base, payout final, conformidad/fondos, schema, migraciones, booking, `/reservas`, Playwright, CDP ni QA automatizada.
 - Validacion final requerida al cierre de esta tarea: `git diff --check`, `npx tsc --noEmit`, `npm run build`.
+
+## Checkpoint 2026-04-29 - Binance rate persistente sin tocar BCV
+
+- Rama vigente: `Marketplace-Pure`.
+- Estado: implementado tecnicamente; sin commit y sin push.
+- Reconciliacion: el diff amplio anterior reescribia BCV y fue corregido. `lib/marketplace/reference-rate.ts` y `/api/bcv-rate` vuelven al flujo previo: 3 fuentes, storage memory/file y `BCV_FALLBACK_RATE`.
+- Modelo creado: `MpBinanceRateSnapshot`, tabla `mp_binance_rate_snapshots`.
+- Campos: `rate`, `fechaValor`, `source`, `mode`, `metadata`, `createdAt`, `updatedAt`.
+- Migracion creada: `prisma/migrations/20260429_marketplace_binance_rate_snapshots/migration.sql`; no se aplico contra produccion desde esta tarea.
+- Helper nuevo: `lib/marketplace/binance-rate.ts` con `resolveBinanceRate()`.
+- Fuente primaria Binance: API P2P, payload USDT/VES BUY, top 10, mediana de `data[].adv.price`.
+- Google Sheets queda solo como fallback opcional para Binance si se configura `MP_RATES_GOOGLE_SHEETS_CSV_URL` o alias equivalentes.
+- Fallback final Binance: ultimo snapshot valido en DB; no se inventa tasa Binance.
+- Queda pendiente aplicar migracion controlada y asociar tasa/snapshot a `MpTransaction` antes de liquidacion/CSV seller auditables.
+- No se tocaron booking, `/reservas`, liquidacion seller final, CSV final, payout final, carrito ni conformidad/fondos.

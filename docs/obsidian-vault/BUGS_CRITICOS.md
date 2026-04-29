@@ -772,3 +772,14 @@ pm run build: OK.
 - **Fix:** El reporte admin clasifica cada seller con `hasPayoutMethod`, usa metodo activo con prioridad default y muestra los detalles necesarios para pago manual. La vista separa `Listo para pagar` de `Falta método de cobro`.
 - **Impacto:** Operaciones sin metodo dejan de verse como plenamente listas; el admin ve banco, telefono, cedula, titular/beneficiario, cuenta, email o wallet cuando existen.
 - **No tocado:** Schema, migraciones, payout final, conformidad/fondos, calculos financieros base, booking, `/reservas`, Playwright, CDP y QA automatizada.
+
+## 34. Falta de tasa Binance persistente para liquidacion auditable
+
+- **Fecha:** 2026-04-29
+- **Estado real:** Mitigado a nivel de arquitectura base; pendiente asociacion por transaccion.
+- **Sintoma:** La liquidacion seller/CSV necesita tasa Binance, tipo de tasa y fecha valor auditables cuando buyer paga USDT/Binance y seller cobra Bs.
+- **Causa:** No existia tabla/modelo `Mp*` para Binance ni campos de tasa en `MpTransaction`. BCV ya tenia su mecanica vigente y no debia ser reemplazada.
+- **Fix base:** Se agrego `MpBinanceRateSnapshot` / `mp_binance_rate_snapshots` y helper `resolveBinanceRate()` con Binance P2P como fuente primaria, mediana top 10 y Google Sheets como fallback opcional solo para Binance.
+- **Regla preservada:** `reference-rate.ts` y `/api/bcv-rate` mantienen el flujo BCV previo, incluido `BCV_FALLBACK_RATE`.
+- **Pendiente bloqueante para liquidacion final:** Falta guardar en cada `MpTransaction` el snapshot/tasa exacta, tipo de tasa (`BCV`/`BINANCE`) y monto/moneda pagada por buyer.
+- **No tocado:** Liquidacion seller final, CSV final, payout final, carrito, conformidad/fondos, booking y `/reservas`.

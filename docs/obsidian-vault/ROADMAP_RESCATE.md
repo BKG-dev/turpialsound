@@ -1485,3 +1485,17 @@ pm run build: OK.
 - **UI:** Admin > Pagos vendedores muestra `Listo para pagar` separado de `Falta método de cobro`.
 - **Datos visibles:** metodo, etiqueta, banco, telefono, cedula, titular/beneficiario, cuenta, email o wallet segun el tipo guardado.
 - **Restricciones respetadas:** No se tocaron schema/migrations, payout final, conformidad/fondos, calculos financieros base, booking, `/reservas`, Playwright, CDP ni QA automatizada.
+
+## 34. Binance rate persistente sin reescribir BCV
+
+- **Fecha:** 2026-04-29
+- **Estado real:** Implementado tecnicamente; sin commit y sin push.
+- **Diagnostico:** El diff amplio anterior habia mezclado BCV y Binance. Se corrigio para respetar la regla: BCV queda en `reference-rate.ts` con 3 fuentes, storage memory/file y fallback `BCV_FALLBACK_RATE`; Binance era la tasa no persistida.
+- **Modelo nuevo:** `MpBinanceRateSnapshot` con tabla `mp_binance_rate_snapshots`.
+- **Campos:** `rate`, `fechaValor`, `source`, `mode`, `metadata`, `createdAt`, `updatedAt`.
+- **Migracion:** `prisma/migrations/20260429_marketplace_binance_rate_snapshots/migration.sql`.
+- **Helper:** `lib/marketplace/binance-rate.ts` con `resolveBinanceRate()`.
+- **Fuente primaria:** Binance P2P API, USDT/VES BUY, mediana de `data[].adv.price` top 10.
+- **Google Sheets:** Fallback opcional solo para Binance con `MP_RATES_GOOGLE_SHEETS_CSV_URL` o alias equivalentes.
+- **Pendiente:** Aplicar migracion en DB por flujo controlado y luego asociar snapshot/tasa a `MpTransaction` antes de liquidacion seller/CSV final.
+- **Restricciones respetadas:** No se implemento liquidacion final, CSV final, payout final, carrito, conformidad/fondos, booking ni `/reservas`.

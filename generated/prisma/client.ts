@@ -137,6 +137,11 @@ export type MpDispute = Prisma.MpDisputeModel
  */
 export type MpPayout = Prisma.MpPayoutModel
 /**
+ * Model MpBinanceRateSnapshot
+ * 
+ */
+export type MpBinanceRateSnapshot = Prisma.MpBinanceRateSnapshotModel
+/**
  * Model MpWebhookLog
  * 
  */
