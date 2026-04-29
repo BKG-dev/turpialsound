@@ -838,3 +838,14 @@ pm run build: OK.
 - No se tocó booking ni /reservas.
 - No se tocó main ni producción.
 - No se tocaron pasarelas, carrito, tasas, finanzas, conformidad/fondos ni paymentProofUrl/proxy SUPER.
+
+## Checkpoint 2026-04-29 - Admin Pagos vendedores metodo de cobro
+
+- Rama vigente: `Marketplace-Pure`.
+- Estado: implementado sin commit y sin push.
+- Causa encontrada: `getPayoutReport()` solo incluia `payoutMethods` con `isDefault: true` y no traia `encryptedData`; si un seller tenia metodo activo no-default o detalles requeridos, el admin caia a `UNKNOWN / Sin metodo configurado`. Ademas todas las ventas `RELEASED` se presentaban como listas aunque faltara metodo de cobro usable.
+- Fix aplicado: el query admin toma metodo activo con prioridad default, trae detalles del metodo, clasifica `hasPayoutMethod` y separa ventas con metodo vs ventas sin metodo.
+- UI Admin > Pagos vendedores: ahora muestra secciones `Listo para pagar` y `Falta método de cobro`; el monto listo excluye operaciones sin datos de cobro.
+- Datos visibles cuando existen: metodo, etiqueta, banco, telefono, cedula, titular/beneficiario, cuenta, email o wallet segun aplique.
+- No se tocaron calculos financieros base, payout final, conformidad/fondos, schema, migraciones, booking, `/reservas`, Playwright, CDP ni QA automatizada.
+- Validacion final requerida al cierre de esta tarea: `git diff --check`, `npx tsc --noEmit`, `npm run build`.

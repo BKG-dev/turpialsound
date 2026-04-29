@@ -1475,3 +1475,13 @@ pm run build: OK.
 - No se tocó booking ni /reservas.
 - No se tocó main ni producción.
 - No se tocaron pasarelas, carrito, tasas, finanzas, conformidad/fondos ni paymentProofUrl/proxy SUPER.
+
+## 33. Admin Pagos vendedores: metodo visible y falta metodo
+
+- **Fecha:** 2026-04-29
+- **Estado real:** Implementado tecnicamente; sin commit y sin push.
+- **Causa:** El reporte admin de payouts filtraba exclusivamente `payoutMethods` con `isDefault: true` y no leia detalles del metodo. Si el vendedor tenia metodo activo no-default o datos requeridos en `encryptedData`, el admin no podia mostrarlos. La vista tambien agrupaba todo `RELEASED` como listo para pago manual aunque faltara metodo.
+- **Fix:** `getPayoutReport()` ahora toma metodo activo con prioridad default, trae detalles visibles y expone `hasPayoutMethod`. `getAdminStats()` separa monto/cantidad listo de monto/cantidad con falta de metodo.
+- **UI:** Admin > Pagos vendedores muestra `Listo para pagar` separado de `Falta método de cobro`.
+- **Datos visibles:** metodo, etiqueta, banco, telefono, cedula, titular/beneficiario, cuenta, email o wallet segun el tipo guardado.
+- **Restricciones respetadas:** No se tocaron schema/migrations, payout final, conformidad/fondos, calculos financieros base, booking, `/reservas`, Playwright, CDP ni QA automatizada.

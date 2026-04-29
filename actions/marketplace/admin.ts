@@ -19,6 +19,13 @@ export interface AdminStats {
   totalSoldValue: number
   pendingSellerPayoutValue: number
   payoutsReadyCount: number
+  missingPayoutMethodValue: number
+  missingPayoutMethodCount: number
+}
+
+export interface PayoutDetail {
+  label: string
+  value: string
 }
 
 export interface EscrowItem {
@@ -47,8 +54,12 @@ export interface EscrowItem {
 export interface PayoutReportRow {
   sellerId: string
   sellerName: string
+  payoutMethodId: string | null
   payoutMethodType: string
   payoutAccount: string
+  payoutMethodIsDefault: boolean
+  payoutDetails: PayoutDetail[]
+  hasPayoutMethod: boolean
   grossAmount: number
   feeAmount: number
   netAmount: number
@@ -94,6 +105,24 @@ async function requireSuper() {
   return session
 }
 
+function parsePayoutDetails(encryptedData: string | null | undefined): PayoutDetail[] {
+  if (!encryptedData) return []
+
+  try {
+    const parsed = JSON.parse(encryptedData) as Record<string, unknown>
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return []
+
+    return Object.entries(parsed)
+      .map(([label, value]) => ({
+        label,
+        value: String(value ?? '').trim(),
+      }))
+      .filter(detail => detail.value.length > 0)
+  } catch {
+    return []
+  }
+}
+
 // ─── GET ADMIN STATS ──────────────────────────────────────────────────────────
 
 export async function getAdminStats(): Promise<ActionResult<AdminStats>> {
@@ -121,8 +150,7 @@ export async function getAdminStats(): Promise<ActionResult<AdminStats>> {
       relMonth,
       feesAgg,
       totalSoldAgg,
-      pendingPayoutAgg,
-      payoutsReadyCount,
+      releasedForPayout,
     ] =
       await Promise.all([
         db.mpTransaction.count(),
@@ -146,14 +174,32 @@ export async function getAdminStats(): Promise<ActionResult<AdminStats>> {
           where: { status: { in: ['IN_ESCROW', 'DELIVERY_CONFIRMED', 'RELEASED'] } },
           _sum: { amount: true },
         }),
-        db.mpTransaction.aggregate({
+        db.mpTransaction.findMany({
           where: { status: 'RELEASED' },
-          _sum: { sellerNetAmount: true },
+          select: {
+            sellerNetAmount: true,
+            seller: {
+              select: {
+                payoutMethods: {
+                  where: { isActive: true },
+                  orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+                  select: { id: true },
+                  take: 1,
+                },
+              },
+            },
+          },
         }),
-        db.mpTransaction.count({ where: { status: 'RELEASED' } }),
       ])
 
     await db.$disconnect()
+    const payoutStatusRows = releasedForPayout as Array<{
+      sellerNetAmount: unknown
+      seller: { payoutMethods: unknown[] }
+    }>
+    const readyPayouts = payoutStatusRows.filter(tx => tx.seller.payoutMethods.length > 0)
+    const missingMethodPayouts = payoutStatusRows.filter(tx => tx.seller.payoutMethods.length === 0)
+
     return {
       success: true,
       data: {
@@ -167,8 +213,10 @@ export async function getAdminStats(): Promise<ActionResult<AdminStats>> {
         releasedThisMonth: relMonth,
         platformFeesEarned: Number(feesAgg._sum.platformFeeAmount ?? 0),
         totalSoldValue: Number(totalSoldAgg._sum.amount ?? 0),
-        pendingSellerPayoutValue: Number(pendingPayoutAgg._sum.sellerNetAmount ?? 0),
-        payoutsReadyCount,
+        pendingSellerPayoutValue: readyPayouts.reduce((sum, tx) => sum + Number(tx.sellerNetAmount), 0),
+        payoutsReadyCount: readyPayouts.length,
+        missingPayoutMethodValue: missingMethodPayouts.reduce((sum, tx) => sum + Number(tx.sellerNetAmount), 0),
+        missingPayoutMethodCount: missingMethodPayouts.length,
       },
       message: 'OK',
     }
@@ -220,8 +268,9 @@ export async function getEscrowList(filter: EscrowFilter = 'all'): Promise<Actio
             id: true,
             displayName: true,
             payoutMethods: {
-              where: { isDefault: true, isActive: true },
+              where: { isActive: true },
               select: { displayLabel: true },
+              orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
               take: 1,
             },
           },
@@ -289,8 +338,16 @@ export async function getPayoutReport(): Promise<ActionResult<PayoutReportRow[]>
             id: true,
             displayName: true,
             payoutMethods: {
-              where: { isDefault: true, isActive: true },
-              select: { displayLabel: true, methodType: true },
+              where: { isActive: true },
+              select: {
+                id: true,
+                displayLabel: true,
+                methodType: true,
+                encryptedData: true,
+                currency: true,
+                isDefault: true,
+              },
+              orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
               take: 1,
             },
           },
@@ -320,8 +377,12 @@ export async function getPayoutReport(): Promise<ActionResult<PayoutReportRow[]>
         sellerMap.set(tx.sellerId, {
           sellerId: tx.sellerId,
           sellerName: tx.seller.displayName,
+          payoutMethodId: payout?.id ?? null,
           payoutMethodType: payout?.methodType ?? 'UNKNOWN',
-          payoutAccount: payout?.displayLabel ?? 'Sin método configurado',
+          payoutAccount: payout?.displayLabel ?? 'Falta método de cobro',
+          payoutMethodIsDefault: payout?.isDefault ?? false,
+          payoutDetails: parsePayoutDetails(payout?.encryptedData),
+          hasPayoutMethod: Boolean(payout),
           grossAmount: gross,
           feeAmount: fee,
           netAmount: net,

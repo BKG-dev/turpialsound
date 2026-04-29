@@ -762,3 +762,13 @@ pm run build: OK.
 - No se tocó booking ni /reservas.
 - No se tocó main ni producción.
 - No se tocaron pasarelas, carrito, tasas, finanzas, conformidad/fondos ni paymentProofUrl/proxy SUPER.
+
+## 33. Residual Admin Pagos vendedores: falsos "listos" sin metodo
+
+- **Fecha:** 2026-04-29
+- **Estado real:** Corregido tecnicamente; pendiente solo validacion visual/manual si se requiere.
+- **Sintoma:** Admin > Pagos vendedores podia mostrar `UNKNOWN / Sin metodo configurado` y aun asi presentar ventas como listas para pagar.
+- **Causa:** Query limitado a metodo `isDefault + isActive`, sin fallback a metodo activo y sin detalles de `encryptedData`; la UI no separaba falta de metodo.
+- **Fix:** El reporte admin clasifica cada seller con `hasPayoutMethod`, usa metodo activo con prioridad default y muestra los detalles necesarios para pago manual. La vista separa `Listo para pagar` de `Falta método de cobro`.
+- **Impacto:** Operaciones sin metodo dejan de verse como plenamente listas; el admin ve banco, telefono, cedula, titular/beneficiario, cuenta, email o wallet cuando existen.
+- **No tocado:** Schema, migraciones, payout final, conformidad/fondos, calculos financieros base, booking, `/reservas`, Playwright, CDP y QA automatizada.

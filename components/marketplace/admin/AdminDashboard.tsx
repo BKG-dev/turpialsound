@@ -76,6 +76,33 @@ function fmtUSD(n: number) {
   return `$${n.toFixed(2)}`
 }
 
+function payoutMethodLabel(methodType: string) {
+  const labels: Record<string, string> = {
+    PAGO_MOVIL: 'Pago movil',
+    BANK_TRANSFER: 'Transferencia bancaria',
+    ZELLE: 'Zelle',
+    CRYPTO_WALLET: 'Binance Pay / wallet crypto',
+    UNKNOWN: 'Sin metodo',
+  }
+
+  return labels[methodType] ?? methodType
+}
+
+function payoutDetailLabel(label: string) {
+  const labels: Record<string, string> = {
+    titular: 'Titular',
+    beneficiario: 'Titular',
+    cedula: 'Cedula',
+    telefono: 'Telefono',
+    banco: 'Banco',
+    cuenta: 'Cuenta',
+    email: 'Email',
+    wallet: 'Wallet',
+  }
+
+  return labels[label] ?? label
+}
+
 function isExpiring(item: EscrowItem) {
   if (!item.escrowReleaseAt || item.status !== 'IN_ESCROW') return false
   return new Date(item.escrowReleaseAt).getTime() - Date.now() < 24 * 60 * 60 * 1000
@@ -126,13 +153,15 @@ function roleBadge(role: string) {
 }
 
 function exportCSV(rows: PayoutReportRow[]) {
-  const headers = ['Vendedor', 'Metodo de cobro', 'Cuenta/Direccion', 'Bruto (USD)', 'Comision plataforma', 'Monto a pagar', 'Moneda', 'Num. TX', 'IDs Transacciones']
+  const headers = ['Estado', 'Vendedor', 'Metodo de cobro', 'Cuenta/Direccion', 'Detalles de cobro', 'Bruto (USD)', 'Comision plataforma', 'Monto a pagar', 'Moneda', 'Num. TX', 'IDs Transacciones']
   const csv = [
     headers.join(','),
     ...rows.map(r => [
+      `"${r.hasPayoutMethod ? 'Listo para pagar' : 'Falta método de cobro'}"`,
       `"${r.sellerName}"`,
-      `"${r.payoutMethodType}"`,
+      `"${payoutMethodLabel(r.payoutMethodType)}"`,
       `"${r.payoutAccount}"`,
+      `"${r.payoutDetails.map(d => `${payoutDetailLabel(d.label)}: ${d.value}`).join(' | ')}"`,
       r.grossAmount.toFixed(2),
       r.feeAmount.toFixed(2),
       r.netAmount.toFixed(2),
@@ -412,7 +441,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
             <KpiCard label="Pagos por revisar" value={stats.pendingValidation} sub="requieren validacion manual" color="#fb923c" icon={Clock} onClick={() => openOperationalView('validations', 'PAYMENT_RECEIVED')} />
             <KpiCard label="Dinero en proceso" value={fmtUSD(stats.escrowActiveValue)} sub="operaciones protegidas" color="#fbbf24" icon={Lock} onClick={() => openOperationalView('escrow', 'IN_ESCROW')} />
             <KpiCard label="Disputas abiertas" value={stats.openDisputes} sub="requieren decision" color="#ef4444" icon={AlertTriangle} onClick={() => openOperationalView('transactions', 'DISPUTED')} />
-            <KpiCard label="Listo para pagar" value={fmtUSD(stats.pendingSellerPayoutValue)} sub={`${stats.payoutsReadyCount} venta${stats.payoutsReadyCount !== 1 ? 's' : ''} lista${stats.payoutsReadyCount !== 1 ? 's' : ''}`} color="#4ade80" icon={CheckCircle2} onClick={() => setTab('payouts')} />
+            <KpiCard label="Listo para pagar" value={fmtUSD(stats.pendingSellerPayoutValue)} sub={`${stats.payoutsReadyCount} venta${stats.payoutsReadyCount !== 1 ? 's' : ''} con metodo; ${stats.missingPayoutMethodCount} falta${stats.missingPayoutMethodCount !== 1 ? 'n' : ''} datos`} color="#4ade80" icon={CheckCircle2} onClick={() => setTab('payouts')} />
           </div>
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -753,7 +782,87 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
   // ─── Tab: Payouts ──────────────────────────────────────────────────────────
 
   const PayoutsTab = () => {
-    const total = payouts?.reduce((s, r) => s + r.netAmount, 0) ?? 0
+    const readyPayouts = payouts?.filter(row => row.hasPayoutMethod) ?? []
+    const missingMethodPayouts = payouts?.filter(row => !row.hasPayoutMethod) ?? []
+    const readyTotal = readyPayouts.reduce((s, r) => s + r.netAmount, 0)
+    const missingTotal = missingMethodPayouts.reduce((s, r) => s + r.netAmount, 0)
+    const totalSales = (rows: PayoutReportRow[]) => rows.reduce((s, r) => s + r.transactionCount, 0)
+
+    const renderPayoutRow = (row: PayoutReportRow, state: 'ready' | 'missing') => (
+      <div
+        key={row.sellerId}
+        className="rounded-xl p-4"
+        style={{
+          background: state === 'ready' ? 'rgba(74,222,128,0.045)' : 'rgba(251,146,60,0.055)',
+          border: state === 'ready' ? '1px solid rgba(74,222,128,0.18)' : '1px solid rgba(251,146,60,0.24)',
+        }}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-semibold text-white">{row.sellerName}</p>
+              <span
+                className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                style={{
+                  background: state === 'ready' ? 'rgba(74,222,128,0.12)' : 'rgba(251,146,60,0.14)',
+                  color: state === 'ready' ? '#4ade80' : '#fb923c',
+                  border: state === 'ready' ? '1px solid rgba(74,222,128,0.22)' : '1px solid rgba(251,146,60,0.24)',
+                }}
+              >
+                {state === 'ready' ? 'Listo para pagar' : 'Falta método de cobro'}
+              </span>
+            </div>
+            <p className="text-[11px] mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              {state === 'ready' ? `${payoutMethodLabel(row.payoutMethodType)} - ${row.payoutAccount}` : 'Solicitar datos de cobro al vendedor antes de pagar.'}
+            </p>
+          </div>
+          <div className="text-left sm:text-right">
+            <p className="text-base font-semibold" style={{ color: state === 'ready' ? '#4ade80' : '#fb923c' }}>{fmtUSD(row.netAmount)}</p>
+            <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>monto a pagar</p>
+          </div>
+        </div>
+
+        {state === 'ready' && (
+          <div
+            className="mb-3 grid gap-2 text-[11px] [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.75rem' }}
+          >
+            <div>
+              <p style={{ color: 'rgba(255,255,255,0.35)' }}>Metodo</p>
+              <p className="text-white">{payoutMethodLabel(row.payoutMethodType)}</p>
+            </div>
+            <div>
+              <p style={{ color: 'rgba(255,255,255,0.35)' }}>Etiqueta</p>
+              <p className="text-white [overflow-wrap:anywhere]">{row.payoutAccount}</p>
+            </div>
+            {row.payoutDetails.map(detail => (
+              <div key={`${row.sellerId}-${detail.label}`}>
+                <p style={{ color: 'rgba(255,255,255,0.35)' }}>{payoutDetailLabel(detail.label)}</p>
+                <p className="text-white [overflow-wrap:anywhere]">{detail.value}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="grid grid-cols-3 gap-2 text-[11px]">
+          <div>
+            <p style={{ color: 'rgba(255,255,255,0.3)' }}>Vendido</p>
+            <p className="text-white">{fmtUSD(row.grossAmount)}</p>
+          </div>
+          <div>
+            <p style={{ color: 'rgba(255,255,255,0.3)' }}>Comision plataforma</p>
+            <p className="text-white">- {fmtUSD(row.feeAmount)}</p>
+          </div>
+          <div>
+            <p style={{ color: 'rgba(255,255,255,0.3)' }}>Ventas</p>
+            <p className="text-white">{row.transactionCount} TX</p>
+          </div>
+        </div>
+        <p className="text-[10px] mt-2 font-mono [overflow-wrap:anywhere]" style={{ color: 'rgba(255,255,255,0.2)' }}>
+          IDs: {row.transactionIds.join(', ')}
+        </p>
+      </div>
+    )
 
     return (
       <div>
@@ -761,7 +870,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
           <div>
             <h2 className="text-sm font-semibold text-white">Pagos a vendedores</h2>
             <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              Ventas listas para pago manual al vendedor.
+              Separa ventas con datos suficientes de las que requieren metodo de cobro.
             </p>
           </div>
           <div className="flex gap-2">
@@ -794,14 +903,23 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
         ) : (
           <>
             {/* Summary */}
-            <div
-              className="rounded-xl p-4 mb-4 flex items-center justify-between"
-              style={{ background: 'rgba(0,174,239,0.06)', border: '1px solid rgba(0,174,239,0.15)' }}
-            >
-              <div>
-                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>{payouts.length} vendedor(es) - {payouts.reduce((s, r) => s + r.transactionCount, 0)} ventas listas</p>
-                <p className="text-base font-semibold text-white mt-0.5">Total a pagar: <span style={{ color: '#00aeef' }}>{fmtUSD(total)}</span></p>
+            <div className="mb-4 grid gap-3 md:grid-cols-2">
+              <div
+                className="rounded-xl p-4"
+                style={{ background: 'rgba(74,222,128,0.055)', border: '1px solid rgba(74,222,128,0.18)' }}
+              >
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>{readyPayouts.length} vendedor(es) - {totalSales(readyPayouts)} ventas</p>
+                <p className="text-base font-semibold text-white mt-0.5">Listo para pagar: <span style={{ color: '#4ade80' }}>{fmtUSD(readyTotal)}</span></p>
               </div>
+              <div
+                className="rounded-xl p-4"
+                style={{ background: 'rgba(251,146,60,0.06)', border: '1px solid rgba(251,146,60,0.2)' }}
+              >
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>{missingMethodPayouts.length} vendedor(es) - {totalSales(missingMethodPayouts)} ventas</p>
+                <p className="text-base font-semibold text-white mt-0.5">Falta método de cobro: <span style={{ color: '#fb923c' }}>{fmtUSD(missingTotal)}</span></p>
+              </div>
+            </div>
+            <div className="mb-4 flex justify-end">
               <button
                 onClick={() => exportCSV(payouts)}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium"
@@ -811,42 +929,28 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
               </button>
             </div>
 
-            <div className="space-y-3">
-              {payouts.map(row => (
-                <div
-                  key={row.sellerId}
-                  className="rounded-xl p-4"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
-                    <div>
-                      <p className="text-sm font-semibold text-white">{row.sellerName}</p>
-                      <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>{row.payoutAccount}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-base font-semibold" style={{ color: '#4ade80' }}>{fmtUSD(row.netAmount)}</p>
-                      <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>monto a pagar</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-[11px]">
-                    <div>
-                      <p style={{ color: 'rgba(255,255,255,0.3)' }}>Vendido</p>
-                      <p className="text-white">{fmtUSD(row.grossAmount)}</p>
-                    </div>
-                    <div>
-                      <p style={{ color: 'rgba(255,255,255,0.3)' }}>Comision plataforma</p>
-                      <p className="text-white">- {fmtUSD(row.feeAmount)}</p>
-                    </div>
-                    <div>
-                      <p style={{ color: 'rgba(255,255,255,0.3)' }}>Ventas</p>
-                      <p className="text-white">{row.transactionCount} TX</p>
-                    </div>
-                  </div>
-                  <p className="text-[10px] mt-2 font-mono" style={{ color: 'rgba(255,255,255,0.2)' }}>
-                    IDs: {row.transactionIds.join(', ')}
+            <div className="space-y-5">
+              <section>
+                <h3 className="mb-2 text-xs font-semibold text-white">Listo para pagar</h3>
+                {readyPayouts.length === 0 ? (
+                  <p className="rounded-xl px-4 py-3 text-xs" style={{ color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    No hay ventas con metodo de cobro usable.
                   </p>
-                </div>
-              ))}
+                ) : (
+                  <div className="space-y-3">{readyPayouts.map(row => renderPayoutRow(row, 'ready'))}</div>
+                )}
+              </section>
+
+              <section>
+                <h3 className="mb-2 text-xs font-semibold" style={{ color: '#fb923c' }}>Falta método de cobro</h3>
+                {missingMethodPayouts.length === 0 ? (
+                  <p className="rounded-xl px-4 py-3 text-xs" style={{ color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    Sin ventas bloqueadas por falta de datos de cobro.
+                  </p>
+                ) : (
+                  <div className="space-y-3">{missingMethodPayouts.map(row => renderPayoutRow(row, 'missing'))}</div>
+                )}
+              </section>
             </div>
           </>
         )}

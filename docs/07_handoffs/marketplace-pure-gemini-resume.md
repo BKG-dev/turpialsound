@@ -96,3 +96,30 @@ pm run build: OK.
 - No se tocó booking ni /reservas.
 - No se tocó main ni producción.
 - No se tocaron pasarelas, carrito, tasas, finanzas, conformidad/fondos ni paymentProofUrl/proxy SUPER.
+
+## Checkpoint 2026-04-29 - Admin Pagos vendedores
+
+**Rama:** `Marketplace-Pure`
+**Estado:** implementado sin commit/push.
+
+### Causa encontrada
+- `getPayoutReport()` solo leia payout method `isDefault + isActive`.
+- No habia fallback a metodo activo usable.
+- No se incluian detalles de `encryptedData`.
+- La UI agrupaba todo `RELEASED` como listo aunque faltara metodo.
+
+### Correccion
+- Query admin usa metodo activo con prioridad default.
+- El reporte expone `hasPayoutMethod` y detalles visibles.
+- Admin > Pagos vendedores separa `Listo para pagar` y `Falta método de cobro`.
+- El KPI `Listo para pagar` suma solo operaciones con metodo de cobro usable.
+
+### Datos visibles
+- Metodo, etiqueta, banco, telefono, cedula, titular/beneficiario, cuenta, email o wallet segun aplique.
+
+### Limites
+- Sin schema/migrations.
+- Sin payout final ni cierre contable.
+- Sin conformidad/fondos.
+- Sin booking ni `/reservas`.
+- Sin Playwright/CDP/QA automatizada.

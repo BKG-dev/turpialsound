@@ -699,3 +699,12 @@ pm run build: OK.
 - No se tocó booking ni /reservas.
 - No se tocó main ni producción.
 - No se tocaron pasarelas, carrito, tasas, finanzas, conformidad/fondos ni paymentProofUrl/proxy SUPER.
+
+## Checkpoint 2026-04-29 - Admin Pagos vendedores
+
+- Admin > Pagos vendedores fue corregido para no mezclar operaciones listas con operaciones sin metodo de cobro.
+- Causa: query admin limitado a metodo `isDefault + isActive`, sin fallback a metodo activo ni detalles de `encryptedData`; agrupacion visual trataba todo `RELEASED` como listo.
+- Estado esperado: `Listo para pagar` solo muestra vendedores con metodo activo usable; `Falta método de cobro` agrupa los montos bloqueados por falta de datos.
+- Datos visibles para pago manual cuando existen: metodo, etiqueta, banco, telefono, cedula, titular/beneficiario, cuenta, email o wallet.
+- No se implemento pago final ni cierre contable; no se tocaron schema/migrations, finanzas, conformidad/fondos, booking, `/reservas`, Playwright ni CDP.
+- Siguiente ventana: si se valida manualmente esta pantalla, documentar solo hallazgos residuales; cualquier QA automatizada nueva sigue requiriendo `task_id` exacto en `qa-dispatcher.json`.
