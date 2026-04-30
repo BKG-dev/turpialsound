@@ -305,7 +305,7 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
     const now = new Date()
     await db.mpTransaction.update({
       where: { id: transactionId },
-      data: { status: 'RELEASED', buyerConfirmedAt: now, releasedAt: now },
+      data: { status: 'DELIVERY_CONFIRMED', buyerConfirmedAt: now },
     })
 
     await db.mpTransactionStatusHistory.create({
@@ -314,21 +314,12 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
         fromStatus: 'IN_ESCROW',
         toStatus: 'DELIVERY_CONFIRMED',
         changedBy: session.userId,
-        reason: 'Comprador confirmo la entrega',
-      },
-    })
-    await db.mpTransactionStatusHistory.create({
-      data: {
-        transactionId,
-        fromStatus: 'DELIVERY_CONFIRMED',
-        toStatus: 'RELEASED',
-        changedBy: 'SYSTEM',
-        reason: 'Fondos liberados automaticamente al confirmar entrega',
+        reason: 'Comprador confirmo la entrega. Operacion movida a Fondos por liberar.',
       },
     })
 
     await db.$disconnect()
-    return { success: true, data: undefined, message: 'Entrega confirmada. Los fondos fueron liberados al vendedor.' }
+    return { success: true, data: undefined, message: 'Entrega confirmada. El equipo gestionara el pago al vendedor.' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }

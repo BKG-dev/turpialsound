@@ -322,11 +322,11 @@ function getStatusLabelForView(status: string, viewAs: 'buyer' | 'seller') {
 
 function getBuyerCtaLabel(status: string) {
   if (status === 'PENDING_PAYMENT') return 'Reportar pago'
-  if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado / esperando validacion'
-  if (status === 'IN_ESCROW') return 'Pago validado / esperando entrega'
-  if (status === 'DELIVERY_CONFIRMED') return 'Entrega confirmada / esperando liberacion'
+  if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago en revision'
+  if (status === 'IN_ESCROW') return 'Confirmar que ya recibí el producto'
+  if (status === 'DELIVERY_CONFIRMED') return 'Entrega confirmada'
   if (status === 'RELEASED') return 'Operacion completada'
-  if (status === 'DISPUTED') return 'En disputa / esperando resolucion'
+  if (status === 'DISPUTED') return 'Disputa en curso'
   return 'Ver detalle'
 }
 
@@ -1155,7 +1155,7 @@ function ProfileHeader({
   const isNew = totalSales === 0 && totalPurchases === 0
   const role = profile?.role ?? 'USER'
 
-  const roleLabel: Record<string, string> = { USER: 'Miembro', SOCIO: 'Socio', SUPER: 'Admin' }
+  const roleLabel: Record<string, string> = { USER: 'Miembro', seller: 'Miembro', SOCIO: 'Socio', SUPER: 'Admin' }
   const roleColor: Record<string, string> = { USER: '#5a5a5a', SOCIO: '#ffc107', SUPER: '#ef4444' }
 
   return (
@@ -1802,7 +1802,16 @@ export function DashboardClient({
   }, [])
 
   const unreadThreads = threads.filter((thread) => getTxUnreadCount(thread, session.userId) > 0)
-  const readThreads = threads.filter(t => !unreadThreads.some(unreadThread => unreadThread.id === t.id))
+
+  // Combine and sort: unread first, then by lastMessageAt descending
+  const displayThreads = [...threads].sort((a, b) => {
+    const aUnread = getTxUnreadCount(a, session.userId) > 0;
+    const bUnread = getTxUnreadCount(b, session.userId) > 0;
+
+    if (aUnread !== bUnread) return aUnread ? -1 : 1;
+
+    return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
+  });
 
   const pendingValidationSales = sales.filter(tx => ['PAYMENT_RECEIVED', 'VALIDATING'].includes(tx.status))
   const escrowSales = sales.filter(tx => ['IN_ESCROW', 'DELIVERY_CONFIRMED'].includes(tx.status))
@@ -2312,46 +2321,19 @@ export function DashboardClient({
                 )}
               </div>
 
-              <div>
-                <SectionHeader title="Chats por Atender" count={unreadThreads.length} />
-                {unreadThreads.length === 0 ? (
-                  <EmptyState
-                    icon={MessageSquare}
-                    title="Sin chats pendientes"
-                    sub="Cuando entren mensajes nuevos, apareceran primero en esta sección."
-                  />
-                ) : (
-                  <div className="space-y-3">
-                    {unreadThreads.map(t => (
-                      <ThreadCard
-                        key={t.id}
-                        thread={t}
-                        currentUserId={session.userId}
-                        onOpen={() => handleOpenThread(t)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
 
-              {/* Chats de Negociación */}
+              {/* All Chats, sorted */}
               <div>
-                <SectionHeader title="Todos los Chats" count={threads.length} />
-                {threads.length === 0 ? (
+                <SectionHeader title="Chats" count={displayThreads.length} />
+                {displayThreads.length === 0 ? (
                   <EmptyState
                     icon={MessageSquare}
                     title="Sin conversaciones"
                     sub="Cuando contactes a un vendedor o alguien te escriba, los hilos aparecerán aquí."
                   />
-                ) : readThreads.length === 0 ? (
-                  <EmptyState
-                    icon={MessageSquare}
-                    title="Todo lo pendiente ya está arriba"
-                    sub="Todas tus conversaciones activas tienen mensajes sin leer o aún no hay chats adicionales."
-                  />
                 ) : (
                   <div className="space-y-3">
-                    {readThreads.map(t => (
+                    {displayThreads.map(t => (
                       <ThreadCard
                         key={t.id}
                         thread={t}

@@ -693,7 +693,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                   </div>
 
                   {/* Details grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 mb-3 text-[11px]">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-3 text-[11px] [word-break:break-word]">
                     <div>
                       <p style={{ color: 'rgba(255,255,255,0.3)' }}>Comision plataforma</p>
                       <p className="text-white">{fmtUSD(tx.platformFeeAmount)}</p>
@@ -845,7 +845,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-2 text-[11px]">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 mb-3 text-[11px]">
           <div>
             <p style={{ color: 'rgba(255,255,255,0.3)' }}>Vendido</p>
             <p className="text-white">{fmtUSD(row.grossAmount)}</p>

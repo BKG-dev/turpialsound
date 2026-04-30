@@ -16,7 +16,7 @@ const MAX_TOTAL_CHARS = 2400
 const MAX_CALLS = 12
 const WINDOW_MS = 60 * 60 * 1000
 const RATE_LIMIT_COOKIE = 'mp_public_assistant_rl'
-const MODEL_TIMEOUT_MS = 8000
+const MODEL_TIMEOUT_MS = 12000
 const SAFE_FALLBACK_REPLY =
   'Puedo ayudarte con compras, ventas, ubicacion publica y uso del marketplace. Si quieres, preguntame por filtros visibles, flujo de compra o alcance del marketplace.'
 
@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const model = process.env.MARKETPLACE_ASSISTANT_MODEL?.trim() || 'gemini-2.5-flash'
+    const model = process.env.MARKETPLACE_ASSISTANT_MODEL?.trim() || 'gemini-1.5-flash'
     const abortController = new AbortController()
     const timeoutId = setTimeout(() => abortController.abort(), MODEL_TIMEOUT_MS)
 
