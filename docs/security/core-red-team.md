@@ -1,30 +1,27 @@
-# Matriz de Auditoría de Seguridad - Core Reservas (Red Team)
+# Matriz de Auditoria de Seguridad - Flujo de Expiracion (Red Team)
 
-## 1. RIESGOS CONFIRMADOS / DEUDA DE HARDENING
-| Riesgo | Severidad | Evidencia | Archivo | Mitigación | Responsable |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Enlaces operativos firmados** | Media-Alta | La revisión de pago puede abrirse por token firmado sin sesión admin activa. Es útil para operación, pero si el enlace se filtra expone contexto sensible mientras el token viva. | `lib/bookings/operational-links.ts`, `app/ops/payment-review` | Mantener TTL corto, auditar accesos y evaluar sesión admin obligatoria para acciones destructivas. | Codex |
-| **Expiración no programada** | Alta | La expiración se procesa desde flujo admin; falta scheduler/reconciliación independiente. | `app/admin/page.tsx`, `lib/bookings/operations.ts` | Crear job/cron operativo que expire y sincronice calendar sin depender de visitas al admin. | Codex |
+## 1. RIESGOS CONFIRMADOS
+- **Falta de scheduler configurado**: el flujo puede ejecutarse desde `/admin` o mediante `POST /api/bookings/expire`, pero falta configurar un scheduler externo/Vercel Cron.
+- **Sincronizacion Calendar fragil**: si Google Calendar falla durante la expiracion, la DB queda expirada/liberada y el fallo queda auditado, pero el evento externo puede quedar desalineado hasta reconciliacion manual.
 
-## 2. SOSPECHAS RAZONABLES
-| Riesgo | Severidad | Sospecha | Archivo | Mitigación | Responsable |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Colisión de Recursos** | Media | Posibilidad de doble asignación si la transacción DB no aísla correctamente el chequeo de disponibilidad. | `lib/bookings/availability.ts` | Asegurar bloqueo (`SELECT FOR UPDATE`) en `tx.resource` durante el chequeo. | Codex |
-| **Desalineación Admin/Calendar** | Crítica | El sync ocurre post-transacción sin mecanismo de rollback o reintento garantizado. | `lib/bookings/google-calendar.ts` | Implementar "Outbox Pattern" o tareas asíncronas para sync. | Codex |
-| **Timezone Drift** | Media | El sistema fuerza America/Caracas en varias capas; requiere QA cruzado browser/server/calendar para confirmar que no haya deriva visual. | `lib/bookings/actions.ts`, `lib/bookings/google-calendar.ts` | Mantener UTC en DB, renderizar explícitamente America/Caracas y cubrir con QA. | Codex |
+## 2. RIESGOS MITIGADOS
+- **Autenticacion endpoint**: `POST /api/bookings/expire` exige `Authorization: Bearer <BOOKINGS_EXPIRE_CRON_SECRET>`.
+- **Fail closed**: si `BOOKINGS_EXPIRE_CRON_SECRET` no esta configurado, el endpoint responde `401` y no ejecuta expiracion.
+- **Idempotencia basica**: la operacion solo actualiza filas `status = under_review` que siguen siendo `pending_payment` real; reservas ya `rejected`/`expired` no se reexpiran.
+- **Proteccion payment_reported**: reservas `payment_reported` o con `PaymentProof.isActive = true` quedan fuera de expiracion automatica.
+- **Auditoria**: cada expiracion efectiva genera `booking_expired_payment_window`; fallos de Calendar generan `calendar_sync_failed_on_expiration`.
 
-## 3. HARDENING FUTURO
-| Riesgo | Severidad | Contexto | Archivo | Mitigación | Responsable |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Rate Limiting** | Baja | Sin protección contra spam en formularios públicos. | `lib/bookings/actions.ts` | Implementar middleware de rate limiting (Upstash o similar). | Futuro |
-| **Sanitización Admin** | Media | Filtros de URL admin son básicos; requieren validación de tipo más estricta. | `app/admin/page.tsx` | Validar tipos de `searchParams` con `zod`. | Codex |
+## 3. RIESGOS PENDIENTES
+- **Sin retry/outbox**: si email o Calendar fallan, no existe reintento persistente automatico.
+- **Rate limiting**: el endpoint no tiene rate limiting; depende del bearer secret y de la idempotencia de la operacion.
+- **Rotacion de secreto**: la seguridad de `BOOKINGS_EXPIRE_CRON_SECRET` depende de configuracion y rotacion operacional externa.
 
-## CAMBIOS DOCUMENTALES
-- Se ha refactorizado la matriz de riesgos para separar lo que es vulnerabilidad confirmada, sospecha técnica y deuda de hardening.
-- Se añadió evidencia explícita para cada entrada.
+## EVIDENCIA
+- `app/api/bookings/expire/route.ts` valida bearer y falla cerrado si falta secret.
+- `lib/bookings/operations.ts` ejecuta la expiracion en transaccion, excluye comprobantes activos y deja email/calendar fuera de la transaccion.
+- `lib/bookings/operations.ts` audita fallo de Calendar con `calendar_sync_failed_on_expiration`.
 
-## PRIMER RIESGO A TOMAR POR CODEX
-- **Atomicidad de disponibilidad y expiración programada.** Son los dos riesgos con impacto directo sobre operación real de agenda.
-
-## VALIDACIÓN
-- `git diff --check`: Ejecutado correctamente.
+## RECOMENDACION PARA CODEX
+1. Configurar scheduler externo/Vercel Cron contra `POST /api/bookings/expire`.
+2. Agregar reconciliacion o reintento operativo para fallos de Calendar/email.
+3. Evaluar rate limiting si el endpoint queda expuesto a internet publica.

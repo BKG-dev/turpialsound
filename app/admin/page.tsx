@@ -9,14 +9,13 @@ import {
   isValidAdminSessionValue,
 } from '@/lib/auth/session'
 import {
-  getOperationalStatusFromInternalNotes,
+  expireOverduePendingPayments,
   getPaymentDeadline,
   getOperationalStatus,
   isOperationalBookingStatus,
   mapOperationalStatusToBookingStatus,
   OPERATIONAL_BOOKING_STATUSES,
   OPERATIONAL_STATUS_LABELS,
-  PAYMENT_WINDOW_MINUTES,
   setOperationalStatusInInternalNotes,
   type OperationalBookingStatus,
 } from '@/lib/bookings/operations'
@@ -101,120 +100,6 @@ function parseOptionalAmount(value: unknown): number | null {
 
   const numericValue = Number(value)
   return Number.isFinite(numericValue) ? numericValue : null
-}
-
-async function expireOverduePendingPayments() {
-  const cutoff = new Date(Date.now() - PAYMENT_WINDOW_MINUTES * 60 * 1000)
-  const overdueBookings = await prisma.bookingRequest.findMany({
-    where: {
-      status: 'under_review',
-      createdAt: { lt: cutoff },
-    },
-    include: {
-      items: {
-        take: 1,
-        orderBy: { createdAt: 'asc' },
-        include: {
-          resource: {
-            select: {
-              name: true,
-            },
-          },
-          serviceVariant: {
-            include: {
-              service: true,
-            },
-          },
-        },
-      },
-    },
-    take: 200,
-  })
-
-  for (const booking of overdueBookings) {
-    const taggedStatus = getOperationalStatusFromInternalNotes(booking.internalNotes)
-    if (taggedStatus && taggedStatus !== 'pending_payment' && taggedStatus !== 'payment_reported') {
-      continue
-    }
-
-    const updatedInternalNotes = setOperationalStatusInInternalNotes(
-      booking.internalNotes,
-      'expired',
-    )
-
-    const expireResult = await prisma.$transaction(async (tx) => {
-      const updateResult = await tx.bookingRequest.updateMany({
-        where: {
-          id: booking.id,
-          status: 'under_review',
-        },
-        data: {
-          status: 'rejected',
-          internalNotes: updatedInternalNotes,
-        },
-      })
-
-      if (updateResult.count === 0) {
-        return { changed: false }
-      }
-
-      await tx.auditLog.create({
-        data: {
-          bookingRequestId: booking.id,
-          action: 'booking_expired_payment_window',
-          nextState: {
-            operationalStatus: 'expired',
-          },
-        },
-      })
-
-      return { changed: true }
-    })
-
-    if (!expireResult.changed) {
-      continue
-    }
-
-    const primaryItem = booking.items[0]
-    await sendBookingNotifications('booking.expired', {
-      publicCode: booking.publicCode,
-      clientName: booking.requesterName,
-      clientEmail: booking.requesterEmail,
-      serviceName: primaryItem?.serviceVariant.service.name ?? null,
-      variantName: primaryItem?.serviceVariant.name ?? null,
-      resourceName: primaryItem?.resource?.name ?? null,
-      startAt: booking.eventDate,
-      endAt: booking.eventEndDate,
-      deadlineAt: getPaymentDeadline(booking.createdAt),
-      estimatedTotal: parseOptionalAmount(booking.estimatedTotal),
-      currency: booking.currency,
-      status: 'expired',
-      notes: booking.notes,
-    })
-
-    const calendarSync = await syncBookingToGoogleCalendar({
-      publicCode: booking.publicCode,
-      serviceName: primaryItem?.serviceVariant.service.name ?? 'Sin servicio',
-      variantName: primaryItem?.serviceVariant.name ?? 'Sin modalidad',
-      resourceName: primaryItem?.resource?.name ?? null,
-      requesterName: booking.requesterName,
-      requesterPhone: booking.requesterPhone,
-      eventDate: booking.eventDate,
-      eventEndDate: booking.eventEndDate,
-      paymentDeadline: getPaymentDeadline(booking.createdAt),
-      operationalStatus: 'expired',
-      existingCalendarEventId: booking.calendarEventId,
-    })
-
-    if (calendarSync.ok && calendarSync.eventId !== booking.calendarEventId) {
-      await prisma.bookingRequest.update({
-        where: { id: booking.id },
-        data: {
-          calendarEventId: calendarSync.eventId,
-        },
-      })
-    }
-  }
 }
 
 function withQueryParam(path: string, key: string, value: string): string {

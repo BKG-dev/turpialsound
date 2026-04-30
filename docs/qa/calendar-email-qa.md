@@ -4,7 +4,7 @@
 Validar la correcta sincronización con servicios externos (Email, Google Calendar).
 
 ## Alcance
-Notificaciones automáticas y gestión de eventos de calendario central. La integración de calendar vive en `lib/bookings/google-calendar.ts`.
+Notificaciones automáticas y gestión de eventos de calendario.
 
 ## Precondiciones
 - Integración API configurada y funcionando en entorno de pruebas.
@@ -12,16 +12,22 @@ Notificaciones automáticas y gestión de eventos de calendario central. La inte
 ## Casos de Prueba
 
 ### 1. Notificaciones (Release)
-- **Pasos**: Finalizar reserva o subir comprobante.
+- **Pasos**: Finalizar reserva, subir comprobante o ejecutar expiración.
 - **Resultado Esperado**: Recepción de correos automáticos (mock/log).
+  - Confirmar envío de `booking.expired`.
 - **Severidad**: Alta.
 
 ### 2. Sincronización Calendar
-- **Pasos**: Crear solicitud, reportar pago, confirmar reserva y cancelar/expirar una solicitud en entorno de prueba.
-- **Resultado Esperado**: Evento creado/actualizado/marcado según estado operativo en Google Calendar.
+- **Pasos**: Confirmar reserva o ejecutar expiración.
+- **Resultado Esperado**:
+  - Confirmar: Evento creado/actualizado.
+  - Expirar: Evento marcado como expired en Calendar.
 - **Severidad**: Alta.
 
-### 3. Manejo de Errores
+### 3. Manejo de Errores (Calendar/Email)
 - **Pasos**: Simular caída de API de Google o servicio de email.
-- **Resultado Esperado**: Logs de error claros, el sistema no se bloquea.
+- **Resultado Esperado**:
+  - Logs de error claros.
+  - Auditoría (AuditLog) registra el fallo en Calendar.
+  - El sistema no se bloquea.
 - **Severidad**: Media.

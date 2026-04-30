@@ -1,5 +1,6 @@
 'use server'
 
+import { Prisma } from '@/generated/prisma/client'
 import { prisma } from '@/lib/db'
 import { buildPublicCode } from '@/lib/bookings'
 import { CATALOG_SERVICES } from '@/lib/bookings/catalog'
@@ -27,6 +28,32 @@ const WHATSAPP_REGEX = /^\+58(412|414|416|424|426)\d{7}$/
 const WHATSAPP_CONSENT_ACCEPTED_TAG = '[wa_consent:accepted]'
 const WHATSAPP_CONSENT_AT_PREFIX = '[wa_consent_at:'
 const CARACAS_UTC_OFFSET_MINUTES = -4 * 60
+const BOOKING_SUBMIT_MAX_ATTEMPTS = 3
+const RETRYABLE_BOOKING_SUBMIT_ERROR_CODES = new Set(['P2034', 'P2002', '40001', '40P01'])
+
+function getUnknownErrorCode(error: unknown): string | null {
+  if (typeof error !== 'object' || error === null) {
+    return null
+  }
+
+  const code = (error as { code?: unknown }).code
+  if (typeof code === 'string') {
+    return code
+  }
+
+  const meta = (error as { meta?: unknown }).meta
+  if (typeof meta !== 'object' || meta === null) {
+    return null
+  }
+
+  const metaCode = (meta as { code?: unknown }).code
+  return typeof metaCode === 'string' ? metaCode : null
+}
+
+function isRetryableBookingSubmitError(error: unknown): boolean {
+  const code = getUnknownErrorCode(error)
+  return code !== null && RETRYABLE_BOOKING_SUBMIT_ERROR_CODES.has(code)
+}
 
 function buildCaracasSlotDateTime(eventDate: string, startTime: string): Date {
   const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(eventDate)
@@ -253,12 +280,6 @@ export async function submitBookingRequest(
       }
     }
 
-    const year = new Date().getFullYear()
-    const existing = await prisma.bookingRequest.count({
-      where: { publicCode: { startsWith: `TUR-${year}-` } },
-    })
-    const publicCode = buildPublicCode(year, existing + 1)
-
     const eventDateTime = buildCaracasSlotDateTime(input.eventDate, input.startTime)
     const eventEndDateTime = new Date(
       eventDateTime.getTime() + input.durationMinutes * 60 * 1000,
@@ -294,68 +315,111 @@ export async function submitBookingRequest(
     const internalNotesWithStatus = setOperationalStatusInInternalNotes(null, 'pending_payment')
     const internalNotes = withWhatsappConsentTags(internalNotesWithStatus, new Date())
 
-    const submitResult = await prisma.$transaction(async (tx) => {
-      const resourceAssignment = await assignResourceForRequestedSlot(tx, {
-        serviceSlug: input.serviceSlug,
-        eventDate: eventDateTime,
-        eventEndDate: eventEndDateTime,
-      })
+    let submitResult:
+      | SubmitBookingResult
+      | (SubmitBookingResult & {
+          bookingId: string
+          createdAt: Date
+          resourceName: string | null
+        })
+      | null = null
 
-      if (!resourceAssignment.available) {
-        return {
-          success: false,
-          error:
-            resourceAssignment.message ??
-            'El bloque seleccionado no esta disponible. Elige otro horario.',
-        } satisfies SubmitBookingResult
+    for (let attempt = 1; attempt <= BOOKING_SUBMIT_MAX_ATTEMPTS; attempt += 1) {
+      try {
+        submitResult = await prisma.$transaction(
+          async (tx) => {
+            const year = new Date().getFullYear()
+            const existing = await tx.bookingRequest.count({
+              where: { publicCode: { startsWith: `TUR-${year}-` } },
+            })
+            const publicCode = buildPublicCode(year, existing + 1)
+
+            const resourceAssignment = await assignResourceForRequestedSlot(tx, {
+              serviceSlug: input.serviceSlug,
+              eventDate: eventDateTime,
+              eventEndDate: eventEndDateTime,
+            })
+
+            if (!resourceAssignment.available) {
+              return {
+                success: false,
+                error:
+                  resourceAssignment.message ??
+                  'El bloque seleccionado no esta disponible. Elige otro horario.',
+              } satisfies SubmitBookingResult
+            }
+
+            const assignedResource = resourceAssignment.assignedResourceId
+              ? await tx.resource.findUnique({
+                  where: { id: resourceAssignment.assignedResourceId },
+                  select: { id: true, name: true },
+                })
+              : null
+
+            const booking = await tx.bookingRequest.create({
+              data: {
+                publicCode,
+                status: 'under_review',
+                source: 'web',
+                requesterName,
+                requesterEmail,
+                requesterPhone,
+                eventTitle,
+                eventDate: eventDateTime,
+                eventEndDate: eventEndDateTime,
+                notes,
+                estimatedTotal: estimatedTotalUsd,
+                internalNotes,
+                submittedAt: new Date(),
+              },
+            })
+
+            await tx.bookingRequestItem.create({
+              data: {
+                bookingRequestId: booking.id,
+                serviceVariantId: serviceVariant.id,
+                resourceId: resourceAssignment.assignedResourceId,
+                quantity: 1,
+              },
+            })
+
+            return {
+              success: true,
+              publicCode,
+              bookingId: booking.id,
+              createdAt: booking.createdAt,
+              resourceName: assignedResource?.name ?? null,
+            } satisfies SubmitBookingResult & {
+              bookingId: string
+              createdAt: Date
+              resourceName: string | null
+            }
+          },
+          { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+        )
+        break
+      } catch (error) {
+        if (isRetryableBookingSubmitError(error) && attempt < BOOKING_SUBMIT_MAX_ATTEMPTS) {
+          continue
+        }
+
+        if (isRetryableBookingSubmitError(error)) {
+          return {
+            success: false,
+            error: 'No pudimos asegurar el bloque por una solicitud simultanea. Intenta de nuevo.',
+          }
+        }
+
+        throw error
       }
+    }
 
-      const assignedResource = resourceAssignment.assignedResourceId
-        ? await tx.resource.findUnique({
-            where: { id: resourceAssignment.assignedResourceId },
-            select: { id: true, name: true },
-          })
-        : null
-
-      const booking = await tx.bookingRequest.create({
-        data: {
-          publicCode,
-          status: 'under_review',
-          source: 'web',
-          requesterName,
-          requesterEmail,
-          requesterPhone,
-          eventTitle,
-          eventDate: eventDateTime,
-          eventEndDate: eventEndDateTime,
-          notes,
-          estimatedTotal: estimatedTotalUsd,
-          internalNotes,
-          submittedAt: new Date(),
-        },
-      })
-
-      await tx.bookingRequestItem.create({
-        data: {
-          bookingRequestId: booking.id,
-          serviceVariantId: serviceVariant.id,
-          resourceId: resourceAssignment.assignedResourceId,
-          quantity: 1,
-        },
-      })
-
+    if (!submitResult) {
       return {
-        success: true,
-        publicCode,
-        bookingId: booking.id,
-        createdAt: booking.createdAt,
-        resourceName: assignedResource?.name ?? null,
-      } satisfies SubmitBookingResult & {
-        bookingId: string
-        createdAt: Date
-        resourceName: string | null
+        success: false,
+        error: 'No pudimos procesar la solicitud. Intenta de nuevo.',
       }
-    })
+    }
 
     if (!submitResult.success || !submitResult.publicCode || !('bookingId' in submitResult)) {
       return submitResult

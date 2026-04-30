@@ -27,11 +27,12 @@ The core booking system now has a partial but real operational V1:
 -   **Real Availability:** Submit-time resource assignment and collision prevention exist for physical-room services (`grabacion`, `podcast-locucion`, `sala-ensayo`).
 -   **Manual Assisted Payment:** The public flow shows payment instructions, amount, assigned room, deadline, method selector, and allows payment reporting.
 -   **Payment Proofs and Notifications:** Payment proofs are stored privately, signed operational links are generated, and Resend notifications exist for key booking events.
+-   **Expiration Logic:** Implemented as a reusable operation (`lib/bookings/operations.ts`) and exposed via an internal API endpoint (`POST /api/bookings/expire`), protected by `BOOKINGS_EXPIRE_CRON_SECRET`. This logic specifically expires `pending_payment` bookings, excluding those with `payment_reported` status or active `PaymentProof`. Calendar update failures are audited.
 
 ### Current Core Gaps
 -   Availability is protected server-side at submit, but the client does not yet list only available slots before submission.
--   Slot collision protection still needs concurrency hardening.
--   Expiration is currently processed from the admin flow, not from a scheduled job.
+-   Slot collision protection has technical hardening implemented, but still needs concurrent smoke/QA in a safe DB environment.
+-   Expiration has an approved endpoint and operation, but still needs an external scheduler/Vercel Cron for recurring execution.
 -   Admin operations need QA, incident handling, and hardening before production use.
 -   Receipt / service order generation is not implemented yet.
 
@@ -40,6 +41,14 @@ The core booking system now has a partial but real operational V1:
 -   **Full Admin Panel:** Only a *minimum* Booking Command Center is in scope for the core.
 -   **Automatic Payment Reconciliation:** Payments are currently manual assisted; automatic reconciliation is a future phase.
 -   **Advanced Multi-resource Blocking/Auto-assignment:** Initial resource rules are in place, but advanced logic is deferred.
+
+### Approval Gate Closure
+Current Approval Gate status:
+-   **Env/Ops:** Approved. `scripts/checks/env-readiness-check.mjs` and the operational docs are the readiness checklist for target environments.
+-   **Expiration:** Approved. The reusable operation, internal endpoint, `payment_reported` protection, active `PaymentProof` protection, read-only checker, QA docs, and security docs are accepted.
+-   **Atomicity:** Technically approved with caveat. The code review is accepted, but smoke/QA concurrent validation remains pending until a safe local/test DB or explicit Neon test branch is available.
+
+Jean controls production, `main`, DB merge, final UI/UX integration, and marketplace integration. Marketplace remains outside Core and is handled by Manuel.
 
 ## Key Enums & Models (from `prisma/schema.prisma` - Core Booking Context)
 

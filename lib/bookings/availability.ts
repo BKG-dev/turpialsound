@@ -1,4 +1,4 @@
-import type { Prisma } from '@/generated/prisma/client'
+import { Prisma } from '@/generated/prisma/client'
 import { PAYMENT_WINDOW_MINUTES } from '@/lib/bookings/operations'
 
 type ManagedServiceSlug = 'grabacion' | 'podcast-locucion' | 'sala-ensayo'
@@ -108,6 +108,23 @@ async function resourceHasCollision(
   return count > 0
 }
 
+async function lockResourceRowsForAssignment(
+  tx: Prisma.TransactionClient,
+  resourceIds: string[],
+): Promise<void> {
+  if (resourceIds.length === 0) {
+    return
+  }
+
+  await tx.$queryRaw`
+    SELECT id
+    FROM resources
+    WHERE id IN (${Prisma.join(resourceIds)})
+    ORDER BY id
+    FOR UPDATE
+  `
+}
+
 async function resolveResourceIdsByCanonicalSlug(
   tx: Prisma.TransactionClient,
 ): Promise<Record<ResourceSlug, string | null>> {
@@ -185,6 +202,8 @@ export async function assignResourceForRequestedSlot(
         `No se encontraron recursos operativos activos para: ${requiredSlugs}. Verifica seed y slugs canónicos.`,
     }
   }
+
+  await lockResourceRowsForAssignment(tx, orderedResourceIds)
 
   for (const resourceId of orderedResourceIds) {
     const hasCollision = await resourceHasCollision(

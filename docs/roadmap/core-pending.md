@@ -1,78 +1,75 @@
 # Core Booking System - Pending Roadmap Items
 
-This document outlines the immediate and deferred pending items for the Turpial Sound Core Booking System, extracted from `AGENTS.md`.
+This document tracks the remaining operational work for the Turpial Sound Core Booking System. It keeps the P0/P1/P2 approval order while preserving the useful implementation context from the previous roadmap.
 
-## Functional Baseline After ORESHNIK Sprint
+## Functional Baseline To Keep
 
-The project already has a real partial V1. The following pieces are implemented enough to keep and harden:
+The core already has a real partial V1:
+
 - `/reservas` public submit creates a real `pending_payment` booking.
-- `/admin` exists as the current Booking Command Center route.
+- `/admin` exists as the current minimum Booking Command Center.
 - Assigned room/resource and payment deadline are displayed.
 - Payment method selector and payment reporting exist.
 - Private payment proofs and signed operational links exist.
-- Resend email notifications exist.
+- Resend email notifications exist for key booking events.
 - Google Calendar sync exists in `lib/bookings/google-calendar.ts`.
 - Submit-time availability and resource collision checks exist for managed physical-room services.
+- Expiration logic exists in `lib/bookings/operations.ts` and can be called by `/admin` or `POST /api/bookings/expire`.
+- Env/Ops readiness check exists in `scripts/checks/env-readiness-check.mjs`.
 
-## Immediate Pending Items (Production Hardening)
+## Approval Gate Closed Blocks
 
-The current focus is not adding a new dashboard, but hardening the existing core flow.
+- [x] **Env/Ops approved:** `env-readiness-check.mjs`, `docs/ops/*`, and `docs/qa/env-readiness-qa.md` are accepted for operational readiness validation.
+- [x] **Expiracion approved:** Reusable expiration operation, internal endpoint, `payment_reported` protection, active `PaymentProof` protection, read-only checker, QA docs, and security docs are accepted.
+- [x] **Atomicidad technically approved:** Code review accepted for serializable transaction, retry, public code generation inside transaction, and resource locking. Caveat: concurrent smoke/QA remains pending until there is a safe local/test DB or explicit Neon test branch.
 
-### 1C.1 - Booking Command Center (`/admin`) Hardening
--   Improve filters and operational views on the existing `/admin` route.
--   Add explicit incidence handling for payment or booking review.
--   Improve payment proof review ergonomics.
--   Add QA coverage for daily operations.
--   Keep the panel minimal; do not expand into a full admin suite yet.
+## Roadmap Prioritization
 
-### 1C.2 - Google Calendar Integration (Central Operational)
--   Keep using the shared master calendar through `lib/bookings/google-calendar.ts`.
--   Validate create/update/cancel behavior in QA.
--   Add retry or reconciliation strategy for failed syncs.
--   Confirm color/status mapping for `pending_payment`, `payment_reported`, `confirmed`, `cancelled`, and `expired`.
+### P0 - Approval Gate / Immediate Production Readiness
 
-### 1C.3 - Real Availability (Minimum)
--   Server-side submit already blocks resource conflicts for managed room services.
--   Pending: client-visible available-slot selection before submit.
--   Pending: concurrency hardening for simultaneous submits.
--   Pending: scheduled expiration/release outside manual admin page load.
--   No personal calendar synchronization in this initial stage; focus remains on the central operational calendar.
+- [ ] **Validacion concurrente de Atomicidad:** Run the concurrency smoke or assisted QA against a safe DB local/test or explicit Neon test branch. Do not use production or suspicious remote DBs.
+- [ ] **Pre-commit review:** Confirm the approved blocks remain separated from marketplace, `Mp*`, Prisma migrations/schema, generated files, `.env*`, `package.json`, and `pnpm-lock.yaml`.
 
-### 1C.4 - Manual Assisted Payment Workflow
--   Payment UX and `payment_reported` flow exist.
--   Private proof upload exists for `image/jpeg`.
--   Verification emails exist.
--   Pending: receipt / service order document with code, client, service, modality, room, schedule, amount, method, and status.
--   Pending: operational incidence flow when payment cannot be verified.
+### P1 - Operational Hardening
 
-### 1C.5 - Physical Resource Rules
--   Sala 1 (large): `grabacion` and/or `sala-ensayo`.
--   Sala 2: `podcast-locucion`.
--   Sala 3: `sala-ensayo` only.
--   Initial operational assignment rules:
-    -   `grabacion` uses only Sala 1.
-    -   `podcast-locucion` uses only Sala 2.
-    -   `sala-ensayo` preferably uses Sala 3; if unavailable, can use Sala 1.
-    -   Other services do not block physical resources yet.
+- [ ] **Scheduler / Vercel Cron:** Configure an external scheduler for `POST /api/bookings/expire` using `Authorization: Bearer <BOOKINGS_EXPIRE_CRON_SECRET>`.
+- [ ] **Retry / Outbox Calendar-Email:** Add a durable retry or reconciliation strategy for failed Google Calendar sync and Resend email delivery.
+- [ ] **QA recurrente DB local/test:** Keep a repeatable local/test DB or explicit Neon test branch for concurrency, expiration, payment proof, Calendar, and email smoke tests.
 
-### 1C.6 - Minimum Operational Statuses
--   `submitted`
--   `pending_payment`
--   `payment_reported`
--   `payment_verified`
--   `confirmed`
--   `cancelled`
--   `expired`
--   Note: `pending_payment` is the first visible operational state for public submissions. `submitted` can remain as a technical/transitory state.
+### P2 - Assisted Operation Improvements
 
-## Deferred Future Phases
+- [ ] **Auth/RBAC Admin:** Refine admin access levels for staff/director roles before wider production use.
+- [ ] **Recibo / Orden operativa:** Generate or display an operational receipt/service order with code, client, service, modality, room, schedule, amount, method, and status.
+- [ ] **Rate limit / Captcha:** Add abuse protection for public booking submit and payment report flows.
+- [ ] **Incidencias operativas:** Add a clearer admin path for payment or booking incidents that cannot be verified normally.
+- [ ] **Available-slot UX:** Later expose available slots before submit; current protection remains server-side at submit.
 
-These items are explicitly postponed beyond the current V1 focus:
--   **1B.6d:** Extended refinement of derived estimate presentation in `SummaryStep`.
--   **1B.6e:** Multiple persistence of `BookingRequestItem` and `estimatedTotal`.
--   **Near Future:**
-    -   Mercantil integration (live).
-    -   Automatic payments / automatic reconciliation.
-    -   Advanced replication to personal calendars (if needed).
+## Resource Rules In Scope
 
-This document serves as a living roadmap for the core booking system, updated as priorities shift and features are completed.
+- Sala 1: `grabacion` and fallback for `sala-ensayo`.
+- Sala 2: `podcast-locucion`.
+- Sala 3: preferred room for `sala-ensayo`.
+- Other services do not block physical resources until their rules are defined.
+
+## Operational Statuses In Scope
+
+- `submitted`
+- `pending_payment`
+- `payment_reported`
+- `payment_verified`
+- `confirmed`
+- `cancelled`
+- `expired`
+
+`pending_payment` is the first visible operational state for public submissions. `submitted` can remain technical/transitory.
+
+## Out Of Scope For This Approval Gate
+
+- Marketplace and `Mp*` models; Manuel owns that scope.
+- Production DB merge, `main` integration, and final UI/UX integration; Jean owns these.
+- Mercantil live integration and automatic payment reconciliation.
+- Personal calendar synchronization.
+
+---
+
+Reference updated for the Approval Gate on 2026-04-29.
