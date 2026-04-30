@@ -154,7 +154,7 @@ function roleBadge(role: string) {
 }
 
 function exportCSV(rows: PayoutReportRow[]) {
-  const headers = ['Estado', 'Vendedor', 'Metodo de cobro', 'Cuenta/Direccion', 'Detalles de cobro', 'Bruto (USD)', 'Comision plataforma', 'Monto a pagar', 'Moneda', 'Num. TX', 'IDs Transacciones']
+  const headers = ['Estado', 'Miembro', 'Metodo de cobro', 'Cuenta/Direccion', 'Detalles de cobro', 'Bruto (USD)', 'Comision plataforma', 'Monto a pagar', 'Moneda', 'Num. TX', 'IDs Transacciones']
   const csv = [
     headers.join(','),
     ...rows.map(r => [
@@ -1064,7 +1064,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-medium text-white">{u.displayName}</span>
                   {roleBadge(u.role)}
-                  {u.isSeller && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,193,7,0.1)', color: '#ffc107', border: '1px solid rgba(255,193,7,0.2)' }}>Vendedor</span>}
+                  {u.isSeller && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,193,7,0.1)', color: '#ffc107', border: '1px solid rgba(255,193,7,0.2)' }}>Miembro</span>}
                   {u.isVerified && <BadgeCheck size={12} style={{ color: '#00aeef' }} />}
                   {u.isBanned && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>SUSPENDIDO</span>}
                   {u.whatsappConsent && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(37,211,102,0.1)', color: '#25D366', border: '1px solid rgba(37,211,102,0.2)' }}>WA ✓</span>}

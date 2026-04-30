@@ -671,7 +671,7 @@ function TxCard({
               {tx.listing?.title ?? 'Listing eliminado'}
             </p>
             <p className="text-[11px] mt-0.5" style={{ color: 'var(--mp-text-faint)' }}>
-              {viewAs === 'buyer' ? 'Vendedor: ' : 'Comprador: '}
+              {viewAs === 'buyer' ? 'Miembro: ' : 'Comprador: '}
               <span style={{ color: 'var(--mp-text-muted)' }}>{otherParty.displayName}</span>
             </p>
           </div>
@@ -874,7 +874,7 @@ function InteractedRow({ item }: { item: DashInteracted }) {
                   className="ml-4 rounded-lg px-3 py-2"
                   style={{ background: 'rgba(0,174,239,0.05)', border: '1px solid rgba(0,174,239,0.1)' }}
                 >
-                  <p className="text-[10px] font-semibold text-[#00aeef] mb-0.5 uppercase tracking-wide">Vendedor</p>
+                  <p className="text-[10px] font-semibold text-[#00aeef] mb-0.5 uppercase tracking-wide">Miembro</p>
                   <p className="text-[12px] text-[#c0c0c0] leading-snug">{q.answer}</p>
                 </div>
               ) : (
@@ -1503,7 +1503,7 @@ function TransactionDetailModal({
               {tx.listing?.title ?? 'Transaccion marketplace'}
             </h3>
             <p className="mt-0.5 text-xs" style={{ color: 'var(--mp-text-faint)' }}>
-              {viewAs === 'buyer' ? 'Vendedor' : 'Comprador'}: <span style={{ color: 'var(--mp-text-muted)' }}>{otherParty.displayName}</span>
+              {viewAs === 'buyer' ? 'Miembro' : 'Comprador'}: <span style={{ color: 'var(--mp-text-muted)' }}>{otherParty.displayName}</span>
             </p>
           </div>
           <button
