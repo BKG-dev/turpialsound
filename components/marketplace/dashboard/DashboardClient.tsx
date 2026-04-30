@@ -33,6 +33,13 @@ import { getMyThreads, getUnreadCount } from '@/actions/marketplace/chat'
 import { getTransaction, openDispute } from '@/actions/marketplace/transactions'
 import { toggleFavorite } from '@/actions/marketplace/favorites'
 import {
+  calculateSellerPayout,
+  roundMoney,
+  USD_REFERENCE_RATE,
+  type BuyerPaymentMethod,
+  type SellerPayoutMethod,
+} from '@/lib/marketplace/finance'
+import {
   addPayoutMethod,
   removePayoutMethod,
   setDefaultPayoutMethod,
@@ -147,14 +154,14 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   SOLD_OUT:            { label: 'Agotado',           color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   glow: 'rgba(239,68,68,0.25)'   },
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, label }: { status: string; label?: string }) {
   const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.CANCELLED
   return (
     <span
       className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide"
       style={{ color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.glow}` }}
     >
-      {cfg.label}
+      {label ?? cfg.label}
     </span>
   )
 }
@@ -171,6 +178,10 @@ function fmtTime(d: string | Date) {
 
 function fmtUSD(n: number) {
   return `$${n.toFixed(2)}`
+}
+
+function fmtUSDT(n: number) {
+  return `${n.toFixed(2)} USDT`
 }
 
 function initials(name: string) {
@@ -207,23 +218,23 @@ function normalizePayoutMethodType(methodType: string) {
 function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
   const copy: Record<string, { buyer: string; seller: string }> = {
     PENDING_PAYMENT: {
-      buyer: 'Tu compra fue iniciada. Falta reportar el pago para que el equipo pueda revisarlo.',
+      buyer: 'Completa el pago para iniciar la validacion.',
       seller: 'El comprador inicio la compra, pero aun no ha reportado el pago.',
     },
     PAYMENT_RECEIVED: {
-      buyer: 'Recibimos tu reporte de pago. La validacion manual esta en curso. Te notificaremos la resolucion y, si procede, la activacion del escrow.',
+      buyer: 'Estamos validando tu pago. Te avisaremos cuando avance.',
       seller: 'El comprador ya reporto el pago. La revision manual esta en curso y te notificaremos cuando la operacion avance.',
     },
     VALIDATING: {
-      buyer: 'Tu pago sigue en validacion manual. No necesitas repetir el envio mientras revisamos la conciliacion. Te notificaremos la resolucion.',
+      buyer: 'Estamos validando tu pago. Te avisaremos cuando avance.',
       seller: 'La revision manual sigue en curso. Te notificaremos cuando el pago quede conciliado.',
     },
     IN_ESCROW: {
-      buyer: 'El pago ya fue validado y los fondos estan protegidos en escrow hasta la entrega o liberacion manual.',
+      buyer: 'Los fondos estan protegidos. Coordina la entrega con el vendedor.',
       seller: 'El pago ya fue validado. Completa la entrega para avanzar al cierre de la venta.',
     },
     DELIVERY_CONFIRMED: {
-      buyer: 'La entrega fue confirmada. El payout al vendedor queda en cola operativa.',
+      buyer: 'La operacion esta lista para avanzar a liberacion si no hay disputa.',
       seller: 'La entrega fue confirmada. El pago al vendedor queda como siguiente paso.',
     },
     RELEASED: {
@@ -231,7 +242,7 @@ function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
       seller: 'La venta ya esta lista para cobrar. Verifica que tus datos de cobro esten actualizados.',
     },
     DISPUTED: {
-      buyer: 'La transaccion entro en disputa. El equipo revisara el caso antes de liberar fondos.',
+      buyer: 'La operacion esta en revision. No se liberaran fondos hasta resolverla.',
       seller: 'La transaccion entro en disputa. El dinero queda retenido hasta la resolucion.',
     },
     PAYMENT_FAILED: {
@@ -254,7 +265,7 @@ function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
 function getOperationalNextStep(status: string, viewAs: 'buyer' | 'seller') {
   const nextStep: Record<string, { buyer: string; seller: string }> = {
     PENDING_PAYMENT: {
-      buyer: 'Reporta tu pago con referencia, banco y fecha para iniciar la validacion.',
+      buyer: 'Reporta tu pago con referencia, fecha y comprobante para iniciar la validacion.',
       seller: 'Espera a que el comprador reporte el pago para que el equipo pueda validarlo.',
     },
     PAYMENT_RECEIVED: {
@@ -296,31 +307,53 @@ function getTxUnreadCount(thread: DashThread, currentUserId: string) {
   return lastMsg && !lastMsg.isRead && lastMsg.senderId !== currentUserId ? 1 : 0
 }
 
-function getTxExtraFee(tx: DashTransaction) {
-  if (tx.paymentMethod === 'MERCANTIL_PAGO_MOVIL') return Math.round(Number(tx.amount ?? 0) * 0.03) / 100
-  if (tx.paymentMethod === 'CRYPTO_WALLET_MANUAL') return 0.06
-  return 0
-}
-
-function roundCurrency(value: number) {
-  return Math.round(value * 100) / 100
-}
-
-function getTxTotalFee(tx: DashTransaction) {
-  const storedFee = Number(tx.platformFeeAmount ?? 0)
-  if (storedFee > 0) return storedFee
-
-  const amount = Number(tx.amount ?? 0)
-  const sellerNet = Number(tx.sellerNetAmount ?? 0)
-  if (amount > 0 && sellerNet >= 0) {
-    return roundCurrency(Math.max(amount - sellerNet, 0))
+function getStatusLabelForView(status: string, viewAs: 'buyer' | 'seller') {
+  if (viewAs === 'buyer') {
+    if (status === 'PENDING_PAYMENT') return 'Reportar pago'
+    if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado'
+    if (status === 'IN_ESCROW') return 'Pago validado'
+    if (status === 'DELIVERY_CONFIRMED') return 'Entrega confirmada'
+    if (status === 'RELEASED') return 'Operacion completada'
+    if (status === 'DISPUTED') return 'En disputa'
   }
 
-  return getTxExtraFee(tx)
+  return STATUS_CONFIG[status]?.label ?? status
 }
 
-function getTxBasePlatformFee(tx: DashTransaction) {
-  return roundCurrency(Math.max(getTxTotalFee(tx) - getTxExtraFee(tx), 0))
+function getBuyerCtaLabel(status: string) {
+  if (status === 'PENDING_PAYMENT') return 'Reportar pago'
+  if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado / esperando validacion'
+  if (status === 'IN_ESCROW') return 'Pago validado / esperando entrega'
+  if (status === 'DELIVERY_CONFIRMED') return 'Entrega confirmada / esperando liberacion'
+  if (status === 'RELEASED') return 'Operacion completada'
+  if (status === 'DISPUTED') return 'En disputa / esperando resolucion'
+  return 'Ver detalle'
+}
+
+function isBinanceTransaction(tx: DashTransaction) {
+  return mapTxBuyerPaymentMethod(tx) === 'BINANCE'
+}
+
+function mapTxBuyerPaymentMethod(tx: DashTransaction): BuyerPaymentMethod {
+  if (tx.paymentMethod === 'CRYPTO_WALLET_MANUAL') return 'BINANCE'
+  if (tx.paymentMethod === 'MERCANTIL_PAGO_MOVIL') return 'PAGO_MOVIL'
+  return 'BANK'
+}
+
+function mapSellerPayoutMethod(method?: DashPayoutMethod | null): SellerPayoutMethod {
+  if (method?.methodType === 'BINANCE_PAY' || method?.methodType === 'CRYPTO_WALLET') return 'BINANCE'
+  if (method?.methodType === 'PAGO_MOVIL' || method?.methodType === 'BANK_TRANSFER') return 'BANK'
+  return 'NONE'
+}
+
+function getTxPayoutCalculation(tx: DashTransaction, sellerPayoutMethod: SellerPayoutMethod) {
+  return calculateSellerPayout({
+    amountUSD: Number(tx.amount ?? 0),
+    buyerPaymentMethod: mapTxBuyerPaymentMethod(tx),
+    sellerPayoutMethod,
+    bcvRate: USD_REFERENCE_RATE,
+    binanceRate: USD_REFERENCE_RATE,
+  })
 }
 
 // ─── Section Header ───────────────────────────────────────────────────────────
@@ -587,6 +620,12 @@ function TxCard({
 }) {
   const otherParty = viewAs === 'buyer' ? tx.seller : tx.buyer
   const guidance = getOperationalStatusCopy(tx.status, viewAs)
+  const actionLabel = viewAs === 'buyer' ? getBuyerCtaLabel(tx.status) : getStatusLabelForView(tx.status, viewAs)
+  const actionTone =
+    tx.status === 'RELEASED' ? 'success' :
+      tx.status === 'PENDING_PAYMENT' || tx.status === 'PAYMENT_RECEIVED' || tx.status === 'VALIDATING' ? 'warning' :
+        tx.status === 'DISPUTED' ? 'danger' :
+          'info'
 
   return (
     <div
@@ -633,7 +672,7 @@ function TxCard({
             </p>
             <p className="text-[11px] mt-0.5" style={{ color: 'var(--mp-text-faint)' }}>
               {viewAs === 'buyer' ? 'Vendedor: ' : 'Comprador: '}
-              <span className="text-[#a0a0a0]">{otherParty.displayName}</span>
+              <span style={{ color: 'var(--mp-text-muted)' }}>{otherParty.displayName}</span>
             </p>
           </div>
           <div className="text-right flex-shrink-0">
@@ -644,8 +683,11 @@ function TxCard({
           </div>
         </div>
 
-        <div className="flex items-center justify-between mt-3">
-          <StatusBadge status={tx.status} />
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge status={tx.status} label={getStatusLabelForView(tx.status, viewAs)} />
+            <PaymentMethodBadge tx={tx} />
+          </div>
           <div className="flex items-center gap-1 text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
             <Clock size={9} />
             <span>{fmtDate(tx.createdAt)}</span>
@@ -683,13 +725,23 @@ function TxCard({
           </div>
         )}
 
-        <div
-          className="mt-3 rounded-lg px-3 py-2"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
-        >
-          <p className="text-[11px] text-[#d4d4d4]">{guidance}</p>
-          <p className="mt-1 text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>Haz clic para ver el detalle completo y la linea de estado.</p>
+        <div className="mt-3">
+          <DashboardStateCallout label={actionLabel} copy={guidance} tone={actionTone} />
         </div>
+
+        {viewAs === 'buyer' && (
+          <button
+            onClick={(event) => {
+              event.stopPropagation()
+              onOpenDetails?.(tx)
+            }}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all"
+            style={{ background: 'rgba(0,174,239,0.08)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.18)' }}
+          >
+            {getBuyerCtaLabel(tx.status)}
+            <ChevronRight size={12} />
+          </button>
+        )}
 
         {viewAs === 'seller' && payoutMissing && (
           <div
@@ -1282,83 +1334,248 @@ function ChatOverlay({
   )
 }
 
+function PaymentMethodBadge({ tx }: { tx: DashTransaction }) {
+  const isBinance = isBinanceTransaction(tx)
+
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold"
+      style={{
+        background: isBinance ? 'rgba(249,115,22,0.1)' : 'rgba(0,174,239,0.08)',
+        color: isBinance ? '#f97316' : '#00aeef',
+        border: `1px solid ${isBinance ? 'rgba(249,115,22,0.24)' : 'rgba(0,174,239,0.18)'}`,
+      }}
+    >
+      {isBinance ? <Wallet size={11} /> : <CreditCard size={11} />}
+      {isBinance ? 'USDT / Binance' : payoutMethodLabel(tx.paymentMethod)}
+    </span>
+  )
+}
+
+function DashboardStateCallout({
+  label,
+  copy,
+  tone = 'info',
+}: {
+  label: string
+  copy: string
+  tone?: 'info' | 'warning' | 'success' | 'danger'
+}) {
+  const accent =
+    tone === 'success' ? '#4ade80' :
+      tone === 'warning' ? '#f59e0b' :
+        tone === 'danger' ? '#f97316' :
+          '#00aeef'
+
+  return (
+    <div
+      className="rounded-xl px-3 py-3"
+      style={{
+        background: `${accent}10`,
+        border: `1px solid ${accent}30`,
+      }}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-semibold" style={{ color: accent }}>{label}</p>
+      </div>
+      <p className="mt-1 text-[11px] leading-relaxed" style={{ color: 'var(--mp-text-muted)' }}>{copy}</p>
+    </div>
+  )
+}
+
+function FinancialSummaryRow({
+  label,
+  value,
+  tone = 'default',
+}: {
+  label: string
+  value: string
+  tone?: 'default' | 'positive' | 'warning'
+}) {
+  const color = tone === 'positive' ? '#4ade80' : tone === 'warning' ? '#f59e0b' : 'var(--mp-text-strong)'
+
+  return (
+    <div
+      className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-xs"
+      style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
+    >
+      <span style={{ color: 'var(--mp-text-muted)' }}>{label}</span>
+      <span className="text-right font-semibold tabular-nums" style={{ color }}>{value}</span>
+    </div>
+  )
+}
+
+function SellerFinancialSummary({
+  tx,
+  sellerPayoutMethod,
+}: {
+  tx: DashTransaction
+  sellerPayoutMethod: SellerPayoutMethod
+}) {
+  const amount = roundMoney(Number(tx.amount ?? 0))
+  const payout = getTxPayoutCalculation(tx, sellerPayoutMethod)
+  const buyerPaidWithBinance = mapTxBuyerPaymentMethod(tx) === 'BINANCE'
+
+  return (
+    <div
+      className="space-y-3 rounded-2xl p-4"
+      style={{
+        background: 'linear-gradient(135deg, rgba(74,222,128,0.08) 0%, var(--mp-card-subtle) 72%)',
+        border: '1px solid rgba(74,222,128,0.18)',
+      }}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p className="text-sm font-semibold" style={{ color: 'var(--mp-text-strong)' }}>Resumen de cobro estimado</p>
+          <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--mp-text-muted)' }}>
+            Estimacion visual del monto a recibir. No ejecuta pagos ni recalcula transacciones historicas.
+          </p>
+        </div>
+        <span
+          className="rounded-full px-2 py-1 text-[10px] font-semibold"
+          style={{ background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.22)' }}
+        >
+          {payout.currency}
+        </span>
+      </div>
+
+      {payout.currency === 'USDT' ? (
+        <div className="space-y-2">
+          <FinancialSummaryRow label="Venta" value={fmtUSDT(amount)} />
+          <FinancialSummaryRow label="Comision Turpial 5%" value={`-${fmtUSDT(payout.platformFeeUSD)}`} />
+          <FinancialSummaryRow label="Fee Binance" value={`-${fmtUSDT(payout.usdtFee)}`} />
+          <FinancialSummaryRow label="Calculo" value={`${fmtUSDT(amount)} - ${fmtUSDT(payout.platformFeeUSD)} - ${fmtUSDT(payout.usdtFee)}`} />
+          <FinancialSummaryRow label="Total estimado a recibir" value={fmtUSDT(payout.finalAmount)} tone="positive" />
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <FinancialSummaryRow
+            label="Venta"
+            value={buyerPaidWithBinance ? `${fmtUSD(amount)} / ${fmtUSDT(amount)}` : fmtUSD(amount)}
+          />
+          <FinancialSummaryRow label="Comision Turpial 5%" value={`-${fmtUSD(payout.platformFeeUSD)}`} />
+          <FinancialSummaryRow
+            label="Tasa usada"
+            value={`${payout.appliedRateType ?? 'Pendiente'} - pendiente de tasa de pago`}
+            tone="warning"
+          />
+          <FinancialSummaryRow label="Monto Bs base" value="Pendiente de tasa de pago" tone="warning" />
+          <FinancialSummaryRow label="Comision bancaria 0.3%" value="Pendiente de tasa de pago" tone="warning" />
+          <FinancialSummaryRow label="Total estimado Bs" value="Pendiente de tasa de pago" tone="warning" />
+        </div>
+      )}
+    </div>
+  )
+}
+
 function TransactionDetailModal({
   tx,
   viewAs,
   onClose,
   onOpenMessages,
+  sellerPayoutMethod = 'NONE',
 }: {
   tx: DashTransactionDetail
   viewAs: 'buyer' | 'seller'
   onClose: () => void
   onOpenMessages?: () => void
+  sellerPayoutMethod?: SellerPayoutMethod
 }) {
   const otherParty = viewAs === 'buyer' ? tx.seller : tx.buyer
+  const buyerPaidWithBinance = mapTxBuyerPaymentMethod(tx) === 'BINANCE'
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)' }}
+      className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-6"
+      style={{ background: 'var(--mp-overlay)', backdropFilter: 'blur(10px)' }}
     >
       <div
-        className="w-full max-w-2xl rounded-2xl overflow-hidden"
+        className="relative flex w-full flex-col h-[100dvh] sm:h-auto sm:max-h-[85vh] sm:max-w-2xl sm:rounded-2xl"
         style={{
-          background: 'rgba(11,11,11,0.98)',
-          border: '1px solid rgba(0,174,239,0.16)',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.85), 0 0 80px rgba(0,174,239,0.06)',
+          background: 'var(--mp-panel-solid)',
+          border: '1px solid var(--mp-border)',
+          boxShadow: 'var(--mp-shadow), 0 0 80px rgba(0,174,239,0.06)',
         }}
       >
-        <div className="flex items-start justify-between gap-3 border-b border-[#1e1e1e] px-6 py-4">
+        <div className="sticky top-0 z-10 flex flex-shrink-0 items-center justify-between gap-3 border-b px-4 py-3 sm:px-6" style={{ borderColor: 'var(--mp-border)', background: 'var(--mp-panel-solid)' }}>
           <div className="min-w-0">
-            <h3 className="text-base font-semibold text-[#f2f2f2] truncate">
+            <h3 className="truncate text-base font-semibold" style={{ color: 'var(--mp-text-strong)' }}>
               {tx.listing?.title ?? 'Transaccion marketplace'}
             </h3>
-            <p className="mt-1 text-xs text-[#5a5a5a]">
-              {viewAs === 'buyer' ? 'Vendedor' : 'Comprador'}: <span className="text-[#a0a0a0]">{otherParty.displayName}</span>
+            <p className="mt-0.5 text-xs" style={{ color: 'var(--mp-text-faint)' }}>
+              {viewAs === 'buyer' ? 'Vendedor' : 'Comprador'}: <span style={{ color: 'var(--mp-text-muted)' }}>{otherParty.displayName}</span>
             </p>
           </div>
-          <button onClick={onClose} className="text-[#5a5a5a] hover:text-[#f2f2f2] transition-colors">
+          <button
+            onClick={onClose}
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-colors"
+            style={{ background: 'var(--mp-card-subtle)', color: 'var(--mp-text-muted)', border: '1px solid var(--mp-border)' }}
+            aria-label="Cerrar detalle"
+          >
             <X size={16} />
           </button>
         </div>
 
-        <div className="space-y-5 p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <StatusBadge status={tx.status} />
-              <span className="text-sm font-semibold text-[#f2f2f2]">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
+          <div
+            className="rounded-2xl p-4"
+            style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge status={tx.status} label={getStatusLabelForView(tx.status, viewAs)} />
+                <PaymentMethodBadge tx={tx} />
+              </div>
+              <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--mp-text-strong)' }}>
                 ${Number(tx.amount).toLocaleString('es-VE')} {tx.currency}
               </span>
             </div>
-            <div className="text-xs text-[#5a5a5a]">
-              Creada: <span className="text-[#a0a0a0]">{fmtDate(tx.createdAt)}</span>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs" style={{ color: 'var(--mp-text-faint)' }}>
+              <span>Estado visible arriba para que identifiques en que punto esta la operacion.</span>
+              <span>Creada: <span style={{ color: 'var(--mp-text-muted)' }}>{fmtDate(tx.createdAt)}</span></span>
             </div>
           </div>
 
-          <div
-            className="rounded-xl p-4 text-sm leading-relaxed"
-            style={{ background: 'rgba(0,174,239,0.06)', border: '1px solid rgba(0,174,239,0.16)', color: '#d0eef9' }}
-          >
-            {getOperationalStatusCopy(tx.status, viewAs)}
+          <div>
+            <SectionHeader title="Que pasa ahora" />
+            <DashboardStateCallout
+              label={viewAs === 'buyer' ? getBuyerCtaLabel(tx.status) : getStatusLabelForView(tx.status, viewAs)}
+              copy={getOperationalStatusCopy(tx.status, viewAs)}
+              tone={
+                tx.status === 'RELEASED' ? 'success' :
+                  tx.status === 'DISPUTED' ? 'danger' :
+                    tx.status === 'PENDING_PAYMENT' || tx.status === 'PAYMENT_RECEIVED' || tx.status === 'VALIDATING' ? 'warning' :
+                      'info'
+              }
+            />
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
-            <PayoutDetailRow label="ID transaccion" value={tx.id} />
-            <PayoutDetailRow label="Metodo de pago" value={tx.paymentMethod} />
-            <PayoutDetailRow label="Referencia" value={tx.paymentReference ?? 'Sin referencia reportada'} />
-            <PayoutDetailRow label="Banco emisor" value={tx.paymentSenderBank ?? 'Sin banco reportado'} />
-            <PayoutDetailRow label="Fecha de pago" value={tx.paymentPaidAt ? fmtDate(tx.paymentPaidAt) : 'Sin fecha reportada'} />
-            <PayoutDetailRow label="Fecha estimada de cierre" value={tx.escrowReleaseAt ? fmtDate(tx.escrowReleaseAt) : 'Aun sin fecha estimada'} />
-            <PayoutDetailRow label="Siguiente paso" value={getOperationalNextStep(tx.status, viewAs)} />
+          {viewAs === 'seller' && (
+            <SellerFinancialSummary tx={tx} sellerPayoutMethod={sellerPayoutMethod} />
+          )}
+
+          <div>
+            <SectionHeader title="Detalles de operacion" />
+            <div className="grid gap-3 md:grid-cols-2">
+              <PayoutDetailRow label="ID transaccion" value={tx.id} />
+              <PayoutDetailRow label="Metodo de pago" value={payoutMethodLabel(tx.paymentMethod)} />
+              <PayoutDetailRow label={buyerPaidWithBinance ? 'Referencia / hash Binance' : 'Referencia'} value={tx.paymentReference ?? 'Sin referencia reportada'} />
+              {!buyerPaidWithBinance && (
+                <PayoutDetailRow label="Banco emisor" value={tx.paymentSenderBank ?? 'Sin banco reportado'} />
+              )}
+              <PayoutDetailRow label="Fecha de pago" value={tx.paymentPaidAt ? fmtDate(tx.paymentPaidAt) : 'Sin fecha reportada'} />
+              <PayoutDetailRow label="Fecha estimada de cierre" value={tx.escrowReleaseAt ? fmtDate(tx.escrowReleaseAt) : 'Aun sin fecha estimada'} />
+              <PayoutDetailRow label="Siguiente paso" value={getOperationalNextStep(tx.status, viewAs)} />
+            </div>
           </div>
 
           {tx.adminNotes && (
             <div
               className="rounded-xl p-4 text-sm"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
             >
-              <p className="text-[10px] uppercase tracking-widest text-[#5a5a5a]">Nota interna</p>
-              <p className="mt-2 text-[#d4d4d4]">{tx.adminNotes}</p>
+              <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--mp-text-faint)' }}>Nota interna</p>
+              <p className="mt-2" style={{ color: 'var(--mp-text-muted)' }}>{tx.adminNotes}</p>
             </div>
           )}
 
@@ -1370,27 +1587,30 @@ function TransactionDetailModal({
                   <div
                     key={entry.id}
                     className="rounded-xl p-3"
-                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                    style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-xs text-[#f2f2f2]">
-                        {(entry.fromStatus ?? 'Inicio')} <span className="text-[#5a5a5a]">→</span> {entry.toStatus}
+                      <p className="text-xs" style={{ color: 'var(--mp-text-strong)' }}>
+                        {(entry.fromStatus ?? 'Inicio')} <span style={{ color: 'var(--mp-text-faint)' }}>-&gt;</span> {entry.toStatus}
                       </p>
-                      <span className="text-[10px] text-[#5a5a5a]">{fmtDate(entry.createdAt)}</span>
+                      <span className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>{fmtDate(entry.createdAt)}</span>
                     </div>
-                    {entry.reason && <p className="mt-1 text-[11px] text-[#a0a0a0]">{entry.reason}</p>}
+                    {entry.reason && <p className="mt-1 text-[11px]" style={{ color: 'var(--mp-text-muted)' }}>{entry.reason}</p>}
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          <div className="flex flex-wrap gap-2">
+          <div
+            className="flex flex-wrap gap-2 rounded-2xl p-3"
+            style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
+          >
             {tx.listing?.slug && (
               <Link
                 href={`/marketplace/${tx.listing.slug}`}
                 className="rounded-xl px-4 py-2 text-sm font-semibold"
-                style={{ background: 'rgba(255,255,255,0.05)', color: '#f2f2f2', border: '1px solid rgba(255,255,255,0.1)' }}
+                style={{ background: 'var(--mp-card-subtle)', color: 'var(--mp-text-strong)', border: '1px solid var(--mp-border)' }}
               >
                 Ver listing
               </Link>
@@ -1587,24 +1807,31 @@ export function DashboardClient({
   const pendingValidationSales = sales.filter(tx => ['PAYMENT_RECEIVED', 'VALIDATING'].includes(tx.status))
   const escrowSales = sales.filter(tx => ['IN_ESCROW', 'DELIVERY_CONFIRMED'].includes(tx.status))
   const releasedSales = sales.filter(tx => tx.status === 'RELEASED')
+  const hasUsablePayoutMethod = payoutMethods.length > 0
+  const defaultPayoutMethod = payoutMethods.find(method => method.isDefault) ?? payoutMethods[0] ?? null
+  const sellerPayoutMethod = mapSellerPayoutMethod(defaultPayoutMethod)
+  const payoutReadySales = hasUsablePayoutMethod ? releasedSales : []
+  const releasedWithoutPayoutMethodSales = hasUsablePayoutMethod ? [] : releasedSales
   const payoutRelevantSales = sales.filter(tx => ['IN_ESCROW', 'DELIVERY_CONFIRMED', 'RELEASED'].includes(tx.status))
-  const payoutReadySales = sales.filter(tx => tx.status === 'RELEASED')
-  const operationalBankFees = payoutRelevantSales.reduce((sum, tx) => sum + (tx.paymentMethod === 'MERCANTIL_PAGO_MOVIL' ? getTxExtraFee(tx) : 0), 0)
-  const operationalBinanceFees = payoutRelevantSales.reduce((sum, tx) => sum + (tx.paymentMethod === 'CRYPTO_WALLET_MANUAL' ? getTxExtraFee(tx) : 0), 0)
-  const operationalCommissions = payoutRelevantSales.reduce((sum, tx) => sum + getTxBasePlatformFee(tx), 0)
-  const operationalTotalFees = payoutRelevantSales.reduce((sum, tx) => sum + getTxTotalFee(tx), 0)
-  const operationalSellerNet = payoutRelevantSales.reduce((sum, tx) => sum + Number(tx.sellerNetAmount ?? 0), 0)
-  const pendingValidationNet = pendingValidationSales.reduce((sum, tx) => sum + Number(tx.sellerNetAmount ?? 0), 0)
-  const protectedInProcessNet = escrowSales.reduce((sum, tx) => sum + Number(tx.sellerNetAmount ?? 0), 0)
-  const payoutReadyNet = payoutReadySales.reduce((sum, tx) => sum + Number(tx.sellerNetAmount ?? 0), 0)
+  const payoutFor = (tx: DashTransaction) => getTxPayoutCalculation(tx, sellerPayoutMethod)
+  const payoutNetTotal = (rows: DashTransaction[]) => roundMoney(rows.reduce((sum, tx) => sum + payoutFor(tx).netUSD, 0))
+  const operationalBankFees = payoutRelevantSales.reduce((sum, tx) => sum + payoutFor(tx).bankFeeBS, 0)
+  const operationalBinanceFees = payoutRelevantSales.reduce((sum, tx) => sum + payoutFor(tx).usdtFee, 0)
+  const operationalCommissions = payoutRelevantSales.reduce((sum, tx) => sum + payoutFor(tx).platformFeeUSD, 0)
+  const operationalTotalFees = payoutRelevantSales.reduce((sum, tx) => {
+    const payout = payoutFor(tx)
+    return sum + Math.max(0, Number(tx.amount ?? 0) - payout.netUSD)
+  }, 0)
+  const operationalSellerNet = payoutNetTotal(payoutRelevantSales)
+  const pendingValidationNet = payoutNetTotal(pendingValidationSales)
+  const protectedInProcessNet = payoutNetTotal(escrowSales)
+  const payoutReadyNet = payoutNetTotal(payoutReadySales)
+  const releasedWithoutPayoutMethodNet = payoutNetTotal(releasedWithoutPayoutMethodSales)
   const sellerCanAddPayoutProfile = Boolean(profile?.isSeller && payoutMethods.length === 0)
   const sellerNeedsPayoutProfile = sellerCanAddPayoutProfile && payoutRelevantSales.length > 0
-  const sellerHasCommissionExemption = profile?.role === 'SOCIO' || profile?.role === 'SUPER'
-  const commissionLabel = sellerHasCommissionExemption ? 'Comision plataforma' : 'Comision 5%'
-  const commissionSub = sellerHasCommissionExemption ? 'exenta por rol actual' : 'base plataforma'
-  const commissionCopy = sellerHasCommissionExemption
-    ? 'Comision base plataforma: exenta por rol actual. Cargo adicional pago movil / transferencia: 0.03%. Cargo adicional Binance: $0.06.'
-    : 'Comision base plataforma: 5%. Cargo adicional pago movil / transferencia: 0.03%. Cargo adicional Binance: $0.06.'
+  const commissionLabel = 'Comision 5%'
+  const commissionSub = 'base plataforma'
+  const commissionCopy = 'Comision base plataforma: 5%. Cargo bancario: 0.3%. Cargo adicional Binance: $0.06.'
 
   const counts: Record<Tab, number> = {
     my_store:  myListings.length,
@@ -2159,11 +2386,12 @@ export function DashboardClient({
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
                     {[
                       { label: 'En revision', value: pendingValidationSales.length, amount: fmtUSD(pendingValidationNet), helper: 'pagos reportados', color: '#f59e0b' },
-                      { label: 'En proceso', value: escrowSales.length, amount: fmtUSD(protectedInProcessNet), helper: 'ventas aprobadas', color: '#00aeef' },
-                      { label: 'Listo para cobrar', value: releasedSales.length, amount: fmtUSD(payoutReadyNet), helper: 'disponible ahora', color: '#4ade80' },
+                      { label: 'En proceso', value: escrowSales.length, amount: fmtUSD(protectedInProcessNet), helper: 'aprobadas, no cobrables', color: '#00aeef' },
+                      { label: 'Listo para cobrar', value: payoutReadySales.length, amount: fmtUSD(payoutReadyNet), helper: 'liberado con metodo', color: '#4ade80' },
+                      { label: 'Sin metodo', value: releasedWithoutPayoutMethodSales.length, amount: fmtUSD(releasedWithoutPayoutMethodNet), helper: 'liberado no cobrable', color: '#f97316' },
                     ].map(item => (
                       <div
                         key={item.label}
@@ -2182,11 +2410,32 @@ export function DashboardClient({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
                 <KpiCard icon={Clock} label="Monto en revision" value={fmtUSD(pendingValidationNet)} sub={`${pendingValidationSales.length} pago${pendingValidationSales.length !== 1 ? 's' : ''} por revisar`} accent="#f59e0b" tone="primary" />
-                <KpiCard icon={Shield} label="Monto en proceso" value={fmtUSD(protectedInProcessNet)} sub={`${escrowSales.length} venta${escrowSales.length !== 1 ? 's' : ''} aprobada${escrowSales.length !== 1 ? 's' : ''}`} accent="#00aeef" tone="primary" />
-                <KpiCard icon={Landmark} label="Listo para cobrar" value={fmtUSD(payoutReadyNet)} sub={`${releasedSales.length} venta${releasedSales.length !== 1 ? 's' : ''} disponible${releasedSales.length !== 1 ? 's' : ''}`} accent="#4ade80" tone="primary" />
+                <KpiCard icon={Shield} label="Monto en proceso" value={fmtUSD(protectedInProcessNet)} sub={`${escrowSales.length} venta${escrowSales.length !== 1 ? 's' : ''} no cobrable${escrowSales.length !== 1 ? 's' : ''}`} accent="#00aeef" tone="primary" />
+                <KpiCard icon={Landmark} label="Listo para cobrar" value={fmtUSD(payoutReadyNet)} sub={`${payoutReadySales.length} venta${payoutReadySales.length !== 1 ? 's' : ''} liberada${payoutReadySales.length !== 1 ? 's' : ''} con metodo`} accent="#4ade80" tone="primary" />
+                <KpiCard icon={AlertTriangle} label="Sin metodo configurado" value={fmtUSD(releasedWithoutPayoutMethodNet)} sub={`${releasedWithoutPayoutMethodSales.length} venta${releasedWithoutPayoutMethodSales.length !== 1 ? 's' : ''} liberada${releasedWithoutPayoutMethodSales.length !== 1 ? 's' : ''} bloqueada${releasedWithoutPayoutMethodSales.length !== 1 ? 's' : ''}`} accent="#f97316" tone="primary" />
               </div>
+
+              {payoutReadySales.length === 0 && (
+                <div
+                  className="rounded-2xl p-4 text-sm leading-relaxed"
+                  style={{ background: 'rgba(0,174,239,0.06)', border: '1px solid rgba(0,174,239,0.16)', color: 'var(--mp-text-muted)' }}
+                >
+                  <p className="font-semibold" style={{ color: 'var(--mp-text-strong)' }}>No tienes fondos disponibles para cobrar todavia.</p>
+                  <p className="mt-1">Tus ventas apareceran aqui cuando esten liberadas y tengas metodo de cobro configurado.</p>
+                </div>
+              )}
+
+              {releasedWithoutPayoutMethodSales.length > 0 && (
+                <div
+                  className="rounded-2xl p-4 text-sm leading-relaxed"
+                  style={{ background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.2)', color: 'var(--mp-text-muted)' }}
+                >
+                  <p className="font-semibold text-[#f97316]">Pendiente: configura metodo de cobro.</p>
+                  <p className="mt-1">Tienes ventas liberadas, pero debes configurar un metodo de cobro para recibirlas.</p>
+                </div>
+              )}
 
               <div
                 className="rounded-2xl p-5"
@@ -2201,7 +2450,7 @@ export function DashboardClient({
                 </div>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
                   <KpiCard icon={CreditCard} label={commissionLabel} value={fmtUSD(operationalCommissions)} sub={commissionSub} accent="#f59e0b" tone="compact" />
-                  <KpiCard icon={Landmark} label="Cargo bancario 0.03%" value={fmtUSD(operationalBankFees)} sub="pago movil / transferencia" accent="#ffc107" tone="compact" />
+                  <KpiCard icon={Landmark} label="Cargo bancario 0.3%" value={fmtUSD(operationalBankFees)} sub="pago movil / transferencia" accent="#ffc107" tone="compact" />
                   <KpiCard icon={Wallet} label="Cargo Binance" value={fmtUSD(operationalBinanceFees)} sub="$0.06 por operacion" accent="#00aeef" tone="compact" />
                 </div>
               </div>
@@ -2246,7 +2495,7 @@ export function DashboardClient({
                           className="rounded-xl p-3 text-xs leading-relaxed"
                           style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.18)', color: '#f5d08a' }}
                         >
-                          Completa tus datos de cobro para poder recibir pagos de ventas. Ya tienes ventas en proceso o listas para cobrar que dependen de este paso.
+                          Completa tus datos de cobro para poder recibir pagos de ventas liberadas. Las ventas en proceso aun no son cobrables; las liberadas sin metodo quedan bloqueadas hasta registrar uno.
                         </div>
                       ) : (
                         <div
@@ -2356,7 +2605,7 @@ export function DashboardClient({
                         className="rounded-xl p-3 text-xs leading-relaxed"
                         style={{ background: 'rgba(0,174,239,0.06)', border: '1px solid rgba(0,174,239,0.14)', color: 'var(--mp-text-muted)' }}
                       >
-                        {commissionCopy} Monto estimado despues de cargos: <span style={{ color: 'var(--mp-text-strong)' }}>{fmtUSD(operationalSellerNet)}</span>. Disponible para cobrar ahora: <span style={{ color: 'var(--mp-text-strong)' }}>{fmtUSD(payoutReadyNet)}</span>.
+                        {commissionCopy} Monto estimado despues de cargos: <span style={{ color: 'var(--mp-text-strong)' }}>{fmtUSD(operationalSellerNet)}</span>. Disponible para cobrar ahora: <span style={{ color: 'var(--mp-text-strong)' }}>{fmtUSD(payoutReadyNet)}</span>. En proceso no equivale a disponible.
                       </div>
 
                       <button
@@ -2403,7 +2652,11 @@ export function DashboardClient({
                       </div>
                       <div className="flex items-center justify-between text-[#a0a0a0]">
                         <span>Listas para cobrar</span>
-                        <span style={{ color: 'var(--mp-text-strong)' }}>{releasedSales.length}</span>
+                        <span style={{ color: 'var(--mp-text-strong)' }}>{payoutReadySales.length}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[#a0a0a0]">
+                        <span>Sin metodo configurado</span>
+                        <span style={{ color: 'var(--mp-text-strong)' }}>{releasedWithoutPayoutMethodSales.length}</span>
                       </div>
                       <div className="flex items-center justify-between text-[#a0a0a0]">
                         <span>Disponible para cobrar</span>
@@ -2480,21 +2733,22 @@ export function DashboardClient({
       {selectedTx && (
         selectedTxLoading || !selectedTxDetail ? (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center"
-            style={{ background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(8px)' }}
+            className="fixed inset-0 z-[90] flex items-center justify-center"
+            style={{ background: 'var(--mp-overlay)', backdropFilter: 'blur(8px)' }}
           >
             <div
               className="rounded-2xl px-5 py-4 flex items-center gap-3"
-              style={{ background: 'rgba(13,13,13,0.95)', border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{ background: 'var(--mp-panel-solid)', border: '1px solid var(--mp-border)' }}
             >
               <Loader2 size={16} className="animate-spin text-[#00aeef]" />
-              <span className="text-sm text-[#f2f2f2]">Cargando detalle de transaccion...</span>
+              <span className="text-sm" style={{ color: 'var(--mp-text-strong)' }}>Cargando detalle de transaccion...</span>
             </div>
           </div>
         ) : (
           <TransactionDetailModal
             tx={selectedTxDetail}
             viewAs={selectedTx.viewAs}
+            sellerPayoutMethod={sellerPayoutMethod}
             onClose={() => {
               setSelectedTx(null)
               setSelectedTxDetail(null)

@@ -177,7 +177,15 @@ Publica un producto o servicio, conversa con compradores dentro del marketplace 
 
 ### Cuando cobra el vendedor?
 
-El vendedor no cobra apenas el comprador paga. Primero el pago reportado se valida, luego el comprador confirma recepcion o conformidad y, si no hay disputa, los fondos pasan a liberacion. El equipo administra o gestiona el pago al vendedor cuando corresponde. No se deben prometer tiempos exactos si no estan definidos publicamente.
+El cobro del vendedor depende del método de pago utilizado por el comprador y de los datos de cobro registrados por el vendedor en su cuenta. La plataforma realiza una retención del 5% por comisión de servicio.
+
+En términos generales:
+- Si el comprador paga en USDT y el vendedor tiene configurado método Binance, recibirá USDT tras descontar la comisión del 5% y una tarifa fija de red de 0.06 USDT.
+- Si el comprador paga en USDT pero el vendedor no usa Binance, recibirá Bolívares a la tasa de cambio de Binance vigente, descontando el 5% de comisión y el 0.3% por gastos bancarios.
+- Si el comprador paga en Bolívares, el vendedor recibe Bolívares a la tasa BCV oficial, descontando el 5% de comisión y el 0.3% por gastos bancarios.
+
+El equipo gestiona los pagos una vez que la operación se considera lista para cobrar. No se garantizan tiempos exactos de pago.
+
 
 ### Que pasa si hay una disputa?
 

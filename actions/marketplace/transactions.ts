@@ -2,6 +2,15 @@
 
 import { getDb } from '@/lib/marketplace/db'
 import { getSession } from '@/lib/marketplace/auth'
+import {
+  BANK_FEE,
+  calculateSellerPayout,
+  PLATFORM_FEE,
+  roundMoney,
+  USD_REFERENCE_RATE,
+  type BuyerPaymentMethod,
+  type SellerPayoutMethod,
+} from '@/lib/marketplace/finance'
 import type { ActionResult } from '@/lib/validations/marketplace'
 
 type CheckoutPaymentMethod =
@@ -12,26 +21,32 @@ type CheckoutPaymentMethod =
   | 'BINANCE_PAY'
 type TxPaymentMethod = 'MERCANTIL_PAGO_MOVIL' | 'ZELLE' | 'CRYPTO_WALLET_MANUAL'
 
-function calcFee(amount: number, sellerRole: string, paymentMethod: TxPaymentMethod) {
-  const exempt = sellerRole === 'SOCIO' || sellerRole === 'SUPER'
-  const baseFeePercent = exempt ? 0 : 5
-  const baseFeeAmount = Math.round(amount * baseFeePercent) / 100
-  const additionalFeeAmount =
-    paymentMethod === 'MERCANTIL_PAGO_MOVIL'
-      ? Math.round(amount * 0.03) / 100
-      : paymentMethod === 'CRYPTO_WALLET_MANUAL'
-        ? 0.06
-        : 0
-  const feeAmount = Math.round((baseFeeAmount + additionalFeeAmount) * 100) / 100
-  const percentComponent =
-    paymentMethod === 'MERCANTIL_PAGO_MOVIL'
-      ? baseFeePercent + 0.03
-      : baseFeePercent
+function mapBuyerPaymentMethod(paymentMethod: TxPaymentMethod): BuyerPaymentMethod {
+  if (paymentMethod === 'CRYPTO_WALLET_MANUAL') return 'BINANCE'
+  if (paymentMethod === 'MERCANTIL_PAGO_MOVIL') return 'PAGO_MOVIL'
+  return 'BANK'
+}
+
+function mapSellerPayoutMethod(methodType: string | null | undefined): SellerPayoutMethod {
+  if (methodType === 'BINANCE_PAY' || methodType === 'CRYPTO_WALLET') return 'BINANCE'
+  if (methodType === 'PAGO_MOVIL' || methodType === 'BANK_TRANSFER') return 'BANK'
+  return 'NONE'
+}
+
+function calcFee(amount: number, paymentMethod: TxPaymentMethod, sellerPayoutMethod: SellerPayoutMethod) {
+  const payout = calculateSellerPayout({
+    amountUSD: amount,
+    buyerPaymentMethod: mapBuyerPaymentMethod(paymentMethod),
+    sellerPayoutMethod,
+    bcvRate: USD_REFERENCE_RATE,
+    binanceRate: USD_REFERENCE_RATE,
+  })
+  const bankPercent = payout.bankFeeBS > 0 ? BANK_FEE * 100 : 0
 
   return {
-    platformFeePercent: percentComponent,
-    platformFeeAmount: feeAmount,
-    sellerNetAmount: Math.round((amount - feeAmount) * 100) / 100,
+    platformFeePercent: PLATFORM_FEE * 100 + bankPercent,
+    platformFeeAmount: Math.max(0, roundMoney(amount - payout.netUSD)),
+    sellerNetAmount: payout.netUSD,
   }
 }
 
@@ -62,7 +77,18 @@ export async function initiatePurchase(
 
     const listing = await db.mpListing.findUnique({
       where: { id: listingId },
-      include: { seller: true },
+      include: {
+        seller: {
+          select: {
+            payoutMethods: {
+              where: { isActive: true },
+              orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+              take: 1,
+              select: { methodType: true },
+            },
+          },
+        },
+      },
     })
 
     if (!listing) return { success: false, message: 'Listing no encontrado' }
@@ -91,7 +117,7 @@ export async function initiatePurchase(
     }
 
     const amount = Number(listing.price)
-    const fee = calcFee(amount, listing.seller.role, mappedPaymentMethod)
+    const fee = calcFee(amount, mappedPaymentMethod, mapSellerPayoutMethod(listing.seller.payoutMethods[0]?.methodType))
     const idempotencyKey = `${session.userId}_${listingId}_${Date.now()}`
 
     const tx = await db.mpTransaction.create({
@@ -132,7 +158,7 @@ export async function submitPaymentProof(
   transactionId: string,
   reference: string,
   details: {
-    senderBank: string
+    senderBank?: string | null
     paymentDate: string
   },
   proofUrl?: string,
@@ -153,8 +179,10 @@ export async function submitPaymentProof(
 
     const cleanReference = reference.trim()
     if (!cleanReference) return { success: false, message: 'La referencia de pago es obligatoria' }
-    const cleanSenderBank = details.senderBank.trim()
-    if (!cleanSenderBank) return { success: false, message: 'El banco emisor es obligatorio' }
+    const isBinancePayment = tx.paymentMethod === 'CRYPTO_WALLET_MANUAL'
+    const cleanSenderBank = details.senderBank?.trim() ?? ''
+    if (!isBinancePayment && !cleanSenderBank) return { success: false, message: 'El banco emisor es obligatorio' }
+    if (isBinancePayment && !proofUrl) return { success: false, message: 'El comprobante Binance es obligatorio' }
     if (!details.paymentDate.trim()) return { success: false, message: 'La fecha de pago es obligatoria' }
 
     const paidAt = new Date(`${details.paymentDate}T12:00:00-04:00`)
@@ -167,7 +195,7 @@ export async function submitPaymentProof(
       data: {
         status: 'PAYMENT_RECEIVED',
         paymentReference: cleanReference,
-        paymentSenderBank: cleanSenderBank,
+        paymentSenderBank: isBinancePayment ? null : cleanSenderBank,
         paymentPaidAt: paidAt,
         paymentProofUrl: proofUrl ?? null,
       },
@@ -179,7 +207,9 @@ export async function submitPaymentProof(
         fromStatus: tx.status,
         toStatus: 'PAYMENT_RECEIVED',
         changedBy: session.userId,
-        reason: `Comprobante enviado. Banco: ${cleanSenderBank}. Operacion: ${cleanReference}. Fecha: ${details.paymentDate}`,
+        reason: isBinancePayment
+          ? `Comprobante Binance enviado. Operacion: ${cleanReference}. Fecha: ${details.paymentDate}`
+          : `Comprobante enviado. Banco: ${cleanSenderBank}. Operacion: ${cleanReference}. Fecha: ${details.paymentDate}`,
       },
     })
 

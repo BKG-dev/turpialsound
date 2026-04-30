@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   X,
@@ -16,7 +17,7 @@ import {
   CalendarDays,
 } from 'lucide-react'
 import type { ElementType } from 'react'
-import type { Listing } from '@/types/marketplace'
+import type { Listing, MpTransactionStatus } from '@/types/marketplace'
 import {
   initiatePurchase,
   submitPaymentProof,
@@ -201,9 +202,11 @@ export interface CheckoutModalProps {
   sellerId: string
   onClose: () => void
   onOpenChat: (listing: Listing) => void
+  onSuccess?: (status: MpTransactionStatus) => void
 }
 
-export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
+export function CheckoutModal({ listing, onClose, onSuccess }: CheckoutModalProps) {
+  const router = useRouter()
   const { rate: bcvRate, loading: rateLoading } = useBcvRate()
   const [selectedMethodId, setSelectedMethodId] = useState<ManualMethodId>('PAGO_MOVIL')
   const [operationNumber, setOperationNumber] = useState('')
@@ -222,6 +225,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
   const currency = listing.currency ?? 'USD'
   const selectedMethod =
     MANUAL_METHODS.find((method) => method.id === selectedMethodId) ?? MANUAL_METHODS[0]
+  const isBinancePay = selectedMethod.id === 'BINANCE_PAY'
   const usdAmountDisplay =
     price != null
       ? Number(price).toLocaleString('es-VE', {
@@ -240,6 +244,23 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
     typeof selectedMethod.details === 'function'
       ? selectedMethod.details(usdAmountDisplay !== '-' ? usdAmountDisplay : '0.00')
       : selectedMethod.details
+  const amountInputValue = isBinancePay
+    ? `${usdAmountDisplay !== '-' ? usdAmountDisplay : '0.00'} USDT`
+    : (bsAmountDisplay !== '-' ? `${bsAmountDisplay} Bs` : '')
+  const referenceLabel = isBinancePay
+    ? 'Referencia / hash / ID de operacion Binance *'
+    : 'Numero de operacion *'
+  const referencePlaceholder = isBinancePay
+    ? 'Ej: hash, order ID o referencia Binance'
+    : 'Ej: 012345678901'
+  const proofRequired = isBinancePay
+  const canConfirmPayment = Boolean(
+    operationNumber.trim() &&
+    paymentDate.trim() &&
+    (!isBinancePay || proofFile) &&
+    (isBinancePay || bankName.trim()) &&
+    !loading,
+  )
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -265,12 +286,17 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
 
   async function handleConfirm() {
     if (!operationNumber.trim()) {
-      setError('Ingresa el numero de operacion.')
+      setError(isBinancePay ? 'Ingresa la referencia, hash o ID de operacion Binance.' : 'Ingresa el numero de operacion.')
       return
     }
 
-    if (!bankName.trim()) {
+    if (!isBinancePay && !bankName.trim()) {
       setError('Selecciona el banco emisor.')
+      return
+    }
+
+    if (isBinancePay && !proofFile) {
+      setError('El comprobante de Binance es obligatorio.')
       return
     }
 
@@ -300,7 +326,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
         purchase.data.transactionId,
         operationNumber.trim(),
         {
-          senderBank: bankName,
+          senderBank: isBinancePay ? null : bankName,
           paymentDate,
         },
         proofUrl,
@@ -311,6 +337,8 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
         return
       }
 
+      onSuccess?.('PAYMENT_RECEIVED')
+      router.refresh()
       setSuccess({
         title: 'Pago procesado',
         summary: 'Tu pago esta siendo validado.',
@@ -453,32 +481,52 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
                 </span>
               </div>
 
-              <div
-                className="mt-3 rounded-lg p-3"
-                style={{
-                  background: 'rgba(255,193,7,0.08)',
-                  border: '1px solid rgba(255,193,7,0.15)',
-                }}
-              >
-                <div className="flex items-baseline justify-between">
-                  <p className="text-[10px] uppercase tracking-wider text-[#9a9a9a]">
-                    Total a pagar en Bs
+              {isBinancePay ? (
+                <div
+                  className="mt-3 rounded-lg p-3"
+                  style={{
+                    background: 'rgba(249,115,22,0.08)',
+                    border: '1px solid rgba(249,115,22,0.16)',
+                  }}
+                >
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="text-[10px] uppercase tracking-wider text-[#9a9a9a]">
+                      Total a pagar en USDT
+                    </p>
+                    <span className="text-sm font-semibold text-[#f97316]">{usdAmountDisplay} USDT</span>
+                  </div>
+                  <p className="mt-1.5 text-[10px] text-[#b8b8b8]">
+                    Binance Pay usa 1 USDT = 1 USD. No se requiere banco venezolano.
                   </p>
-                  {rateLoading ? (
-                    <span className="animate-pulse text-sm text-[#b8b8b8]">Cargando...</span>
-                  ) : (
-                    <span className="text-sm font-semibold text-[#ffc107]">{bsAmountDisplay} Bs</span>
-                  )}
                 </div>
-                <p className="mt-1.5 text-[10px] text-[#b8b8b8]">
-                  Tasa BCV: 1 USD ={' '}
-                  {bcvRate?.toLocaleString('es-VE', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  }) ?? '-'}{' '}
-                  Bs
-                </p>
-              </div>
+              ) : (
+                <div
+                  className="mt-3 rounded-lg p-3"
+                  style={{
+                    background: 'rgba(255,193,7,0.08)',
+                    border: '1px solid rgba(255,193,7,0.15)',
+                  }}
+                >
+                  <div className="flex items-baseline justify-between">
+                    <p className="text-[10px] uppercase tracking-wider text-[#9a9a9a]">
+                      Total a pagar en Bs
+                    </p>
+                    {rateLoading ? (
+                      <span className="animate-pulse text-sm text-[#b8b8b8]">Cargando...</span>
+                    ) : (
+                      <span className="text-sm font-semibold text-[#ffc107]">{bsAmountDisplay} Bs</span>
+                    )}
+                  </div>
+                  <p className="mt-1.5 text-[10px] text-[#b8b8b8]">
+                    Tasa BCV: 1 USD ={' '}
+                    {bcvRate?.toLocaleString('es-VE', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }) ?? '-'}{' '}
+                    Bs
+                  </p>
+                </div>
+              )}
             </div>
 
             <div>
@@ -493,6 +541,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
                       key={method.id}
                       onClick={() => {
                         setSelectedMethodId(method.id)
+                        if (method.id === 'BINANCE_PAY') setBankName('')
                         setError(null)
                       }}
                       className="flex flex-col items-center gap-2 rounded-xl px-2 py-3 text-center transition-all duration-200"
@@ -543,7 +592,9 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
                     value={detail.value}
                   />
                 ))}
-                <CopyRow label="Monto en Bs" value={bsAmountDisplay !== '-' ? `${bsAmountDisplay} Bs` : '-'} />
+                {!isBinancePay && (
+                  <CopyRow label="Monto en Bs" value={bsAmountDisplay !== '-' ? `${bsAmountDisplay} Bs` : '-'} />
+                )}
               </div>
             </div>
 
@@ -565,8 +616,8 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
                 />
 
                 <InputField
-                  label="Monto en Bs"
-                  value={bsAmountDisplay !== '-' ? `${bsAmountDisplay} Bs` : ''}
+                  label={isBinancePay ? 'Monto a pagar' : 'Monto en Bs'}
+                  value={amountInputValue}
                   onChange={() => {}}
                   placeholder=""
                   type="text"
@@ -574,38 +625,40 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
                 />
 
                 <InputField
-                  label="Numero de operacion *"
+                  label={referenceLabel}
                   value={operationNumber}
                   onChange={(value) => {
                     setOperationNumber(value)
                     setError(null)
                   }}
-                  placeholder="Ej: 012345678901"
+                  placeholder={referencePlaceholder}
                   type="text"
                 />
 
-                <div className="space-y-1.5">
-                  <label className="text-xs text-[#c8c8c8]" htmlFor="marketplace-payment-sender-bank">
-                    Banco emisor *
-                  </label>
-                  <select
-                    id="marketplace-payment-sender-bank"
-                    name="marketplace-payment-sender-bank"
-                    value={bankName}
-                    onChange={(e) => {
-                      setBankName(e.target.value)
-                      setError(null)
-                    }}
-                    className="mp-themed-input w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-[rgba(0,174,239,0.45)] sm:py-2.5"
-                  >
-                    <option value="">Selecciona un banco</option>
-                    {VENEZUELAN_BANK_OPTIONS.map((bank) => (
-                      <option key={bank.code} value={bank.label}>
-                        {bank.displayLabel}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {!isBinancePay && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-[#c8c8c8]" htmlFor="marketplace-payment-sender-bank">
+                      Banco emisor *
+                    </label>
+                    <select
+                      id="marketplace-payment-sender-bank"
+                      name="marketplace-payment-sender-bank"
+                      value={bankName}
+                      onChange={(e) => {
+                        setBankName(e.target.value)
+                        setError(null)
+                      }}
+                      className="mp-themed-input w-full rounded-xl border px-4 py-3 text-sm outline-none focus:border-[rgba(0,174,239,0.45)] sm:py-2.5"
+                    >
+                      <option value="">Selecciona un banco</option>
+                      {VENEZUELAN_BANK_OPTIONS.map((bank) => (
+                        <option key={bank.code} value={bank.label}>
+                          {bank.displayLabel}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <InputField
                   label="Fecha de pago *"
@@ -621,7 +674,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
 
                 <div className="space-y-1.5">
                   <label className="text-xs text-[#a0a0a0]">
-                    Comprobante <span className="text-[#9a9a9a]">(opcional)</span>
+                    Comprobante {!proofRequired && <span className="text-[#9a9a9a]">(opcional)</span>}{proofRequired && <span className="text-[#4ade80]">*</span>}
                   </label>
                   <label
                     className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl py-6 transition-all"
@@ -695,7 +748,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
           <div className="flex-shrink-0 border-t px-5 pb-5 pt-4" style={{ borderColor: 'var(--mp-border)' }}>
             <button
               onClick={handleConfirm}
-              disabled={!operationNumber.trim() || !bankName.trim() || !paymentDate.trim() || loading}
+              disabled={!canConfirmPayment}
               className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all disabled:opacity-50"
               style={{
                 background: 'rgba(74,222,128,0.1)',
@@ -703,7 +756,7 @@ export function CheckoutModal({ listing, onClose }: CheckoutModalProps) {
                 border: '1px solid rgba(74,222,128,0.25)',
               }}
               onMouseEnter={(e) => {
-                if (operationNumber.trim() && bankName.trim() && paymentDate.trim() && !loading) {
+                if (canConfirmPayment) {
                   e.currentTarget.style.background = 'rgba(74,222,128,0.18)'
                 }
               }}

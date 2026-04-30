@@ -9,7 +9,7 @@ import { MarketplaceAuthModal } from '@/components/marketplace/MarketplaceAuthMo
 import { getOrCreateThread } from '@/actions/marketplace'
 import { toggleFavorite, getMyFavoriteIds } from '@/actions/marketplace/favorites'
 import { trackMarketplaceClientEvent } from '@/lib/marketplace/analytics-client'
-import type { Listing } from '@/types/marketplace'
+import type { Listing, MpTransactionStatus } from '@/types/marketplace'
 import type { MpSessionPayload } from '@/lib/marketplace/auth'
 
 export function ListingDetailActions({
@@ -30,6 +30,7 @@ export function ListingDetailActions({
   const [pendingAction, setPendingAction] = useState<'checkout' | 'chat' | 'favorite' | null>(null)
 
   const [checkoutOpen, setCheckoutOpen] = useState(false)
+  const [localTxStatus, setLocalTxStatus] = useState<MpTransactionStatus | undefined>(listing.activeTransactionStatus)
   const [chatOpen, setChatOpen] = useState(false)
   const [chatThreadId, setChatThreadId] = useState<string | null>(null)
   
@@ -57,6 +58,10 @@ export function ListingDetailActions({
   useEffect(() => {
     trackMarketplaceClientEvent({ eventType: 'listing_view', listingId: listing.id })
   }, [listing.id])
+
+  useEffect(() => {
+    setLocalTxStatus(listing.activeTransactionStatus)
+  }, [listing.activeTransactionStatus])
 
   function requireAuth(action: 'checkout' | 'chat' | 'favorite') {
     setPendingAction(action)
@@ -118,7 +123,7 @@ export function ListingDetailActions({
 
   const isSeller = userId === sellerId
   const isSold = listing.status === 'sold'
-  const txStatus = listing.activeTransactionStatus
+  const txStatus = localTxStatus
 
   const getStatusLabel = () => {
     switch (txStatus) {
@@ -151,6 +156,7 @@ export function ListingDetailActions({
             listing={listing}
             sellerId={sellerId}
             onClose={() => setCheckoutOpen(false)}
+            onSuccess={(status) => setLocalTxStatus(status)}
             onOpenChat={() => {
               setCheckoutOpen(false)
               openChat()

@@ -2,35 +2,39 @@
 
 Este documento define la matriz de casos de prueba para el sprint de auditoría y automatización de Seller Cobros y cálculos de Fees en Turpial Sound Marketplace.
 
-## 1. Estados de Transacción (Payout Pipeline)
-| Estado | Descripción | Validación esperada |
-| :--- | :--- | :--- |
-| **En revisión** | Pago recibido/validado pero no conciliado. | No debe aparecer en "Listo para cobrar". |
-| **En proceso** | Liquidación iniciada por el sistema. | Bloqueo de cambios en la transacción. |
-| **Listo para cobrar** | Fondos liberados (Released) y método configurado. | Disponible para inclusión en Payout. |
-| **Sin método de pago** | Fondos liberados pero seller no ha configurado método. | Alerta visual en Admin/Copilot. |
+## 1. Reglas de Negocio (Fuente de Verdad)
+*   **Comisión Turpial:** 5% del monto de venta SIEMPRE.
+*   **Escenario A (USDT → Vendedor Binance):** Descuento de 5% + 0.06 USDT flat fee.
+*   **Escenario B (USDT → Vendedor Bs):** Descuento de 5% + 0.3% comisión bancaria (aplicado sobre el monto en Bs).
+*   **Escenario C (Pago Bs/Normal → BCV):** Descuento de 5% + 0.3% comisión bancaria (aplicado sobre el monto en Bs).
 
-## 2. Estructura de Comisiones y Fees
-*   **Comisión Plataforma (Turpial):** 5.00% sobre monto bruto.
-*   **Cargo Bancario (Venta):** 0.03% (cuando aplique).
-*   **Cargo Binance (USDT):** 0.06 USDT (fijo por transacción).
+## 2. Escenarios de Prueba con Cálculos Numéricos (Expected Results)
 
-## 3. Matriz de Conversión y Monedas
-| Input (Venta) | Payout Método | Tasa Aplicada | Notas |
-| :--- | :--- | :--- | :--- |
-| USD | Zelle | N/A | Paridad 1:1 |
-| USD | Bs | Tasa BCV (fecha valor) | Comisión de cambio aplicada |
-| USDT | USDT | N/A | - |
-| USDT | Bs | Tasa Binance (fecha valor) | Ajuste por spread Binance |
+### Caso 1: Venta Binance ($100.00) -> Vendedor Binance (USDT)
+*   **Monto Bruto:** $100.00
+*   **Comisión Turpial (5%):** $5.00
+*   **Flat Fee Red (0.06 USDT):** $0.06
+*   **Total Descuentos:** $5.06
+*   **Neto a Pagar:** **94.94 USDT**
 
-## 4. Reglas de Validación Críticas
-1.  **Segregación:** Es imposible mezclar fondos `En proceso` con `Listo para cobrar`.
-2.  **No-Ingreso:** Los fees externos (Binance/Bancos) NO deben contarse como ingreso neto de Turpial.
-3.  **Conformidad:** Prohibido liberar fondos sin `buyerConfirmedAt` o resolución de disputa.
+### Caso 2: Venta Binance ($100.00) -> Vendedor Bs (Tasa Binance)
+*   **Monto Bruto:** $100.00
+*   **Comisión Turpial (5%):** $5.00
+*   **Monto Neto en USD:** $95.00
+*   **Monto en Bs (Tasa Binance, ej: 37.00):** 3,515.00 Bs
+*   **Comisión Bancaria (0.3% sobre Bs):** 10.545 Bs ≈ 10.55 Bs
+*   **Neto a Pagar (Bs):** **3,504.45 Bs**
 
-## 5. Casos Edge (Testing)
-*   **Seller sin método:** Intentar generar payout masivo; el sistema debe excluir al seller y notificar.
-*   **Disputa Activa:** Seller con transacción `DISPUTED` debe quedar bloqueado del payout hasta resolución `RESOLVED_SELLER`.
-*   **Falta de Conformidad:** Pago validado pero sin `buyerConfirmedAt` (status != RELEASED); no debe incluirse en la cola.
-*   **USDT a Bs:** Validar cálculo de `amountUsd * exchangeRate` menos fees.
-*   **USDT a USDT:** Validación de dirección de wallet antes de procesar payout.
+### Caso 3: Venta Normal ($100.00) -> Vendedor Bs (Tasa BCV)
+*   **Monto Bruto:** $100.00
+*   **Comisión Turpial (5%):** $5.00
+*   **Monto Neto en USD:** $95.00
+*   **Monto en Bs (Tasa BCV, ej: 36.50):** 3,467.50 Bs
+*   **Comisión Bancaria (0.3% sobre Bs):** 10.4025 Bs ≈ 10.40 Bs
+*   **Neto a Pagar (Bs):** **3,457.10 Bs**
+
+## 3. Reglas de Validación Críticas
+1.  **0.3% siempre:** El cargo bancario es siempre 0.3% sobre el monto en Bolívares.
+2.  **USDT Solo:** El flat fee de 0.06 USDT solo aplica si el pago final es en USDT.
+3.  **Segregación:** Fondos `IN_ESCROW` no son liberables.
+4.  **Redondeo:** Usar `ROUND_HALF_UP` a 2 decimales para montos finales.
