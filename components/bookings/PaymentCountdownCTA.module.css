@@ -1,0 +1,51 @@
+.cta {
+  position: relative;
+}
+
+.label {
+  color: rgba(222, 247, 255, 0.96);
+  font-family: 'Rajdhani', 'Segoe UI', sans-serif;
+  font-size: 1.03rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow:
+    0 0 8px rgba(84, 226, 255, 0.14),
+    0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.timeValue {
+  color: #ffd66d;
+  font-family: 'Orbitron', 'Rajdhani', 'Segoe UI', sans-serif;
+  font-size: 1.22rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow:
+    0 0 8px rgba(255, 201, 66, 0.16),
+    0 0 1px rgba(255, 237, 201, 0.08);
+}
+
+@media (max-width: 1200px) {
+  .label {
+    font-size: 0.98rem;
+  }
+
+  .timeValue {
+    font-size: 1.12rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .label {
+    font-size: 0.82rem;
+    letter-spacing: 0.03em;
+  }
+
+  .timeValue {
+    font-size: 0.96rem;
+    letter-spacing: 0.05em;
+  }
+}
