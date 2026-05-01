@@ -8,6 +8,18 @@ export type SellerPayoutMethod = 'BINANCE' | 'BANK' | 'NONE'
 export type SellerPayoutCurrency = 'USDT' | 'BS'
 export type AppliedRateType = 'BCV' | 'BINANCE' | null
 
+export type ExchangeRateKind = 'BCV' | 'BINANCE'
+
+export type MarketplaceExchangeContext = {
+  kind: ExchangeRateKind
+  rateValue: number
+  source: string
+  fechaValor: string
+  capturedAt: string
+  buyerAmountBs: number | null
+  snapshotId: string | null
+}
+
 export type CalculateSellerPayoutParams = {
   amountUSD: number
   buyerPaymentMethod: BuyerPaymentMethod

@@ -2,15 +2,17 @@
 
 import { getDb } from '@/lib/marketplace/db'
 import { getSession } from '@/lib/marketplace/auth'
+import { resolveBinanceRate } from '@/lib/marketplace/binance-rate'
 import {
   BANK_FEE,
   calculateSellerPayout,
   PLATFORM_FEE,
   roundMoney,
-  USD_REFERENCE_RATE,
+  type MarketplaceExchangeContext,
   type BuyerPaymentMethod,
   type SellerPayoutMethod,
 } from '@/lib/marketplace/finance'
+import { resolveReferenceRate } from '@/lib/marketplace/reference-rate'
 import type { ActionResult } from '@/lib/validations/marketplace'
 
 type CheckoutPaymentMethod =
@@ -33,13 +35,58 @@ function mapSellerPayoutMethod(methodType: string | null | undefined): SellerPay
   return 'NONE'
 }
 
-function calcFee(amount: number, paymentMethod: TxPaymentMethod, sellerPayoutMethod: SellerPayoutMethod) {
+async function resolveMarketplaceExchangeContext(params: {
+  amountUSD: number
+  buyerPaymentMethod: BuyerPaymentMethod
+  sellerPayoutMethod: SellerPayoutMethod
+}): Promise<MarketplaceExchangeContext> {
+  const capturedAt = new Date().toISOString()
+
+  if (params.buyerPaymentMethod === 'BINANCE') {
+    const result = await resolveBinanceRate()
+    if (!result.snapshotId) {
+      throw new Error('Tasa Binance no disponible para persistencia DB')
+    }
+
+    return {
+      kind: 'BINANCE',
+      rateValue: result.rate,
+      source: result.source,
+      fechaValor: result.fechaValor,
+      capturedAt,
+      buyerAmountBs: params.sellerPayoutMethod === 'BINANCE' ? null : roundMoney(params.amountUSD * result.rate),
+      snapshotId: result.snapshotId,
+    }
+  }
+
+  const result = await resolveReferenceRate()
+  if (!result.snapshotId || result.mode === 'fallback') {
+    throw new Error('Tasa BCV no disponible para persistencia DB')
+  }
+
+  return {
+    kind: 'BCV',
+    rateValue: result.rate,
+    source: result.source,
+    fechaValor: result.fechaValor,
+    capturedAt,
+    buyerAmountBs: roundMoney(params.amountUSD * result.rate),
+    snapshotId: result.snapshotId,
+  }
+}
+
+function calcFee(
+  amount: number,
+  paymentMethod: TxPaymentMethod,
+  sellerPayoutMethod: SellerPayoutMethod,
+  exchangeRateValue: number,
+) {
   const payout = calculateSellerPayout({
     amountUSD: amount,
     buyerPaymentMethod: mapBuyerPaymentMethod(paymentMethod),
     sellerPayoutMethod,
-    bcvRate: USD_REFERENCE_RATE,
-    binanceRate: USD_REFERENCE_RATE,
+    bcvRate: exchangeRateValue,
+    binanceRate: exchangeRateValue,
   })
   const bankPercent = payout.bankFeeBS > 0 ? BANK_FEE * 100 : 0
 
@@ -117,7 +164,19 @@ export async function initiatePurchase(
     }
 
     const amount = Number(listing.price)
-    const fee = calcFee(amount, mappedPaymentMethod, mapSellerPayoutMethod(listing.seller.payoutMethods[0]?.methodType))
+    const sellerPayoutMethod = mapSellerPayoutMethod(listing.seller.payoutMethods[0]?.methodType)
+    let exchangeContext
+    try {
+      exchangeContext = await resolveMarketplaceExchangeContext({
+        amountUSD: amount,
+        buyerPaymentMethod: mapBuyerPaymentMethod(mappedPaymentMethod),
+        sellerPayoutMethod,
+      })
+    } catch {
+      return { success: false, message: 'Tasa no disponible, intenta nuevamente' }
+    }
+
+    const fee = calcFee(amount, mappedPaymentMethod, sellerPayoutMethod, exchangeContext.rateValue)
     const idempotencyKey = `${session.userId}_${listingId}_${Date.now()}`
 
     const tx = await db.mpTransaction.create({
@@ -130,6 +189,12 @@ export async function initiatePurchase(
         status: 'PENDING_PAYMENT',
         amount: String(amount),
         currency: listing.currency,
+        exchangeRateValue: String(exchangeContext.rateValue),
+        exchangeRateSource: exchangeContext.source,
+        exchangeRateKind: exchangeContext.kind,
+        exchangeRateFechaValor: new Date(exchangeContext.fechaValor),
+        exchangeRateCapturedAt: new Date(exchangeContext.capturedAt),
+        buyerAmountBs: exchangeContext.buyerAmountBs == null ? null : String(exchangeContext.buyerAmountBs),
         platformFeePercent: String(fee.platformFeePercent),
         platformFeeAmount: String(fee.platformFeeAmount),
         sellerNetAmount: String(fee.sellerNetAmount),

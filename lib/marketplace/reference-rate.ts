@@ -1,3 +1,4 @@
+import { getDb } from '@/lib/marketplace/db'
 import { mkdir, readFile, writeFile } from 'fs/promises'
 import path from 'path'
 
@@ -15,6 +16,8 @@ export interface ReferenceRateResult {
   mode: RateMode
   source: string
   asOf: string
+  fechaValor: string
+  snapshotId: string | null
   providersTried: RateProviderAttempt[]
 }
 
@@ -28,6 +31,18 @@ interface PersistedRate {
   rate: number
   source: string
   asOf: string
+  fechaValor: string
+  snapshotId: string | null
+}
+
+interface ReferenceRateSnapshot {
+  id?: string | null
+  rate: number
+  fechaValor: string
+  source: string
+  mode: RateMode
+  metadata?: Record<string, unknown>
+  createdAt?: string
 }
 
 const DEFAULT_FALLBACK_RATE = 50
@@ -179,12 +194,20 @@ async function readPersistedRate(storageMode: 'memory' | 'file', storageFile: st
 
   try {
     const raw = await readFile(storageFile, 'utf-8')
-    const parsed = JSON.parse(raw) as PersistedRate
-    if (!Number.isFinite(parsed.rate) || parsed.rate <= 0 || !parsed.source || !parsed.asOf) {
+    const parsed = JSON.parse(raw) as Partial<PersistedRate>
+    const rate = typeof parsed.rate === 'number' ? parsed.rate : Number.NaN
+    if (!Number.isFinite(rate) || rate <= 0 || !parsed.source || !parsed.asOf) {
       return null
     }
-    inMemoryLastValidRate = parsed
-    return parsed
+    const payload: PersistedRate = {
+      rate,
+      source: parsed.source,
+      asOf: parsed.asOf,
+      fechaValor: parsed.fechaValor || parsed.asOf,
+      snapshotId: typeof parsed.snapshotId === 'string' ? parsed.snapshotId : null,
+    }
+    inMemoryLastValidRate = payload
+    return payload
   } catch {
     return null
   }
@@ -203,6 +226,102 @@ async function writePersistedRate(
 
   await mkdir(path.dirname(storageFile), { recursive: true })
   await writeFile(storageFile, JSON.stringify(payload, null, 2), 'utf-8')
+}
+
+function rowToSnapshot(row: Record<string, unknown>): ReferenceRateSnapshot | null {
+  const rate = typeof row.rate === 'number' ? row.rate : Number(row.rate)
+  if (!Number.isFinite(rate) || rate <= 0) return null
+
+  const fechaValor =
+    row.fechaValor instanceof Date
+      ? row.fechaValor.toISOString()
+      : typeof row.fechaValor === 'string'
+        ? new Date(row.fechaValor).toISOString()
+        : null
+  if (!fechaValor) return null
+
+  const createdAt =
+    row.createdAt instanceof Date
+      ? row.createdAt.toISOString()
+      : typeof row.createdAt === 'string'
+        ? new Date(row.createdAt).toISOString()
+        : undefined
+
+  return {
+    id: typeof row.id === 'string' ? row.id : null,
+    rate,
+    fechaValor,
+    source: typeof row.source === 'string' ? row.source : 'db_snapshot',
+    mode: row.mode === 'live' || row.mode === 'stale' || row.mode === 'fallback' ? row.mode : 'stale',
+    metadata: typeof row.metadata === 'object' && row.metadata !== null ? (row.metadata as Record<string, unknown>) : undefined,
+    createdAt,
+  }
+}
+
+async function readLastValidDbSnapshot(): Promise<ReferenceRateSnapshot | null> {
+  const db = await getDb()
+  if (!db) return null
+
+  try {
+    const row = await db.mpReferenceRateSnapshot.findFirst({
+      orderBy: [{ fechaValor: 'desc' }, { createdAt: 'desc' }],
+    })
+
+    return row ? rowToSnapshot(row) : null
+  } catch {
+    return null
+  } finally {
+    await db.$disconnect().catch(() => {})
+  }
+}
+
+function shouldReuseLatestSnapshot(
+  latest: ReferenceRateSnapshot | null,
+  candidate: ReferenceRateSnapshot,
+  minIntervalMinutes: number,
+): boolean {
+  if (!latest?.createdAt) return false
+  if (latest.source !== candidate.source || latest.mode !== candidate.mode) return false
+  if (latest.fechaValor !== candidate.fechaValor) return false
+  if (Math.abs(latest.rate - candidate.rate) >= 0.0001) return false
+
+  const latestCreatedAt = new Date(latest.createdAt).getTime()
+  if (Number.isNaN(latestCreatedAt)) return false
+
+  const ageMs = Date.now() - latestCreatedAt
+  return ageMs >= 0 && ageMs < minIntervalMinutes * 60 * 1000
+}
+
+async function persistSnapshot(candidate: ReferenceRateSnapshot): Promise<ReferenceRateSnapshot> {
+  const db = await getDb()
+  if (!db) return candidate
+
+  try {
+    const latestRow = await db.mpReferenceRateSnapshot.findFirst({
+      orderBy: [{ createdAt: 'desc' }],
+    })
+    const latest = latestRow ? rowToSnapshot(latestRow) : null
+
+    if (shouldReuseLatestSnapshot(latest, candidate, 15)) {
+      return latest ?? candidate
+    }
+
+    const created = await db.mpReferenceRateSnapshot.create({
+      data: {
+        rate: String(candidate.rate),
+        fechaValor: new Date(candidate.fechaValor),
+        source: candidate.source,
+        mode: candidate.mode,
+        metadata: candidate.metadata ?? {},
+      },
+    })
+
+    return rowToSnapshot(created) ?? candidate
+  } catch {
+    return candidate
+  } finally {
+    await db.$disconnect().catch(() => {})
+  }
 }
 
 async function fetchProviderRate(
@@ -285,6 +404,7 @@ export async function resolveReferenceRate(): Promise<ReferenceRateResult> {
 
   const consensus = findConsensus(successfulRates, deltaPct)
   const lastValid = await readPersistedRate(storageMode, storageFile)
+  const lastValidDb = await readLastValidDbSnapshot()
 
   if (consensus) {
     const jumpVsLastValid =
@@ -293,10 +413,20 @@ export async function resolveReferenceRate(): Promise<ReferenceRateResult> {
         : 0
 
     if (!lastValid || jumpVsLastValid <= maxJumpPct) {
-      const livePayload: PersistedRate = {
+      const liveCandidate: ReferenceRateSnapshot = {
         rate: consensus.rate,
         source: consensus.sources.join(' + '),
-        asOf: nowIso,
+        fechaValor: nowIso,
+        mode: 'live',
+      }
+
+      const persisted = await persistSnapshot(liveCandidate)
+      const livePayload: PersistedRate = {
+        rate: persisted.rate,
+        source: persisted.source,
+        asOf: persisted.createdAt ?? nowIso,
+        fechaValor: persisted.fechaValor,
+        snapshotId: persisted.id ?? null,
       }
 
       await writePersistedRate(storageMode, storageFile, livePayload)
@@ -306,8 +436,34 @@ export async function resolveReferenceRate(): Promise<ReferenceRateResult> {
         mode: 'live',
         source: livePayload.source,
         asOf: livePayload.asOf,
+        fechaValor: livePayload.fechaValor,
+        snapshotId: livePayload.snapshotId,
         providersTried,
       }
+    }
+  }
+
+  if (lastValid?.snapshotId) {
+    return {
+      rate: lastValid.rate,
+      mode: 'stale',
+      source: lastValid.source,
+      asOf: lastValid.asOf,
+      fechaValor: lastValid.fechaValor,
+      snapshotId: lastValid.snapshotId,
+      providersTried,
+    }
+  }
+
+  if (lastValidDb) {
+    return {
+      rate: lastValidDb.rate,
+      mode: 'stale',
+      source: `${lastValidDb.source} (last_valid_db_snapshot)`,
+      asOf: lastValidDb.createdAt ?? nowIso,
+      fechaValor: lastValidDb.fechaValor,
+      snapshotId: lastValidDb.id ?? null,
+      providersTried,
     }
   }
 
@@ -317,6 +473,8 @@ export async function resolveReferenceRate(): Promise<ReferenceRateResult> {
       mode: 'stale',
       source: lastValid.source,
       asOf: lastValid.asOf,
+      fechaValor: lastValid.fechaValor,
+      snapshotId: lastValid.snapshotId,
       providersTried,
     }
   }
@@ -326,6 +484,8 @@ export async function resolveReferenceRate(): Promise<ReferenceRateResult> {
     mode: 'fallback',
     source: 'configured_fallback',
     asOf: nowIso,
+    fechaValor: nowIso,
+    snapshotId: null,
     providersTried,
   }
 }

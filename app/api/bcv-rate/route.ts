@@ -15,6 +15,7 @@ export async function GET() {
       mode: result.mode,
       source: result.source,
       asOf: result.asOf,
+      fechaValor: result.fechaValor,
       isFallback: result.mode === 'fallback'
     }, {
       headers: {

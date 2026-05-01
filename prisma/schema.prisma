@@ -346,11 +346,18 @@ enum MpListingStatus {
 }
 
 enum MpUserRole {
-  USER  // Standard marketplace user
+  USER // Standard marketplace user
   SOCIO // Partner — exempt from platform commission
   SUPER // Developer/admin — full access, exempt from commission
 
   @@map("mp_user_role")
+}
+
+enum MpExchangeRateKind {
+  BCV
+  BINANCE
+
+  @@map("mp_exchange_rate_kind")
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -391,7 +398,7 @@ model MpUser {
   role MpUserRole @default(USER)
 
   // Contact & Notifications
-  phone             String?   // e.g. "+58 414 123 4567"
+  phone             String? // e.g. "+58 414 123 4567"
   whatsappConsent   Boolean   @default(false)
   whatsappConsentAt DateTime?
 
@@ -410,16 +417,16 @@ model MpUser {
   // Relations
   listings            MpListing[]
   payoutMethods       MpPayoutMethod[]
-  buyerTransactions   MpTransaction[]  @relation("MpBuyerTransactions")
-  sellerTransactions  MpTransaction[]  @relation("MpSellerTransactions")
-  sentMessages        MpMessage[]      @relation("MpMessageSender")
-  receivedMessages    MpMessage[]      @relation("MpMessageReceiver")
-  chatThreadsAsBuyer  MpChatThread[]   @relation("MpChatBuyer")
-  chatThreadsAsSeller MpChatThread[]   @relation("MpChatSeller")
+  buyerTransactions   MpTransaction[]     @relation("MpBuyerTransactions")
+  sellerTransactions  MpTransaction[]     @relation("MpSellerTransactions")
+  sentMessages        MpMessage[]         @relation("MpMessageSender")
+  receivedMessages    MpMessage[]         @relation("MpMessageReceiver")
+  chatThreadsAsBuyer  MpChatThread[]      @relation("MpChatBuyer")
+  chatThreadsAsSeller MpChatThread[]      @relation("MpChatSeller")
   disputes            MpDispute[]
   mpPayouts           MpPayout[]
   askedQuestions      MpListingQuestion[] @relation("MpAskedQuestions")
-  favoriteListings    MpListing[]      @relation("UserFavorites")
+  favoriteListings    MpListing[]         @relation("UserFavorites")
 
   @@index([email])
   @@index([isSeller])
@@ -614,17 +621,25 @@ model MpTransaction {
   amount        Decimal             @db.Decimal(10, 2)
   currency      String              @default("USD")
 
+  // Exchange Rate Freeze (minimal audit context for the purchase)
+  exchangeRateValue      Decimal?            @db.Decimal(12, 4)
+  exchangeRateSource     String?
+  exchangeRateKind       MpExchangeRateKind?
+  exchangeRateFechaValor DateTime?
+  exchangeRateCapturedAt DateTime?
+  buyerAmountBs          Decimal?            @db.Decimal(10, 2)
+
   // Platform Fee (calculated at creation)
   platformFeePercent Decimal @db.Decimal(5, 2) // e.g., 10.00 for 10%
   platformFeeAmount  Decimal @db.Decimal(10, 2)
   sellerNetAmount    Decimal @db.Decimal(10, 2)
 
   // External References
-  externalTxId     String? // Mercantil/Binance transaction ID
-  paymentReference String? // Zelle reference, wallet hash, etc.
+  externalTxId      String? // Mercantil/Binance transaction ID
+  paymentReference  String? // Zelle reference, wallet hash, etc.
   paymentSenderBank String? // Issuing bank selected by buyer for manual reconciliation
   paymentPaidAt     DateTime? // Reported payment date from buyer
-  paymentProofUrl  String? // Screenshot/proof upload URL
+  paymentProofUrl   String? // Screenshot/proof upload URL
 
   // Escrow Management
   escrowHeldAt    DateTime? // When funds entered escrow
@@ -817,6 +832,25 @@ model MpBinanceRateSnapshot {
   @@index([source])
   @@index([mode])
   @@map("mp_binance_rate_snapshots")
+}
+
+model MpReferenceRateSnapshot {
+  id String @id @default(cuid())
+
+  rate       Decimal  @db.Decimal(12, 4)
+  fechaValor DateTime
+
+  source String
+  mode   String?
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([fechaValor])
+  @@index([createdAt])
+  @@map("mp_reference_rate_snapshots")
 }
 
 // ─────────────────────────────────────────────────────────────────
