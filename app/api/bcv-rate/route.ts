@@ -1,4 +1,4 @@
-import { resolveReferenceRate } from '@/lib/marketplace/reference-rate'
+import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
 import { NextResponse } from 'next/server'
 
 /**
@@ -9,17 +9,21 @@ import { NextResponse } from 'next/server'
 export async function GET() {
   try {
     const result = await resolveReferenceRate()
-    
+
+    const cacheControl =
+      result.mode === 'live'
+        ? 'public, s-maxage=300, stale-while-revalidate=120'
+        : 'public, s-maxage=60, stale-while-revalidate=60'
+
     return NextResponse.json({
       rate: result.rate,
       mode: result.mode,
       source: result.source,
       asOf: result.asOf,
-      isFallback: result.mode === 'fallback'
+      isFallback: result.mode !== 'live'
     }, {
       headers: {
-        // Cache for 15 minutes, revalidate every minute
-        'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=60'
+        'Cache-Control': cacheControl
       }
     })
   } catch (error) {
