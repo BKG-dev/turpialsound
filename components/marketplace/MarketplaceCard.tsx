@@ -489,10 +489,10 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
           </div>
         </div>
 
-        {/* Escrow badge */}
+        {/* Protected payment badge */}
         <div className="flex items-start gap-2 text-[11px] leading-relaxed text-[#b8b8b8]">
           <Shield size={11} className="mt-0.5 flex-shrink-0 text-[#ffc107] opacity-70" />
-          <span>Pago reportado y revisado manualmente</span>
+          <span>Pago protegido con revision del equipo</span>
         </div>
       </div>
     </div>

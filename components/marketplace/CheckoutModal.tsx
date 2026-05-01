@@ -342,7 +342,7 @@ export function CheckoutModal({ listing, onClose, onSuccess }: CheckoutModalProp
       setSuccess({
         title: 'Pago procesado',
         summary: 'Tu pago esta siendo validado.',
-        detail: 'Notificaremos la resolucion o la liberacion del escrow en menos de 24h.',
+        detail: 'Te notificaremos cuando la operacion avance. El equipo respondera en menos de 24h.',
       })
     } catch {
       setError('Error inesperado. Intenta de nuevo.')
@@ -397,7 +397,7 @@ export function CheckoutModal({ listing, onClose, onSuccess }: CheckoutModalProp
               <p className="mb-2 text-base font-semibold text-[#f2f2f2]">{success.title}</p>
               <div className="space-y-2 text-sm leading-relaxed text-[#b8b8b8]">
                 <p>{success.summary}</p>
-                <p>Recibimos tu comprobante y el equipo operativo ya fue notificado para revisar la conciliacion manual.</p>
+                <p>Recibimos tu comprobante y el equipo operativo ya fue notificado para revisar la referencia y el monto.</p>
                 <p>{success.detail}</p>
               </div>
             </div>

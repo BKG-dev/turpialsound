@@ -5,7 +5,7 @@ import MarketplacePageClient from './MarketplacePageClient'
 
 const marketplaceUrl = `${siteConfig.url}/marketplace`
 const marketplaceDescription =
-  'Marketplace musical de Turpial Sound para comprar y vender instrumentos, equipos de audio, accesorios y servicios musicales en Venezuela con revision manual de pagos y operacion protegida.'
+  'Marketplace musical de Turpial Sound para comprar y vender instrumentos, equipos de audio, accesorios y servicios musicales en Venezuela con revision del equipo y operacion protegida.'
 
 export const metadata: Metadata = generatePageMetadata({
   title: 'Marketplace musical en Venezuela',

@@ -729,6 +729,8 @@ video {
 
   color-scheme: dark;
   min-height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   background: var(--mp-page-bg);
   color: var(--mp-text);
   transition: background-color 180ms ease, color 180ms ease;
@@ -871,6 +873,76 @@ video {
 .mp-theme-toggle--compact {
   min-height: 2.15rem;
   padding-right: 0.65rem;
+}
+
+.mp-market-authbar {
+  isolation: isolate;
+}
+
+.mp-bcv-ticker {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(0, 174, 239, 0.15);
+  border-radius: 9999px;
+  background: rgba(0, 174, 239, 0.05);
+  color: var(--mp-text-soft);
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.mp-bcv-ticker::before,
+.mp-bcv-ticker::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 2.5rem;
+  pointer-events: none;
+}
+
+.mp-bcv-ticker::before {
+  left: 0;
+  background: linear-gradient(90deg, var(--mp-panel-solid), transparent);
+}
+
+.mp-bcv-ticker::after {
+  right: 0;
+  background: linear-gradient(270deg, var(--mp-panel-solid), transparent);
+}
+
+.mp-bcv-ticker__track {
+  display: flex;
+  width: max-content;
+  animation: mpTickerScroll 45s linear infinite;
+  will-change: transform;
+}
+
+.mp-bcv-ticker__track span {
+  flex: 0 0 auto;
+  padding: 0.5rem 2.5rem;
+  display: inline-block;
+}
+
+@keyframes mpTickerScroll {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mp-bcv-ticker__track {
+    width: 100%;
+    animation: none;
+    transform: none;
+  }
+
+  .mp-bcv-ticker__track span[aria-hidden='true'] {
+    display: none;
+  }
 }
 
 .mp-theme-root .mp-themed-panel {

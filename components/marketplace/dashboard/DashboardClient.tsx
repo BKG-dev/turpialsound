@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { LucideIcon } from 'lucide-react'
 import {
-  ArrowLeft,
   ShoppingBag,
   TrendingUp,
   MessageSquare,
@@ -17,7 +16,6 @@ import {
   Package,
   ChevronRight,
   Zap,
-  Activity,
   AlertTriangle,
   X,
   Loader2,
@@ -46,7 +44,8 @@ import {
 } from '@/actions/marketplace/users'
 import { cn } from '@/lib/utils'
 import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
-import { MarketplaceThemeToggle } from '@/components/marketplace/MarketplaceTheme'
+import { MarketplaceAuthBar } from '@/components/marketplace/MarketplaceAuthBar'
+import { logoutMpUser } from '@/actions/marketplace/auth'
 import { VENEZUELAN_BANK_OPTIONS } from '@/lib/marketplace/venezuelan-banks'
 import { normalizeVenezuelanMobilePhone } from '@/lib/marketplace/venezuelan-phone'
 
@@ -136,16 +135,16 @@ type Tab = 'my_store' | 'sales' | 'purchases' | 'messages' | 'favorites' | 'payo
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; glow: string }> = {
   INITIATED:           { label: 'Iniciado',          color: '#60a5fa', bg: 'rgba(59,130,246,0.1)',  glow: 'rgba(59,130,246,0.25)'  },
-  PENDING_PAYMENT:     { label: 'Pago Pendiente',    color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  glow: 'rgba(245,158,11,0.25)'  },
-  PAYMENT_RECEIVED:    { label: 'Pago Recibido',     color: '#eab308', bg: 'rgba(234,179,8,0.1)',   glow: 'rgba(234,179,8,0.25)'   },
-  VALIDATING:          { label: 'Validando',         color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', glow: 'rgba(167,139,250,0.25)' },
-  IN_ESCROW:           { label: 'En proceso',        color: '#00aeef', bg: 'rgba(0,174,239,0.1)',   glow: 'rgba(0,174,239,0.25)'   },
-  DELIVERY_CONFIRMED:  { label: 'Entrega Confirmada',color: '#34d399', bg: 'rgba(52,211,153,0.1)',  glow: 'rgba(52,211,153,0.25)'  },
-  RELEASED:            { label: 'Listo para cobrar', color: '#4ade80', bg: 'rgba(74,222,128,0.1)',  glow: 'rgba(74,222,128,0.25)'  },
-  PAYMENT_FAILED:      { label: 'Pago Fallido',      color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   glow: 'rgba(239,68,68,0.25)'   },
-  DISPUTED:            { label: 'En Disputa',        color: '#f97316', bg: 'rgba(249,115,22,0.1)',  glow: 'rgba(249,115,22,0.25)'  },
+  PENDING_PAYMENT:     { label: 'Compra iniciada',   color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  glow: 'rgba(245,158,11,0.25)'  },
+  PAYMENT_RECEIVED:    { label: 'Pago reportado',    color: '#eab308', bg: 'rgba(234,179,8,0.1)',   glow: 'rgba(234,179,8,0.25)'   },
+  VALIDATING:          { label: 'Pago por revisar',  color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', glow: 'rgba(167,139,250,0.25)' },
+  IN_ESCROW:           { label: 'Pago revisado',     color: '#00aeef', bg: 'rgba(0,174,239,0.1)',   glow: 'rgba(0,174,239,0.25)'   },
+  DELIVERY_CONFIRMED:  { label: 'Recepcion confirmada', color: '#34d399', bg: 'rgba(52,211,153,0.1)',  glow: 'rgba(52,211,153,0.25)'  },
+  RELEASED:            { label: 'Operacion cerrada', color: '#4ade80', bg: 'rgba(74,222,128,0.1)',  glow: 'rgba(74,222,128,0.25)'  },
+  PAYMENT_FAILED:      { label: 'Pago no validado',  color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   glow: 'rgba(239,68,68,0.25)'   },
+  DISPUTED:            { label: 'En revision',       color: '#f97316', bg: 'rgba(249,115,22,0.1)',  glow: 'rgba(249,115,22,0.25)'  },
   REFUNDED:            { label: 'Reembolsado',       color: '#c084fc', bg: 'rgba(192,132,252,0.1)', glow: 'rgba(192,132,252,0.25)' },
-  CANCELLED:           { label: 'Cancelado',         color: '#6b7280', bg: 'rgba(107,114,128,0.1)', glow: 'rgba(107,114,128,0.25)' },
+  CANCELLED:           { label: 'Operacion cancelada', color: '#6b7280', bg: 'rgba(107,114,128,0.1)', glow: 'rgba(107,114,128,0.25)' },
   // Listing statuses
   ACTIVE:              { label: 'Activo',            color: '#4ade80', bg: 'rgba(74,222,128,0.1)',  glow: 'rgba(74,222,128,0.25)'  },
   PAUSED:              { label: 'Pausado',           color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  glow: 'rgba(245,158,11,0.25)'  },
@@ -218,32 +217,32 @@ function normalizePayoutMethodType(methodType: string) {
 function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
   const copy: Record<string, { buyer: string; seller: string }> = {
     PENDING_PAYMENT: {
-      buyer: 'Completa el pago para iniciar la validacion.',
+      buyer: 'Completa el reporte de pago para que el equipo revise la referencia, el monto y el comprobante.',
       seller: 'El comprador inicio la compra, pero aun no ha reportado el pago.',
     },
     PAYMENT_RECEIVED: {
-      buyer: 'Estamos validando tu pago. Te avisaremos cuando avance.',
-      seller: 'El comprador ya reporto el pago. La revision manual esta en curso y te notificaremos cuando la operacion avance.',
+      buyer: 'Recibimos tu reporte de pago. El equipo verificara la referencia, el monto y el comprobante.',
+      seller: 'El pago del comprador fue reportado. El equipo lo revisara antes de avanzar la operacion.',
     },
     VALIDATING: {
-      buyer: 'Estamos validando tu pago. Te avisaremos cuando avance.',
-      seller: 'La revision manual sigue en curso. Te notificaremos cuando el pago quede conciliado.',
+      buyer: 'Recibimos tu reporte de pago. El equipo verificara la referencia, el monto y el comprobante.',
+      seller: 'El pago del comprador esta en revision. Te notificaremos cuando la operacion avance.',
     },
     IN_ESCROW: {
-      buyer: 'Los fondos estan protegidos. Coordina la entrega con el vendedor.',
-      seller: 'El pago ya fue validado. Completa la entrega para avanzar al cierre de la venta.',
+      buyer: 'Tu pago fue revisado por el equipo. Ahora coordina la entrega con el vendedor.',
+      seller: 'El pago del comprador fue revisado por el equipo. Coordina la entrega del articulo.',
     },
     DELIVERY_CONFIRMED: {
-      buyer: 'La operacion esta lista para avanzar a liberacion si no hay disputa.',
-      seller: 'La entrega fue confirmada. El pago al vendedor queda como siguiente paso.',
+      buyer: 'Confirmaste la recepcion. El equipo gestionara el pago al vendedor.',
+      seller: 'El comprador confirmo la recepcion. Tu pago sera procesado en menos de 24 horas. Si no lo ves reflejado, escribenos por el centro de mensajes indicando el ID de la operacion.',
     },
     RELEASED: {
-      buyer: 'La operacion fue liberada y quedo cerrada a nivel de escrow.',
-      seller: 'La venta ya esta lista para cobrar. Verifica que tus datos de cobro esten actualizados.',
+      buyer: 'La operacion fue completada correctamente.',
+      seller: 'El equipo registro el pago al vendedor. Revisa los datos de la operacion.',
     },
     DISPUTED: {
       buyer: 'La operacion esta en revision. No se liberaran fondos hasta resolverla.',
-      seller: 'La transaccion entro en disputa. El dinero queda retenido hasta la resolucion.',
+      seller: 'La transaccion entro en revision. El dinero queda retenido hasta la resolucion.',
     },
     PAYMENT_FAILED: {
       buyer: 'El pago fue rechazado o no pudo conciliarse. Revisa los datos antes de intentar de nuevo.',
@@ -269,24 +268,24 @@ function getOperationalNextStep(status: string, viewAs: 'buyer' | 'seller') {
       seller: 'Espera a que el comprador reporte el pago para que el equipo pueda validarlo.',
     },
     PAYMENT_RECEIVED: {
-      buyer: 'Espera la validacion manual. No hace falta reenviar el comprobante salvo que soporte lo solicite.',
-      seller: 'Espera la conciliacion manual. Te notificaremos cuando la operacion avance o si hace falta revision adicional.',
+      buyer: 'Espera la validacion del equipo. No hace falta reenviar el comprobante salvo que soporte lo solicite.',
+      seller: 'Espera la revision del equipo. Te notificaremos cuando la operacion avance o si hace falta informacion adicional.',
     },
     VALIDATING: {
       buyer: 'Mantente atento a la confirmacion del equipo mientras termina la conciliacion.',
       seller: 'Mantente atento a la confirmacion del equipo mientras termina la conciliacion.',
     },
     IN_ESCROW: {
-      buyer: 'Coordina la entrega y abre disputa solo si aparece una incidencia real.',
-      seller: 'Completa la entrega para que la venta pueda avanzar a cierre y cobro.',
+      buyer: 'Cuando recibas el articulo y todo este conforme, confirma la recepcion para avanzar el pago al vendedor.',
+      seller: 'Coordina la entrega con el comprador. Cuando confirme la recepcion, la operacion pasara a pago al vendedor.',
     },
     DELIVERY_CONFIRMED: {
       buyer: 'La operacion ya quedo lista para cierre operativo.',
       seller: 'El pago al vendedor queda en cola con tus datos de cobro actuales.',
     },
     RELEASED: {
-      buyer: 'La transaccion ya esta cerrada del lado de escrow.',
-      seller: 'Verifica tus datos de cobro si el pago manual aun no ha sido ejecutado.',
+      buyer: 'La operacion fue completada correctamente.',
+      seller: 'Operacion completada.',
     },
     DISPUTED: {
       buyer: 'Espera la resolucion del equipo y conserva el contexto de la entrega.',
@@ -309,25 +308,32 @@ function getTxUnreadCount(thread: DashThread, currentUserId: string) {
 
 function getStatusLabelForView(status: string, viewAs: 'buyer' | 'seller') {
   if (viewAs === 'buyer') {
-    if (status === 'PENDING_PAYMENT') return 'Reportar pago'
+    if (status === 'PENDING_PAYMENT') return 'Pago por reportar'
     if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado'
-    if (status === 'IN_ESCROW') return 'Pago validado'
-    if (status === 'DELIVERY_CONFIRMED') return 'Entrega confirmada'
+    if (status === 'IN_ESCROW') return 'Pago revisado'
+    if (status === 'DELIVERY_CONFIRMED') return 'Recepcion confirmada'
     if (status === 'RELEASED') return 'Operacion completada'
-    if (status === 'DISPUTED') return 'En disputa'
+    if (status === 'DISPUTED') return 'En revision'
   }
 
-  return STATUS_CONFIG[status]?.label ?? status
+  return STATUS_CONFIG[status]?.label ?? 'Estado por revisar'
 }
 
 function getBuyerCtaLabel(status: string) {
   if (status === 'PENDING_PAYMENT') return 'Reportar pago'
   if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago en revision'
-  if (status === 'IN_ESCROW') return 'Confirmar que ya recibí el producto'
-  if (status === 'DELIVERY_CONFIRMED') return 'Entrega confirmada'
+  if (status === 'IN_ESCROW') return 'Coordinando entrega'
+  if (status === 'DELIVERY_CONFIRMED') return 'Recepcion confirmada'
   if (status === 'RELEASED') return 'Operacion completada'
-  if (status === 'DISPUTED') return 'Disputa en curso'
+  if (status === 'DISPUTED') return 'En revision'
   return 'Ver detalle'
+}
+
+function cleanVisibleOperationalCopy(value: string) {
+  return value
+    .replace(/\bescrow\b/gi, 'proceso protegido')
+    .replace(/\bmanualmente\b/gi, 'por el equipo')
+    .replace(/\bmanual\b/gi, 'del equipo')
 }
 
 function isBinanceTransaction(tx: DashTransaction) {
@@ -972,10 +978,12 @@ function ThreadCard({
   thread,
   currentUserId,
   onOpen,
+  buttonRef,
 }: {
   thread: DashThread
   currentUserId: string
   onOpen: () => void
+  buttonRef?: React.Ref<HTMLButtonElement>
 }) {
   const isBuyer = thread.buyerId === currentUserId
   const other = isBuyer ? thread.seller : thread.buyer
@@ -985,7 +993,9 @@ function ThreadCard({
 
   return (
     <button
+      ref={buttonRef}
       onClick={onOpen}
+      aria-label={hasUnread ? `Abrir conversacion con ${other.displayName}, ${unreadCount} sin leer` : `Abrir conversacion con ${other.displayName}`}
       className="w-full text-left rounded-xl p-4 flex gap-3 group transition-all duration-200 hover:border-[rgba(0,174,239,0.25)]"
       style={{
         background: 'var(--mp-card)',
@@ -1156,7 +1166,7 @@ function ProfileHeader({
   const role = profile?.role ?? 'USER'
 
   const roleLabel: Record<string, string> = { USER: 'Miembro', seller: 'Miembro', SOCIO: 'Socio', SUPER: 'Admin' }
-  const roleColor: Record<string, string> = { USER: '#5a5a5a', SOCIO: '#ffc107', SUPER: '#ef4444' }
+  const roleColor: Record<string, string> = { USER: '#5a5a5a', seller: '#5a5a5a', SOCIO: '#ffc107', SUPER: '#ef4444' }
 
   return (
     <div
@@ -1591,11 +1601,11 @@ function TransactionDetailModal({
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs" style={{ color: 'var(--mp-text-strong)' }}>
-                        {(entry.fromStatus ?? 'Inicio')} <span style={{ color: 'var(--mp-text-faint)' }}>-&gt;</span> {entry.toStatus}
+                        {entry.fromStatus ? getStatusLabelForView(entry.fromStatus, viewAs) : 'Inicio'} <span style={{ color: 'var(--mp-text-faint)' }}>-&gt;</span> {getStatusLabelForView(entry.toStatus, viewAs)}
                       </p>
                       <span className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>{fmtDate(entry.createdAt)}</span>
                     </div>
-                    {entry.reason && <p className="mt-1 text-[11px]" style={{ color: 'var(--mp-text-muted)' }}>{entry.reason}</p>}
+                    {entry.reason && <p className="mt-1 text-[11px]" style={{ color: 'var(--mp-text-muted)' }}>{cleanVisibleOperationalCopy(entry.reason)}</p>}
                   </div>
                 ))}
               </div>
@@ -1788,6 +1798,7 @@ export function DashboardClient({
 
   const initialUnread = initialThreads.reduce((sum, thread) => sum + getTxUnreadCount(thread, session.userId), 0)
   const [unreadCount, setUnreadCount] = useState(initialUnread)
+  const firstUnreadThreadRef = useRef<HTMLButtonElement | null>(null)
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -1812,6 +1823,7 @@ export function DashboardClient({
 
     return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
   });
+  const firstUnreadThreadId = displayThreads.find((thread) => getTxUnreadCount(thread, session.userId) > 0)?.id ?? null
 
   const pendingValidationSales = sales.filter(tx => ['PAYMENT_RECEIVED', 'VALIDATING'].includes(tx.status))
   const escrowSales = sales.filter(tx => ['IN_ESCROW', 'DELIVERY_CONFIRMED'].includes(tx.status))
@@ -1854,6 +1866,20 @@ export function DashboardClient({
   function handleTabChange(tab: Tab) {
     setActiveTab(tab)
     router.replace(`/marketplace/dashboard?tab=${tab}`, { scroll: false })
+  }
+
+  function focusFirstUnreadThread() {
+    handleTabChange('messages')
+    window.setTimeout(() => {
+      firstUnreadThreadRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      firstUnreadThreadRef.current?.focus({ preventScroll: true })
+    }, 80)
+  }
+
+  async function handleLogout() {
+    await logoutMpUser()
+    router.push('/marketplace')
+    router.refresh()
   }
 
   async function handleOpenTransaction(tx: DashTransaction, viewAs: 'buyer' | 'seller') {
@@ -2007,48 +2033,15 @@ export function DashboardClient({
       className="mp-dashboard-surface min-h-screen"
       style={{ background: 'var(--mp-page-bg)' }}
     >
-      {/* Top bar */}
-      <div
-        className="sticky top-0 z-40 flex items-center gap-4 px-4 sm:px-6 py-3"
-        style={{
-          background: 'var(--mp-panel-solid)',
-          borderBottom: '1px solid var(--mp-border)',
-          backdropFilter: 'blur(16px)',
-        }}
-      >
-        <Link
-          href="/marketplace"
-          className="flex items-center gap-2 text-[#5a5a5a] hover:text-[#f2f2f2] transition-colors"
-        >
-          <ArrowLeft size={16} />
-          <span className="text-xs hidden sm:inline">Marketplace</span>
-        </Link>
+      <MarketplaceAuthBar
+        session={session}
+        unreadCount={unreadCount}
+        variant="dashboard"
+        onLogout={handleLogout}
+        onMessagesClick={focusFirstUnreadThread}
+      />
 
-        <div className="flex-1 flex items-center gap-2">
-          <div
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ background: '#4ade80', boxShadow: '0 0 8px rgba(74,222,128,0.8)' }}
-          />
-          <span
-            className="text-[11px] font-bold tracking-[0.15em] uppercase"
-            style={{ color: '#00aeef' }}
-          >
-            Market Command Center
-          </span>
-        </div>
-
-        <MarketplaceThemeToggle compact />
-
-        <div className="hidden items-center gap-1.5 text-[10px] text-[#5a5a5a] sm:flex">
-          <Activity size={10} className="text-[#4ade80]" />
-          <span>
-            {new Date().toLocaleDateString('es-VE', { weekday: 'short', day: 'numeric', month: 'short' })}
-          </span>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 space-y-5">
+      <div className="mx-auto w-full max-w-6xl space-y-5 px-3 pb-5 pt-4 sm:px-6 lg:px-8">
 
         {/* Profile + KPIs */}
         <ProfileHeader
@@ -2058,7 +2051,10 @@ export function DashboardClient({
           myListings={myListings}
           myFavorites={favorites}
           unreadCount={unreadCount}
-          onTabClick={handleTabChange}
+          onTabClick={(tab) => {
+            if (tab === 'messages') focusFirstUnreadThread()
+            else handleTabChange(tab)
+          }}
         />
 
         {/* Tab Navigation */}
@@ -2206,7 +2202,7 @@ export function DashboardClient({
                 <EmptyState
                   icon={ShoppingBag}
                   title="Sin compras activas"
-                  sub="Cuando realices tu primera compra aparecerá aquí con el estado del escrow en tiempo real."
+                  sub="Cuando realices tu primera compra aparecera aqui con el estado de la operacion en tiempo real."
                 />
               ) : (
                 <div className="space-y-3">
@@ -2244,12 +2240,15 @@ export function DashboardClient({
                     </p>
                   </div>
                   {unreadCount > 0 && (
-                    <span
-                      className="rounded-full px-3 py-1 text-[11px] font-semibold"
+                    <button
+                      type="button"
+                      onClick={focusFirstUnreadThread}
+                      className="rounded-full px-3 py-1 text-[11px] font-semibold transition hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-cyan-400/60"
                       style={{ background: 'rgba(0,174,239,0.1)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.18)' }}
+                      aria-label="Ir al primer hilo sin leer"
                     >
                       {unreadCount > 99 ? '99+' : unreadCount} sin leer
-                    </span>
+                    </button>
                   )}
                 </div>
               </div>
@@ -2338,6 +2337,7 @@ export function DashboardClient({
                         key={t.id}
                         thread={t}
                         currentUserId={session.userId}
+                        buttonRef={t.id === firstUnreadThreadId ? firstUnreadThreadRef : undefined}
                         onOpen={() => handleOpenThread(t)}
                       />
                     ))}
@@ -2457,7 +2457,7 @@ export function DashboardClient({
                       className="rounded-full px-2 py-1 text-[10px] font-semibold"
                       style={{ background: 'rgba(0,174,239,0.08)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.15)' }}
                     >
-                      Pago manual
+                      Gestion del equipo
                     </span>
                   </div>
 

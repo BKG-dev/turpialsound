@@ -157,6 +157,18 @@ const QUICK_REPLY_BY_INTENT = {
     'Por ahora, revisa la descripcion del listado, cualquier ubicacion publica disponible y los detalles que muestre el vendedor.',
     'Si el flujo lo permite, contacta al vendedor desde el marketplace para confirmar entrega, retiro o coordinacion desde tu ciudad.',
   ].join('\n'),
+  paymentReport: [
+    'Despues de reportar tu pago, este entra en una etapa de revision por parte del equipo.',
+    'Validaremos la referencia, el monto y el comprobante adjunto para conciliarlo con la cuenta correspondiente.',
+    'Una vez validado, la operacion avanzara al estado "En proceso" y podras coordinar la entrega o el servicio con el vendedor.',
+    'No se liberan fondos automaticamente al reportar; la seguridad del marketplace protege a ambas partes durante la revision.',
+  ].join('\n'),
+  instrumentSearch: [
+    'Puedes buscar guitarras, bajos, teclados, baterias, equipos de audio y mas explorando los listados visibles del marketplace.',
+    'Usa la barra de busqueda si esta disponible o navega por las categorias de productos y servicios musicales.',
+    'Si no encuentras lo que buscas, te sugiero revisar periodicamente ya que la comunidad publica nuevos listados constantemente.',
+    'Al encontrar un equipo que te interese, revisa sus fotos y descripcion, y usa el chat para preguntarle detalles al vendedor.',
+  ].join('\n'),
   sellableScope: [
     'El marketplace esta enfocado en el ecosistema musical.',
     'Puedes publicar instrumentos, equipos de audio, accesorios, articulos para estudio o escenario, productos vinculados con produccion musical y servicios creativos relacionados.',
@@ -219,6 +231,28 @@ export function getDeterministicMarketplaceAssistantReply(input: string): string
     (/\bciudad\b/.test(text) && /\b(busco|buscar|filtro|ubicacion)\b/.test(text))
   ) {
     return QUICK_REPLY_BY_INTENT.citySearch
+  }
+
+  if (
+    /\breporte de pago\b/.test(text) ||
+    /\breportar pago\b/.test(text) ||
+    /\bdespues de pagar\b/.test(text) ||
+    (/\bpago\b/.test(text) && /\b(reportar|reporte|hacer|despues|que pasa)\b/.test(text))
+  ) {
+    return QUICK_REPLY_BY_INTENT.paymentReport
+  }
+
+  if (
+    /\bbusco\b/.test(text) ||
+    /\bbuscar\b/.test(text) ||
+    /\bguitarra\b/.test(text) ||
+    /\bequipo\b/.test(text) ||
+    /\binstrumento\b/.test(text) ||
+    /\bteclado\b/.test(text) ||
+    /\bbajo\b/.test(text) ||
+    /\bbateria\b/.test(text)
+  ) {
+    return QUICK_REPLY_BY_INTENT.instrumentSearch
   }
 
   if (

@@ -48,7 +48,7 @@ function buildListingDescription(listing: Listing) {
     listing.description,
     price ? `Precio publicado: ${price}.` : null,
     listing.subcategory ? `Categoria: ${listing.subcategory}.` : null,
-    'Operacion con pago reportado y revision manual en Turpial Sound.',
+    'Operacion con pago reportado y revision del equipo en Turpial Sound.',
   ].filter(Boolean)
 
   return truncateForMetadata(parts.join(' '))
@@ -412,7 +412,7 @@ export default async function ListingPage({ params }: ListingPageParams) {
                   </h2>
                 </div>
                 <p className="text-[11px] text-[#b8b8b8] leading-relaxed">
-                  El comprador reporta el pago y Turpial Sound realiza una revision manual antes
+                  El comprador reporta el pago y Turpial Sound realiza una revision del equipo antes
                   de avanzar la operacion. El pago al vendedor se gestiona despues de la validacion
                   y la confirmacion correspondiente.
                 </p>
