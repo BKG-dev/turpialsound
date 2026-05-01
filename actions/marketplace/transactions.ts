@@ -279,7 +279,7 @@ export async function validatePayment(
     return {
       success: true,
       data: undefined,
-      message: approved ? 'Pago aprobado. Fondos en escrow hasta confirmacion de entrega.' : 'Pago rechazado.',
+      message: approved ? 'Pago aprobado. Operacion protegida hasta confirmacion de entrega.' : 'Pago rechazado.',
     }
   } catch (err) {
     await db.$disconnect().catch(() => {})
@@ -314,7 +314,7 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
         fromStatus: 'IN_ESCROW',
         toStatus: 'DELIVERY_CONFIRMED',
         changedBy: session.userId,
-        reason: 'Comprador confirmo la entrega. Operacion movida a Fondos por liberar.',
+        reason: 'Comprador confirmo la entrega. Operacion movida a fondos por liberar.',
       },
     })
 
@@ -329,7 +329,7 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
 export async function releaseEscrow(transactionId: string): Promise<ActionResult> {
   const session = await getSession()
   if (!session || session.role !== 'SUPER') {
-    return { success: false, message: 'Solo administradores pueden liberar el escrow manualmente' }
+    return { success: false, message: 'Solo administradores pueden liberar el pago protegido.' }
   }
 
   const db = await getDb()
@@ -354,12 +354,12 @@ export async function releaseEscrow(transactionId: string): Promise<ActionResult
         fromStatus: tx.status,
         toStatus: 'RELEASED',
         changedBy: session.userId,
-        reason: 'Escrow liberado manualmente (T+7 o admin)',
+        reason: 'Pago protegido liberado por el equipo (T+7 o admin)',
       },
     })
 
     await db.$disconnect()
-    return { success: true, data: undefined, message: 'Escrow liberado. Fondos transferidos al vendedor.' }
+    return { success: true, data: undefined, message: 'Pago del vendedor liberado.' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }

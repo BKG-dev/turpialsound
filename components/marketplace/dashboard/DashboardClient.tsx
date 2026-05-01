@@ -1579,16 +1579,6 @@ function TransactionDetailModal({
             </div>
           </div>
 
-          {tx.adminNotes && (
-            <div
-              className="rounded-xl p-4 text-sm"
-              style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
-            >
-              <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--mp-text-faint)' }}>Nota interna</p>
-              <p className="mt-2" style={{ color: 'var(--mp-text-muted)' }}>{tx.adminNotes}</p>
-            </div>
-          )}
-
           {tx.statusHistory && tx.statusHistory.length > 0 && (
             <div>
               <SectionHeader title="Linea de Estado" count={tx.statusHistory.length} />
