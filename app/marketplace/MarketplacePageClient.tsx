@@ -25,6 +25,7 @@ import { useMarketplaceAssistantLauncher } from '@/components/marketplace/Market
 import { MarketplaceAuthModal } from '@/components/marketplace/MarketplaceAuthModal'
 import { CheckoutModal } from '@/components/marketplace/CheckoutModal'
 import { MarketplaceAuthBar } from '@/components/marketplace/MarketplaceAuthBar'
+import { TurpialWaveShader } from '@/components/marketplace/TurpialWaveShader'
 import { getMpSession, logoutMpUser } from '@/actions/marketplace/auth'
 import { getActiveListings, getOrCreateThread } from '@/actions/marketplace'
 import { getUnreadCount } from '@/actions/marketplace/chat'
@@ -522,8 +523,9 @@ export default function MarketplacePageClient() {
               background: 'var(--mp-hero-bg)',
             }}
           >
+          <TurpialWaveShader />
           {/* Ambient orbs */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
             <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full opacity-[0.04]"
               style={{
                 background: 'radial-gradient(circle, #00aeef 0%, transparent 70%)',
@@ -540,6 +542,7 @@ export default function MarketplacePageClient() {
             />
           </div>
 
+          <div className="relative z-10 flex w-full flex-col items-center">
           {/* Eyebrow */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -685,6 +688,7 @@ export default function MarketplacePageClient() {
               <ChevronDown size={16} className="text-[var(--mp-text-faint)]" />
             </motion.div>
           </motion.div>
+          </div>
         </section>
 
         {/* ═══════════════════════════════════════════════════════════════════
