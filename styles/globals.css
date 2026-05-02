@@ -774,8 +774,13 @@ video {
 }
 
 .mp-route-shell {
-  margin-top: -4rem;
-  padding-top: 4rem;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+/* Marketplace owns its app shell: hide global SiteHeader only inside /marketplace routes. */
+body:has(.mp-route-shell) header.fixed {
+  display: none !important;
 }
 
 .mp-theme-root h1,
@@ -882,6 +887,8 @@ video {
 .mp-bcv-ticker {
   position: relative;
   width: 100%;
+  max-width: 920px;
+  margin-inline: auto;
   overflow: hidden;
   border: 1px solid rgba(0, 174, 239, 0.15);
   border-radius: 9999px;
@@ -901,7 +908,7 @@ video {
   top: 0;
   bottom: 0;
   z-index: 2;
-  width: 2.5rem;
+  width: 1.25rem;
   pointer-events: none;
 }
 
@@ -924,7 +931,7 @@ video {
 
 .mp-bcv-ticker__track span {
   flex: 0 0 auto;
-  padding: 0.5rem 2.5rem;
+  padding: 0.28rem 2rem;
   display: inline-block;
 }
 

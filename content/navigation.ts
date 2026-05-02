@@ -33,10 +33,6 @@ export const mainNavItems: NavItem[] = [
     href: '/marketplace' as Route,
   },
   {
-    label: 'Mi Panel',
-    href: '/marketplace/dashboard' as Route,
-  },
-  {
     label: 'Recursos',
     href: '/recursos',
   },

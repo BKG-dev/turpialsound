@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Michroma } from 'next/font/google'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { SiteFooter } from '@/components/layout/SiteFooter'
+import { MainContentShell } from '@/components/layout/MainContentShell'
 import { WhatsAppButton } from '@/components/ui/WhatsAppButton'
 import { rootMetadata } from '@/lib/metadata'
 import { buildOrganizationSchema } from '@/lib/schema'
@@ -33,9 +34,9 @@ export default function RootLayout({
       </head>
       <body>
         <SiteHeader />
-        <main id="main-content" className="pt-16">
+        <MainContentShell>
           {children}
-        </main>
+        </MainContentShell>
         <SiteFooter />
         <WhatsAppButton />
       </body>

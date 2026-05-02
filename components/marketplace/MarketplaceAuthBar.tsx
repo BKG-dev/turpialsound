@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect, createContext, useContext, useCallback } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -11,6 +12,113 @@ import {
 } from 'lucide-react'
 import { MarketplaceThemeToggle } from '@/components/marketplace/MarketplaceTheme'
 import { useBcvRate } from '@/lib/hooks/useBcvRate'
+import { getMpSession, logoutMpUser } from '@/actions/marketplace/auth'
+import { getUnreadCount } from '@/actions/marketplace/chat'
+import { MarketplaceAuthModal } from '@/components/marketplace/MarketplaceAuthModal'
+import type { MpSessionPayload } from '@/lib/marketplace/auth'
+
+type MarketplaceSessionContextType = {
+  session: MpSessionPayload | null
+  isSessionLoading: boolean
+  unreadCount: number
+  authOpen: boolean
+  authTab: 'login' | 'register'
+  openLogin: () => void
+  openRegister: () => void
+  closeAuth: () => void
+  logout: () => Promise<void>
+  refreshSession: () => Promise<void>
+  updateUnreadCount: (delta: number) => void
+}
+
+const MarketplaceSessionContext = createContext<MarketplaceSessionContextType | null>(null)
+
+export function MarketplaceSessionProvider({ children }: { children: React.ReactNode }) {
+  const [session, setSession] = useState<MpSessionPayload | null>(null)
+  const [isSessionLoading, setIsSessionLoading] = useState(true)
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [authOpen, setAuthOpen] = useState(false)
+  const [authTab, setAuthTab] = useState<'login' | 'register'>('login')
+
+  const fetchSession = useCallback(async () => {
+    try {
+      const s = await getMpSession()
+      setSession(s)
+    } catch (e) {
+      setSession(null)
+    } finally {
+      setIsSessionLoading(false)
+    }
+  }, [])
+
+  const fetchUnread = useCallback(async () => {
+    if (!session) return
+    const r = await getUnreadCount()
+    if (r.success && r.data) setUnreadCount(r.data.count)
+  }, [session])
+
+  useEffect(() => {
+    fetchSession()
+  }, [fetchSession])
+
+  useEffect(() => {
+    if (!session) { setUnreadCount(0); return }
+    fetchUnread()
+    const id = setInterval(fetchUnread, 30_000)
+    return () => clearInterval(id)
+  }, [session, fetchUnread])
+
+  const logout = async () => {
+    await logoutMpUser()
+    setSession(null)
+    setUnreadCount(0)
+  }
+
+  const openLogin = () => { setAuthTab('login'); setAuthOpen(true) }
+  const openRegister = () => { setAuthTab('register'); setAuthOpen(true) }
+  const closeAuth = () => setAuthOpen(false)
+
+  const updateUnreadCount = (delta: number) => {
+    setUnreadCount(prev => Math.max(0, prev + delta))
+  }
+
+  return (
+    <MarketplaceSessionContext.Provider
+      value={{
+        session,
+        isSessionLoading,
+        unreadCount,
+        authOpen,
+        authTab,
+        openLogin,
+        openRegister,
+        closeAuth,
+        logout,
+        refreshSession: fetchSession,
+        updateUnreadCount,
+      }}
+    >
+      {children}
+      <MarketplaceAuthModal
+        isOpen={authOpen}
+        defaultTab={authTab}
+        onClose={closeAuth}
+        onSuccess={(s) => {
+          setSession(s)
+          setAuthOpen(false)
+        }}
+      />
+    </MarketplaceSessionContext.Provider>
+  )
+}
+
+export function useMarketplaceSession() {
+  const context = useContext(MarketplaceSessionContext)
+  if (!context) {
+    throw new Error('useMarketplaceSession must be used within a MarketplaceSessionProvider')
+  }
+  return context
+}
 
 type MarketplaceAuthBarSession = {
   displayName: string
@@ -26,6 +134,36 @@ type MarketplaceAuthBarProps = {
   onLogin?: () => void
   onRegister?: () => void
   onMessagesClick?: () => void
+}
+
+export function SmartMarketplaceAuthBar({
+  variant = 'marketplace',
+  onMessagesClick,
+}: {
+  variant?: 'marketplace' | 'dashboard'
+  onMessagesClick?: () => void
+}) {
+  const {
+    session,
+    isSessionLoading,
+    unreadCount,
+    logout,
+    openLogin,
+    openRegister,
+  } = useMarketplaceSession()
+
+  return (
+    <MarketplaceAuthBar
+      session={session}
+      isSessionLoading={isSessionLoading}
+      unreadCount={unreadCount}
+      variant={variant}
+      onLogout={logout}
+      onLogin={openLogin}
+      onRegister={openRegister}
+      onMessagesClick={onMessagesClick}
+    />
+  )
 }
 
 function formatBcvNumber(value: number) {
@@ -99,21 +237,19 @@ export function MarketplaceAuthBar({
   const roleStyle = getRoleBadgeStyle(session?.role)
   const messageLabel = unreadCount > 0 ? `${unreadCount > 99 ? '99+' : unreadCount} sin leer` : 'Mensajes'
 
-
-
   return (
     <div
       className="mp-market-authbar sticky top-0 z-[70] w-full border-b"
       style={{
         borderColor: 'var(--mp-border)',
-        background: 'var(--mp-panel-solid)',
-        backdropFilter: 'blur(24px)',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+        background: 'linear-gradient(135deg, rgba(8, 18, 24, 0.42), rgba(10, 10, 10, 0.34))',
+        backdropFilter: 'blur(18px) saturate(155%)',
+        boxShadow: '0 6px 22px rgba(0,0,0,0.22)',
       }}
     >
-      <div className="mx-auto flex min-h-[92px] w-full flex-wrap items-center justify-between px-4 py-2 sm:px-6 lg:min-h-[60px] lg:flex-nowrap lg:gap-x-4">
+      <div className="mx-auto flex min-h-[42px] w-full flex-wrap items-center justify-between px-4 py-0.5 sm:px-6 lg:min-h-[40px] lg:flex-nowrap lg:gap-x-3">
         <div className="flex flex-1 items-center min-w-0 overflow-hidden">
-          <div className="flex shrink-0 items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2.5">
             {isDashboard ? (
               <div className="flex items-center gap-3">
                 <Link
@@ -137,14 +273,14 @@ export function MarketplaceAuthBar({
                   className="hidden h-2.5 w-2.5 shrink-0 rounded-full bg-[#4ade80] sm:block"
                   style={{ boxShadow: '0 0 10px #4ade80' }}
                 />
-                <div className="min-w-0">
-                  <h2 className="truncate text-[11px] font-black uppercase tracking-[0.25em] text-[#00aeef]">
+                <Link href="/marketplace" className="group min-w-0 block">
+                  <h2 className="truncate text-[11px] font-black uppercase tracking-[0.25em] text-[#00aeef] transition-colors group-hover:text-[#00aeef]/80">
                     Turpial Market
                   </h2>
-                  <p className="hidden truncate text-[9px] font-semibold text-[#111827] sm:block">
-  Marketplace musical protegido
-</p>
-                </div>
+                  <p className="hidden truncate text-[9px] font-semibold sm:block" style={{ color: 'var(--mp-text-faint)' }}>
+                    Marketplace musical protegido
+                  </p>
+                </Link>
               </div>
             )}
           </div>
@@ -232,42 +368,52 @@ export function MarketplaceAuthBar({
 
               {onLogout && (
                 <button
-  type="button"
-  onClick={onLogout}
-  className="flex shrink-0 items-center justify-center gap-1 rounded-lg border border-white/10 px-2 py-1.5 text-xs font-bold uppercase tracking-widest text-[#111827]/60 transition-all hover:bg-black/5 hover:text-[#111827]"
-  title="Salir"
-  aria-label="Salir"
->
-  <LogOut size={14} />
-  <span className="hidden 2xl:inline">Salir</span>
-</button>
+                  type="button"
+                  onClick={onLogout}
+                  className="flex shrink-0 items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-bold uppercase tracking-widest transition-all hover:bg-black/5"
+                  style={{
+                    borderColor: 'var(--mp-border)',
+                    color: 'var(--mp-text-faint)',
+                  }}
+                  title="Salir"
+                  aria-label="Salir"
+                >
+                  <LogOut size={14} />
+                  <span className="hidden 2xl:inline">Salir</span>
+                </button>
               )}
             </>
-         ) : onLogin || onRegister ? (
-  <div className="flex items-center gap-2">
-    {onLogin && (
-      <button
-        type="button"
-        onClick={onLogin}
-        className="rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-[#111827]/70 transition-colors hover:text-[#111827]"
-      >
-        Entrar
-      </button>
-    )}
+          ) : onLogin || onRegister ? (
+            <div className="flex items-center gap-2">
+              <MarketplaceThemeToggle compact className="shrink-0" />
+              {onLogin && (
+                <button
+                  type="button"
+                  onClick={onLogin}
+                  className="h-8 rounded-lg border px-3 text-xs font-bold uppercase tracking-widest transition-colors hover:bg-white/5"
+                  style={{
+                    borderColor: 'var(--mp-border)',
+                    background: 'rgba(255,255,255,0.04)',
+                    color: 'var(--mp-text-strong)',
+                  }}
+                >
+                  Entrar
+                </button>
+              )}
 
-    {onRegister && (
-      <button
-        type="button"
-        onClick={onRegister}
-        className="rounded-lg bg-[#00aeef] px-4 py-1.5 text-xs font-black uppercase tracking-widest text-[#020617] transition-all hover:brightness-110 active:scale-95"
-      >
-        Unirse
-      </button>
-    )}
-  </div>
-) : (
-  <div className="h-8 w-20 shrink-0 animate-pulse rounded-lg bg-black/5" aria-hidden="true" />
-)}
+              {onRegister && (
+                <button
+                  type="button"
+                  onClick={onRegister}
+                  className="btn-silky-primary h-8 rounded-lg px-4 text-xs font-black uppercase tracking-widest transition-all active:scale-95"
+                >
+                  Unirse
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="h-8 w-20 shrink-0 animate-pulse rounded-lg bg-black/5" aria-hidden="true" />
+          )}
         </div>
       </div>
     </div>
