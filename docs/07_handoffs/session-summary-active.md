@@ -1,5 +1,66 @@
 ﻿# Session Summary - Activa
 
+## Actualizacion 2026-05-02 - Integracion Marketplace + Reservas + Admin (pre-push)
+
+- Rama actual: `integration/marketplace-pure-booking-selective-2026-04-30` (ahead 6 sobre `origin/Marketplace-Pure`).
+- Commits locales de la integracion:
+  1. `c9ae415` - lock Prisma 7.7.0 + contrato selectivo booking/marketplace.
+  2. `cbc4bdc` - restore de `/reservas` wizard.
+  3. `b192c9b` - migracion `payment_proofs` + Prisma Client con `PaymentProof`.
+  4. `845ca6e` - ruta viewer de comprobante (`/payment-proofs/view`).
+  5. `45556ed` - ruta ops de revision de pago (`/ops/payment-review`).
+  6. `cdfdb1d` - bloque `/admin` + `lib/auth/*` + `middleware.ts`.
+- Tags locales de checkpoint:
+  - `cp/contract-prisma77-booking-selective-2026-04-30`
+  - `cp/reservas-wizard-restored-2026-04-30`
+  - `cp/payment-review-ops-route-2026-05-02`
+  - `cp/admin-auth-routes-2026-05-02`
+
+### Entorno operativo usado en esta integracion
+
+- `.env.local` del colaborador apunta a Neon host `ep-little-moon-...`.
+- `DATABASE_URL`: pooled.
+- `DIRECT_URL`: direct (sin `-pooler`).
+- Se corrio `prisma/seed.ts` sobre esa DB para poblar catalogo base booking (`Service`, `ServiceVariant`, `Resource`) sin tocar modelos marketplace.
+
+### Migracion y Prisma
+
+- Migracion aplicada para pagos reportados:
+  - `prisma/migrations/20260420113640_add_payment_proofs_phase1_base/migration.sql`
+- Prisma Client regenerado y alineado con schema:
+  - `PaymentProofDuplicateStatus`
+  - `PaymentProof`
+  - `BookingRequest.paymentProofs`
+- Estado runtime validado: `prisma.paymentProof` disponible y operativo.
+
+### Validacion funcional cerrada
+
+- Marketplace con datos: OK.
+- `/reservas`: abre wizard, submit real OK.
+- Correo cliente: OK.
+- Reportar pago con JPG: OK.
+- Correo admin por pago reportado: OK.
+- Ver comprobante (`/payment-proofs/view?token=...`): OK.
+- `/ops/payment-review`: abre y opera.
+- Confirmar pago: OK.
+- Correo de reserva confirmada: OK.
+- Google Calendar actualizado: OK.
+- `/admin/login`: OK.
+- `/admin`: OK.
+- `/admin/bookings/[publicCode]/payment-proof`: OK.
+- `auth + middleware` de admin: OK, sin romper `/marketplace`, `/reservas` ni `/ops/payment-review`.
+
+### Pendientes explicitos (siguiente fase)
+
+1. Probar `Marcar incidencia` end-to-end.
+2. Evaluar integrar `app/api/bookings/expire/route.ts`.
+3. Resolver tasa BCV desactualizada (`asOf` viejo) en frente separado.
+4. Mantener `var/` fuera de commits.
+
+### Recomendacion de salida
+
+- Hacer push controlado de la rama de integracion y tags de checkpoint, acompanado de handoff tecnico y lista de pendientes.
+
 > Fecha de ultima actualizacion: 2026-04-26
 > Tipo de nota: Checkpoint operativo de cierre
 > Fuente principal: `docs/obsidian-vault/*`
