@@ -466,7 +466,7 @@ export default function MarketplacePageClient() {
               HERO SECTION
           ═══════════════════════════════════════════════════════════════════ */}
           <section
-            className="relative flex min-h-[calc(100svh-3.25rem)] flex-col justify-between overflow-hidden px-4 pb-0 pt-3 lg:min-h-[calc(100svh-3rem)] lg:pt-4"
+            className="relative flex min-h-[calc(100svh-2rem)] flex-col justify-between overflow-hidden px-4 pb-0 pt-3 lg:min-h-[calc(100svh-2rem)] lg:pt-4"
             style={{
               background: 'var(--mp-hero-bg)',
             }}

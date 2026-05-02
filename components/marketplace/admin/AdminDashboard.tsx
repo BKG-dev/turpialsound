@@ -41,7 +41,6 @@ import {
   adminSetUserRole,
   adminVerifyUser,
 } from '@/actions/marketplace/admin'
-import { MarketplaceThemeToggle } from '@/components/marketplace/MarketplaceTheme'
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -1126,7 +1125,6 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
           <h1 className="text-xl font-semibold text-white">Turpial Sound - Admin</h1>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <MarketplaceThemeToggle compact />
           <a
             href="/marketplace/admin/copilot"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all hover:bg-white/5"
@@ -1134,13 +1132,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
           >
             <Bot size={12} /> Copilot
           </a>
-          <a
-            href="/marketplace"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all hover:bg-white/5"
-            style={{ color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
-            &lt;- Marketplace
-          </a>
+
         </div>
       </div>
 

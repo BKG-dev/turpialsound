@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, createContext, useContext, useCallback } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -247,14 +248,33 @@ export function MarketplaceAuthBar({
         boxShadow: '0 6px 22px rgba(0,0,0,0.22)',
       }}
     >
-      <div className="mx-auto flex min-h-[42px] w-full flex-wrap items-center justify-between px-4 py-0.5 sm:px-6 lg:min-h-[40px] lg:flex-nowrap lg:gap-x-3">
-        <div className="flex flex-1 items-center min-w-0 overflow-hidden">
+      <div className="mx-auto flex min-h-[34px] w-full flex-wrap items-center justify-between px-4 py-0 sm:px-6 lg:min-h-[32px] lg:flex-nowrap lg:gap-x-3">
+        <div className="mp-authbar-left-rail flex items-center min-w-0 overflow-hidden">
           <div className="flex shrink-0 items-center gap-2.5">
             {isDashboard ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
+                <Link
+                  href="/"
+                  aria-label="Ir al home de Turpial Sound"
+                  title="Turpial Sound"
+                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-transform hover:scale-105"
+                  style={{
+                    borderColor: 'rgba(0,174,239,0.32)',
+                    background: '#f8fafc',
+                    boxShadow: '0 0 10px rgba(0,174,239,0.18)',
+                  }}
+                >
+                  <Image
+                    src="/images/logo-navbar.png"
+                    alt=""
+                    width={18}
+                    height={18}
+                    className="h-[18px] w-[18px] object-contain"
+                  />
+                </Link>
                 <Link
                   href="/marketplace"
-                  className="group flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 transition-all hover:bg-white/5"
+                  className="group flex h-6 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-[10px] leading-none transition-all hover:bg-white/5"
                   style={{ borderColor: 'var(--mp-border)', color: 'var(--mp-text-muted)' }}
                 >
                   <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-0.5" />
@@ -264,15 +284,34 @@ export function MarketplaceAuthBar({
                   <p className="truncate text-[9px] font-black uppercase tracking-[0.2em] text-[#00aeef]">
                     Market Command Center
                   </p>
-                  <p className="truncate text-xs font-bold text-white">Mi Panel</p>
+                  <p className="truncate text-xs font-bold text-white">{isAdmin ? 'Panel Admin' : 'Mi Panel'}</p>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <div
                   className="hidden h-2.5 w-2.5 shrink-0 rounded-full bg-[#4ade80] sm:block"
                   style={{ boxShadow: '0 0 10px #4ade80' }}
                 />
+                <Link
+                  href="/"
+                  aria-label="Ir al home de Turpial Sound"
+                  title="Turpial Sound"
+                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-transform hover:scale-105"
+                  style={{
+                    borderColor: 'rgba(0,174,239,0.32)',
+                    background: '#f8fafc',
+                    boxShadow: '0 0 10px rgba(0,174,239,0.18)',
+                  }}
+                >
+                  <Image
+                    src="/images/logo-navbar.png"
+                    alt=""
+                    width={18}
+                    height={18}
+                    className="h-[18px] w-[18px] object-contain"
+                  />
+                </Link>
                 <Link href="/marketplace" className="group min-w-0 block">
                   <h2 className="truncate text-[11px] font-black uppercase tracking-[0.25em] text-[#00aeef] transition-colors group-hover:text-[#00aeef]/80">
                     Turpial Market
@@ -285,7 +324,7 @@ export function MarketplaceAuthBar({
             )}
           </div>
 
-          <div className="ml-4 flex-1 min-w-0 overflow-hidden lg:ml-6">
+          <div className="mp-authbar-ticker-slot ml-4 min-w-0 overflow-hidden lg:ml-6">
             <BcvTicker />
           </div>
         </div>
@@ -301,7 +340,7 @@ export function MarketplaceAuthBar({
               {isAdmin && (
                 <Link
                   href="/marketplace/admin"
-                  className="flex shrink-0 items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-xs font-black uppercase tracking-widest text-red-500 transition-all hover:bg-red-500/20"
+                  className="flex h-6 shrink-0 items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 text-[10px] font-black uppercase tracking-widest text-red-500 transition-all hover:bg-red-500/20"
                 >
                   <ShieldAlert size={12} />
                   <span className="hidden sm:inline">Admin</span>
@@ -312,7 +351,7 @@ export function MarketplaceAuthBar({
                 <button
                   type="button"
                   onClick={onMessagesClick}
-                  className="relative flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition-all hover:bg-white/5"
+                  className="mp-authbar-blue-pill relative flex h-6 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-[10px] font-bold leading-none transition-all hover:bg-white/5"
                   style={{
                     background: unreadCount > 0 ? 'rgba(0,174,239,0.1)' : 'transparent',
                     color: unreadCount > 0 ? '#00aeef' : 'var(--mp-text-muted)',
@@ -320,14 +359,14 @@ export function MarketplaceAuthBar({
                   }}
                   aria-label={messageLabel}
                 >
-                  <MessageSquare size={14} />
+                  <MessageSquare size={12} />
                   {unreadCount > 0 && <span className="tabular-nums">{unreadCount > 99 ? '99+' : unreadCount}</span>}
                   <span className="hidden xl:inline">Mensajes</span>
                 </button>
               ) : (
                 <Link
                   href="/marketplace/dashboard?tab=messages"
-                  className="relative flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition-all hover:bg-white/5"
+                  className="mp-authbar-blue-pill relative flex h-6 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-[10px] font-bold leading-none transition-all hover:bg-white/5"
                   style={{
                     background: unreadCount > 0 ? 'rgba(0,174,239,0.1)' : 'transparent',
                     color: unreadCount > 0 ? '#00aeef' : 'var(--mp-text-muted)',
@@ -335,42 +374,40 @@ export function MarketplaceAuthBar({
                   }}
                   aria-label={messageLabel}
                 >
-                  <MessageSquare size={14} />
+                  <MessageSquare size={12} />
                   {unreadCount > 0 && <span className="tabular-nums">{unreadCount > 99 ? '99+' : unreadCount}</span>}
                   <span className="hidden xl:inline">Mensajes</span>
                 </Link>
               )}
 
               <div
-                className="hidden shrink-0 items-center gap-2 rounded-lg border px-2.5 py-1.5 md:flex"
+                className="hidden h-6 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-[10px] md:flex"
                 style={{ background: roleStyle.bg, borderColor: roleStyle.border, color: roleStyle.text }}
               >
-                <UserCircle2 size={14} />
-                <div className="flex flex-col leading-none">
-                  <span className="max-w-[100px] truncate text-xs font-black uppercase tracking-tight">
-                    {session.displayName}
-                  </span>
-                  <span className="text-[8px] font-bold opacity-70 uppercase">{roleLabel}</span>
-                </div>
+                <UserCircle2 size={12} />
+                <span className="max-w-[110px] truncate font-black uppercase tracking-tight">
+                  {session.displayName}
+                </span>
+                <span className="text-[8px] font-bold uppercase opacity-70">{roleLabel}</span>
               </div>
 
               {!isDashboard && (
                 <Link
                   href="/marketplace/dashboard"
-                  className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[#00aeef]/30 bg-[#00aeef]/10 px-2.5 py-1.5 text-xs font-black uppercase tracking-widest text-[#00aeef] transition-all hover:bg-[#00aeef]/20"
+                  className="mp-authbar-blue-pill flex h-6 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#00aeef]/20"
                 >
-                  <LayoutDashboard size={14} />
+                  <LayoutDashboard size={12} />
                   <span className="hidden sm:inline">Mi Panel</span>
                 </Link>
               )}
 
-              <MarketplaceThemeToggle compact className="shrink-0" />
+              <MarketplaceThemeToggle compact className="mp-authbar-theme-toggle h-6 shrink-0" />
 
               {onLogout && (
                 <button
                   type="button"
                   onClick={onLogout}
-                  className="flex shrink-0 items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-bold uppercase tracking-widest transition-all hover:bg-black/5"
+                  className="flex h-6 shrink-0 items-center justify-center gap-1 rounded-lg border px-2 text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-black/5"
                   style={{
                     borderColor: 'var(--mp-border)',
                     color: 'var(--mp-text-faint)',
@@ -378,19 +415,19 @@ export function MarketplaceAuthBar({
                   title="Salir"
                   aria-label="Salir"
                 >
-                  <LogOut size={14} />
+                  <LogOut size={12} />
                   <span className="hidden 2xl:inline">Salir</span>
                 </button>
               )}
             </>
           ) : onLogin || onRegister ? (
             <div className="flex items-center gap-2">
-              <MarketplaceThemeToggle compact className="shrink-0" />
+              <MarketplaceThemeToggle compact className="mp-authbar-theme-toggle h-6 shrink-0" />
               {onLogin && (
                 <button
                   type="button"
                   onClick={onLogin}
-                  className="h-8 rounded-lg border px-3 text-xs font-bold uppercase tracking-widest transition-colors hover:bg-white/5"
+                  className="mp-authbar-login-pill h-6 rounded-lg border px-3 text-[10px] font-bold uppercase tracking-widest transition-colors hover:bg-white/5"
                   style={{
                     borderColor: 'var(--mp-border)',
                     background: 'rgba(255,255,255,0.04)',
@@ -405,14 +442,14 @@ export function MarketplaceAuthBar({
                 <button
                   type="button"
                   onClick={onRegister}
-                  className="btn-silky-primary h-8 rounded-lg px-4 text-xs font-black uppercase tracking-widest transition-all active:scale-95"
+                  className="btn-silky-primary mp-authbar-register-pill h-6 rounded-lg px-4 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
                 >
                   Unirse
                 </button>
               )}
             </div>
           ) : (
-            <div className="h-8 w-20 shrink-0 animate-pulse rounded-lg bg-black/5" aria-hidden="true" />
+            <div className="h-6 w-20 shrink-0 animate-pulse rounded-lg bg-black/5" aria-hidden="true" />
           )}
         </div>
       </div>
