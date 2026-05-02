@@ -53,6 +53,15 @@ export const PriorityLevel = {
 export type PriorityLevel = (typeof PriorityLevel)[keyof typeof PriorityLevel]
 
 
+export const PaymentProofDuplicateStatus = {
+  none: 'none',
+  same_booking: 'same_booking',
+  other_booking: 'other_booking'
+} as const
+
+export type PaymentProofDuplicateStatus = (typeof PaymentProofDuplicateStatus)[keyof typeof PaymentProofDuplicateStatus]
+
+
 export const MpPaymentMethodType = {
   MERCANTIL_C2P: 'MERCANTIL_C2P',
   MERCANTIL_PAGO_MOVIL: 'MERCANTIL_PAGO_MOVIL',

@@ -329,6 +329,7 @@ export type BookingRequestWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"BookingRequest"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"BookingRequest"> | Date | string
   items?: Prisma.BookingRequestItemListRelationFilter
+  paymentProofs?: Prisma.PaymentProofListRelationFilter
   approvals?: Prisma.ApprovalListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
 }
@@ -354,6 +355,7 @@ export type BookingRequestOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   items?: Prisma.BookingRequestItemOrderByRelationAggregateInput
+  paymentProofs?: Prisma.PaymentProofOrderByRelationAggregateInput
   approvals?: Prisma.ApprovalOrderByRelationAggregateInput
   auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
 }
@@ -382,6 +384,7 @@ export type BookingRequestWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"BookingRequest"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"BookingRequest"> | Date | string
   items?: Prisma.BookingRequestItemListRelationFilter
+  paymentProofs?: Prisma.PaymentProofListRelationFilter
   approvals?: Prisma.ApprovalListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
 }, "id" | "publicCode">
@@ -459,6 +462,7 @@ export type BookingRequestCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.BookingRequestItemCreateNestedManyWithoutBookingRequestInput
+  paymentProofs?: Prisma.PaymentProofCreateNestedManyWithoutBookingRequestInput
   approvals?: Prisma.ApprovalCreateNestedManyWithoutBookingRequestInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutBookingRequestInput
 }
@@ -484,6 +488,7 @@ export type BookingRequestUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.BookingRequestItemUncheckedCreateNestedManyWithoutBookingRequestInput
+  paymentProofs?: Prisma.PaymentProofUncheckedCreateNestedManyWithoutBookingRequestInput
   approvals?: Prisma.ApprovalUncheckedCreateNestedManyWithoutBookingRequestInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutBookingRequestInput
 }
@@ -509,6 +514,7 @@ export type BookingRequestUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.BookingRequestItemUpdateManyWithoutBookingRequestNestedInput
+  paymentProofs?: Prisma.PaymentProofUpdateManyWithoutBookingRequestNestedInput
   approvals?: Prisma.ApprovalUpdateManyWithoutBookingRequestNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutBookingRequestNestedInput
 }
@@ -534,6 +540,7 @@ export type BookingRequestUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.BookingRequestItemUncheckedUpdateManyWithoutBookingRequestNestedInput
+  paymentProofs?: Prisma.PaymentProofUncheckedUpdateManyWithoutBookingRequestNestedInput
   approvals?: Prisma.ApprovalUncheckedUpdateManyWithoutBookingRequestNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutBookingRequestNestedInput
 }
@@ -722,6 +729,20 @@ export type BookingRequestUpdateOneRequiredWithoutItemsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.BookingRequestUpdateToOneWithWhereWithoutItemsInput, Prisma.BookingRequestUpdateWithoutItemsInput>, Prisma.BookingRequestUncheckedUpdateWithoutItemsInput>
 }
 
+export type BookingRequestCreateNestedOneWithoutPaymentProofsInput = {
+  create?: Prisma.XOR<Prisma.BookingRequestCreateWithoutPaymentProofsInput, Prisma.BookingRequestUncheckedCreateWithoutPaymentProofsInput>
+  connectOrCreate?: Prisma.BookingRequestCreateOrConnectWithoutPaymentProofsInput
+  connect?: Prisma.BookingRequestWhereUniqueInput
+}
+
+export type BookingRequestUpdateOneRequiredWithoutPaymentProofsNestedInput = {
+  create?: Prisma.XOR<Prisma.BookingRequestCreateWithoutPaymentProofsInput, Prisma.BookingRequestUncheckedCreateWithoutPaymentProofsInput>
+  connectOrCreate?: Prisma.BookingRequestCreateOrConnectWithoutPaymentProofsInput
+  upsert?: Prisma.BookingRequestUpsertWithoutPaymentProofsInput
+  connect?: Prisma.BookingRequestWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.BookingRequestUpdateToOneWithWhereWithoutPaymentProofsInput, Prisma.BookingRequestUpdateWithoutPaymentProofsInput>, Prisma.BookingRequestUncheckedUpdateWithoutPaymentProofsInput>
+}
+
 export type BookingRequestCreateNestedOneWithoutApprovalsInput = {
   create?: Prisma.XOR<Prisma.BookingRequestCreateWithoutApprovalsInput, Prisma.BookingRequestUncheckedCreateWithoutApprovalsInput>
   connectOrCreate?: Prisma.BookingRequestCreateOrConnectWithoutApprovalsInput
@@ -772,6 +793,7 @@ export type BookingRequestCreateWithoutItemsInput = {
   submittedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  paymentProofs?: Prisma.PaymentProofCreateNestedManyWithoutBookingRequestInput
   approvals?: Prisma.ApprovalCreateNestedManyWithoutBookingRequestInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutBookingRequestInput
 }
@@ -796,6 +818,7 @@ export type BookingRequestUncheckedCreateWithoutItemsInput = {
   submittedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  paymentProofs?: Prisma.PaymentProofUncheckedCreateNestedManyWithoutBookingRequestInput
   approvals?: Prisma.ApprovalUncheckedCreateNestedManyWithoutBookingRequestInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutBookingRequestInput
 }
@@ -836,6 +859,7 @@ export type BookingRequestUpdateWithoutItemsInput = {
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  paymentProofs?: Prisma.PaymentProofUpdateManyWithoutBookingRequestNestedInput
   approvals?: Prisma.ApprovalUpdateManyWithoutBookingRequestNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutBookingRequestNestedInput
 }
@@ -860,6 +884,123 @@ export type BookingRequestUncheckedUpdateWithoutItemsInput = {
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  paymentProofs?: Prisma.PaymentProofUncheckedUpdateManyWithoutBookingRequestNestedInput
+  approvals?: Prisma.ApprovalUncheckedUpdateManyWithoutBookingRequestNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutBookingRequestNestedInput
+}
+
+export type BookingRequestCreateWithoutPaymentProofsInput = {
+  id?: string
+  publicCode: string
+  status?: $Enums.BookingStatus
+  priorityLevel?: $Enums.PriorityLevel
+  source?: string
+  requesterName: string
+  requesterEmail: string
+  requesterPhone?: string | null
+  eventTitle: string
+  eventDate: Date | string
+  eventEndDate?: Date | string | null
+  notes?: string | null
+  internalNotes?: string | null
+  estimatedTotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currency?: string
+  calendarEventId?: string | null
+  submittedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  items?: Prisma.BookingRequestItemCreateNestedManyWithoutBookingRequestInput
+  approvals?: Prisma.ApprovalCreateNestedManyWithoutBookingRequestInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutBookingRequestInput
+}
+
+export type BookingRequestUncheckedCreateWithoutPaymentProofsInput = {
+  id?: string
+  publicCode: string
+  status?: $Enums.BookingStatus
+  priorityLevel?: $Enums.PriorityLevel
+  source?: string
+  requesterName: string
+  requesterEmail: string
+  requesterPhone?: string | null
+  eventTitle: string
+  eventDate: Date | string
+  eventEndDate?: Date | string | null
+  notes?: string | null
+  internalNotes?: string | null
+  estimatedTotal?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currency?: string
+  calendarEventId?: string | null
+  submittedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  items?: Prisma.BookingRequestItemUncheckedCreateNestedManyWithoutBookingRequestInput
+  approvals?: Prisma.ApprovalUncheckedCreateNestedManyWithoutBookingRequestInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutBookingRequestInput
+}
+
+export type BookingRequestCreateOrConnectWithoutPaymentProofsInput = {
+  where: Prisma.BookingRequestWhereUniqueInput
+  create: Prisma.XOR<Prisma.BookingRequestCreateWithoutPaymentProofsInput, Prisma.BookingRequestUncheckedCreateWithoutPaymentProofsInput>
+}
+
+export type BookingRequestUpsertWithoutPaymentProofsInput = {
+  update: Prisma.XOR<Prisma.BookingRequestUpdateWithoutPaymentProofsInput, Prisma.BookingRequestUncheckedUpdateWithoutPaymentProofsInput>
+  create: Prisma.XOR<Prisma.BookingRequestCreateWithoutPaymentProofsInput, Prisma.BookingRequestUncheckedCreateWithoutPaymentProofsInput>
+  where?: Prisma.BookingRequestWhereInput
+}
+
+export type BookingRequestUpdateToOneWithWhereWithoutPaymentProofsInput = {
+  where?: Prisma.BookingRequestWhereInput
+  data: Prisma.XOR<Prisma.BookingRequestUpdateWithoutPaymentProofsInput, Prisma.BookingRequestUncheckedUpdateWithoutPaymentProofsInput>
+}
+
+export type BookingRequestUpdateWithoutPaymentProofsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  publicCode?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
+  priorityLevel?: Prisma.EnumPriorityLevelFieldUpdateOperationsInput | $Enums.PriorityLevel
+  source?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterEmail?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  eventTitle?: Prisma.StringFieldUpdateOperationsInput | string
+  eventDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  eventEndDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estimatedTotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  calendarEventId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  items?: Prisma.BookingRequestItemUpdateManyWithoutBookingRequestNestedInput
+  approvals?: Prisma.ApprovalUpdateManyWithoutBookingRequestNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutBookingRequestNestedInput
+}
+
+export type BookingRequestUncheckedUpdateWithoutPaymentProofsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  publicCode?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumBookingStatusFieldUpdateOperationsInput | $Enums.BookingStatus
+  priorityLevel?: Prisma.EnumPriorityLevelFieldUpdateOperationsInput | $Enums.PriorityLevel
+  source?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterEmail?: Prisma.StringFieldUpdateOperationsInput | string
+  requesterPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  eventTitle?: Prisma.StringFieldUpdateOperationsInput | string
+  eventDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  eventEndDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  internalNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estimatedTotal?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  calendarEventId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  items?: Prisma.BookingRequestItemUncheckedUpdateManyWithoutBookingRequestNestedInput
   approvals?: Prisma.ApprovalUncheckedUpdateManyWithoutBookingRequestNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutBookingRequestNestedInput
 }
@@ -885,6 +1026,7 @@ export type BookingRequestCreateWithoutApprovalsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.BookingRequestItemCreateNestedManyWithoutBookingRequestInput
+  paymentProofs?: Prisma.PaymentProofCreateNestedManyWithoutBookingRequestInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutBookingRequestInput
 }
 
@@ -909,6 +1051,7 @@ export type BookingRequestUncheckedCreateWithoutApprovalsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.BookingRequestItemUncheckedCreateNestedManyWithoutBookingRequestInput
+  paymentProofs?: Prisma.PaymentProofUncheckedCreateNestedManyWithoutBookingRequestInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutBookingRequestInput
 }
 
@@ -949,6 +1092,7 @@ export type BookingRequestUpdateWithoutApprovalsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.BookingRequestItemUpdateManyWithoutBookingRequestNestedInput
+  paymentProofs?: Prisma.PaymentProofUpdateManyWithoutBookingRequestNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutBookingRequestNestedInput
 }
 
@@ -973,6 +1117,7 @@ export type BookingRequestUncheckedUpdateWithoutApprovalsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.BookingRequestItemUncheckedUpdateManyWithoutBookingRequestNestedInput
+  paymentProofs?: Prisma.PaymentProofUncheckedUpdateManyWithoutBookingRequestNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutBookingRequestNestedInput
 }
 
@@ -997,6 +1142,7 @@ export type BookingRequestCreateWithoutAuditLogsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.BookingRequestItemCreateNestedManyWithoutBookingRequestInput
+  paymentProofs?: Prisma.PaymentProofCreateNestedManyWithoutBookingRequestInput
   approvals?: Prisma.ApprovalCreateNestedManyWithoutBookingRequestInput
 }
 
@@ -1021,6 +1167,7 @@ export type BookingRequestUncheckedCreateWithoutAuditLogsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.BookingRequestItemUncheckedCreateNestedManyWithoutBookingRequestInput
+  paymentProofs?: Prisma.PaymentProofUncheckedCreateNestedManyWithoutBookingRequestInput
   approvals?: Prisma.ApprovalUncheckedCreateNestedManyWithoutBookingRequestInput
 }
 
@@ -1061,6 +1208,7 @@ export type BookingRequestUpdateWithoutAuditLogsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.BookingRequestItemUpdateManyWithoutBookingRequestNestedInput
+  paymentProofs?: Prisma.PaymentProofUpdateManyWithoutBookingRequestNestedInput
   approvals?: Prisma.ApprovalUpdateManyWithoutBookingRequestNestedInput
 }
 
@@ -1085,6 +1233,7 @@ export type BookingRequestUncheckedUpdateWithoutAuditLogsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.BookingRequestItemUncheckedUpdateManyWithoutBookingRequestNestedInput
+  paymentProofs?: Prisma.PaymentProofUncheckedUpdateManyWithoutBookingRequestNestedInput
   approvals?: Prisma.ApprovalUncheckedUpdateManyWithoutBookingRequestNestedInput
 }
 
@@ -1095,12 +1244,14 @@ export type BookingRequestUncheckedUpdateWithoutAuditLogsInput = {
 
 export type BookingRequestCountOutputType = {
   items: number
+  paymentProofs: number
   approvals: number
   auditLogs: number
 }
 
 export type BookingRequestCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   items?: boolean | BookingRequestCountOutputTypeCountItemsArgs
+  paymentProofs?: boolean | BookingRequestCountOutputTypeCountPaymentProofsArgs
   approvals?: boolean | BookingRequestCountOutputTypeCountApprovalsArgs
   auditLogs?: boolean | BookingRequestCountOutputTypeCountAuditLogsArgs
 }
@@ -1120,6 +1271,13 @@ export type BookingRequestCountOutputTypeDefaultArgs<ExtArgs extends runtime.Typ
  */
 export type BookingRequestCountOutputTypeCountItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.BookingRequestItemWhereInput
+}
+
+/**
+ * BookingRequestCountOutputType without action
+ */
+export type BookingRequestCountOutputTypeCountPaymentProofsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PaymentProofWhereInput
 }
 
 /**
@@ -1158,6 +1316,7 @@ export type BookingRequestSelect<ExtArgs extends runtime.Types.Extensions.Intern
   createdAt?: boolean
   updatedAt?: boolean
   items?: boolean | Prisma.BookingRequest$itemsArgs<ExtArgs>
+  paymentProofs?: boolean | Prisma.BookingRequest$paymentProofsArgs<ExtArgs>
   approvals?: boolean | Prisma.BookingRequest$approvalsArgs<ExtArgs>
   auditLogs?: boolean | Prisma.BookingRequest$auditLogsArgs<ExtArgs>
   _count?: boolean | Prisma.BookingRequestCountOutputTypeDefaultArgs<ExtArgs>
@@ -1232,6 +1391,7 @@ export type BookingRequestSelectScalar = {
 export type BookingRequestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "publicCode" | "status" | "priorityLevel" | "source" | "requesterName" | "requesterEmail" | "requesterPhone" | "eventTitle" | "eventDate" | "eventEndDate" | "notes" | "internalNotes" | "estimatedTotal" | "currency" | "calendarEventId" | "submittedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["bookingRequest"]>
 export type BookingRequestInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   items?: boolean | Prisma.BookingRequest$itemsArgs<ExtArgs>
+  paymentProofs?: boolean | Prisma.BookingRequest$paymentProofsArgs<ExtArgs>
   approvals?: boolean | Prisma.BookingRequest$approvalsArgs<ExtArgs>
   auditLogs?: boolean | Prisma.BookingRequest$auditLogsArgs<ExtArgs>
   _count?: boolean | Prisma.BookingRequestCountOutputTypeDefaultArgs<ExtArgs>
@@ -1243,6 +1403,7 @@ export type $BookingRequestPayload<ExtArgs extends runtime.Types.Extensions.Inte
   name: "BookingRequest"
   objects: {
     items: Prisma.$BookingRequestItemPayload<ExtArgs>[]
+    paymentProofs: Prisma.$PaymentProofPayload<ExtArgs>[]
     approvals: Prisma.$ApprovalPayload<ExtArgs>[]
     auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
   }
@@ -1661,6 +1822,7 @@ readonly fields: BookingRequestFieldRefs;
 export interface Prisma__BookingRequestClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   items<T extends Prisma.BookingRequest$itemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BookingRequest$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BookingRequestItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  paymentProofs<T extends Prisma.BookingRequest$paymentProofsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BookingRequest$paymentProofsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PaymentProofPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   approvals<T extends Prisma.BookingRequest$approvalsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BookingRequest$approvalsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ApprovalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   auditLogs<T extends Prisma.BookingRequest$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.BookingRequest$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -2125,6 +2287,30 @@ export type BookingRequest$itemsArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   distinct?: Prisma.BookingRequestItemScalarFieldEnum | Prisma.BookingRequestItemScalarFieldEnum[]
+}
+
+/**
+ * BookingRequest.paymentProofs
+ */
+export type BookingRequest$paymentProofsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PaymentProof
+   */
+  select?: Prisma.PaymentProofSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PaymentProof
+   */
+  omit?: Prisma.PaymentProofOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PaymentProofInclude<ExtArgs> | null
+  where?: Prisma.PaymentProofWhereInput
+  orderBy?: Prisma.PaymentProofOrderByWithRelationInput | Prisma.PaymentProofOrderByWithRelationInput[]
+  cursor?: Prisma.PaymentProofWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PaymentProofScalarFieldEnum | Prisma.PaymentProofScalarFieldEnum[]
 }
 
 /**
