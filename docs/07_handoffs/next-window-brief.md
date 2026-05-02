@@ -1,47 +1,49 @@
 # Next Window Brief - Turpial Sound
 
-**Fecha de actualizacion:** 2026-04-29
-**Frente activo:** Marketplace
+**Fecha de actualizacion:** 2026-05-01
+**Frente activo:** Marketplace (P0-B Chat / Sprint 2 Delivery)
 **Tipo de nota:** Checkpoint operativo para siguiente ventana
-**Estado de sincronización:** Admin AI Copilot (read-only) y BI/Analytics implementados y validados técnicamente.
+**Estado de sincronización:** P0-A Shell/Home y DB-Rates MVP CERRADOS.
 
 ---
 
 ## Estado resumido
 
-El Admin AI Copilot (read-only) y la instrumentación inicial de Analytics/Blob están implementados y validados técnicamente. El marketplace sigue funcional y separado del booking.
+Se ha consolidado el Shell propio del marketplace (independiente del navbar global) y la persistencia de tasas (BCV/Binance) para transacciones. El marketplace es visualmente consistente en dark/light mode y funcionalmente estable en su flujo manual.
 
 ## Bloqueos activos
-- Critico: Ejecutar QA manual completa buyer -> admin -> escrow -> payout manual seller.
-- Alto: QA manual del Admin AI Copilot (verificación de restricciones de acceso y lectura).
-- Pendiente: Ejecutar smoke tests técnicos con `git diff --check`, `tsc` y `npm run build`.
+- Crítico: El sistema de mensajes (P0-B) requiere timestamps, real-time y badges clickeables.
+- Alto: Falta flujo de confirmación de entrega ("Ya recibí" / "Ya entregué") para liberar fondos.
+- Pendiente: Diagnóstico de transacciones legacy con tasas pendientes.
 
 ## Resuelto (Hitos clave)
-- Implementación de Admin AI Copilot (read-only) y APIs asociadas.
-- Instrumentación técnica de Analytics (`MpAnalyticsEvent`) y Blob Metadata (`MpBlobObjectMetadata`).
-- Normalización de seguridad: sin acciones de escritura, sin exposición de secretos.
-- Validaciones de construcción (`tsc`, `build`) exitosas.
+- **UI Shell P0-A:** Marketplace tiene navegación propia; navbar global oculto; MainContentShell corregido.
+- **DB-Rates MVP:** Snapshots de tasas persistidos; transacciones congelan tasa al crear.
+- **Polish Visual:** AuthBar glassmorphism; avatar asistente contrastado; hero balanceado.
+- **Validaciones:** Build y TSC limpios.
 
 ## Siguiente accion exacta
 
-1. Ejecutar QA manual E2E (buyer -> admin -> escrow -> payout seller) siguiendo el runbook.
-2. Validar Admin AI Copilot (restricciones de lectura y acceso) según el diseño.
-3. Verificar integridad del build con `git diff --check`.
-4. Una vez validado, realizar el commit y push a `Marketplace-Pure`.
-5. NO implementar acciones de escritura en el Copilot hasta nuevo aviso.
-6. NO tocar booking ni `/reservas`.
+1. **P0-B / Chat + mensajes:**
+   - Implementar timestamps en chat público y seller chat.
+   - Asegurar que badges de "sin leer" lleven al chat correcto.
+   - Notificaciones de sistema para avances de estado.
+2. **Sprint 2 / Delivery:**
+   - Implementar botones "Ya entregué" (Seller) y "Ya recibí" (Buyer).
+   - El estado "Ya recibí" debe habilitar la liberación de fondos (escrow -> released).
+3. **QA:** Validar flujos de mensajes tras cada cambio.
+4. NO tocar booking ni `/reservas`.
 
 ## Proximo prompt operativo exacto
 
 ```text
 Lee primero:
-- docs/obsidian-vault/ROADMAP_RESCATE.md
 - docs/07_handoffs/session-summary-active.md
-- docs/07_handoffs/qa-dispatcher.json
+- docs/07_handoffs/next-window-brief.md
+- docs/obsidian-vault/ROADMAP_RESCATE.md
 
-Confirma el estado del marketplace y el Admin AI Copilot.
-Ejecuta QA manual E2E (buyer -> admin -> escrow -> payout seller) siguiendo el runbook.
-Valida el Admin AI Copilot (restricciones de lectura y acceso) según el diseño.
-Si hay residuales, documenta en Obsidian y handoff antes de hacer commits.
+Confirma el cierre de P0-A y DB-Rates.
+Inicia el Sprint P0-B (Chat + mensajes) implementando timestamps y real-time aproximado.
+Luego inicia el Sprint 2 (Delivery) para implementar confirmaciones de recepción de artículos.
 No toques booking ni /reservas.
 ```

@@ -1,59 +1,55 @@
 ﻿# Session Summary - Activa
 
-> Fecha de ultima actualizacion: 2026-04-26
-> Tipo de nota: Checkpoint operativo de cierre
+> Fecha de ultima actualizacion: 2026-05-01
+> Tipo de nota: Checkpoint operativo de cierre (P0-A Shell/Home + DB-Rates)
 > Fuente principal: `docs/obsidian-vault/*`
 
 ---
 
-## Estado real actual del proyecto (2026-04-29)
+## Estado real actual del proyecto (2026-05-01)
 
-El marketplace está funcional, separado del booking y con foco en estabilización operativa.
+El marketplace ha consolidado su shell propio y la persistencia de tasas para transacciones. Se ha cerrado el polish visual inicial del Home.
 
-### Sprint "Admin AI Copilot + BI/Analytics" Implementado
-- **Admin AI Copilot (Read-only):** Implementado en `/marketplace/admin/copilot` y `/api/marketplace/admin/copilot`.
-  - Acceso restringido a `SUPER` (roles admin).
-  - Herramientas read-only: usuarios, ventas, operaciones pendientes, fondos, KPIs, resumen de transacción, métricas de listings, DB status y Blob metadata.
-  - Seguridad estricta: sin acciones de escritura, sin exposición de secretos, sin logs de prompts/respuestas en DB, sin logs de datos bancarios.
-- **Instrumentación Analytics/BI:**
-  - Modelo `MpAnalyticsEvent` y `MpBlobObjectMetadata`.
-  - Endpoint `/api/marketplace/analytics/event` con payload allowlist.
-  - Eventos: `listing_view`, `listing_click`, `buy_click`, `favorite_click`, `checkout_start`, `admin_copilot_db_status_view`.
-  - Limpieza de metadata: sin query/hash en URLs, sin `paymentProofUrl` privado.
-- **Validaciones:** `npx prisma generate` OK, `npx tsc --noEmit` OK, `npm run build` OK.
+### Sprint "P0-A UI Shell/Home" - CERRADO
+- **Shell Propio:** El marketplace ahora oculta el navbar global de Turpial Sound.
+- **MainContentShell:** Implementado para manejar paddings route-aware (marketplace usa `pt-0`).
+- **AuthBar Glassmorphism:** Barra persistente con transparencia, backdrop-blur y altura optimizada.
+- **Home Polish:** StatBar visible en primer viewport, Hero balanceado con Turpial Wave y navegación corregida.
+- **Asistente Avatar:** Corregido contraste del avatar en modo oscuro (fondo claro).
+
+### Sprint "DB-Rates MVP" - CERRADO
+- **Persistencia:** Implementados `MpReferenceRateSnapshot` (BCV) y `MpBinanceRateSnapshot`.
+- **Congelación de Tasas:** Las nuevas transacciones congelan la tasa real al momento de la compra.
+- **Legacy Cleanup:** `USD_REFERENCE_RATE = 1` queda solo para compatibilidad legacy/export.
+- **Validación:** Migraciones aplicadas en neondb y schema actualizado.
+
+### Lecciones Metodológicas
+1. **Prioridad de Modelos:** Usar Gemini/GPT para razonamiento UI/docs, pero reservar Codex para arquitectura compleja/DB cuando la cuota es baja.
+2. **Inspección de Layout Padre:** Antes de ajustar paddings a ciegas, verificar `app/layout.tsx` (causa raíz del padding global).
+3. **Integridad de Archivos:** Evitar `Get-Content | Set-Content` en archivos Unicode grandes para prevenir mojibake; preferir lectura/escritura UTF-8 explícita.
+4. **Validación Proporcional:** No repetir `build` por microajustes CSS; usar diff check y preview visual.
 
 ### Bloqueos activos
-- Crítico: QA manual final del Admin Copilot y el nuevo DB Status.
-- No realizar commit/push hasta la validación funcional.
+- Crítico: QA manual final de los flujos de mensajería y chat (P0-B).
+- Alto: Falta implementación formal de MpPayout y cierre contable final.
 
-### Pendientes (Fase futura)
-- Automatización de acciones de escritura (requiere confirmación UI).
-- Tráfico/bandwidth real (requiere Vercel Observability).
-- Módulo financiero/P&L.
-- Orquestador Oreshnik.
-
-## Bloqueos activos
-
-- Critico: ejecutar QA manual completa del flujo buyer -> admin -> escrow -> payout manual seller.
-- Alto: el checkout manual sigue siendo temporal; no es un bug, pero condiciona toda la operacion actual.
-- Alto: el storage de media actual ya no usa base64, pero sigue siendo temporal; falta storage productivo definitivo.
-- Medio-Alto: falta definir el cierre contable final despues de `RELEASED`.
-- Medio: cron T+7 para auto-release sigue pendiente.
-- Medio: queda en cola una mejora visual pro para el hero del marketplace con animacion tipo rayo/plasma, solo para ese hero, ligera y sin tocar el resto del site.
+### Pendientes (Fase futura - Sprints P0-B a Sprint 4)
+- **P0-B:** Chat y mensajes (timestamps, real-time, badges clickeables).
+- **Sprint 2:** Flujo de entrega/recepción ("Ya recibí" / "Ya entregué").
+- **Sprint 3:** Diagnóstico de tasas pendientes en transacciones legacy.
+- **Sprint 4:** Formalización de MpPayout y registro de pagos a vendedores.
+- **Listings:** Requerimientos de ubicación y métodos de cobro obligatorios.
 
 ## Hallazgos funcionales activos del marketplace
 
-- Operativo y Todos muestran casi la misma informacion.
-  Impacto: la segmentacion del dashboard no ayuda a operar.
-  Prioridad: media-alta.
 - El tab de mensajes no refleja bien los 3 mensajes sin leer ni su ubicacion real.
   Impacto: mitigado por la nueva separacion entre chats por atender y todos los chats; falta QA real.
-  Prioridad: media-alta.
-- Totales y comisiones quedaron mas coherentes, pero requieren QA con operaciones reales para cerrar el frente.
+  Prioridad: alta (objetivo P0-B).
+- Totales y comisiones requieren QA con operaciones reales tras el fix de tasas.
   Impacto: posible ajuste residual en metricas operativas.
   Prioridad: alta.
 - Desajuste transversal entre metricas, tabs y flujo real del dashboard.
-  Impacto: ya no es bloqueo estructural; queda como validacion/pulido de segunda pasada.
+  Impacto: queda como validacion/pulido de segunda pasada.
   Prioridad: alta.
 
 ## Resuelto en esta ventana
