@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import type { LucideIcon } from 'lucide-react'
 import {
   ShoppingBag,
@@ -1750,6 +1750,7 @@ export function DashboardClient({
   initialTab,
 }: DashboardClientProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const profile = rawProfile as DashProfile | null
   const purchases = rawPurchases as DashTransaction[]
@@ -1814,6 +1815,23 @@ export function DashboardClient({
     return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
   });
   const firstUnreadThreadId = displayThreads.find((thread) => getTxUnreadCount(thread, session.userId) > 0)?.id ?? null
+
+  // Auto-focus first unread thread when URL has focus=unread.
+  const hasAutoFocusedRef = useRef(false)
+  useEffect(() => {
+    const focusParam = searchParams?.get('focus')
+    if (focusParam !== 'unread' || hasAutoFocusedRef.current || threads.length === 0) return
+
+    const firstUnread = threads.find((thread) => getTxUnreadCount(thread, session.userId) > 0)
+    if (!firstUnread) return
+
+    hasAutoFocusedRef.current = true
+    window.setTimeout(() => {
+      handleOpenThread(firstUnread)
+    }, 150)
+  // handleOpenThread is intentionally omitted to avoid re-triggering autofocus on each render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [threads, searchParams, session.userId])
 
   const pendingValidationSales = sales.filter(tx => ['PAYMENT_RECEIVED', 'VALIDATING'].includes(tx.status))
   const escrowSales = sales.filter(tx => ['IN_ESCROW', 'DELIVERY_CONFIRMED'].includes(tx.status))

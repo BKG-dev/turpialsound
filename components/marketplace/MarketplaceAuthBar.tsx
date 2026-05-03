@@ -365,7 +365,7 @@ export function MarketplaceAuthBar({
                 </button>
               ) : (
                 <Link
-                  href="/marketplace/dashboard?tab=messages"
+                  href="/marketplace/dashboard?tab=messages&focus=unread"
                   className="mp-authbar-blue-pill relative flex h-6 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-[10px] font-bold leading-none transition-all hover:bg-white/5"
                   style={{
                     background: unreadCount > 0 ? 'rgba(0,174,239,0.1)' : 'transparent',
