@@ -1,36 +1,48 @@
 ﻿# Session Summary - Activa
 
-> Fecha de ultima actualizacion: 2026-05-03
-> Tipo de nota: Checkpoint documental y replan Pareto 80/20
-> Fuente principal: `docs/99_prompts/marketplace-docs-pareto-update.md`
+> Fecha de ultima actualizacion: 2026-05-03 (segunda revision)
+> Tipo de nota: Checkpoint documental con P0-B y P0-C aprobados
+> Fuente principal: `docs/99_prompts/marketplace-docs-p0b-p0c-checkpoint.md`
 
 ---
 
 ## Checkpoint oficial vigente
 
 **Preview oficial/confiable aprobado:**
-https://turpialsound-t18pj01z8-cerberus77s-projects.vercel.app/marketplace
+https://turpialsound-6uemfhtej-cerberus77s-projects.vercel.app/marketplace (P0-B)
 
-- Deployment: `turpialsound-t18pj01z8-cerberus77s-projects.vercel.app`
+https://turpialsound-lvihtqudi-cerberus77s-projects.vercel.app/marketplace (P0-C)
+
+- Deployment P0-B: `turpialsound-6uemfhtej-cerberus77s-projects.vercel.app`
+- Deployment P0-C: `turpialsound-lvihtqudi-cerberus77s-projects.vercel.app`
 - Target: preview
 - Status: Ready
-- Created: Sat May 02 2026 14:46:19 GMT-0400
 
-Commits del checkpoint oficial:
+Commits del checkpoint P0-B:
+- `c75cc45` fix(marketplace): improve unread chat navigation (rama `Marketplace-P0B-chat-unread`)
+
+Commits del checkpoint P0-C:
+- `aefac86` fix(marketplace): keep authbar sticky on scroll (rama `Marketplace-P0C-authbar-sticky`)
+
+Checkpoint base anterior:
 - `e177170` docs(marketplace): record authbar shell polish checkpoint (2026-05-02)
 - `5f00b54` fix(marketplace): refine authbar and home shell polish (2026-05-02)
 
-Estado visual/funcional aprobado en ese punto:
-- Marketplace shell/AuthBar/Home aprobado.
-- AuthBar correcto.
-- Global navbar oculto dentro de marketplace.
-- StatBar alineado abajo en primer viewport.
-- Ticker del AuthBar corregido para no invadir controles.
-- Logo Turpial Sound con fondo claro como escape visual/home.
-- Badges compactos.
-- Toggle alineado.
-- Duplicidad de toggle en admin resuelta.
-- No producción.
+### Estado visual/funcional P0-B aprobado
+- AuthBar unread badge navega a messages/focus unread.
+- Dashboard enfoca/abre primer thread unread automáticamente con `focus=unread`.
+- TransactionChat ya no marca mensajes como leídos al montar (mark-as-read diferido).
+- Mark-as-read se dispara solo con interacción explícita: pointer/wheel/touch o envío de mensaje.
+- Sin schema, sin pagos, sin WebGL, sin booking.
+
+### Estado visual/funcional P0-C aprobado
+- AuthBar queda sticky arriba durante scroll en todas las rutas marketplace.
+- El problema real no era MarketplaceAuthBar (ya tenía `sticky top-0 z-[70]`).
+- Causa real: `.mp-route-shell` generaba scroll container vertical (`overflowX hidden` / `overflowY auto`).
+- Fix aplicado en `styles/globals.css`: `overflow-y: visible; overflow-x: clip` en `.mp-route-shell`.
+- QA runtime confirma `AUTHBAR_RECT_AFTER_SCROLL.top = 0` después de scroll.
+- Se rechazó el primer parche con `paddingTop` por página porque podía recrear black band / dead space.
+- Sin schema, sin pagos, sin WebGL, sin booking.
 
 ## Prototipo en observación
 
@@ -52,16 +64,16 @@ La exploración de la onda WebGL fue problemática y generó loop.
 
 **Regla:**
 - No continuar la onda ahora.
-- No mezclar WebGL wave con P0-B.
+- No mezclar WebGL wave con otros sprints.
 - Si se retoma, debe ser sprint visual separado.
 - Primero debe haber captura/base clara y aprobación visual.
 - No usar Gemini como ejecutor visual fino.
 - Preferir script manual controlado por GPT o KAT-Coder-Pro V2 si se necesita agente.
 - Codex solo si el bloqueo visual es importante y otros fallan.
 
-## Estado real actual del proyecto (2026-05-03)
+## Estado real actual del proyecto (2026-05-03 - segunda revision)
 
-El marketplace ha consolidado su shell propio y la persistencia de tasas para transacciones. Se ha cerrado el polish visual inicial del Home. El checkpoint oficial `t18pj01z8` refleja el estado aprobado con AuthBar, Home, StatBar y badges compactos funcionales.
+El marketplace ha consolidado su shell propio, persistencia de tasas, bloqueo de compra duplicada, el sistema de mensajes con unread badge/focus/mark-as-read diferido, y el AuthBar sticky. Los checkpoints P0-B y P0-C están implementados, pusheados y validados en preview.
 
 ### Sprint "P0-A UI Shell/Home" - CERRADO
 - **Shell Propio:** El marketplace ahora oculta el navbar global de Turpial Sound.
@@ -82,6 +94,24 @@ El marketplace ha consolidado su shell propio y la persistencia de tasas para tr
 - Estados bloqueantes y terminales definidos.
 - No se marca `SOLD_OUT` antes de validación admin.
 
+### Sprint P0-B — Chat Unread / Badge / Focus - CERRADO
+- Rama `Marketplace-P0B-chat-unread`, commit `c75cc45`.
+- Preview validado: `https://turpialsound-6uemfhtej-cerberus77s-projects.vercel.app/marketplace`.
+- AuthBar unread badge navega a messages con `focus=unread`.
+- Dashboard abre primer thread unread automáticamente.
+- TransactionChat no marca leídos al montar.
+- Mark-as-read diferido hasta interacción explícita (pointer/wheel/touch/envío).
+- Sin schema, sin pagos, sin WebGL, sin booking.
+
+### Sprint P0-C — AuthBar Sticky - CERRADO
+- Rama `Marketplace-P0C-authbar-sticky`, commit `aefac86`.
+- Preview validado: `https://turpialsound-lvihtqudi-cerberus77s-projects.vercel.app/marketplace`.
+- AuthBar sticky confirmado en runtime (`top = 0` después de scroll).
+- Causa real: `.mp-route-shell` creaba scroll container vertical.
+- Fix: `overflow-y: visible; overflow-x: clip` en `styles/globals.css`.
+- Se rechazó parche con paddingTop manual (riesgo de black band).
+- Sin schema, sin pagos, sin WebGL, sin booking.
+
 ## Metodología obligatoria (reforzada)
 
 - Un paso a la vez.
@@ -100,39 +130,15 @@ El marketplace ha consolidado su shell propio y la persistencia de tasas para tr
 - Para UI/código moderado usar KAT-Coder-Pro V2 antes que Codex.
 - Gemini no usar como ejecutor visual fino en este proyecto.
 
-## Pendientes consolidados (herederados)
+## Pendientes consolidados (actualizados post P0-B/P0-C)
 
-### P0-B — Chat / Mensajes / Notificaciones
-Siguiente sprint recomendado por Pareto.
+### Sprint P0-B.2 — System Messages (diseño pendiente)
+- Siguiente mejora de mensajes: mensajes de sistema en el chat.
+- **NO usar senderId = SYSTEM** porque `MpMessage.senderId` es FK obligatoria a `MpUser`.
+- Requiere diseño: usuario sistema, schema/type, o statusHistory virtual.
+- No implementar sin diseño previo.
 
-Pendientes:
-1. Chat público y seller chat deben mostrar hora/timestamp.
-2. Mensajes deben refrescar casi en tiempo real sin refresh manual.
-3. Chip "1 mensaje sin leer" debe ser clickeable.
-4. Click en unread debe llevar al thread/mensaje correcto.
-5. Cambios de estado deben generar mensajes/notificaciones de sistema.
-6. Usuario debe ver próximas acciones pendientes en compras/ventas.
-7. CTAs deben navegar exactamente al lugar de acción.
-8. Auditar infraestructura existente:
-   - unread
-   - read receipts
-   - mark as read
-   - polling/refetch
-   - status history
-   - system messages
-
-**Primera tarea P0-B debe ser auditoría read-only, no implementación.**
-
-Archivos probables a auditar:
-- `components/marketplace/TransactionChat.tsx`
-- `components/marketplace/dashboard/DashboardClient.tsx`
-- `components/marketplace/MarketplaceAuthBar.tsx`
-- `actions/marketplace/chat.ts`
-- `actions/marketplace/transactions.ts`
-- `actions/marketplace/questions.ts`
-- `prisma/schema.prisma` solo lectura
-
-### Sprint 2 — Entrega / Recepción
+### Sprint 2 — Delivery / Receipt
 Pendientes:
 1. Seller "Ya entregué".
 2. Buyer "Ya recibí".
@@ -144,7 +150,7 @@ Pendientes:
 8. Admin solo ejecuta/registra pago al vendedor.
 
 ### Rates / DB / Finanzas (high-risk, Codex-only)
-1. Persistencia integral BCV/Binance.
+1. Persistencia integral BCV/Binance (completado en DB-Rates MVP).
 2. Transaction creation no debe usar `USD_REFERENCE_RATE = 1`.
 3. Payout en Bs debe guardar: USD base, exchange rate, fecha valor, amount Bs, bank fee 0.03%, final Bs amount.
 4. USDT payout: 5% comisión plataforma, 0.06 USDT operational/platform charge.
@@ -167,38 +173,8 @@ Al publicar venta, seller debe proveer:
 - métodos de cobro/payout
 - datos necesarios para pago vendedor
 
-## Replanteamiento Pareto 80/20 para hoy
-
-### Sprint de hoy 1 — Cierre documental / limpieza de verdad operativa
-**Objetivo:** Dejar docs alineadas con checkpoint oficial, prototipo en observación y próximos sprints.
-**Resultado esperado:** Docs/handoff/Obsidian actualizados.
-
-### Sprint de hoy 2 — P0-B Read-only audit de Chat/Mensajes/Notificaciones
-**Objetivo:** Mapear estado real antes de implementar.
-**Resultado esperado:** Lista exacta de archivos, funciones existentes, gaps y plan quirúrgico.
-**No implementar todavía.**
-
-### Sprint de hoy 3 — Implementación P0-B mínima viable (si auditoría lo permite)
-Solo si el audit indica bajo riesgo/no schema:
-- timestamps visibles
-- polling/refetch razonable
-- unread chip clickeable
-- foco/scroll al mensaje/thread
-- system messages si ya existe infraestructura
-
-Si requiere schema o arquitectura: parar y reportar.
-
-### Sprint posterior — Entrega/Recepción
-Solo después de P0-B o si se decide cambiar prioridad por bloqueo de flujo.
-
-### Sprint high-risk separado — Rates/Payout/Closure
-Codex-only. No mezclar con sprints normales.
-
 ## Hallazgos funcionales activos del marketplace
 
-- El tab de mensajes no refleja bien los 3 mensajes sin leer ni su ubicación real.
-  Impacto: mitigado por la nueva separación entre chats por atender y todos los chats; falta QA real.
-  Prioridad: alta (objetivo P0-B).
 - Totales y comisiones requieren QA con operaciones reales tras el fix de tasas.
   Impacto: posible ajuste residual en métricas operativas.
   Prioridad: alta.
@@ -219,12 +195,11 @@ Estos parecen ser referencias de sesiones anteriores que no se materializaron co
 
 ## Resuelto en esta ventana
 
-- Checkpoint oficial documentado con commit hash y URL de preview.
-- Prototipo `gptrfix08` documentado como "en observación", no como oficial.
-- Regla WebGL wave documentada y cerrada para este sprint.
-- Pendientes consolidados en una sola lista jerárquica.
-- Plan Pareto 80/20 estructurado para hoy.
-- Metodología obligatoria reforzada.
+- Checkpoint P0-B documentado con commit `c75cc45`, preview y QA manual.
+- Checkpoint P0-C documentado con commit `aefac86`, preview y QA runtime.
+- Causa real del sticky fix documentada: `.mp-route-shell` scroll container.
+- Pendientes actualizados: P0-B.2 system messages, Sprint 2 Delivery.
+- Plan Pareto actualizado post P0-B/P0-C.
 
 ## Resuelto y no reabrir
 
@@ -240,11 +215,15 @@ Estos parecen ser referencias de sesiones anteriores que no se materializaron co
 - `paymentSenderBank`, `paymentPaidAt` e índices ya aplicados en `mp_transactions`.
 - `npm run build` limpio.
 - `npx tsc --noEmit` limpio.
+- P0-B Chat Unread / Badge / Focus completado y validado.
+- P0-C AuthBar Sticky completado y validado con QA runtime.
 
 ## Checkpoint para reanudar mañana
 
-- Estado marketplace: funcional, separado del booking y con foco en estabilización operativa.
-- Checkpoint oficial: `t18pj01z8`. Prototipo `gptrfix08` en observación.
-- Proximo paso: P0-B read-only audit antes de implementar.
+- Estado marketplace: funcional, separado del booking, con P0-B (chat unread/focus) y P0-C (authbar sticky) aprobados.
+- Checkpoint P0-B: `turpialsound-6uemfhtej-cerberus77s-projects.vercel.app`
+- Checkpoint P0-C: `turpialsound-lvihtqudi-cerberus77s-projects.vercel.app`
+- Próximo paso: QA visual rápida de P0-C en todas las rutas, decidir si crear PR desde `Marketplace-P0C-authbar-sticky`.
+- Proximo frente: Sprint P0-B.2 system messages (requiere diseño) o Sprint 2 Delivery/Receipt.
 - WebGL wave: no continuar ahora.
 - No producción, no booking, no schema sin sprint explícito.
