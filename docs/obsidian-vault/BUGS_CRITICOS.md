@@ -4,14 +4,14 @@ tags: ["#status/live-source", "#area/backend", "#area/ui", "#area/ops"]
 
 # Bugs Criticos
 
-Este archivo registra los bloqueos y riesgos operativos activos del marketplace al 2026-05-01.
+Este archivo registra los bloqueos y riesgos operativos activos del marketplace al 2026-05-03.
 
 ## 1. Franja negra superior (UI Shell)
 - **Estado real**: Resuelto en P0-A. Se implementó `MainContentShell` para anular el `pt-16` global en rutas de marketplace.
 
 ## 2. QA operativa end-to-end (P0-B)
 - **Estado real**: Pendiente crítica para el nuevo sistema de mensajes.
-- **Accion inmediata**: Ejecutar QA sobre los nuevos componentes de chat.
+- **Accion inmediata**: Ejecutar auditoría read-only de chat/mensajes/notificaciones antes de implementar.
 
 ## 3. Storage productivo definitivo
 - **Estado real**: Public media validada; proofs sensibles implementados técnicamente y validados manualmente en preview.
@@ -19,6 +19,7 @@ Este archivo registra los bloqueos y riesgos operativos activos del marketplace 
 
 ## 4. Cierre final de payout (MpPayout)
 - **Estado real**: Pendiente alta. Requiere formalizar el registro de pagos realizados por admin.
+- **Advertencia**: No tocar sin diseño de arquitectura. Codex-only.
 
 ## 5. Cron T+7 no implementado
 - **Estado real**: Pendiente.
@@ -46,3 +47,11 @@ Este archivo registra los bloqueos y riesgos operativos activos del marketplace 
 ## 9. Sprint 2 Bugs internos (Resueltos)
 - [x] Guardar método de cobro (Normalizado, validado)
 - [x] Nota interna Admin (Foco estable)
+
+## 10. WebGL Wave - No continuar ahora
+- **Estado real**: Exploración problemática que generó loop. Cerrada para este sprint.
+- **Regla**: No mezclar con P0-B. Si se retoma, debe ser sprint visual separado con aprobación previa.
+
+## 11. Prototipo gptrfix08 - En observación
+- **Estado real**: Preview NO oficial. Preservado como candidato visual.
+- **Regla**: No tratar como oficial. No mezclar con checkpoint `t18pj01z8`.
