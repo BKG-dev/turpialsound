@@ -774,6 +774,8 @@ video {
 }
 
 .mp-route-shell {
+  overflow-y: visible;
+  overflow-x: clip;
   margin-top: 0;
   padding-top: 0;
 }
