@@ -21,6 +21,7 @@ export {
   submitPaymentProof,
   validatePayment,
   confirmDelivery,
+  sellerDeliver,
   releaseEscrow,
   openDispute,
   resolveDispute,

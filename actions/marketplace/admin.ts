@@ -481,8 +481,8 @@ export async function adminReleaseEscrow(txId: string, note: string): Promise<Ac
     try {
       const tx = await db.mpTransaction.findUnique({ where: { id: txId } })
       if (!tx) return { success: false, message: 'Transacción no encontrada' }
-      if (!['IN_ESCROW', 'DELIVERY_CONFIRMED'].includes(tx.status)) {
-        return { success: false, message: `No se puede liberar en estado ${tx.status}` }
+      if (tx.status !== 'DELIVERY_CONFIRMED') {
+        return { success: false, message: 'Solo se puede liberar el pago cuando el comprador ha confirmado la recepcion.' }
       }
 
       await db.mpTransaction.update({

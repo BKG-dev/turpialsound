@@ -24,11 +24,12 @@ import {
   Landmark,
   Plus,
   CreditCard,
+  CheckCircle2,
 } from 'lucide-react'
 import type { MpSessionPayload } from '@/lib/marketplace/auth'
 import { TransactionChat } from '@/components/marketplace/TransactionChat'
 import { getMyThreads, getUnreadCount } from '@/actions/marketplace/chat'
-import { getTransaction, openDispute } from '@/actions/marketplace/transactions'
+import { getTransaction, openDispute, confirmDelivery, sellerDeliver } from '@/actions/marketplace/transactions'
 import { toggleFavorite } from '@/actions/marketplace/favorites'
 import {
   calculateSellerPayout,
@@ -138,8 +139,8 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   PENDING_PAYMENT:     { label: 'Compra iniciada',   color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  glow: 'rgba(245,158,11,0.25)'  },
   PAYMENT_RECEIVED:    { label: 'Pago reportado',    color: '#eab308', bg: 'rgba(234,179,8,0.1)',   glow: 'rgba(234,179,8,0.25)'   },
   VALIDATING:          { label: 'Pago por revisar',  color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', glow: 'rgba(167,139,250,0.25)' },
-  IN_ESCROW:           { label: 'Pago revisado',     color: '#00aeef', bg: 'rgba(0,174,239,0.1)',   glow: 'rgba(0,174,239,0.25)'   },
-  DELIVERY_CONFIRMED:  { label: 'Recepcion confirmada', color: '#34d399', bg: 'rgba(52,211,153,0.1)',  glow: 'rgba(52,211,153,0.25)'  },
+  IN_ESCROW:           { label: 'Esperando conformidad', color: '#00aeef', bg: 'rgba(0,174,239,0.1)',   glow: 'rgba(0,174,239,0.25)'   },
+  DELIVERY_CONFIRMED:  { label: 'Fondos por liberar', color: '#34d399', bg: 'rgba(52,211,153,0.1)',  glow: 'rgba(52,211,153,0.25)'  },
   RELEASED:            { label: 'Operacion cerrada', color: '#4ade80', bg: 'rgba(74,222,128,0.1)',  glow: 'rgba(74,222,128,0.25)'  },
   PAYMENT_FAILED:      { label: 'Pago no validado',  color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   glow: 'rgba(239,68,68,0.25)'   },
   DISPUTED:            { label: 'En revision',       color: '#f97316', bg: 'rgba(249,115,22,0.1)',  glow: 'rgba(249,115,22,0.25)'  },
@@ -229,12 +230,12 @@ function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
       seller: 'El pago del comprador esta en revision. Te notificaremos cuando la operacion avance.',
     },
     IN_ESCROW: {
-      buyer: 'Tu pago fue revisado por el equipo. Ahora coordina la entrega con el vendedor.',
-      seller: 'El pago del comprador fue revisado por el equipo. Coordina la entrega del articulo.',
+      buyer: 'Tu pago fue revisado por el equipo. Coordina la entrega con el vendedor. Cuando recibas el articulo, confirma la recepcion para liberar los fondos al vendedor.',
+      seller: 'El pago del comprador fue revisado por el equipo. Coordina la entrega del articulo. Cuando el comprador confirme la recepcion, los fondos quedaran listos para liberar.',
     },
     DELIVERY_CONFIRMED: {
-      buyer: 'Confirmaste la recepcion. El equipo gestionara el pago al vendedor.',
-      seller: 'El comprador confirmo la recepcion. Tu pago sera procesado en menos de 24 horas. Si no lo ves reflejado, escribenos por el centro de mensajes indicando el ID de la operacion.',
+      buyer: 'Confirmaste la recepcion. Los fondos estan listos para que el equipo los libere al vendedor.',
+      seller: 'El comprador confirmo la recepcion. Los fondos estan por liberar. El equipo gestionara el pago al vendedor en menos de 24 horas. Si no lo ves reflejado, escribenos por el centro de mensajes indicando el ID de la operacion.',
     },
     RELEASED: {
       buyer: 'La operacion fue completada correctamente.',
@@ -310,8 +311,8 @@ function getStatusLabelForView(status: string, viewAs: 'buyer' | 'seller') {
   if (viewAs === 'buyer') {
     if (status === 'PENDING_PAYMENT') return 'Pago por reportar'
     if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado'
-    if (status === 'IN_ESCROW') return 'Pago revisado'
-    if (status === 'DELIVERY_CONFIRMED') return 'Recepcion confirmada'
+    if (status === 'IN_ESCROW') return 'Esperando conformidad'
+    if (status === 'DELIVERY_CONFIRMED') return 'Fondos por liberar'
     if (status === 'RELEASED') return 'Operacion completada'
     if (status === 'DISPUTED') return 'En revision'
   }
@@ -322,7 +323,7 @@ function getStatusLabelForView(status: string, viewAs: 'buyer' | 'seller') {
 function getBuyerCtaLabel(status: string) {
   if (status === 'PENDING_PAYMENT') return 'Reportar pago'
   if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago en revision'
-  if (status === 'IN_ESCROW') return 'Coordinando entrega'
+  if (status === 'IN_ESCROW') return 'Confirmar recepcion'
   if (status === 'DELIVERY_CONFIRMED') return 'Recepcion confirmada'
   if (status === 'RELEASED') return 'Operacion completada'
   if (status === 'DISPUTED') return 'En revision'
@@ -617,13 +618,22 @@ function TxCard({
   onDispute,
   onOpenDetails,
   payoutMissing = false,
+  onBuyerConfirm,
+  onSellerDeliver,
+  deliveryBusyTxId,
+  sellerDeliveredTxIds,
 }: {
   tx: DashTransaction
   viewAs: 'buyer' | 'seller'
   onDispute?: (tx: DashTransaction) => void
   onOpenDetails?: (tx: DashTransaction) => void
   payoutMissing?: boolean
+  onBuyerConfirm?: (txId: string) => void
+  onSellerDeliver?: (txId: string) => void
+  deliveryBusyTxId?: string | null
+  sellerDeliveredTxIds?: Set<string>
 }) {
+  const [confirmAction, setConfirmAction] = useState<'buyer_confirm' | 'seller_deliver' | null>(null)
   const otherParty = viewAs === 'buyer' ? tx.seller : tx.buyer
   const guidance = getOperationalStatusCopy(tx.status, viewAs)
   const actionLabel = viewAs === 'buyer' ? getBuyerCtaLabel(tx.status) : getStatusLabelForView(tx.status, viewAs)
@@ -728,6 +738,128 @@ function TxCard({
               <AlertTriangle size={11} />
               Abrir Disputa
             </button>
+          </div>
+        )}
+
+        {/* Delivery Actions for IN_ESCROW */}
+        {tx.status === 'IN_ESCROW' && confirmAction === null && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {viewAs === 'buyer' && onBuyerConfirm && (
+              <button
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setConfirmAction('buyer_confirm')
+                }}
+                disabled={deliveryBusyTxId === tx.id}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-semibold transition-all disabled:opacity-50"
+                style={{
+                  background: 'rgba(52,211,153,0.1)',
+                  border: '1px solid rgba(52,211,153,0.25)',
+                  color: '#34d399',
+                }}
+              >
+                {deliveryBusyTxId === tx.id ? (
+                  <><Loader2 size={11} className="animate-spin" />Procesando...</>
+                ) : (
+                  <><CheckCircle2 size={11} />Ya recibi el articulo</>
+                )}
+              </button>
+            )}
+            {viewAs === 'seller' && onSellerDeliver && !sellerDeliveredTxIds?.has(tx.id) && (
+              <button
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setConfirmAction('seller_deliver')
+                }}
+                disabled={deliveryBusyTxId === tx.id}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-semibold transition-all disabled:opacity-50"
+                style={{
+                  background: 'rgba(0,174,239,0.1)',
+                  border: '1px solid rgba(0,174,239,0.25)',
+                  color: '#00aeef',
+                }}
+              >
+                {deliveryBusyTxId === tx.id ? (
+                  <><Loader2 size={11} className="animate-spin" />Procesando...</>
+                ) : (
+                  <><Package size={11} />Ya entregue el articulo</>
+                )}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Confirm dialog for buyer */}
+        {tx.status === 'IN_ESCROW' && confirmAction === 'buyer_confirm' && (
+          <div
+            className="mt-3 rounded-xl p-3"
+            style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)' }}
+          >
+            <p className="text-[11px] leading-relaxed" style={{ color: 'var(--mp-text-muted)' }}>
+              Confirma solo si ya recibiste el articulo y estas conforme. Al confirmar, Turpial podra liberar los fondos al vendedor.
+            </p>
+            <div className="mt-2 flex gap-2">
+              <button
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setConfirmAction(null)
+                  onBuyerConfirm?.(tx.id)
+                }}
+                disabled={deliveryBusyTxId === tx.id}
+                className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all disabled:opacity-50"
+                style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)' }}
+              >
+                {deliveryBusyTxId === tx.id ? <><Loader2 size={10} className="animate-spin" />Confirmando...</> : 'Si, confirmo'}
+              </button>
+              <button
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setConfirmAction(null)
+                }}
+                disabled={deliveryBusyTxId === tx.id}
+                className="rounded-lg px-3 py-1.5 text-[11px] transition-all disabled:opacity-50"
+                style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--mp-text-faint)', border: '1px solid var(--mp-border)' }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Confirm dialog for seller */}
+        {tx.status === 'IN_ESCROW' && confirmAction === 'seller_deliver' && (
+          <div
+            className="mt-3 rounded-xl p-3"
+            style={{ background: 'rgba(0,174,239,0.06)', border: '1px solid rgba(0,174,239,0.2)' }}
+          >
+            <p className="text-[11px] leading-relaxed" style={{ color: 'var(--mp-text-muted)' }}>
+              Marca esto solo cuando ya entregaste o coordinaste la entrega con el comprador.
+            </p>
+            <div className="mt-2 flex gap-2">
+              <button
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setConfirmAction(null)
+                  onSellerDeliver?.(tx.id)
+                }}
+                disabled={deliveryBusyTxId === tx.id}
+                className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all disabled:opacity-50"
+                style={{ background: 'rgba(0,174,239,0.15)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.3)' }}
+              >
+                {deliveryBusyTxId === tx.id ? <><Loader2 size={10} className="animate-spin" />Confirmando...</> : 'Si, entregue'}
+              </button>
+              <button
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setConfirmAction(null)
+                }}
+                disabled={deliveryBusyTxId === tx.id}
+                className="rounded-lg px-3 py-1.5 text-[11px] transition-all disabled:opacity-50"
+                style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--mp-text-faint)', border: '1px solid var(--mp-border)' }}
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
         )}
 
@@ -1766,6 +1898,10 @@ export function DashboardClient({
   const [selectedTxLoading, setSelectedTxLoading] = useState(false)
   const [disputeTarget, setDisputeTarget] = useState<DashTransaction | null>(null)
   const [disputedTxIds, setDisputedTxIds] = useState<Set<string>>(new Set())
+  const [deliveryActionTxId, setDeliveryActionTxId] = useState<string | null>(null)
+  const [deliveryActionMsg, setDeliveryActionMsg] = useState<string | null>(null)
+  const [deliveryConfirmedTxIds, setDeliveryConfirmedTxIds] = useState<Set<string>>(new Set())
+  const [sellerDeliveredTxIds, setSellerDeliveredTxIds] = useState<Set<string>>(new Set())
   const [favorites, setFavorites] = useState<DashListing[]>(rawMyFavorites as DashListing[])
   const myInteracted = rawMyInteracted as DashInteracted[]
   const [threads, setThreads] = useState<DashThread[]>(initialThreads)
@@ -2036,6 +2172,46 @@ export function DashboardClient({
     setPayoutBusyId(null)
   }
 
+  async function handleBuyerConfirmDelivery(txId: string) {
+    setDeliveryActionTxId(txId)
+    setDeliveryActionMsg(null)
+    const result = await confirmDelivery(txId)
+    if (result.success) {
+      setDeliveryActionMsg(result.message)
+      setDeliveryConfirmedTxIds(prev => new Set(prev).add(txId))
+      // Refresh the transaction detail if open
+      if (selectedTx?.tx.id === txId) {
+        const refreshed = await getTransaction(txId)
+        if (refreshed.success && refreshed.data) {
+          setSelectedTxDetail(refreshed.data as DashTransactionDetail)
+        }
+      }
+    } else {
+      setDeliveryActionMsg(result.message)
+    }
+    setDeliveryActionTxId(null)
+  }
+
+  async function handleSellerMarkDelivered(txId: string) {
+    setDeliveryActionTxId(txId)
+    setDeliveryActionMsg(null)
+    const result = await sellerDeliver(txId)
+    if (result.success) {
+      setDeliveryActionMsg(result.message)
+      setSellerDeliveredTxIds(prev => new Set(prev).add(txId))
+      // Refresh the transaction detail if open
+      if (selectedTx?.tx.id === txId) {
+        const refreshed = await getTransaction(txId)
+        if (refreshed.success && refreshed.data) {
+          setSelectedTxDetail(refreshed.data as DashTransactionDetail)
+        }
+      }
+    } else {
+      setDeliveryActionMsg(result.message)
+    }
+    setDeliveryActionTxId(null)
+  }
+
   return (
     <div
       className="mp-dashboard-surface min-h-screen"
@@ -2067,6 +2243,16 @@ export function DashboardClient({
 
         {/* Tab Navigation */}
         <TabBar active={activeTab} onChange={handleTabChange} counts={counts} />
+
+        {/* Delivery action feedback message */}
+        {deliveryActionMsg && (
+          <div
+            className="rounded-xl px-4 py-3 text-sm"
+            style={{ background: 'rgba(0,174,239,0.08)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.2)' }}
+          >
+            {deliveryActionMsg}
+          </div>
+        )}
 
         {/* Tab Content */}
         <div>
@@ -2182,7 +2368,9 @@ export function DashboardClient({
               ) : (
                 <div className="space-y-3">
                   {sales.map(tx => {
-                    const effectiveTx = disputedTxIds.has(tx.id) ? { ...tx, status: 'DISPUTED' } : tx
+                    const effectiveTx = deliveryConfirmedTxIds.has(tx.id)
+                      ? { ...tx, status: 'DELIVERY_CONFIRMED' as const }
+                      : disputedTxIds.has(tx.id) ? { ...tx, status: 'DISPUTED' as const } : tx
                     const payoutMissingForTx =
                       payoutMethods.length === 0 &&
                       ['IN_ESCROW', 'DELIVERY_CONFIRMED', 'RELEASED'].includes(effectiveTx.status)
@@ -2194,6 +2382,9 @@ export function DashboardClient({
                         onOpenDetails={(currentTx) => void handleOpenTransaction(currentTx, 'seller')}
                         onDispute={effectiveTx.status === 'IN_ESCROW' ? setDisputeTarget : undefined}
                         payoutMissing={payoutMissingForTx}
+                        onSellerDeliver={handleSellerMarkDelivered}
+                        deliveryBusyTxId={deliveryActionTxId}
+                        sellerDeliveredTxIds={sellerDeliveredTxIds}
                       />
                     )
                   })}
@@ -2215,7 +2406,9 @@ export function DashboardClient({
               ) : (
                 <div className="space-y-3">
                   {purchases.map(tx => {
-                    const effectiveTx = disputedTxIds.has(tx.id) ? { ...tx, status: 'DISPUTED' } : tx
+                    const effectiveTx = deliveryConfirmedTxIds.has(tx.id)
+                      ? { ...tx, status: 'DELIVERY_CONFIRMED' as const }
+                      : disputedTxIds.has(tx.id) ? { ...tx, status: 'DISPUTED' as const } : tx
                     return (
                       <TxCard
                         key={tx.id}
@@ -2223,6 +2416,9 @@ export function DashboardClient({
                         viewAs="buyer"
                         onOpenDetails={(currentTx) => void handleOpenTransaction(currentTx, 'buyer')}
                         onDispute={effectiveTx.status === 'IN_ESCROW' ? setDisputeTarget : undefined}
+                        onBuyerConfirm={handleBuyerConfirmDelivery}
+                        deliveryBusyTxId={deliveryActionTxId}
+                        sellerDeliveredTxIds={sellerDeliveredTxIds}
                       />
                     )
                   })}
