@@ -84,7 +84,7 @@ function SecurityBanner() {
         <p className="text-[11px] text-[#a0a0a0] leading-relaxed">
           Por tu seguridad, <span className="text-[#f2f2f2]">toda transacción debe realizarse exclusivamente aquí.</span>{' '}
           Compartir números de teléfono, direcciones físicas, correos electrónicos o enlaces externos resultará en el{' '}
-          <span className="text-[#ef4444] font-medium">BANEO PERMANENTE de la cuenta</span> y la pérdida de toda protección fiduciaria.
+          <span className="text-[#ef4444] font-medium">BANEO PERMANENTE de la cuenta</span> y la pérdida de toda protección de la operación.
         </p>
         <div className="flex items-center gap-1.5 mt-1">
           <Shield size={10} className="text-[#00aeef]" />
@@ -195,7 +195,7 @@ function QuoteCard({ quote, isOwn, onPay }: {
             <div className="rounded-lg flex items-center justify-center gap-2 py-3"
               style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)' }}>
               <CheckCircle2 size={14} className="text-[#4ade80]" />
-              <span className="text-sm font-medium text-[#4ade80]">Pago en Escrow · Fondos Retenidos</span>
+              <span className="text-sm font-medium text-[#4ade80]">Pago protegido · fondos por liberar</span>
             </div>
           ) : (
             <button
@@ -220,7 +220,7 @@ function QuoteCard({ quote, isOwn, onPay }: {
           {!paid && (
             <p className="text-[10px] text-[#b8b8b8] text-center mt-2">
               <Shield size={9} className="inline mr-1 text-[#00aeef]" />
-              Tu pago queda protegido mientras se confirma la entrega
+              Tu pago queda protegido mientras el equipo revisa la operación.
             </p>
           )}
         </div>
@@ -356,11 +356,11 @@ function ChatHeader({
         )}
       </div>
 
-      {/* Escrow chip */}
+      {/* Protected payment chip */}
       <div className="flex items-center gap-1 px-2 py-1 rounded-full flex-shrink-0"
         style={{ background: 'rgba(0,174,239,0.08)', border: '1px solid rgba(0,174,239,0.18)' }}>
         <Shield size={10} className="text-[#00aeef]" />
-        <span className="text-[9px] text-[#00aeef] font-medium tracking-wide">ESCROW</span>
+        <span className="text-[9px] text-[#00aeef] font-medium tracking-wide">PAGO PROTEGIDO</span>
       </div>
 
       <button onClick={onClose} className="text-[#5a5a5a] hover:text-[#f2f2f2] transition-colors ml-1">
@@ -493,6 +493,10 @@ export function TransactionChat({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [thread.id, threadId])
 
+  // Track unread acknowledgement without marking messages as read on mount.
+  // Do not use onScroll: programmatic auto-scroll can fire scroll events.
+  const markReadPendingRef = useRef(false)
+
   // Real mode: load messages from DB on mount and poll every 10 s.
   useEffect(() => {
     if (!threadId) return
@@ -505,7 +509,8 @@ export function TransactionChat({
     }
 
     void pull()
-    void markMessagesReadAction(threadId)
+    // DO NOT mark as read on mount - wait for explicit user intent
+    markReadPendingRef.current = true
     const timer = setInterval(pull, 10_000)
 
     return () => {
@@ -513,6 +518,14 @@ export function TransactionChat({
       clearInterval(timer)
     }
   }, [threadId])
+
+  // Mark messages as read only after explicit user intent.
+  async function ensureMarkedAsRead() {
+    if (markReadPendingRef.current && threadId) {
+      markReadPendingRef.current = false
+      await markMessagesReadAction(threadId)
+    }
+  }
 
   // Auto-scroll to bottom whenever messages change.
   useEffect(() => {
@@ -624,6 +637,9 @@ export function TransactionChat({
         ref={scrollRef}
         className="flex-1 overflow-y-auto px-4 py-3 space-y-4 scrollbar-none"
         style={{ scrollBehavior: 'smooth' }}
+        onPointerDown={() => { void ensureMarkedAsRead() }}
+        onWheel={() => { void ensureMarkedAsRead() }}
+        onTouchStart={() => { void ensureMarkedAsRead() }}
       >
         {localMessages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-2 py-8">

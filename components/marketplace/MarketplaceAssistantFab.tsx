@@ -86,8 +86,9 @@ export function MarketplaceAssistantFab({ children }: { children: ReactNode }) {
               <span
                 className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(0,174,239,0.18), rgba(255,193,7,0.14))',
-                  border: '1px solid rgba(255,255,255,0.18)',
+                  background: '#f8fafc',
+                  border: '1px solid rgba(0,174,239,0.4)',
+                  boxShadow: '0 0 15px rgba(255,255,255,0.1)',
                 }}
               >
                 <Image
@@ -95,7 +96,7 @@ export function MarketplaceAssistantFab({ children }: { children: ReactNode }) {
                   alt=""
                   width={40}
                   height={40}
-                  className="h-9 w-9 object-contain"
+                  className="h-8 w-8 object-contain brightness-90 contrast-125"
                   priority={false}
                 />
               </span>

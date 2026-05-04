@@ -534,7 +534,7 @@ function BuyFlow({ step, direction, listings, listingsLoading, listingsError, on
       {step === 0 && (
         <div className="p-6 space-y-4">
           <p className="text-sm text-[#a0a0a0]">
-            Encuentra equipos, instrumentos y consumibles verificados. Cada compra usa pago reportado y revision manual antes de avanzar.
+            Encuentra equipos, instrumentos y consumibles verificados. Cada compra utiliza nuestro flujo de pago protegido para mayor seguridad.
           </p>
           <CategoryGrid
             categories={PRODUCT_CATEGORIES as Array<{ id: ProductCategory; label: string; description: string; icon: string; accent: 'gold' | 'cyan'; listingCount?: number }>}
@@ -775,7 +775,7 @@ function FindTalentFlow({ step, direction, listings, listingsLoading, listingsEr
       {step === 0 && (
         <div className="p-6 space-y-4">
           <p className="text-sm text-[#a0a0a0]">
-            Contrata músicos de sesión, bandas para eventos, técnicos de audio y productores con pago reportado y revision manual.
+            Contrata músicos de sesión, bandas para eventos, técnicos de audio y productores de forma segura.
           </p>
           <CategoryGrid
             categories={SERVICE_CATEGORIES as Array<{ id: ServiceCategory; label: string; description: string; icon: string; accent: 'gold' | 'cyan'; listingCount?: number }>}

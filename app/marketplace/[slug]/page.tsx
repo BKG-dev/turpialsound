@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
-import { ArrowLeft, BadgeCheck, Clock, MapPin, Shield, Star } from 'lucide-react'
+import { BadgeCheck, Clock, MapPin, Shield, Star } from 'lucide-react'
 import { siteConfig } from '@/content/site'
 import { getListingBySlug } from '@/actions/marketplace/listings'
 import { getListingQuestions } from '@/actions/marketplace/questions'
@@ -9,7 +8,7 @@ import { getSession } from '@/lib/marketplace/auth'
 import { ListingQASection } from '@/components/marketplace/ListingQASection'
 import { ListingDetailActions } from '@/components/marketplace/ListingDetailActions'
 import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
-import { MarketplaceThemeToggle } from '@/components/marketplace/MarketplaceTheme'
+import { SmartMarketplaceAuthBar } from '@/components/marketplace/MarketplaceAuthBar'
 import type { Listing } from '@/types/marketplace'
 
 type ListingPageParams = { params: { slug: string } }
@@ -48,7 +47,7 @@ function buildListingDescription(listing: Listing) {
     listing.description,
     price ? `Precio publicado: ${price}.` : null,
     listing.subcategory ? `Categoria: ${listing.subcategory}.` : null,
-    'Operacion con pago reportado y revision manual en Turpial Sound.',
+    'Operacion con pago reportado y revision del equipo en Turpial Sound.',
   ].filter(Boolean)
 
   return truncateForMetadata(parts.join(' '))
@@ -214,26 +213,7 @@ export default async function ListingPage({ params }: ListingPageParams) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(listingJsonLd) }}
       />
       <div className="min-h-screen">
-        <div
-          className="sticky top-0 z-40 flex items-center gap-4 px-4 sm:px-6 py-3"
-          style={{
-            background: 'var(--mp-panel-solid)',
-            borderBottom: '1px solid var(--mp-border)',
-            backdropFilter: 'blur(16px)',
-          }}
-        >
-          <Link
-            href="/marketplace"
-            className="flex items-center gap-2 text-[#9a9a9a] hover:text-[#f2f2f2] transition-colors"
-          >
-            <ArrowLeft size={16} />
-            <span className="text-xs hidden sm:inline">Marketplace</span>
-          </Link>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-[#9a9a9a] truncate">{listing.title}</p>
-          </div>
-          <MarketplaceThemeToggle compact />
-        </div>
+        <SmartMarketplaceAuthBar />
 
         <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -412,7 +392,7 @@ export default async function ListingPage({ params }: ListingPageParams) {
                   </h2>
                 </div>
                 <p className="text-[11px] text-[#b8b8b8] leading-relaxed">
-                  El comprador reporta el pago y Turpial Sound realiza una revision manual antes
+                  El comprador reporta el pago y Turpial Sound realiza una revision del equipo antes
                   de avanzar la operacion. El pago al vendedor se gestiona despues de la validacion
                   y la confirmacion correspondiente.
                 </p>

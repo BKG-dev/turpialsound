@@ -16,25 +16,19 @@ import {
   ChevronDown,
   Lock,
   BadgeCheck,
-  UserCircle2,
-  LogOut,
-  ShieldAlert,
 } from 'lucide-react'
 import type { ModalFlow, ModalState, Listing, MarketplaceUser, MessageThread } from '@/types/marketplace'
 import { MarketplaceModals } from '@/components/marketplace/MarketplaceModals'
 import { MarketplaceCard } from '@/components/marketplace/MarketplaceCard'
 import { TransactionChat } from '@/components/marketplace/TransactionChat'
 import { useMarketplaceAssistantLauncher } from '@/components/marketplace/MarketplaceAssistantFab'
-import { MarketplaceAuthModal } from '@/components/marketplace/MarketplaceAuthModal'
 import { CheckoutModal } from '@/components/marketplace/CheckoutModal'
-import { MarketplaceThemeToggle } from '@/components/marketplace/MarketplaceTheme'
-import { getMpSession, logoutMpUser } from '@/actions/marketplace/auth'
+import { SmartMarketplaceAuthBar, useMarketplaceSession } from '@/components/marketplace/MarketplaceAuthBar'
+import { TurpialWaveShader } from '@/components/marketplace/TurpialWaveShader'
 import { getActiveListings, getOrCreateThread } from '@/actions/marketplace'
-import { getUnreadCount } from '@/actions/marketplace/chat'
 import { toggleFavorite, getMyFavoriteIds } from '@/actions/marketplace/favorites'
 import { trackMarketplaceClientEvent } from '@/lib/marketplace/analytics-client'
 import type { MpSessionPayload } from '@/lib/marketplace/auth'
-import Link from 'next/link'
 
 // ─── Build a MessageThread from a listing + optional session ──────────────────
 // Used when opening a real chat: we have the listing data but no pre-fetched thread.
@@ -101,7 +95,7 @@ const INTENT_CARDS = [
     id: 'sell' as ModalFlow,
     icon: Tag,
     label: 'Quiero Vender',
-    sublabel: 'Publica · Cotiza · Cobra con revision',
+    sublabel: 'Publica · Coordina · Cobra seguro',
     accent: 'gold' as const,
     accentColor: '#ffc107',
     accentBg: 'rgba(255,193,7,0.06)',
@@ -206,37 +200,19 @@ export default function MarketplacePageClient() {
   // Tab
   const [activeTab, setActiveTab] = useState('all')
 
-  // Auth
-  const [session, setSession] = useState<MpSessionPayload | null>(null)
-  const [authOpen, setAuthOpen] = useState(false)
-  const [authTab, setAuthTab] = useState<'login' | 'register'>('login')
-  const [unreadCount, setUnreadCount] = useState(0)
+  // Auth & Session from global context
+  const {
+    session,
+    openLogin,
+    openRegister,
+    updateUnreadCount,
+  } = useMarketplaceSession()
+
   // Flow requested while unauthenticated — open after login
   const [pendingFlow, setPendingFlow] = useState<ModalFlow | null>(null)
 
   // Favorites
   const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set())
-
-  useEffect(() => {
-    getMpSession().then(setSession)
-  }, [])
-
-  // Poll unread count every 30s when logged in
-  useEffect(() => {
-    if (!session) { setUnreadCount(0); return }
-    getUnreadCount().then(r => { if (r.success && r.data) setUnreadCount(r.data.count) })
-    const id = setInterval(() => {
-      getUnreadCount().then(r => { if (r.success && r.data) setUnreadCount(r.data.count) })
-    }, 30_000)
-    return () => clearInterval(id)
-  }, [session])
-
-  // Create a function to update unread count optimistically
-  const updateUnreadCountOptimistically = useCallback((delta: number) => {
-    if (session) {
-      setUnreadCount(prev => Math.max(0, prev + delta))
-    }
-  }, [session])
 
   // Load favorite IDs when session is active
   useEffect(() => {
@@ -248,40 +224,28 @@ export default function MarketplacePageClient() {
 
   const handleToggleFavorite = useCallback(async (id: string) => {
     trackMarketplaceClientEvent({ eventType: 'favorite_click', listingId: id })
-    if (!session) { openAuth('login'); return }
+    if (!session) { openLogin(); return }
     setFavoritedIds(prev => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id); else next.add(id)
       return next
     })
     await toggleFavorite(id)
-  }, [session])
+  }, [session, openLogin])
 
   const handleListingClick = useCallback((listing: Listing) => {
     trackMarketplaceClientEvent({ eventType: 'listing_click', listingId: listing.id })
     router.push(`/marketplace/${listing.slug}`)
   }, [router])
 
-  function openAuth(tab: 'login' | 'register' = 'login') {
-    setAuthTab(tab)
-    setAuthOpen(true)
-  }
-
-  function handleAuthSuccess(s: MpSessionPayload) {
-    setSession(s)
-    setAuthOpen(false)
-    // Open deferred flow after login
-    if (pendingFlow) {
+  // Watch for session changes to trigger pending flows
+  useEffect(() => {
+    if (session && pendingFlow) {
       setDirection(1)
       setModalState({ flow: pendingFlow, step: 'category' })
       setPendingFlow(null)
     }
-  }
-
-  async function handleLogout() {
-    await logoutMpUser()
-    setSession(null)
-  }
+  }, [session, pendingFlow])
 
   // Listings loaded from DB on mount (persisted across sessions)
   const [dbListings, setDbListings] = useState<Listing[]>([])
@@ -331,12 +295,12 @@ export default function MarketplacePageClient() {
     // Sell / offer-talent require a session — prompt auth first
     if ((flow === 'sell' || flow === 'offer-talent') && !session) {
       setPendingFlow(flow)
-      openAuth('register')
+      openRegister()
       return
     }
     setDirection(1)
     setModalState({ flow, step: 'category' })
-  }, [session])
+  }, [session, openRegister])
 
   const closeModal = useCallback(() => {
     setModalState({ flow: null, step: 'category' })
@@ -357,21 +321,21 @@ export default function MarketplacePageClient() {
           if (r.success && r.data) {
             setChatThreadId(r.data.threadId)
             // Reset unread count for this thread when opening it
-            updateUnreadCountOptimistically(-1) // Approximate reduction
+            updateUnreadCount(-1) // Approximate reduction
           }
         })
         .catch(() => {})
     }
-  }, [session, closeModal, updateUnreadCountOptimistically])
+  }, [session, closeModal, updateUnreadCount])
 
   const openCheckout = useCallback((listing: Listing) => {
     if (!session) {
       setPendingFlow(null)
-      openAuth('login')
+      openLogin()
       return
     }
     setCheckoutListing(listing)
-  }, [session])
+  }, [session, openLogin])
 
   const nextStep = useCallback((payload?: Partial<ModalState>) => {
     setDirection(1)
@@ -410,102 +374,8 @@ export default function MarketplacePageClient() {
 
   return (
     <>
-      {/* ── Auth Modal ─────────────────────────────────────────────────────── */}
-      <MarketplaceAuthModal
-        isOpen={authOpen}
-        defaultTab={authTab}
-        onClose={() => { setAuthOpen(false); setPendingFlow(null) }}
-        onSuccess={handleAuthSuccess}
-      />
-
       {/* ── Auth Bar ───────────────────────────────────────────────────────── */}
-      <div
-        className="flex w-full flex-wrap items-center justify-end gap-2 px-4 py-2 sm:gap-3 sm:px-6"
-        style={{ borderBottom: '1px solid var(--mp-border)', background: 'var(--mp-panel)' }}
-      >
-        <MarketplaceThemeToggle className="mr-auto" />
-        {session ? (
-          <>
-            {session.role === 'SUPER' && (
-              <a
-                href="/marketplace/admin"
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-80"
-                style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}
-              >
-                <ShieldAlert size={11} /> Admin
-              </a>
-            )}
-            {/* Unread messages badge */}
-            <Link
-              href="/marketplace/dashboard?tab=messages"
-              className="relative flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-90"
-              style={{
-                background: unreadCount > 0 ? 'rgba(0,174,239,0.1)' : 'transparent',
-                color: unreadCount > 0 ? '#00aeef' : 'var(--mp-text-muted)',
-                border: unreadCount > 0 ? '1px solid rgba(0,174,239,0.25)' : '1px solid transparent',
-                boxShadow: unreadCount > 0 ? '0 0 12px rgba(0,174,239,0.2)' : 'none',
-              }}
-            >
-              <MessageSquare size={12} />
-              {unreadCount > 0 && (
-                <span
-                  className="font-bold tabular-nums"
-                  style={{ textShadow: '0 0 8px rgba(0,174,239,0.8)' }}
-                >
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              )}
-            </Link>
-
-            <div className="flex items-center gap-2">
-              <UserCircle2 size={15} style={{ color: '#00aeef' }} />
-              <span className="max-w-[42vw] truncate text-xs sm:max-w-none" style={{ color: 'var(--mp-text-muted)' }}>
-                {session.displayName}
-                {session.role === 'SUPER' ? (
-                  <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded"
-                    style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)' }}>
-                    Admin
-                  </span>
-                ) : session.role === 'SOCIO' ? (
-                  <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded"
-                    style={{ background: 'rgba(168,85,247,0.15)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.25)' }}>
-                    Socio
-                  </span>
-                ) : session.isSeller ? (
-                  <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded"
-                    style={{ background: 'rgba(255,193,7,0.15)', color: '#ffc107', border: '1px solid rgba(255,193,7,0.25)' }}>
-                    Vendedor
-                  </span>
-                ) : null}
-              </span>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-colors hover:bg-white/5"
-              style={{ color: 'var(--mp-text-muted)' }}
-            >
-              <LogOut size={12} /> Salir
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={() => openAuth('login')}
-              className="text-xs px-3 py-1 rounded-lg transition-colors hover:bg-white/5"
-              style={{ color: 'var(--mp-text-muted)' }}
-            >
-              Iniciar sesión
-            </button>
-            <button
-              onClick={() => openAuth('register')}
-              className="text-xs px-3 py-1 rounded-lg font-medium transition-all"
-              style={{ background: 'rgba(0,174,239,0.12)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.25)' }}
-            >
-              Crear cuenta
-            </button>
-          </>
-        )}
-      </div>
+      <SmartMarketplaceAuthBar />
 
       {/* ── Marketplace Modals ─────────────────────────────────────────────── */}
       <MarketplaceModals
@@ -577,8 +447,7 @@ export default function MarketplacePageClient() {
                   session ? session.displayName.slice(0, 2).toUpperCase() : undefined
                 }
                 onMessageSent={() => {
-                  // Optimistically update unread count when sending a message
-                  updateUnreadCountOptimistically(0) // No change for own messages
+                  // Message sent successfully
                 }}
                 onClose={() => {
                   setShowChat(false)
@@ -591,27 +460,28 @@ export default function MarketplacePageClient() {
         )}
       </AnimatePresence>
 
-      <main className="min-h-screen">
-
-        {/* ═══════════════════════════════════════════════════════════════════
-            HERO SECTION
-        ═══════════════════════════════════════════════════════════════════ */}
-        <section
-          className="relative min-h-screen flex flex-col items-center justify-center px-4 pt-24 pb-16 overflow-hidden"
-          style={{
-            background: 'var(--mp-hero-bg)',
-          }}
-        >
+      <main className="min-h-screen overflow-x-hidden">
+        <div className="flex flex-col">
+          {/* ═══════════════════════════════════════════════════════════════════
+              HERO SECTION
+          ═══════════════════════════════════════════════════════════════════ */}
+          <section
+            className="relative flex min-h-[calc(100svh-2rem)] flex-col justify-between overflow-hidden px-4 pb-0 pt-3 lg:min-h-[calc(100svh-2rem)] lg:pt-4"
+            style={{
+              background: 'var(--mp-hero-bg)',
+            }}
+          >
+          <TurpialWaveShader />
           {/* Ambient orbs */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full opacity-[0.04]"
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+            <div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full opacity-[0.04]"
               style={{
                 background: 'radial-gradient(circle, #00aeef 0%, transparent 70%)',
                 filter: 'blur(60px)',
                 animation: 'bgDrift 18s ease-in-out infinite',
               }}
             />
-            <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full opacity-[0.03]"
+            <div className="absolute bottom-1/3 right-1/4 w-64 h-64 rounded-full opacity-[0.03]"
               style={{
                 background: 'radial-gradient(circle, #ffc107 0%, transparent 70%)',
                 filter: 'blur(60px)',
@@ -620,179 +490,166 @@ export default function MarketplacePageClient() {
             />
           </div>
 
-          {/* Eyebrow */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-center gap-3 mb-8"
-          >
-            <span className="accent-line-animated" />
-            <span className="text-[11px] uppercase tracking-[0.25em] text-[#9a9a9a]">
-              Turpial Market Beta
-            </span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold"
-              style={{ background: 'rgba(0,174,239,0.1)', border: '1px solid rgba(0,174,239,0.2)', color: '#00aeef' }}>
-              NUEVO
-            </span>
-          </motion.div>
+          <div className="relative z-10 flex w-full flex-col items-center flex-grow justify-center">
+            {/* Eyebrow */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="mb-4 flex items-center gap-3"
+            >
+              <span className="accent-line-animated" />
+              <span className="text-[10px] uppercase tracking-[0.25em] text-[#9a9a9a]">
+                Turpial Market Beta
+              </span>
+            </motion.div>
 
-          {/* Heading */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="text-center max-w-3xl mb-4"
-          >
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-tight">
-              <span className="text-gradient-animated">El Marketplace</span>
-              <br />
-              <span className="text-[#f2f2f2]">Musical de Venezuela</span>
-            </h1>
-          </motion.div>
+            {/* Heading */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="text-center max-w-4xl mb-4"
+            >
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-6xl font-semibold leading-[0.9] tracking-[-0.04em]">
+                <span className="text-gradient-animated">El Marketplace</span>
+                <br />
+                <span className="text-[#f2f2f2]">Musical de Venezuela</span>
+              </h1>
+            </motion.div>
 
-          {/* Subheading */}
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-center text-sm text-[#b8b8b8] max-w-xl mb-12"
-          >
-            Compra, vende y contrata talento musical con pagos reportados y revisados manualmente.
-            Instrumentos, equipos de audio, accesorios y servicios para la comunidad musical.
-          </motion.p>
+            {/* Subheading */}
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="mb-6 max-w-xl text-center text-sm leading-relaxed text-[#b8b8b8] sm:text-base"
+            >
+              Compra, vende y contrata talento musical de forma segura.
+            </motion.p>
 
-          {/* ── 4 Intent Cards ─────────────────────────────────────────────── */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-4xl"
-          >
-            {INTENT_CARDS.map((card, i) => {
-              const Icon = card.icon
-              return (
-                <motion.button
-                  key={card.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.35 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                  onClick={() => openFlow(card.id)}
-                  className="group relative flex flex-col items-center text-center gap-4 p-6 rounded-2xl transition-all duration-350 hover:-translate-y-2 active:scale-95 active:opacity-80"
-                  style={{
-                    background: card.accentBg,
-                    border: `1px solid ${card.accentBorder}`,
-                  }}
-                  onMouseEnter={e => {
-                    (e.currentTarget as HTMLElement).style.boxShadow = `0 20px 60px rgba(0,0,0,0.5), 0 0 40px ${card.accentGlow}`
-                    ;(e.currentTarget as HTMLElement).style.borderColor = card.accentColor + '40'
-                  }}
-                  onMouseLeave={e => {
-                    ;(e.currentTarget as HTMLElement).style.boxShadow = ''
-                    ;(e.currentTarget as HTMLElement).style.borderColor = card.accentBorder
-                  }}
-                >
-                  {/* Icon ring */}
-                  <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-350 group-hover:scale-110"
+            {/* ── 4 Intent Cards ─────────────────────────────────────────────── */}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="mb-6 grid w-full max-w-5xl grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
+            >
+              {INTENT_CARDS.map((card, i) => {
+                const Icon = card.icon
+                return (
+                  <motion.button
+                    key={card.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.35 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                    onClick={() => openFlow(card.id)}
+                    className="group relative flex flex-col items-center gap-2 rounded-2xl p-4 text-center transition-all duration-350 hover:-translate-y-2 active:scale-95 active:opacity-80 sm:gap-3 sm:p-5 lg:p-5"
                     style={{
-                      background: `linear-gradient(135deg, ${card.accentColor}20 0%, ${card.accentColor}08 100%)`,
-                      border: `1px solid ${card.accentColor}25`,
+                      background: card.accentBg,
+                      border: `1px solid ${card.accentBorder}`,
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLElement).style.boxShadow = `0 20px 60px rgba(0,0,0,0.5), 0 0 40px ${card.accentGlow}`
+                      ;(e.currentTarget as HTMLElement).style.borderColor = card.accentColor + '40'
+                    }}
+                    onMouseLeave={e => {
+                      ;(e.currentTarget as HTMLElement).style.boxShadow = ''
+                      ;(e.currentTarget as HTMLElement).style.borderColor = card.accentBorder
                     }}
                   >
-                    <Icon
-                      size={24}
-                      style={{ color: card.accentColor, filter: `drop-shadow(0 0 8px ${card.accentColor}40)` }}
-                    />
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-[#f2f2f2] mb-1 group-hover:text-white transition-colors">
-                      {card.label}
-                    </p>
-                    <p className="text-[11px] text-[#b8b8b8] leading-relaxed">{card.sublabel}</p>
-                  </div>
-
-                  {/* Arrow indicator */}
-                  <div
-                    className="absolute bottom-4 right-4 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-250"
-                    style={{ background: `${card.accentColor}15`, border: `1px solid ${card.accentColor}25` }}
-                  >
-                    <ChevronDown
-                      size={12}
-                      style={{ color: card.accentColor, transform: 'rotate(-90deg)' }}
-                    />
-                  </div>
-                </motion.button>
-              )
-            })}
-          </motion.div>
-
-          {/* Trust chips */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.6 }}
-            className="flex flex-wrap justify-center gap-3 mt-10"
-          >
-            {[
-              { icon: Lock, text: 'Pago protegido' },
-              { icon: Shield, text: 'Revision manual' },
-              { icon: BadgeCheck, text: 'Talentos verificados' },
-              { icon: CheckCircle2, text: 'Comision 5% al vendedor' },
-            ].map(chip => (
-              <div
-                key={chip.text}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-              >
-                <chip.icon size={12} className="text-[#00aeef]" />
-                <span className="text-xs text-[#b8b8b8]">{chip.text}</span>
-              </div>
-            ))}
-          </motion.div>
-
-          {/* Scroll hint */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1, duration: 0.6 }}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-          >
-            <span className="text-[10px] text-[var(--mp-text-faint)] uppercase tracking-widest">Explorar</span>
-            <motion.div
-              animate={{ y: [0, 6, 0] }}
-              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <ChevronDown size={16} className="text-[var(--mp-text-faint)]" />
-            </motion.div>
-          </motion.div>
-        </section>
-
-        {/* ═══════════════════════════════════════════════════════════════════
-            TRUST STATS BAR
-        ═══════════════════════════════════════════════════════════════════ */}
-        <section className="border-y" style={{ background: 'var(--mp-panel)', borderColor: 'var(--mp-border)', backdropFilter: 'blur(12px)' }}>
-          <div className="container-base py-6">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-              {TRUST_STATS.map(stat => {
-                const Icon = stat.icon
-                return (
-                  <div key={stat.label} className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: `${stat.color}12`, border: `1px solid ${stat.color}20` }}>
-                      <Icon size={16} style={{ color: stat.color }} />
+                    <div
+                      className="flex h-11 w-11 items-center justify-center rounded-2xl transition-all duration-350 group-hover:scale-110 sm:h-12 sm:w-12 lg:h-14 lg:w-14"
+                      style={{
+                        background: `linear-gradient(135deg, ${card.accentColor}20 0%, ${card.accentColor}08 100%)`,
+                        border: `1px solid ${card.accentColor}25`,
+                      }}
+                    >
+                      <Icon
+                        size={20}
+                        style={{ color: card.accentColor, filter: `drop-shadow(0 0 8px ${card.accentColor}40)` }}
+                      />
                     </div>
                     <div>
-                      <p className="text-base font-semibold text-[#f2f2f2]">{stat.value}</p>
-                      <p className="text-[10px] text-[#b8b8b8]">{stat.label}</p>
+                      <p className="mb-0.5 text-[12px] font-semibold text-[#f2f2f2] transition-colors group-hover:text-white sm:text-[13px]">
+                        {card.label}
+                      </p>
+                      <p className="text-[11px] leading-snug text-[#b8b8b8] sm:text-xs sm:leading-relaxed">{card.sublabel}</p>
                     </div>
-                  </div>
+                  </motion.button>
                 )
               })}
+            </motion.div>
+
+            {/* Bottom Row: Trust chips & Explore hint */}
+            <div className="flex w-full flex-col items-center gap-4">
+              {/* Trust chips */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.7, duration: 0.6 }}
+                className="flex flex-wrap justify-center gap-3"
+              >
+                {[
+                  { icon: Lock, text: 'Pagos protegidos' },
+                  { icon: BadgeCheck, text: 'Talentos verificados' },
+                  { icon: CheckCircle2, text: 'Comisión del 5% al vendedor' },
+                ].map(chip => (
+                  <div
+                    key={chip.text}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  >
+                    <chip.icon size={12} className="text-[#00aeef]" />
+                    <span className="text-xs text-[#b8b8b8]">{chip.text}</span>
+                  </div>
+                ))}
+              </motion.div>
+
+              {/* Scroll hint */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1, duration: 0.6 }}
+                className="flex flex-col items-center gap-1"
+              >
+                <span className="text-[10px] text-[var(--mp-text-faint)] uppercase tracking-widest">Explorar</span>
+                <motion.div
+                  animate={{ y: [0, 6, 0] }}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  <ChevronDown size={16} className="text-[var(--mp-text-faint)]" />
+                </motion.div>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* ═══════════════════════════════════════════════════════════════════
+              TRUST STATS BAR
+          ═══════════════════════════════════════════════════════════════════ */}
+          <div className="border-t w-full" style={{ background: 'var(--mp-panel)', borderColor: 'var(--mp-border)', backdropFilter: 'blur(12px)' }}>
+            <div className="container-base py-2">
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                {TRUST_STATS.map(stat => {
+                  const Icon = stat.icon
+                  return (
+                    <div key={stat.label} className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl"
+                        style={{ background: `${stat.color}12`, border: `1px solid ${stat.color}20` }}>
+                        <Icon size={16} style={{ color: stat.color }} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-[#f2f2f2] sm:text-base">{stat.value}</p>
+                        <p className="text-[10px] text-[#b8b8b8]">{stat.label}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </section>
+        </div>
 
         <section className="section-padding-sm border-b" style={{ borderColor: 'var(--mp-border)' }}>
           <div className="container-base">
@@ -807,14 +664,14 @@ export default function MarketplacePageClient() {
                 <p className="mt-4 text-sm leading-relaxed text-[#8a8a8a]">
                   Turpial Market conecta a musicos, productores, estudios y vendedores con listados de instrumentos,
                   interfaces, microfonos, monitores, accesorios y talento musical. El flujo actual usa pagos
-                  reportados por el comprador, revision manual del equipo y operacion protegida antes del cierre.
+                  reportados por el comprador, revision del equipo y operacion protegida antes del cierre.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 {[
                   {
                     title: 'Para compradores',
-                    text: 'Explora productos y servicios, conversa con el vendedor y reporta el pago para revision.',
+                    text: 'Explora productos y servicios, conversa con el vendedor y reporta el pago para revision del equipo.',
                   },
                   {
                     title: 'Para vendedores',
@@ -944,7 +801,7 @@ export default function MarketplacePageClient() {
               accentClass="text-gradient-gold"
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 gap-6 overflow-hidden md:grid-cols-4">
               {[
                 {
                   step: '01',
@@ -964,7 +821,7 @@ export default function MarketplacePageClient() {
                   step: '03',
                   icon: Lock,
                   title: 'Pago reportado',
-                  desc: 'El comprador reporta el pago y el equipo lo revisa manualmente antes de avanzar.',
+                  desc: 'El comprador reporta el pago y el equipo lo revisa antes de avanzar.',
                   color: '#00aeef',
                 },
                 {
