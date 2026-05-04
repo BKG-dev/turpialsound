@@ -1,8 +1,8 @@
 ﻿# Session Summary - Activa
 
-## Actualizacion 2026-05-02 - Integracion Marketplace + Reservas + Admin (pre-push)
+## Actualizacion 2026-05-02 - Integracion Marketplace + Reservas + Admin (post-push)
 
-- Rama actual: `integration/marketplace-pure-booking-selective-2026-04-30` (ahead 6 sobre `origin/Marketplace-Pure`).
+- Rama actual: `integration/marketplace-pure-booking-selective-2026-04-30`.
 - Commits locales de la integracion:
   1. `c9ae415` - lock Prisma 7.7.0 + contrato selectivo booking/marketplace.
   2. `cbc4bdc` - restore de `/reservas` wizard.
@@ -10,6 +10,9 @@
   4. `845ca6e` - ruta viewer de comprobante (`/payment-proofs/view`).
   5. `45556ed` - ruta ops de revision de pago (`/ops/payment-review`).
   6. `cdfdb1d` - bloque `/admin` + `lib/auth/*` + `middleware.ts`.
+  7. `d4952b8` - route de expiracion operativa `POST /api/bookings/expire`.
+- Push confirmado:
+  - remoto `origin/integration/marketplace-pure-booking-selective-2026-04-30` en `d4952b8c297b2e059a401811a889cd3c75bc81bf`.
 - Tags locales de checkpoint:
   - `cp/contract-prisma77-booking-selective-2026-04-30`
   - `cp/reservas-wizard-restored-2026-04-30`
@@ -53,13 +56,16 @@
 ### Pendientes explicitos (siguiente fase)
 
 1. Probar `Marcar incidencia` end-to-end.
-2. Evaluar integrar `app/api/bookings/expire/route.ts`.
-3. Resolver tasa BCV desactualizada (`asOf` viejo) en frente separado.
-4. Mantener `var/` fuera de commits.
+2. Configurar `BOOKINGS_EXPIRE_CRON_SECRET` en `.env.local` y entorno remoto.
+3. Probar manualmente `POST /api/bookings/expire` con secret correcto e incorrecto.
+4. Decidir automatizacion de expiracion: Vercel Cron vs cron externo/GitHub Actions/Make/cron-job.org.
+5. Resolver tasa BCV desactualizada (`asOf` viejo) en frente separado.
+6. Definir DB oficial de trabajo (vs DB de colaborador).
+7. Mantener `var/` fuera de commits.
 
 ### Recomendacion de salida
 
-- Hacer push controlado de la rama de integracion y tags de checkpoint, acompanado de handoff tecnico y lista de pendientes.
+- Push del bloque `expire route` ya completado. Mantener siguiente fase enfocada en validacion operativa y automatizacion controlada.
 
 > Fecha de ultima actualizacion: 2026-04-26
 > Tipo de nota: Checkpoint operativo de cierre
