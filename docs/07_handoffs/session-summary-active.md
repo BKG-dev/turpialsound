@@ -53,12 +53,22 @@
 - `/admin/bookings/[publicCode]/payment-proof`: OK.
 - `auth + middleware` de admin: OK, sin romper `/marketplace`, `/reservas` ni `/ops/payment-review`.
 
+### Validacion local endpoint expire (controlada)
+
+- Proteccion HTTP validada:
+  - `GET /api/bookings/expire` => `405 Method Not Allowed`.
+  - `POST /api/bookings/expire` con Bearer invalido => `401 Unauthorized`.
+- Prueba real controlada con Bearer correcto:
+  - preflight read-only: `baseCandidates=0`, `eligibleCandidates=0`, `skippedTagged=0`, `skippedActiveProof=0`.
+  - POST: `200` con `ok=true` y `result.scanned=0`, `result.expired=0`, `result.skipped=0`, `result.calendarSynced=0`, `result.calendarFailed=0`.
+- No hubo mutacion efectiva de reservas en esta validacion.
+
 ### Pendientes explicitos (siguiente fase)
 
 1. Probar `Marcar incidencia` end-to-end.
-2. Configurar `BOOKINGS_EXPIRE_CRON_SECRET` en `.env.local` y entorno remoto.
-3. Probar manualmente `POST /api/bookings/expire` con secret correcto e incorrecto.
-4. Decidir automatizacion de expiracion: Vercel Cron vs cron externo/GitHub Actions/Make/cron-job.org.
+2. Configurar `BOOKINGS_EXPIRE_CRON_SECRET` en entorno remoto (Preview/Production, cuando aplique).
+3. Decidir automatizacion de expiracion: Vercel Cron vs cron externo/GitHub Actions/Make/cron-job.org.
+4. Crear/usar datos controlados para probar caso `scanned > 0` / `expired > 0`.
 5. Resolver tasa BCV desactualizada (`asOf` viejo) en frente separado.
 6. Definir DB oficial de trabajo (vs DB de colaborador).
 7. Mantener `var/` fuera de commits.
