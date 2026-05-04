@@ -772,8 +772,20 @@ video {
 }
 
 .mp-route-shell {
-  margin-top: -4rem;
-  padding-top: 4rem;
+  overflow-y: visible;
+  overflow-x: clip;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+/* Marketplace owns its app shell: hide global SiteHeader only inside /marketplace routes. */
+body:has(.mp-route-shell) header.fixed {
+  display: none !important;
+}
+
+/* Remove global main top offset only for marketplace shell. */
+body:has(.mp-route-shell) main.pt-16 {
+  padding-top: 0 !important;
 }
 
 .mp-theme-root h1,
@@ -871,6 +883,78 @@ video {
 .mp-theme-toggle--compact {
   min-height: 2.15rem;
   padding-right: 0.65rem;
+}
+
+.mp-market-authbar {
+  isolation: isolate;
+}
+
+.mp-bcv-ticker {
+  position: relative;
+  width: min(100%, 76ch);
+  max-width: 76ch;
+  margin-inline: 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(0, 174, 239, 0.15);
+  border-radius: 9999px;
+  background: rgba(0, 174, 239, 0.05);
+  color: var(--mp-text-soft);
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.mp-bcv-ticker::before,
+.mp-bcv-ticker::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 1.25rem;
+  pointer-events: none;
+}
+
+.mp-bcv-ticker::before {
+  left: 0;
+  background: linear-gradient(90deg, var(--mp-panel-solid), transparent);
+}
+
+.mp-bcv-ticker::after {
+  right: 0;
+  background: linear-gradient(270deg, var(--mp-panel-solid), transparent);
+}
+
+.mp-bcv-ticker__track {
+  display: flex;
+  width: max-content;
+  animation: mpTickerScroll 45s linear infinite;
+  will-change: transform;
+}
+
+.mp-bcv-ticker__track span {
+  flex: 0 0 auto;
+  padding: 0.28rem 1.25rem;
+  display: inline-block;
+}
+
+@keyframes mpTickerScroll {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mp-bcv-ticker__track {
+    width: 100%;
+    animation: none;
+    transform: none;
+  }
+
+  .mp-bcv-ticker__track span[aria-hidden='true'] {
+    display: none;
+  }
 }
 
 .mp-theme-root .mp-themed-panel {
@@ -1209,4 +1293,147 @@ video {
   );
   background-size: 200% 100%;
   animation: shimmer 2s linear infinite;
+}
+
+/* Marketplace AuthBar compact control rhythm */
+.mp-market-authbar .mp-authbar-theme-toggle.mp-theme-toggle--compact {
+  min-height: 1.5rem !important;
+  height: 1.5rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 0.55rem 0 0.42rem !important;
+  gap: 0.38rem !important;
+  line-height: 1 !important;
+}
+
+.mp-market-authbar .mp-authbar-theme-toggle.mp-theme-toggle--compact .mp-theme-toggle__track {
+  position: relative !important;
+  flex: 0 0 auto !important;
+  width: 2.05rem !important;
+  height: 1.05rem !important;
+  margin: 0 !important;
+  transform: none !important;
+  overflow: hidden !important;
+}
+
+.mp-market-authbar .mp-authbar-theme-toggle.mp-theme-toggle--compact .mp-theme-toggle__icon {
+  position: absolute !important;
+  top: 50% !important;
+  display: inline-flex !important;
+  width: 0.78rem !important;
+  height: 0.78rem !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transform: translateY(-50%) !important;
+}
+
+.mp-market-authbar .mp-authbar-theme-toggle.mp-theme-toggle--compact .mp-theme-toggle__icon--light {
+  left: 0.18rem !important;
+}
+
+.mp-market-authbar .mp-authbar-theme-toggle.mp-theme-toggle--compact .mp-theme-toggle__icon--dark {
+  right: 0.18rem !important;
+}
+
+.mp-market-authbar .mp-authbar-theme-toggle.mp-theme-toggle--compact .mp-theme-toggle__thumb {
+  position: absolute !important;
+  top: 50% !important;
+  left: 0.08rem !important;
+  display: inline-flex !important;
+  width: 0.9rem !important;
+  height: 0.9rem !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transform: translateY(-50%) !important;
+}
+
+.mp-market-authbar .mp-authbar-theme-toggle.mp-theme-toggle--compact[data-marketplace-theme-current='dark'] .mp-theme-toggle__thumb {
+  left: calc(100% - 0.98rem) !important;
+}
+
+.mp-market-authbar .mp-authbar-theme-toggle.mp-theme-toggle--compact .mp-theme-toggle__label {
+  font-size: 10px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+/* Marketplace AuthBar contrast polish */
+.mp-market-authbar .mp-authbar-blue-pill {
+  background: rgba(0, 174, 239, 0.18) !important;
+  border-color: rgba(0, 174, 239, 0.48) !important;
+  color: #7ddcff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 0 12px rgba(0,174,239,0.12);
+}
+
+.mp-market-authbar .mp-authbar-blue-pill:hover {
+  background: rgba(0, 174, 239, 0.24) !important;
+  color: #b7efff !important;
+}
+
+.mp-market-authbar .mp-authbar-login-pill {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(255,255,255,0.22) !important;
+  color: #f8fafc !important;
+}
+
+.mp-market-authbar .mp-authbar-login-pill:hover {
+  background: rgba(255,255,255,0.11) !important;
+  border-color: rgba(255,255,255,0.32) !important;
+}
+
+.mp-market-authbar .mp-authbar-register-pill {
+  color: #ffffff !important;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.32);
+}
+
+.mp-theme-root[data-marketplace-theme='light'] .mp-market-authbar .mp-authbar-blue-pill {
+  background: rgba(0, 104, 224, 0.13) !important;
+  border-color: rgba(0, 80, 200, 0.38) !important;
+  color: #0050c8 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.42),
+    0 0 10px rgba(0,104,224,0.08);
+}
+
+.mp-theme-root[data-marketplace-theme='light'] .mp-market-authbar .mp-authbar-blue-pill:hover {
+  background: rgba(0, 104, 224, 0.18) !important;
+  color: #003f9f !important;
+}
+
+.mp-theme-root[data-marketplace-theme='light'] .mp-market-authbar .mp-authbar-login-pill {
+  background: rgba(15,23,42,0.08) !important;
+  border-color: rgba(15,23,42,0.22) !important;
+  color: #0f172a !important;
+}
+
+.mp-theme-root[data-marketplace-theme='light'] .mp-market-authbar .mp-authbar-register-pill {
+  color: #ffffff !important;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.28);
+}
+
+/* Marketplace AuthBar ticker width final clamp */
+.mp-market-authbar .mp-authbar-left-rail {
+  flex: 0 1 50% !important;
+  width: 50% !important;
+  max-width: 50% !important;
+}
+
+.mp-market-authbar .mp-authbar-ticker-slot {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+.mp-market-authbar .mp-bcv-ticker {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-inline: 0 auto !important;
+}
+
+.mp-market-authbar .mp-bcv-ticker__track span {
+  padding-inline: 0.85rem !important;
 }
