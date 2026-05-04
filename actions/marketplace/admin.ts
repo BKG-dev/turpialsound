@@ -459,7 +459,7 @@ export async function adminValidatePayment(
       return {
         success: true,
         data: undefined,
-        message: approved ? 'Pago aprobado → IN_ESCROW' : 'Pago rechazado → PAYMENT_FAILED',
+        message: approved ? 'Pago aprobado. Operacion protegida.' : 'Pago rechazado. Operacion no aprobada.',
       }
     } catch (err) {
       await db.$disconnect().catch(() => {})
@@ -481,8 +481,8 @@ export async function adminReleaseEscrow(txId: string, note: string): Promise<Ac
     try {
       const tx = await db.mpTransaction.findUnique({ where: { id: txId } })
       if (!tx) return { success: false, message: 'Transacción no encontrada' }
-      if (!['IN_ESCROW', 'DELIVERY_CONFIRMED', 'DISPUTED'].includes(tx.status)) {
-        return { success: false, message: `No se puede liberar en estado ${tx.status}` }
+      if (tx.status !== 'DELIVERY_CONFIRMED') {
+        return { success: false, message: 'Solo se puede liberar el pago cuando el comprador ha confirmado la recepcion.' }
       }
 
       await db.mpTransaction.update({
@@ -496,12 +496,12 @@ export async function adminReleaseEscrow(txId: string, note: string): Promise<Ac
           fromStatus: tx.status,
           toStatus: 'RELEASED',
           changedBy: session.userId,
-          reason: note || 'Liberación manual por admin',
+          reason: note || 'Liberacion por el equipo',
         },
       })
 
       await db.$disconnect()
-      return { success: true, data: undefined, message: 'Fondos liberados al vendedor' }
+      return { success: true, data: undefined, message: 'Pago del vendedor liberado' }
     } catch (err) {
       await db.$disconnect().catch(() => {})
       return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
