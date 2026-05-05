@@ -1,7 +1,8 @@
 import { mkdir, readFile, writeFile } from 'fs/promises'
 import path from 'path'
+import { getDb } from '@/lib/marketplace/db'
 
-export type RateMode = 'live' | 'stale' | 'fallback'
+export type RateMode = 'live' | 'stale' | 'fallback' | 'unavailable'
 
 export interface RateProviderAttempt {
   name: string
@@ -11,10 +12,12 @@ export interface RateProviderAttempt {
 }
 
 export interface ReferenceRateResult {
-  rate: number
+  rate: number | null // null cuando mode === 'unavailable' (sin tasa válida disponible)
   mode: RateMode
   source: string
   asOf: string
+  fechaValor: string
+  snapshotId: string | null
   providersTried: RateProviderAttempt[]
 }
 
@@ -30,7 +33,6 @@ interface PersistedRate {
   asOf: string
 }
 
-const DEFAULT_FALLBACK_RATE = 50
 const DEFAULT_DELTA_PCT = 0.005
 const DEFAULT_MAX_JUMP_PCT = 0.05
 const DEFAULT_STORAGE_FILE = path.join(process.cwd(), '.cache', 'reference-rate.json')
@@ -265,9 +267,67 @@ async function fetchProviderRate(
   }
 }
 
+async function persistReferenceSnapshot(rate: number, source: string, mode: RateMode, metadata?: Record<string, unknown>): Promise<{ id: string | null }> {
+  const db = await getDb()
+  if (!db) return { id: null }
+
+  try {
+    const created = await db.mpReferenceRateSnapshot.create({
+      data: {
+        rate: String(rate),
+        fechaValor: new Date(),
+        source,
+        mode,
+        metadata: metadata ?? {},
+      },
+    })
+
+    return { id: typeof created.id === 'string' ? created.id : null }
+  } catch {
+    return { id: null }
+  } finally {
+    await db.$disconnect().catch(() => {})
+  }
+}
+
+interface DbReferenceSnapshot {
+  rate: number
+  source: string
+  asOf: string
+  fechaValor: string
+  snapshotId: string | null
+}
+
+async function readLastValidReferenceSnapshot(): Promise<DbReferenceSnapshot | null> {
+  const db = await getDb()
+  if (!db) return null
+
+  try {
+    const row = await db.mpReferenceRateSnapshot.findFirst({
+      orderBy: [{ fechaValor: 'desc' }, { createdAt: 'desc' }],
+    })
+
+    if (!row) return null
+
+    const rate = Number(row.rate)
+    if (!Number.isFinite(rate) || rate <= 0) return null
+
+    return {
+      rate,
+      source: typeof row.source === 'string' ? row.source : 'db_snapshot',
+      asOf: row.createdAt instanceof Date ? row.createdAt.toISOString() : new Date().toISOString(),
+      fechaValor: row.fechaValor instanceof Date ? row.fechaValor.toISOString() : new Date().toISOString(),
+      snapshotId: typeof row.id === 'string' ? row.id : null,
+    }
+  } catch {
+    return null
+  } finally {
+    await db.$disconnect().catch(() => {})
+  }
+}
+
 export async function resolveReferenceRate(): Promise<ReferenceRateResult> {
   const providers = buildProvidersFromEnv()
-  const fallbackRate = parseEnvNumber(process.env.BCV_FALLBACK_RATE, DEFAULT_FALLBACK_RATE)
   const deltaPct = parseEnvNumber(process.env.RATE_DELTA_PCT, DEFAULT_DELTA_PCT)
   const maxJumpPct = parseEnvNumber(process.env.RATE_MAX_JUMP_PCT, DEFAULT_MAX_JUMP_PCT)
   const storageMode = normalizeStorageMode(process.env.RATE_STORAGE)
@@ -301,31 +361,86 @@ export async function resolveReferenceRate(): Promise<ReferenceRateResult> {
 
       await writePersistedRate(storageMode, storageFile, livePayload)
 
+      const dbSnapshot = await persistReferenceSnapshot(
+        livePayload.rate,
+        livePayload.source,
+        'live',
+        { providersTried: providersTried.map((p) => ({ name: p.name, status: p.status, rate: p.rate })) },
+      )
+
       return {
         rate: livePayload.rate,
         mode: 'live',
         source: livePayload.source,
         asOf: livePayload.asOf,
+        fechaValor: nowIso,
+        snapshotId: dbSnapshot.id,
         providersTried,
       }
     }
   }
 
+  // ── PATH 2: Stale — memory/file persisted rate (no usable consensus) ──
   if (lastValid) {
+    // Attempt to persist lastValid as DB snapshot so snapshotId matches the rate returned
+    const staleSnapshot = await persistReferenceSnapshot(
+      lastValid.rate,
+      lastValid.source,
+      'stale',
+      { providersTried: providersTried.map((p) => ({ name: p.name, status: p.status, rate: p.rate })) },
+    )
+
+    if (staleSnapshot.id) {
+      // Success: return lastValid with its own newly-created snapshotId (fully self-consistent)
+      return {
+        rate: lastValid.rate,
+        mode: 'stale',
+        source: lastValid.source,
+        asOf: lastValid.asOf,
+        fechaValor: nowIso,
+        snapshotId: staleSnapshot.id,
+        providersTried,
+      }
+    }
+
+    // DB persist failed: return lastValid with snapshotId: null (no cross-contamination)
     return {
       rate: lastValid.rate,
       mode: 'stale',
       source: lastValid.source,
       asOf: lastValid.asOf,
+      fechaValor: lastValid.asOf,
+      snapshotId: null,
       providersTried,
     }
   }
 
+  // ── PATH 3: DB last valid snapshot (no memory/file persisted rate) ──
+  const dbSnapshot = await readLastValidReferenceSnapshot()
+
+  if (dbSnapshot) {
+    // Return fully self-consistent: rate, source, asOf, fechaValor, snapshotId from same DB row
+    return {
+      rate: dbSnapshot.rate,
+      mode: 'stale',
+      source: dbSnapshot.source,
+      asOf: dbSnapshot.asOf,
+      fechaValor: dbSnapshot.fechaValor,
+      snapshotId: dbSnapshot.snapshotId,
+      providersTried,
+    }
+  }
+
+  // ── PATH 4: Unavailable — no rate from any source, no DB snapshot ──
+  // Never return hardcoded rate=1 or invented value.
+  // Fase 2 will use this to block transactions with invalid rates.
   return {
-    rate: fallbackRate,
-    mode: 'fallback',
-    source: 'configured_fallback',
+    rate: null,
+    mode: 'unavailable',
+    source: 'none',
     asOf: nowIso,
+    fechaValor: nowIso,
+    snapshotId: null,
     providersTried,
   }
 }
