@@ -1,10 +1,29 @@
 import type { MetadataRoute } from 'next'
 import { siteConfig } from '@/content/site'
+import { getDb } from '@/lib/marketplace/db'
 
-export default function sitemap(): MetadataRoute.Sitemap {
+async function getPublicListingEntries() {
+  const db = await getDb()
+  if (!db) return []
+
+  try {
+    const listings = await db.mpListing.findMany({
+      where: { status: 'ACTIVE' },
+      select: { slug: true, updatedAt: true },
+      orderBy: { updatedAt: 'desc' },
+    })
+    await db.$disconnect()
+    return listings
+  } catch {
+    await db.$disconnect().catch(() => {})
+    return []
+  }
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteConfig.url
 
-  const routes = [
+  const staticRoutes = [
     { url: base, priority: 1.0, changeFrequency: 'weekly' as const },
     { url: `${base}/marketplace`, priority: 0.9, changeFrequency: 'daily' as const },
     { url: `${base}/salas-de-ensayo`, priority: 0.9, changeFrequency: 'monthly' as const },
@@ -22,10 +41,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/contacto`, priority: 0.8, changeFrequency: 'monthly' as const },
   ]
 
-  return routes.map((route) => ({
+  const listingEntries = await getPublicListingEntries()
+
+  const listingRoutes = listingEntries.map((entry: { slug: string; updatedAt: Date | string }) => ({
+    url: `${base}/marketplace/${entry.slug}`,
+    lastModified: entry.updatedAt instanceof Date ? entry.updatedAt : new Date(entry.updatedAt),
+    changeFrequency: 'weekly' as const,
+    priority: 0.65,
+  }))
+
+  const staticSitemapEntries = staticRoutes.map((route) => ({
     url: route.url,
     lastModified: new Date(),
     changeFrequency: route.changeFrequency,
     priority: route.priority,
   }))
+
+  return [...staticSitemapEntries, ...listingRoutes]
 }
