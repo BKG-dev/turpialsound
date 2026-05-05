@@ -286,6 +286,28 @@ export default async function ListingPage({ params }: ListingPageParams) {
                 {listing.title}
               </h1>
 
+              {listing.status !== 'active' && (
+                <div
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                  style={{
+                    background: listing.status === 'sold' ? 'rgba(239,68,68,0.1)' : 'rgba(251,191,36,0.1)',
+                    border: listing.status === 'sold' ? '1px solid rgba(239,68,68,0.25)' : '1px solid rgba(251,191,36,0.25)',
+                    color: listing.status === 'sold' ? '#ef4444' : '#fbbf24',
+                  }}
+                >
+                  {listing.status === 'sold' ? 'Vendido' : 'No disponible'}
+                </div>
+              )}
+
+              {listing.activeTransactionStatus && listing.status === 'active' && (
+                <div
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
+                  style={{ background: 'rgba(0,174,239,0.1)', border: '1px solid rgba(0,174,239,0.2)', color: '#00aeef' }}
+                >
+                  <Clock size={11} /> En proceso
+                </div>
+              )}
+
               <div className="flex items-end gap-2">
                 {listing.type === 'service' && (
                   <span className="text-sm text-[#b8b8b8] mb-0.5">Desde</span>

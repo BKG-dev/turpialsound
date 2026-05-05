@@ -24,6 +24,7 @@ import {
   HelpCircle,
   ChevronDown,
   Send,
+  MapPin,
 } from 'lucide-react'
 import type {
   ModalState,
@@ -747,8 +748,22 @@ function SellFlow({
               style={{ background: 'rgba(255,193,7,0.05)', border: '1px solid rgba(255,193,7,0.12)' }}>
               <AlertCircle size={13} className="text-[#ffc107] mt-0.5 flex-shrink-0" />
               <p className="text-[11px] text-[#a0a0a0]">
-                Turpial Market cobra el <span className="text-[#ffc107]">5% de comisión sobre el precio de venta</span>, descontado de tu liquidación al completarse la transacción.
+                Turpial Market cobra el <span className="text-[#ffc107]">5% de comision sobre el precio de venta</span>, descontado de tu liquidacion al completarse la transaccion.
               </p>
+            </div>
+
+            {/* Location & delivery guidance */}
+            <div className="rounded-xl p-3 flex items-start gap-2"
+              style={{ background: 'rgba(0,174,239,0.04)', border: '1px solid rgba(0,174,239,0.12)' }}>
+              <MapPin size={13} className="text-[#00aeef] mt-0.5 flex-shrink-0" />
+              <div className="space-y-1.5">
+                <p className="text-[11px] text-[#b8b8b8]">
+                  <span className="text-[#d8d8d8] font-medium">Ubicacion y entrega:</span> Coordina con el comprador en el chat la ciudad, zona de entrega o retiro, y metodo de envio antes de cerrar la venta.
+                </p>
+                <p className="text-[11px] text-[#b8b8b8]">
+                  <span className="text-[#d8d8d8] font-medium">Forma de cobro:</span> Agrega tus datos de cobro desde tu panel de vendedor para recibir el pago cuando la operacion quede lista.
+                </p>
+              </div>
             </div>
           </div>
         </div>
