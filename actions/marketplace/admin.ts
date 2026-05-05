@@ -3,6 +3,7 @@
 import { getDb } from '@/lib/marketplace/db'
 import { getSession } from '@/lib/marketplace/auth'
 import type { ActionResult } from '@/lib/validations/marketplace'
+import { sendSystemMessage } from '@/actions/marketplace/chat'
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -502,6 +503,112 @@ export async function adminReleaseEscrow(txId: string, note: string): Promise<Ac
 
       await db.$disconnect()
       return { success: true, data: undefined, message: 'Pago del vendedor liberado' }
+    } catch (err) {
+      await db.$disconnect().catch(() => {})
+      return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
+    }
+  } catch (err) {
+    return { success: false, message: err instanceof Error ? err.message : 'Sin permiso' }
+  }
+}
+
+// ─── ADMIN MARK SELLER PAID (REGISTRAR PAGO ENVIADO AL VENDEDOR) ─────────────
+
+export async function adminMarkSellerPaid(
+  txId: string,
+  externalPayoutId?: string,
+): Promise<ActionResult> {
+  try {
+    const session = await requireSuper()
+    const db = await getDb()
+    if (!db) return { success: false, message: 'Base de datos no disponible' }
+
+    try {
+      const tx = await db.mpTransaction.findUnique({ where: { id: txId } })
+      if (!tx) return { success: false, message: 'Transacción no encontrada' }
+      if (tx.status !== 'RELEASED') {
+        return {
+          success: false,
+          message: 'Solo se puede marcar como pagado al vendedor cuando la transacción está en estado RELEASED.',
+        }
+      }
+
+      // Guard: prevent double payout for the same transaction
+      const existingPayout = await db.mpPayout.findFirst({
+        where: {
+          status: 'COMPLETED',
+          transactionIds: { has: txId },
+        },
+      })
+      if (existingPayout) {
+        return {
+          success: false,
+          message: 'Ya existe un pago registrado para esta transacción.',
+        }
+      }
+
+      // Guard: block payout if there is an active dispute
+      const activeDispute = await db.mpDispute.findFirst({
+        where: {
+          transactionId: txId,
+          status: { in: ['OPEN', 'UNDER_REVIEW'] },
+        },
+      })
+      if (activeDispute) {
+        return {
+          success: false,
+          message: 'No se puede pagar al vendedor: la transacción tiene una disputa activa.',
+        }
+      }
+
+      // Fetch seller's default active payout method
+      const payoutMethod = await db.mpPayoutMethod.findFirst({
+        where: { userId: tx.sellerId, isActive: true, isDefault: true },
+      })
+      if (!payoutMethod) {
+        return {
+          success: false,
+          message: 'El vendedor no tiene un método de cobro activo configurado. No se puede registrar el pago.',
+        }
+      }
+
+      // Create MpPayout record — stays as source of truth; transaction remains RELEASED
+      await db.mpPayout.create({
+        data: {
+          sellerId: tx.sellerId,
+          amount: tx.sellerNetAmount,
+          currency: tx.currency,
+          method: payoutMethod.methodType,
+          status: 'COMPLETED',
+          transactionIds: [txId],
+          externalPayoutId: externalPayoutId ?? null,
+          completedAt: new Date(),
+        },
+      })
+
+      // Record audit entry in status history (no status change — informational)
+      await db.mpTransactionStatusHistory.create({
+        data: {
+          transactionId: txId,
+          fromStatus: tx.status,
+          toStatus: tx.status,
+          changedBy: session.userId,
+          reason: `Pago al vendedor registrado por admin${externalPayoutId ? ` (ref: ${externalPayoutId})` : ''}`,
+        },
+      })
+
+      // Fire-and-forget: notify seller that admin has marked their payout as sent
+      void sendSystemMessage({
+        buyerId: tx.buyerId,
+        sellerId: tx.sellerId,
+        listingId: tx.listingId,
+        senderId: session.userId,
+        receiverId: tx.sellerId,
+        content: `💰 El equipo de Turpial Market ha registrado el envío de tu pago${externalPayoutId ? ` (referencia: ${externalPayoutId})` : ''}. Si tienes dudas, responde a este chat.`,
+      })
+
+      await db.$disconnect()
+      return { success: true, data: undefined, message: 'Pago al vendedor registrado exitosamente.' }
     } catch (err) {
       await db.$disconnect().catch(() => {})
       return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }

@@ -7,11 +7,13 @@ import {
   calculateSellerPayout,
   PLATFORM_FEE,
   roundMoney,
-  USD_REFERENCE_RATE,
   type BuyerPaymentMethod,
   type SellerPayoutMethod,
 } from '@/lib/marketplace/finance'
+import { resolveBinanceRate, type BinanceRateResult } from '@/lib/marketplace/binance-rate'
+import { resolveReferenceRate } from '@/lib/marketplace/reference-rate'
 import type { ActionResult } from '@/lib/validations/marketplace'
+import { sendSystemMessage } from '@/actions/marketplace/chat'
 
 type CheckoutPaymentMethod =
   | 'PAGO_MOVIL'
@@ -33,13 +35,14 @@ function mapSellerPayoutMethod(methodType: string | null | undefined): SellerPay
   return 'NONE'
 }
 
-function calcFee(amount: number, paymentMethod: TxPaymentMethod, sellerPayoutMethod: SellerPayoutMethod) {
+function calcFee(amount: number, paymentMethod: TxPaymentMethod, sellerPayoutMethod: SellerPayoutMethod, bcvRate: number, binanceRate: number) {
+  const buyerMethod = mapBuyerPaymentMethod(paymentMethod)
   const payout = calculateSellerPayout({
     amountUSD: amount,
-    buyerPaymentMethod: mapBuyerPaymentMethod(paymentMethod),
+    buyerPaymentMethod: buyerMethod,
     sellerPayoutMethod,
-    bcvRate: USD_REFERENCE_RATE,
-    binanceRate: USD_REFERENCE_RATE,
+    bcvRate,
+    binanceRate,
   })
   const bankPercent = payout.bankFeeBS > 0 ? BANK_FEE * 100 : 0
 
@@ -47,6 +50,10 @@ function calcFee(amount: number, paymentMethod: TxPaymentMethod, sellerPayoutMet
     platformFeePercent: PLATFORM_FEE * 100 + bankPercent,
     platformFeeAmount: Math.max(0, roundMoney(amount - payout.netUSD)),
     sellerNetAmount: payout.netUSD,
+    appliedRateType: payout.appliedRateType,
+    appliedRate: payout.appliedRateType === 'BINANCE' ? binanceRate : payout.appliedRateType === 'BCV' ? bcvRate : null,
+    sellerNetBS: payout.netBS,
+    breakdown: payout.breakdown,
   }
 }
 
@@ -95,7 +102,7 @@ export async function initiatePurchase(
     if (listing.status !== 'ACTIVE') return { success: false, message: 'Este listing no esta disponible' }
     if (listing.sellerId === session.userId) return { success: false, message: 'No puedes comprar tu propio listing' }
 
-    // Check for active transactions
+    // Guard: prevent double sale — RELEASED included because listing is unique (one sale = one listing)
     const activeTx = await db.mpTransaction.findFirst({
       where: {
         listingId,
@@ -107,6 +114,7 @@ export async function initiatePurchase(
             'IN_ESCROW',
             'DELIVERY_CONFIRMED',
             'DISPUTED',
+            'RELEASED',
           ],
         },
       },
@@ -116,34 +124,94 @@ export async function initiatePurchase(
       return { success: false, message: 'Este articulo ya tiene una operacion en curso y no esta disponible para la compra' }
     }
 
+    const sellerPayoutMethod = mapSellerPayoutMethod(listing.seller.payoutMethods[0]?.methodType)
+    const buyerMethod = mapBuyerPaymentMethod(mappedPaymentMethod)
+    const isBinanceBuyer = buyerMethod === 'BINANCE'
+    const isBinanceSeller = sellerPayoutMethod === 'BINANCE'
+    const isUSDTDirect = isBinanceBuyer && isBinanceSeller
+
     const amount = Number(listing.price)
-    const fee = calcFee(amount, mappedPaymentMethod, mapSellerPayoutMethod(listing.seller.payoutMethods[0]?.methodType))
     const idempotencyKey = `${session.userId}_${listingId}_${Date.now()}`
 
-    const tx = await db.mpTransaction.create({
-      data: {
-        idempotencyKey,
-        buyerId: session.userId,
-        sellerId: listing.sellerId,
-        listingId,
-        paymentMethod: mappedPaymentMethod,
-        status: 'PENDING_PAYMENT',
-        amount: String(amount),
-        currency: listing.currency,
-        platformFeePercent: String(fee.platformFeePercent),
-        platformFeeAmount: String(fee.platformFeeAmount),
-        sellerNetAmount: String(fee.sellerNetAmount),
-      },
-      select: { id: true },
-    })
+    // ─── Rate resolution & frozen-column persistence ───
+    // Three mutually exclusive paths; each sets frozenRate columns or blocks with a clear error.
+    // No silent fallback to USD_REFERENCE_RATE=1.
+    let bcvRate = 0
+    let binanceRate = 0
+    let frozenRate: string | null = null
+    let frozenRateSource: string | null = null
+    let frozenRateFechaValor: Date | null = null
+    let rateSnapshotId: string | null = null
+    let adminNotes = ''
 
-    await db.mpTransactionStatusHistory.create({
-      data: {
-        transactionId: tx.id,
-        toStatus: 'PENDING_PAYMENT',
-        changedBy: session.userId,
-        reason: 'Compra iniciada por el comprador. Esperando comprobante de pago.',
-      },
+    if (isUSDTDirect) {
+      // USDT direct: buyer pays USDT, seller receives USDT — no conversion needed
+      adminNotes = 'USDT directo — sin conversion de tasa'
+    } else if (!isBinanceBuyer) {
+      // BCV route: buyer pays via PagoMovil / Bank / Zelle → seller receives BS
+      const bcvResult = await resolveReferenceRate()
+      if (bcvResult.rate === null || bcvResult.rate <= 0) {
+        await db.$disconnect()
+        return { success: false, message: 'No pudimos obtener la tasa de pago (BCV). Intenta nuevamente en unos minutos o contacta soporte.' }
+      }
+      bcvRate = bcvResult.rate
+      frozenRate = String(bcvResult.rate)
+      frozenRateSource = 'BCV'
+      frozenRateFechaValor = bcvResult.fechaValor ? new Date(bcvResult.fechaValor) : null
+      rateSnapshotId = bcvResult.snapshotId
+      adminNotes = `Tasa BCV: ${bcvResult.rate} Bs/USD | fuente: ${bcvResult.source} | modo: ${bcvResult.mode}`
+    } else {
+      // Binance route: buyer pays via Binance → seller receives BS
+      let binanceResult: BinanceRateResult
+      try {
+        binanceResult = await resolveBinanceRate()
+      } catch (binanceErr) {
+        await db.$disconnect()
+        return { success: false, message: 'No pudimos obtener la tasa de pago (Binance). Intenta nuevamente en unos minutos o contacta soporte.' }
+      }
+      binanceRate = binanceResult.rate
+      frozenRate = String(binanceResult.rate)
+      frozenRateSource = 'BINANCE'
+      frozenRateFechaValor = binanceResult.fechaValor ? new Date(binanceResult.fechaValor) : null
+      rateSnapshotId = binanceResult.snapshotId
+      adminNotes = `Tasa Binance: ${binanceResult.rate} Bs/USD | snapshotId: ${binanceResult.snapshotId ?? 'N/D'} | modo: ${binanceResult.mode}`
+    }
+
+    const fee = calcFee(amount, mappedPaymentMethod, sellerPayoutMethod, bcvRate, binanceRate)
+
+    const tx = await db.$transaction(async (prisma: any) => {
+      const record = await prisma.mpTransaction.create({
+        data: {
+          idempotencyKey,
+          buyerId: session.userId,
+          sellerId: listing.sellerId,
+          listingId,
+          paymentMethod: mappedPaymentMethod,
+          status: 'PENDING_PAYMENT',
+          amount: String(amount),
+          currency: listing.currency,
+          platformFeePercent: String(fee.platformFeePercent),
+          platformFeeAmount: String(fee.platformFeeAmount),
+          sellerNetAmount: String(fee.sellerNetAmount),
+          frozenRate,
+          frozenRateSource,
+          frozenRateFechaValor,
+          rateSnapshotId,
+          adminNotes,
+        },
+        select: { id: true },
+      })
+
+      await prisma.mpTransactionStatusHistory.create({
+        data: {
+          transactionId: record.id,
+          toStatus: 'PENDING_PAYMENT',
+          changedBy: session.userId,
+          reason: 'Compra iniciada por el comprador. Esperando comprobante de pago.',
+        },
+      })
+
+      return record
     })
 
     await db.$disconnect()
@@ -287,7 +355,7 @@ export async function validatePayment(
   }
 }
 
-export async function confirmDelivery(transactionId: string): Promise<ActionResult> {
+export async function sellerDeliver(transactionId: string): Promise<ActionResult> {
   const session = await getSession()
   if (!session) return { success: false, message: 'No autenticado' }
 
@@ -297,9 +365,69 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
   try {
     const tx = await db.mpTransaction.findUnique({ where: { id: transactionId } })
     if (!tx) return { success: false, message: 'Transaccion no encontrada' }
-    if (tx.buyerId !== session.userId) return { success: false, message: 'Solo el comprador puede confirmar la entrega' }
+    if (tx.sellerId !== session.userId) return { success: false, message: 'Solo el vendedor puede registrar la entrega' }
     if (tx.status !== 'IN_ESCROW') {
-      return { success: false, message: `No se puede confirmar desde el estado: ${tx.status}` }
+      return { success: false, message: `No se puede registrar entrega desde el estado: ${tx.status}` }
+    }
+
+    const now = new Date()
+    await db.mpTransaction.update({
+      where: { id: transactionId },
+      data: { status: 'DELIVERY_CONFIRMED' },
+    })
+
+    await db.mpTransactionStatusHistory.create({
+      data: {
+        transactionId,
+        fromStatus: 'IN_ESCROW',
+        toStatus: 'DELIVERY_CONFIRMED',
+        changedBy: session.userId,
+        reason: 'Vendedor registro la entrega del producto/servicio',
+      },
+    })
+
+    // Fire-and-forget: notify buyer that seller has delivered
+    void sendSystemMessage({
+      buyerId: tx.buyerId,
+      sellerId: tx.sellerId,
+      listingId: tx.listingId,
+      senderId: tx.sellerId,
+      receiverId: tx.buyerId,
+      content: '📦 El vendedor ha registrado la entrega del producto/servicio. Por favor revisa y confirma la recepción para liberar los fondos.',
+    })
+
+    await db.$disconnect()
+    return { success: true, data: undefined, message: 'Entrega registrada. El comprador debe confirmar la recepcion.' }
+  } catch (err) {
+    await db.$disconnect().catch(() => {})
+    return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
+  }
+}
+
+export async function confirmDelivery(transactionId: string): Promise<ActionResult> {
+  const session = await getSession()
+  if (!session) return { success: false, message: 'No autenticado' }
+
+  const db = await getDb()
+  if (!db) return { success: false, message: 'Base de datos no disponible' }
+
+  try {
+    const tx = await db.mpTransaction.findUnique({
+      where: { id: transactionId },
+      include: {
+        disputes: { where: { status: { in: ['OPEN', 'UNDER_REVIEW'] } }, select: { id: true } },
+      },
+    })
+    if (!tx) return { success: false, message: 'Transaccion no encontrada' }
+    if (tx.buyerId !== session.userId) return { success: false, message: 'Solo el comprador puede confirmar la entrega' }
+    if (tx.status !== 'DELIVERY_CONFIRMED') {
+      return { success: false, message: `No se puede confirmar desde el estado: ${tx.status}. Espera a que el vendedor registre la entrega.` }
+    }
+
+    // Dispute guard: if there is an active dispute, block release
+    if (tx.disputes && tx.disputes.length > 0) {
+      await db.$disconnect()
+      return { success: false, message: 'Existe una disputa activa. No se puede confirmar la entrega mientras la disputa este abierta.' }
     }
 
     const now = new Date()
@@ -311,24 +439,25 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
     await db.mpTransactionStatusHistory.create({
       data: {
         transactionId,
-        fromStatus: 'IN_ESCROW',
-        toStatus: 'DELIVERY_CONFIRMED',
-        changedBy: session.userId,
-        reason: 'Comprador confirmo la entrega',
-      },
-    })
-    await db.mpTransactionStatusHistory.create({
-      data: {
-        transactionId,
         fromStatus: 'DELIVERY_CONFIRMED',
         toStatus: 'RELEASED',
-        changedBy: 'SYSTEM',
-        reason: 'Fondos liberados automaticamente al confirmar entrega',
+        changedBy: session.userId,
+        reason: 'Comprador confirmo la recepcion. Fondos liberados al vendedor.',
       },
     })
 
+    // Fire-and-forget: notify seller that buyer confirmed and funds are released
+    void sendSystemMessage({
+      buyerId: tx.buyerId,
+      sellerId: tx.sellerId,
+      listingId: tx.listingId,
+      senderId: tx.buyerId,
+      receiverId: tx.sellerId,
+      content: '✅ El comprador ha confirmado la recepción. Los fondos están listos para pago. El equipo procesará el pago a tu método de cobro en breve.',
+    })
+
     await db.$disconnect()
-    return { success: true, data: undefined, message: 'Entrega confirmada. Los fondos fueron liberados al vendedor.' }
+    return { success: true, data: undefined, message: 'Recepcion confirmada. Los fondos estan listos para pago al vendedor.' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
@@ -338,7 +467,7 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
 export async function releaseEscrow(transactionId: string): Promise<ActionResult> {
   const session = await getSession()
   if (!session || session.role !== 'SUPER') {
-    return { success: false, message: 'Solo administradores pueden liberar el escrow manualmente' }
+    return { success: false, message: 'Solo administradores pueden liberar el pago manualmente' }
   }
 
   const db = await getDb()
@@ -347,8 +476,9 @@ export async function releaseEscrow(transactionId: string): Promise<ActionResult
   try {
     const tx = await db.mpTransaction.findUnique({ where: { id: transactionId } })
     if (!tx) return { success: false, message: 'Transaccion no encontrada' }
-    if (tx.status !== 'IN_ESCROW' && tx.status !== 'DELIVERY_CONFIRMED') {
-      return { success: false, message: `No se puede liberar desde el estado: ${tx.status}` }
+    // DELIVERY_CONFIRMED only: la operacion aun espera conformidad del comprador si esta en IN_ESCROW
+    if (tx.status !== 'DELIVERY_CONFIRMED') {
+      return { success: false, message: `No se puede liberar desde el estado: ${tx.status}. ${tx.status === 'IN_ESCROW' ? 'La operacion aun espera conformidad del comprador.' : 'Solo se puede liberar cuando el comprador ha confirmado la recepcion.'}` }
     }
 
     const now = new Date()
@@ -363,12 +493,12 @@ export async function releaseEscrow(transactionId: string): Promise<ActionResult
         fromStatus: tx.status,
         toStatus: 'RELEASED',
         changedBy: session.userId,
-        reason: 'Escrow liberado manualmente (T+7 o admin)',
+        reason: 'Pago liberado manualmente por administrador',
       },
     })
 
     await db.$disconnect()
-    return { success: true, data: undefined, message: 'Escrow liberado. Fondos transferidos al vendedor.' }
+    return { success: true, data: undefined, message: 'Fondos liberados para pago al vendedor.' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
@@ -581,7 +711,22 @@ export async function getMyTransactions(
 
     const txs = await db.mpTransaction.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        status: true,
+        amount: true,
+        currency: true,
+        paymentMethod: true,
+        platformFeeAmount: true,
+        sellerNetAmount: true,
+        paymentReference: true,
+        paymentProofUrl: true,
+        createdAt: true,
+        escrowReleaseAt: true,
+        frozenRate: true,
+        frozenRateSource: true,
+        frozenRateFechaValor: true,
+        rateSnapshotId: true,
         buyer: { select: { id: true, displayName: true, avatarUrl: true } },
         seller: { select: { id: true, displayName: true, avatarUrl: true } },
         listing: { select: { id: true, title: true, slug: true, coverImageUrl: true } },
