@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { LucideIcon } from 'lucide-react'
@@ -26,11 +26,14 @@ import {
   Landmark,
   Plus,
   CreditCard,
+  CheckCircle2,
+  Send,
+  ExternalLink,
 } from 'lucide-react'
 import type { MpSessionPayload } from '@/lib/marketplace/auth'
 import { TransactionChat } from '@/components/marketplace/TransactionChat'
 import { getMyThreads, getUnreadCount } from '@/actions/marketplace/chat'
-import { getTransaction, openDispute } from '@/actions/marketplace/transactions'
+import { getTransaction, openDispute, confirmDelivery, sellerDeliver } from '@/actions/marketplace/transactions'
 import { toggleFavorite } from '@/actions/marketplace/favorites'
 import {
   roundMoney,
@@ -131,6 +134,33 @@ type DashListing = any
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DashInteracted = any
+
+// ─── Action Center Types ───────────────────────────────────────────────────────
+
+type ActionPriority = 'required' | 'review' | 'pending' | 'closed'
+
+interface ActionItem {
+  /** Unique key for rendering */
+  key: string
+  /** The transaction this action belongs to */
+  tx: DashTransaction
+  /** Which role perspective */
+  viewAs: 'buyer' | 'seller'
+  /** Priority level for ordering */
+  priority: ActionPriority
+  /** Human-readable chip label */
+  chipLabel: string
+  /** Short description of the action */
+  description: string
+  /** CTA label — null if no CTA available */
+  ctaLabel: string | null
+  /** CTA type determines the handler */
+  ctaType: 'view-detail' | 'confirm-delivery' | 'seller-deliver' | 'open-messages' | 'payout-setup' | null
+  /** Whether this action is disabled (e.g., already submitted) */
+  disabled: boolean
+  /** Accent color for the chip */
+  accent: string
+}
 
 // ─── Tab Type ─────────────────────────────────────────────────────────────────
 
@@ -377,6 +407,250 @@ function getTxPayoutCalculation(tx: DashTransaction, sellerPayoutMethod: SellerP
     sellerPayoutMethod,
     frozenRate: frozen,
   })
+}
+
+// ─── Action Center Derivation ─────────────────────────────────────────────────
+
+const ACTION_ACCENT = {
+  required: '#f97316',
+  review: '#f59e0b',
+  pending: '#00aeef',
+  closed: '#4ade80',
+} as const
+
+const CHIP_BG: Record<ActionPriority, string> = {
+  required: 'rgba(249,115,22,0.12)',
+  review: 'rgba(245,158,11,0.1)',
+  pending: 'rgba(0,174,239,0.1)',
+  closed: 'rgba(74,222,128,0.1)',
+}
+
+const CHIP_BORDER: Record<ActionPriority, string> = {
+  required: 'rgba(249,115,22,0.28)',
+  review: 'rgba(245,158,11,0.22)',
+  pending: 'rgba(0,174,239,0.2)',
+  closed: 'rgba(74,222,128,0.2)',
+}
+
+/**
+ * Derive the ActionItems from existing transactions and payout state.
+ * NO new server actions. NO new data fetches. Purely a projection of existing data.
+ *
+ * Priority order:
+ * 1. required (action needed by current user)
+ * 2. review   (under review by team)
+ * 3. pending  (waiting for counterparty or team)
+ * 4. closed   (terminal / no action)
+ */
+function deriveActionItems(
+  purchases: DashTransaction[],
+  sales: DashTransaction[],
+  hasUsablePayoutMethod: boolean,
+): ActionItem[] {
+  const items: ActionItem[] = []
+
+  // ── Buyer Actions ──
+  for (const tx of purchases) {
+    const base = { tx, viewAs: 'buyer' as const, disabled: false }
+
+    switch (tx.status) {
+      case 'PENDING_PAYMENT':
+        items.push({
+          ...base,
+          key: `buyer-pay-${tx.id}`,
+          priority: 'required',
+          chipLabel: 'Acción requerida',
+          description: 'Completa o reporta tu pago para iniciar la validación.',
+          ctaLabel: 'Ver operación',
+          ctaType: 'view-detail',
+          accent: ACTION_ACCENT.required,
+        })
+        break
+      case 'PAYMENT_RECEIVED':
+      case 'VALIDATING':
+        items.push({
+          ...base,
+          key: `buyer-validate-${tx.id}`,
+          priority: 'review',
+          chipLabel: 'En revisión',
+          description: 'Pago en revisión por el equipo. Te notificaremos cuando avance.',
+          ctaLabel: 'Ver operación',
+          ctaType: 'view-detail',
+          accent: ACTION_ACCENT.review,
+        })
+        break
+      case 'IN_ESCROW':
+        items.push({
+          ...base,
+          key: `buyer-escrow-${tx.id}`,
+          priority: 'pending',
+          chipLabel: 'Esperando vendedor',
+          description: 'Coordina entrega con el vendedor. Confirma cuando recibas.',
+          ctaLabel: 'Abrir conversación',
+          ctaType: 'open-messages',
+          accent: ACTION_ACCENT.pending,
+        })
+        break
+      case 'DELIVERY_CONFIRMED':
+        items.push({
+          ...base,
+          key: `buyer-confirm-${tx.id}`,
+          priority: 'required',
+          chipLabel: 'Acción requerida',
+          description: 'Confirma que recibiste el producto/servicio para liberar los fondos.',
+          ctaLabel: 'Confirmar recibido',
+          ctaType: 'confirm-delivery',
+          accent: ACTION_ACCENT.required,
+        })
+        break
+      case 'RELEASED':
+        items.push({
+          ...base,
+          key: `buyer-released-${tx.id}`,
+          priority: 'pending',
+          chipLabel: 'Pago pendiente',
+          description: 'Pago al vendedor pendiente. El equipo lo procesará en breve.',
+          ctaLabel: 'Ver operación',
+          ctaType: 'view-detail',
+          accent: ACTION_ACCENT.pending,
+        })
+        break
+      case 'DISPUTED':
+        items.push({
+          ...base,
+          key: `buyer-disputed-${tx.id}`,
+          priority: 'review',
+          chipLabel: 'En revisión',
+          description: 'Operación en disputa. El equipo revisará el caso.',
+          ctaLabel: 'Ver operación',
+          ctaType: 'view-detail',
+          accent: ACTION_ACCENT.review,
+        })
+        break
+      case 'REFUNDED':
+      case 'CANCELLED':
+      case 'PAYMENT_FAILED':
+        items.push({
+          ...base,
+          key: `buyer-closed-${tx.id}`,
+          priority: 'closed',
+          chipLabel: 'Cerrada',
+          description: `Operación ${tx.status === 'REFUNDED' ? 'reembolsada' : tx.status === 'CANCELLED' ? 'cancelada' : 'con pago fallido'}.`,
+          ctaLabel: 'Ver operación',
+          ctaType: 'view-detail',
+          accent: ACTION_ACCENT.closed,
+        })
+        break
+      default:
+        // INITIATED or unknown — skip
+        break
+    }
+  }
+
+  // ── Seller Actions ──
+  for (const tx of sales) {
+    const base = { tx, viewAs: 'seller' as const, disabled: false }
+
+    switch (tx.status) {
+      case 'PAYMENT_RECEIVED':
+      case 'VALIDATING':
+        items.push({
+          ...base,
+          key: `seller-validate-${tx.id}`,
+          priority: 'review',
+          chipLabel: 'En revisión',
+          description: 'Pago del comprador en revisión por el equipo.',
+          ctaLabel: 'Ver operación',
+          ctaType: 'view-detail',
+          accent: ACTION_ACCENT.review,
+        })
+        break
+      case 'IN_ESCROW':
+        items.push({
+          ...base,
+          key: `seller-deliver-${tx.id}`,
+          priority: 'required',
+          chipLabel: 'Acción requerida',
+          description: 'Coordina la entrega del producto/servicio.',
+          ctaLabel: 'Reportar entrega',
+          ctaType: 'seller-deliver',
+          accent: ACTION_ACCENT.required,
+        })
+        break
+      case 'DELIVERY_CONFIRMED':
+        items.push({
+          ...base,
+          key: `seller-waiting-${tx.id}`,
+          priority: 'pending',
+          chipLabel: 'Esperando comprador',
+          description: 'Esperando confirmación del comprador para liberar el pago.',
+          ctaLabel: 'Ver operación',
+          ctaType: 'view-detail',
+          accent: ACTION_ACCENT.pending,
+        })
+        break
+      case 'RELEASED':
+        if (hasUsablePayoutMethod) {
+          items.push({
+            ...base,
+            key: `seller-released-${tx.id}`,
+            priority: 'pending',
+            chipLabel: 'Pago pendiente',
+            description: 'Pago al vendedor pendiente. El equipo lo procesará en breve con tus datos de cobro.',
+            ctaLabel: 'Ver operación',
+            ctaType: 'view-detail',
+            accent: ACTION_ACCENT.pending,
+          })
+        } else {
+          items.push({
+            ...base,
+            key: `seller-payout-missing-${tx.id}`,
+            priority: 'required',
+            chipLabel: 'Acción requerida',
+            description: 'Actualiza tus datos de cobro para recibir el pago.',
+            ctaLabel: 'Actualizar datos de cobro',
+            ctaType: 'payout-setup',
+            accent: ACTION_ACCENT.required,
+          })
+        }
+        break
+      case 'DISPUTED':
+        items.push({
+          ...base,
+          key: `seller-disputed-${tx.id}`,
+          priority: 'review',
+          chipLabel: 'En revisión',
+          description: 'Operación en disputa. El equipo revisará el caso.',
+          ctaLabel: 'Ver operación',
+          ctaType: 'view-detail',
+          accent: ACTION_ACCENT.review,
+        })
+        break
+      case 'REFUNDED':
+      case 'CANCELLED':
+      case 'PAYMENT_FAILED':
+        items.push({
+          ...base,
+          key: `seller-closed-${tx.id}`,
+          priority: 'closed',
+          chipLabel: 'Cerrada',
+          description: `Operación ${tx.status === 'REFUNDED' ? 'reembolsada' : tx.status === 'CANCELLED' ? 'cancelada' : 'con pago fallido'}.`,
+          ctaLabel: 'Ver operación',
+          ctaType: 'view-detail',
+          accent: ACTION_ACCENT.closed,
+        })
+        break
+      default:
+        // INITIATED, PENDING_PAYMENT — skip for seller
+        break
+    }
+  }
+
+  // Sort: required first, then review, then pending, then closed
+  const priorityOrder: Record<ActionPriority, number> = { required: 0, review: 1, pending: 2, closed: 3 }
+  items.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
+
+  return items
 }
 
 // ─── Section Header ───────────────────────────────────────────────────────────
@@ -1766,6 +2040,159 @@ function PayoutMethodCard({
   )
 }
 
+// ─── Action Center Section ─────────────────────────────────────────────────────
+
+function ActionCenterSection({
+  items,
+  onAction,
+  busyKey,
+}: {
+  items: ActionItem[]
+  onAction: (item: ActionItem) => void
+  busyKey: string | null
+}) {
+  if (items.length === 0) return null
+
+  const requiredCount = items.filter(i => i.priority === 'required').length
+  const reviewCount = items.filter(i => i.priority === 'review').length
+
+  return (
+    <div
+      className="rounded-2xl overflow-hidden"
+      style={{
+        background: 'var(--mp-card)',
+        border: '1px solid var(--mp-border)',
+        boxShadow: 'var(--mp-card-shadow)',
+      }}
+    >
+      {/* Header */}
+      <div
+        className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5"
+        style={{
+          background: requiredCount > 0
+            ? 'linear-gradient(135deg, rgba(249,115,22,0.08) 0%, var(--mp-card-subtle) 100%)'
+            : 'var(--mp-card-subtle)',
+          borderBottom: '1px solid var(--mp-border)',
+        }}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{
+              background: requiredCount > 0 ? 'rgba(249,115,22,0.14)' : 'rgba(0,174,239,0.1)',
+              border: `1px solid ${requiredCount > 0 ? 'rgba(249,115,22,0.25)' : 'rgba(0,174,239,0.18)'}`,
+            }}
+          >
+            <Zap size={14} color={requiredCount > 0 ? '#f97316' : '#00aeef'} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold truncate" style={{ color: 'var(--mp-text-strong)' }}>
+              Próximos pasos
+            </p>
+            <p className="text-[10px] truncate" style={{ color: 'var(--mp-text-faint)' }}>
+              {items.length} operación{items.length !== 1 ? 'es' : ''}
+              {requiredCount > 0 && (
+                <span className="ml-1" style={{ color: '#f97316' }}>
+                  · {requiredCount} requiere{requiredCount === 1 ? '' : 'n'} acción
+                </span>
+              )}
+              {reviewCount > 0 && (
+                <span className="ml-1" style={{ color: '#f59e0b' }}>
+                  · {reviewCount} en revisión
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* List */}
+      <div className="divide-y" style={{ borderColor: 'var(--mp-border)' }}>
+        {items.map(item => {
+          const isBusy = busyKey === item.key
+          const hasCta = item.ctaLabel && item.ctaType
+          const listingTitle = item.tx.listing?.title ?? 'Listing eliminado'
+          const otherParty = item.viewAs === 'buyer' ? item.tx.seller : item.tx.buyer
+
+          return (
+            <div
+              key={item.key}
+              className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3 sm:px-5 transition-colors hover:bg-[rgba(255,255,255,0.01)]"
+            >
+              {/* Left: Chip + Description */}
+              <div className="flex-1 min-w-0 flex items-start gap-3">
+                {/* Priority chip */}
+                <span
+                  className="inline-flex items-center gap-1 flex-shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold whitespace-nowrap"
+                  style={{
+                    background: CHIP_BG[item.priority],
+                    border: `1px solid ${CHIP_BORDER[item.priority]}`,
+                    color: item.accent,
+                  }}
+                >
+                  {item.priority === 'required' && <AlertTriangle size={9} />}
+                  {item.priority === 'review' && <Clock size={9} />}
+                  {item.priority === 'pending' && <Shield size={9} />}
+                  {item.priority === 'closed' && <CheckCircle2 size={9} />}
+                  {item.chipLabel}
+                </span>
+
+                {/* Description */}
+                <div className="min-w-0">
+                  <p className="text-[11px] leading-snug" style={{ color: 'var(--mp-text-muted)' }}>
+                    {item.description}
+                  </p>
+                  <p className="text-[10px] mt-0.5 truncate" style={{ color: 'var(--mp-text-faint)' }}>
+                    <span className="font-medium" style={{ color: 'var(--mp-text-soft)' }}>
+                      {listingTitle}
+                    </span>
+                    <span className="mx-1">·</span>
+                    {item.viewAs === 'buyer' ? 'Vendedor: ' : 'Comprador: '}
+                    {otherParty.displayName}
+                    <span className="mx-1">·</span>
+                    ${Number(item.tx.amount).toLocaleString('es-VE')}
+                  </p>
+                </div>
+              </div>
+
+              {/* Right: CTA */}
+              {hasCta && (
+                <button
+                  onClick={() => onAction(item)}
+                  disabled={isBusy || item.disabled}
+                  className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all disabled:opacity-50 whitespace-nowrap"
+                  style={{
+                    background: item.priority === 'required'
+                      ? 'rgba(249,115,22,0.12)'
+                      : 'rgba(0,174,239,0.08)',
+                    border: `1px solid ${item.priority === 'required' ? 'rgba(249,115,22,0.25)' : 'rgba(0,174,239,0.2)'}`,
+                    color: item.priority === 'required' ? '#f97316' : '#00aeef',
+                  }}
+                >
+                  {isBusy ? (
+                    <Loader2 size={11} className="animate-spin" />
+                  ) : item.ctaType === 'confirm-delivery' ? (
+                    <CheckCircle2 size={11} />
+                  ) : item.ctaType === 'seller-deliver' ? (
+                    <Send size={11} />
+                  ) : item.ctaType === 'payout-setup' ? (
+                    <Wallet size={11} />
+                  ) : item.ctaType === 'open-messages' ? (
+                    <MessageSquare size={11} />
+                  ) : (
+                    <ExternalLink size={11} />
+                  )}
+                  {item.ctaLabel}
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 interface DashboardClientProps {
@@ -1829,6 +2256,7 @@ export function DashboardClient({
     username: '',
     wallet: '',
   })
+  const [actionBusyKey, setActionBusyKey] = useState<string | null>(null)
 
   const initialUnread = initialThreads.reduce((sum, thread) => sum + getTxUnreadCount(thread, session.userId), 0)
   const [unreadCount, setUnreadCount] = useState(initialUnread)
@@ -1852,6 +2280,12 @@ export function DashboardClient({
   const escrowSales = sales.filter(tx => ['IN_ESCROW', 'DELIVERY_CONFIRMED'].includes(tx.status))
   const releasedSales = sales.filter(tx => tx.status === 'RELEASED')
   const hasUsablePayoutMethod = payoutMethods.length > 0
+
+  const actionItems = useMemo(
+    () => deriveActionItems(purchases, sales, hasUsablePayoutMethod),
+    [purchases, sales, hasUsablePayoutMethod],
+  )
+
   const defaultPayoutMethod = payoutMethods.find(method => method.isDefault) ?? payoutMethods[0] ?? null
   const sellerPayoutMethod = mapSellerPayoutMethod(defaultPayoutMethod)
   const payoutReadySales = hasUsablePayoutMethod ? releasedSales : []
@@ -1889,6 +2323,47 @@ export function DashboardClient({
   function handleTabChange(tab: Tab) {
     setActiveTab(tab)
     router.replace(`/marketplace/dashboard?tab=${tab}`, { scroll: false })
+  }
+
+  async function handleActionCenterCta(item: ActionItem) {
+    if (item.disabled || !item.ctaType) return
+    setActionBusyKey(item.key)
+
+    try {
+      switch (item.ctaType) {
+        case 'view-detail':
+          await handleOpenTransaction(item.tx, item.viewAs)
+          break
+        case 'confirm-delivery': {
+          const result = await confirmDelivery(item.tx.id)
+          if (result.success) {
+            window.location.reload()
+            return
+          }
+          break
+        }
+        case 'seller-deliver': {
+          const result = await sellerDeliver(item.tx.id)
+          if (result.success) {
+            window.location.reload()
+            return
+          }
+          break
+        }
+        case 'open-messages': {
+          const thread = threads.find(
+            t => t.buyerId === item.tx.buyer.id && t.sellerId === item.tx.seller.id,
+          )
+          if (thread) handleOpenThread(thread)
+          break
+        }
+        case 'payout-setup':
+          handleTabChange('payouts')
+          break
+      }
+    } finally {
+      setActionBusyKey(null)
+    }
   }
 
   async function handleOpenTransaction(tx: DashTransaction, viewAs: 'buyer' | 'seller') {
@@ -2094,6 +2569,13 @@ export function DashboardClient({
           myFavorites={favorites}
           unreadCount={unreadCount}
           onTabClick={handleTabChange}
+        />
+
+        {/* Action Center: Próximos Pasos */}
+        <ActionCenterSection
+          items={actionItems}
+          onAction={handleActionCenterCta}
+          busyKey={actionBusyKey}
         />
 
         {/* Tab Navigation */}
