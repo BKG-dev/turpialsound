@@ -45,3 +45,12 @@ Prioridad Jean:
 Nadie trabaja codigo directo sobre la rama madre.
 Cada sprint sale en rama propia.
 Un solo dueno por lock critico.
+
+## Capa de hitos pragmaticos
+
+Ademas de la distribucion tecnica por sprints, el roadmap debe leerse junto con:
+
+- docs/07_handoffs/marketplace-pragmatic-milestones-2026-05-04.md
+- docs/obsidian-vault/HITOS_MARKETPLACE_PRACTICOS.md
+
+Estos documentos traducen cada sprint a un resultado verificable para buyer, seller o admin.

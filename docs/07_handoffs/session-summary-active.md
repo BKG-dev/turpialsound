@@ -978,3 +978,21 @@ Manuel puede iniciar sus sprints en ramas propias desde la rama madre, priorizan
 
 - docs/07_handoffs/parallel-sprint-distribution-2026-05-04.md
 - docs/obsidian-vault/SPRINTS_MARKETPLACE_PARALELO.md
+
+---
+
+## Checkpoint operativo - hitos pragmaticos marketplace
+
+Fecha: 2026-05-04
+Rama madre: integration/lab-marketplace-sprint2a-selective-2026-05-04
+
+Se agrego una capa de hitos pragmaticos / Definition of Done para traducir cada sprint tecnico a resultados concretos verificables.
+
+Documentos:
+- docs/07_handoffs/marketplace-pragmatic-milestones-2026-05-04.md
+- docs/obsidian-vault/HITOS_MARKETPLACE_PRACTICOS.md
+
+Uso:
+- Jean y Manuel deben leer estos hitos al iniciar sesion.
+- Cada sprint debe cerrar con un resultado verificable, no solo con archivos modificados.
+- La division tecnica de locks se mantiene en parallel-sprint-distribution.

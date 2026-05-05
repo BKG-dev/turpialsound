@@ -234,3 +234,12 @@ Luego confirmar:
 4. Manuel: iniciar rates diagnosis en rama propia.
 5. Jean/Manuel: no pisarse en transactions.ts, AdminDashboard.tsx ni DashboardClient.tsx sin lock.
 6. Luego documentar merge y avanzar a Sprint 2A.1 / Rates diagnosis en paralelo.
+
+## Capa de hitos pragmaticos
+
+Ademas de la distribucion tecnica por sprints, el roadmap debe leerse junto con:
+
+- docs/07_handoffs/marketplace-pragmatic-milestones-2026-05-04.md
+- docs/obsidian-vault/HITOS_MARKETPLACE_PRACTICOS.md
+
+Estos documentos traducen cada sprint a un resultado verificable para buyer, seller o admin.
