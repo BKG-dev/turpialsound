@@ -354,7 +354,7 @@ export async function validatePayment(
   }
 }
 
-export async function confirmDelivery(transactionId: string): Promise<ActionResult> {
+export async function sellerDeliver(transactionId: string): Promise<ActionResult> {
   const session = await getSession()
   if (!session) return { success: false, message: 'No autenticado' }
 
@@ -364,9 +364,59 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
   try {
     const tx = await db.mpTransaction.findUnique({ where: { id: transactionId } })
     if (!tx) return { success: false, message: 'Transaccion no encontrada' }
-    if (tx.buyerId !== session.userId) return { success: false, message: 'Solo el comprador puede confirmar la entrega' }
+    if (tx.sellerId !== session.userId) return { success: false, message: 'Solo el vendedor puede registrar la entrega' }
     if (tx.status !== 'IN_ESCROW') {
-      return { success: false, message: `No se puede confirmar desde el estado: ${tx.status}` }
+      return { success: false, message: `No se puede registrar entrega desde el estado: ${tx.status}` }
+    }
+
+    const now = new Date()
+    await db.mpTransaction.update({
+      where: { id: transactionId },
+      data: { status: 'DELIVERY_CONFIRMED' },
+    })
+
+    await db.mpTransactionStatusHistory.create({
+      data: {
+        transactionId,
+        fromStatus: 'IN_ESCROW',
+        toStatus: 'DELIVERY_CONFIRMED',
+        changedBy: session.userId,
+        reason: 'Vendedor registro la entrega del producto/servicio',
+      },
+    })
+
+    await db.$disconnect()
+    return { success: true, data: undefined, message: 'Entrega registrada. El comprador debe confirmar la recepcion.' }
+  } catch (err) {
+    await db.$disconnect().catch(() => {})
+    return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
+  }
+}
+
+export async function confirmDelivery(transactionId: string): Promise<ActionResult> {
+  const session = await getSession()
+  if (!session) return { success: false, message: 'No autenticado' }
+
+  const db = await getDb()
+  if (!db) return { success: false, message: 'Base de datos no disponible' }
+
+  try {
+    const tx = await db.mpTransaction.findUnique({
+      where: { id: transactionId },
+      include: {
+        disputes: { where: { status: { in: ['OPEN', 'UNDER_REVIEW'] } }, select: { id: true } },
+      },
+    })
+    if (!tx) return { success: false, message: 'Transaccion no encontrada' }
+    if (tx.buyerId !== session.userId) return { success: false, message: 'Solo el comprador puede confirmar la entrega' }
+    if (tx.status !== 'DELIVERY_CONFIRMED') {
+      return { success: false, message: `No se puede confirmar desde el estado: ${tx.status}. Espera a que el vendedor registre la entrega.` }
+    }
+
+    // Dispute guard: if there is an active dispute, block release
+    if (tx.disputes && tx.disputes.length > 0) {
+      await db.$disconnect()
+      return { success: false, message: 'Existe una disputa activa. No se puede confirmar la entrega mientras la disputa este abierta.' }
     }
 
     const now = new Date()
@@ -378,24 +428,15 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
     await db.mpTransactionStatusHistory.create({
       data: {
         transactionId,
-        fromStatus: 'IN_ESCROW',
-        toStatus: 'DELIVERY_CONFIRMED',
-        changedBy: session.userId,
-        reason: 'Comprador confirmo la entrega',
-      },
-    })
-    await db.mpTransactionStatusHistory.create({
-      data: {
-        transactionId,
         fromStatus: 'DELIVERY_CONFIRMED',
         toStatus: 'RELEASED',
-        changedBy: 'SYSTEM',
-        reason: 'Fondos liberados automaticamente al confirmar entrega',
+        changedBy: session.userId,
+        reason: 'Comprador confirmo la recepcion. Fondos liberados al vendedor.',
       },
     })
 
     await db.$disconnect()
-    return { success: true, data: undefined, message: 'Entrega confirmada. Los fondos fueron liberados al vendedor.' }
+    return { success: true, data: undefined, message: 'Recepcion confirmada. Los fondos estan listos para pago al vendedor.' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
@@ -405,7 +446,7 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
 export async function releaseEscrow(transactionId: string): Promise<ActionResult> {
   const session = await getSession()
   if (!session || session.role !== 'SUPER') {
-    return { success: false, message: 'Solo administradores pueden liberar el escrow manualmente' }
+    return { success: false, message: 'Solo administradores pueden liberar el pago manualmente' }
   }
 
   const db = await getDb()
@@ -414,8 +455,9 @@ export async function releaseEscrow(transactionId: string): Promise<ActionResult
   try {
     const tx = await db.mpTransaction.findUnique({ where: { id: transactionId } })
     if (!tx) return { success: false, message: 'Transaccion no encontrada' }
-    if (tx.status !== 'IN_ESCROW' && tx.status !== 'DELIVERY_CONFIRMED') {
-      return { success: false, message: `No se puede liberar desde el estado: ${tx.status}` }
+    // DELIVERY_CONFIRMED only: la operacion aun espera conformidad del comprador si esta en IN_ESCROW
+    if (tx.status !== 'DELIVERY_CONFIRMED') {
+      return { success: false, message: `No se puede liberar desde el estado: ${tx.status}. ${tx.status === 'IN_ESCROW' ? 'La operacion aun espera conformidad del comprador.' : 'Solo se puede liberar cuando el comprador ha confirmado la recepcion.'}` }
     }
 
     const now = new Date()
@@ -430,12 +472,12 @@ export async function releaseEscrow(transactionId: string): Promise<ActionResult
         fromStatus: tx.status,
         toStatus: 'RELEASED',
         changedBy: session.userId,
-        reason: 'Escrow liberado manualmente (T+7 o admin)',
+        reason: 'Pago liberado manualmente por administrador',
       },
     })
 
     await db.$disconnect()
-    return { success: true, data: undefined, message: 'Escrow liberado. Fondos transferidos al vendedor.' }
+    return { success: true, data: undefined, message: 'Fondos liberados para pago al vendedor.' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
@@ -648,7 +690,22 @@ export async function getMyTransactions(
 
     const txs = await db.mpTransaction.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        status: true,
+        amount: true,
+        currency: true,
+        paymentMethod: true,
+        platformFeeAmount: true,
+        sellerNetAmount: true,
+        paymentReference: true,
+        paymentProofUrl: true,
+        createdAt: true,
+        escrowReleaseAt: true,
+        frozenRate: true,
+        frozenRateSource: true,
+        frozenRateFechaValor: true,
+        rateSnapshotId: true,
         buyer: { select: { id: true, displayName: true, avatarUrl: true } },
         seller: { select: { id: true, displayName: true, avatarUrl: true } },
         listing: { select: { id: true, title: true, slug: true, coverImageUrl: true } },

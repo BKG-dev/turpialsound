@@ -33,11 +33,11 @@ import { getMyThreads, getUnreadCount } from '@/actions/marketplace/chat'
 import { getTransaction, openDispute } from '@/actions/marketplace/transactions'
 import { toggleFavorite } from '@/actions/marketplace/favorites'
 import {
-  calculateSellerPayout,
   roundMoney,
-  USD_REFERENCE_RATE,
+  txPayoutDisplay,
   type BuyerPaymentMethod,
   type SellerPayoutMethod,
+  type FrozenRatePayload,
 } from '@/lib/marketplace/finance'
 import {
   addPayoutMethod,
@@ -79,6 +79,10 @@ interface DashTransaction {
   paymentProofUrl?: string | null
   createdAt: string | Date
   escrowReleaseAt?: string | Date | null
+  frozenRate?: number | null
+  frozenRateSource?: string | null
+  frozenRateFechaValor?: string | Date | null
+  rateSnapshotId?: string | null
   buyer: { id: string; displayName: string; avatarUrl: string | null }
   seller: { id: string; displayName: string; avatarUrl: string | null }
   listing: { id: string; title: string; slug: string; coverImageUrl: string | null } | null
@@ -139,9 +143,9 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   PENDING_PAYMENT:     { label: 'Pago Pendiente',    color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  glow: 'rgba(245,158,11,0.25)'  },
   PAYMENT_RECEIVED:    { label: 'Pago Recibido',     color: '#eab308', bg: 'rgba(234,179,8,0.1)',   glow: 'rgba(234,179,8,0.25)'   },
   VALIDATING:          { label: 'Validando',         color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', glow: 'rgba(167,139,250,0.25)' },
-  IN_ESCROW:           { label: 'En proceso',        color: '#00aeef', bg: 'rgba(0,174,239,0.1)',   glow: 'rgba(0,174,239,0.25)'   },
+  IN_ESCROW:           { label: 'Esperando conformidad', color: '#00aeef', bg: 'rgba(0,174,239,0.1)',   glow: 'rgba(0,174,239,0.25)'   },
   DELIVERY_CONFIRMED:  { label: 'Entrega Confirmada',color: '#34d399', bg: 'rgba(52,211,153,0.1)',  glow: 'rgba(52,211,153,0.25)'  },
-  RELEASED:            { label: 'Listo para cobrar', color: '#4ade80', bg: 'rgba(74,222,128,0.1)',  glow: 'rgba(74,222,128,0.25)'  },
+  RELEASED:            { label: 'Fondos por liberar', color: '#4ade80', bg: 'rgba(74,222,128,0.1)',  glow: 'rgba(74,222,128,0.25)'  },
   PAYMENT_FAILED:      { label: 'Pago Fallido',      color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   glow: 'rgba(239,68,68,0.25)'   },
   DISPUTED:            { label: 'En Disputa',        color: '#f97316', bg: 'rgba(249,115,22,0.1)',  glow: 'rgba(249,115,22,0.25)'  },
   REFUNDED:            { label: 'Reembolsado',       color: '#c084fc', bg: 'rgba(192,132,252,0.1)', glow: 'rgba(192,132,252,0.25)' },
@@ -182,6 +186,16 @@ function fmtUSD(n: number) {
 
 function fmtUSDT(n: number) {
   return `${n.toFixed(2)} USDT`
+}
+
+function fmtBS(n: number) {
+  if (!Number.isFinite(n)) return 'Bs —'
+  return `Bs ${n.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+function fmtShortDate(d: string | Date | null) {
+  if (!d) return '-'
+  return new Date(d).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: '2-digit' })
 }
 
 function initials(name: string) {
@@ -347,12 +361,21 @@ function mapSellerPayoutMethod(method?: DashPayoutMethod | null): SellerPayoutMe
 }
 
 function getTxPayoutCalculation(tx: DashTransaction, sellerPayoutMethod: SellerPayoutMethod) {
-  return calculateSellerPayout({
+  const frozen: FrozenRatePayload | null =
+    tx.frozenRate != null && Number.isFinite(tx.frozenRate) && tx.frozenRate > 0
+      ? {
+          rate: tx.frozenRate,
+          source: tx.frozenRateSource ?? null,
+          fechaValor: tx.frozenRateFechaValor ? String(tx.frozenRateFechaValor) : null,
+          snapshotId: tx.rateSnapshotId ?? null,
+        }
+      : null
+
+  return txPayoutDisplay({
     amountUSD: Number(tx.amount ?? 0),
     buyerPaymentMethod: mapTxBuyerPaymentMethod(tx),
     sellerPayoutMethod,
-    bcvRate: USD_REFERENCE_RATE,
-    binanceRate: USD_REFERENCE_RATE,
+    frozenRate: frozen,
   })
 }
 
@@ -1447,6 +1470,27 @@ function SellerFinancialSummary({
           <FinancialSummaryRow label="Calculo" value={`${fmtUSDT(amount)} - ${fmtUSDT(payout.platformFeeUSD)} - ${fmtUSDT(payout.usdtFee)}`} />
           <FinancialSummaryRow label="Total estimado a recibir" value={fmtUSDT(payout.finalAmount)} tone="positive" />
         </div>
+      ) : payout.hasFrozenRate ? (
+        <div className="space-y-2">
+          <FinancialSummaryRow
+            label="Venta"
+            value={buyerPaidWithBinance ? `${fmtUSD(amount)} / ${fmtUSDT(amount)}` : fmtUSD(amount)}
+          />
+          <FinancialSummaryRow label="Comision Turpial 5%" value={`-${fmtUSD(payout.platformFeeUSD)}`} />
+          <FinancialSummaryRow
+            label={`Tasa ${payout.appliedRateType}`}
+            value={`Bs ${payout.appliedRateType === 'BINANCE' ? roundMoney(Number(tx.frozenRate ?? 0)).toFixed(2) : roundMoney(Number(tx.frozenRate ?? 0)).toFixed(2)}`}
+          />
+          <FinancialSummaryRow label="Monto Bs base" value={fmtBS(payout.netBS + payout.bankFeeBS)} />
+          <FinancialSummaryRow label="Comision bancaria 0.3%" value={`-${fmtBS(payout.bankFeeBS)}`} />
+          <FinancialSummaryRow label="Total estimado Bs" value={fmtBS(payout.finalAmount)} tone="positive" />
+          {tx.frozenRateSource && (
+            <FinancialSummaryRow
+              label="Fuente"
+              value={`${tx.frozenRateSource}${tx.frozenRateFechaValor ? ` — ${fmtShortDate(String(tx.frozenRateFechaValor))}` : ''}`}
+            />
+          )}
+        </div>
       ) : (
         <div className="space-y-2">
           <FinancialSummaryRow
@@ -1455,13 +1499,13 @@ function SellerFinancialSummary({
           />
           <FinancialSummaryRow label="Comision Turpial 5%" value={`-${fmtUSD(payout.platformFeeUSD)}`} />
           <FinancialSummaryRow
-            label="Tasa usada"
-            value={`${payout.appliedRateType ?? 'Pendiente'} - pendiente de tasa de pago`}
+            label="Tasa"
+            value="Operación anterior sin tasa congelada"
             tone="warning"
           />
-          <FinancialSummaryRow label="Monto Bs base" value="Pendiente de tasa de pago" tone="warning" />
-          <FinancialSummaryRow label="Comision bancaria 0.3%" value="Pendiente de tasa de pago" tone="warning" />
-          <FinancialSummaryRow label="Total estimado Bs" value="Pendiente de tasa de pago" tone="warning" />
+          <FinancialSummaryRow label="Monto Bs base" value="No disponible — operación sin tasa congelada" tone="warning" />
+          <FinancialSummaryRow label="Comision bancaria" value="No disponible" tone="warning" />
+          <FinancialSummaryRow label="Total estimado Bs" value="Requiere revisión de tasa" tone="warning" />
         </div>
       )}
     </div>

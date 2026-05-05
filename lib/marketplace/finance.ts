@@ -1,7 +1,6 @@
 export const PLATFORM_FEE = 0.05
 export const BANK_FEE = 0.003
 export const USDT_FEE = 0.06
-export const USD_REFERENCE_RATE = 1
 
 export type BuyerPaymentMethod = 'BINANCE' | 'BANK' | 'PAGO_MOVIL'
 export type SellerPayoutMethod = 'BINANCE' | 'BANK' | 'NONE'
@@ -28,13 +27,36 @@ export type SellerPayoutCalculation = {
   breakdown: string
 }
 
+/** Frozen-rate display result — used exclusively by the dashboard UI. */
+export type FrozenRatePayload = {
+  rate: number
+  source: string | null
+  fechaValor: string | null
+  snapshotId: string | null
+}
+
+export type TxPayoutDisplay = {
+  hasFrozenRate: boolean
+  currency: SellerPayoutCurrency
+  platformFeeUSD: number
+  bankFeeBS: number
+  usdtFee: number
+  netUSD: number
+  netBS: number
+  finalAmount: number
+  appliedRateType: AppliedRateType
+  breakdown: string
+}
+
 export function roundMoney(value: number): number {
   if (!Number.isFinite(value)) return 0
   return Math.round(value * 100) / 100
 }
 
 function positiveRate(value: number): number {
-  return Number.isFinite(value) && value > 0 ? value : 1
+  // Server-side: rates are pre-validated before reaching this function.
+  // Return 0 as safety net (never fabricate rate=1).
+  return Number.isFinite(value) && value > 0 ? value : 0
 }
 
 export function calculateSellerPayout(params: CalculateSellerPayoutParams): SellerPayoutCalculation {
@@ -77,5 +99,53 @@ export function calculateSellerPayout(params: CalculateSellerPayoutParams): Sell
     finalAmount: netBS,
     appliedRateType,
     breakdown: `Payout BS: 5% plataforma + 0.3% bancario con tasa ${appliedRateType}.`,
+  }
+}
+
+/**
+ * Dashboard-only: calculate BS/commission display using the transaction's frozen rate.
+ *
+ * - When frozenRate is present: uses the real rate, never fabricates.
+ * - When frozenRate is absent (legacy TX): returns hasFrozenRate=false so the UI
+ *   can show honest copy instead of inventing numbers.
+ */
+export function txPayoutDisplay(params: {
+  amountUSD: number
+  buyerPaymentMethod: BuyerPaymentMethod
+  sellerPayoutMethod: SellerPayoutMethod
+  frozenRate: FrozenRatePayload | null
+}): TxPayoutDisplay {
+  const { amountUSD, buyerPaymentMethod, sellerPayoutMethod, frozenRate } = params
+
+  // Legacy TX: no frozen rate — don't calculate, return placeholder.
+  if (!frozenRate || !frozenRate.rate || !Number.isFinite(frozenRate.rate) || frozenRate.rate <= 0) {
+    return {
+      hasFrozenRate: false,
+      currency: sellerPayoutMethod === 'BINANCE' ? 'USDT' : 'BS',
+      platformFeeUSD: 0,
+      bankFeeBS: 0,
+      usdtFee: 0,
+      netUSD: 0,
+      netBS: 0,
+      finalAmount: 0,
+      appliedRateType: null,
+      breakdown: 'Operación anterior sin tasa congelada',
+    }
+  }
+
+  const bcvRate = frozenRate.source === 'BCV' ? frozenRate.rate : 0
+  const binanceRate = frozenRate.source === 'BINANCE' ? frozenRate.rate : 0
+
+  const calc = calculateSellerPayout({
+    amountUSD,
+    buyerPaymentMethod,
+    sellerPayoutMethod,
+    bcvRate,
+    binanceRate,
+  })
+
+  return {
+    hasFrozenRate: true,
+    ...calc,
   }
 }

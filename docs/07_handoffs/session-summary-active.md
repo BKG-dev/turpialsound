@@ -1082,3 +1082,69 @@ Fase 1 — Schema: Crear `MpReferenceRateSnapshot`, anadir columnas de tasa a `M
 - Admin payout report usa montos con rate=1 (Gap E).
 - UI placeholders cosméticos (Gap H).
 - Migración `MpBinanceRateSnapshot` pendiente de aplicación en producción (Gap F).
+
+---
+
+## Checkpoint 2026-05-05 — Fase 3-A Rates Financiero-Operacional (Cierre)
+
+- **Rama:** `Manuel/marketplace-rates-diagnosis`.
+- **Estado:** Completado técnicamente. Sin commit ni push aún.
+- **4 archivos modificados:** `actions/marketplace.ts`, `actions/marketplace/transactions.ts`, `components/marketplace/dashboard/DashboardClient.tsx`, `lib/marketplace/finance.ts`.
+
+### Tarea A — Dashboard buyer/seller sin rate=1
+
+- `finance.ts`: Eliminado `USD_REFERENCE_RATE = 1`. `positiveRate()` ahora retorna `0` (no `1`) para rates inválidos.
+- `finance.ts`: Nuevo tipo `FrozenRatePayload` (rate, source, fechaValor, snapshotId) y tipo `TxPayoutDisplay` (hasFrozenRate, breakdown, etc.).
+- `finance.ts`: Nueva función `txPayoutDisplay()` — calcula BS con frozen rate real para transacciones nuevas; retorna `hasFrozenRate: false` con mensaje "Operación anterior sin tasa congelada" para transacciones legacy.
+- `DashboardClient.tsx`: `DashTransaction` extendido con `frozenRate`, `frozenRateSource`, `frozenRateFechaValor`, `rateSnapshotId`.
+- `DashboardClient.tsx`: `getTxPayoutCalculation()` ahora construye `FrozenRatePayload` desde campos de tx y llama a `txPayoutDisplay()`.
+- `DashboardClient.tsx`: `FinancialBreakdown` del seller ahora muestra 3 ramas: USDT directo (sin cambios), BS con frozen rate real (muestra tasa, fuente, fecha, BS reales), BS legacy ("Operación anterior sin tasa congelada", "No disponible", "Requiere revisión de tasa").
+- `DashboardClient.tsx`: Helpers `fmtBS()` y `fmtShortDate()` agregados.
+- `DashboardClient.tsx`: Removida importación de `calculateSellerPayout` y `USD_REFERENCE_RATE`.
+
+### Tarea B — Admin payout report sin rate=1
+
+- Confirmado: `AdminDashboard.tsx` nunca usó `USD_REFERENCE_RATE`. Todo el display admin es USD-only. Cero contaminación rate=1 en admin.
+- `admin.ts`: `adminReleaseEscrow()` ya estaba correcto (solo `DELIVERY_CONFIRMED`).
+
+### Tarea C — Flujo seller/buyer correcto
+
+- **Creado `sellerDeliver()`:** Solo el seller puede invocarlo. Requiere `IN_ESCROW`. Transiciona a `DELIVERY_CONFIRMED`. Escribe `MpTransactionStatusHistory` con razón "Vendedor registró la entrega del producto/servicio". No libera fondos. Deja al comprador como siguiente actor.
+- **Corregido `confirmDelivery()`:** Ahora requiere `DELIVERY_CONFIRMED` (antes aceptaba `IN_ESCROW` incorrectamente). Verifica disputas activas (`OPEN` o `UNDER_REVIEW`) antes de liberar; bloquea si hay disputa activa. Transiciona a `RELEASED`. Mensaje mejorado.
+- **Dispute guard:** Query `include: { disputes: { where: { status: { in: ['OPEN', 'UNDER_REVIEW'] } } } }` en `confirmDelivery()`.
+
+### Tarea D — Admin payout / cierre operativo
+
+- **Corregido `releaseEscrow()`:** Solo permite `DELIVERY_CONFIRMED`. Si llega con `IN_ESCROW`, mensaje específico: "La operación aún espera conformidad del comprador."
+- `adminReleaseEscrow()` ya estaba correcto (sin cambios).
+- `MpPayout` model existe en schema pero no hay server action de "pago enviado al vendedor". Brecha documentada.
+
+### Tarea E — Labels/copy mínimo de estados
+
+- `IN_ESCROW`: "Esperando conformidad" (antes "En proceso").
+- `RELEASED`: "Fondos por liberar" (antes "Listo para cobrar").
+- Actualizado en `STATUS_CONFIG` de `DashboardClient.tsx`.
+
+### Tarea F — Producción/migración
+
+- **No deploy DB.** No se ejecutó `prisma migrate` ni `prisma db push`.
+- **Migración `MpBinanceRateSnapshot` (`prisma/migrations/20260429_marketplace_binance_rate_snapshots/migration.sql`) debe ser aplicada por Jean o con candado explícito antes de producción.**
+- **Migración `MpReferenceRateSnapshot` (`prisma/migrations/20260505_marketplace_rate_schema_fase1/migration.sql`) debe ser aplicada por Jean o con candado explícito antes de producción.**
+
+### Validación
+
+- `npx tsc --noEmit`: Solo error pre-existente `flipclock` en `PaymentFlipCountdown.tsx` (bloqueador de Jean). Cero errores nuevos en archivos marketplace.
+- `git diff --check`: Limpio.
+- `npm run build`: ✓ Compiled successfully. Falla solo en `flipclock` (PaymentFlipCountdown.tsx — Jean).
+
+### Brechas conocidas
+
+- **`MpPayout` sin acción de "pago enviado":** El modelo existe en schema (`MpPayout`) con campos de status, pero no hay server action que marque un payout como enviado/completado. El flujo termina en `RELEASED` → admin ve ventas listas para pagar → pero no hay paso siguiente programático.
+- **`flipclock` bloquea build completo:** `components/bookings/PaymentFlipCountdown.tsx` importa módulo `flipclock` inexistente. Bloqueador de Jean, no causado por cambios marketplace.
+
+### Restricciones vigentes
+
+- No main/production.
+- No booking, no `/reservas`.
+- No schema/DB/migrations sin autorización explícita.
+- No ejecutar `prisma migrate` ni `prisma db push`.
