@@ -10,6 +10,28 @@ Estado global: **Sprint 0 COMPLETADO / Sprint 2A.1 ACTIVO (proximo)**.
 
 Regla operativa: `var/rate-state.json` no debe entrar en staging.
 
+## Sprint 2A.1 - Corte 2 (checkpoint tecnico + Preview)
+
+- Commit: `6cda82e` (`fix(marketplace): sync chat unread after message events`).
+- Tag: `cp/sprint2a1-cut2-chat-unread-sync-2026-05-05`.
+- Preview Ready: `https://turpialsound-eskweq84b-bkgs-projects-829c67c1.vercel.app`.
+- Cambios:
+  - `TransactionChat` emite eventos `message_sent/messages_read/send_error/refresh_error`.
+  - `DashboardClient` refresca `threads/unread` inmediatamente via callback.
+  - Polling de 20s conservado como fallback.
+- Validaciones:
+  - `git diff --check` OK
+  - `pnpm exec tsc --noEmit` OK
+  - `pnpm run build` OK
+  - Smoke HTTP Preview OK (`/` 200, `/marketplace` 200, `/marketplace/dashboard` 307 gate esperado, `/marketplace/admin` 307 gate esperado, `/admin/login` 200, `/api/bcv-rate` 200)
+  - logs de Preview sin errores relevantes del corte.
+- Pendiente para cierre QA completo:
+  - smoke autenticado chat/unread manual;
+  - confirmar mensaje enviado visible;
+  - confirmar refresh inmediato unread/hilos;
+  - confirmar marcar leido -> badge/hilos.
+- Estado recomendado: listo tecnico + Preview OK, pendiente QA E2E autenticado de chat/unread.
+
 ## Sprint 2A.1 - Corte 1 (checkpoint validado)
 
 - Commit: `77f7516` (`fix(marketplace): improve post-action sync feedback`).

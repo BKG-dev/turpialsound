@@ -1,5 +1,38 @@
 # Session Summary - Activa
 
+## Estado activo - Sprint 2A.1 Corte 2 checkpoint - 2026-05-05
+
+- Rama activa: `jean/marketplace-sync-stabilization-2a1-2026-05-05`.
+- Corte 2 implementado en commit: `6cda82e` (`fix(marketplace): sync chat unread after message events`).
+- Tag de checkpoint publicado: `cp/sprint2a1-cut2-chat-unread-sync-2026-05-05`.
+- Preview Ready para el commit: `https://turpialsound-eskweq84b-bkgs-projects-829c67c1.vercel.app`.
+- Cambios del corte:
+  - `TransactionChat` notifica `message_sent`, `messages_read`, `send_error`, `refresh_error`.
+  - `DashboardClient` refresca hilos/unread inmediatamente via callback de chat.
+  - el polling existente se mantiene como fallback.
+- Validaciones:
+  - `git diff --check` OK
+  - `pnpm exec tsc --noEmit` OK
+  - `pnpm run build` OK
+  - Preview de `6cda82e` en estado Ready
+  - Smoke HTTP Preview OK:
+    - `/` 200
+    - `/marketplace` 200
+    - `/marketplace/dashboard` 307 (gate esperado)
+    - `/marketplace/admin` 307 (gate esperado)
+    - `/admin/login` 200
+    - `/api/bcv-rate` 200
+  - logs de Preview sin errores relevantes del corte.
+- Pendiente manual (no bloqueante tecnico):
+  - smoke autenticado chat/unread;
+  - validar mensaje enviado visible;
+  - validar refresh inmediato de unread/hilos;
+  - validar que marcar leido actualiza badge/hilos.
+- Estado recomendado:
+  - Corte 2 listo tecnicamente y Preview OK.
+  - No marcar como QA E2E completo hasta cerrar smoke manual autenticado.
+- `var/rate-state.json` se mantiene fuera de git.
+
 ## Estado activo - Sprint 2A.1 Corte 1 validado (superficial) - 2026-05-05
 
 - Rama activa: `jean/marketplace-sync-stabilization-2a1-2026-05-05`.
