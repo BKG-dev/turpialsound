@@ -27,6 +27,30 @@ export function getBookingsAppBaseUrl(): string | null {
   )
 }
 
+export function getPaymentProofLinkReadiness(): {
+  baseUrl: string | null
+  hasAccessSecret: boolean
+  missing: string[]
+} {
+  const baseUrl = getBookingsAppBaseUrl()
+  const hasAccessSecret = Boolean(process.env.PAYMENT_PROOF_ACCESS_SECRET?.trim())
+  const missing: string[] = []
+
+  if (!baseUrl) {
+    missing.push('BOOKINGS_APP_BASE_URL o NEXT_PUBLIC_APP_URL')
+  }
+
+  if (!hasAccessSecret) {
+    missing.push('PAYMENT_PROOF_ACCESS_SECRET')
+  }
+
+  return {
+    baseUrl,
+    hasAccessSecret,
+    missing,
+  }
+}
+
 export function buildAdminPaymentProofUrl(
   publicCode: string,
   paymentProofId?: string | null,

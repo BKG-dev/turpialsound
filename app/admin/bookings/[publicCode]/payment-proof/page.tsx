@@ -4,6 +4,11 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { ADMIN_LOGIN_PATH, SESSION_COOKIE_NAME, isValidAdminSessionValue } from '@/lib/auth/session'
 import { getOperationalStatus } from '@/lib/bookings/operations'
+import {
+  buildAdminPaymentProofUrl,
+  buildPaymentProofViewerUrl,
+  getPaymentProofLinkReadiness,
+} from '@/lib/bookings/operational-links'
 
 interface PaymentProofPageProps {
   params: Promise<{
@@ -111,6 +116,17 @@ export default async function PaymentProofPage({ params }: PaymentProofPageProps
           nextState: true,
         },
       },
+      paymentProofs: {
+        where: { isActive: true },
+        orderBy: { uploadedAt: 'desc' },
+        take: 1,
+        select: {
+          id: true,
+          uploadedAt: true,
+          reportedReference: true,
+          normalizedReference: true,
+        },
+      },
     },
   })
 
@@ -136,11 +152,22 @@ export default async function PaymentProofPage({ params }: PaymentProofPageProps
   }
 
   const paymentReportAudit = booking.auditLogs[0] ?? null
-  const paymentProofUrl = readStringField(paymentReportAudit?.nextState, 'paymentProofUrl')
+  const paymentProof = booking.paymentProofs[0] ?? null
+  const paymentProofUrl = paymentProof
+    ? buildPaymentProofViewerUrl(booking.publicCode, paymentProof.id)
+    : null
+  const paymentReviewUrl = paymentProof
+    ? buildAdminPaymentProofUrl(booking.publicCode, paymentProof.id)
+    : null
+  const proofLinkReadiness = getPaymentProofLinkReadiness()
   const paymentMethod = readStringField(paymentReportAudit?.nextState, 'paymentMethod')
-  const paymentReference = readStringField(paymentReportAudit?.nextState, 'paymentReference')
+  const paymentReference =
+    paymentProof?.normalizedReference ??
+    paymentProof?.reportedReference ??
+    readStringField(paymentReportAudit?.nextState, 'paymentReference')
   const paymentReportedAt =
     readStringField(paymentReportAudit?.nextState, 'paymentReportedAt') ??
+    paymentProof?.uploadedAt.toISOString() ??
     paymentReportAudit?.createdAt?.toISOString() ??
     null
   const normalizedReference = normalizePaymentReference(paymentReference ?? booking.publicCode)
@@ -161,12 +188,14 @@ export default async function PaymentProofPage({ params }: PaymentProofPageProps
             </div>
 
             <div className="flex gap-2">
-              <Link
-                href="/admin"
-                className="inline-flex h-9 items-center rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                Abrir solicitud
-              </Link>
+              {paymentReviewUrl ? (
+                <a
+                  href={paymentReviewUrl}
+                  className="inline-flex h-9 items-center rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  Abrir revision
+                </a>
+              ) : null}
               <Link
                 href="/admin"
                 className="inline-flex h-9 items-center rounded-md bg-slate-900 px-3 text-sm font-medium text-white transition hover:bg-slate-800"
@@ -181,14 +210,36 @@ export default async function PaymentProofPage({ params }: PaymentProofPageProps
           <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold text-slate-900">Comprobante</h2>
             {paymentProofUrl ? (
-              <img
-                src={paymentProofUrl}
-                alt={`Comprobante de ${booking.publicCode}`}
-                className="mt-3 w-full rounded-lg border border-slate-200 bg-slate-50 object-contain"
-              />
+              <>
+                <img
+                  src={paymentProofUrl}
+                  alt={`Comprobante de ${booking.publicCode}`}
+                  className="mt-3 w-full rounded-lg border border-slate-200 bg-slate-50 object-contain"
+                />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <a
+                    href={paymentProofUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-9 items-center rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Abrir imagen
+                  </a>
+                  {paymentReviewUrl ? (
+                    <a
+                      href={paymentReviewUrl}
+                      className="inline-flex h-9 items-center rounded-md bg-slate-900 px-3 text-sm font-medium text-white transition hover:bg-slate-800"
+                    >
+                      Revisar y aprobar
+                    </a>
+                  ) : null}
+                </div>
+              </>
             ) : (
               <div className="mt-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
-                No hay comprobante de imagen disponible para esta solicitud.
+                {paymentProof
+                  ? `No pudimos generar el visor seguro. Revisa la configuracion de ${proofLinkReadiness.missing.join(' y ') || 'enlaces operativos'}.`
+                  : 'No hay comprobante activo registrado para esta solicitud.'}
               </div>
             )}
           </article>

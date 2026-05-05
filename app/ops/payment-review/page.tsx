@@ -11,7 +11,10 @@ import { sendBookingNotifications } from '@/lib/bookings/notifications'
 import { syncBookingToGoogleCalendar } from '@/lib/bookings/google-calendar'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
 import { validatePaymentReviewAccessToken } from '@/lib/bookings/payment-review-access'
-import { buildPaymentProofViewerUrl } from '@/lib/bookings/operational-links'
+import {
+  buildPaymentProofViewerUrl,
+  getPaymentProofLinkReadiness,
+} from '@/lib/bookings/operational-links'
 
 interface PaymentReviewPageProps {
   searchParams?:
@@ -562,6 +565,7 @@ export default async function OpsPaymentReviewPage({ searchParams }: PaymentRevi
   }
 
   const proofViewerUrl = buildPaymentProofViewerUrl(booking.publicCode, paymentProof.id)
+  const proofLinkReadiness = getPaymentProofLinkReadiness()
   const canConfirm = operationalStatus === 'payment_reported'
 
   return (
@@ -592,7 +596,8 @@ export default async function OpsPaymentReviewPage({ searchParams }: PaymentRevi
               />
             ) : (
               <div className="mt-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
-                No pudimos generar el visor del comprobante.
+                No pudimos generar el visor seguro del comprobante. Revisa la configuracion de{' '}
+                {proofLinkReadiness.missing.join(' y ') || 'enlaces operativos'}.
               </div>
             )}
             <p className="mt-2 text-xs text-slate-500">
