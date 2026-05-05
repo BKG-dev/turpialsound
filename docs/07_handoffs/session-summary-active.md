@@ -996,3 +996,50 @@ Uso:
 - Jean y Manuel deben leer estos hitos al iniciar sesion.
 - Cada sprint debe cerrar con un resultado verificable, no solo con archivos modificados.
 - La division tecnica de locks se mantiene en parallel-sprint-distribution.
+
+---
+
+## Checkpoint 2026-05-05 - Rates Diagnosis (Solo Lectura)
+
+- **Rama:** `Manuel/marketplace-rates-diagnosis` (base: `integration/lab-marketplace-sprint2a-selective-2026-05-04`).
+- **Estado:** Diagnostico completado. Sin commits, sin modificaciones, sin migraciones.
+- **Deliverable:** `docs/marketplace/RATES_DIAGNOSIS_2026-05-04.md` — 13 secciones, 8 gaps (A-H).
+
+### Root Cause — "Pendiente de tasa de pago"
+
+1. **Schema:** `MpTransaction` sin columnas de tasa (`frozenRate`, `frozenRateType`, `fechaValor`, `rateSnapshotId`). `MpReferenceRateSnapshot` no existe. `MpBinanceRateSnapshot` existe pero migracion no aplicada.
+2. **Backend:** `calcFee()` en `actions/marketplace/transactions.ts:36` y `getTxPayoutCalculation()` en `DashboardClient.tsx:349` usan `USD_REFERENCE_RATE=1` (definido en `lib/marketplace/finance.ts:4`). Los resolvers `resolveBinanceRate()` y `resolveReferenceRate()` existen completos pero nunca son invocados durante la creacion de transacciones.
+3. **UI:** Placeholders en `DashboardClient.tsx:1458-1464` deliberados nunca reemplazados porque la data real nunca llego.
+
+### Gaps Clasificados
+
+| Gap | Severidad | Descripcion |
+|-----|-----------|-------------|
+| A | CRITICO | `MpTransaction` sin columnas de tasa |
+| B | CRITICO | `MpReferenceRateSnapshot` no existe |
+| C | CRITICO | `initiatePurchase()` no integra resolvers de tasa |
+| D | ALTO | Dashboard recalcula con rate=1 |
+| E | ALTO | Admin payout report usa montos rate=1 |
+| F | ALTO | Migracion `MpBinanceRateSnapshot` no aplicada en prod |
+| G | MEDIO | `/api/bcv-rate` importa de booking, no marketplace |
+| H | BAJO | Placeholder strings cosmeticos en UI |
+
+### Archivos Clave
+
+- `lib/marketplace/finance.ts` — `USD_REFERENCE_RATE=1`, `calculateSellerPayout()`
+- `lib/marketplace/binance-rate.ts` — `resolveBinanceRate()` completo, no usado
+- `lib/marketplace/reference-rate.ts` — `resolveReferenceRate()` completo, no usado
+- `actions/marketplace/transactions.ts` — `calcFee()`, `initiatePurchase()` con rate=1
+- `components/marketplace/dashboard/DashboardClient.tsx` — Placeholders L1458-1464, rate=1 L349
+- `prisma/schema.prisma` — MpTransaction L630-696, MpBinanceRateSnapshot L837-856
+
+### Proximo Paso Unico
+
+Fase 1 — Schema: Crear `MpReferenceRateSnapshot`, anadir columnas de tasa a `MpTransaction`, aplicar migracion `MpBinanceRateSnapshot`. Requiere autorizacion explicita para salir de solo-lectura.
+
+### Restricciones Vigentes
+
+- No main/production.
+- No booking, no `/reservas`.
+- No schema/DB/migrations sin autorizacion explicita.
+- No commits ni pushes (diagnosis fue solo-lectura).

@@ -1,49 +1,53 @@
 # Next Window Brief - Turpial Sound
 
-**Fecha de actualizacion:** 2026-04-29
-**Frente activo:** Marketplace
-**Tipo de nota:** Checkpoint operativo para siguiente ventana
-**Estado de sincronización:** Admin AI Copilot (read-only) y BI/Analytics implementados y validados técnicamente.
+**Fecha de actualizacion:** 2026-05-05
+**Frente activo:** Marketplace — Rates Integration (Fase 1: Schema)
+**Rama activa:** `Manuel/marketplace-rates-diagnosis` (base: `integration/lab-marketplace-sprint2a-selective-2026-05-04`)
+**Tipo de nota:** Checkpoint post-diagnosis para siguiente ventana de implementacion.
 
 ---
 
 ## Estado resumido
 
-El Admin AI Copilot (read-only) y la instrumentación inicial de Analytics/Blob están implementados y validados técnicamente. El marketplace sigue funcional y separado del booking.
+Diagnostico de tasas completado (solo-lectura). Se identifico la causa raiz de "Pendiente de tasa de pago": desconexion arquitectural entre los resolvers de tasa (completos) y el flujo de creacion de transacciones (usa `USD_REFERENCE_RATE=1`). Schema carece de columnas para congelar tasa. Deliverable: `docs/marketplace/RATES_DIAGNOSIS_2026-05-04.md` (8 gaps, 4 fases).
 
 ## Bloqueos activos
-- Critico: Ejecutar QA manual completa buyer -> admin -> escrow -> payout manual seller.
-- Alto: QA manual del Admin AI Copilot (verificación de restricciones de acceso y lectura).
-- Pendiente: Ejecutar smoke tests técnicos con `git diff --check`, `tsc` y `npm run build`.
+- CRITICO: No implementar sin autorizacion explicita para salir de solo-lectura.
+- CRITICO: `MpTransaction` sin columnas `frozenRate`, `frozenRateType`, `fechaValor`, `rateSnapshotId`.
+- CRITICO: `MpReferenceRateSnapshot` no existe como modelo Prisma.
+- ALTO: Migracion `MpBinanceRateSnapshot` pendiente de aplicacion en produccion.
+- ALTO: Transacciones existentes con `platformFeeAmount`/`sellerNetAmount` calculados con rate=1 (~40x error en Bs).
 
 ## Resuelto (Hitos clave)
-- Implementación de Admin AI Copilot (read-only) y APIs asociadas.
-- Instrumentación técnica de Analytics (`MpAnalyticsEvent`) y Blob Metadata (`MpBlobObjectMetadata`).
-- Normalización de seguridad: sin acciones de escritura, sin exposición de secretos.
-- Validaciones de construcción (`tsc`, `build`) exitosas.
+- Diagnostico completo de rates: root cause, gaps, plan de correccion.
+- Verificacion de no-interferencia con booking y `/reservas`.
+- Mapeo completo de archivos y flujos afectados.
+- 8 gaps clasificados (A-H) con severidad.
 
-## Siguiente accion exacta
+## Siguiente accion exacta (Fase 1 — Schema)
 
-1. Ejecutar QA manual E2E (buyer -> admin -> escrow -> payout seller) siguiendo el runbook.
-2. Validar Admin AI Copilot (restricciones de lectura y acceso) según el diseño.
-3. Verificar integridad del build con `git diff --check`.
-4. Una vez validado, realizar el commit y push a `Marketplace-Pure`.
-5. NO implementar acciones de escritura en el Copilot hasta nuevo aviso.
-6. NO tocar booking ni `/reservas`.
+1. Crear modelo `MpReferenceRateSnapshot` en `prisma/schema.prisma` (analogo a `MpBinanceRateSnapshot`).
+2. Anadir columnas a `MpTransaction`: `frozenRate Decimal(12,4)`, `frozenRateType String`, `fechaValor DateTime`, `rateSnapshotId String?`.
+3. Aplicar migracion `MpBinanceRateSnapshot` si no esta aplicada.
+4. Modificar `resolveReferenceRate()` en `lib/marketplace/reference-rate.ts` para persistir en `MpReferenceRateSnapshot`.
+5. Generar migracion y validar con `npx tsc --noEmit` + `npm run build`.
 
 ## Proximo prompt operativo exacto
 
 ```text
 Lee primero:
-- docs/obsidian-vault/ROADMAP_RESCATE.md
 - docs/07_handoffs/session-summary-active.md
-- docs/07_handoffs/qa-dispatcher.json
+- docs/07_handoffs/next-window-brief.md
+- docs/marketplace/RATES_DIAGNOSIS_2026-05-04.md
 
-Confirma el estado del marketplace y el Admin AI Copilot.
-Ejecuta QA manual E2E (buyer -> admin -> escrow -> payout seller) siguiendo el runbook.
-Valida el Admin AI Copilot (restricciones de lectura y acceso) según el diseño.
-Si hay residuales, documenta en Obsidian y handoff antes de hacer commits.
-No toques booking ni /reservas.
+Confirma autorizacion para salir de solo-lectura.
+Ejecuta Fase 1 — Schema:
+  1. Crear MpReferenceRateSnapshot en schema.prisma.
+  2. Anadir columnas de tasa a MpTransaction.
+  3. Verificar/aplicar migracion MpBinanceRateSnapshot.
+  4. Modificar resolveReferenceRate() para persistir en DB.
+No tocar booking ni /reservas.
+No implementar Fase 2 (integracion en initiatePurchase) hasta que Fase 1 este validada.
 ```
 
 ---
