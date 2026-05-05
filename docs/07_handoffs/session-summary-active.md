@@ -1,10 +1,13 @@
 # Session Summary - Activa
 
-## Estado activo - Plan paralelo Marketplace integrado - 2026-05-05
+## Estado activo - Sprint 0 cerrado / Sprint 2A.1 proximo - 2026-05-05
 
-- Rama activa: `integration/lab-marketplace-sprint2a-selective-2026-05-04`.
-- Estado: Sprint 0 activo.
-- Objetivo inmediato: cerrar documentacion operativa, validar rama madre, luego smoke test de booking/lab + marketplace.
+- Rama madre: `integration/lab-marketplace-sprint2a-selective-2026-05-04`.
+- Sprint 0: COMPLETADO.
+- Checkpoint documental:
+  - commit `276215c`
+  - tag `cp/parallel-marketplace-docs-reconciled-2026-05-05`
+- Objetivo inmediato: abrir Sprint 2A.1 Sync stabilization desde rama separada.
 
 ### Confirmado
 
@@ -13,12 +16,29 @@
 - Docs paralelos creados:
   - `docs/07_handoffs/parallel-sprint-distribution-2026-05-04.md`
   - `docs/obsidian-vault/SPRINTS_MARKETPLACE_PARALELO.md`
-- `e0d99e8` fue integrado manualmente sobre remoto `4a746f1` mediante resolucion documental (sin cambios de codigo).
+- `e0d99e8` fue integrado manualmente sobre remoto `4a746f1` mediante resolucion documental.
+- Validacion tecnica Sprint 0:
+  - `pnpm exec prisma validate` OK
+  - `pnpm exec prisma migrate status` OK
+  - `pnpm exec tsc --noEmit` OK
+  - `pnpm run build` OK
+- Smoke Preview Sprint 0:
+  - `/` 200
+  - `/marketplace` 200
+  - `/reservas` 200
+  - `/admin/login` 200
+  - `/admin` gate/login esperado
+  - `/ops/payment-review` gate esperado
+  - `/api/bcv-rate` 200
+- Bloqueantes: ninguno.
+- Pendientes no bloqueantes:
+  - smoke local pendiente si se quiere paridad local/preview.
+  - warnings `no-img-element` y warning Node/PG `sslmode` quedan como deuda tecnica.
 - `var/rate-state.json` queda fuera de git.
 
 ### Pendiente inmediato
 
-- Ejecutar validaciones Sprint 0.
+- Abrir Sprint 2A.1 Sync stabilization en rama separada.
 
 ### Reglas
 
@@ -30,7 +50,9 @@
 
 ### Proximo paso despues de este checkpoint
 
-- Validacion Sprint 0 read-only/build: `git diff --check`, `prisma validate/generate`, `tsc`, `build`, `migrate status` y smoke test.
+- Regla: no trabajar features directo sobre rama madre.
+- Crear rama de trabajo dedicada para Sprint 2A.1, por ejemplo:
+  - `Jean/marketplace-sync-stabilization-2a1-2026-05-05`
 
 ## Actualizacion 2026-05-02 - Integracion Marketplace + Reservas + Admin (post-push)
 

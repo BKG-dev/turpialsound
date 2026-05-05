@@ -6,11 +6,11 @@ tags: ["#marketplace", "#sprints", "#paralelo", "#status/live-source"]
 
 Rama madre integrada: `integration/lab-marketplace-sprint2a-selective-2026-05-04`
 
-Estado global: **Sprint 0 ACTIVO**.
+Estado global: **Sprint 0 COMPLETADO / Sprint 2A.1 ACTIVO (proximo)**.
 
 Regla operativa: `var/rate-state.json` no debe entrar en staging.
 
-## Sprint 0 - ACTIVO
+## Sprint 0 - COMPLETADO
 
 - Owner tecnico: Jean
 - Owner funcional: Manuel
@@ -19,7 +19,12 @@ Regla operativa: `var/rate-state.json` no debe entrar en staging.
 - Validacion minima: rama local/remota confirmada, checkpoint documental actualizado, estado git limpio salvo untracked esperado.
 - Stop condition: bloqueo de rama/entorno no resuelto o divergencia critica en rama madre.
 
-## Sprint 2A.1 Sync stabilization - PENDIENTE
+Resumen de cierre Sprint 0:
+- tecnica: `prisma validate` OK, `prisma migrate status` OK, `tsc --noEmit` OK, `pnpm run build` OK.
+- smoke preview: `/`, `/marketplace`, `/reservas`, `/admin/login`, `/admin` (gate), `/ops/payment-review` (gate), `/api/bcv-rate` en 200.
+- bloqueantes: ninguno.
+
+## Sprint 2A.1 Sync stabilization - ACTIVO / PROXIMO
 
 - Owner tecnico: Jean
 - Owner funcional: Manuel

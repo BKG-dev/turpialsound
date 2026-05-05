@@ -1,7 +1,7 @@
 # Plan operativo paralelo - Marketplace integrado
 
 Fecha: 2026-05-05
-Estado: Sprint 0 activo
+Estado: Sprint 0 completado / Sprint 2A.1 proximo
 Rama madre integrada: `integration/lab-marketplace-sprint2a-selective-2026-05-04`
 
 ## Premisa de ownership
@@ -27,10 +27,21 @@ Flujo obligatorio:
 8. QA minima.
 9. Docs actualizados.
 
-## Sprint 0 (activo)
+## Sprint 0 (completado)
 
 - Owner: Jean (tecnico), Manuel (QA/product review).
 - Objetivo: confirmar rama madre integrada, booking/lab + marketplace, envs, Prisma, build, preview y smoke test.
+- Cierre validado:
+  - `pnpm exec prisma validate` OK
+  - `pnpm exec prisma migrate status` OK
+  - `pnpm exec tsc --noEmit` OK
+  - `pnpm run build` OK
+  - Smoke Preview OK en rutas base y gates esperados.
+
+## Sprint 2A.1 (proximo)
+
+- Estado: activo/proximo.
+- Regla: abrir rama separada para features; no trabajar directo sobre rama madre.
 
 ## Distribucion de sprints
 
