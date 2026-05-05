@@ -228,7 +228,7 @@ export default function MarketplacePageClient() {
   const [filterCategory, setFilterCategory] = useState('all')
   const [priceMin, setPriceMin] = useState('')
   const [priceMax, setPriceMax] = useState('')
-  const [hideUnavailable, setHideUnavailable] = useState(true)
+  const [hideUnavailable, setHideUnavailable] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
 
   // Auth & Session from global context
@@ -900,7 +900,13 @@ export default function MarketplacePageClient() {
                       {filteredDb.length + filteredExtra.length} resultado{filteredDb.length + filteredExtra.length !== 1 ? 's' : ''}
                     </span>
                     <button
-                      onClick={() => { setSearchQuery(''); setFilterCategory('all'); setPriceMin(''); setPriceMax('') }}
+                      onClick={() => {
+                        setSearchQuery('')
+                        setFilterCategory('all')
+                        setPriceMin('')
+                        setPriceMax('')
+                        setHideUnavailable(false)
+                      }}
                       className="text-[10px] underline"
                       style={{ color: '#00aeef' }}
                     >
@@ -933,12 +939,20 @@ export default function MarketplacePageClient() {
                   <div className="col-span-full flex flex-col items-center gap-3 py-20 text-center">
                     <p className="text-sm text-[#b8b8b8]">
                       {searchQuery || filterCategory !== 'all' || priceMin || priceMax || hideUnavailable
-                        ? 'No hay listados que coincidan con los filtros actuales.'
+                        ? hideUnavailable
+                          ? 'No hay listados que coincidan con los filtros actuales. Estas ocultando publicaciones no disponibles.'
+                          : 'No hay listados que coincidan con los filtros actuales.'
                         : 'No hay listados activos en este momento.'}
                     </p>
-                    {(searchQuery || filterCategory !== 'all' || priceMin || priceMax) && (
+                    {(searchQuery || filterCategory !== 'all' || priceMin || priceMax || hideUnavailable) && (
                       <button
-                        onClick={() => { setSearchQuery(''); setFilterCategory('all'); setPriceMin(''); setPriceMax('') }}
+                        onClick={() => {
+                          setSearchQuery('')
+                          setFilterCategory('all')
+                          setPriceMin('')
+                          setPriceMax('')
+                          setHideUnavailable(false)
+                        }}
                         className="text-xs underline"
                         style={{ color: '#00aeef' }}
                       >
