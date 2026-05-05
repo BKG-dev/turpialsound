@@ -426,6 +426,28 @@ export default function MarketplacePageClient() {
   const uniqueDb  = filteredDb.filter(l => !extraIds.has(l.id))
 
   const listings: Listing[] = [...filteredExtra, ...uniqueDb]
+  const hasDiscoveryFiltersActive =
+    activeTab !== 'all' ||
+    Boolean(searchQuery.trim()) ||
+    filterCategory !== 'all' ||
+    Boolean(priceMin) ||
+    Boolean(priceMax) ||
+    hideUnavailable
+
+  const resetDiscoveryFilters = () => {
+    setActiveTab('all')
+    setSearchQuery('')
+    setFilterCategory('all')
+    setPriceMin('')
+    setPriceMax('')
+    setHideUnavailable(false)
+  }
+
+  const emptyStateMessage = hideUnavailable
+    ? 'No hay listados disponibles con los filtros actuales. Estas ocultando publicaciones vendidas, no disponibles o en proceso.'
+    : hasDiscoveryFiltersActive
+      ? 'No hay resultados para la busqueda o filtros actuales.'
+      : 'No hay listados publicados en este momento.'
 
   return (
     <>
@@ -803,14 +825,18 @@ export default function MarketplacePageClient() {
               >
                 <SlidersHorizontal size={12} />
                 Filtros
-                {(searchQuery || filterCategory !== 'all' || priceMin || priceMax) && (
+                {hasDiscoveryFiltersActive && (
                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#00aeef' }} />
                 )}
               </button>
               {hideUnavailable && (
-                <span className="text-[10px] px-2 py-1 rounded-full" style={{ background: 'rgba(74,222,128,0.08)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.18)' }}>
-                  Solo disponibles
-                </span>
+                <button
+                  onClick={() => setHideUnavailable(false)}
+                  className="text-[10px] px-2 py-1 rounded-full transition-all"
+                  style={{ background: 'rgba(74,222,128,0.08)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.18)' }}
+                >
+                  Solo disponibles · Mostrar todos
+                </button>
               )}
             </div>
 
@@ -889,24 +915,18 @@ export default function MarketplacePageClient() {
                       color: hideUnavailable ? '#4ade80' : '#9a9a9a',
                     }}
                   >
-                    {hideUnavailable ? '✓ Solo disponibles' : 'Mostrar todos'}
+                    {hideUnavailable ? 'Solo disponibles' : 'Ocultar no disponibles'}
                   </button>
                 </div>
 
                 {/* Active filters summary */}
-                {(searchQuery || filterCategory !== 'all' || priceMin || priceMax) && (
+                {hasDiscoveryFiltersActive && (
                   <div className="flex items-center gap-2">
                     <span className="text-[10px]" style={{ color: '#6a6a6a' }}>
                       {filteredDb.length + filteredExtra.length} resultado{filteredDb.length + filteredExtra.length !== 1 ? 's' : ''}
                     </span>
                     <button
-                      onClick={() => {
-                        setSearchQuery('')
-                        setFilterCategory('all')
-                        setPriceMin('')
-                        setPriceMax('')
-                        setHideUnavailable(false)
-                      }}
+                      onClick={resetDiscoveryFilters}
                       className="text-[10px] underline"
                       style={{ color: '#00aeef' }}
                     >
@@ -938,28 +958,18 @@ export default function MarketplacePageClient() {
                 ) : listings.length === 0 ? (
                   <div className="col-span-full flex flex-col items-center gap-3 py-20 text-center">
                     <p className="text-sm text-[#b8b8b8]">
-                      {searchQuery || filterCategory !== 'all' || priceMin || priceMax || hideUnavailable
-                        ? hideUnavailable
-                          ? 'No hay listados que coincidan con los filtros actuales. Estas ocultando publicaciones no disponibles.'
-                          : 'No hay listados que coincidan con los filtros actuales.'
-                        : 'No hay listados activos en este momento.'}
+                      {emptyStateMessage}
                     </p>
-                    {(searchQuery || filterCategory !== 'all' || priceMin || priceMax || hideUnavailable) && (
+                    {hasDiscoveryFiltersActive && (
                       <button
-                        onClick={() => {
-                          setSearchQuery('')
-                          setFilterCategory('all')
-                          setPriceMin('')
-                          setPriceMax('')
-                          setHideUnavailable(false)
-                        }}
+                        onClick={resetDiscoveryFilters}
                         className="text-xs underline"
                         style={{ color: '#00aeef' }}
                       >
-                        Limpiar filtros
+                        {hideUnavailable ? 'Mostrar todos los listados' : 'Limpiar filtros'}
                       </button>
                     )}
-                    {!searchQuery && filterCategory === 'all' && !priceMin && !priceMax && (
+                    {!hasDiscoveryFiltersActive && (
                       <button
                         onClick={() => openFlow('sell')}
                         className="text-xs underline"
