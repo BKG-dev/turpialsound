@@ -19,6 +19,25 @@ const SERVICE_CATEGORY_IDS = new Set([
   'podcast',
 ])
 
+const CATEGORY_LABELS: Record<string, string> = {
+  'instrumentos-nuevos': 'Instrumentos Nuevos',
+  'instrumentos-usados': 'Instrumentos Usados',
+  'audio-pro-estudio': 'Audio Pro & Estudio',
+  'consumibles': 'Consumibles',
+  'alquiler-equipos': 'Alquiler de Equipos',
+  'musicos-sesion': 'Musicos de Sesion',
+  'bandas-eventos': 'Bandas para Eventos',
+  'tecnicos-audio-iluminacion': 'Tecnicos de Audio/Iluminacion',
+  'productores-arreglistas': 'Productores & Arreglistas',
+  'beats': 'Beats',
+  'mixing': 'Mixing',
+  'mastering': 'Mastering',
+  'vocals': 'Vocals',
+  'production': 'Produccion',
+  'arreglos': 'Arreglos',
+  'podcast': 'Podcast',
+}
+
 function buildMarketplaceUser(
   id: string,
   displayName: string,
@@ -77,6 +96,14 @@ export function adaptDbListing(l: any): Listing {
 
   const activeTransactionStatus = activeTx?.status
 
+  const categoryLabel = CATEGORY_LABELS[l.category] ?? l.category
+
+  let mappedStatus: string = 'active'
+  if (l.status === 'SOLD_OUT') mappedStatus = 'sold'
+  else if (l.status === 'ARCHIVED') mappedStatus = 'sold'
+  else if (l.status === 'PAUSED') mappedStatus = 'draft'
+  else if (l.status === 'DRAFT') mappedStatus = 'draft'
+
   if (isService) {
     return {
       id: l.id,
@@ -86,14 +113,14 @@ export function adaptDbListing(l: any): Listing {
       description: l.description,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       category: l.category as any,
-      subcategory: l.category,
+      subcategory: categoryLabel,
       priceFrom: price,
       priceTo: undefined,
       priceLabel: 'por proyecto',
       currency: (l.currency as 'USD' | 'VES') ?? 'USD',
-      badge: 'NUEVO',
+      badge: l.status === 'ACTIVE' ? 'DISPONIBLE' : undefined,
       talent: user,
-      status: l.status === 'SOLD_OUT' ? 'sold' : 'active',
+      status: mappedStatus as Listing['status'],
       activeTransactionStatus,
       createdAt: createdAtStr,
       tags: l.tags ?? [],
@@ -108,14 +135,14 @@ export function adaptDbListing(l: any): Listing {
     description: l.description,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     category: l.category as any,
-    subcategory: l.category,
+    subcategory: categoryLabel,
     price,
     currency: (l.currency as 'USD' | 'VES') ?? 'USD',
     condition: 'used-good',
     images,
-    badge: 'NUEVO',
+    badge: l.status === 'ACTIVE' ? 'DISPONIBLE' : undefined,
     seller: user,
-    status: l.status === 'SOLD_OUT' ? 'sold' : 'active',
+    status: mappedStatus as Listing['status'],
     activeTransactionStatus,
     createdAt: createdAtStr,
     location: 'Venezuela',

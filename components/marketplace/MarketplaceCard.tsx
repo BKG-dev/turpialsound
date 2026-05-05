@@ -390,23 +390,8 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
           </span>
         )}
 
-        {/* VENDIDO overlay */}
-        {listing.status === 'sold' && (
-          <div className="absolute inset-0 flex items-center justify-center"
-            style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)' }}>
-            <span
-              className="px-4 py-1.5 rounded-lg text-sm font-bold tracking-widest rotate-[-8deg]"
-              style={{
-                background: 'rgba(239,68,68,0.15)',
-                border: '2px solid rgba(239,68,68,0.7)',
-                color: '#ef4444',
-                boxShadow: '0 0 20px rgba(239,68,68,0.3)',
-              }}
-            >
-              VENDIDO
-            </span>
-          </div>
-        )}
+        {/* Availability overlay */}
+        <AvailabilityOverlay listing={listing} />
 
         {/* Delivery */}
         {listing.deliveryDays && (
