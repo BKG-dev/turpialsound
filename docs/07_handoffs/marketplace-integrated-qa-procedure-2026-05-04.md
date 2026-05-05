@@ -9,6 +9,42 @@ Este documento define como validar cada sprint del marketplace con evidencia con
 
 El objetivo es evitar cerrar sprints por intuicion. Cada sprint debe cerrar con rama, commit, push, validacion proporcional, QA minimo, evidencia, pendientes clasificados y handoff.
 
+## Addendum 2026-05-05 - QA para integracion por bloques Manuel -> Jean
+
+La rama grande `origin/Manuel/marketplace-final-integrated-sprint` no debe validarse como merge directo.
+
+QA debe ejecutarse por ramas pequenas en este orden:
+
+1. `Manuel/integration-block-a-db-contract-2026-05-05`
+2. `Manuel/integration-block-b-generated-prisma-2026-05-05`
+3. `Manuel/integration-block-c-rates-finance-payout-2026-05-05`
+4. `Manuel/integration-block-d-actions-business-2026-05-05`
+5. `Manuel/integration-block-e-seo-discovery-2026-05-05`
+6. `Manuel/integration-block-f-ui-action-center-2026-05-05`
+7. `Manuel/integration-block-g-docs-handoffs-2026-05-05`
+
+Validacion minima por bloque:
+
+- `git diff --check`
+- `git diff --name-only`
+- `git diff --stat`
+- `npx tsc --noEmit`
+- `npm run build` para bloques D/E/F o cuando haya cambios de runtime/UI.
+
+Nota de entorno:
+
+- Si `tsc/build` fallan solo por `components/bookings/PaymentFlipCountdown.tsx` y `flipclock`, clasificar como bloqueo externo a marketplace. No corregirlo desde estas ramas porque booking esta fuera de scope.
+
+QA E2E requerido despues de integrar bloques aprobados:
+
+- buyer inicia compra con tasa congelada real;
+- seller entrega;
+- buyer confirma recepcion;
+- admin libera escrow;
+- admin marca pago enviado;
+- verificar que `RELEASED` significa pago vendedor pendiente y que `MpPayout COMPLETED` es el cierre operativo;
+- validar bloqueo de doble pago, disputa activa, metodo de cobro requerido y role `SUPER`.
+
 ## 1. Preparacion obligatoria
 
 Antes de probar cualquier sprint:

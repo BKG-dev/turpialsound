@@ -1,5 +1,43 @@
 # Next Window Brief - Turpial Sound
 
+**Fecha de actualizacion:** 2026-05-05
+**Frente activo:** Marketplace integration split
+**Tipo de nota:** Handoff de ramas por bloque para Jean
+**Estado de sincronizacion:** Rama grande de Manuel dividida en bloques integrables; no hubo merge directo.
+
+---
+
+## Handoff inmediato - integracion Manuel por bloques
+
+Base usada: `origin/jean/marketplace-sync-stabilization-2a1-2026-05-05`.
+
+Rama fuente auditada: `origin/Manuel/marketplace-final-integrated-sprint` (`a870f12`).
+
+Orden recomendado de revision:
+
+1. `Manuel/integration-block-a-db-contract-2026-05-05`
+2. `Manuel/integration-block-b-generated-prisma-2026-05-05`
+3. `Manuel/integration-block-c-rates-finance-payout-2026-05-05`
+4. `Manuel/integration-block-d-actions-business-2026-05-05`
+5. `Manuel/integration-block-e-seo-discovery-2026-05-05`
+6. `Manuel/integration-block-f-ui-action-center-2026-05-05`
+7. `Manuel/integration-block-g-docs-handoffs-2026-05-05`
+
+Bloqueo conocido de validacion local:
+
+- `npx tsc --noEmit` y `npm run build` fallan por `components/bookings/PaymentFlipCountdown.tsx` -> modulo `flipclock` no encontrado.
+- Este fallo esta fuera del diff marketplace y no se corrigio por regla: no tocar booking.
+
+Reglas vigentes:
+
+- No tocar `main`.
+- No tocar produccion.
+- No tocar booking, `/reservas` ni `components/bookings`.
+- No ejecutar migraciones contra DB sin lock/decision de Jean.
+- No mergear la rama grande de Manuel completa.
+
+---
+
 **Fecha de actualizacion:** 2026-04-29
 **Frente activo:** Marketplace
 **Tipo de nota:** Checkpoint operativo para siguiente ventana

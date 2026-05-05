@@ -1,5 +1,40 @@
 # Session Summary - Activa
 
+## Estado activo - Integracion Manuel por bloques para Jean - 2026-05-05
+
+- Rama base de integracion: `origin/jean/marketplace-sync-stabilization-2a1-2026-05-05`.
+- Rama Manuel grande auditada: `origin/Manuel/marketplace-final-integrated-sprint` en commit `a870f12`.
+- Decision: no merge directo de la rama grande. Se dividio en ramas pequenas, encadenadas y revisables.
+- No se toco `main`, produccion, booking, `/reservas` ni `components/bookings`.
+- No se ejecutaron migraciones contra DB. Solo se versiono el contrato/migration file en bloque A.
+- `var/rate-state.json` quedo fuera de git.
+
+### Ramas creadas para revision secuencial
+
+1. `Manuel/integration-block-a-db-contract-2026-05-05` - `9171405` - DB contract.
+2. `Manuel/integration-block-b-generated-prisma-2026-05-05` - `4ddae1b` - Prisma generated versionado.
+3. `Manuel/integration-block-c-rates-finance-payout-2026-05-05` - `b9dbd3d` - rates/finance/payout libs.
+4. `Manuel/integration-block-d-actions-business-2026-05-05` - `3f0721d` - actions/negocio marketplace.
+5. `Manuel/integration-block-e-seo-discovery-2026-05-05` - `8490cc8` - SEO/discovery publico.
+6. `Manuel/integration-block-f-ui-action-center-2026-05-05` - `ead57c9` - UI dashboard/action center.
+7. `Manuel/integration-block-g-docs-handoffs-2026-05-05` - docs/handoff de esta integracion.
+
+### Validaciones y bloqueo conocido
+
+- `git diff --check`: OK en cada bloque validado.
+- `npx prisma format`: OK en bloque A.
+- `npx prisma generate --schema=prisma/schema.prisma`: OK en bloque A.
+- `npx tsc --noEmit`: falla por `components/bookings/PaymentFlipCountdown.tsx` importando `flipclock`.
+- `npm run build`: compila Next y falla en el mismo typecheck externo `flipclock`.
+- El fallo `flipclock` esta en booking y queda fuera del scope por regla operativa.
+
+### Pendientes para Jean
+
+- Revisar PRs en orden A -> B -> C -> D -> E -> F -> G.
+- Confirmar target/lock de DB antes de aplicar migraciones reales.
+- Ejecutar QA E2E marketplace buyer/seller/admin despues de integrar los bloques aprobados.
+- Mantener `RELEASED` como fondos listos/pago vendedor pendiente y `MpPayout COMPLETED` como cierre operativo de pago enviado.
+
 ## Estado activo - Sprint 2A.1 Corte 2 checkpoint - 2026-05-05
 
 - Rama activa: `jean/marketplace-sync-stabilization-2a1-2026-05-05`.
