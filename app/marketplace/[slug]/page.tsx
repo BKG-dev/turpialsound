@@ -47,7 +47,7 @@ function buildListingDescription(listing: Listing) {
     listing.description,
     price ? `Precio publicado: ${price}.` : null,
     listing.subcategory ? `Categoria: ${listing.subcategory}.` : null,
-    'Operacion con pago reportado y revision del equipo en Turpial Sound.',
+    'Compra y venta de equipos musicales con operacion protegida en Turpial Sound Marketplace, Venezuela.',
   ].filter(Boolean)
 
   return truncateForMetadata(parts.join(' '))
@@ -65,10 +65,27 @@ function getListingUrl(slug: string) {
   return `${siteConfig.url}/marketplace/${slug}`
 }
 
+function getSchemaAvailability(listing: Listing): string {
+  if (listing.status === 'sold' || listing.status === 'escrow') {
+    return 'https://schema.org/OutOfStock'
+  }
+  if (listing.status !== 'active') {
+    return 'https://schema.org/OutOfStock'
+  }
+  if (listing.activeTransactionStatus) {
+    return 'https://schema.org/LimitedAvailability'
+  }
+  return 'https://schema.org/InStock'
+}
+
 function buildListingJsonLd(listing: Listing, listingUrl: string, description: string) {
   const marketplaceUrl = `${siteConfig.url}/marketplace`
   const images = getListingImages(listing)
   const cover = images[0] ? absoluteUrl(images[0]) : undefined
+  const price = getListingPrice(listing)
+  const availability = getSchemaAvailability(listing)
+  const schemaType = listing.type === 'product' ? 'Product' : 'Service'
+  const currency = listing.currency ?? 'USD'
 
   return {
     '@context': 'https://schema.org',
@@ -94,10 +111,40 @@ function buildListingJsonLd(listing: Listing, listingUrl: string, description: s
             }
           : {}),
         about: {
-          '@type': 'Thing',
+          '@type': schemaType,
           name: listing.title,
           description,
         },
+      },
+      {
+        '@type': schemaType,
+        '@id': `${listingUrl}#${listing.type}`,
+        name: listing.title,
+        description,
+        url: listingUrl,
+        ...(cover
+          ? {
+              image: {
+                '@type': 'ImageObject',
+                url: cover,
+              },
+            }
+          : {}),
+        ...(listing.type === 'product'
+          ? {
+              offers: {
+                '@type': 'Offer',
+                '@id': `${listingUrl}#offer`,
+                url: listingUrl,
+                price: String(price),
+                priceCurrency: currency,
+                availability,
+              },
+            }
+          : {}),
+        ...(listing.subcategory
+          ? { category: listing.subcategory }
+          : {}),
       },
       {
         '@type': 'BreadcrumbList',
@@ -147,7 +194,7 @@ export async function generateMetadata({ params }: ListingPageParams): Promise<M
 
   const listingUrl = getListingUrl(listing.slug || params.slug)
   const description = buildListingDescription(listing)
-  const title = `${listing.title} | ${siteConfig.name}`
+  const title = `${listing.title} — Marketplace Musical en Venezuela | ${siteConfig.name}`
   const images = getListingImages(listing)
   const ogImage = images[0] ? absoluteUrl(images[0]) : `${siteConfig.url}/images/og/default.jpg`
 
@@ -285,6 +332,28 @@ export default async function ListingPage({ params }: ListingPageParams) {
               <h1 className="text-2xl sm:text-3xl font-semibold text-[#f2f2f2] leading-snug">
                 {listing.title}
               </h1>
+
+              {listing.status !== 'active' && (
+                <div
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                  style={{
+                    background: listing.status === 'sold' ? 'rgba(239,68,68,0.1)' : 'rgba(251,191,36,0.1)',
+                    border: listing.status === 'sold' ? '1px solid rgba(239,68,68,0.25)' : '1px solid rgba(251,191,36,0.25)',
+                    color: listing.status === 'sold' ? '#ef4444' : '#fbbf24',
+                  }}
+                >
+                  {listing.status === 'sold' ? 'Vendido' : 'No disponible'}
+                </div>
+              )}
+
+              {listing.activeTransactionStatus && listing.status === 'active' && (
+                <div
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
+                  style={{ background: 'rgba(0,174,239,0.1)', border: '1px solid rgba(0,174,239,0.2)', color: '#00aeef' }}
+                >
+                  <Clock size={11} /> En proceso
+                </div>
+              )}
 
               <div className="flex items-end gap-2">
                 {listing.type === 'service' && (

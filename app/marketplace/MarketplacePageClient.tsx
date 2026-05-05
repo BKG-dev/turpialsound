@@ -16,6 +16,9 @@ import {
   ChevronDown,
   Lock,
   BadgeCheck,
+  Search,
+  SlidersHorizontal,
+  X,
 } from 'lucide-react'
 import type { ModalFlow, ModalState, Listing, MarketplaceUser, MessageThread } from '@/types/marketplace'
 import { MarketplaceModals } from '@/components/marketplace/MarketplaceModals'
@@ -145,6 +148,26 @@ const TABS = [
 
 const LISTINGS_LOAD_ERROR_MESSAGE = 'No pudimos cargar listados en este momento. Intenta de nuevo.'
 
+const CATEGORY_OPTIONS = [
+  { value: 'all', label: 'Todas las categorias' },
+  { value: 'instrumentos-nuevos', label: 'Instrumentos Nuevos' },
+  { value: 'instrumentos-usados', label: 'Instrumentos Usados' },
+  { value: 'audio-pro-estudio', label: 'Audio Pro & Estudio' },
+  { value: 'consumibles', label: 'Consumibles' },
+  { value: 'alquiler-equipos', label: 'Alquiler de Equipos' },
+  { value: 'musicos-sesion', label: 'Musicos de Sesion' },
+  { value: 'bandas-eventos', label: 'Bandas para Eventos' },
+  { value: 'tecnicos-audio-iluminacion', label: 'Tecnicos Audio/Iluminacion' },
+  { value: 'productores-arreglistas', label: 'Productores & Arreglistas' },
+  { value: 'beats', label: 'Beats' },
+  { value: 'mixing', label: 'Mixing' },
+  { value: 'mastering', label: 'Mastering' },
+  { value: 'vocals', label: 'Vocals' },
+  { value: 'production', label: 'Produccion' },
+  { value: 'arreglos', label: 'Arreglos' },
+  { value: 'podcast', label: 'Podcast' },
+]
+
 // ─── Section heading helper ───────────────────────────────────────────────────
 
 function SectionHeading({
@@ -199,6 +222,14 @@ export default function MarketplacePageClient() {
 
   // Tab
   const [activeTab, setActiveTab] = useState('all')
+
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterCategory, setFilterCategory] = useState('all')
+  const [priceMin, setPriceMin] = useState('')
+  const [priceMax, setPriceMax] = useState('')
+  const [hideUnavailable, setHideUnavailable] = useState(true)
+  const [showFilters, setShowFilters] = useState(false)
 
   // Auth & Session from global context
   const {
@@ -358,13 +389,37 @@ export default function MarketplacePageClient() {
 
   // ── Listings filtered ───────────────────────────────────────────────────────
 
-  const tabFilter = (l: Listing) =>
-    activeTab === 'all' ||
-    (activeTab === 'products' && l.type === 'product') ||
-    (activeTab === 'services' && l.type === 'service')
+  const priceForListing = (l: Listing): number =>
+    l.type === 'product' ? l.price : l.priceFrom
 
-  const filteredExtra = extraListings.filter(tabFilter)
-  const filteredDb    = dbListings.filter(tabFilter)
+  const applyFilters = useCallback((l: Listing): boolean => {
+    if (activeTab !== 'all') {
+      if (activeTab === 'products' && l.type !== 'product') return false
+      if (activeTab === 'services' && l.type !== 'service') return false
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      const haystack = [l.title, l.description, l.subcategory, ...l.tags].join(' ').toLowerCase()
+      if (!haystack.includes(q)) return false
+    }
+
+    if (filterCategory !== 'all' && l.category !== filterCategory) return false
+
+    const price = priceForListing(l)
+    if (priceMin && price < Number(priceMin)) return false
+    if (priceMax && price > Number(priceMax)) return false
+
+    if (hideUnavailable) {
+      const isAvailable = l.status === 'active' && !l.activeTransactionStatus
+      if (!isAvailable) return false
+    }
+
+    return true
+  }, [activeTab, searchQuery, filterCategory, priceMin, priceMax, hideUnavailable])
+
+  const filteredExtra = extraListings.filter(applyFilters)
+  const filteredDb    = dbListings.filter(applyFilters)
 
   // Deduplicate: extraListings (same-session) take priority over dbListings
   const extraIds  = new Set(filteredExtra.map(l => l.id))
@@ -712,30 +767,149 @@ export default function MarketplacePageClient() {
             />
 
             {/* Tab filter */}
-            <div className="flex gap-1 mb-8 p-1 rounded-xl w-fit"
-              style={{ background: 'var(--mp-panel)', border: '1px solid var(--mp-border)' }}>
-              {TABS.map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className="px-4 py-2 rounded-lg text-xs transition-all duration-250"
-                  style={activeTab === tab.id
-                    ? {
-                        background: 'rgba(0,174,239,0.12)',
-                        border: '1px solid rgba(0,174,239,0.25)',
-                        color: '#00aeef',
-                      }
-                    : {
-                        background: 'transparent',
-                        border: '1px solid transparent',
-                        color: '#9a9a9a',
-                      }
-                  }
-                >
-                  {tab.label}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <div className="flex gap-1 p-1 rounded-xl w-fit"
+                style={{ background: 'var(--mp-panel)', border: '1px solid var(--mp-border)' }}>
+                {TABS.map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className="px-4 py-2 rounded-lg text-xs transition-all duration-250"
+                    style={activeTab === tab.id
+                      ? {
+                          background: 'rgba(0,174,239,0.12)',
+                          border: '1px solid rgba(0,174,239,0.25)',
+                          color: '#00aeef',
+                        }
+                      : {
+                          background: 'transparent',
+                          border: '1px solid transparent',
+                          color: '#9a9a9a',
+                        }
+                    }
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setShowFilters(p => !p)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs transition-all"
+                style={{
+                  background: showFilters ? 'rgba(0,174,239,0.1)' : 'rgba(255,255,255,0.03)',
+                  border: showFilters ? '1px solid rgba(0,174,239,0.25)' : '1px solid rgba(255,255,255,0.08)',
+                  color: showFilters ? '#00aeef' : '#9a9a9a',
+                }}
+              >
+                <SlidersHorizontal size={12} />
+                Filtros
+                {(searchQuery || filterCategory !== 'all' || priceMin || priceMax) && (
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#00aeef' }} />
+                )}
+              </button>
+              {hideUnavailable && (
+                <span className="text-[10px] px-2 py-1 rounded-full" style={{ background: 'rgba(74,222,128,0.08)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.18)' }}>
+                  Solo disponibles
+                </span>
+              )}
             </div>
+
+            {/* Filter panel */}
+            {showFilters && (
+              <div
+                className="rounded-xl p-4 mb-4 space-y-3"
+                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
+              >
+                {/* Search */}
+                <div className="relative">
+                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#5a5a5a' }} />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Buscar por titulo, descripcion o etiquetas..."
+                    className="w-full pl-8 pr-8 py-2 rounded-lg text-xs outline-none"
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: '#f2f2f2',
+                    }}
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2"
+                      style={{ color: '#5a5a5a' }}
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                  {/* Category */}
+                  <select
+                    value={filterCategory}
+                    onChange={e => setFilterCategory(e.target.value)}
+                    className="px-3 py-2 rounded-lg text-xs outline-none"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f2f2f2' }}
+                  >
+                    {CATEGORY_OPTIONS.map(c => (
+                      <option key={c.value} value={c.value} style={{ background: '#111', color: '#f2f2f2' }}>{c.label}</option>
+                    ))}
+                  </select>
+
+                  {/* Price min */}
+                  <input
+                    type="number"
+                    value={priceMin}
+                    onChange={e => setPriceMin(e.target.value)}
+                    placeholder="Precio minimo USD"
+                    className="px-3 py-2 rounded-lg text-xs outline-none"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f2f2f2' }}
+                  />
+
+                  {/* Price max */}
+                  <input
+                    type="number"
+                    value={priceMax}
+                    onChange={e => setPriceMax(e.target.value)}
+                    placeholder="Precio maximo USD"
+                    className="px-3 py-2 rounded-lg text-xs outline-none"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f2f2f2' }}
+                  />
+
+                  {/* Availability toggle */}
+                  <button
+                    onClick={() => setHideUnavailable(p => !p)}
+                    className="px-3 py-2 rounded-lg text-xs transition-all text-left"
+                    style={{
+                      background: hideUnavailable ? 'rgba(74,222,128,0.06)' : 'rgba(255,255,255,0.03)',
+                      border: hideUnavailable ? '1px solid rgba(74,222,128,0.2)' : '1px solid rgba(255,255,255,0.08)',
+                      color: hideUnavailable ? '#4ade80' : '#9a9a9a',
+                    }}
+                  >
+                    {hideUnavailable ? '✓ Solo disponibles' : 'Mostrar todos'}
+                  </button>
+                </div>
+
+                {/* Active filters summary */}
+                {(searchQuery || filterCategory !== 'all' || priceMin || priceMax) && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px]" style={{ color: '#6a6a6a' }}>
+                      {filteredDb.length + filteredExtra.length} resultado{filteredDb.length + filteredExtra.length !== 1 ? 's' : ''}
+                    </span>
+                    <button
+                      onClick={() => { setSearchQuery(''); setFilterCategory('all'); setPriceMin(''); setPriceMax('') }}
+                      className="text-[10px] underline"
+                      style={{ color: '#00aeef' }}
+                    >
+                      Limpiar filtros
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Grid */}
             <AnimatePresence mode="wait">
@@ -757,14 +931,29 @@ export default function MarketplacePageClient() {
                   </div>
                 ) : listings.length === 0 ? (
                   <div className="col-span-full flex flex-col items-center gap-3 py-20 text-center">
-                    <p className="text-sm text-[#b8b8b8]">No hay listados activos en este momento.</p>
-                    <button
-                      onClick={() => openFlow('sell')}
-                      className="text-xs underline"
-                      style={{ color: '#00aeef' }}
-                    >
-                      ¿Quieres publicar el primero?
-                    </button>
+                    <p className="text-sm text-[#b8b8b8]">
+                      {searchQuery || filterCategory !== 'all' || priceMin || priceMax || hideUnavailable
+                        ? 'No hay listados que coincidan con los filtros actuales.'
+                        : 'No hay listados activos en este momento.'}
+                    </p>
+                    {(searchQuery || filterCategory !== 'all' || priceMin || priceMax) && (
+                      <button
+                        onClick={() => { setSearchQuery(''); setFilterCategory('all'); setPriceMin(''); setPriceMax('') }}
+                        className="text-xs underline"
+                        style={{ color: '#00aeef' }}
+                      >
+                        Limpiar filtros
+                      </button>
+                    )}
+                    {!searchQuery && filterCategory === 'all' && !priceMin && !priceMax && (
+                      <button
+                        onClick={() => openFlow('sell')}
+                        className="text-xs underline"
+                        style={{ color: '#00aeef' }}
+                      >
+                        ¿Quieres publicar el primero?
+                      </button>
+                    )}
                   </div>
                 ) : listings.map((listing, i) => (
                   <motion.div
