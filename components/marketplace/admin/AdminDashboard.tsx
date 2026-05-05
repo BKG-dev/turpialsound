@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   BarChart3,
   Users,
@@ -299,6 +300,7 @@ interface Props {
 }
 
 export function AdminDashboard({ initialStats, initialEscrow }: Props) {
+  const router = useRouter()
   const [tab, setTab] = useState<AdminTab>('dashboard')
   const [isPending, startTransition] = useTransition()
 
@@ -314,6 +316,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
   const [operationFilter, setOperationFilter] = useState('')
   const [pendingAction, setPendingAction] = useState<PendingAction>(null)
   const [actionMsg, setActionMsg] = useState('')
+  const [actionMsgTone, setActionMsgTone] = useState<'success' | 'error' | 'info'>('info')
 
   // Payouts
   const [payouts, setPayouts] = useState<PayoutReportRow[] | null>(null)
@@ -349,6 +352,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
 
   function startAction(txId: string, type: NonNullable<PendingAction>['type']) {
     setActionMsg('')
+    setActionMsgTone('info')
     setPendingAction({ txId, type, note: '', loading: false })
   }
 
@@ -366,12 +370,23 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
     else                            result = await adminCancelTransaction(txId, note)
 
     setActionMsg(result.message)
+    setActionMsgTone(result.success ? 'success' : 'error')
     setPendingAction(null)
 
     if (result.success) {
-      // Refresh escrow list
-      const refreshed = await getEscrowList(escrowFilter)
-      if (refreshed.success && refreshed.data) setEscrow(refreshed.data)
+      // Refresh visual state for badges/pending panels after any action.
+      const [refreshedEscrow, refreshedStats] = await Promise.all([
+        getEscrowList(escrowFilter),
+        getAdminStats(),
+      ])
+      if (refreshedEscrow.success && refreshedEscrow.data) setEscrow(refreshedEscrow.data)
+      if (refreshedStats.success && refreshedStats.data) setStats(refreshedStats.data)
+      try {
+        router.refresh()
+      } catch {
+        setActionMsgTone('info')
+        setActionMsg('Accion procesada. Si no ves los cambios, recarga el panel.')
+      }
     }
   }
 
@@ -656,7 +671,13 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
 
         {actionMsg && (
           <p className="text-xs mb-3 px-3 py-2 rounded-lg"
-            style={{ background: 'rgba(0,174,239,0.08)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.15)' }}>
+            style={
+              actionMsgTone === 'success'
+                ? { background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }
+                : actionMsgTone === 'error'
+                  ? { background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)' }
+                  : { background: 'rgba(0,174,239,0.08)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.15)' }
+            }>
             {actionMsg}
           </p>
         )}

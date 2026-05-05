@@ -454,7 +454,7 @@ function DisputeModal({
 }: {
   tx: DashTransaction
   onClose: () => void
-  onSuccess: (txId: string) => void
+  onSuccess: (txId: string) => void | Promise<void>
 }) {
   const [reason, setReason] = useState(DISPUTE_REASONS[0])
   const [description, setDescription] = useState('')
@@ -470,7 +470,7 @@ function DisputeModal({
     setError(null)
     const res = await openDispute(tx.id, reason, description.trim())
     if (res.success) {
-      onSuccess(tx.id)
+      await onSuccess(tx.id)
       onClose()
     } else {
       setError(res.message)
@@ -1771,6 +1771,8 @@ export function DashboardClient({
   const [payoutMethods, setPayoutMethods] = useState<DashPayoutMethod[]>(initialPayoutMethods)
   const [payoutBusyId, setPayoutBusyId] = useState<string | null>(null)
   const [payoutMessage, setPayoutMessage] = useState<string | null>(null)
+  const [dashboardMessage, setDashboardMessage] = useState<string | null>(null)
+  const [dashboardMessageTone, setDashboardMessageTone] = useState<'success' | 'error' | 'info'>('info')
   const [payoutSubmitting, setPayoutSubmitting] = useState(false)
   const [payoutForm, setPayoutForm] = useState({
     methodType: 'PAGO_MOVIL',
@@ -1845,6 +1847,15 @@ export function DashboardClient({
   function handleTabChange(tab: Tab) {
     setActiveTab(tab)
     router.replace(`/marketplace/dashboard?tab=${tab}`, { scroll: false })
+  }
+
+  async function refreshTransactionDetail(txId: string) {
+    const result = await getTransaction(txId)
+    if (result.success && result.data) {
+      setSelectedTxDetail(result.data as DashTransactionDetail)
+      return true
+    }
+    return false
   }
 
   async function handleOpenTransaction(tx: DashTransaction, viewAs: 'buyer' | 'seller') {
@@ -2054,6 +2065,21 @@ export function DashboardClient({
 
         {/* Tab Navigation */}
         <TabBar active={activeTab} onChange={handleTabChange} counts={counts} />
+
+        {dashboardMessage && (
+          <div
+            className="rounded-xl px-4 py-3 text-xs"
+            style={
+              dashboardMessageTone === 'success'
+                ? { background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)', color: '#4ade80' }
+                : dashboardMessageTone === 'error'
+                  ? { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }
+                  : { background: 'rgba(0,174,239,0.1)', border: '1px solid rgba(0,174,239,0.2)', color: '#00aeef' }
+            }
+          >
+            {dashboardMessage}
+          </div>
+        )}
 
         {/* Tab Content */}
         <div>
@@ -2767,9 +2793,21 @@ export function DashboardClient({
         <DisputeModal
           tx={disputeTarget}
           onClose={() => setDisputeTarget(null)}
-          onSuccess={txId => {
+          onSuccess={async txId => {
             setDisputedTxIds(prev => new Set(prev).add(txId))
             setDisputeTarget(null)
+            setDashboardMessageTone('success')
+            setDashboardMessage('Disputa enviada. Actualizamos el estado operativo de la transaccion.')
+            if (selectedTx?.tx.id === txId) {
+              setSelectedTxDetail(prev => prev ? { ...prev, status: 'DISPUTED' } : prev)
+              await refreshTransactionDetail(txId)
+            }
+            try {
+              router.refresh()
+            } catch {
+              setDashboardMessageTone('info')
+              setDashboardMessage('Disputa registrada. Si no ves el cambio de inmediato, recarga la vista.')
+            }
           }}
         />
       )}
