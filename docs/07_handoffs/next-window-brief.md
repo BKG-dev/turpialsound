@@ -1,36 +1,38 @@
 # Next Window Brief - Turpial Sound
 
-**Fecha de actualizacion:** 2026-05-05
-**Frente activo:** Marketplace — Rates Integration (Fase 1: Schema)
+**Fecha de actualización:** 2026-05-05
+**Frente activo:** Marketplace — Rates Integration (Fase 2 cerrada, pendiente commit+push)
 **Rama activa:** `Manuel/marketplace-rates-diagnosis` (base: `integration/lab-marketplace-sprint2a-selective-2026-05-04`)
-**Tipo de nota:** Checkpoint post-diagnosis para siguiente ventana de implementacion.
+**Tipo de nota:** Checkpoint post-Fase 2 para siguiente ventana.
 
 ---
 
 ## Estado resumido
 
-Diagnostico de tasas completado (solo-lectura). Se identifico la causa raiz de "Pendiente de tasa de pago": desconexion arquitectural entre los resolvers de tasa (completos) y el flujo de creacion de transacciones (usa `USD_REFERENCE_RATE=1`). Schema carece de columnas para congelar tasa. Deliverable: `docs/marketplace/RATES_DIAGNOSIS_2026-05-04.md` (8 gaps, 4 fases).
+Fase 2 de integración de tasas completada técnicamente. Schema Fase 1 cherry-picked desde `Manuel/marketplace-rates-schema-fase1`. `initiatePurchase()` ahora persiste tasas reales en columnas dedicadas (`frozenRate`, `frozenRateSource`, `frozenRateFechaValor`, `rateSnapshotId`), bloquea compras cuando no hay tasa disponible (sin fallback silencioso a `USD_REFERENCE_RATE=1`), y protege contra doble venta con `RELEASED` en el guard.
 
-## Bloqueos activos
-- CRITICO: No implementar sin autorizacion explicita para salir de solo-lectura.
-- CRITICO: `MpTransaction` sin columnas `frozenRate`, `frozenRateType`, `fechaValor`, `rateSnapshotId`.
-- CRITICO: `MpReferenceRateSnapshot` no existe como modelo Prisma.
-- ALTO: Migracion `MpBinanceRateSnapshot` pendiente de aplicacion en produccion.
-- ALTO: Transacciones existentes con `platformFeeAmount`/`sellerNetAmount` calculados con rate=1 (~40x error en Bs).
+## Lo que ya está cerrado
 
-## Resuelto (Hitos clave)
-- Diagnostico completo de rates: root cause, gaps, plan de correccion.
-- Verificacion de no-interferencia con booking y `/reservas`.
-- Mapeo completo de archivos y flujos afectados.
-- 8 gaps clasificados (A-H) con severidad.
+- Schema: columnas de tasa en `MpTransaction`, modelo `MpReferenceRateSnapshot`, migración, `reference-rate.ts` con DB.
+- `calcFee()`: firma simplificada, eliminada dependencia de `USD_REFERENCE_RATE`.
+- `initiatePurchase()`: 3 rutas (USDT directo / BCV / Binance), bloqueo en unavailable, persistencia real, `RELEASED` guard.
+- `releaseEscrow()`: verificado que acepta `DELIVERY_CONFIRMED`.
+- `RATES_BLOCKER_FASE2.md`: eliminado.
+- `tsc --noEmit`: limpio.
 
-## Siguiente accion exacta (Fase 1 — Schema)
+## Lo que falta por hacer en esta rama
 
-1. Crear modelo `MpReferenceRateSnapshot` en `prisma/schema.prisma` (analogo a `MpBinanceRateSnapshot`).
-2. Anadir columnas a `MpTransaction`: `frozenRate Decimal(12,4)`, `frozenRateType String`, `fechaValor DateTime`, `rateSnapshotId String?`.
-3. Aplicar migracion `MpBinanceRateSnapshot` si no esta aplicada.
-4. Modificar `resolveReferenceRate()` en `lib/marketplace/reference-rate.ts` para persistir en `MpReferenceRateSnapshot`.
-5. Generar migracion y validar con `npx tsc --noEmit` + `npm run build`.
+1. Commit + push con mensaje: `feat(marketplace): persist resolved purchase rates — Fase 2 closure`.
+2. (Opcional) `npm run build` final.
+
+## Gaps pendientes para siguientes fases
+
+| Gap | Severidad | Descripción |
+|-----|-----------|-------------|
+| D | ALTO | Dashboard (`DashboardClient.tsx`) recalcula con `USD_REFERENCE_RATE=1` |
+| E | ALTO | Admin payout report usa montos con rate=1 |
+| F | ALTO | Migración `MpBinanceRateSnapshot` no aplicada en producción |
+| H | BAJO | UI placeholders cosméticos en dashboard |
 
 ## Proximo prompt operativo exacto
 
@@ -38,59 +40,17 @@ Diagnostico de tasas completado (solo-lectura). Se identifico la causa raiz de "
 Lee primero:
 - docs/07_handoffs/session-summary-active.md
 - docs/07_handoffs/next-window-brief.md
-- docs/marketplace/RATES_DIAGNOSIS_2026-05-04.md
 
-Confirma autorizacion para salir de solo-lectura.
-Ejecuta Fase 1 — Schema:
-  1. Crear MpReferenceRateSnapshot en schema.prisma.
-  2. Anadir columnas de tasa a MpTransaction.
-  3. Verificar/aplicar migracion MpBinanceRateSnapshot.
-  4. Modificar resolveReferenceRate() para persistir en DB.
+Confirma si deseas commit + push en rama Manuel/marketplace-rates-diagnosis.
+O si prefieres avanzar a Fase 3 (dashboard/payout recalculation con tasas reales).
 No tocar booking ni /reservas.
-No implementar Fase 2 (integracion en initiatePurchase) hasta que Fase 1 este validada.
 ```
 
 ---
 
-## Checkpoint operativo - rama madre integrada y trabajo paralelo
+## Restricciones vigentes
 
-Fecha: 2026-05-04
-Rama madre: integration/lab-marketplace-sprint2a-selective-2026-05-04
-
-Se documento el metodo de trabajo paralelo para Jean y Manuel.
-
-### Estado
-
-La rama madre es controlada por Jean y funciona como base integrada. No se debe trabajar codigo directo sobre ella.
-
-### Pendiente inmediato Jean
-
-- Resolver bloqueo global de build por flipclock en components/bookings/PaymentFlipCountdown.tsx.
-- Revisar/mergear Manuel/reconcile-sprint2a-on-integrated-mother, commit 6512972, que restaura piezas criticas de Sprint 2A en la integracion.
-
-### Manuel
-
-Manuel puede iniciar sus sprints en ramas propias desde la rama madre, priorizando rates diagnosis, payout design, listing state y QA operacional.
-
-### Documentos fuente
-
-- docs/07_handoffs/parallel-sprint-distribution-2026-05-04.md
-- docs/obsidian-vault/SPRINTS_MARKETPLACE_PARALELO.md
-
----
-
-## Checkpoint operativo - hitos pragmaticos marketplace
-
-Fecha: 2026-05-04
-Rama madre: integration/lab-marketplace-sprint2a-selective-2026-05-04
-
-Se agrego una capa de hitos pragmaticos / Definition of Done para traducir cada sprint tecnico a resultados concretos verificables.
-
-Documentos:
-- docs/07_handoffs/marketplace-pragmatic-milestones-2026-05-04.md
-- docs/obsidian-vault/HITOS_MARKETPLACE_PRACTICOS.md
-
-Uso:
-- Jean y Manuel deben leer estos hitos al iniciar sesion.
-- Cada sprint debe cerrar con un resultado verificable, no solo con archivos modificados.
-- La division tecnica de locks se mantiene en parallel-sprint-distribution.
+- No main/production.
+- No booking, no `/reservas`.
+- No schema/DB/migrations sin autorización explícita.
+- No ejecutar `prisma migrate` ni `prisma db push`.

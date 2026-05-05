@@ -7,10 +7,11 @@ import {
   calculateSellerPayout,
   PLATFORM_FEE,
   roundMoney,
-  USD_REFERENCE_RATE,
   type BuyerPaymentMethod,
   type SellerPayoutMethod,
 } from '@/lib/marketplace/finance'
+import { resolveBinanceRate, type BinanceRateResult } from '@/lib/marketplace/binance-rate'
+import { resolveReferenceRate } from '@/lib/marketplace/reference-rate'
 import type { ActionResult } from '@/lib/validations/marketplace'
 
 type CheckoutPaymentMethod =
@@ -33,13 +34,14 @@ function mapSellerPayoutMethod(methodType: string | null | undefined): SellerPay
   return 'NONE'
 }
 
-function calcFee(amount: number, paymentMethod: TxPaymentMethod, sellerPayoutMethod: SellerPayoutMethod) {
+function calcFee(amount: number, paymentMethod: TxPaymentMethod, sellerPayoutMethod: SellerPayoutMethod, bcvRate: number, binanceRate: number) {
+  const buyerMethod = mapBuyerPaymentMethod(paymentMethod)
   const payout = calculateSellerPayout({
     amountUSD: amount,
-    buyerPaymentMethod: mapBuyerPaymentMethod(paymentMethod),
+    buyerPaymentMethod: buyerMethod,
     sellerPayoutMethod,
-    bcvRate: USD_REFERENCE_RATE,
-    binanceRate: USD_REFERENCE_RATE,
+    bcvRate,
+    binanceRate,
   })
   const bankPercent = payout.bankFeeBS > 0 ? BANK_FEE * 100 : 0
 
@@ -47,6 +49,10 @@ function calcFee(amount: number, paymentMethod: TxPaymentMethod, sellerPayoutMet
     platformFeePercent: PLATFORM_FEE * 100 + bankPercent,
     platformFeeAmount: Math.max(0, roundMoney(amount - payout.netUSD)),
     sellerNetAmount: payout.netUSD,
+    appliedRateType: payout.appliedRateType,
+    appliedRate: payout.appliedRateType === 'BINANCE' ? binanceRate : payout.appliedRateType === 'BCV' ? bcvRate : null,
+    sellerNetBS: payout.netBS,
+    breakdown: payout.breakdown,
   }
 }
 
@@ -95,7 +101,7 @@ export async function initiatePurchase(
     if (listing.status !== 'ACTIVE') return { success: false, message: 'Este listing no esta disponible' }
     if (listing.sellerId === session.userId) return { success: false, message: 'No puedes comprar tu propio listing' }
 
-    // Check for active transactions
+    // Guard: prevent double sale — RELEASED included because listing is unique (one sale = one listing)
     const activeTx = await db.mpTransaction.findFirst({
       where: {
         listingId,
@@ -107,6 +113,7 @@ export async function initiatePurchase(
             'IN_ESCROW',
             'DELIVERY_CONFIRMED',
             'DISPUTED',
+            'RELEASED',
           ],
         },
       },
@@ -116,34 +123,94 @@ export async function initiatePurchase(
       return { success: false, message: 'Este articulo ya tiene una operacion en curso y no esta disponible para la compra' }
     }
 
+    const sellerPayoutMethod = mapSellerPayoutMethod(listing.seller.payoutMethods[0]?.methodType)
+    const buyerMethod = mapBuyerPaymentMethod(mappedPaymentMethod)
+    const isBinanceBuyer = buyerMethod === 'BINANCE'
+    const isBinanceSeller = sellerPayoutMethod === 'BINANCE'
+    const isUSDTDirect = isBinanceBuyer && isBinanceSeller
+
     const amount = Number(listing.price)
-    const fee = calcFee(amount, mappedPaymentMethod, mapSellerPayoutMethod(listing.seller.payoutMethods[0]?.methodType))
     const idempotencyKey = `${session.userId}_${listingId}_${Date.now()}`
 
-    const tx = await db.mpTransaction.create({
-      data: {
-        idempotencyKey,
-        buyerId: session.userId,
-        sellerId: listing.sellerId,
-        listingId,
-        paymentMethod: mappedPaymentMethod,
-        status: 'PENDING_PAYMENT',
-        amount: String(amount),
-        currency: listing.currency,
-        platformFeePercent: String(fee.platformFeePercent),
-        platformFeeAmount: String(fee.platformFeeAmount),
-        sellerNetAmount: String(fee.sellerNetAmount),
-      },
-      select: { id: true },
-    })
+    // ─── Rate resolution & frozen-column persistence ───
+    // Three mutually exclusive paths; each sets frozenRate columns or blocks with a clear error.
+    // No silent fallback to USD_REFERENCE_RATE=1.
+    let bcvRate = 0
+    let binanceRate = 0
+    let frozenRate: string | null = null
+    let frozenRateSource: string | null = null
+    let frozenRateFechaValor: Date | null = null
+    let rateSnapshotId: string | null = null
+    let adminNotes = ''
 
-    await db.mpTransactionStatusHistory.create({
-      data: {
-        transactionId: tx.id,
-        toStatus: 'PENDING_PAYMENT',
-        changedBy: session.userId,
-        reason: 'Compra iniciada por el comprador. Esperando comprobante de pago.',
-      },
+    if (isUSDTDirect) {
+      // USDT direct: buyer pays USDT, seller receives USDT — no conversion needed
+      adminNotes = 'USDT directo — sin conversion de tasa'
+    } else if (!isBinanceBuyer) {
+      // BCV route: buyer pays via PagoMovil / Bank / Zelle → seller receives BS
+      const bcvResult = await resolveReferenceRate()
+      if (bcvResult.rate === null || bcvResult.rate <= 0) {
+        await db.$disconnect()
+        return { success: false, message: 'No pudimos obtener la tasa de pago (BCV). Intenta nuevamente en unos minutos o contacta soporte.' }
+      }
+      bcvRate = bcvResult.rate
+      frozenRate = String(bcvResult.rate)
+      frozenRateSource = 'BCV'
+      frozenRateFechaValor = bcvResult.fechaValor ? new Date(bcvResult.fechaValor) : null
+      rateSnapshotId = bcvResult.snapshotId
+      adminNotes = `Tasa BCV: ${bcvResult.rate} Bs/USD | fuente: ${bcvResult.source} | modo: ${bcvResult.mode}`
+    } else {
+      // Binance route: buyer pays via Binance → seller receives BS
+      let binanceResult: BinanceRateResult
+      try {
+        binanceResult = await resolveBinanceRate()
+      } catch (binanceErr) {
+        await db.$disconnect()
+        return { success: false, message: 'No pudimos obtener la tasa de pago (Binance). Intenta nuevamente en unos minutos o contacta soporte.' }
+      }
+      binanceRate = binanceResult.rate
+      frozenRate = String(binanceResult.rate)
+      frozenRateSource = 'BINANCE'
+      frozenRateFechaValor = binanceResult.fechaValor ? new Date(binanceResult.fechaValor) : null
+      rateSnapshotId = binanceResult.snapshotId
+      adminNotes = `Tasa Binance: ${binanceResult.rate} Bs/USD | snapshotId: ${binanceResult.snapshotId ?? 'N/D'} | modo: ${binanceResult.mode}`
+    }
+
+    const fee = calcFee(amount, mappedPaymentMethod, sellerPayoutMethod, bcvRate, binanceRate)
+
+    const tx = await db.$transaction(async (prisma: any) => {
+      const record = await prisma.mpTransaction.create({
+        data: {
+          idempotencyKey,
+          buyerId: session.userId,
+          sellerId: listing.sellerId,
+          listingId,
+          paymentMethod: mappedPaymentMethod,
+          status: 'PENDING_PAYMENT',
+          amount: String(amount),
+          currency: listing.currency,
+          platformFeePercent: String(fee.platformFeePercent),
+          platformFeeAmount: String(fee.platformFeeAmount),
+          sellerNetAmount: String(fee.sellerNetAmount),
+          frozenRate,
+          frozenRateSource,
+          frozenRateFechaValor,
+          rateSnapshotId,
+          adminNotes,
+        },
+        select: { id: true },
+      })
+
+      await prisma.mpTransactionStatusHistory.create({
+        data: {
+          transactionId: record.id,
+          toStatus: 'PENDING_PAYMENT',
+          changedBy: session.userId,
+          reason: 'Compra iniciada por el comprador. Esperando comprobante de pago.',
+        },
+      })
+
+      return record
     })
 
     await db.$disconnect()

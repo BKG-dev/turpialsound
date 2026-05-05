@@ -1043,3 +1043,42 @@ Fase 1 — Schema: Crear `MpReferenceRateSnapshot`, anadir columnas de tasa a `M
 - No booking, no `/reservas`.
 - No schema/DB/migrations sin autorizacion explicita.
 - No commits ni pushes (diagnosis fue solo-lectura).
+
+---
+
+## Checkpoint 2026-05-05 — Fase 2 Rates Integration (Cierre)
+
+- **Rama:** `Manuel/marketplace-rates-diagnosis`.
+- **Estado:** Completado técnicamente. Sin commit ni push aún.
+- **Schema Fase 1:** Cherry-picked commit `8ea44d4` desde `Manuel/marketplace-rates-schema-fase1` (zero conflicts, 36 files).
+  - Columnas `frozenRate`, `frozenRateSource`, `frozenRateFechaValor`, `rateSnapshotId` en `MpTransaction`.
+  - Modelo `MpReferenceRateSnapshot` en `prisma/schema.prisma` y generado en Prisma Client.
+  - `lib/marketplace/reference-rate.ts` con integración DB (`persistReferenceSnapshot`, `readLastValidReferenceSnapshot`).
+  - Migración manual `prisma/migrations/20260505_marketplace_rate_schema_fase1/migration.sql`.
+
+### Cambios en `actions/marketplace/transactions.ts`
+
+1. **`calcFee()`** — firma simplificada de `(amount, paymentMethod, sellerPayoutMethod, rates: ResolvedRates)` a `(amount, paymentMethod, sellerPayoutMethod, bcvRate: number, binanceRate: number)`. Eliminada dependencia de `USD_REFERENCE_RATE`.
+2. **`initiatePurchase()`**:
+   - `RELEASED` agregado al guard de transacción activa (previene doble venta en listings únicos).
+   - Tres rutas mutuamente excluyentes con validación de tasas:
+     - **USDT directo:** sin conversión, `adminNotes = 'USDT directo — sin conversion de tasa'`.
+     - **BCV route:** `resolveReferenceRate()` → bloquea si `rate === null || rate <= 0` con error: "No pudimos obtener la tasa de pago (BCV). Intenta nuevamente en unos minutos o contacta soporte."
+     - **Binance route:** `resolveBinanceRate()` → bloquea si lanza excepción con error: "No pudimos obtener la tasa de pago (Binance). Intenta nuevamente en unos minutos o contacta soporte."
+   - Columnas reales persistidas: `frozenRate` (String del rate), `frozenRateSource` ('BCV'|'BINANCE'), `frozenRateFechaValor` (Date), `rateSnapshotId`.
+   - `adminNotes` reducido a nota informativa secundaria (no audit trail financiero).
+   - Eliminada dependencia de `USD_REFERENCE_RATE` (ya no importado).
+   - Eliminado tipo `ResolvedRates`.
+3. **`releaseEscrow()`** — verificado: ya permite `DELIVERY_CONFIRMED` (línea 414).
+
+### Validación
+
+- `npx tsc --noEmit`: limpio (único error pre-existente: `flipclock` de Jean).
+- `RATES_BLOCKER_FASE2.md`: eliminado (bloqueo resuelto).
+
+### Pendientes (Fase 3+)
+
+- Dashboard (`DashboardClient.tsx`) aún recalcula con `USD_REFERENCE_RATE=1` (Gap D).
+- Admin payout report usa montos con rate=1 (Gap E).
+- UI placeholders cosméticos (Gap H).
+- Migración `MpBinanceRateSnapshot` pendiente de aplicación en producción (Gap F).
