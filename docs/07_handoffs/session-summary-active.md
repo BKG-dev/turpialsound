@@ -1,4 +1,4 @@
-﻿# Session Summary - Activa
+# Session Summary - Activa
 
 ## Actualizacion 2026-05-02 - Integracion Marketplace + Reservas + Admin (post-push)
 
@@ -951,3 +951,30 @@ pm run build: OK.
 - Guardrails: rechaza secretos, arquitectura, rutas internas, Prisma/schema/tablas, antifraude, proof/proxy SUPER, notas admin, datos personales/bancarios privados, handoffs, roadmap, bugs, commits, ramas y finanzas/tasas internas.
 - UI nueva: `components/marketplace/MarketplaceAssistant.tsx`, mobile/desktop y dark/light por tokens `--mp-*`.
 - No se tocaron booking, `/reservas`, schema/migrations, tasas/Binance rate, liquidacion seller, payout final, carrito, conformidad/fondos, paymentProofUrl/proxy SUPER, env files, logica de transacciones, main ni produccion.
+
+---
+
+## Checkpoint operativo - rama madre integrada y trabajo paralelo
+
+Fecha: 2026-05-04
+Rama madre: integration/lab-marketplace-sprint2a-selective-2026-05-04
+
+Se documento el metodo de trabajo paralelo para Jean y Manuel.
+
+### Estado
+
+La rama madre es controlada por Jean y funciona como base integrada. No se debe trabajar codigo directo sobre ella.
+
+### Pendiente inmediato Jean
+
+- Resolver bloqueo global de build por flipclock en components/bookings/PaymentFlipCountdown.tsx.
+- Revisar/mergear Manuel/reconcile-sprint2a-on-integrated-mother, commit 6512972, que restaura piezas criticas de Sprint 2A en la integracion.
+
+### Manuel
+
+Manuel puede iniciar sus sprints en ramas propias desde la rama madre, priorizando rates diagnosis, payout design, listing state y QA operacional.
+
+### Documentos fuente
+
+- docs/07_handoffs/parallel-sprint-distribution-2026-05-04.md
+- docs/obsidian-vault/SPRINTS_MARKETPLACE_PARALELO.md
