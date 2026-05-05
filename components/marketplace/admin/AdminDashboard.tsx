@@ -115,9 +115,9 @@ const STATUS_LABEL: Record<string, string> = {
   PAYMENT_RECEIVED: 'Pago recibido',
   VALIDATING: 'En revision',
   PAYMENT_FAILED: 'Pago fallido',
-  IN_ESCROW: 'En proceso',
-  DELIVERY_CONFIRMED: 'Entrega confirmada',
-  RELEASED: 'Listo para pagar',
+  IN_ESCROW: 'Esperando conformidad',
+  DELIVERY_CONFIRMED: 'Fondos por liberar',
+  RELEASED: 'Operacion cerrada',
   REFUNDED: 'Reembolsado',
   DISPUTED: 'Disputa abierta',
   CANCELLED: 'Cancelado',
@@ -510,11 +510,11 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
       { value: 'all', label: 'Todas' },
       { value: 'PAYMENT_RECEIVED', label: 'Pago recibido' },
       { value: 'VALIDATING', label: 'En revision' },
-      { value: 'IN_ESCROW', label: 'En proceso' },
+      { value: 'IN_ESCROW', label: 'Esperando conformidad' },
       { value: 'expiring', label: 'Por vencer' },
       { value: 'DISPUTED', label: 'En disputa' },
-      { value: 'DELIVERY_CONFIRMED', label: 'Conf. entrega' },
-      { value: 'RELEASED', label: 'Listo para pagar' },
+      { value: 'DELIVERY_CONFIRMED', label: 'Fondos por liberar' },
+      { value: 'RELEASED', label: 'Operacion cerrada' },
     ]
 
     const availableSenderBanks = Array.from(
@@ -758,8 +758,8 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                         <ActionBtn label="Rechazar" color="#ef4444" onClick={() => startAction(tx.id, 'reject')} />
                       </>
                     )}
-                    {(tx.status === 'IN_ESCROW' || tx.status === 'DELIVERY_CONFIRMED') && (
-                      <ActionBtn label="Listo para pagar" color="#00aeef" onClick={() => startAction(tx.id, 'release')} />
+                    {tx.status === 'DELIVERY_CONFIRMED' && (
+                      <ActionBtn label="Liberar fondos" color="#00aeef" onClick={() => startAction(tx.id, 'release')} />
                     )}
                     {tx.status === 'DISPUTED' && (
                       <>

@@ -20,6 +20,7 @@ export {
   initiatePurchase,
   submitPaymentProof,
   validatePayment,
+  sellerDeliver,
   confirmDelivery,
   releaseEscrow,
   openDispute,

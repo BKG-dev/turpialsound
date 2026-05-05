@@ -26,11 +26,13 @@ import {
   Landmark,
   Plus,
   CreditCard,
+  CheckCircle,
+  Send,
 } from 'lucide-react'
 import type { MpSessionPayload } from '@/lib/marketplace/auth'
 import { TransactionChat } from '@/components/marketplace/TransactionChat'
 import { getMyThreads, getUnreadCount } from '@/actions/marketplace/chat'
-import { getTransaction, openDispute } from '@/actions/marketplace/transactions'
+import { getTransaction, openDispute, sellerDeliver, confirmDelivery } from '@/actions/marketplace/transactions'
 import { toggleFavorite } from '@/actions/marketplace/favorites'
 import {
   calculateSellerPayout,
@@ -50,7 +52,7 @@ import { MarketplaceThemeToggle } from '@/components/marketplace/MarketplaceThem
 import { VENEZUELAN_BANK_OPTIONS } from '@/lib/marketplace/venezuelan-banks'
 import { normalizeVenezuelanMobilePhone } from '@/lib/marketplace/venezuelan-phone'
 
-// ─── Local Types ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Local Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface DashProfile {
   id: string
@@ -128,20 +130,20 @@ type DashListing = any
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DashInteracted = any
 
-// ─── Tab Type ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Tab Type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type Tab = 'my_store' | 'sales' | 'purchases' | 'messages' | 'favorites' | 'payouts'
 
-// ─── Status Config ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Status Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; glow: string }> = {
   INITIATED:           { label: 'Iniciado',          color: '#60a5fa', bg: 'rgba(59,130,246,0.1)',  glow: 'rgba(59,130,246,0.25)'  },
   PENDING_PAYMENT:     { label: 'Pago Pendiente',    color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  glow: 'rgba(245,158,11,0.25)'  },
   PAYMENT_RECEIVED:    { label: 'Pago Recibido',     color: '#eab308', bg: 'rgba(234,179,8,0.1)',   glow: 'rgba(234,179,8,0.25)'   },
   VALIDATING:          { label: 'Validando',         color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', glow: 'rgba(167,139,250,0.25)' },
-  IN_ESCROW:           { label: 'En proceso',        color: '#00aeef', bg: 'rgba(0,174,239,0.1)',   glow: 'rgba(0,174,239,0.25)'   },
-  DELIVERY_CONFIRMED:  { label: 'Entrega Confirmada',color: '#34d399', bg: 'rgba(52,211,153,0.1)',  glow: 'rgba(52,211,153,0.25)'  },
-  RELEASED:            { label: 'Listo para cobrar', color: '#4ade80', bg: 'rgba(74,222,128,0.1)',  glow: 'rgba(74,222,128,0.25)'  },
+  IN_ESCROW:           { label: 'Envio en curso',    color: '#00aeef', bg: 'rgba(0,174,239,0.1)',   glow: 'rgba(0,174,239,0.25)'   },
+  DELIVERY_CONFIRMED:  { label: 'Entrega confirmada',color: '#34d399', bg: 'rgba(52,211,153,0.1)',  glow: 'rgba(52,211,153,0.25)'  },
+  RELEASED:            { label: 'Completada',        color: '#4ade80', bg: 'rgba(74,222,128,0.1)',  glow: 'rgba(74,222,128,0.25)'  },
   PAYMENT_FAILED:      { label: 'Pago Fallido',      color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   glow: 'rgba(239,68,68,0.25)'   },
   DISPUTED:            { label: 'En Disputa',        color: '#f97316', bg: 'rgba(249,115,22,0.1)',  glow: 'rgba(249,115,22,0.25)'  },
   REFUNDED:            { label: 'Reembolsado',       color: '#c084fc', bg: 'rgba(192,132,252,0.1)', glow: 'rgba(192,132,252,0.25)' },
@@ -166,7 +168,7 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
   )
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function fmtDate(d: string | Date) {
   return new Date(d).toLocaleDateString('es-VE', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -230,12 +232,12 @@ function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
       seller: 'La revision manual sigue en curso. Te notificaremos cuando el pago quede conciliado.',
     },
     IN_ESCROW: {
-      buyer: 'Los fondos estan protegidos. Coordina la entrega con el vendedor.',
-      seller: 'El pago ya fue validado. Completa la entrega para avanzar al cierre de la venta.',
+      buyer: 'Los fondos estan protegidos. Confirma cuando recibas el producto o servicio.',
+      seller: 'El pago ya fue validado. Marca como entregado para que el comprador confirme la recepcion.',
     },
     DELIVERY_CONFIRMED: {
-      buyer: 'La operacion esta lista para avanzar a liberacion si no hay disputa.',
-      seller: 'La entrega fue confirmada. El pago al vendedor queda como siguiente paso.',
+      buyer: 'Confirmaste la recepcion. Un administrador liberara los fondos al vendedor.',
+      seller: 'El comprador confirmo la entrega. Espera la liberacion de fondos por un administrador.',
     },
     RELEASED: {
       buyer: 'La operacion fue liberada y quedo cerrada a nivel de escrow.',
@@ -277,8 +279,8 @@ function getOperationalNextStep(status: string, viewAs: 'buyer' | 'seller') {
       seller: 'Mantente atento a la confirmacion del equipo mientras termina la conciliacion.',
     },
     IN_ESCROW: {
-      buyer: 'Coordina la entrega y abre disputa solo si aparece una incidencia real.',
-      seller: 'Completa la entrega para que la venta pueda avanzar a cierre y cobro.',
+      buyer: 'Confirma la recepcion con "Ya recibi" cuando tengas el producto.',
+      seller: 'Marca "Ya entregue" cuando hayas completado la entrega del producto.',
     },
     DELIVERY_CONFIRMED: {
       buyer: 'La operacion ya quedo lista para cierre operativo.',
@@ -323,7 +325,7 @@ function getStatusLabelForView(status: string, viewAs: 'buyer' | 'seller') {
 function getBuyerCtaLabel(status: string) {
   if (status === 'PENDING_PAYMENT') return 'Reportar pago'
   if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado / esperando validacion'
-  if (status === 'IN_ESCROW') return 'Pago validado / esperando entrega'
+  if (status === 'IN_ESCROW') return 'Confirma la recepcion del producto'
   if (status === 'DELIVERY_CONFIRMED') return 'Entrega confirmada / esperando liberacion'
   if (status === 'RELEASED') return 'Operacion completada'
   if (status === 'DISPUTED') return 'En disputa / esperando resolucion'
@@ -356,7 +358,7 @@ function getTxPayoutCalculation(tx: DashTransaction, sellerPayoutMethod: SellerP
   })
 }
 
-// ─── Section Header ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Section Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function SectionHeader({ title, count }: { title: string; count?: number }) {
   return (
@@ -373,7 +375,7 @@ function SectionHeader({ title, count }: { title: string; count?: number }) {
   )
 }
 
-// ─── KPI Card ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ KPI Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function KpiCard({
   icon: Icon,
@@ -436,13 +438,13 @@ function KpiCard({
   )
 }
 
-// ─── Dispute Modal ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Dispute Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const DISPUTE_REASONS = [
-  'No recibí el producto / servicio',
-  'El producto no coincide con la descripción',
+  'No recibÃ­ el producto / servicio',
+  'El producto no coincide con la descripciÃ³n',
   'El vendedor no responde',
-  'Producto llegó dañado o incompleto',
+  'Producto llegÃ³ daÃ±ado o incompleto',
   'Servicio entregado de forma incompleta',
   'Otro motivo',
 ]
@@ -463,7 +465,7 @@ function DisputeModal({
 
   async function handleSubmit() {
     if (description.trim().length < 20) {
-      setError('La descripción debe tener al menos 20 caracteres.')
+      setError('La descripciÃ³n debe tener al menos 20 caracteres.')
       return
     }
     setSubmitting(true)
@@ -500,7 +502,7 @@ function DisputeModal({
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-semibold text-[#f2f2f2]">Abrir Disputa</h3>
             <p className="text-[11px] text-[#5a5a5a] truncate mt-0.5">
-              {tx.listing?.title ?? 'Transacción'} · ${Number(tx.amount).toLocaleString('es-VE')} {tx.currency}
+              {tx.listing?.title ?? 'TransacciÃ³n'} Â· ${Number(tx.amount).toLocaleString('es-VE')} {tx.currency}
             </p>
           </div>
           <button onClick={onClose} className="text-[#5a5a5a] hover:text-[#f2f2f2] transition-colors">
@@ -517,7 +519,7 @@ function DisputeModal({
             <p className="text-[11px] text-[#a0a0a0] leading-relaxed">
               Al abrir una disputa, el dinero protegido queda{' '}
               <span className="text-[#f2f2f2]">retenido hasta la resolucion</span>. El equipo de Turpial
-              Market revisará el caso en <span className="text-[#f2f2f2]">24–48 horas</span>.
+              Market revisarÃ¡ el caso en <span className="text-[#f2f2f2]">24â€“48 horas</span>.
             </p>
           </div>
 
@@ -537,13 +539,13 @@ function DisputeModal({
 
           <div className="space-y-1.5">
             <label className="text-xs text-[#a0a0a0]">
-              Descripción detallada{' '}
-              <span className="text-[#3a3a3a]">(mín. 20 caracteres)</span>
+              DescripciÃ³n detallada{' '}
+              <span className="text-[#3a3a3a]">(mÃ­n. 20 caracteres)</span>
             </label>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="Describe con detalle qué ocurrió, cuándo y por qué solicitas una disputa..."
+              placeholder="Describe con detalle quÃ© ocurriÃ³, cuÃ¡ndo y por quÃ© solicitas una disputa..."
               rows={4}
               className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#3a3a3a] outline-none resize-none"
               style={{
@@ -554,7 +556,7 @@ function DisputeModal({
             />
             <div className="flex items-center justify-between">
               {description.trim().length > 0 && description.trim().length < 20 && (
-                <p className="text-[11px] text-[#ef4444]">Mínimo 20 caracteres</p>
+                <p className="text-[11px] text-[#ef4444]">MÃ­nimo 20 caracteres</p>
               )}
               <p className="text-[10px] text-[#3a3a3a] ml-auto">{description.length}/1500</p>
             </div>
@@ -603,7 +605,7 @@ function DisputeModal({
   )
 }
 
-// ─── Transaction Card ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Transaction Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function TxCard({
   tx,
@@ -611,12 +613,16 @@ function TxCard({
   onDispute,
   onOpenDetails,
   payoutMissing = false,
+  onConfirmDelivery,
+  onSellerDeliver,
 }: {
   tx: DashTransaction
   viewAs: 'buyer' | 'seller'
   onDispute?: (tx: DashTransaction) => void
   onOpenDetails?: (tx: DashTransaction) => void
   payoutMissing?: boolean
+  onConfirmDelivery?: (tx: DashTransaction) => void
+  onSellerDeliver?: (tx: DashTransaction) => void
 }) {
   const otherParty = viewAs === 'buyer' ? tx.seller : tx.buyer
   const guidance = getOperationalStatusCopy(tx.status, viewAs)
@@ -703,6 +709,54 @@ function TxCard({
           </div>
         )}
 
+        {tx.status === 'IN_ESCROW' && viewAs === 'buyer' && onConfirmDelivery && (
+          <div className="mt-3">
+            <button
+              onClick={(event) => {
+                event.stopPropagation()
+                const confirmed = window.confirm('Confirma solo si ya recibiste el articulo y estas conforme. Al confirmar, Turpial podra liberar los fondos al vendedor.')
+                if (!confirmed) return
+                onConfirmDelivery(tx)
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200"
+              style={{
+                background: 'rgba(74,222,128,0.06)',
+                border: '1px solid rgba(74,222,128,0.18)',
+                color: '#4ade80',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(74,222,128,0.12)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(74,222,128,0.06)' }}
+            >
+              <CheckCircle size={11} />
+              Ya recibi
+            </button>
+          </div>
+        )}
+
+        {tx.status === 'IN_ESCROW' && viewAs === 'seller' && onSellerDeliver && (
+          <div className="mt-3">
+            <button
+              onClick={(event) => {
+                event.stopPropagation()
+                const confirmed = window.confirm('Marca esto solo cuando ya entregaste o coordinaste la entrega con el comprador.')
+                if (!confirmed) return
+                onSellerDeliver(tx)
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200"
+              style={{
+                background: 'rgba(0,174,239,0.06)',
+                border: '1px solid rgba(0,174,239,0.18)',
+                color: '#00aeef',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,174,239,0.12)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,174,239,0.06)' }}
+            >
+              <Send size={11} />
+              Ya entregue
+            </button>
+          </div>
+        )}
+
         {tx.status === 'IN_ESCROW' && onDispute && (
           <div className="mt-3">
             <button
@@ -758,7 +812,7 @@ function TxCard({
   )
 }
 
-// ─── My Listing Row (seller dashboard) ────────────────────────────────────────
+// â”€â”€â”€ My Listing Row (seller dashboard) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function MyListingRow({ listing, onClick }: { listing: DashListing; onClick?: () => void }) {
   const price = listing.price ?? listing.priceFrom
@@ -807,7 +861,7 @@ function MyListingRow({ listing, onClick }: { listing: DashListing; onClick?: ()
   )
 }
 
-// ─── Interacted Listing Row (buyer Q&A) ───────────────────────────────────────
+// â”€â”€â”€ Interacted Listing Row (buyer Q&A) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function InteractedRow({ item }: { item: DashInteracted }) {
   const [expanded, setExpanded] = useState(false)
@@ -848,7 +902,7 @@ function InteractedRow({ item }: { item: DashInteracted }) {
             <span className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
               {item.questions.length} pregunta{item.questions.length !== 1 ? 's' : ''}
               {unanswered > 0 && (
-                <span className="ml-1 text-[#f59e0b]">· {unanswered} sin respuesta</span>
+                <span className="ml-1 text-[#f59e0b]">Â· {unanswered} sin respuesta</span>
               )}
             </span>
           </div>
@@ -888,7 +942,7 @@ function InteractedRow({ item }: { item: DashInteracted }) {
   )
 }
 
-// ─── Favorite Row ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Favorite Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function FavoriteRow({
   listing,
@@ -966,7 +1020,7 @@ function FavoriteRow({
   )
 }
 
-// ─── Thread Card ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Thread Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ThreadCard({
   thread,
@@ -1022,14 +1076,14 @@ function ThreadCard({
           )}
         </div>
         <p className="text-[11px] truncate mb-1" style={{ color: 'var(--mp-text-faint)' }}>
-          {other.displayName}{thread.listing?.title ? ` • ${thread.listing.title}` : ''}
+          {other.displayName}{thread.listing?.title ? ` â€¢ ${thread.listing.title}` : ''}
         </p>
         {lastMsg ? (
           <p className={cn('text-xs truncate', hasUnread && 'font-medium')} style={{ color: hasUnread ? 'var(--mp-text-muted)' : 'var(--mp-text-faint)' }}>
-            {lastMsg.senderId === currentUserId ? 'Tú: ' : ''}{lastMsg.content}
+            {lastMsg.senderId === currentUserId ? 'TÃº: ' : ''}{lastMsg.content}
           </p>
         ) : (
-          <p className="text-xs text-[#3a3a3a] italic">Sin mensajes aún</p>
+          <p className="text-xs text-[#3a3a3a] italic">Sin mensajes aÃºn</p>
         )}
       </div>
 
@@ -1038,7 +1092,7 @@ function ThreadCard({
   )
 }
 
-// ─── Empty State ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Empty State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function EmptyState({ icon: Icon, title, sub }: {
   icon: LucideIcon
@@ -1059,7 +1113,7 @@ function EmptyState({ icon: Icon, title, sub }: {
   )
 }
 
-// ─── Tab Bar ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Tab Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function TabBar({
   active,
@@ -1129,7 +1183,7 @@ function TabBar({
   )
 }
 
-// ─── Reputation Header ────────────────────────────────────────────────────────
+// â”€â”€â”€ Reputation Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ProfileHeader({
   profile,
@@ -1211,7 +1265,7 @@ function ProfileHeader({
                 className="px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide"
                 style={{ background: 'rgba(0,174,239,0.12)', border: '1px solid rgba(0,174,239,0.25)', color: '#00aeef' }}
               >
-                ✓ VERIFICADO
+                âœ“ VERIFICADO
               </span>
             )}
             <span
@@ -1276,9 +1330,9 @@ function ProfileHeader({
         />
         <KpiCard
           icon={Star}
-          label="Calificación"
-          value={rating > 0 ? rating.toFixed(1) : '—'}
-          sub={rating === 0 ? 'Sin calificaciones aún' : 'Promedio de ventas'}
+          label="CalificaciÃ³n"
+          value={rating > 0 ? rating.toFixed(1) : 'â€”'}
+          sub={rating === 0 ? 'Sin calificaciones aÃºn' : 'Promedio de ventas'}
           accent="#ffc107"
         />
         <KpiCard
@@ -1294,7 +1348,7 @@ function ProfileHeader({
   )
 }
 
-// ─── Chat Overlay ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Chat Overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ChatOverlay({
   thread,
@@ -1324,7 +1378,7 @@ function ChatOverlay({
             displayName: other.displayName,
             avatarUrl: other.avatarUrl,
           }}
-          listingTitle={thread.listing?.title ?? 'Conversación'}
+          listingTitle={thread.listing?.title ?? 'ConversaciÃ³n'}
           listingSlug={thread.listing?.slug}
           onClose={onClose}
           className="h-full"
@@ -1722,7 +1776,7 @@ function PayoutMethodCard({
   )
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface DashboardClientProps {
   session: MpSessionPayload
@@ -1765,6 +1819,8 @@ export function DashboardClient({
   const [selectedTxLoading, setSelectedTxLoading] = useState(false)
   const [disputeTarget, setDisputeTarget] = useState<DashTransaction | null>(null)
   const [disputedTxIds, setDisputedTxIds] = useState<Set<string>>(new Set())
+  const [deliveryConfirmedTxIds, setDeliveryConfirmedTxIds] = useState<Set<string>>(new Set())
+  const [sellerDeliveredTxIds, setSellerDeliveredTxIds] = useState<Set<string>>(new Set())
   const [favorites, setFavorites] = useState<DashListing[]>(rawMyFavorites as DashListing[])
   const myInteracted = rawMyInteracted as DashInteracted[]
   const [threads, setThreads] = useState<DashThread[]>(initialThreads)
@@ -1856,6 +1912,22 @@ export function DashboardClient({
       setSelectedTxDetail(result.data as DashTransactionDetail)
     }
     setSelectedTxLoading(false)
+  }
+
+  async function handleConfirmDelivery(txId: string) {
+    const result = await confirmDelivery(txId)
+    if (result.success) {
+      setDeliveryConfirmedTxIds(prev => new Set(prev).add(txId))
+    }
+    return result
+  }
+
+  async function handleSellerDeliver(txId: string) {
+    const result = await sellerDeliver(txId)
+    if (result.success) {
+      setSellerDeliveredTxIds(prev => new Set(prev).add(txId))
+    }
+    return result
   }
 
   function handleOpenThread(thread: DashThread) {
@@ -2058,7 +2130,7 @@ export function DashboardClient({
         {/* Tab Content */}
         <div>
 
-          {/* ─ Mi Tienda ─ */}
+          {/* â”€ Mi Tienda â”€ */}
           {activeTab === 'my_store' && (
             <div className="space-y-4">
               {/* Preguntas por Responder */}
@@ -2133,7 +2205,7 @@ export function DashboardClient({
             </div>
           )}
 
-          {/* ─ Mis Ventas ─ */}
+          {/* â”€ Mis Ventas â”€ */}
           {activeTab === 'sales' && (
             <div className="space-y-3">
               {sellerNeedsPayoutProfile && (
@@ -2164,7 +2236,7 @@ export function DashboardClient({
                 <EmptyState
                   icon={TrendingUp}
                   title="Sin transacciones activas"
-                  sub="Cuando un comprador inicie una transacción en tus listings aparecerá aquí."
+                  sub="Cuando un comprador inicie una transacciÃ³n en tus listings aparecerÃ¡ aquÃ­."
                 />
               ) : (
                 <div className="space-y-3">
@@ -2181,6 +2253,7 @@ export function DashboardClient({
                         onOpenDetails={(currentTx) => void handleOpenTransaction(currentTx, 'seller')}
                         onDispute={effectiveTx.status === 'IN_ESCROW' ? setDisputeTarget : undefined}
                         payoutMissing={payoutMissingForTx}
+                        onSellerDeliver={effectiveTx.status === 'IN_ESCROW' && !sellerDeliveredTxIds.has(tx.id) ? () => void handleSellerDeliver(tx.id) : undefined}
                       />
                     )
                   })}
@@ -2189,7 +2262,7 @@ export function DashboardClient({
             </div>
           )}
 
-          {/* ─ Mis Compras ─ */}
+          {/* â”€ Mis Compras â”€ */}
           {activeTab === 'purchases' && (
             <div className="space-y-3">
               <SectionHeader title="Mis compras" count={purchases.length} />
@@ -2197,7 +2270,7 @@ export function DashboardClient({
                 <EmptyState
                   icon={ShoppingBag}
                   title="Sin compras activas"
-                  sub="Cuando realices tu primera compra aparecerá aquí con el estado del escrow en tiempo real."
+                  sub="Cuando realices tu primera compra aparecerÃ¡ aquÃ­ con el estado del escrow en tiempo real."
                 />
               ) : (
                 <div className="space-y-3">
@@ -2210,6 +2283,7 @@ export function DashboardClient({
                         viewAs="buyer"
                         onOpenDetails={(currentTx) => void handleOpenTransaction(currentTx, 'buyer')}
                         onDispute={effectiveTx.status === 'IN_ESCROW' ? setDisputeTarget : undefined}
+                        onConfirmDelivery={effectiveTx.status === 'IN_ESCROW' && !deliveryConfirmedTxIds.has(tx.id) ? () => void handleConfirmDelivery(tx.id) : undefined}
                       />
                     )
                   })}
@@ -2218,7 +2292,7 @@ export function DashboardClient({
             </div>
           )}
 
-          {/* ─ Mensajes ─ */}
+          {/* â”€ Mensajes â”€ */}
           {activeTab === 'messages' && (
             <div className="space-y-6">
               <div
@@ -2301,7 +2375,7 @@ export function DashboardClient({
                   <EmptyState
                     icon={HelpCircle}
                     title="Sin preguntas realizadas"
-                    sub="Las preguntas que hagas sobre listings aparecerán aquí con las respuestas de los vendedores."
+                    sub="Las preguntas que hagas sobre listings aparecerÃ¡n aquÃ­ con las respuestas de los vendedores."
                   />
                 ) : (
                   <div className="space-y-2">
@@ -2318,7 +2392,7 @@ export function DashboardClient({
                   <EmptyState
                     icon={MessageSquare}
                     title="Sin chats pendientes"
-                    sub="Cuando entren mensajes nuevos, apareceran primero en esta sección."
+                    sub="Cuando entren mensajes nuevos, apareceran primero en esta secciÃ³n."
                   />
                 ) : (
                   <div className="space-y-3">
@@ -2334,20 +2408,20 @@ export function DashboardClient({
                 )}
               </div>
 
-              {/* Chats de Negociación */}
+              {/* Chats de NegociaciÃ³n */}
               <div>
                 <SectionHeader title="Todos los Chats" count={threads.length} />
                 {threads.length === 0 ? (
                   <EmptyState
                     icon={MessageSquare}
                     title="Sin conversaciones"
-                    sub="Cuando contactes a un vendedor o alguien te escriba, los hilos aparecerán aquí."
+                    sub="Cuando contactes a un vendedor o alguien te escriba, los hilos aparecerÃ¡n aquÃ­."
                   />
                 ) : readThreads.length === 0 ? (
                   <EmptyState
                     icon={MessageSquare}
-                    title="Todo lo pendiente ya está arriba"
-                    sub="Todas tus conversaciones activas tienen mensajes sin leer o aún no hay chats adicionales."
+                    title="Todo lo pendiente ya estÃ¡ arriba"
+                    sub="Todas tus conversaciones activas tienen mensajes sin leer o aÃºn no hay chats adicionales."
                   />
                 ) : (
                   <div className="space-y-3">
@@ -2366,7 +2440,7 @@ export function DashboardClient({
             </div>
           )}
 
-          {/* ─ Cobros ─ */}
+          {/* â”€ Cobros â”€ */}
           {activeTab === 'payouts' && (
             <div className="space-y-6">
               <div
@@ -2695,8 +2769,8 @@ export function DashboardClient({
               {favorites.length === 0 ? (
                 <EmptyState
                   icon={Heart}
-                  title="Sin favoritos aún"
-                  sub="Guarda listings que te interesen desde el Marketplace para acceder rápido a ellos."
+                  title="Sin favoritos aÃºn"
+                  sub="Guarda listings que te interesen desde el Marketplace para acceder rÃ¡pido a ellos."
                 />
               ) : (
                 <>
