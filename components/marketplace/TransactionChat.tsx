@@ -460,6 +460,8 @@ interface TransactionChatProps {
   className?: string
   /** Called when a message is sent - for optimistic UI updates */
   onMessageSent?: () => void
+  /** Called when parent views should sync chat/unread state immediately. */
+  onSyncNeeded?: (reason: 'message_sent' | 'messages_read' | 'send_error' | 'refresh_error') => void
 }
 
 export function TransactionChat({
@@ -474,6 +476,7 @@ export function TransactionChat({
   onClose = () => {},
   className,
   onMessageSent,
+  onSyncNeeded,
 }: TransactionChatProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -484,6 +487,10 @@ export function TransactionChat({
   const [localMessages, setLocalMessages] = useState<Message[]>(
     threadId ? [] : thread.messages,
   )
+  const [chatFeedback, setChatFeedback] = useState<{
+    tone: 'error' | 'info'
+    text: string
+  } | null>(null)
 
   // Mock mode: sync when thread changes. Real mode: managed by the DB effect below.
   useEffect(() => {
@@ -523,7 +530,12 @@ export function TransactionChat({
   async function ensureMarkedAsRead() {
     if (markReadPendingRef.current && threadId) {
       markReadPendingRef.current = false
-      await markMessagesReadAction(threadId)
+      try {
+        await markMessagesReadAction(threadId)
+        onSyncNeeded?.('messages_read')
+      } catch {
+        // Keep UX non-blocking; polling fallback will eventually reconcile.
+      }
     }
   }
 
@@ -542,8 +554,9 @@ export function TransactionChat({
       currentUserInitials ?? senderName.slice(0, 2).toUpperCase()
 
     // Optimistic: show the message immediately in the UI.
+    const optimisticId = `local_${Date.now()}`
     const optimistic: Message = {
-      id: `local_${Date.now()}`,
+      id: optimisticId,
       threadId: threadId ?? thread.id,
       senderId: effectiveUserId,
       senderName,
@@ -556,15 +569,32 @@ export function TransactionChat({
     setLocalMessages(prev => [...prev, optimistic])
 
     if (threadId) {
-      // Persist to DB + trigger WhatsApp notification (server action handles both).
-      await sendMessageAction(threadId, content)
-      // Immediately refresh from DB to replace the optimistic message with the real one.
-      const res = await getThreadMessagesAction(threadId, 50)
-      if (res.success) {
-        setLocalMessages((res.data as DbMessage[]).map(normalizeDbMessage))
+      try {
+        setChatFeedback(null)
+        // Persist to DB + trigger WhatsApp notification (server action handles both).
+        await sendMessageAction(threadId, content)
+        // Immediately refresh from DB to replace the optimistic message with the real one.
+        const res = await getThreadMessagesAction(threadId, 50)
+        if (res.success) {
+          setLocalMessages((res.data as DbMessage[]).map(normalizeDbMessage))
+          // Notify parent component for optimistic UI updates
+          onMessageSent?.()
+          onSyncNeeded?.('message_sent')
+        } else {
+          setChatFeedback({
+            tone: 'error',
+            text: 'Tu mensaje se envió, pero no pudimos refrescar la conversación. Intenta recargar esta vista.',
+          })
+          onSyncNeeded?.('refresh_error')
+        }
+      } catch {
+        setLocalMessages(prev => prev.filter(m => m.id !== optimisticId))
+        setChatFeedback({
+          tone: 'error',
+          text: 'No pudimos enviar el mensaje. Verifica tu conexión e inténtalo de nuevo.',
+        })
+        onSyncNeeded?.('send_error')
       }
-      // Notify parent component for optimistic UI updates
-      onMessageSent?.()
     } else {
       // Demo mode: call Turpial Assistant AI.
       const typingId = `typing_${Date.now()}`
@@ -659,6 +689,18 @@ export function TransactionChat({
       </div>
 
       {/* Input */}
+      {chatFeedback && (
+        <div
+          className="mx-4 mb-2 rounded-xl px-3 py-2 text-xs"
+          style={{
+            background: chatFeedback.tone === 'error' ? 'rgba(239,68,68,0.1)' : 'rgba(0,174,239,0.08)',
+            border: chatFeedback.tone === 'error' ? '1px solid rgba(239,68,68,0.25)' : '1px solid rgba(0,174,239,0.2)',
+            color: chatFeedback.tone === 'error' ? '#fca5a5' : '#7dd3fc',
+          }}
+        >
+          {chatFeedback.text}
+        </div>
+      )}
       <ChatInput onSend={handleSend} />
     </div>
   )

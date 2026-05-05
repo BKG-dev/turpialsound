@@ -131,6 +131,7 @@ type DashInteracted = any
 // ─── Tab Type ─────────────────────────────────────────────────────────────────
 
 type Tab = 'my_store' | 'sales' | 'purchases' | 'messages' | 'favorites' | 'payouts'
+type ChatSyncReason = 'message_sent' | 'messages_read' | 'send_error' | 'refresh_error'
 
 // ─── Status Config ────────────────────────────────────────────────────────────
 
@@ -1301,11 +1302,13 @@ function ChatOverlay({
   currentUserId,
   currentUserName,
   onClose,
+  onSyncNeeded,
 }: {
   thread: DashThread
   currentUserId: string
   currentUserName: string
   onClose: () => void
+  onSyncNeeded?: (reason: ChatSyncReason) => void
 }) {
   const isBuyer = thread.buyerId === currentUserId
   const other = isBuyer ? thread.seller : thread.buyer
@@ -1327,6 +1330,7 @@ function ChatOverlay({
           listingTitle={thread.listing?.title ?? 'Conversación'}
           listingSlug={thread.listing?.slug}
           onClose={onClose}
+          onSyncNeeded={onSyncNeeded}
           className="h-full"
         />
       </div>
@@ -1791,14 +1795,24 @@ export function DashboardClient({
   const initialUnread = initialThreads.reduce((sum, thread) => sum + getTxUnreadCount(thread, session.userId), 0)
   const [unreadCount, setUnreadCount] = useState(initialUnread)
 
+  async function refreshThreadsAndUnread() {
+    const [unreadResult, threadsResult] = await Promise.allSettled([
+      getUnreadCount(),
+      getMyThreads(),
+    ])
+
+    if (unreadResult.status === 'fulfilled' && unreadResult.value.success && unreadResult.value.data) {
+      setUnreadCount(unreadResult.value.data.count)
+    }
+
+    if (threadsResult.status === 'fulfilled' && threadsResult.value.success && threadsResult.value.data) {
+      setThreads(threadsResult.value.data as DashThread[])
+    }
+  }
+
   useEffect(() => {
     const id = setInterval(() => {
-      getUnreadCount().then(r => { if (r.success && r.data) setUnreadCount(r.data.count) })
-      getMyThreads().then((result) => {
-        if (result.success && result.data) {
-          setThreads(result.data as DashThread[])
-        }
-      })
+      void refreshThreadsAndUnread()
     }, 20_000)
     return () => clearInterval(id)
   }, [])
@@ -1890,6 +1904,21 @@ export function DashboardClient({
       ),
     )
     setOpenThread(thread)
+  }
+
+  async function handleChatSyncNeeded(reason: ChatSyncReason) {
+    await refreshThreadsAndUnread()
+
+    if (reason === 'send_error') {
+      setDashboardMessageTone('error')
+      setDashboardMessage('No se pudo enviar el mensaje. Intenta de nuevo.')
+      return
+    }
+
+    if (reason === 'refresh_error') {
+      setDashboardMessageTone('info')
+      setDashboardMessage('Mensaje enviado. Estamos actualizando el estado de la conversación.')
+    }
   }
 
   function updatePayoutField(field: keyof typeof payoutForm, value: string) {
@@ -2752,6 +2781,7 @@ export function DashboardClient({
           thread={openThread}
           currentUserId={session.userId}
           currentUserName={session.displayName}
+          onSyncNeeded={handleChatSyncNeeded}
           onClose={() => setOpenThread(null)}
         />
       )}
