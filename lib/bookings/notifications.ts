@@ -2,7 +2,7 @@ import { getEnabledPaymentMethods } from '@/lib/bookings/payment-settings'
 import type { OperationalBookingStatus } from '@/lib/bookings/operations'
 import { Resend } from 'resend'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
-import { buildAdminPaymentProofUrl, buildPaymentProofViewerUrl } from '@/lib/bookings/operational-links'
+import { buildAdminPaymentProofUrl } from '@/lib/bookings/operational-links'
 
 export type BookingNotificationEvent =
   | 'booking.pending_payment.created'
@@ -266,7 +266,7 @@ function buildPaymentReportedCustomerText(payload: BookingNotificationPayload): 
 }
 
 function buildPaymentReportedAdminText(payload: BookingNotificationPayload): string {
-  const paymentProofUrl = buildAdminPaymentProofUrl(payload.publicCode, payload.paymentProofId)
+  const paymentReviewUrl = buildAdminPaymentProofUrl(payload.publicCode, payload.paymentProofId)
   const paymentMethodLabel = mapPaymentMethodLabel(payload.paymentMethod)
   const temporalStatus = computeTemporalStatusLabel(payload)
   const bsReferenceAmount = formatBsReferenceAmount(payload)
@@ -294,7 +294,9 @@ function buildPaymentReportedAdminText(payload: BookingNotificationPayload): str
     `Vencimiento de pago: ${formatDateTime(payload.deadlineAt)}`,
     `Pago reportado: ${formatDateTime(payload.paymentReportedAt)}`,
     `Estado temporal: ${temporalStatus}`,
-    paymentProofUrl ? 'Verificacion operativa disponible desde enlace seguro.' : '',
+    paymentReviewUrl
+      ? `Enlace de revision: ${paymentReviewUrl}`
+      : 'Enlace de revision: no disponible por configuracion incompleta.',
   ]
     .filter(Boolean)
     .join('\n')
@@ -307,9 +309,6 @@ function buildActionButtonHtml(label: string, href: string, bgColor: string): st
 function buildPaymentReportedAdminHtml(payload: BookingNotificationPayload): string | null {
   const reviewUrl = buildAdminPaymentProofUrl(payload.publicCode, payload.paymentProofId)
   if (!reviewUrl) return null
-  const proofViewerUrl = payload.paymentProofId
-    ? buildPaymentProofViewerUrl(payload.publicCode, payload.paymentProofId)
-    : null
   const confirmUrl = `${reviewUrl}&intent=confirm`
   const incidenceUrl = `${reviewUrl}&intent=incidence`
 
@@ -346,8 +345,8 @@ function buildPaymentReportedAdminHtml(payload: BookingNotificationPayload): str
       </table>
 
       <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap;">
-        ${buildActionButtonHtml('Ver comprobante', proofViewerUrl ?? reviewUrl, '#0f172a')}
-        ${buildActionButtonHtml('Abrir solicitud', reviewUrl, '#334155')}
+        ${buildActionButtonHtml('Ver comprobante y aprobar', reviewUrl, '#0f172a')}
+        ${buildActionButtonHtml('Abrir revision', reviewUrl, '#334155')}
         ${buildActionButtonHtml('Confirmar pago', confirmUrl, '#065f46')}
         ${buildActionButtonHtml('Marcar incidencia', incidenceUrl, '#9a3412')}
       </div>
