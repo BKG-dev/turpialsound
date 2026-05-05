@@ -90,3 +90,23 @@ Uso:
 - Jean y Manuel deben leer estos hitos al iniciar sesion.
 - Cada sprint debe cerrar con un resultado verificable, no solo con archivos modificados.
 - La division tecnica de locks se mantiene en parallel-sprint-distribution.
+
+---
+
+## Checkpoint operativo - procedimiento QA integrado
+
+Fecha: 2026-05-04
+Rama madre: integration/lab-marketplace-sprint2a-selective-2026-05-04
+
+Se documento el procedimiento QA integrado del marketplace.
+
+Documentos:
+- docs/07_handoffs/marketplace-integrated-qa-procedure-2026-05-04.md
+- docs/obsidian-vault/QA_MARKETPLACE_INTEGRADO.md
+
+Uso:
+- Cada sprint debe cerrar con QA minimo y evidencia.
+- Se clasifican fallos como P0, P1 o P2.
+- No se cierra ningun sprint con P0 abierto.
+- P1 debe quedar documentado con owner.
+- El flujo canonico buyer/seller/admin queda definido como prueba base.

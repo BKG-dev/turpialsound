@@ -30,3 +30,12 @@ Primero estabilidad y dinero; luego UX estructural; luego discovery/filtros.
 
 Jean: repo, booking/lab, integracion, build, Vercel/envs, DB/schema autorizado, UX tecnica.
 Manuel: producto marketplace, operacion, tasas, payout, reglas de negocio, QA operacional.
+
+## Procedimiento QA integrado
+
+Ademas de los hitos pragmaticos, el cierre de cada sprint debe seguir:
+
+- docs/07_handoffs/marketplace-integrated-qa-procedure-2026-05-04.md
+- docs/obsidian-vault/QA_MARKETPLACE_INTEGRADO.md
+
+Estos documentos definen QA smoke, QA buyer/seller/admin, QA rates, QA payout, QA listing state, QA chat/unread, QA visual, severidad P0/P1/P2 y evidencia minima.

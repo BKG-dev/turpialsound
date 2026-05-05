@@ -243,3 +243,12 @@ Ademas de la distribucion tecnica por sprints, el roadmap debe leerse junto con:
 - docs/obsidian-vault/HITOS_MARKETPLACE_PRACTICOS.md
 
 Estos documentos traducen cada sprint a un resultado verificable para buyer, seller o admin.
+
+## Procedimiento QA integrado
+
+Ademas de los hitos pragmaticos, el cierre de cada sprint debe seguir:
+
+- docs/07_handoffs/marketplace-integrated-qa-procedure-2026-05-04.md
+- docs/obsidian-vault/QA_MARKETPLACE_INTEGRADO.md
+
+Estos documentos definen QA smoke, QA buyer/seller/admin, QA rates, QA payout, QA listing state, QA chat/unread, QA visual, severidad P0/P1/P2 y evidencia minima.
