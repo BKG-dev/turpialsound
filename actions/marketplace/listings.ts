@@ -11,6 +11,51 @@ import type { Listing } from '@/types/marketplace'
 import { adaptDbListing } from '@/lib/marketplace/adapters'
 import { attachMarketplaceBlobMetadataToEntity } from '@/lib/marketplace/blob-metadata'
 
+const DISCOVERABLE_LISTING_STATUSES = ['ACTIVE', 'SOLD_OUT'] as const
+const ACTIVE_TRANSACTION_EXCLUDED_STATUSES = [
+  'RELEASED',
+  'REFUNDED',
+  'PAYMENT_FAILED',
+  'CANCELLED',
+] as const
+
+type DbListingWithTransactions = {
+  id: string
+  transactions?: Array<{ status: string }>
+}
+
+async function withActiveTransactions<T extends DbListingWithTransactions>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
+  listings: T[],
+): Promise<T[]> {
+  if (listings.length === 0) return listings
+
+  try {
+    const transactions = await db.mpTransaction.findMany({
+      where: {
+        listingId: { in: listings.map(listing => listing.id) },
+        status: { notIn: [...ACTIVE_TRANSACTION_EXCLUDED_STATUSES] },
+      },
+      select: { listingId: true, status: true },
+    })
+
+    const byListingId = new Map<string, Array<{ status: string }>>()
+    for (const tx of transactions) {
+      const current = byListingId.get(tx.listingId) ?? []
+      current.push({ status: tx.status })
+      byListingId.set(tx.listingId, current)
+    }
+
+    return listings.map(listing => ({
+      ...listing,
+      transactions: byListingId.get(listing.id) ?? [],
+    }))
+  } catch {
+    return listings.map(listing => ({ ...listing, transactions: [] }))
+  }
+}
+
 // ─── SLUG GENERATOR ───────────────────────────────────────────────────────────
 function generateSlug(title: string): string {
   const base = title
@@ -31,21 +76,13 @@ export async function getActiveListings(): Promise<Listing[]> {
 
   try {
     const listings = await db.mpListing.findMany({
-      where: { status: 'ACTIVE' },
+      where: { status: { in: [...DISCOVERABLE_LISTING_STATUSES] } },
       orderBy: { createdAt: 'desc' },
-      include: {
-        seller: true,
-        transactions: {
-          where: {
-            status: {
-              notIn: ['RELEASED', 'REFUNDED', 'PAYMENT_FAILED', 'CANCELLED'],
-            },
-          },
-        },
-      },
+      include: { seller: true },
     })
+    const listingsWithTransactions = await withActiveTransactions(db, listings)
     await db.$disconnect()
-    return listings.map(adaptDbListing)
+    return listingsWithTransactions.map(adaptDbListing)
   } catch {
     await db.$disconnect().catch(() => {})
     return []
@@ -58,21 +95,13 @@ export async function getListingById(id: string): Promise<Listing | null> {
   if (!db) return null
   try {
     const l = await db.mpListing.findUnique({
-      where: { id, status: 'ACTIVE' },
-      include: {
-        seller: true,
-        transactions: {
-          where: {
-            status: {
-              notIn: ['RELEASED', 'REFUNDED', 'PAYMENT_FAILED', 'CANCELLED'],
-            },
-          },
-        },
-      },
+      where: { id, status: { in: [...DISCOVERABLE_LISTING_STATUSES] } },
+      include: { seller: true },
     })
     if (!l) { await db.$disconnect(); return null }
+    const [listingWithTransactions] = await withActiveTransactions(db, [l])
     await db.$disconnect()
-    return adaptDbListing(l)
+    return adaptDbListing(listingWithTransactions)
   } catch {
     await db.$disconnect().catch(() => {})
     return null
@@ -85,21 +114,13 @@ export async function getListingBySlug(slug: string): Promise<Listing | null> {
   if (!db) return null
   try {
     const l = await db.mpListing.findUnique({
-      where: { slug, status: { in: ['ACTIVE', 'SOLD_OUT'] } },
-      include: {
-        seller: true,
-        transactions: {
-          where: {
-            status: {
-              notIn: ['RELEASED', 'REFUNDED', 'PAYMENT_FAILED', 'CANCELLED'],
-            },
-          },
-        },
-      },
+      where: { slug, status: { in: [...DISCOVERABLE_LISTING_STATUSES] } },
+      include: { seller: true },
     })
     if (!l) { await db.$disconnect(); return null }
+    const [listingWithTransactions] = await withActiveTransactions(db, [l])
     await db.$disconnect()
-    return adaptDbListing(l)
+    return adaptDbListing(listingWithTransactions)
   } catch {
     await db.$disconnect().catch(() => {})
     return null
@@ -115,22 +136,14 @@ export async function getListingsByCategory(
   if (!db) return []
   try {
     const listings = await db.mpListing.findMany({
-      where: { category, status: 'ACTIVE' },
+      where: { category, status: { in: [...DISCOVERABLE_LISTING_STATUSES] } },
       orderBy: { createdAt: 'desc' },
       take: limit,
-      include: {
-        seller: true,
-        transactions: {
-          where: {
-            status: {
-              notIn: ['RELEASED', 'REFUNDED', 'PAYMENT_FAILED', 'CANCELLED'],
-            },
-          },
-        },
-      },
+      include: { seller: true },
     })
+    const listingsWithTransactions = await withActiveTransactions(db, listings)
     await db.$disconnect()
-    return listings.map(adaptDbListing)
+    return listingsWithTransactions.map(adaptDbListing)
   } catch {
     await db.$disconnect().catch(() => {})
     return []
