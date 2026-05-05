@@ -1,5 +1,37 @@
 # Session Summary - Activa
 
+## Estado activo - Plan paralelo Marketplace integrado - 2026-05-05
+
+- Rama activa: `integration/lab-marketplace-sprint2a-selective-2026-05-04`.
+- Estado: Sprint 0 activo.
+- Objetivo inmediato: cerrar documentacion operativa, validar rama madre, luego smoke test de booking/lab + marketplace.
+
+### Confirmado
+
+- Rama local y remota existen.
+- La rama anterior `integration/marketplace-pure-booking-selective-2026-04-30` sigue disponible.
+- Docs paralelos creados:
+  - `docs/07_handoffs/parallel-sprint-distribution-2026-05-04.md`
+  - `docs/obsidian-vault/SPRINTS_MARKETPLACE_PARALELO.md`
+- `e0d99e8` fue integrado manualmente sobre remoto `4a746f1` mediante resolucion documental (sin cambios de codigo).
+- `var/rate-state.json` queda fuera de git.
+
+### Pendiente inmediato
+
+- Ejecutar validaciones Sprint 0.
+
+### Reglas
+
+- No trabajar directo sobre rama madre para features.
+- No tocar `main`.
+- No tocar produccion.
+- No tocar schema/migrations sin lock.
+- No mezclar booking/lab con marketplace sin autorizacion.
+
+### Proximo paso despues de este checkpoint
+
+- Validacion Sprint 0 read-only/build: `git diff --check`, `prisma validate/generate`, `tsc`, `build`, `migrate status` y smoke test.
+
 ## Actualizacion 2026-05-02 - Integracion Marketplace + Reservas + Admin (post-push)
 
 - Rama actual: `integration/marketplace-pure-booking-selective-2026-04-30`.
