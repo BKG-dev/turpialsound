@@ -13,6 +13,7 @@ import {
 import { resolveBinanceRate, type BinanceRateResult } from '@/lib/marketplace/binance-rate'
 import { resolveReferenceRate } from '@/lib/marketplace/reference-rate'
 import type { ActionResult } from '@/lib/validations/marketplace'
+import { sendSystemMessage } from '@/actions/marketplace/chat'
 
 type CheckoutPaymentMethod =
   | 'PAGO_MOVIL'
@@ -385,6 +386,16 @@ export async function sellerDeliver(transactionId: string): Promise<ActionResult
       },
     })
 
+    // Fire-and-forget: notify buyer that seller has delivered
+    void sendSystemMessage({
+      buyerId: tx.buyerId,
+      sellerId: tx.sellerId,
+      listingId: tx.listingId,
+      senderId: tx.sellerId,
+      receiverId: tx.buyerId,
+      content: '📦 El vendedor ha registrado la entrega del producto/servicio. Por favor revisa y confirma la recepción para liberar los fondos.',
+    })
+
     await db.$disconnect()
     return { success: true, data: undefined, message: 'Entrega registrada. El comprador debe confirmar la recepcion.' }
   } catch (err) {
@@ -433,6 +444,16 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
         changedBy: session.userId,
         reason: 'Comprador confirmo la recepcion. Fondos liberados al vendedor.',
       },
+    })
+
+    // Fire-and-forget: notify seller that buyer confirmed and funds are released
+    void sendSystemMessage({
+      buyerId: tx.buyerId,
+      sellerId: tx.sellerId,
+      listingId: tx.listingId,
+      senderId: tx.buyerId,
+      receiverId: tx.sellerId,
+      content: '✅ El comprador ha confirmado la recepción. Los fondos están listos para pago. El equipo procesará el pago a tu método de cobro en breve.',
     })
 
     await db.$disconnect()

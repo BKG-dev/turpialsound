@@ -145,7 +145,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   VALIDATING:          { label: 'Validando',         color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', glow: 'rgba(167,139,250,0.25)' },
   IN_ESCROW:           { label: 'Esperando conformidad', color: '#00aeef', bg: 'rgba(0,174,239,0.1)',   glow: 'rgba(0,174,239,0.25)'   },
   DELIVERY_CONFIRMED:  { label: 'Entrega Confirmada',color: '#34d399', bg: 'rgba(52,211,153,0.1)',  glow: 'rgba(52,211,153,0.25)'  },
-  RELEASED:            { label: 'Fondos por liberar', color: '#4ade80', bg: 'rgba(74,222,128,0.1)',  glow: 'rgba(74,222,128,0.25)'  },
+  RELEASED:            { label: 'Pago al vendedor pendiente', color: '#4ade80', bg: 'rgba(74,222,128,0.1)',  glow: 'rgba(74,222,128,0.25)'  },
   PAYMENT_FAILED:      { label: 'Pago Fallido',      color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   glow: 'rgba(239,68,68,0.25)'   },
   DISPUTED:            { label: 'En Disputa',        color: '#f97316', bg: 'rgba(249,115,22,0.1)',  glow: 'rgba(249,115,22,0.25)'  },
   REFUNDED:            { label: 'Reembolsado',       color: '#c084fc', bg: 'rgba(192,132,252,0.1)', glow: 'rgba(192,132,252,0.25)' },
@@ -252,8 +252,8 @@ function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
       seller: 'La entrega fue confirmada. El pago al vendedor queda como siguiente paso.',
     },
     RELEASED: {
-      buyer: 'La operacion fue liberada y quedo cerrada a nivel de escrow.',
-      seller: 'La venta ya esta lista para cobrar. Verifica que tus datos de cobro esten actualizados.',
+      buyer: 'La operacion esta en cola de pago al vendedor. El equipo procesara el pago manual en breve.',
+      seller: 'El pago esta pendiente de ser enviado por el equipo. Asegurate de tener tus datos de cobro actualizados.',
     },
     DISPUTED: {
       buyer: 'La operacion esta en revision. No se liberaran fondos hasta resolverla.',
@@ -299,8 +299,8 @@ function getOperationalNextStep(status: string, viewAs: 'buyer' | 'seller') {
       seller: 'El pago al vendedor queda en cola con tus datos de cobro actuales.',
     },
     RELEASED: {
-      buyer: 'La transaccion ya esta cerrada del lado de escrow.',
-      seller: 'Verifica tus datos de cobro si el pago manual aun no ha sido ejecutado.',
+      buyer: 'El pago al vendedor esta siendo gestionado. No necesitas hacer nada adicional.',
+      seller: 'El pago esta en cola para ser enviado. Si tu metodo de cobro esta actualizado, no necesitas hacer nada mas.',
     },
     DISPUTED: {
       buyer: 'Espera la resolucion del equipo y conserva el contexto de la entrega.',
@@ -327,7 +327,7 @@ function getStatusLabelForView(status: string, viewAs: 'buyer' | 'seller') {
     if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado'
     if (status === 'IN_ESCROW') return 'Pago validado'
     if (status === 'DELIVERY_CONFIRMED') return 'Entrega confirmada'
-    if (status === 'RELEASED') return 'Operacion completada'
+    if (status === 'RELEASED') return 'Pago al vendedor pendiente'
     if (status === 'DISPUTED') return 'En disputa'
   }
 
@@ -339,7 +339,7 @@ function getBuyerCtaLabel(status: string) {
   if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado / esperando validacion'
   if (status === 'IN_ESCROW') return 'Pago validado / esperando entrega'
   if (status === 'DELIVERY_CONFIRMED') return 'Entrega confirmada / esperando liberacion'
-  if (status === 'RELEASED') return 'Operacion completada'
+  if (status === 'RELEASED') return 'Pago al vendedor pendiente'
   if (status === 'DISPUTED') return 'En disputa / esperando resolucion'
   return 'Ver detalle'
 }

@@ -59,6 +59,7 @@ export {
   getPayoutReport,
   adminValidatePayment,
   adminReleaseEscrow,
+  adminMarkSellerPaid,
   adminResolveDispute,
   adminCancelTransaction,
   adminGetUsers,
