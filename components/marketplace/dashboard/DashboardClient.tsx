@@ -26,18 +26,23 @@ import {
   Landmark,
   Plus,
   CreditCard,
+  CheckCircle2,
+  Send,
+  ExternalLink,
 } from 'lucide-react'
 import type { MpSessionPayload } from '@/lib/marketplace/auth'
 import { TransactionChat } from '@/components/marketplace/TransactionChat'
 import { getMyThreads, getUnreadCount } from '@/actions/marketplace/chat'
-import { getTransaction, openDispute } from '@/actions/marketplace/transactions'
+import { confirmDelivery, getTransaction, openDispute, sellerDeliver } from '@/actions/marketplace/transactions'
 import { toggleFavorite } from '@/actions/marketplace/favorites'
 import {
   calculateSellerPayout,
   roundMoney,
-  USD_REFERENCE_RATE,
+  txPayoutDisplay,
   type BuyerPaymentMethod,
+  type FrozenRatePayload,
   type SellerPayoutMethod,
+  type TxPayoutDisplay,
 } from '@/lib/marketplace/finance'
 import {
   addPayoutMethod,
@@ -79,6 +84,10 @@ interface DashTransaction {
   paymentProofUrl?: string | null
   createdAt: string | Date
   escrowReleaseAt?: string | Date | null
+  frozenRate?: number | string | null
+  frozenRateSource?: string | null
+  frozenRateFechaValor?: string | Date | null
+  rateSnapshotId?: string | null
   buyer: { id: string; displayName: string; avatarUrl: string | null }
   seller: { id: string; displayName: string; avatarUrl: string | null }
   listing: { id: string; title: string; slug: string; coverImageUrl: string | null } | null
@@ -128,6 +137,21 @@ type DashListing = any
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DashInteracted = any
 
+type ActionPriority = 'required' | 'review' | 'pending' | 'closed'
+
+interface ActionItem {
+  key: string
+  tx: DashTransaction
+  viewAs: 'buyer' | 'seller'
+  priority: ActionPriority
+  chipLabel: string
+  description: string
+  ctaLabel: string | null
+  ctaType: 'view-detail' | 'confirm-delivery' | 'seller-deliver' | 'open-messages' | 'payout-setup' | null
+  disabled: boolean
+  accent: string
+}
+
 // ─── Tab Type ─────────────────────────────────────────────────────────────────
 
 type Tab = 'my_store' | 'sales' | 'purchases' | 'messages' | 'favorites' | 'payouts'
@@ -140,9 +164,9 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   PENDING_PAYMENT:     { label: 'Pago Pendiente',    color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  glow: 'rgba(245,158,11,0.25)'  },
   PAYMENT_RECEIVED:    { label: 'Pago Recibido',     color: '#eab308', bg: 'rgba(234,179,8,0.1)',   glow: 'rgba(234,179,8,0.25)'   },
   VALIDATING:          { label: 'Validando',         color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', glow: 'rgba(167,139,250,0.25)' },
-  IN_ESCROW:           { label: 'En proceso',        color: '#00aeef', bg: 'rgba(0,174,239,0.1)',   glow: 'rgba(0,174,239,0.25)'   },
+  IN_ESCROW:           { label: 'Esperando conformidad', color: '#00aeef', bg: 'rgba(0,174,239,0.1)',   glow: 'rgba(0,174,239,0.25)'   },
   DELIVERY_CONFIRMED:  { label: 'Entrega Confirmada',color: '#34d399', bg: 'rgba(52,211,153,0.1)',  glow: 'rgba(52,211,153,0.25)'  },
-  RELEASED:            { label: 'Listo para cobrar', color: '#4ade80', bg: 'rgba(74,222,128,0.1)',  glow: 'rgba(74,222,128,0.25)'  },
+  RELEASED:            { label: 'Pago al vendedor pendiente', color: '#4ade80', bg: 'rgba(74,222,128,0.1)',  glow: 'rgba(74,222,128,0.25)'  },
   PAYMENT_FAILED:      { label: 'Pago Fallido',      color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   glow: 'rgba(239,68,68,0.25)'   },
   DISPUTED:            { label: 'En Disputa',        color: '#f97316', bg: 'rgba(249,115,22,0.1)',  glow: 'rgba(249,115,22,0.25)'  },
   REFUNDED:            { label: 'Reembolsado',       color: '#c084fc', bg: 'rgba(192,132,252,0.1)', glow: 'rgba(192,132,252,0.25)' },
@@ -183,6 +207,16 @@ function fmtUSD(n: number) {
 
 function fmtUSDT(n: number) {
   return `${n.toFixed(2)} USDT`
+}
+
+function fmtBS(n: number) {
+  if (!Number.isFinite(n)) return 'Bs -'
+  return `Bs ${n.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+function fmtShortDate(d: string | Date | null) {
+  if (!d) return '-'
+  return new Date(d).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: '2-digit' })
 }
 
 function initials(name: string) {
@@ -239,8 +273,8 @@ function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
       seller: 'La entrega fue confirmada. El pago al vendedor queda como siguiente paso.',
     },
     RELEASED: {
-      buyer: 'La operacion fue liberada y quedo cerrada a nivel de escrow.',
-      seller: 'La venta ya esta lista para cobrar. Verifica que tus datos de cobro esten actualizados.',
+      buyer: 'La operacion esta en cola de pago al vendedor. El equipo procesara el pago manual en breve.',
+      seller: 'El pago esta pendiente de ser enviado por el equipo. Asegurate de tener tus datos de cobro actualizados.',
     },
     DISPUTED: {
       buyer: 'La operacion esta en revision. No se liberaran fondos hasta resolverla.',
@@ -286,8 +320,8 @@ function getOperationalNextStep(status: string, viewAs: 'buyer' | 'seller') {
       seller: 'El pago al vendedor queda en cola con tus datos de cobro actuales.',
     },
     RELEASED: {
-      buyer: 'La transaccion ya esta cerrada del lado de escrow.',
-      seller: 'Verifica tus datos de cobro si el pago manual aun no ha sido ejecutado.',
+      buyer: 'El pago al vendedor esta siendo gestionado. No necesitas hacer nada adicional.',
+      seller: 'El pago esta en cola para ser enviado. Si tu metodo de cobro esta actualizado, no necesitas hacer nada mas.',
     },
     DISPUTED: {
       buyer: 'Espera la resolucion del equipo y conserva el contexto de la entrega.',
@@ -314,7 +348,7 @@ function getStatusLabelForView(status: string, viewAs: 'buyer' | 'seller') {
     if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado'
     if (status === 'IN_ESCROW') return 'Pago validado'
     if (status === 'DELIVERY_CONFIRMED') return 'Entrega confirmada'
-    if (status === 'RELEASED') return 'Operacion completada'
+    if (status === 'RELEASED') return 'Pago al vendedor pendiente'
     if (status === 'DISPUTED') return 'En disputa'
   }
 
@@ -326,7 +360,7 @@ function getBuyerCtaLabel(status: string) {
   if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado / esperando validacion'
   if (status === 'IN_ESCROW') return 'Pago validado / esperando entrega'
   if (status === 'DELIVERY_CONFIRMED') return 'Entrega confirmada / esperando liberacion'
-  if (status === 'RELEASED') return 'Operacion completada'
+  if (status === 'RELEASED') return 'Pago al vendedor pendiente'
   if (status === 'DISPUTED') return 'En disputa / esperando resolucion'
   return 'Ver detalle'
 }
@@ -347,14 +381,218 @@ function mapSellerPayoutMethod(method?: DashPayoutMethod | null): SellerPayoutMe
   return 'NONE'
 }
 
-function getTxPayoutCalculation(tx: DashTransaction, sellerPayoutMethod: SellerPayoutMethod) {
-  return calculateSellerPayout({
-    amountUSD: Number(tx.amount ?? 0),
-    buyerPaymentMethod: mapTxBuyerPaymentMethod(tx),
+function getTxPayoutCalculation(tx: DashTransaction, sellerPayoutMethod: SellerPayoutMethod): TxPayoutDisplay {
+  const amountUSD = Number(tx.amount ?? 0)
+  const buyerPaymentMethod = mapTxBuyerPaymentMethod(tx)
+
+  if (buyerPaymentMethod === 'BINANCE' && sellerPayoutMethod === 'BINANCE') {
+    return {
+      hasFrozenRate: false,
+      ...calculateSellerPayout({
+        amountUSD,
+        buyerPaymentMethod,
+        sellerPayoutMethod,
+        bcvRate: 0,
+        binanceRate: 0,
+      }),
+    }
+  }
+
+  const numericFrozenRate = Number(tx.frozenRate ?? 0)
+  const frozenRate: FrozenRatePayload | null =
+    Number.isFinite(numericFrozenRate) && numericFrozenRate > 0
+      ? {
+          rate: numericFrozenRate,
+          source: tx.frozenRateSource ?? null,
+          fechaValor: tx.frozenRateFechaValor ? String(tx.frozenRateFechaValor) : null,
+          snapshotId: tx.rateSnapshotId ?? null,
+        }
+      : null
+
+  return txPayoutDisplay({
+    amountUSD,
+    buyerPaymentMethod,
     sellerPayoutMethod,
-    bcvRate: USD_REFERENCE_RATE,
-    binanceRate: USD_REFERENCE_RATE,
+    frozenRate,
   })
+}
+
+const ACTION_ACCENT: Record<ActionPriority, string> = {
+  required: '#f97316',
+  review: '#f59e0b',
+  pending: '#00aeef',
+  closed: '#4ade80',
+}
+
+const CHIP_BG: Record<ActionPriority, string> = {
+  required: 'rgba(249,115,22,0.12)',
+  review: 'rgba(245,158,11,0.1)',
+  pending: 'rgba(0,174,239,0.1)',
+  closed: 'rgba(74,222,128,0.1)',
+}
+
+const CHIP_BORDER: Record<ActionPriority, string> = {
+  required: 'rgba(249,115,22,0.28)',
+  review: 'rgba(245,158,11,0.22)',
+  pending: 'rgba(0,174,239,0.2)',
+  closed: 'rgba(74,222,128,0.2)',
+}
+
+function deriveActionItems(
+  purchases: DashTransaction[],
+  sales: DashTransaction[],
+  hasUsablePayoutMethod: boolean,
+): ActionItem[] {
+  const items: ActionItem[] = []
+
+  for (const tx of purchases) {
+    const base = { tx, viewAs: 'buyer' as const, disabled: false }
+
+    if (tx.status === 'PENDING_PAYMENT') {
+      items.push({
+        ...base,
+        key: `buyer-pay-${tx.id}`,
+        priority: 'required',
+        chipLabel: 'Accion requerida',
+        description: 'Completa o reporta tu pago para iniciar la validacion.',
+        ctaLabel: 'Ver operacion',
+        ctaType: 'view-detail',
+        accent: ACTION_ACCENT.required,
+      })
+    } else if (tx.status === 'PAYMENT_RECEIVED' || tx.status === 'VALIDATING') {
+      items.push({
+        ...base,
+        key: `buyer-validate-${tx.id}`,
+        priority: 'review',
+        chipLabel: 'En revision',
+        description: 'Pago en revision por el equipo. Te notificaremos cuando avance.',
+        ctaLabel: 'Ver operacion',
+        ctaType: 'view-detail',
+        accent: ACTION_ACCENT.review,
+      })
+    } else if (tx.status === 'IN_ESCROW') {
+      items.push({
+        ...base,
+        key: `buyer-escrow-${tx.id}`,
+        priority: 'pending',
+        chipLabel: 'Esperando vendedor',
+        description: 'Coordina la entrega con el vendedor. Confirma solo cuando el vendedor registre la entrega.',
+        ctaLabel: 'Abrir conversacion',
+        ctaType: 'open-messages',
+        accent: ACTION_ACCENT.pending,
+      })
+    } else if (tx.status === 'DELIVERY_CONFIRMED') {
+      items.push({
+        ...base,
+        key: `buyer-confirm-${tx.id}`,
+        priority: 'required',
+        chipLabel: 'Accion requerida',
+        description: 'Confirma recibido solo si ya revisaste el producto o servicio.',
+        ctaLabel: 'Confirmar recibido',
+        ctaType: 'confirm-delivery',
+        accent: ACTION_ACCENT.required,
+      })
+    } else if (tx.status === 'RELEASED') {
+      items.push({
+        ...base,
+        key: `buyer-released-${tx.id}`,
+        priority: 'pending',
+        chipLabel: 'Pago pendiente',
+        description: 'Pago al vendedor pendiente. El equipo lo procesara en breve.',
+        ctaLabel: 'Ver operacion',
+        ctaType: 'view-detail',
+        accent: ACTION_ACCENT.pending,
+      })
+    } else if (tx.status === 'DISPUTED') {
+      items.push({
+        ...base,
+        key: `buyer-disputed-${tx.id}`,
+        priority: 'review',
+        chipLabel: 'En revision',
+        description: 'Operacion en disputa. El equipo revisara el caso.',
+        ctaLabel: 'Ver operacion',
+        ctaType: 'view-detail',
+        accent: ACTION_ACCENT.review,
+      })
+    }
+  }
+
+  for (const tx of sales) {
+    const base = { tx, viewAs: 'seller' as const, disabled: false }
+
+    if (tx.status === 'PAYMENT_RECEIVED' || tx.status === 'VALIDATING') {
+      items.push({
+        ...base,
+        key: `seller-validate-${tx.id}`,
+        priority: 'review',
+        chipLabel: 'En revision',
+        description: 'Pago del comprador en revision por el equipo.',
+        ctaLabel: 'Ver operacion',
+        ctaType: 'view-detail',
+        accent: ACTION_ACCENT.review,
+      })
+    } else if (tx.status === 'IN_ESCROW') {
+      items.push({
+        ...base,
+        key: `seller-deliver-${tx.id}`,
+        priority: 'required',
+        chipLabel: 'Accion requerida',
+        description: 'Coordina la entrega y registrala cuando este completada.',
+        ctaLabel: 'Marcar entregado',
+        ctaType: 'seller-deliver',
+        accent: ACTION_ACCENT.required,
+      })
+    } else if (tx.status === 'DELIVERY_CONFIRMED') {
+      items.push({
+        ...base,
+        key: `seller-waiting-${tx.id}`,
+        priority: 'pending',
+        chipLabel: 'Esperando comprador',
+        description: 'Esperando confirmacion del comprador para liberar el pago.',
+        ctaLabel: 'Ver operacion',
+        ctaType: 'view-detail',
+        accent: ACTION_ACCENT.pending,
+      })
+    } else if (tx.status === 'RELEASED') {
+      items.push({
+        ...base,
+        key: hasUsablePayoutMethod ? `seller-released-${tx.id}` : `seller-payout-missing-${tx.id}`,
+        priority: hasUsablePayoutMethod ? 'pending' : 'required',
+        chipLabel: hasUsablePayoutMethod ? 'Pago pendiente' : 'Accion requerida',
+        description: hasUsablePayoutMethod
+          ? 'Pago al vendedor pendiente. El equipo lo procesara con tus datos de cobro.'
+          : 'Configura un metodo de cobro para que el equipo pueda pagarte.',
+        ctaLabel: hasUsablePayoutMethod ? 'Ver operacion' : 'Configurar metodo de cobro',
+        ctaType: hasUsablePayoutMethod ? 'view-detail' : 'payout-setup',
+        accent: hasUsablePayoutMethod ? ACTION_ACCENT.pending : ACTION_ACCENT.required,
+      })
+    } else if (tx.status === 'DISPUTED') {
+      items.push({
+        ...base,
+        key: `seller-disputed-${tx.id}`,
+        priority: 'review',
+        chipLabel: 'En revision',
+        description: 'Operacion en disputa. El equipo revisara el caso.',
+        ctaLabel: 'Ver operacion',
+        ctaType: 'view-detail',
+        accent: ACTION_ACCENT.review,
+      })
+    }
+  }
+
+  const priorityOrder: Record<ActionPriority, number> = { required: 0, review: 1, pending: 2, closed: 3 }
+  return items.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
+}
+
+function statusLabelForTimeline(status: string | null, viewAs: 'buyer' | 'seller') {
+  if (!status) return 'Inicio'
+  return getStatusLabelForView(status, viewAs)
+}
+
+function hasSellerPaidAudit(tx: DashTransactionDetail) {
+  return tx.statusHistory?.some(entry =>
+    entry.reason?.toLowerCase().includes('pago al vendedor registrado'),
+  ) ?? false
 }
 
 // ─── Section Header ───────────────────────────────────────────────────────────
@@ -623,7 +861,7 @@ function TxCard({
   const guidance = getOperationalStatusCopy(tx.status, viewAs)
   const actionLabel = viewAs === 'buyer' ? getBuyerCtaLabel(tx.status) : getStatusLabelForView(tx.status, viewAs)
   const actionTone =
-    tx.status === 'RELEASED' ? 'success' :
+    tx.status === 'RELEASED' ? 'info' :
       tx.status === 'PENDING_PAYMENT' || tx.status === 'PAYMENT_RECEIVED' || tx.status === 'VALIDATING' ? 'warning' :
         tx.status === 'DISPUTED' ? 'danger' :
           'info'
@@ -1451,6 +1689,27 @@ function SellerFinancialSummary({
           <FinancialSummaryRow label="Calculo" value={`${fmtUSDT(amount)} - ${fmtUSDT(payout.platformFeeUSD)} - ${fmtUSDT(payout.usdtFee)}`} />
           <FinancialSummaryRow label="Total estimado a recibir" value={fmtUSDT(payout.finalAmount)} tone="positive" />
         </div>
+      ) : payout.hasFrozenRate ? (
+        <div className="space-y-2">
+          <FinancialSummaryRow
+            label="Venta"
+            value={buyerPaidWithBinance ? `${fmtUSD(amount)} / ${fmtUSDT(amount)}` : fmtUSD(amount)}
+          />
+          <FinancialSummaryRow label="Comision Turpial 5%" value={`-${fmtUSD(payout.platformFeeUSD)}`} />
+          <FinancialSummaryRow
+            label={`Tasa ${payout.appliedRateType ?? ''}`.trim()}
+            value={`Bs ${roundMoney(Number(tx.frozenRate ?? 0)).toFixed(2)}`}
+          />
+          <FinancialSummaryRow label="Monto Bs base" value={fmtBS(payout.netBS + payout.bankFeeBS)} />
+          <FinancialSummaryRow label="Comision bancaria 0.3%" value={`-${fmtBS(payout.bankFeeBS)}`} />
+          <FinancialSummaryRow label="Total estimado Bs" value={fmtBS(payout.finalAmount)} tone="positive" />
+          {tx.frozenRateSource && (
+            <FinancialSummaryRow
+              label="Fuente"
+              value={`${tx.frozenRateSource}${tx.frozenRateFechaValor ? ` - ${fmtShortDate(tx.frozenRateFechaValor)}` : ''}`}
+            />
+          )}
+        </div>
       ) : (
         <div className="space-y-2">
           <FinancialSummaryRow
@@ -1459,13 +1718,13 @@ function SellerFinancialSummary({
           />
           <FinancialSummaryRow label="Comision Turpial 5%" value={`-${fmtUSD(payout.platformFeeUSD)}`} />
           <FinancialSummaryRow
-            label="Tasa usada"
-            value={`${payout.appliedRateType ?? 'Pendiente'} - pendiente de tasa de pago`}
+            label="Tasa"
+            value="Operacion anterior sin tasa congelada"
             tone="warning"
           />
-          <FinancialSummaryRow label="Monto Bs base" value="Pendiente de tasa de pago" tone="warning" />
-          <FinancialSummaryRow label="Comision bancaria 0.3%" value="Pendiente de tasa de pago" tone="warning" />
-          <FinancialSummaryRow label="Total estimado Bs" value="Pendiente de tasa de pago" tone="warning" />
+          <FinancialSummaryRow label="Monto Bs base" value="No disponible: operacion sin tasa congelada" tone="warning" />
+          <FinancialSummaryRow label="Comision bancaria" value="No disponible" tone="warning" />
+          <FinancialSummaryRow label="Total estimado Bs" value="Requiere revision de tasa" tone="warning" />
         </div>
       )}
     </div>
@@ -1487,6 +1746,11 @@ function TransactionDetailModal({
 }) {
   const otherParty = viewAs === 'buyer' ? tx.seller : tx.buyer
   const buyerPaidWithBinance = mapTxBuyerPaymentMethod(tx) === 'BINANCE'
+  const sellerPaid = tx.status === 'RELEASED' && hasSellerPaidAudit(tx)
+  const detailStateLabel = sellerPaid ? 'Pago enviado al vendedor' : (viewAs === 'buyer' ? getBuyerCtaLabel(tx.status) : getStatusLabelForView(tx.status, viewAs))
+  const detailStateCopy = sellerPaid
+    ? 'El pago al vendedor ya fue registrado por el equipo. La operacion queda cerrada a nivel operativo.'
+    : getOperationalStatusCopy(tx.status, viewAs)
 
   return (
     <div
@@ -1527,7 +1791,7 @@ function TransactionDetailModal({
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge status={tx.status} label={getStatusLabelForView(tx.status, viewAs)} />
+                <StatusBadge status={tx.status} label={sellerPaid ? 'Pago enviado' : getStatusLabelForView(tx.status, viewAs)} />
                 <PaymentMethodBadge tx={tx} />
               </div>
               <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--mp-text-strong)' }}>
@@ -1543,10 +1807,11 @@ function TransactionDetailModal({
           <div>
             <SectionHeader title="Que pasa ahora" />
             <DashboardStateCallout
-              label={viewAs === 'buyer' ? getBuyerCtaLabel(tx.status) : getStatusLabelForView(tx.status, viewAs)}
-              copy={getOperationalStatusCopy(tx.status, viewAs)}
+              label={detailStateLabel}
+              copy={detailStateCopy}
               tone={
-                tx.status === 'RELEASED' ? 'success' :
+                sellerPaid ? 'success' :
+                  tx.status === 'RELEASED' ? 'info' :
                   tx.status === 'DISPUTED' ? 'danger' :
                     tx.status === 'PENDING_PAYMENT' || tx.status === 'PAYMENT_RECEIVED' || tx.status === 'VALIDATING' ? 'warning' :
                       'info'
@@ -1569,7 +1834,15 @@ function TransactionDetailModal({
               )}
               <PayoutDetailRow label="Fecha de pago" value={tx.paymentPaidAt ? fmtDate(tx.paymentPaidAt) : 'Sin fecha reportada'} />
               <PayoutDetailRow label="Fecha estimada de cierre" value={tx.escrowReleaseAt ? fmtDate(tx.escrowReleaseAt) : 'Aun sin fecha estimada'} />
-              <PayoutDetailRow label="Siguiente paso" value={getOperationalNextStep(tx.status, viewAs)} />
+              <PayoutDetailRow label="Siguiente paso" value={sellerPaid ? 'Pago enviado al vendedor. No hay acciones pendientes.' : getOperationalNextStep(tx.status, viewAs)} />
+              {tx.frozenRate ? (
+                <PayoutDetailRow
+                  label="Tasa congelada"
+                  value={`${tx.frozenRateSource ?? 'Tasa'} Bs ${roundMoney(Number(tx.frozenRate)).toFixed(2)}${tx.frozenRateFechaValor ? ` - ${fmtShortDate(tx.frozenRateFechaValor)}` : ''}`}
+                />
+              ) : (
+                <PayoutDetailRow label="Tasa congelada" value="No disponible para esta operacion legacy" />
+              )}
             </div>
           </div>
 
@@ -1595,7 +1868,7 @@ function TransactionDetailModal({
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs" style={{ color: 'var(--mp-text-strong)' }}>
-                        {(entry.fromStatus ?? 'Inicio')} <span style={{ color: 'var(--mp-text-faint)' }}>-&gt;</span> {entry.toStatus}
+                        {statusLabelForTimeline(entry.fromStatus, viewAs)} <span style={{ color: 'var(--mp-text-faint)' }}>-&gt;</span> {statusLabelForTimeline(entry.toStatus, viewAs)}
                       </p>
                       <span className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>{fmtDate(entry.createdAt)}</span>
                     </div>
@@ -1728,6 +2001,135 @@ function PayoutMethodCard({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+function ActionCenterSection({
+  items,
+  onAction,
+  busyKey,
+}: {
+  items: ActionItem[]
+  onAction: (item: ActionItem) => void
+  busyKey: string | null
+}) {
+  if (items.length === 0) return null
+
+  const requiredCount = items.filter(item => item.priority === 'required').length
+  const reviewCount = items.filter(item => item.priority === 'review').length
+
+  return (
+    <div
+      className="overflow-hidden rounded-2xl"
+      style={{
+        background: 'var(--mp-card)',
+        border: '1px solid var(--mp-border)',
+        boxShadow: 'var(--mp-card-shadow)',
+      }}
+    >
+      <div
+        className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5"
+        style={{
+          background: requiredCount > 0
+            ? 'linear-gradient(135deg, rgba(249,115,22,0.08) 0%, var(--mp-card-subtle) 100%)'
+            : 'var(--mp-card-subtle)',
+          borderBottom: '1px solid var(--mp-border)',
+        }}
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <div
+            className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg"
+            style={{
+              background: requiredCount > 0 ? 'rgba(249,115,22,0.14)' : 'rgba(0,174,239,0.1)',
+              border: `1px solid ${requiredCount > 0 ? 'rgba(249,115,22,0.25)' : 'rgba(0,174,239,0.18)'}`,
+            }}
+          >
+            <Zap size={14} color={requiredCount > 0 ? '#f97316' : '#00aeef'} />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold" style={{ color: 'var(--mp-text-strong)' }}>Proximos pasos</p>
+            <p className="truncate text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
+              {items.length} operacion{items.length !== 1 ? 'es' : ''}
+              {requiredCount > 0 && <span className="ml-1" style={{ color: '#f97316' }}>- {requiredCount} requiere{requiredCount === 1 ? '' : 'n'} accion</span>}
+              {reviewCount > 0 && <span className="ml-1" style={{ color: '#f59e0b' }}>- {reviewCount} en revision</span>}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="divide-y" style={{ borderColor: 'var(--mp-border)' }}>
+        {items.map(item => {
+          const isBusy = busyKey === item.key
+          const hasCta = Boolean(item.ctaLabel && item.ctaType)
+          const listingTitle = item.tx.listing?.title ?? 'Listing eliminado'
+          const otherParty = item.viewAs === 'buyer' ? item.tx.seller : item.tx.buyer
+
+          return (
+            <div
+              key={item.key}
+              className="flex flex-col gap-3 px-4 py-3 transition-colors hover:bg-[rgba(255,255,255,0.01)] sm:flex-row sm:items-center sm:px-5"
+            >
+              <div className="flex min-w-0 flex-1 items-start gap-3">
+                <span
+                  className="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
+                  style={{
+                    background: CHIP_BG[item.priority],
+                    border: `1px solid ${CHIP_BORDER[item.priority]}`,
+                    color: item.accent,
+                  }}
+                >
+                  {item.priority === 'required' && <AlertTriangle size={9} />}
+                  {item.priority === 'review' && <Clock size={9} />}
+                  {item.priority === 'pending' && <Shield size={9} />}
+                  {item.priority === 'closed' && <CheckCircle2 size={9} />}
+                  {item.chipLabel}
+                </span>
+
+                <div className="min-w-0">
+                  <p className="text-[11px] leading-snug" style={{ color: 'var(--mp-text-muted)' }}>{item.description}</p>
+                  <p className="mt-0.5 truncate text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
+                    <span className="font-medium" style={{ color: 'var(--mp-text-soft)' }}>{listingTitle}</span>
+                    <span className="mx-1">-</span>
+                    {item.viewAs === 'buyer' ? 'Vendedor: ' : 'Comprador: '}
+                    {otherParty.displayName}
+                    <span className="mx-1">-</span>
+                    ${Number(item.tx.amount).toLocaleString('es-VE')}
+                  </p>
+                </div>
+              </div>
+
+              {hasCta && (
+                <button
+                  onClick={() => onAction(item)}
+                  disabled={isBusy || item.disabled}
+                  className="inline-flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all disabled:opacity-50"
+                  style={{
+                    background: item.priority === 'required' ? 'rgba(249,115,22,0.12)' : 'rgba(0,174,239,0.08)',
+                    border: `1px solid ${item.priority === 'required' ? 'rgba(249,115,22,0.25)' : 'rgba(0,174,239,0.2)'}`,
+                    color: item.priority === 'required' ? '#f97316' : '#00aeef',
+                  }}
+                >
+                  {isBusy ? (
+                    <Loader2 size={11} className="animate-spin" />
+                  ) : item.ctaType === 'confirm-delivery' ? (
+                    <CheckCircle2 size={11} />
+                  ) : item.ctaType === 'seller-deliver' ? (
+                    <Send size={11} />
+                  ) : item.ctaType === 'payout-setup' ? (
+                    <Wallet size={11} />
+                  ) : item.ctaType === 'open-messages' ? (
+                    <MessageSquare size={11} />
+                  ) : (
+                    <ExternalLink size={11} />
+                  )}
+                  {item.ctaLabel}
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 interface DashboardClientProps {
   session: MpSessionPayload
   profile: object | null
@@ -1778,6 +2180,7 @@ export function DashboardClient({
   const [dashboardMessage, setDashboardMessage] = useState<string | null>(null)
   const [dashboardMessageTone, setDashboardMessageTone] = useState<'success' | 'error' | 'info'>('info')
   const [payoutSubmitting, setPayoutSubmitting] = useState(false)
+  const [actionBusyKey, setActionBusyKey] = useState<string | null>(null)
   const [payoutForm, setPayoutForm] = useState({
     methodType: 'PAGO_MOVIL',
     displayLabel: '',
@@ -1824,6 +2227,7 @@ export function DashboardClient({
   const escrowSales = sales.filter(tx => ['IN_ESCROW', 'DELIVERY_CONFIRMED'].includes(tx.status))
   const releasedSales = sales.filter(tx => tx.status === 'RELEASED')
   const hasUsablePayoutMethod = payoutMethods.length > 0
+  const actionItems = deriveActionItems(purchases, sales, hasUsablePayoutMethod)
   const defaultPayoutMethod = payoutMethods.find(method => method.isDefault) ?? payoutMethods[0] ?? null
   const sellerPayoutMethod = mapSellerPayoutMethod(defaultPayoutMethod)
   const payoutReadySales = hasUsablePayoutMethod ? releasedSales : []
@@ -1870,6 +2274,45 @@ export function DashboardClient({
       return true
     }
     return false
+  }
+
+  async function handleActionCenterCta(item: ActionItem) {
+    if (item.disabled || !item.ctaType) return
+    setActionBusyKey(item.key)
+    setDashboardMessage(null)
+
+    try {
+      if (item.ctaType === 'view-detail') {
+        await handleOpenTransaction(item.tx, item.viewAs)
+      } else if (item.ctaType === 'confirm-delivery') {
+        const result = await confirmDelivery(item.tx.id)
+        setDashboardMessageTone(result.success ? 'success' : 'error')
+        setDashboardMessage(result.message)
+        if (result.success) router.refresh()
+      } else if (item.ctaType === 'seller-deliver') {
+        const result = await sellerDeliver(item.tx.id)
+        setDashboardMessageTone(result.success ? 'success' : 'error')
+        setDashboardMessage(result.message)
+        if (result.success) router.refresh()
+      } else if (item.ctaType === 'open-messages') {
+        const thread = threads.find(t => {
+          const sameParties = t.buyerId === item.tx.buyer.id && t.sellerId === item.tx.seller.id
+          const sameListing = !item.tx.listing?.id || t.listing?.id === item.tx.listing.id
+          return sameParties && sameListing
+        })
+        if (thread) {
+          handleOpenThread(thread)
+        } else {
+          handleTabChange('messages')
+          setDashboardMessageTone('info')
+          setDashboardMessage('No encontre un hilo exacto para esta operacion. Revisa tus conversaciones activas.')
+        }
+      } else if (item.ctaType === 'payout-setup') {
+        handleTabChange('payouts')
+      }
+    } finally {
+      setActionBusyKey(null)
+    }
   }
 
   async function handleOpenTransaction(tx: DashTransaction, viewAs: 'buyer' | 'seller') {
@@ -2090,6 +2533,12 @@ export function DashboardClient({
           myFavorites={favorites}
           unreadCount={unreadCount}
           onTabClick={handleTabChange}
+        />
+
+        <ActionCenterSection
+          items={actionItems}
+          onAction={handleActionCenterCta}
+          busyKey={actionBusyKey}
         />
 
         {/* Tab Navigation */}
@@ -2445,7 +2894,7 @@ export function DashboardClient({
                     {[
                       { label: 'En revision', value: pendingValidationSales.length, amount: fmtUSD(pendingValidationNet), helper: 'pagos reportados', color: '#f59e0b' },
                       { label: 'En proceso', value: escrowSales.length, amount: fmtUSD(protectedInProcessNet), helper: 'aprobadas, no cobrables', color: '#00aeef' },
-                      { label: 'Listo para cobrar', value: payoutReadySales.length, amount: fmtUSD(payoutReadyNet), helper: 'liberado con metodo', color: '#4ade80' },
+                      { label: 'Pago pendiente', value: payoutReadySales.length, amount: fmtUSD(payoutReadyNet), helper: 'liberado con metodo', color: '#4ade80' },
                       { label: 'Sin metodo', value: releasedWithoutPayoutMethodSales.length, amount: fmtUSD(releasedWithoutPayoutMethodNet), helper: 'liberado no cobrable', color: '#f97316' },
                     ].map(item => (
                       <div
@@ -2468,7 +2917,7 @@ export function DashboardClient({
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
                 <KpiCard icon={Clock} label="Monto en revision" value={fmtUSD(pendingValidationNet)} sub={`${pendingValidationSales.length} pago${pendingValidationSales.length !== 1 ? 's' : ''} por revisar`} accent="#f59e0b" tone="primary" />
                 <KpiCard icon={Shield} label="Monto en proceso" value={fmtUSD(protectedInProcessNet)} sub={`${escrowSales.length} venta${escrowSales.length !== 1 ? 's' : ''} no cobrable${escrowSales.length !== 1 ? 's' : ''}`} accent="#00aeef" tone="primary" />
-                <KpiCard icon={Landmark} label="Listo para cobrar" value={fmtUSD(payoutReadyNet)} sub={`${payoutReadySales.length} venta${payoutReadySales.length !== 1 ? 's' : ''} liberada${payoutReadySales.length !== 1 ? 's' : ''} con metodo`} accent="#4ade80" tone="primary" />
+                <KpiCard icon={Landmark} label="Pago pendiente" value={fmtUSD(payoutReadyNet)} sub={`${payoutReadySales.length} venta${payoutReadySales.length !== 1 ? 's' : ''} liberada${payoutReadySales.length !== 1 ? 's' : ''} con metodo`} accent="#4ade80" tone="primary" />
                 <KpiCard icon={AlertTriangle} label="Sin metodo configurado" value={fmtUSD(releasedWithoutPayoutMethodNet)} sub={`${releasedWithoutPayoutMethodSales.length} venta${releasedWithoutPayoutMethodSales.length !== 1 ? 's' : ''} liberada${releasedWithoutPayoutMethodSales.length !== 1 ? 's' : ''} bloqueada${releasedWithoutPayoutMethodSales.length !== 1 ? 's' : ''}`} accent="#f97316" tone="primary" />
               </div>
 
@@ -2478,7 +2927,7 @@ export function DashboardClient({
                   style={{ background: 'rgba(0,174,239,0.06)', border: '1px solid rgba(0,174,239,0.16)', color: 'var(--mp-text-muted)' }}
                 >
                   <p className="font-semibold" style={{ color: 'var(--mp-text-strong)' }}>No tienes fondos disponibles para cobrar todavia.</p>
-                  <p className="mt-1">Tus ventas apareceran aqui cuando esten liberadas y tengas metodo de cobro configurado.</p>
+                  <p className="mt-1">Tus ventas apareceran aqui cuando esten liberadas y tengas metodo de cobro configurado. RELEASED significa pago al vendedor pendiente, no cierre completo.</p>
                 </div>
               )}
 
@@ -2706,7 +3155,7 @@ export function DashboardClient({
                         <span style={{ color: 'var(--mp-text-strong)' }}>{escrowSales.length}</span>
                       </div>
                       <div className="flex items-center justify-between text-[#a0a0a0]">
-                        <span>Listas para cobrar</span>
+                        <span>Pago pendiente al vendedor</span>
                         <span style={{ color: 'var(--mp-text-strong)' }}>{payoutReadySales.length}</span>
                       </div>
                       <div className="flex items-center justify-between text-[#a0a0a0]">
@@ -2714,7 +3163,7 @@ export function DashboardClient({
                         <span style={{ color: 'var(--mp-text-strong)' }}>{releasedWithoutPayoutMethodSales.length}</span>
                       </div>
                       <div className="flex items-center justify-between text-[#a0a0a0]">
-                        <span>Disponible para cobrar</span>
+                        <span>Pendiente con metodo</span>
                         <span className="font-semibold text-[#00aeef]">{fmtUSD(payoutReadyNet)}</span>
                       </div>
                     </div>

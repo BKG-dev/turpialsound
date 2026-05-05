@@ -35,6 +35,7 @@ import {
   adminGetUsers,
   adminValidatePayment,
   adminReleaseEscrow,
+  adminMarkSellerPaid,
   adminResolveDispute,
   adminCancelTransaction,
   adminBanUser,
@@ -50,7 +51,7 @@ type AdminTab = 'dashboard' | 'transactions' | 'escrow' | 'validations' | 'payou
 
 type PendingAction = {
   txId: string
-  type: 'approve' | 'reject' | 'release' | 'resolve-buyer' | 'resolve-seller' | 'cancel'
+  type: 'approve' | 'reject' | 'release' | 'mark-paid' | 'resolve-buyer' | 'resolve-seller' | 'cancel'
   note: string
   loading: boolean
 } | null
@@ -118,7 +119,7 @@ const STATUS_LABEL: Record<string, string> = {
   PAYMENT_FAILED: 'Pago fallido',
   IN_ESCROW: 'En proceso',
   DELIVERY_CONFIRMED: 'Entrega confirmada',
-  RELEASED: 'Listo para pagar',
+  RELEASED: 'Pago al vendedor pendiente',
   REFUNDED: 'Reembolsado',
   DISPUTED: 'Disputa abierta',
   CANCELLED: 'Cancelado',
@@ -159,7 +160,7 @@ function exportCSV(rows: PayoutReportRow[]) {
   const csv = [
     headers.join(','),
     ...rows.map(r => [
-      `"${r.hasPayoutMethod ? 'Listo para pagar' : 'Falta método de cobro'}"`,
+      `"${r.hasPayoutMethod ? 'Pago al vendedor pendiente' : 'Falta metodo de cobro'}"`,
       `"${r.sellerName}"`,
       `"${payoutMethodLabel(r.payoutMethodType)}"`,
       `"${r.payoutAccount}"`,
@@ -241,6 +242,7 @@ function ActionPanel({
     approve:          { title: 'Aprobar pago reportado', color: '#4ade80' },
     reject:           { title: 'Rechazar pago reportado', color: '#ef4444' },
     release:          { title: 'Marcar listo para pago al vendedor', color: '#00aeef' },
+    'mark-paid':      { title: 'Registrar pago enviado al vendedor', color: '#4ade80' },
     'resolve-buyer':  { title: 'Resolver disputa a favor del comprador', color: '#a855f7' },
     'resolve-seller': { title: 'Resolver disputa a favor del vendedor', color: '#4ade80' },
     cancel:           { title: 'Cancelar transaccion', color: '#6b7280' },
@@ -261,7 +263,7 @@ function ActionPanel({
         type="text"
         value={action.note}
         onChange={e => onNote(e.target.value)}
-        placeholder="Nota interna (opcional)"
+        placeholder={action.type === 'mark-paid' ? 'Referencia de pago enviada al vendedor (opcional)' : 'Nota interna (opcional)'}
         className="w-full px-3 py-2 rounded-lg text-sm outline-none mb-3"
         style={{
           background: 'rgba(255,255,255,0.06)',
@@ -365,6 +367,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
     if (type === 'approve')         result = await adminValidatePayment(txId, true, note)
     else if (type === 'reject')     result = await adminValidatePayment(txId, false, note)
     else if (type === 'release')    result = await adminReleaseEscrow(txId, note)
+    else if (type === 'mark-paid')  result = await adminMarkSellerPaid(txId, note || undefined)
     else if (type === 'resolve-buyer')   result = await adminResolveDispute(txId, 'BUYER', note)
     else if (type === 'resolve-seller')  result = await adminResolveDispute(txId, 'SELLER', note)
     else                            result = await adminCancelTransaction(txId, note)
@@ -457,7 +460,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
             <KpiCard label="Pagos por revisar" value={stats.pendingValidation} sub="requieren validacion manual" color="#fb923c" icon={Clock} onClick={() => openOperationalView('validations', 'PAYMENT_RECEIVED')} />
             <KpiCard label="Dinero en proceso" value={fmtUSD(stats.escrowActiveValue)} sub="operaciones protegidas" color="#fbbf24" icon={Lock} onClick={() => openOperationalView('escrow', 'IN_ESCROW')} />
             <KpiCard label="Disputas abiertas" value={stats.openDisputes} sub="requieren decision" color="#ef4444" icon={AlertTriangle} onClick={() => openOperationalView('transactions', 'DISPUTED')} />
-            <KpiCard label="Listo para pagar" value={fmtUSD(stats.pendingSellerPayoutValue)} sub={`${stats.payoutsReadyCount} venta${stats.payoutsReadyCount !== 1 ? 's' : ''} con metodo; ${stats.missingPayoutMethodCount} falta${stats.missingPayoutMethodCount !== 1 ? 'n' : ''} datos`} color="#4ade80" icon={CheckCircle2} onClick={() => setTab('payouts')} />
+            <KpiCard label="Pago al vendedor pendiente" value={fmtUSD(stats.pendingSellerPayoutValue)} sub={`${stats.payoutsReadyCount} venta${stats.payoutsReadyCount !== 1 ? 's' : ''} con metodo; ${stats.missingPayoutMethodCount} falta${stats.missingPayoutMethodCount !== 1 ? 'n' : ''} datos`} color="#4ade80" icon={CheckCircle2} onClick={() => setTab('payouts')} />
           </div>
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -529,7 +532,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
       { value: 'expiring', label: 'Por vencer' },
       { value: 'DISPUTED', label: 'En disputa' },
       { value: 'DELIVERY_CONFIRMED', label: 'Conf. entrega' },
-      { value: 'RELEASED', label: 'Listo para pagar' },
+      { value: 'RELEASED', label: 'Pago al vendedor pendiente' },
     ]
 
     const availableSenderBanks = Array.from(
@@ -690,6 +693,10 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
           <div className="space-y-3">
             {visibleEscrow.map(tx => {
               const exp = isExpiring(tx)
+              const canMarkSellerPaid =
+                tx.status === 'RELEASED' &&
+                Boolean(tx.seller.defaultPayout) &&
+                !tx.disputeOpenedAt
               return (
                 <div
                   key={tx.id}
@@ -780,7 +787,10 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                       </>
                     )}
                     {(tx.status === 'IN_ESCROW' || tx.status === 'DELIVERY_CONFIRMED') && (
-                      <ActionBtn label="Listo para pagar" color="#00aeef" onClick={() => startAction(tx.id, 'release')} />
+                      <ActionBtn label="Liberar para pago" color="#00aeef" onClick={() => startAction(tx.id, 'release')} />
+                    )}
+                    {canMarkSellerPaid && (
+                      <ActionBtn label="Registrar pago enviado" color="#4ade80" onClick={() => startAction(tx.id, 'mark-paid')} />
                     )}
                     {tx.status === 'DISPUTED' && (
                       <>
@@ -831,7 +841,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                   border: state === 'ready' ? '1px solid rgba(74,222,128,0.22)' : '1px solid rgba(251,146,60,0.24)',
                 }}
               >
-                {state === 'ready' ? 'Listo para pagar' : 'Falta método de cobro'}
+                {state === 'ready' ? 'Pago al vendedor pendiente' : 'Falta método de cobro'}
               </span>
             </div>
             <p className="text-[11px] mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
@@ -931,7 +941,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                 style={{ background: 'rgba(74,222,128,0.055)', border: '1px solid rgba(74,222,128,0.18)' }}
               >
                 <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>{readyPayouts.length} vendedor(es) - {totalSales(readyPayouts)} ventas</p>
-                <p className="text-base font-semibold text-white mt-0.5">Listo para pagar: <span style={{ color: '#4ade80' }}>{fmtUSD(readyTotal)}</span></p>
+                <p className="text-base font-semibold text-white mt-0.5">Pago al vendedor pendiente: <span style={{ color: '#4ade80' }}>{fmtUSD(readyTotal)}</span></p>
               </div>
               <div
                 className="rounded-xl p-4"
@@ -953,7 +963,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
 
             <div className="space-y-5">
               <section>
-                <h3 className="mb-2 text-xs font-semibold text-white">Listo para pagar</h3>
+                <h3 className="mb-2 text-xs font-semibold text-white">Pago al vendedor pendiente</h3>
                 {readyPayouts.length === 0 ? (
                   <p className="rounded-xl px-4 py-3 text-xs" style={{ color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)' }}>
                     No hay ventas con metodo de cobro usable.
@@ -1000,7 +1010,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <KpiCard label="Total vendido" value={fmtUSD(stats?.totalSoldValue ?? gross)} color="#4ade80" icon={BarChart3} />
           <KpiCard label="Comision plataforma" value={fmtUSD(stats?.platformFeesEarned ?? fees)} color="#a855f7" icon={FileText} />
-          <KpiCard label="Listo para pagar" value={fmtUSD(stats?.pendingSellerPayoutValue ?? net)} color="#00aeef" icon={Lock} />
+          <KpiCard label="Pago al vendedor pendiente" value={fmtUSD(stats?.pendingSellerPayoutValue ?? net)} color="#00aeef" icon={Lock} />
           <KpiCard label="Ventas listas" value={stats?.payoutsReadyCount ?? payoutRows.length} color="#fbbf24" icon={Download} />
         </div>
 
