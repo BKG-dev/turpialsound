@@ -1,58 +1,74 @@
 # Next Window Brief - Turpial Sound
 
-**Fecha de actualización:** 2026-05-05
-**Frente activo:** Marketplace — Rates Integration (Fase 3-A Financiero-Operacional cerrada, pendiente commit+push)
-**Rama activa:** `Manuel/marketplace-rates-diagnosis` (base: `integration/lab-marketplace-sprint2a-selective-2026-05-04`)
-**Tipo de nota:** Checkpoint post-Fase 3-A para siguiente ventana.
+**Fecha de actualizacion:** 2026-05-05
+**Frente activo:** Marketplace — Sprint integrado final cerrado
+**Rama activa:** `Manuel/marketplace-final-integrated-sprint` (base: `origin/Manuel/marketplace-integrated-finance-discovery`)
+**Tipo de nota:** Checkpoint de cierre de integracion para revision.
 
 ---
 
 ## Estado resumido
 
-Fase 2 (persistencia de tasas en compra) + Fase 3-A (dashboard financiero-operacional) completadas técnicamente. El dashboard ya no recalcula con `rate=1`. El flujo escrow ahora tiene los 3 pasos correctos: seller entrega → buyer confirma → admin/auto libera. Las transacciones legacy sin frozen rate muestran "Operación anterior sin tasa congelada" sin fabricar montos falsos.
+Sprint final integrado cerrado. Combina finance/rates/payout/discovery base + Action Center (CTAs buyer/seller) + SEO/AEO (sitemap listings, JSON-LD hardening, canonical). Hardening semantico de estados verificado. Build limitado solo por flipclock externo de Jean.
 
-## Lo que ya está cerrado (Fase 2 + Fase 3-A)
+## Ramas integradas
 
-### Fase 2 (Rates Integration)
-- Schema: columnas de tasa en `MpTransaction`, modelo `MpReferenceRateSnapshot`, migración, `reference-rate.ts` con DB.
-- `calcFee()`: firma simplificada, eliminada dependencia de `USD_REFERENCE_RATE`.
-- `initiatePurchase()`: 3 rutas (USDT directo / BCV / Binance), bloqueo en unavailable, persistencia real, `RELEASED` guard.
-- `RATES_BLOCKER_FASE2.md`: eliminado.
+| Rama | Commit | Contenido |
+|------|--------|-----------|
+| `Manuel/marketplace-integrated-finance-discovery` | 0689bce | Base: finance, rates, payout, discovery, sellerDeliver, confirmDelivery |
+| `Manuel/marketplace-action-center-next-steps` | 05ccf72 | Action Center: CTAs buyer/seller en DashboardClient |
+| `Manuel/marketplace-seo-aeo-listings-sitemap` | 5577dc3 | SEO/AEO: sitemap dinamico, JSON-LD Product/Offers, canonical |
 
-### Fase 3-A (Financiero-Operacional)
-- **`finance.ts`**: Eliminado `USD_REFERENCE_RATE = 1`. `positiveRate()` → 0. Nuevos tipos `FrozenRatePayload`, `TxPayoutDisplay`. Nueva función `txPayoutDisplay()`.
-- **`DashboardClient.tsx`**: `getTxPayoutCalculation()` usa frozen rates reales. Legacy muestra "Operación anterior sin tasa congelada". `FinancialBreakdown` con 3 ramas (USDT/BS-frozen/BS-legacy).
-- **`transactions.ts`**: Creado `sellerDeliver()` (`IN_ESCROW` → `DELIVERY_CONFIRMED`). Corregido `confirmDelivery()` (`DELIVERY_CONFIRMED` → `RELEASED`, con dispute guard). Corregido `releaseEscrow()` (solo `DELIVERY_CONFIRMED`).
-- **Labels**: `IN_ESCROW` = "Esperando conformidad", `RELEASED` = "Fondos por liberar".
-- **AdminDashboard**: Confirmado limpio (USD-only, sin rate=1).
-- **`sellerDeliver`** exportado en barrel `actions/marketplace.ts`.
+## Lo que ya esta cerrado
 
-## Lo que falta por hacer en esta rama
+### Finance/Discovery (base)
+- adminMarkSellerPaid con guards: SUPER, RELEASED-only, no doble pago, no disputa activa, payout method.
+- sellerDeliver (IN_ESCROW -> DELIVERY_CONFIRMED).
+- confirmDelivery (DELIVERY_CONFIRMED -> RELEASED, dispute guard).
+- RELEASED no cancelable (nonCancellable guard).
+- Frozen rates en transactions + financial breakdown.
 
-1. Commit + push con mensaje: `feat(marketplace): financial-operational rates — Fase 3-A closure`.
+### Action Center
+- ActionCenterSection en DashboardClient con prioridades (required/review/pending/closed).
+- CTAs: confirm-delivery, seller-deliver, payout-setup, open-messages, view-detail.
+- Usa server actions existentes, sin nuevas.
+- Mobile responsive preservado.
+- Sin raw enums visibles.
 
-## Gaps pendientes para siguientes fases
+### SEO/AEO
+- Sitemap dinamico con listings ACTIVE (url, lastModified, changeFrequency=weekly, priority=0.65).
+- Listing detail canonical limpio sin query params.
+- JSON-LD: Product/Service + Offer (price, priceCurrency, availability).
+- Availability map: InStock / LimitedAvailability / OutOfStock.
+- Filtros client-side no generan URLs indexables falsas.
 
-| Gap | Severidad | Descripción |
+### Hardening semantico verificado
+- IN_ESCROW = pago validado, esperando conformidad del comprador.
+- sellerDeliver = reporta entrega, NO libera fondos.
+- confirmDelivery = buyer confirma recepcion -> RELEASED.
+- RELEASED = pago al vendedor pendiente, NO operacion cerrada.
+- Payout COMPLETED = operacion cerrada.
+
+## Gaps pendientes
+
+| Gap | Severidad | Descripcion |
 |-----|-----------|-------------|
-| F | ALTO | Migración `MpBinanceRateSnapshot` no aplicada en producción (Jean) |
-| — | ALTO | Migración `MpReferenceRateSnapshot` (`20260505_marketplace_rate_schema_fase1`) no aplicada en producción (Jean) |
-| — | MEDIO | `MpPayout` model existe pero no hay server action de "pago enviado al vendedor" |
-| — | BAJO | `flipclock` bloquea build completo en `PaymentFlipCountdown.tsx` (Jean) |
+| F | ALTO | Migracion `MpBinanceRateSnapshot` no aplicada en produccion (Jean) |
+| — | ALTO | Migracion `MpReferenceRateSnapshot` no aplicada en produccion (Jean) |
+| — | BAJO | `flipclock` bloquea build en `PaymentFlipCountdown.tsx` (Jean) |
 
-## Validación
+## Validacion
 
-- `npx tsc --noEmit`: Solo error pre-existente `flipclock`. Cero errores nuevos.
-- `npm run build`: ✓ Compiled successfully. Falla solo en `flipclock`.
 - `git diff --check`: Limpio.
-- Archivos modificados: `actions/marketplace.ts`, `actions/marketplace/transactions.ts`, `components/marketplace/dashboard/DashboardClient.tsx`, `lib/marketplace/finance.ts`.
+- `npx tsc --noEmit`: Solo error pre-existente flipclock.
+- `npm run build`: Compila correctamente. Falla solo en flipclock.
+- Working tree: limpio.
 
 ---
 
 ## Restricciones vigentes
 
-- No main/production.
+- No main/produccion.
 - No booking, no `/reservas`.
-- No schema/DB/migrations sin autorización explícita.
-- No ejecutar `prisma migrate` ni `prisma db push`.
-- Migraciones `MpBinanceRateSnapshot` y `MpReferenceRateSnapshot` deben ser aplicadas por Jean o con candado explícito antes de producción.
+- No schema/DB/migraciones sin autorizacion explicita.
+- Migraciones deben ser aplicadas por Jean o con candado explicito antes de produccion.

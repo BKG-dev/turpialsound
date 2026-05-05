@@ -923,6 +923,46 @@ pm run build: OK.
 - No se tocaron calculos financieros base, payout final, conformidad/fondos, schema, migraciones, booking, `/reservas`, Playwright, CDP ni QA automatizada.
 - Validacion final requerida al cierre de esta tarea: `git diff --check`, `npx tsc --noEmit`, `npm run build`.
 
+## Checkpoint 2026-05-05 - Integracion final del sprint marketplace
+
+- Rama final: `Manuel/marketplace-final-integrated-sprint`
+- Base: `origin/Manuel/marketplace-integrated-finance-discovery` (0689bce)
+- Ramas integradas via cherry-pick:
+  1. `origin/Manuel/marketplace-action-center-next-steps` (05ccf72) — Action Center, CTAs buyer/seller
+  2. `origin/Manuel/marketplace-seo-aeo-listings-sitemap` (5577dc3) — sitemap listings dinamicos, JSON-LD hardening, canonical
+- Commit de integracion: `chore(marketplace): integrate final marketplace sprint`
+
+### Que quedo cerrado
+- Action Center en DashboardClient con CTAs buyer/seller (confirmDelivery, sellerDeliver, payout-setup).
+- Sitemap dinamico con listings ACTIVE indexables.
+- JSON-LD Product/Service con Offers, availability (InStock/LimitedAvailability/OutOfStock).
+- Canonical limpio en listing detail (/marketplace/[slug]).
+- Filtros client-side no generan URLs indexables falsas.
+- No se exponen datos privados en SEO.
+
+### Hardening semantico verificado
+- IN_ESCROW = pago validado, esperando conformidad del comprador.
+- sellerDeliver (IN_ESCROW -> DELIVERY_CONFIRMED) reporta entrega, NO libera fondos.
+- confirmDelivery (DELIVERY_CONFIRMED -> RELEASED) confirma recepcion del buyer.
+- RELEASED = pago al vendedor pendiente, NO significa operacion cerrada.
+- Payout COMPLETED = operacion cerrada.
+- RELEASED no es cancelable por flujo normal (nonCancellable guard).
+- adminMarkSellerPaid exige: SUPER, RELEASED-only, no doble pago, no disputa activa, payout method activo/default.
+
+### Blockers externos
+- flipclock de Jean bloquea build en PaymentFlipCountdown.tsx.
+- Migraciones rates/snapshots (MpBinanceRateSnapshot, MpReferenceRateSnapshot) pendientes de aplicar por Jean o con lock explicito antes de produccion.
+
+### Validaciones
+- git diff --check: limpio.
+- npx tsc --noEmit: solo error flipclock (Jean).
+- npm run build: solo error flipclock (Jean).
+- Working tree limpio.
+- Push: si (origin/Manuel/marketplace-final-integrated-sprint).
+
+### No se toco
+- booking, /reservas, schema/migrations, prisma, paymentProof/proxy SUPER, main, produccion, archivos de Agente 1.
+
 ## Checkpoint 2026-04-29 - Binance rate persistente sin tocar BCV
 
 - Rama vigente: `Marketplace-Pure`.
