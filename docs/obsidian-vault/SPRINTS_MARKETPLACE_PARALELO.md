@@ -10,6 +10,23 @@ Estado global: **Sprint 0 COMPLETADO / Sprint 2A.1 ACTIVO (proximo)**.
 
 Regla operativa: `var/rate-state.json` no debe entrar en staging.
 
+## Sprint 2A.1 - Corte 1 (checkpoint validado)
+
+- Commit: `77f7516` (`fix(marketplace): improve post-action sync feedback`).
+- Tag: `cp/sprint2a1-cut1-sync-feedback-2026-05-05`.
+- Preview Ready: `https://turpialsound-e6d4x13ys-bkgs-projects-829c67c1.vercel.app`.
+- Smoke HTTP: OK (`/`, `/marketplace`, `/admin/login`, `/api/bcv-rate` en 200; gates esperados en `/marketplace/dashboard` y `/marketplace/admin` con 307).
+- Smoke autenticado manual superficial: positivo.
+- Aclaracion: no equivale a QA E2E exhaustivo.
+- Estado recomendado: listo para PR ready/revision.
+- Pendiente antes de merge final (maxima seguridad):
+  - QA profundo seller/admin.
+  - Accion admin real.
+  - Disputa/accion seller real.
+  - Verificar refresh badges/stats post-accion.
+  - Confirmar modal no-stale en flujo real.
+- Si falla `gh auth`, crear PR manual desde GitHub con base/head ya definidos.
+
 ## Sprint 0 - COMPLETADO
 
 - Owner tecnico: Jean

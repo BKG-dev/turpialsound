@@ -1,5 +1,32 @@
 # Session Summary - Activa
 
+## Estado activo - Sprint 2A.1 Corte 1 validado (superficial) - 2026-05-05
+
+- Rama activa: `jean/marketplace-sync-stabilization-2a1-2026-05-05`.
+- Corte implementado en commit: `77f7516` (`fix(marketplace): improve post-action sync feedback`).
+- Tag de checkpoint publicado: `cp/sprint2a1-cut1-sync-feedback-2026-05-05`.
+- Preview para el commit: `https://turpialsound-e6d4x13ys-bkgs-projects-829c67c1.vercel.app` (Ready).
+- Smoke HTTP reportado:
+  - `/` 200
+  - `/marketplace` 200
+  - `/marketplace/dashboard` 307 (gate esperado)
+  - `/marketplace/admin` 307 (gate esperado)
+  - `/admin/login` 200
+  - `/api/bcv-rate` 200
+- Smoke autenticado manual superficial (Jean): **positivo**.
+- Aclaracion operativa: esto **no** cuenta como QA E2E exhaustivo.
+- Estado recomendado: listo para PR ready/revision cuando Jean lo decida.
+- Pendiente para maxima seguridad antes de merge final:
+  - QA profundo seller/admin.
+  - Validar accion admin real.
+  - Validar disputa/accion seller real.
+  - Confirmar badges/stats despues de accion real.
+  - Confirmar modal no-stale en flujo real.
+- Proximo paso:
+  - si el PR draft ya existe, marcarlo ready cuando Jean decida;
+  - si el PR no existe por fallo de `gh auth`, crearlo manualmente desde GitHub.
+- `var/rate-state.json` se mantiene fuera de git.
+
 ## Estado activo - Sprint 0 cerrado / Sprint 2A.1 proximo - 2026-05-05
 
 - Rama madre: `integration/lab-marketplace-sprint2a-selective-2026-05-04`.
