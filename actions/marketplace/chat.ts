@@ -130,6 +130,68 @@ export async function sendMessage(
   }
 }
 
+// ─── SYSTEM MESSAGE HELPER ─────────────────────────────────────────────────────
+// Creates a system notification message in the buyer-seller thread.
+// Fire-and-forget — never blocks the calling operation, never throws.
+// Used for delivery confirmation, receipt confirmation, and admin payout events.
+
+export async function sendSystemMessage(params: {
+  buyerId: string
+  sellerId: string
+  listingId?: string | null
+  senderId: string
+  receiverId: string
+  content: string
+}): Promise<void> {
+  try {
+    const db = await getDb()
+    if (!db) return
+
+    // Find existing active thread between buyer and seller
+    let thread = await db.mpChatThread.findFirst({
+      where: {
+        buyerId: params.buyerId,
+        sellerId: params.sellerId,
+        listingId: params.listingId ?? null,
+        isActive: true,
+      },
+      select: { id: true },
+    })
+
+    // Create thread if it doesn't exist yet (edge case: no prior chat)
+    if (!thread) {
+      thread = await db.mpChatThread.create({
+        data: {
+          buyerId: params.buyerId,
+          sellerId: params.sellerId,
+          listingId: params.listingId ?? null,
+        },
+        select: { id: true },
+      })
+    }
+
+    // Create the system notification message
+    await db.mpMessage.create({
+      data: {
+        threadId: thread.id,
+        senderId: params.senderId,
+        receiverId: params.receiverId,
+        content: params.content,
+      },
+    })
+
+    // Bump lastMessageAt so the thread surfaces in the recipient's inbox
+    await db.mpChatThread.update({
+      where: { id: thread.id },
+      data: { lastMessageAt: new Date() },
+    })
+
+    await db.$disconnect()
+  } catch {
+    // Silently ignore — system messages are best-effort; never block operations
+  }
+}
+
 // ─── GET THREAD MESSAGES ──────────────────────────────────────────────────────
 // Returns messages in chronological order (oldest first).
 // Uses cursor-based pagination: pass `before` message ID to load earlier messages.
