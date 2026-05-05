@@ -61,6 +61,31 @@ Manuel puede iniciar sus sprints en ramas propias desde la rama madre, priorizan
 
 ---
 
+## Checkpoint 2026-05-05 — Fase 1 Schema de Tasas Marketplace (CERRADA)
+
+- **Rama:** `Manuel/marketplace-rates-schema-fase1`.
+- **Commit:** `8ea44d4` — `feat(marketplace): add auditable rate schema`.
+- **Rama de diagnóstico previa:** `Manuel/marketplace-rates-diagnosis` en `670b49f`.
+- **Estado:** Implementado, commiteado y pusheado. Migraciones sin aplicar a DB.
+
+### Schema agregado
+- `MpTransaction`: `frozenRate`, `frozenRateSource`, `frozenRateFechaValor`, `rateSnapshotId` (nullable).
+- `MpReferenceRateSnapshot`: nuevo modelo análogo a `MpBinanceRateSnapshot`.
+- Migración: `prisma/migrations/20260505_marketplace_rate_schema_fase1/migration.sql`.
+
+### Backend corregido
+- `resolveReferenceRate()` persiste snapshots BCV en DB.
+- Fallback: live → stale persistido → último snapshot DB → `unavailable` (`rate: null`).
+- Nunca devuelve `rate=1` ni constante inventada.
+
+### Próximo paso
+1. Jean resuelve `flipclock` blocker.
+2. Revisar/aprobar migraciones.
+3. Aplicar migraciones en ambiente controlado.
+4. Fase 2: integrar tasa en `initiatePurchase()` (nueva rama, autorización explícita).
+
+---
+
 ## Checkpoint operativo - hitos pragmaticos marketplace
 
 Fecha: 2026-05-04

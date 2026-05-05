@@ -1043,3 +1043,66 @@ Fase 1 — Schema: Crear `MpReferenceRateSnapshot`, anadir columnas de tasa a `M
 - No booking, no `/reservas`.
 - No schema/DB/migrations sin autorizacion explicita.
 - No commits ni pushes (diagnosis fue solo-lectura).
+
+---
+
+## Checkpoint 2026-05-05 — Fase 1 Schema de Tasas Marketplace (CERRADA)
+
+- **Rama:** `Manuel/marketplace-rates-schema-fase1` (base: `integration/lab-marketplace-sprint2a-selective-2026-05-04`).
+- **Commit:** `8ea44d4` — `feat(marketplace): add auditable rate schema`.
+- **Rama de diagnóstico previa:** `Manuel/marketplace-rates-diagnosis` en `670b49f` (solo-lectura, evidencia previa).
+- **Estado:** Implementado, commiteado y pusheado. Working tree limpio post-push.
+- **No se ejecutó** `prisma migrate deploy/dev/db push` — migraciones sin aplicar a DB.
+
+### Schema agregado
+
+1. **`MpTransaction`** — 4 columnas nuevas (nullable, compatibles con datos históricos):
+   - `frozenRate` (`Decimal(12,4)?`) — tasa congelada aplicada.
+   - `frozenRateSource` (`String?`) — discriminador `'BCV'` / `'BINANCE'`.
+   - `frozenRateFechaValor` (`DateTime?`) — fecha valor de la tasa.
+   - `rateSnapshotId` (`String?`) — scalar auditable (sin FK polimórfica).
+   - Índices: `frozenRateSource`, `rateSnapshotId`.
+
+2. **`MpReferenceRateSnapshot`** — nuevo modelo (análogo a `MpBinanceRateSnapshot`):
+   - `id`, `rate` (`Decimal(12,4)`), `fechaValor`, `source`, `mode` (`'live'`/`'stale'`/`'fallback'`/`'unavailable'`), `metadata` (`Json?`), `createdAt`, `updatedAt`.
+   - Tabla: `mp_reference_rate_snapshots`.
+   - Índices: `fechaValor`, `createdAt`, `source`, `mode`.
+
+3. **Migración:** `prisma/migrations/20260505_marketplace_rate_schema_fase1/migration.sql` — manual, `ADD COLUMN IF NOT EXISTS` + `CREATE TABLE IF NOT EXISTS`, sin backfill, sin constraints destructivos.
+
+### Backend corregido
+
+- **`lib/marketplace/reference-rate.ts`** — `resolveReferenceRate()` ahora:
+  - Persiste snapshots BCV/referencia en `MpReferenceRateSnapshot`.
+  - Retorna `snapshotId` y `fechaValor` en `ReferenceRateResult`.
+  - Fallback correcto: fuentes live → lastValid persistido como stale → último snapshot DB → `mode: 'unavailable'` con `rate: null`.
+  - **Nunca devuelve `rate=1` ni constante inventada como fallback operativo.**
+  - **No mezcla `lastValid` (memoria/archivo) con `snapshotId` de otro row DB.**
+  - `RateMode` extendido con `'unavailable'`.
+  - `ReferenceRateResult.rate` cambió a `number | null`.
+
+### Validaciones
+
+| Validación | Resultado |
+|------------|-----------|
+| `git diff --check` (source files) | ✅ Clean |
+| `npx prisma format` | ✅ OK |
+| `npx prisma generate` | ✅ Prisma Client 7.7.0 generado |
+| `npx tsc --noEmit` | ⚠️ Solo error preexistente `flipclock` en bookings. Cero errores de Fase 1. |
+| `npm run build` | ⚠️ Webpack ✓ Compiled. Solo error preexistente `flipclock`. Cero errores de Fase 1. |
+
+### Restricciones respetadas
+
+- No se tocó booking ni `/reservas`.
+- No se tocó `DashboardClient.tsx`, `AdminDashboard.tsx`, `actions/marketplace/transactions.ts`, `actions/marketplace/admin.ts`.
+- No se tocó `app/api/bcv-rate/route.ts`.
+- No se tocó `paymentProofUrl`, proxy SUPER, storage sensible.
+- No se tocó main/producción.
+- No se ejecutó `prisma migrate deploy/dev/db push`.
+
+### Próximo paso (NO ejecutar en esta sesión)
+
+1. Jean: resolver blocker `flipclock` para build limpio.
+2. Revisar/aprobar migraciones `20260429_marketplace_binance_rate_snapshots` y `20260505_marketplace_rate_schema_fase1`.
+3. Aplicar migraciones en ambiente controlado cuando se autorice.
+4. **Fase 2** (nueva rama, autorización explícita): integrar resolución de tasa en `initiatePurchase()` en `actions/marketplace/transactions.ts`.

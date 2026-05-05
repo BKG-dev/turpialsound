@@ -26,10 +26,12 @@ Esta rama restaura Sprint 2A perdido parcialmente en el port selectivo.
 Manuel puede comenzar sus sprints en ramas propias desde la rama madre, sin tocar directo la madre.
 
 Prioridad Manuel:
-1. Rates diagnosis.
-2. Payout design.
-3. Listing state.
-4. QA operacional.
+1. ~~Rates diagnosis.~~ ✅ **CERRADO** — Diagnóstico en `Manuel/marketplace-rates-diagnosis` (670b49f).
+2. ~~Rates Fase 1 Schema.~~ ✅ **CERRADO** — Schema implementado en `Manuel/marketplace-rates-schema-fase1` (8ea44d4). Migraciones sin aplicar a DB.
+3. **Rates Fase 2** — Integrar tasa en `initiatePurchase()` (nueva rama, autorización explícita).
+4. Payout design.
+5. Listing state.
+6. QA operacional.
 
 ## Jean puede comenzar
 

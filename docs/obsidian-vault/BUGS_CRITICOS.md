@@ -59,7 +59,17 @@ Este archivo registra los bloqueos y riesgos operativos activos del marketplace 
 - [ ] Validación manual local pendiente.
 
 ## 13. Binance rate snapshot
-- [ ] Aplicar migración contra DB productiva y asociar a transacciones.
+- [ ] Aplicar migración `20260429_marketplace_binance_rate_snapshots` contra DB productiva.
+- [x] Schema `MpBinanceRateSnapshot` existe en `prisma/schema.prisma`.
+
+## 14. Fase 1 Schema de Tasas Marketplace (CERRADA — Commit 8ea44d4)
+- [x] `MpTransaction` con columnas: `frozenRate`, `frozenRateSource`, `frozenRateFechaValor`, `rateSnapshotId`.
+- [x] `MpReferenceRateSnapshot` creado (análogo a `MpBinanceRateSnapshot`).
+- [x] Migración `20260505_marketplace_rate_schema_fase1` creada (no aplicada a DB).
+- [x] `resolveReferenceRate()` persiste snapshots BCV en DB.
+- [x] Fallback correcto: nunca usa `rate=1` ni constante inventada.
+- [ ] Migraciones sin aplicar a DB productiva — pendiente autorización.
+- [ ] Fase 2: integrar tasa en `initiatePurchase()` — pendiente nueva rama.
 
 ---
 

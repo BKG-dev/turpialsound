@@ -1,36 +1,58 @@
 # Next Window Brief - Turpial Sound
 
 **Fecha de actualizacion:** 2026-05-05
-**Frente activo:** Marketplace — Rates Integration (Fase 1: Schema)
-**Rama activa:** `Manuel/marketplace-rates-diagnosis` (base: `integration/lab-marketplace-sprint2a-selective-2026-05-04`)
-**Tipo de nota:** Checkpoint post-diagnosis para siguiente ventana de implementacion.
+**Frente activo:** Marketplace — Rates Integration (Fase 2: Integracion en initiatePurchase)
+**Rama activa:** `Manuel/marketplace-rates-schema-fase1` (base: `integration/lab-marketplace-sprint2a-selective-2026-05-04`)
+**Tipo de nota:** Checkpoint post-Fase 1 para siguiente ventana de implementacion.
 
 ---
 
 ## Estado resumido
 
-Diagnostico de tasas completado (solo-lectura). Se identifico la causa raiz de "Pendiente de tasa de pago": desconexion arquitectural entre los resolvers de tasa (completos) y el flujo de creacion de transacciones (usa `USD_REFERENCE_RATE=1`). Schema carece de columnas para congelar tasa. Deliverable: `docs/marketplace/RATES_DIAGNOSIS_2026-05-04.md` (8 gaps, 4 fases).
+**Fase 1 — Schema cerrada.** Commit `8ea44d4` en `Manuel/marketplace-rates-schema-fase1`, pusheado. Working tree limpio.
+
+### Schema agregado
+- `MpTransaction`: 4 columnas nullable (`frozenRate`, `frozenRateSource`, `frozenRateFechaValor`, `rateSnapshotId`).
+- `MpReferenceRateSnapshot`: nuevo modelo con `rate`, `fechaValor`, `source`, `mode`, `metadata`.
+- Migracion: `prisma/migrations/20260505_marketplace_rate_schema_fase1/migration.sql` (manual, no aplicada a DB).
+
+### Backend corregido
+- `resolveReferenceRate()` persiste snapshots BCV en `MpReferenceRateSnapshot`.
+- Fallback correcto: live → stale persistido → último snapshot DB → `unavailable` (`rate: null`).
+- **Nunca devuelve `rate=1` ni constante inventada.**
+- **No mezcla `lastValid` con `snapshotId` de otro row DB.**
+
+### Validaciones
+- `git diff --check`: ✅ Clean (source files).
+- `npx prisma format`: ✅ OK.
+- `npx prisma generate`: ✅ Prisma Client 7.7.0.
+- `npx tsc --noEmit`: ⚠️ Solo error preexistente `flipclock` en bookings.
+- `npm run build`: ⚠️ Webpack ✓ Compiled. Solo error preexistente `flipclock`.
 
 ## Bloqueos activos
-- CRITICO: No implementar sin autorizacion explicita para salir de solo-lectura.
-- CRITICO: `MpTransaction` sin columnas `frozenRate`, `frozenRateType`, `fechaValor`, `rateSnapshotId`.
-- CRITICO: `MpReferenceRateSnapshot` no existe como modelo Prisma.
-- ALTO: Migracion `MpBinanceRateSnapshot` pendiente de aplicacion en produccion.
+- ALTO: Migraciones `20260429_marketplace_binance_rate_snapshots` y `20260505_marketplace_rate_schema_fase1` sin aplicar a DB productiva.
+- ALTO: `flipclock` blocker en `components/bookings/PaymentFlipCountdown.tsx` — impide build limpio.
 - ALTO: Transacciones existentes con `platformFeeAmount`/`sellerNetAmount` calculados con rate=1 (~40x error en Bs).
+- MEDIO: `MpBinanceRateSnapshot` migracion no aplicada en prod (Gap F del diagnostico).
 
 ## Resuelto (Hitos clave)
-- Diagnostico completo de rates: root cause, gaps, plan de correccion.
-- Verificacion de no-interferencia con booking y `/reservas`.
-- Mapeo completo de archivos y flujos afectados.
-- 8 gaps clasificados (A-H) con severidad.
+- Gap A (CRITICO): `MpTransaction` ya tiene columnas de tasa.
+- Gap B (CRITICO): `MpReferenceRateSnapshot` creado.
+- Gap G (MEDIO): `resolveReferenceRate()` persiste en DB.
+- Diagnostico completo documentado en `docs/marketplace/RATES_DIAGNOSIS_2026-05-04.md`.
 
-## Siguiente accion exacta (Fase 1 — Schema)
+## Siguiente accion exacta (Fase 2 — Integracion en initiatePurchase)
 
-1. Crear modelo `MpReferenceRateSnapshot` en `prisma/schema.prisma` (analogo a `MpBinanceRateSnapshot`).
-2. Anadir columnas a `MpTransaction`: `frozenRate Decimal(12,4)`, `frozenRateType String`, `fechaValor DateTime`, `rateSnapshotId String?`.
-3. Aplicar migracion `MpBinanceRateSnapshot` si no esta aplicada.
-4. Modificar `resolveReferenceRate()` en `lib/marketplace/reference-rate.ts` para persistir en `MpReferenceRateSnapshot`.
-5. Generar migracion y validar con `npx tsc --noEmit` + `npm run build`.
+1. Jean resuelve blocker `flipclock` para build limpio.
+2. Revisar/aprobar migraciones `20260429_marketplace_binance_rate_snapshots` y `20260505_marketplace_rate_schema_fase1`.
+3. Aplicar migraciones en ambiente controlado cuando se autorice.
+4. **Fase 2** (nueva rama, autorizacion explicita):
+   - Modificar `initiatePurchase()` en `actions/marketplace/transactions.ts`.
+   - Invocar `resolveBinanceRate()` o `resolveReferenceRate()` segun `paymentMethod`.
+   - Pasar tasa real a `calcFee()` en vez de `USD_REFERENCE_RATE=1`.
+   - Almacenar `frozenRate`, `frozenRateSource`, `frozenRateFechaValor`, `rateSnapshotId` en `MpTransaction`.
+   - Manejar `mode: 'unavailable'` bloqueando la transaccion.
+   - Wrap en Prisma `$transaction`.
 
 ## Proximo prompt operativo exacto
 
@@ -40,14 +62,20 @@ Lee primero:
 - docs/07_handoffs/next-window-brief.md
 - docs/marketplace/RATES_DIAGNOSIS_2026-05-04.md
 
-Confirma autorizacion para salir de solo-lectura.
-Ejecuta Fase 1 — Schema:
-  1. Crear MpReferenceRateSnapshot en schema.prisma.
-  2. Anadir columnas de tasa a MpTransaction.
-  3. Verificar/aplicar migracion MpBinanceRateSnapshot.
-  4. Modificar resolveReferenceRate() para persistir en DB.
+Fase 1 Schema cerrada en commit 8ea44d4 (Manuel/marketplace-rates-schema-fase1).
+Migraciones sin aplicar a DB.
+flipclock blocker aun activo en bookings.
+
+Ejecuta Fase 2 — Integracion en initiatePurchase:
+  1. Modificar actions/marketplace/transactions.ts.
+  2. Invocar resolveBinanceRate() o resolveReferenceRate() segun paymentMethod.
+  3. Pasar tasa real a calcFee().
+  4. Almacenar frozenRate, frozenRateSource, frozenRateFechaValor, rateSnapshotId.
+  5. Manejar mode: 'unavailable' bloqueando la transaccion.
+  6. Wrap en Prisma $transaction.
 No tocar booking ni /reservas.
-No implementar Fase 2 (integracion en initiatePurchase) hasta que Fase 1 este validada.
+No tocar UI/placeholders.
+No tocar DB productiva sin autorizacion.
 ```
 
 ---
