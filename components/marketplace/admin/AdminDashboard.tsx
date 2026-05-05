@@ -773,7 +773,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                         <ActionBtn label="Resolver vendedor" color="#4ade80" onClick={() => startAction(tx.id, 'resolve-seller')} />
                       </>
                     )}
-                    {!['REFUNDED', 'CANCELLED', 'PAYMENT_FAILED'].includes(tx.status) && (
+                    {!['RELEASED', 'REFUNDED', 'CANCELLED', 'PAYMENT_FAILED'].includes(tx.status) && (
                       <ActionBtn label="Cancelar" color="#6b7280" onClick={() => startAction(tx.id, 'cancel')} />
                     )}
                   </div>
