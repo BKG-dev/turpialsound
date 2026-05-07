@@ -1,5 +1,64 @@
 # Session Summary - Activa
 
+## Checkpoint 2026-05-07 - Rama candidata estable Marketplace + Reservas + BCV
+
+1. Rama marcada como mejor disponible para produccion:
+   - `integration/today-reservas-marketplace-stable-2026-05-07`
+
+2. Estado:
+   - Rama candidata estable / release candidate.
+   - No desplegada a produccion todavia.
+   - Main no tocado.
+   - Produccion no tocada.
+
+3. Preview validado:
+   - `https://turpialsound-8ydzqnphf-bkgs-projects-829c67c1.vercel.app`
+
+4. Que funciona:
+   - `/reservas` end-to-end: wizard, submit, reporte pago JPG, correos, Calendar, confirmed.
+   - `/marketplace`: listings visibles tras corregir DB Preview env.
+   - `/api/bcv-rate`: tasa actual tras fix `single_provider_fresh`.
+   - `/admin/login` responde.
+   - `/ops/payment-review` responde con error controlado sin token.
+   - `/payment-proofs/view` responde error controlado sin token.
+
+5. Causa raiz Marketplace:
+   - Vercel Preview apuntaba a DB `ep-m...` sin tablas `mp_*`.
+   - Prisma runtime fallaba con `P2021: public.mp_listings does not exist`.
+   - DB `ep-l...` es la DB integrada con reservas + payment_proofs + marketplace.
+   - Se actualizaron `DATABASE_URL` y `DIRECT_URL` en Vercel Preview para usar DB integrada.
+   - El fix de codigo mantiene prehidratacion server-side y logging seguro.
+
+6. Causa raiz BCV:
+   - `GoogleSheets-BCV` estaba viejo.
+   - `DolarApi-Oficial` estaba fresco.
+   - El consenso estricto A+B causaba `stale_last_good`.
+   - Se agrego fallback live por proveedor unico fresco con guardrail.
+
+7. Commits relevantes:
+   - `a96c247` fix(bookings): allow fresh single-provider rate fallback
+   - `c01ec60` fix(marketplace): render active listings on public page
+
+8. Pendientes antes de produccion real:
+   - Decidir si esta rama abre PR hacia rama estable o main.
+   - Reconfirmar env Production antes de cualquier produccion.
+   - No copiar Preview env a Production sin revision.
+   - Smoke final en dominio de produccion cuando se autorice.
+   - Revisar `NEXT_PUBLIC_APP_URL` / `VERCEL_URL` strategy para previews dinamicos.
+   - Documentar DB oficial staging/integracion vs production.
+
+9. Leccion operativa:
+   - Congelar zonas sanas.
+   - No arreglar sintomas.
+   - Confirmar branch/commit/deployment.
+   - Revisar logs runtime.
+   - Comparar schema esperado vs DB real.
+   - Corregir la capa exacta.
+
+Frustracion convertida en determinacion.
+Determinacion convertida en metodo.
+Metodo convertido en entrega.
+
 ## Estado activo - Sprint 2A.1 Corte 2 checkpoint - 2026-05-05
 
 - Rama activa: `jean/marketplace-sync-stabilization-2a1-2026-05-05`.
