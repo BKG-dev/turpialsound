@@ -118,7 +118,7 @@ const STATUS_LABEL: Record<string, string> = {
   VALIDATING: 'En revision',
   PAYMENT_FAILED: 'Pago fallido',
   IN_ESCROW: 'En proceso',
-  DELIVERY_CONFIRMED: 'Entrega confirmada',
+  DELIVERY_CONFIRMED: 'Recepcion confirmada',
   RELEASED: 'Pago al vendedor pendiente',
   REFUNDED: 'Reembolsado',
   DISPUTED: 'Disputa abierta',
@@ -531,7 +531,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
       { value: 'IN_ESCROW', label: 'En proceso' },
       { value: 'expiring', label: 'Por vencer' },
       { value: 'DISPUTED', label: 'En disputa' },
-      { value: 'DELIVERY_CONFIRMED', label: 'Conf. entrega' },
+      { value: 'DELIVERY_CONFIRMED', label: 'Recepcion conf.' },
       { value: 'RELEASED', label: 'Pago al vendedor pendiente' },
     ]
 

@@ -84,11 +84,11 @@ interface DashTransaction {
   paymentProofUrl?: string | null
   createdAt: string | Date
   escrowReleaseAt?: string | Date | null
-  buyerConfirmedAt?: string | Date | null
   frozenRate?: number | string | null
   frozenRateSource?: string | null
   frozenRateFechaValor?: string | Date | null
   rateSnapshotId?: string | null
+  statusHistory?: DashTransactionHistory[]
   buyer: { id: string; displayName: string; avatarUrl: string | null }
   seller: { id: string; displayName: string; avatarUrl: string | null }
   listing: { id: string; title: string; slug: string; coverImageUrl: string | null } | null
@@ -166,7 +166,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   PAYMENT_RECEIVED:    { label: 'Pago Recibido',     color: '#eab308', bg: 'rgba(234,179,8,0.1)',   glow: 'rgba(234,179,8,0.25)'   },
   VALIDATING:          { label: 'Validando',         color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', glow: 'rgba(167,139,250,0.25)' },
   IN_ESCROW:           { label: 'Esperando conformidad', color: '#00aeef', bg: 'rgba(0,174,239,0.1)',   glow: 'rgba(0,174,239,0.25)'   },
-  DELIVERY_CONFIRMED:  { label: 'Entrega Confirmada',color: '#34d399', bg: 'rgba(52,211,153,0.1)',  glow: 'rgba(52,211,153,0.25)'  },
+  DELIVERY_CONFIRMED:  { label: 'Recepcion confirmada', color: '#34d399', bg: 'rgba(52,211,153,0.1)',  glow: 'rgba(52,211,153,0.25)'  },
   RELEASED:            { label: 'Pago al vendedor pendiente', color: '#4ade80', bg: 'rgba(74,222,128,0.1)',  glow: 'rgba(74,222,128,0.25)'  },
   PAYMENT_FAILED:      { label: 'Pago Fallido',      color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   glow: 'rgba(239,68,68,0.25)'   },
   DISPUTED:            { label: 'En Disputa',        color: '#f97316', bg: 'rgba(249,115,22,0.1)',  glow: 'rgba(249,115,22,0.25)'  },
@@ -270,8 +270,8 @@ function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
       seller: 'El pago ya fue validado. Completa la entrega para avanzar al cierre de la venta.',
     },
     DELIVERY_CONFIRMED: {
-      buyer: 'La operacion esta lista para avanzar a liberacion si no hay disputa.',
-      seller: 'La entrega fue confirmada. El pago al vendedor queda como siguiente paso.',
+      buyer: 'Confirmaste la recepcion. La operacion esta lista para liberacion admin si no hay disputa.',
+      seller: 'El comprador confirmo recepcion. El pago al vendedor queda pendiente de liberacion admin.',
     },
     RELEASED: {
       buyer: 'La operacion esta en cola de pago al vendedor. El equipo procesara el pago manual en breve.',
@@ -317,8 +317,8 @@ function getOperationalNextStep(status: string, viewAs: 'buyer' | 'seller') {
       seller: 'Completa la entrega para que la venta pueda avanzar a cierre y cobro.',
     },
     DELIVERY_CONFIRMED: {
-      buyer: 'La operacion ya quedo lista para cierre operativo.',
-      seller: 'El pago al vendedor queda en cola con tus datos de cobro actuales.',
+      buyer: 'Espera la liberacion admin. La operacion todavia no esta cerrada.',
+      seller: 'Espera la liberacion admin antes de considerar cobrable la operacion.',
     },
     RELEASED: {
       buyer: 'El pago al vendedor esta siendo gestionado. No necesitas hacer nada adicional.',
@@ -348,7 +348,7 @@ function getStatusLabelForView(status: string, viewAs: 'buyer' | 'seller') {
     if (status === 'PENDING_PAYMENT') return 'Reportar pago'
     if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado'
     if (status === 'IN_ESCROW') return 'Pago validado'
-    if (status === 'DELIVERY_CONFIRMED') return 'Entrega confirmada'
+    if (status === 'DELIVERY_CONFIRMED') return 'Recepcion confirmada'
     if (status === 'RELEASED') return 'Pago al vendedor pendiente'
     if (status === 'DISPUTED') return 'En disputa'
   }
@@ -356,11 +356,52 @@ function getStatusLabelForView(status: string, viewAs: 'buyer' | 'seller') {
   return STATUS_CONFIG[status]?.label ?? status
 }
 
+function hasSellerDeliveryAudit(tx: Pick<DashTransaction, 'statusHistory'>) {
+  return tx.statusHistory?.some(entry =>
+    entry.toStatus === 'IN_ESCROW' &&
+    (entry.reason ?? '').includes('seller_delivered'),
+  ) ?? false
+}
+
+function getTxStatusLabel(tx: DashTransaction, viewAs: 'buyer' | 'seller') {
+  if (tx.status === 'IN_ESCROW' && hasSellerDeliveryAudit(tx)) {
+    return viewAs === 'buyer' ? 'Entrega registrada' : 'Entrega reportada'
+  }
+  if (tx.status === 'DELIVERY_CONFIRMED') return 'Recepcion confirmada'
+  return getStatusLabelForView(tx.status, viewAs)
+}
+
+function getTxStatusCopy(tx: DashTransaction, viewAs: 'buyer' | 'seller') {
+  if (tx.status === 'IN_ESCROW' && hasSellerDeliveryAudit(tx)) {
+    return viewAs === 'buyer'
+      ? 'El vendedor registro la entrega. Confirma recepcion solo si ya revisaste y estas conforme.'
+      : 'La entrega quedo registrada. Los fondos siguen protegidos hasta que el comprador confirme y admin libere.'
+  }
+  if (tx.status === 'DELIVERY_CONFIRMED') {
+    return viewAs === 'buyer'
+      ? 'Confirmaste la recepcion. El admin debe liberar el pago al vendedor si no hay disputa activa.'
+      : 'El comprador confirmo la recepcion. El admin debe liberar el pago antes de marcarlo como enviado.'
+  }
+  return getOperationalStatusCopy(tx.status, viewAs)
+}
+
+function getTxNextStep(tx: DashTransaction, viewAs: 'buyer' | 'seller') {
+  if (tx.status === 'IN_ESCROW' && hasSellerDeliveryAudit(tx)) {
+    return viewAs === 'buyer'
+      ? 'Confirma recibido solo si estas conforme, o abre disputa si hay una incidencia real.'
+      : 'Espera la confirmacion del comprador. No hay fondos liberados todavia.'
+  }
+  if (tx.status === 'DELIVERY_CONFIRMED') {
+    return 'Espera la liberacion admin. La operacion todavia no esta pagada al vendedor.'
+  }
+  return getOperationalNextStep(tx.status, viewAs)
+}
+
 function getBuyerCtaLabel(status: string) {
   if (status === 'PENDING_PAYMENT') return 'Reportar pago'
   if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado / esperando validacion'
   if (status === 'IN_ESCROW') return 'Pago validado / esperando entrega'
-  if (status === 'DELIVERY_CONFIRMED') return 'Entrega confirmada / esperando liberacion'
+  if (status === 'DELIVERY_CONFIRMED') return 'Recepcion confirmada / esperando liberacion admin'
   if (status === 'RELEASED') return 'Pago al vendedor pendiente'
   if (status === 'DISPUTED') return 'En disputa / esperando resolucion'
   return 'Ver detalle'
@@ -472,24 +513,13 @@ function deriveActionItems(
         accent: ACTION_ACCENT.review,
       })
     } else if (tx.status === 'IN_ESCROW') {
-      items.push({
-        ...base,
-        key: `buyer-escrow-${tx.id}`,
-        priority: 'pending',
-        chipLabel: 'Esperando vendedor',
-        description: 'Coordina la entrega con el vendedor. Confirma solo cuando el vendedor registre la entrega.',
-        ctaLabel: 'Abrir conversacion',
-        ctaType: 'open-messages',
-        accent: ACTION_ACCENT.pending,
-      })
-    } else if (tx.status === 'DELIVERY_CONFIRMED') {
-      if (!tx.buyerConfirmedAt) {
+      if (hasSellerDeliveryAudit(tx)) {
         items.push({
           ...base,
           key: `buyer-confirm-${tx.id}`,
           priority: 'required',
           chipLabel: 'Accion requerida',
-          description: 'Confirma recibido solo si ya revisaste el producto o servicio.',
+          description: 'El vendedor registro la entrega. Confirma recibido solo si estas conforme.',
           ctaLabel: 'Confirmar recibido',
           ctaType: 'confirm-delivery',
           accent: ACTION_ACCENT.required,
@@ -497,15 +527,26 @@ function deriveActionItems(
       } else {
         items.push({
           ...base,
-          key: `buyer-await-release-${tx.id}`,
+          key: `buyer-escrow-${tx.id}`,
           priority: 'pending',
-          chipLabel: 'En revision final',
-          description: 'Recepcion confirmada. El equipo debe liberar el pago al vendedor.',
-          ctaLabel: 'Ver operacion',
-          ctaType: 'view-detail',
+          chipLabel: 'Esperando vendedor',
+          description: 'Coordina la entrega con el vendedor. Confirma solo cuando el vendedor registre la entrega.',
+          ctaLabel: 'Abrir conversacion',
+          ctaType: 'open-messages',
           accent: ACTION_ACCENT.pending,
         })
       }
+    } else if (tx.status === 'DELIVERY_CONFIRMED') {
+      items.push({
+        ...base,
+        key: `buyer-confirmed-${tx.id}`,
+        priority: 'pending',
+        chipLabel: 'Esperando admin',
+        description: 'Recepcion confirmada. El admin debe liberar el pago al vendedor.',
+        ctaLabel: 'Ver operacion',
+        ctaType: 'view-detail',
+        accent: ACTION_ACCENT.pending,
+      })
     } else if (tx.status === 'RELEASED') {
       items.push({
         ...base,
@@ -546,23 +587,36 @@ function deriveActionItems(
         accent: ACTION_ACCENT.review,
       })
     } else if (tx.status === 'IN_ESCROW') {
-      items.push({
-        ...base,
-        key: `seller-deliver-${tx.id}`,
-        priority: 'required',
-        chipLabel: 'Accion requerida',
-        description: 'Coordina la entrega y registrala cuando este completada.',
-        ctaLabel: 'Marcar entregado',
-        ctaType: 'seller-deliver',
-        accent: ACTION_ACCENT.required,
-      })
+      if (hasSellerDeliveryAudit(tx)) {
+        items.push({
+          ...base,
+          key: `seller-delivered-${tx.id}`,
+          priority: 'pending',
+          chipLabel: 'Esperando comprador',
+          description: 'Entrega registrada. Los fondos siguen protegidos hasta confirmacion del comprador y liberacion admin.',
+          ctaLabel: 'Ver operacion',
+          ctaType: 'view-detail',
+          accent: ACTION_ACCENT.pending,
+        })
+      } else {
+        items.push({
+          ...base,
+          key: `seller-deliver-${tx.id}`,
+          priority: 'required',
+          chipLabel: 'Accion requerida',
+          description: 'Coordina la entrega y registrala cuando este completada.',
+          ctaLabel: 'Marcar entregado',
+          ctaType: 'seller-deliver',
+          accent: ACTION_ACCENT.required,
+        })
+      }
     } else if (tx.status === 'DELIVERY_CONFIRMED') {
       items.push({
         ...base,
         key: `seller-waiting-${tx.id}`,
         priority: 'pending',
-        chipLabel: 'Esperando comprador',
-        description: 'Esperando confirmacion del comprador para liberar el pago.',
+        chipLabel: 'Esperando admin',
+        description: 'El comprador confirmo recepcion. El admin debe liberar el pago antes de registrar el envio.',
         ctaLabel: 'Ver operacion',
         ctaType: 'view-detail',
         accent: ACTION_ACCENT.pending,
@@ -601,6 +655,16 @@ function deriveActionItems(
 function statusLabelForTimeline(status: string | null, viewAs: 'buyer' | 'seller') {
   if (!status) return 'Inicio'
   return getStatusLabelForView(status, viewAs)
+}
+
+function timelineReasonLabel(reason: string) {
+  if (reason.includes('seller_delivered')) {
+    return 'Entrega registrada por vendedor. Fondos protegidos hasta confirmacion del comprador.'
+  }
+  if (reason.includes('buyer_confirmed_receipt')) {
+    return 'Comprador confirmo recepcion. Pendiente liberacion admin.'
+  }
+  return reason
 }
 
 function hasSellerPaidAudit(tx: DashTransactionDetail) {
@@ -872,8 +936,8 @@ function TxCard({
   payoutMissing?: boolean
 }) {
   const otherParty = viewAs === 'buyer' ? tx.seller : tx.buyer
-  const guidance = getOperationalStatusCopy(tx.status, viewAs)
-  const actionLabel = viewAs === 'buyer' ? getBuyerCtaLabel(tx.status) : getStatusLabelForView(tx.status, viewAs)
+  const guidance = getTxStatusCopy(tx, viewAs)
+  const actionLabel = viewAs === 'buyer' && !hasSellerDeliveryAudit(tx) ? getBuyerCtaLabel(tx.status) : getTxStatusLabel(tx, viewAs)
   const actionTone =
     tx.status === 'RELEASED' ? 'info' :
       tx.status === 'PENDING_PAYMENT' || tx.status === 'PAYMENT_RECEIVED' || tx.status === 'VALIDATING' ? 'warning' :
@@ -938,7 +1002,7 @@ function TxCard({
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={tx.status} label={getStatusLabelForView(tx.status, viewAs)} />
+            <StatusBadge status={tx.status} label={getTxStatusLabel(tx, viewAs)} />
             <PaymentMethodBadge tx={tx} />
           </div>
           <div className="flex items-center gap-1 text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
@@ -1761,10 +1825,10 @@ function TransactionDetailModal({
   const otherParty = viewAs === 'buyer' ? tx.seller : tx.buyer
   const buyerPaidWithBinance = mapTxBuyerPaymentMethod(tx) === 'BINANCE'
   const sellerPaid = tx.status === 'RELEASED' && hasSellerPaidAudit(tx)
-  const detailStateLabel = sellerPaid ? 'Pago enviado al vendedor' : (viewAs === 'buyer' ? getBuyerCtaLabel(tx.status) : getStatusLabelForView(tx.status, viewAs))
+  const detailStateLabel = sellerPaid ? 'Pago enviado al vendedor' : getTxStatusLabel(tx, viewAs)
   const detailStateCopy = sellerPaid
     ? 'El pago al vendedor ya fue registrado por el equipo. La operacion queda cerrada a nivel operativo.'
-    : getOperationalStatusCopy(tx.status, viewAs)
+    : getTxStatusCopy(tx, viewAs)
 
   return (
     <div
@@ -1805,7 +1869,7 @@ function TransactionDetailModal({
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge status={tx.status} label={sellerPaid ? 'Pago enviado' : getStatusLabelForView(tx.status, viewAs)} />
+                <StatusBadge status={tx.status} label={sellerPaid ? 'Pago enviado' : getTxStatusLabel(tx, viewAs)} />
                 <PaymentMethodBadge tx={tx} />
               </div>
               <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--mp-text-strong)' }}>
@@ -1848,7 +1912,7 @@ function TransactionDetailModal({
               )}
               <PayoutDetailRow label="Fecha de pago" value={tx.paymentPaidAt ? fmtDate(tx.paymentPaidAt) : 'Sin fecha reportada'} />
               <PayoutDetailRow label="Fecha estimada de cierre" value={tx.escrowReleaseAt ? fmtDate(tx.escrowReleaseAt) : 'Aun sin fecha estimada'} />
-              <PayoutDetailRow label="Siguiente paso" value={sellerPaid ? 'Pago enviado al vendedor. No hay acciones pendientes.' : getOperationalNextStep(tx.status, viewAs)} />
+              <PayoutDetailRow label="Siguiente paso" value={sellerPaid ? 'Pago enviado al vendedor. No hay acciones pendientes.' : getTxNextStep(tx, viewAs)} />
               {tx.frozenRate ? (
                 <PayoutDetailRow
                   label="Tasa congelada"
@@ -1886,7 +1950,7 @@ function TransactionDetailModal({
                       </p>
                       <span className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>{fmtDate(entry.createdAt)}</span>
                     </div>
-                    {entry.reason && <p className="mt-1 text-[11px]" style={{ color: 'var(--mp-text-muted)' }}>{entry.reason}</p>}
+                    {entry.reason && <p className="mt-1 text-[11px]" style={{ color: 'var(--mp-text-muted)' }}>{timelineReasonLabel(entry.reason)}</p>}
                   </div>
                 ))}
               </div>
@@ -2299,11 +2363,15 @@ export function DashboardClient({
       if (item.ctaType === 'view-detail') {
         await handleOpenTransaction(item.tx, item.viewAs)
       } else if (item.ctaType === 'confirm-delivery') {
+        const confirmed = window.confirm('Confirma solo si ya recibiste y revisaste el producto o servicio. Esta accion no paga al vendedor; deja la operacion lista para liberacion admin.')
+        if (!confirmed) return
         const result = await confirmDelivery(item.tx.id)
         setDashboardMessageTone(result.success ? 'success' : 'error')
         setDashboardMessage(result.message)
         if (result.success) router.refresh()
       } else if (item.ctaType === 'seller-deliver') {
+        const confirmed = window.confirm('Marca entregado solo cuando ya completaste la entrega. Esta accion no libera fondos.')
+        if (!confirmed) return
         const result = await sellerDeliver(item.tx.id)
         setDashboardMessageTone(result.success ? 'success' : 'error')
         setDashboardMessage(result.message)

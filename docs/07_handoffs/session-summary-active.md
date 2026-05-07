@@ -1,5 +1,23 @@
 # Session Summary - Activa
 
+## Checkpoint 2026-05-07 - M1 Marketplace protected flow reconcile
+
+- Rama reconciliada: `Manuel/s02-marketplace-protected-flow-reconcile-2026-05-07`.
+- Base de reconciliacion: `origin/Manuel/s02-marketplace-protected-flow-e2e-2026-05-07` en `04ffcbf`.
+- Commit local protegido reaplicado quirurgicamente: `1bf7e70` (`fix(marketplace): harden protected transaction flow`).
+- Se preserva el checkpoint remoto de rama candidata estable Marketplace + Reservas + BCV como contexto util, sin tratarlo como validacion de produccion.
+- Cambios de seguridad operacional:
+  - `sellerDeliver()` registra `seller_delivered` como `IN_ESCROW -> IN_ESCROW`; no pasa a `DELIVERY_CONFIRMED` ni libera fondos.
+  - `confirmDelivery()` exige buyer owner, estado `IN_ESCROW`, evidencia `seller_delivered` y ausencia de disputa activa; luego pasa a `DELIVERY_CONFIRMED` y setea `buyerConfirmedAt`.
+  - `releaseEscrow()` / `adminReleaseEscrow()` liberan solo desde `DELIVERY_CONFIRMED`, con `buyerConfirmedAt` y sin disputa activa.
+  - `adminMarkSellerPaid()` bloquea payout duplicado si existe payout no terminal para la transaccion.
+  - Dashboards buyer/seller/admin diferencian entrega registrada, recepcion confirmada, liberacion admin y pago enviado.
+- QA operativo:
+  - No se ejecuto QA E2E protegido en esta reconciliacion por falta de `APP_URL`/sesiones activas.
+  - Cualquier QA posterior debe resolver primero `task_id` exacto en `docs/07_handoffs/qa-dispatcher.json`.
+- Restricciones respetadas:
+  - No main, no produccion, no Vercel env, no schema/migrations, no generated Prisma, no reservas/booking, no secretos.
+
 ## Checkpoint 2026-05-07 - Rama candidata estable Marketplace + Reservas + BCV
 
 1. Rama marcada como mejor disponible para produccion:

@@ -480,13 +480,21 @@ export async function adminReleaseEscrow(txId: string, note: string): Promise<Ac
     if (!db) return { success: false, message: 'Base de datos no disponible' }
 
     try {
-      const tx = await db.mpTransaction.findUnique({ where: { id: txId } })
+      const tx = await db.mpTransaction.findUnique({
+        where: { id: txId },
+        include: {
+          disputes: { where: { status: { in: ['OPEN', 'UNDER_REVIEW'] } }, select: { id: true } },
+        },
+      })
       if (!tx) return { success: false, message: 'Transacción no encontrada' }
       if (tx.status !== 'DELIVERY_CONFIRMED') {
         return { success: false, message: 'Solo se puede liberar el pago cuando el comprador ha confirmado la recepcion.' }
       }
       if (!tx.buyerConfirmedAt) {
-        return { success: false, message: 'No se puede liberar: falta confirmacion de recepcion por parte del comprador.' }
+        return { success: false, message: 'No se puede liberar sin confirmacion del comprador.' }
+      }
+      if (tx.disputes.length > 0) {
+        return { success: false, message: 'No se puede liberar el pago con una disputa activa.' }
       }
 
       await db.mpTransaction.update({
@@ -539,7 +547,7 @@ export async function adminMarkSellerPaid(
       // Guard: prevent double payout for the same transaction
       const existingPayout = await db.mpPayout.findFirst({
         where: {
-          status: 'COMPLETED',
+          status: { notIn: ['FAILED', 'CANCELLED'] },
           transactionIds: { has: txId },
         },
       })
