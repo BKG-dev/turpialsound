@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { siteConfig } from '@/content/site'
 import { generatePageMetadata } from '@/lib/metadata'
+import { getActiveListings } from '@/actions/marketplace/listings'
 import MarketplacePageClient from './MarketplacePageClient'
 
 const marketplaceUrl = `${siteConfig.url}/marketplace`
@@ -62,14 +63,16 @@ const marketplaceJsonLd = {
   ],
 }
 
-export default function MarketplacePage() {
+export default async function MarketplacePage() {
+  const initialListings = await getActiveListings()
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(marketplaceJsonLd) }}
       />
-      <MarketplacePageClient />
+      <MarketplacePageClient initialListings={initialListings} />
     </>
   )
 }

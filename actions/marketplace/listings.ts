@@ -11,13 +11,28 @@ import type { Listing } from '@/types/marketplace'
 import { adaptDbListing } from '@/lib/marketplace/adapters'
 import { attachMarketplaceBlobMetadataToEntity } from '@/lib/marketplace/blob-metadata'
 
-const DISCOVERABLE_LISTING_STATUSES = ['ACTIVE', 'SOLD_OUT'] as const
+const DISCOVERY_LISTING_STATUSES = ['ACTIVE'] as const
+const LISTING_DETAIL_VISIBLE_STATUSES = ['ACTIVE', 'SOLD_OUT'] as const
 const ACTIVE_TRANSACTION_EXCLUDED_STATUSES = [
   'RELEASED',
   'REFUNDED',
   'PAYMENT_FAILED',
   'CANCELLED',
 ] as const
+const MARKETPLACE_DISCOVERY_DIAGNOSTICS_PREFIX = '[marketplace.discovery]'
+
+type DiscoveryDiagnosticsCode =
+  | 'DB_MISSING'
+  | 'QUERY_ERROR'
+  | 'ZERO_ACTIVE'
+  | 'FILTERED_EMPTY'
+
+type ListingStatusSnapshot = {
+  total: number
+  active: number
+  discoverable: number
+  byStatus: Record<string, number>
+}
 
 type DbListingWithTransactions = {
   id: string
@@ -56,6 +71,43 @@ async function withActiveTransactions<T extends DbListingWithTransactions>(
   }
 }
 
+async function getListingStatusSnapshot(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
+): Promise<ListingStatusSnapshot> {
+  const grouped = await db.mpListing.groupBy({
+    by: ['status'],
+    _count: { _all: true },
+  })
+
+  const byStatus: Record<string, number> = {}
+  let total = 0
+
+  for (const row of grouped as Array<{ status: string; _count: { _all: number } }>) {
+    const count = Number(row._count._all ?? 0)
+    byStatus[row.status] = count
+    total += count
+  }
+
+  const active = byStatus.ACTIVE ?? 0
+  const discoverable = [...DISCOVERY_LISTING_STATUSES]
+    .reduce((sum, status) => sum + (byStatus[status] ?? 0), 0)
+
+  return { total, active, discoverable, byStatus }
+}
+
+function logDiscoveryDiagnostics(
+  code: DiscoveryDiagnosticsCode,
+  details: Record<string, unknown>,
+) {
+  const payload = { code, ...details }
+  if (code === 'QUERY_ERROR') {
+    console.error(MARKETPLACE_DISCOVERY_DIAGNOSTICS_PREFIX, payload)
+    return
+  }
+  console.warn(MARKETPLACE_DISCOVERY_DIAGNOSTICS_PREFIX, payload)
+}
+
 // ─── SLUG GENERATOR ───────────────────────────────────────────────────────────
 function generateSlug(title: string): string {
   const base = title
@@ -72,18 +124,50 @@ function generateSlug(title: string): string {
 // ─── GET ACTIVE LISTINGS (UI-compatible) ─────────────────────────────────────
 export async function getActiveListings(): Promise<Listing[]> {
   const db = await getDb()
-  if (!db) return []
+  if (!db) {
+    logDiscoveryDiagnostics('DB_MISSING', {
+      hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
+    })
+    return []
+  }
 
   try {
-    const listings = await db.mpListing.findMany({
-      where: { status: { in: [...DISCOVERABLE_LISTING_STATUSES] } },
-      orderBy: { createdAt: 'desc' },
-      include: { seller: true },
-    })
+    const [listings, snapshot] = await Promise.all([
+      db.mpListing.findMany({
+        where: { status: { in: [...DISCOVERY_LISTING_STATUSES] } },
+        orderBy: { createdAt: 'desc' },
+        include: { seller: true },
+      }),
+      getListingStatusSnapshot(db),
+    ])
+
+    if (listings.length === 0) {
+      if (snapshot.total > 0 && snapshot.discoverable === 0) {
+        logDiscoveryDiagnostics('FILTERED_EMPTY', snapshot)
+      } else {
+        logDiscoveryDiagnostics('ZERO_ACTIVE', snapshot)
+      }
+    }
+
     const listingsWithTransactions = await withActiveTransactions(db, listings)
+    const adaptedListings: Listing[] = []
+    for (const listing of listingsWithTransactions) {
+      try {
+        adaptedListings.push(adaptDbListing(listing))
+      } catch (error) {
+        logDiscoveryDiagnostics('QUERY_ERROR', {
+          stage: 'ADAPT_LISTING',
+          listingId: listing.id,
+          errorName: error instanceof Error ? error.name : 'UnknownError',
+        })
+      }
+    }
     await db.$disconnect()
-    return listingsWithTransactions.map(adaptDbListing)
-  } catch {
+    return adaptedListings
+  } catch (error) {
+    logDiscoveryDiagnostics('QUERY_ERROR', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    })
     await db.$disconnect().catch(() => {})
     return []
   }
@@ -95,7 +179,7 @@ export async function getListingById(id: string): Promise<Listing | null> {
   if (!db) return null
   try {
     const l = await db.mpListing.findUnique({
-      where: { id, status: { in: [...DISCOVERABLE_LISTING_STATUSES] } },
+      where: { id, status: { in: [...LISTING_DETAIL_VISIBLE_STATUSES] } },
       include: { seller: true },
     })
     if (!l) { await db.$disconnect(); return null }
@@ -114,7 +198,7 @@ export async function getListingBySlug(slug: string): Promise<Listing | null> {
   if (!db) return null
   try {
     const l = await db.mpListing.findUnique({
-      where: { slug, status: { in: [...DISCOVERABLE_LISTING_STATUSES] } },
+      where: { slug, status: { in: [...LISTING_DETAIL_VISIBLE_STATUSES] } },
       include: { seller: true },
     })
     if (!l) { await db.$disconnect(); return null }
@@ -136,7 +220,7 @@ export async function getListingsByCategory(
   if (!db) return []
   try {
     const listings = await db.mpListing.findMany({
-      where: { category, status: { in: [...DISCOVERABLE_LISTING_STATUSES] } },
+      where: { category, status: { in: [...DISCOVERY_LISTING_STATUSES] } },
       orderBy: { createdAt: 'desc' },
       take: limit,
       include: { seller: true },

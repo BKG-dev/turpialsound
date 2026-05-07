@@ -195,7 +195,11 @@ function SectionHeading({
 
 // ─── Page Component ───────────────────────────────────────────────────────────
 
-export default function MarketplacePageClient() {
+type MarketplacePageClientProps = {
+  initialListings: Listing[]
+}
+
+export default function MarketplacePageClient({ initialListings }: MarketplacePageClientProps) {
   const router = useRouter()
   const { openAssistant } = useMarketplaceAssistantLauncher()
 
@@ -279,11 +283,13 @@ export default function MarketplacePageClient() {
   }, [session, pendingFlow])
 
   // Listings loaded from DB on mount (persisted across sessions)
-  const [dbListings, setDbListings] = useState<Listing[]>([])
-  const [listingsLoading, setListingsLoading] = useState(true)
+  const [dbListings, setDbListings] = useState<Listing[]>(initialListings)
+  const [listingsLoading, setListingsLoading] = useState(initialListings.length === 0)
   const [listingsError, setListingsError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (initialListings.length > 0) return
+
     let active = true
     const timeoutId = window.setTimeout(() => {
       if (!active) return
@@ -311,7 +317,7 @@ export default function MarketplacePageClient() {
       active = false
       window.clearTimeout(timeoutId)
     }
-  }, [])
+  }, [initialListings])
 
   // Extra listings added by the user in this session (appear immediately, before DB refresh)
   const [extraListings, setExtraListings] = useState<Listing[]>([])
