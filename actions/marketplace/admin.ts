@@ -485,6 +485,9 @@ export async function adminReleaseEscrow(txId: string, note: string): Promise<Ac
       if (tx.status !== 'DELIVERY_CONFIRMED') {
         return { success: false, message: 'Solo se puede liberar el pago cuando el comprador ha confirmado la recepcion.' }
       }
+      if (!tx.buyerConfirmedAt) {
+        return { success: false, message: 'No se puede liberar: falta confirmacion de recepcion por parte del comprador.' }
+      }
 
       await db.mpTransaction.update({
         where: { id: txId },
