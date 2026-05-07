@@ -118,7 +118,7 @@ const STATUS_LABEL: Record<string, string> = {
   VALIDATING: 'En revision',
   PAYMENT_FAILED: 'Pago fallido',
   IN_ESCROW: 'En proceso',
-  DELIVERY_CONFIRMED: 'Entrega confirmada',
+  DELIVERY_CONFIRMED: 'Recepcion confirmada',
   RELEASED: 'Pago al vendedor pendiente',
   REFUNDED: 'Reembolsado',
   DISPUTED: 'Disputa abierta',
@@ -531,7 +531,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
       { value: 'IN_ESCROW', label: 'En proceso' },
       { value: 'expiring', label: 'Por vencer' },
       { value: 'DISPUTED', label: 'En disputa' },
-      { value: 'DELIVERY_CONFIRMED', label: 'Conf. entrega' },
+      { value: 'DELIVERY_CONFIRMED', label: 'Recepcion conf.' },
       { value: 'RELEASED', label: 'Pago al vendedor pendiente' },
     ]
 
@@ -786,7 +786,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                         <ActionBtn label="Rechazar" color="#ef4444" onClick={() => startAction(tx.id, 'reject')} />
                       </>
                     )}
-                    {(tx.status === 'IN_ESCROW' || tx.status === 'DELIVERY_CONFIRMED') && (
+                    {(tx.status === 'DELIVERY_CONFIRMED' && Boolean(tx.buyerConfirmedAt)) && (
                       <ActionBtn label="Liberar para pago" color="#00aeef" onClick={() => startAction(tx.id, 'release')} />
                     )}
                     {canMarkSellerPaid && (

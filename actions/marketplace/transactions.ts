@@ -22,6 +22,18 @@ type CheckoutPaymentMethod =
   | 'CRYPTO_WALLET'
   | 'BINANCE_PAY'
 type TxPaymentMethod = 'MERCANTIL_PAGO_MOVIL' | 'ZELLE' | 'CRYPTO_WALLET_MANUAL'
+const SELLER_DELIVERED_EVENT = 'seller_delivered'
+
+function hasSellerDelivered(
+  statusHistory: Array<{ reason: string | null; toStatus: string; changedBy: string | null }>,
+  sellerId: string,
+) {
+  return statusHistory.some(entry =>
+    entry.toStatus === 'IN_ESCROW' &&
+    entry.changedBy === sellerId &&
+    (entry.reason ?? '').includes(SELLER_DELIVERED_EVENT),
+  )
+}
 
 function mapBuyerPaymentMethod(paymentMethod: TxPaymentMethod): BuyerPaymentMethod {
   if (paymentMethod === 'CRYPTO_WALLET_MANUAL') return 'BINANCE'
@@ -363,26 +375,30 @@ export async function sellerDeliver(transactionId: string): Promise<ActionResult
   if (!db) return { success: false, message: 'Base de datos no disponible' }
 
   try {
-    const tx = await db.mpTransaction.findUnique({ where: { id: transactionId } })
+    const tx = await db.mpTransaction.findUnique({
+      where: { id: transactionId },
+      include: {
+        statusHistory: {
+          select: { reason: true, toStatus: true, changedBy: true },
+        },
+      },
+    })
     if (!tx) return { success: false, message: 'Transaccion no encontrada' }
     if (tx.sellerId !== session.userId) return { success: false, message: 'Solo el vendedor puede registrar la entrega' }
     if (tx.status !== 'IN_ESCROW') {
       return { success: false, message: `No se puede registrar entrega desde el estado: ${tx.status}` }
     }
-
-    const now = new Date()
-    await db.mpTransaction.update({
-      where: { id: transactionId },
-      data: { status: 'DELIVERY_CONFIRMED' },
-    })
+    if (hasSellerDelivered(tx.statusHistory, tx.sellerId)) {
+      return { success: false, message: 'La entrega ya fue registrada. Espera la confirmacion del comprador.' }
+    }
 
     await db.mpTransactionStatusHistory.create({
       data: {
         transactionId,
         fromStatus: 'IN_ESCROW',
-        toStatus: 'DELIVERY_CONFIRMED',
+        toStatus: 'IN_ESCROW',
         changedBy: session.userId,
-        reason: 'Vendedor registro la entrega del producto/servicio',
+        reason: `${SELLER_DELIVERED_EVENT}: vendedor registro entrega; espera confirmacion del comprador`,
       },
     })
 
@@ -393,11 +409,11 @@ export async function sellerDeliver(transactionId: string): Promise<ActionResult
       listingId: tx.listingId,
       senderId: tx.sellerId,
       receiverId: tx.buyerId,
-      content: '📦 El vendedor ha registrado la entrega del producto/servicio. Por favor revisa y confirma la recepción para liberar los fondos.',
+      content: 'El vendedor registro la entrega. Revisa el producto o servicio y confirma la recepcion solo si estas conforme. Los fondos siguen protegidos.',
     })
 
     await db.$disconnect()
-    return { success: true, data: undefined, message: 'Entrega registrada. El comprador debe confirmar la recepcion.' }
+    return { success: true, data: undefined, message: 'Entrega registrada. Los fondos siguen protegidos hasta la confirmacion del comprador y liberacion admin.' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
@@ -416,15 +432,19 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
       where: { id: transactionId },
       include: {
         disputes: { where: { status: { in: ['OPEN', 'UNDER_REVIEW'] } }, select: { id: true } },
+        statusHistory: { select: { reason: true, toStatus: true, changedBy: true } },
       },
     })
     if (!tx) return { success: false, message: 'Transaccion no encontrada' }
     if (tx.buyerId !== session.userId) return { success: false, message: 'Solo el comprador puede confirmar la entrega' }
-    if (tx.status !== 'DELIVERY_CONFIRMED') {
+    if (tx.status !== 'IN_ESCROW') {
       return { success: false, message: `No se puede confirmar desde el estado: ${tx.status}. Espera a que el vendedor registre la entrega.` }
     }
+    if (!hasSellerDelivered(tx.statusHistory, tx.sellerId)) {
+      return { success: false, message: 'El vendedor aun no ha registrado la entrega.' }
+    }
 
-    // Dispute guard: if there is an active dispute, block release
+    // Dispute guard: if there is an active dispute, block buyer confirmation
     if (tx.disputes && tx.disputes.length > 0) {
       await db.$disconnect()
       return { success: false, message: 'Existe una disputa activa. No se puede confirmar la entrega mientras la disputa este abierta.' }
@@ -433,31 +453,31 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
     const now = new Date()
     await db.mpTransaction.update({
       where: { id: transactionId },
-      data: { status: 'RELEASED', buyerConfirmedAt: now, releasedAt: now },
+      data: { status: 'DELIVERY_CONFIRMED', buyerConfirmedAt: now },
     })
 
     await db.mpTransactionStatusHistory.create({
       data: {
         transactionId,
-        fromStatus: 'DELIVERY_CONFIRMED',
-        toStatus: 'RELEASED',
+        fromStatus: 'IN_ESCROW',
+        toStatus: 'DELIVERY_CONFIRMED',
         changedBy: session.userId,
-        reason: 'Comprador confirmo la recepcion. Fondos liberados al vendedor.',
+        reason: 'buyer_confirmed_receipt: comprador confirmo la recepcion; pendiente liberacion admin',
       },
     })
 
-    // Fire-and-forget: notify seller that buyer confirmed and funds are released
+    // Fire-and-forget: notify seller that buyer confirmed; admin still releases later
     void sendSystemMessage({
       buyerId: tx.buyerId,
       sellerId: tx.sellerId,
       listingId: tx.listingId,
       senderId: tx.buyerId,
       receiverId: tx.sellerId,
-      content: '✅ El comprador ha confirmado la recepción. Los fondos están listos para pago. El equipo procesará el pago a tu método de cobro en breve.',
+      content: 'El comprador confirmo la recepcion. La operacion queda lista para liberacion admin si no hay disputa activa.',
     })
 
     await db.$disconnect()
-    return { success: true, data: undefined, message: 'Recepcion confirmada. Los fondos estan listos para pago al vendedor.' }
+    return { success: true, data: undefined, message: 'Recepcion confirmada. El admin debe liberar el pago al vendedor.' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
@@ -474,11 +494,22 @@ export async function releaseEscrow(transactionId: string): Promise<ActionResult
   if (!db) return { success: false, message: 'Base de datos no disponible' }
 
   try {
-    const tx = await db.mpTransaction.findUnique({ where: { id: transactionId } })
+    const tx = await db.mpTransaction.findUnique({
+      where: { id: transactionId },
+      include: {
+        disputes: { where: { status: { in: ['OPEN', 'UNDER_REVIEW'] } }, select: { id: true } },
+      },
+    })
     if (!tx) return { success: false, message: 'Transaccion no encontrada' }
     // DELIVERY_CONFIRMED only: la operacion aun espera conformidad del comprador si esta en IN_ESCROW
     if (tx.status !== 'DELIVERY_CONFIRMED') {
       return { success: false, message: `No se puede liberar desde el estado: ${tx.status}. ${tx.status === 'IN_ESCROW' ? 'La operacion aun espera conformidad del comprador.' : 'Solo se puede liberar cuando el comprador ha confirmado la recepcion.'}` }
+    }
+    if (!tx.buyerConfirmedAt) {
+      return { success: false, message: 'No se puede liberar sin confirmacion del comprador.' }
+    }
+    if (tx.disputes.length > 0) {
+      return { success: false, message: 'No se puede liberar con una disputa activa.' }
     }
 
     const now = new Date()
@@ -727,6 +758,10 @@ export async function getMyTransactions(
         frozenRateSource: true,
         frozenRateFechaValor: true,
         rateSnapshotId: true,
+        statusHistory: {
+          select: { id: true, fromStatus: true, toStatus: true, reason: true, createdAt: true },
+          orderBy: { createdAt: 'asc' },
+        },
         buyer: { select: { id: true, displayName: true, avatarUrl: true } },
         seller: { select: { id: true, displayName: true, avatarUrl: true } },
         listing: { select: { id: true, title: true, slug: true, coverImageUrl: true } },
