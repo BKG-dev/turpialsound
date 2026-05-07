@@ -786,7 +786,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                         <ActionBtn label="Rechazar" color="#ef4444" onClick={() => startAction(tx.id, 'reject')} />
                       </>
                     )}
-                    {(tx.status === 'IN_ESCROW' || tx.status === 'DELIVERY_CONFIRMED') && (
+                    {(tx.status === 'DELIVERY_CONFIRMED' && Boolean(tx.buyerConfirmedAt)) && (
                       <ActionBtn label="Liberar para pago" color="#00aeef" onClick={() => startAction(tx.id, 'release')} />
                     )}
                     {canMarkSellerPaid && (

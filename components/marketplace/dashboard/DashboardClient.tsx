@@ -84,6 +84,7 @@ interface DashTransaction {
   paymentProofUrl?: string | null
   createdAt: string | Date
   escrowReleaseAt?: string | Date | null
+  buyerConfirmedAt?: string | Date | null
   frozenRate?: number | string | null
   frozenRateSource?: string | null
   frozenRateFechaValor?: string | Date | null
@@ -482,16 +483,29 @@ function deriveActionItems(
         accent: ACTION_ACCENT.pending,
       })
     } else if (tx.status === 'DELIVERY_CONFIRMED') {
-      items.push({
-        ...base,
-        key: `buyer-confirm-${tx.id}`,
-        priority: 'required',
-        chipLabel: 'Accion requerida',
-        description: 'Confirma recibido solo si ya revisaste el producto o servicio.',
-        ctaLabel: 'Confirmar recibido',
-        ctaType: 'confirm-delivery',
-        accent: ACTION_ACCENT.required,
-      })
+      if (!tx.buyerConfirmedAt) {
+        items.push({
+          ...base,
+          key: `buyer-confirm-${tx.id}`,
+          priority: 'required',
+          chipLabel: 'Accion requerida',
+          description: 'Confirma recibido solo si ya revisaste el producto o servicio.',
+          ctaLabel: 'Confirmar recibido',
+          ctaType: 'confirm-delivery',
+          accent: ACTION_ACCENT.required,
+        })
+      } else {
+        items.push({
+          ...base,
+          key: `buyer-await-release-${tx.id}`,
+          priority: 'pending',
+          chipLabel: 'En revision final',
+          description: 'Recepcion confirmada. El equipo debe liberar el pago al vendedor.',
+          ctaLabel: 'Ver operacion',
+          ctaType: 'view-detail',
+          accent: ACTION_ACCENT.pending,
+        })
+      }
     } else if (tx.status === 'RELEASED') {
       items.push({
         ...base,

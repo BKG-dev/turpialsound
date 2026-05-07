@@ -423,6 +423,9 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
     if (tx.status !== 'DELIVERY_CONFIRMED') {
       return { success: false, message: `No se puede confirmar desde el estado: ${tx.status}. Espera a que el vendedor registre la entrega.` }
     }
+    if (tx.buyerConfirmedAt) {
+      return { success: false, message: 'La recepcion ya fue confirmada previamente.' }
+    }
 
     // Dispute guard: if there is an active dispute, block release
     if (tx.disputes && tx.disputes.length > 0) {
@@ -433,16 +436,16 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
     const now = new Date()
     await db.mpTransaction.update({
       where: { id: transactionId },
-      data: { status: 'RELEASED', buyerConfirmedAt: now, releasedAt: now },
+      data: { buyerConfirmedAt: now },
     })
 
     await db.mpTransactionStatusHistory.create({
       data: {
         transactionId,
         fromStatus: 'DELIVERY_CONFIRMED',
-        toStatus: 'RELEASED',
+        toStatus: 'DELIVERY_CONFIRMED',
         changedBy: session.userId,
-        reason: 'Comprador confirmo la recepcion. Fondos liberados al vendedor.',
+        reason: 'Comprador confirmo la recepcion. Operacion lista para liberacion por admin.',
       },
     })
 
@@ -453,11 +456,11 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
       listingId: tx.listingId,
       senderId: tx.buyerId,
       receiverId: tx.sellerId,
-      content: '✅ El comprador ha confirmado la recepción. Los fondos están listos para pago. El equipo procesará el pago a tu método de cobro en breve.',
+      content: '✅ El comprador ha confirmado la recepción. El equipo ahora puede liberar el pago al vendedor.',
     })
 
     await db.$disconnect()
-    return { success: true, data: undefined, message: 'Recepcion confirmada. Los fondos estan listos para pago al vendedor.' }
+    return { success: true, data: undefined, message: 'Recepcion confirmada. Operacion lista para liberacion por admin.' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
@@ -479,6 +482,9 @@ export async function releaseEscrow(transactionId: string): Promise<ActionResult
     // DELIVERY_CONFIRMED only: la operacion aun espera conformidad del comprador si esta en IN_ESCROW
     if (tx.status !== 'DELIVERY_CONFIRMED') {
       return { success: false, message: `No se puede liberar desde el estado: ${tx.status}. ${tx.status === 'IN_ESCROW' ? 'La operacion aun espera conformidad del comprador.' : 'Solo se puede liberar cuando el comprador ha confirmado la recepcion.'}` }
+    }
+    if (!tx.buyerConfirmedAt) {
+      return { success: false, message: 'No se puede liberar: falta confirmacion de recepcion por parte del comprador.' }
     }
 
     const now = new Date()
@@ -723,6 +729,7 @@ export async function getMyTransactions(
         paymentProofUrl: true,
         createdAt: true,
         escrowReleaseAt: true,
+        buyerConfirmedAt: true,
         frozenRate: true,
         frozenRateSource: true,
         frozenRateFechaValor: true,
