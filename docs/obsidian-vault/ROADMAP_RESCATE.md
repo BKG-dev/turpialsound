@@ -4,95 +4,54 @@ tags: ["#roadmap", "#status/urgent", "#status/live-source"]
 
 # Roadmap de Rescate
 
-Obsidian es la fuente de trazabilidad viva del proyecto. Este archivo refleja el estado operativo real del marketplace al 2026-04-29 y deja el checkpoint para retomar sin rearmar contexto.
+## Estado real activo (2026-05-07)
 
-## Estado actual real del marketplace (2026-04-29)
+- Rama madre estable: `integration/today-reservas-marketplace-stable-2026-05-07`.
+- Commit estable: `c01ec60`.
+- `/reservas` congelado como zona sana.
+- `/marketplace` activo.
+- BCV corregido con tasa fresca.
 
-El marketplace está funcional y separado del booking. El flujo operativo vigente es manual temporal.
+## Incidente clave aprendido
 
-### Hitos completados (Sprint "Admin AI Copilot + BI/Analytics")
-- **Admin AI Copilot (Read-only):** Implementado en `/marketplace/admin/copilot`. Acceso restringido a `SUPER`. Herramientas de lectura operativa y BI.
-- **Instrumentación Analytics/BI:** Modelos `MpAnalyticsEvent` y `MpBlobObjectMetadata` creados. Endpoints y eventos instrumentados.
-- **Seguridad:** Aislamiento total de escritura en Copilot y limpieza de metadata sensible.
+- Marketplace vacio en Preview no fue problema de UI/filtros.
+- Causa raiz: DB target incorrecta sin tablas `mp_*`.
+- Error tecnico observado: Prisma `P2021` (`public.mp_listings` inexistente).
+- Solucion real: alinear `DATABASE_URL` (pooled) y `DIRECT_URL` (direct) al mismo proyecto Neon integrado.
 
-### Bloqueos activos
-- [ ] Ejecutar QA manual E2E buyer -> admin -> escrow -> payout seller siguiendo runbook.
-- [ ] Validar Admin AI Copilot (restricciones de lectura y acceso).
-- [ ] Verificar build con `git diff --check`, `tsc` y `npm run build`.
+## Protocolo obligatorio: marketplace vacio
 
-### Pendientes posteriores (Nivel 2)
-- [ ] Automatización de acciones de escritura (requiere confirmación UI).
-- [ ] Tráfico/bandwidth real (requiere Vercel Observability).
-- [ ] Módulo financiero/P&L.
-- [ ] Orquestador Oreshnik.
+1. Confirmar branch/commit exacto del deployment.
+2. Revisar Vercel runtime logs.
+3. Buscar logs `marketplace.discovery`.
+4. Distinguir `DB_MISSING` / `QUERY_ERROR` / `ZERO_ACTIVE` / `FILTERED_EMPTY`.
+5. Ante Prisma `P2021`, revisar DB target y tablas `mp_*` antes de tocar UI.
+6. Comparar `DATABASE_URL` vs `DIRECT_URL` con fingerprint seguro: host hint, pooler true/false, sslmode.
+7. Nunca imprimir secretos.
+8. Corregir env/DB en Preview solo por Jean.
+9. Redeployar mismo commit.
+10. Solo tocar UI si DB y query estan correctas.
 
-## Reglas de oro
-- No tocar `booking` ni `/reservas`.
-- No implementar nuevas migraciones sin aprobación explícita.
-- No tocar `paymentProofUrl` ni proxy `SUPER`.
-- Si un objetivo no está en `docs/07_handoffs/qa-dispatcher.json`, reportar `GAP OPERATIVO` y no improvisar.
+## Metodologia Oreshnik-Codex 2.0
 
----
+- 1 rama madre estable.
+- N worktrees separados.
+- N agentes Codex.
+- 1 owner por lock.
+- 1 commit/push por sprint cerrado.
+- 0 trabajo directo sobre madre.
+- 0 main.
+- 0 produccion.
+- 0 zonas sanas tocadas.
 
-## Checkpoint operativo - rama madre integrada y trabajo paralelo
+## Roles
 
-Fecha: 2026-05-04
-Rama madre: integration/lab-marketplace-sprint2a-selective-2026-05-04
+- Jean: integracion, Vercel/envs, DB/Prisma/schema/migrations, booking/reservas, rama madre, merges, preview integrado.
+- Manuel: marketplace producto, buyer/seller/admin flow, QA operacional, rates, payout, estados, copy/UX operativo.
 
-Se documento el metodo de trabajo paralelo para Jean y Manuel.
+## Ola 1
 
-### Estado
-
-La rama madre es controlada por Jean y funciona como base integrada. No se debe trabajar codigo directo sobre ella.
-
-### Pendiente inmediato Jean
-
-- Resolver bloqueo global de build por flipclock en components/bookings/PaymentFlipCountdown.tsx.
-- Revisar/mergear Manuel/reconcile-sprint2a-on-integrated-mother, commit 6512972, que restaura piezas criticas de Sprint 2A en la integracion.
-
-### Manuel
-
-Manuel puede iniciar sus sprints en ramas propias desde la rama madre, priorizando rates diagnosis, payout design, listing state y QA operacional.
-
-### Documentos fuente
-
-- docs/07_handoffs/parallel-sprint-distribution-2026-05-04.md
-- docs/obsidian-vault/SPRINTS_MARKETPLACE_PARALELO.md
-
----
-
-## Checkpoint operativo - hitos pragmaticos marketplace
-
-Fecha: 2026-05-04
-Rama madre: integration/lab-marketplace-sprint2a-selective-2026-05-04
-
-Se agrego una capa de hitos pragmaticos / Definition of Done para traducir cada sprint tecnico a resultados concretos verificables.
-
-Documentos:
-- docs/07_handoffs/marketplace-pragmatic-milestones-2026-05-04.md
-- docs/obsidian-vault/HITOS_MARKETPLACE_PRACTICOS.md
-
-Uso:
-- Jean y Manuel deben leer estos hitos al iniciar sesion.
-- Cada sprint debe cerrar con un resultado verificable, no solo con archivos modificados.
-- La division tecnica de locks se mantiene en parallel-sprint-distribution.
-
----
-
-## Checkpoint operativo - procedimiento QA integrado
-
-Fecha: 2026-05-04
-Rama madre: integration/lab-marketplace-sprint2a-selective-2026-05-04
-
-Se documento el procedimiento QA integrado del marketplace.
-
-Documentos:
-- docs/07_handoffs/marketplace-integrated-qa-procedure-2026-05-04.md
-- docs/obsidian-vault/QA_MARKETPLACE_INTEGRADO.md
-
-Uso:
-- Cada sprint debe cerrar con QA minimo y evidencia.
-- Se clasifican fallos como P0, P1 o P2.
-- No se cierra ningun sprint con P0 abierto.
-- P1 debe quedar documentado con owner.
-- El flujo canonico buyer/seller/admin queda definido como prueba base.
+- J1 Docs Control Tower.
+- J2 Preview Runtime Guard.
+- M1 Marketplace Protected Flow E2E.
+- M2 Marketplace QA Harness.

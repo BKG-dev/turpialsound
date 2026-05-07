@@ -1,48 +1,36 @@
 # QA Marketplace Integrado
 
-Rama madre: integration/lab-marketplace-sprint2a-selective-2026-05-04
+## Estado base 2026-05-07
 
-## Regla
+- Rama madre estable: `integration/today-reservas-marketplace-stable-2026-05-07`.
+- Commit estable: `c01ec60`.
+- `/reservas` congelado como zona sana.
+- `/marketplace` activo.
 
-No se cierra ningun sprint sin QA minimo, evidencia y clasificacion P0/P1/P2.
+## Regla de despacho QA (obligatoria)
 
-## QA obligatorio
+- Fuente de despacho por objetivo: `docs/07_handoffs/qa-dispatcher.json`.
+- Antes de cualquier QA, resolver `task_id` exacto en dispatcher.
+- Si no existe ruta canonica exacta, detener y reportar `GAP OPERATIVO`.
+- No usar `LEGACY` ni `EXPERIMENTAL` como primera opcion si existe ruta canonica/supporting exacta.
 
-1. Confirmar rama, commit y preview.
-2. Confirmar que no es produccion.
-3. Probar buyer, seller y admin en sesiones separadas.
-4. Clasificar fallos como P0, P1 o P2.
-5. No cerrar con P0 abierto.
-6. Documentar P1 con owner.
-7. Reportar evidencia minima.
+## Regla de incidente marketplace vacio
 
-## Flujo canonico
+Si aparece UI vacia en marketplace, aplicar este protocolo y no improvisar:
 
-1. Seller publica.
-2. Buyer pregunta.
-3. Seller responde.
-4. Buyer inicia compra.
-5. Buyer reporta pago.
-6. Admin valida pago.
-7. Estado pasa a IN_ESCROW.
-8. Seller marca Ya entregue.
-9. Buyer marca Ya recibi.
-10. Estado pasa a DELIVERY_CONFIRMED.
-11. Admin libera/registra pago.
-12. Estado pasa a RELEASED.
-13. Chat, timeline y dashboards quedan consistentes.
+1. Confirmar branch/commit exacto del deployment.
+2. Revisar Vercel runtime logs.
+3. Buscar logs `marketplace.discovery`.
+4. Distinguir `DB_MISSING` / `QUERY_ERROR` / `ZERO_ACTIVE` / `FILTERED_EMPTY`.
+5. Si aparece Prisma `P2021`, revisar DB target y tablas `mp_*` antes de tocar UI.
+6. Comparar `DATABASE_URL` y `DIRECT_URL` por fingerprint seguro (host hint, pooler true/false, sslmode).
+7. Nunca imprimir secretos.
+8. Corregir env/DB en Vercel Preview solo por Jean.
+9. Redeployar mismo commit.
+10. Solo tocar UI si DB y query estan correctas.
 
-## P0 automatico
+## Regla de conexiones
 
-- fondos liberados antes de confirmacion buyer;
-- admin libera desde IN_ESCROW;
-- doble venta;
-- operacion nueva sin tasa para payout;
-- error server-side;
-- booking/lab roto por cambios marketplace.
-
-## Documentos relacionados
-
-- docs/07_handoffs/marketplace-integrated-qa-procedure-2026-05-04.md
-- docs/07_handoffs/marketplace-pragmatic-milestones-2026-05-04.md
-- docs/07_handoffs/parallel-sprint-distribution-2026-05-04.md
+- `DATABASE_URL`: pooled/pooler.
+- `DIRECT_URL`: direct/no-pooler.
+- Ambas al mismo proyecto/base Neon integrada.
