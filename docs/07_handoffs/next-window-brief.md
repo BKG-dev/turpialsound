@@ -1,112 +1,57 @@
 # Next Window Brief - Turpial Sound
 
-**Fecha de actualizacion:** 2026-04-29
-**Frente activo:** Marketplace
-**Tipo de nota:** Checkpoint operativo para siguiente ventana
-**Estado de sincronización:** Admin AI Copilot (read-only) y BI/Analytics implementados y validados técnicamente.
-
----
+**Fecha de actualizacion:** 2026-05-07
+**Frente activo:** Integracion reservas + marketplace estable
+**Tipo de nota:** Control Tower / siguiente ventana
 
 ## Estado resumido
 
-El Admin AI Copilot (read-only) y la instrumentación inicial de Analytics/Blob están implementados y validados técnicamente. El marketplace sigue funcional y separado del booking.
+- Rama madre real: `integration/today-reservas-marketplace-stable-2026-05-07`.
+- Commit estable: `c01ec60`.
+- `/reservas` congelado como zona sana.
+- `/marketplace` activo y funcional en la rama integrada.
+- BCV corregido con tasa fresca.
 
-## Bloqueos activos
-- Critico: Ejecutar QA manual completa buyer -> admin -> escrow -> payout manual seller.
-- Alto: QA manual del Admin AI Copilot (verificación de restricciones de acceso y lectura).
-- Pendiente: Ejecutar smoke tests técnicos con `git diff --check`, `tsc` y `npm run build`.
+## Regla de entorno DB (obligatoria)
 
-## Resuelto (Hitos clave)
-- Implementación de Admin AI Copilot (read-only) y APIs asociadas.
-- Instrumentación técnica de Analytics (`MpAnalyticsEvent`) y Blob Metadata (`MpBlobObjectMetadata`).
-- Normalización de seguridad: sin acciones de escritura, sin exposición de secretos.
-- Validaciones de construcción (`tsc`, `build`) exitosas.
+- `DATABASE_URL`: pooled/pooler.
+- `DIRECT_URL`: direct/no-pooler.
+- Ambas al mismo proyecto/base Neon integrada.
+- Nunca imprimir secretos.
 
-## Siguiente accion exacta
+## Protocolo obligatorio si marketplace carga vacio
 
-1. Ejecutar QA manual E2E (buyer -> admin -> escrow -> payout seller) siguiendo el runbook.
-2. Validar Admin AI Copilot (restricciones de lectura y acceso) según el diseño.
-3. Verificar integridad del build con `git diff --check`.
-4. Una vez validado, realizar el commit y push a `Marketplace-Pure`.
-5. NO implementar acciones de escritura en el Copilot hasta nuevo aviso.
-6. NO tocar booking ni `/reservas`.
+1. Confirmar branch/commit exacto del deployment.
+2. Revisar Vercel runtime logs.
+3. Buscar logs `marketplace.discovery`.
+4. Distinguir `DB_MISSING` / `QUERY_ERROR` / `ZERO_ACTIVE` / `FILTERED_EMPTY`.
+5. Si aparece Prisma `P2021`, revisar DB target y tablas `mp_*` antes de tocar UI.
+6. Comparar `DATABASE_URL` y `DIRECT_URL` por fingerprint seguro (host hint, pooler true/false, sslmode).
+7. Nunca imprimir secretos.
+8. Corregir env/DB en Vercel Preview solo por Jean.
+9. Redeployar mismo commit.
+10. Solo tocar UI si DB y query estan correctas.
 
-## Proximo prompt operativo exacto
+## Metodologia Oreshnik-Codex 2.0
 
-```text
-Lee primero:
-- docs/obsidian-vault/ROADMAP_RESCATE.md
-- docs/07_handoffs/session-summary-active.md
-- docs/07_handoffs/qa-dispatcher.json
+- 1 rama madre estable.
+- N worktrees separados.
+- N agentes Codex.
+- 1 owner por lock.
+- 1 commit/push por sprint cerrado.
+- 0 trabajo directo sobre madre.
+- 0 main.
+- 0 produccion.
+- 0 zonas sanas tocadas.
 
-Confirma el estado del marketplace y el Admin AI Copilot.
-Ejecuta QA manual E2E (buyer -> admin -> escrow -> payout seller) siguiendo el runbook.
-Valida el Admin AI Copilot (restricciones de lectura y acceso) según el diseño.
-Si hay residuales, documenta en Obsidian y handoff antes de hacer commits.
-No toques booking ni /reservas.
-```
+## Roles
 
----
+- Jean: integracion, Vercel/envs, DB/Prisma/schema/migrations, booking/reservas, rama madre, merges, preview integrado.
+- Manuel: marketplace producto, buyer/seller/admin flow, QA operacional, rates, payout, estados, copy/UX operativo.
 
-## Checkpoint operativo - rama madre integrada y trabajo paralelo
+## Ola 1
 
-Fecha: 2026-05-04
-Rama madre: integration/lab-marketplace-sprint2a-selective-2026-05-04
-
-Se documento el metodo de trabajo paralelo para Jean y Manuel.
-
-### Estado
-
-La rama madre es controlada por Jean y funciona como base integrada. No se debe trabajar codigo directo sobre ella.
-
-### Pendiente inmediato Jean
-
-- Resolver bloqueo global de build por flipclock en components/bookings/PaymentFlipCountdown.tsx.
-- Revisar/mergear Manuel/reconcile-sprint2a-on-integrated-mother, commit 6512972, que restaura piezas criticas de Sprint 2A en la integracion.
-
-### Manuel
-
-Manuel puede iniciar sus sprints en ramas propias desde la rama madre, priorizando rates diagnosis, payout design, listing state y QA operacional.
-
-### Documentos fuente
-
-- docs/07_handoffs/parallel-sprint-distribution-2026-05-04.md
-- docs/obsidian-vault/SPRINTS_MARKETPLACE_PARALELO.md
-
----
-
-## Checkpoint operativo - hitos pragmaticos marketplace
-
-Fecha: 2026-05-04
-Rama madre: integration/lab-marketplace-sprint2a-selective-2026-05-04
-
-Se agrego una capa de hitos pragmaticos / Definition of Done para traducir cada sprint tecnico a resultados concretos verificables.
-
-Documentos:
-- docs/07_handoffs/marketplace-pragmatic-milestones-2026-05-04.md
-- docs/obsidian-vault/HITOS_MARKETPLACE_PRACTICOS.md
-
-Uso:
-- Jean y Manuel deben leer estos hitos al iniciar sesion.
-- Cada sprint debe cerrar con un resultado verificable, no solo con archivos modificados.
-- La division tecnica de locks se mantiene en parallel-sprint-distribution.
-
----
-
-## Checkpoint operativo - procedimiento QA integrado
-
-Fecha: 2026-05-04
-Rama madre: integration/lab-marketplace-sprint2a-selective-2026-05-04
-
-Se documento el procedimiento QA integrado del marketplace.
-
-Documentos:
-- docs/07_handoffs/marketplace-integrated-qa-procedure-2026-05-04.md
-- docs/obsidian-vault/QA_MARKETPLACE_INTEGRADO.md
-
-Uso:
-- Cada sprint debe cerrar con QA minimo y evidencia.
-- Se clasifican fallos como P0, P1 o P2.
-- No se cierra ningun sprint con P0 abierto.
-- P1 debe quedar documentado con owner.
-- El flujo canonico buyer/seller/admin queda definido como prueba base.
+- J1 Docs Control Tower.
+- J2 Preview Runtime Guard.
+- M1 Marketplace Protected Flow E2E.
+- M2 Marketplace QA Harness.

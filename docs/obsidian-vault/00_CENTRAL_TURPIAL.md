@@ -1,89 +1,56 @@
 ---
-tags: ["#central", "#map"]
+tags: ["#central", "#map", "#status/live-source"]
 ---
 
 # Mapa de Contenido Principal
 
-## Áreas del Proyecto
-- [[ARQUITECTURA_TASAS]]
-- [[BUGS_CRITICOS]]
+## Estado canonico activo (2026-05-07)
+
+- Rama madre estable real: `integration/today-reservas-marketplace-stable-2026-05-07`.
+- Commit estable real: `c01ec60`.
+- `/reservas` congelado como zona sana.
+- `/marketplace` activo.
+- BCV corregido con tasa fresca.
+
+## Principio central
+
+Codigo correcto + DB incorrecta = UI vacia.
+
+## Reglas de conexion DB
+
+- `DATABASE_URL` pooled/pooler.
+- `DIRECT_URL` direct/no-pooler.
+- Mismo proyecto/base Neon integrada para ambas.
+- Nunca imprimir secretos.
+
+## Metodologia Oreshnik-Codex 2.0
+
+- 1 rama madre estable.
+- N worktrees separados.
+- N agentes Codex.
+- 1 owner por lock.
+- 1 commit/push por sprint cerrado.
+- 0 trabajo directo sobre madre.
+- 0 main.
+- 0 produccion.
+- 0 zonas sanas tocadas.
+
+## Roles
+
+- Jean: integracion, Vercel/envs, DB/Prisma/schema/migrations, booking/reservas, rama madre, merges, preview integrado.
+- Manuel: marketplace producto, buyer/seller/admin flow, QA operacional, rates, payout, estados, copy/UX operativo.
+
+## Ola 1
+
+- J1 Docs Control Tower.
+- J2 Preview Runtime Guard.
+- M1 Marketplace Protected Flow E2E.
+- M2 Marketplace QA Harness.
+
+## Enlaces relacionados
+
 - [[ROADMAP_RESCATE]]
-
-## Enlaces Relacionados
-- [[MEMORY]]
-- [[docs/marketplace/00_IMPLEMENTATION_SUMMARY]]
-- [[docs/marketplace/01_ROADMAP_AND_STATUS]]
-- [[docs/marketplace/05_GLOSARIO_DE_TERMINOS_UX]]
-
-## Checkpoint Activo - 2026-04-24
-
-- Seller Cobros quedo refactorizado a nivel UI/UX y validado tecnicamente.
-- El cambio mejora ancho util, tabs, jerarquia financiera, resumen de estado y datos de cobro.
-- Validacion cerrada: `npx tsc --noEmit` limpio y `npm run build` limpio.
-- No se tocaron booking, `/reservas`, Admin Pagos, enums ni logica de negocio.
-- Detalle completo en [[ROADMAP_RESCATE]] y [[BUGS_CRITICOS]].
-
----
-
-## Checkpoint operativo - rama madre integrada y trabajo paralelo
-
-Fecha: 2026-05-04
-Rama madre: integration/lab-marketplace-sprint2a-selective-2026-05-04
-
-Se documento el metodo de trabajo paralelo para Jean y Manuel.
-
-### Estado
-
-La rama madre es controlada por Jean y funciona como base integrada. No se debe trabajar codigo directo sobre ella.
-
-### Pendiente inmediato Jean
-
-- Resolver bloqueo global de build por flipclock en components/bookings/PaymentFlipCountdown.tsx.
-- Revisar/mergear Manuel/reconcile-sprint2a-on-integrated-mother, commit 6512972, que restaura piezas criticas de Sprint 2A en la integracion.
-
-### Manuel
-
-Manuel puede iniciar sus sprints en ramas propias desde la rama madre, priorizando rates diagnosis, payout design, listing state y QA operacional.
-
-### Documentos fuente
-
-- docs/07_handoffs/parallel-sprint-distribution-2026-05-04.md
-- docs/obsidian-vault/SPRINTS_MARKETPLACE_PARALELO.md
-
----
-
-## Checkpoint operativo - hitos pragmaticos marketplace
-
-Fecha: 2026-05-04
-Rama madre: integration/lab-marketplace-sprint2a-selective-2026-05-04
-
-Se agrego una capa de hitos pragmaticos / Definition of Done para traducir cada sprint tecnico a resultados concretos verificables.
-
-Documentos:
-- docs/07_handoffs/marketplace-pragmatic-milestones-2026-05-04.md
-- docs/obsidian-vault/HITOS_MARKETPLACE_PRACTICOS.md
-
-Uso:
-- Jean y Manuel deben leer estos hitos al iniciar sesion.
-- Cada sprint debe cerrar con un resultado verificable, no solo con archivos modificados.
-- La division tecnica de locks se mantiene en parallel-sprint-distribution.
-
----
-
-## Checkpoint operativo - procedimiento QA integrado
-
-Fecha: 2026-05-04
-Rama madre: integration/lab-marketplace-sprint2a-selective-2026-05-04
-
-Se documento el procedimiento QA integrado del marketplace.
-
-Documentos:
-- docs/07_handoffs/marketplace-integrated-qa-procedure-2026-05-04.md
-- docs/obsidian-vault/QA_MARKETPLACE_INTEGRADO.md
-
-Uso:
-- Cada sprint debe cerrar con QA minimo y evidencia.
-- Se clasifican fallos como P0, P1 o P2.
-- No se cierra ningun sprint con P0 abierto.
-- P1 debe quedar documentado con owner.
-- El flujo canonico buyer/seller/admin queda definido como prueba base.
+- [[BUGS_CRITICOS]]
+- [[SPRINTS_MARKETPLACE_PARALELO]]
+- [[QA_MARKETPLACE_INTEGRADO]]
+- [[ARQUITECTURA_TASAS]]
