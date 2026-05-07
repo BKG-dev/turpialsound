@@ -29,6 +29,7 @@ interface ProviderConfig {
   url: string
   format: 'csv' | 'json'
   path?: string
+  asOfPath?: string
 }
 
 interface ProviderFetchResult extends RateProviderAttempt {
@@ -53,6 +54,7 @@ const DEFAULT_MAX_JUMP_PCT = 0.05
 const DEFAULT_TIMEOUT_MS = 4000
 const DEFAULT_EMERGENCY_FALLBACK_RATE = 50
 const DEFAULT_PERSIST_MIN_INTERVAL_SECONDS = 300
+const DEFAULT_MAX_PROVIDER_AGE_HOURS = 72
 
 const DEFAULT_SOURCE_A_NAME = 'GoogleSheets-BCV'
 const DEFAULT_SOURCE_A_URL =
@@ -60,6 +62,7 @@ const DEFAULT_SOURCE_A_URL =
 const DEFAULT_SOURCE_B_NAME = 'DolarApi-Oficial'
 const DEFAULT_SOURCE_B_URL = 'https://ve.dolarapi.com/v1/dolares/oficial'
 const DEFAULT_SOURCE_B_PATH = 'promedio'
+const DEFAULT_SOURCE_B_AS_OF_PATH = 'fechaActualizacion'
 
 let inMemoryLastGoodConsensus: StoredReferenceRateConsensus | null = null
 
@@ -154,6 +157,7 @@ function buildProvidersFromEnv(): ProviderConfig[] {
     url: normalizeUrl(process.env.RATE_SOURCE_B_URL, DEFAULT_SOURCE_B_URL),
     format: 'json',
     path: normalizePath(process.env.RATE_SOURCE_B_PATH, DEFAULT_SOURCE_B_PATH),
+    asOfPath: normalizePath(process.env.RATE_SOURCE_B_AS_OF_PATH, DEFAULT_SOURCE_B_AS_OF_PATH),
   }
 
   const sourceCFormat = process.env.RATE_SOURCE_C_FORMAT?.trim().toLowerCase() === 'csv' ? 'csv' : 'json'
@@ -163,6 +167,7 @@ function buildProvidersFromEnv(): ProviderConfig[] {
     url: process.env.RATE_SOURCE_C_URL?.trim() ?? '',
     format: sourceCFormat,
     path: sourceCFormat === 'json' ? process.env.RATE_SOURCE_C_PATH?.trim() ?? '' : undefined,
+    asOfPath: sourceCFormat === 'json' ? process.env.RATE_SOURCE_C_AS_OF_PATH?.trim() ?? '' : undefined,
   }
 
   return [sourceA, sourceB, sourceC]
@@ -352,11 +357,18 @@ async function fetchJsonProviderRate(
       throw new Error('invalid_rate_value')
     }
 
+    const rawAsOf = provider.asOfPath ? getByPath(payload, provider.asOfPath) : null
+    const parsedAsOf =
+      typeof rawAsOf === 'string' && !Number.isNaN(new Date(rawAsOf).getTime())
+        ? new Date(rawAsOf).toISOString()
+        : undefined
+
     return {
       slot: provider.slot,
       name: provider.name,
       status: 'ok',
       rate: parsedRate,
+      asOf: parsedAsOf,
     }
   } catch (error) {
     return {
@@ -431,6 +443,47 @@ function toProviderAttemptList(results: ProviderFetchResult[]): RateProviderAtte
   }))
 }
 
+function isProviderFresh(
+  provider: ProviderFetchResult,
+  maxProviderAgeHours: number,
+  nowMs: number,
+): boolean {
+  if (provider.status !== 'ok') return false
+  if (typeof provider.rate !== 'number' || !Number.isFinite(provider.rate) || provider.rate <= 0) {
+    return false
+  }
+
+  if (!provider.asOf) {
+    return true
+  }
+
+  const asOfMs = new Date(provider.asOf).getTime()
+  if (Number.isNaN(asOfMs)) {
+    return false
+  }
+
+  const maxAgeMs = Math.max(1, maxProviderAgeHours) * 60 * 60 * 1000
+  return nowMs - asOfMs <= maxAgeMs
+}
+
+function pickBestFreshProvider(
+  providerResults: ProviderFetchResult[],
+  maxProviderAgeHours: number,
+  nowMs: number,
+): ProviderFetchResult | null {
+  const freshProviders = providerResults.filter((provider) =>
+    isProviderFresh(provider, maxProviderAgeHours, nowMs),
+  )
+
+  if (freshProviders.length === 0) return null
+
+  return freshProviders.sort((a, b) => {
+    const aAsOf = a.asOf ? new Date(a.asOf).getTime() : Number.NEGATIVE_INFINITY
+    const bAsOf = b.asOf ? new Date(b.asOf).getTime() : Number.NEGATIVE_INFINITY
+    return bAsOf - aAsOf
+  })[0]
+}
+
 export async function resolveReferenceRate(): Promise<ReferenceRateResult> {
   const providers = buildProvidersFromEnv()
   const deltaPct = parseEnvNumber(process.env.RATE_DELTA_PCT, DEFAULT_DELTA_PCT)
@@ -438,6 +491,10 @@ export async function resolveReferenceRate(): Promise<ReferenceRateResult> {
   const minPersistIntervalSeconds = parseEnvNumber(
     process.env.RATE_LAST_GOOD_MIN_PERSIST_SECONDS,
     DEFAULT_PERSIST_MIN_INTERVAL_SECONDS,
+  )
+  const maxProviderAgeHours = parseEnvNumber(
+    process.env.RATE_MAX_PROVIDER_AGE_HOURS,
+    DEFAULT_MAX_PROVIDER_AGE_HOURS,
   )
   const emergencyFallbackRate = parseEnvNumber(
     process.env.BCV_EMERGENCY_FALLBACK_RATE ?? process.env.BCV_FALLBACK_RATE,
@@ -453,17 +510,32 @@ export async function resolveReferenceRate(): Promise<ReferenceRateResult> {
   const sourceB = providerResults.find((item) => item.slot === 'B')
   const consensus = buildConsensusFromAandB(sourceA, sourceB, deltaPct, nowIso)
   const lastGood = await readLastGoodConsensus()
+  const bestFreshProvider = pickBestFreshProvider(
+    providerResults,
+    maxProviderAgeHours,
+    new Date(nowIso).getTime(),
+  )
 
-  if (consensus) {
+  let candidate: ConsensusResult | null = consensus
+  if (!candidate && bestFreshProvider?.rate) {
+    candidate = {
+      rate: bestFreshProvider.rate,
+      source: `${bestFreshProvider.name} (single_provider_fresh)`,
+      providersUsed: [bestFreshProvider.name],
+      asOf: bestFreshProvider.asOf ?? nowIso,
+    }
+  }
+
+  if (candidate) {
     const jumpVsLastGood =
-      lastGood && lastGood.rate > 0 ? Math.abs(consensus.rate - lastGood.rate) / lastGood.rate : 0
+      lastGood && lastGood.rate > 0 ? Math.abs(candidate.rate - lastGood.rate) / lastGood.rate : 0
 
     if (!lastGood || jumpVsLastGood <= maxJumpPct) {
       const livePayload: StoredReferenceRateConsensus = {
-        rate: consensus.rate,
-        source: consensus.source,
-        asOf: consensus.asOf,
-        providersUsed: consensus.providersUsed,
+        rate: candidate.rate,
+        source: candidate.source,
+        asOf: candidate.asOf,
+        providersUsed: candidate.providersUsed,
         persistedAt: nowIso,
       }
 
