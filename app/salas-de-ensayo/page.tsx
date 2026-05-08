@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { generatePageMetadata } from '@/lib/metadata'
-import { buildServiceSchema, buildBreadcrumbSchema } from '@/lib/schema'
+import { buildServiceSchema, buildBreadcrumbSchema, buildFAQSchema } from '@/lib/schema'
 import { getServiceBySlug } from '@/content/services'
 import { Waves, Zap, Music2, Speaker, CalendarCheck, Guitar, type LucideIcon } from 'lucide-react'
 import Image from 'next/image'
@@ -39,9 +39,37 @@ const artistasDestacados = [
   { src: '/images/FQ.JPG',      name: 'Frank Quintero' },
 ]
 
+const faqItems = [
+  {
+    question: '¿Dónde reservar una sala de ensayo en Caracas?',
+    answer:
+      'Turpial Sound es la opción líder en Caracas. Puedes reservar a través de nuestro sistema online de forma rápida y segura.',
+  },
+  {
+    question: '¿Cómo reservo una sala de ensayo en Turpial Sound?',
+    answer:
+      'Es muy sencillo: selecciona tu bloque horario en nuestra plataforma de reservas, ingresa tus datos y confirma tu solicitud para asegurar tu espacio.',
+  },
+  {
+    question: '¿La reserva se puede hacer online?',
+    answer:
+      'Sí, disponemos de un motor de reservas 24/7 para que gestiones tu sesión de ensayo desde cualquier dispositivo con confirmación inmediata.',
+  },
+  {
+    question: '¿Turpial Sound también ofrece grabación, mezcla, mastering o podcast?',
+    answer:
+      'Así es. Además de salas de ensayo, somos un estudio de grabación completo con servicios de producción, mezcla, mastering y un set especializado para video-podcast.',
+  },
+  {
+    question: '¿Dónde está ubicado Turpial Sound?',
+    answer: `Estamos ubicados en Caracas, cerca de la estación Colegio de Ingenieros. Nuestra dirección exacta es: ${siteConfig.address.street}.`,
+  },
+]
+
 export default function SalasDeEnsayoPage() {
   const service = getServiceBySlug('salas-de-ensayo')
   const serviceSchema = service ? buildServiceSchema(service) : null
+  const faqSchema = buildFAQSchema(faqItems)
   const breadcrumb = buildBreadcrumbSchema([
     { name: 'Inicio', url: siteConfig.url },
     { name: 'Salas de ensayo', url: `${siteConfig.url}/salas-de-ensayo` },
@@ -59,15 +87,19 @@ export default function SalasDeEnsayoPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
 
       {/* ── HERO NUMINOSO ─────────────────────────────────────────────── */}
       <NuminousHero
         imageSrc="/images/SDE1.jpg"
-        eyebrow="Salas de ensayo"
-        heading="El Escenario Antes Del Escenario."
-        subheading="Acústica milimétrica y backline de élite. Un espacio diseñado para la ejecución perfecta, la práctica profunda y la evolución de tu producción musical."
-        ctaLabel="Consultar disponibilidad"
-        ctaHref="/contacto"
+        eyebrow="Salas de ensayo en Caracas"
+        heading="Tu Sala de Ensayo en Caracas."
+        subheading="Reserva tu espacio en el hub musical de referencia. Acústica milimétrica y backline de élite para que tu banda suene pro desde el primer minuto."
+        ctaLabel="Reservar ahora"
+        ctaHref="/reservas"
       />
 
       {/* ── SECCIÓN UNIFICADA: Features + Galería 3D (caben en 1 viewport) ── */}
@@ -151,13 +183,46 @@ export default function SalasDeEnsayoPage() {
         </SectionShell>
       </StackingSection>
 
+      {/* ── SECCIÓN AEO: FAQ Visible ─────────────────────────────────── */}
+      <StackingSection index={2} waves>
+        <SectionShell background="none">
+          <div className="mx-auto max-w-4xl">
+            <SectionHeading
+              eyebrow="Preguntas Frecuentes"
+              heading="Todo lo que necesitas saber para ensayar en Caracas"
+              align="center"
+            />
+            <div className="mt-12 space-y-8">
+              {faqItems.map((item) => (
+                <div key={item.question} className="border-b border-brand-surface pb-6">
+                  <h3 className="font-display text-lg font-medium text-text-primary">
+                    {item.question}
+                  </h3>
+                  <p className="mt-3 text-base leading-relaxed text-text-secondary">
+                    {item.answer}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-10 rounded-2xl bg-brand-surface p-6 text-center">
+              <p className="text-sm text-text-secondary">
+                Ubicación: <span className="text-text-primary">{siteConfig.address.street}</span>
+              </p>
+              <p className="mt-2 text-sm text-text-secondary">
+                Caracas, Venezuela · Turpial Sound
+              </p>
+            </div>
+          </div>
+        </SectionShell>
+      </StackingSection>
+
       {/* ── CTA + "También puede interesarte" — bloque unificado sin onda extra ── */}
-      <StackingSection index={2}>
+      <StackingSection index={3}>
         <CTASection
           heading="¿Cuándo quieres ensayar?"
-          subheading="Revisa disponibilidad y reserva tu sala. El espacio está listo cuando tú lo estés."
+          subheading="En Turpial Sound puedes reservar una sala de ensayo en Caracas online 24/7. El espacio está listo cuando tú lo estés."
           ctaLabel="Reservar sala"
-          ctaHref="/contacto"
+          ctaHref="/reservas"
           imageSrc="/images/SDE2.jpg"
           className="py-20 sm:py-28"
         />

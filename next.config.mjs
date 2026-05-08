@@ -12,6 +12,15 @@ const nextConfig = {
   experimental: {
     typedRoutes: true,
   },
+  async redirects() {
+    return [
+      {
+        source: '/sala-de-ensayo-caracas',
+        destination: '/salas-de-ensayo',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 export default nextConfig

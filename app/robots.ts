@@ -13,7 +13,6 @@ export default function robots(): MetadataRoute.Robots {
         '/payment-proofs',
         '/marketplace/admin',
         '/marketplace/dashboard',
-        '/_next/',
       ],
     },
     sitemap: `${siteConfig.url}/sitemap.xml`,
