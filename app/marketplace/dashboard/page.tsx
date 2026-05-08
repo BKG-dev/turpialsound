@@ -9,7 +9,14 @@ import { getMyFavorites } from '@/actions/marketplace/favorites'
 import { getMyInteractedListings } from '@/actions/marketplace/questions'
 import { DashboardClient } from '@/components/marketplace/dashboard/DashboardClient'
 
-export const metadata = { title: 'Mi Cuenta — Turpial Market' }
+export const metadata = {
+  title: 'Mi Cuenta — Turpial Market',
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+  },
+}
 
 export default async function DashboardPage({
   searchParams,
