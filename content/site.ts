@@ -4,14 +4,14 @@ export const siteConfig: SiteConfig = {
   name: 'Turpial Sound',
   tagline: 'Estudio de grabación y producción musical en Caracas', // SUGGESTED
   description:
-    'Hub premium de ensayo, grabación y producción musical en Caracas. Más de 10 años construyendo sonido con artistas reconocidos en Venezuela.', // SUGGESTED
+    'Reserva un estudio de grabación en Caracas, Venezuela, con salas de ensayo, producción musical, mezcla, mastering, podcast y servicios creativos en un solo lugar. Turpial Sound conecta artistas, músicos y proyectos con espacio, talento y tecnología para sonar pro.',
   url: 'https://turpialsound.com', // CLIENT_REQUIRED — confirmar dominio oficial
   locale: 'es',
-  phoneWhatsApp: '+58XXXXXXXXXX', // CLIENT_REQUIRED
-  phoneDisplay: '+58 XXX XXX XXXX', // CLIENT_REQUIRED
+  phoneWhatsApp: '+584168017844',
+  phoneDisplay: '+58 416-8017844',
   email: 'info@turpialsound.com', // CLIENT_REQUIRED
   address: {
-    street: 'PLACEHOLDER — CLIENT_REQUIRED',
+    street: 'G424+8WW, cerca de Colegio de Ingenieros, Caracas 1010, Distrito Capital, Venezuela',
     city: 'Caracas',
     country: 'Venezuela',
     countryCode: 'VE',
