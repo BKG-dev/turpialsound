@@ -1,4 +1,13 @@
 import { cookies } from 'next/headers'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+  },
+}
 import { redirect } from 'next/navigation'
 import {
   ADMIN_DASHBOARD_PATH,

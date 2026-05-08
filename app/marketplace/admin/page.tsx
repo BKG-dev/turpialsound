@@ -1,4 +1,13 @@
 import { redirect } from 'next/navigation'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+  },
+}
 import { getSession } from '@/lib/marketplace/auth'
 import { AdminDashboard } from '@/components/marketplace/admin/AdminDashboard'
 import { getAdminStats, getEscrowList } from '@/actions/marketplace/admin'
