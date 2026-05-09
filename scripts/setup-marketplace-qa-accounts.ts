@@ -25,7 +25,7 @@ const BUYER: QaUserSpec = {
 const SELLER: QaUserSpec = {
   email: 'sellerIA@local.test',
   displayName: 'sellerIA',
-  password: 'SellerIA_QA_2026!',
+  password: '13894619',
   isSeller: true,
   bio: 'Cuenta QA persistente para recorridos seller end-to-end del marketplace local.',
   phone: '+58 412 000 0002',

@@ -18,7 +18,7 @@ const BUYER = {
 
 const SELLER = {
   identifier: 'sellerIA',
-  password: 'SellerIA_QA_2026!',
+  password: '13894619',
   email: 'sellerIA@local.test',
 }
 

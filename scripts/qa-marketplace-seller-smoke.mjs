@@ -8,7 +8,7 @@ const APP_URL = process.env.APP_URL || 'http://localhost:3002'
 const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
 const DEBUG_PORT = Number(process.env.DEBUG_PORT || '9222')
 const REUSE_BROWSER = process.env.REUSE_BROWSER === '1'
-const SELLER = { identifier: 'mvera', password: '13894619' }
+const SELLER = { identifier: 'sellerIA', password: '13894619' }
 
 let ws
 let msgId = 0
@@ -263,11 +263,11 @@ async function getMarketplaceSessionState() {
         url: location.href,
         hasLogout: texts.some((text) => normalize(text).includes('salir')),
         hasSellerLabel: texts.some((text) => normalize(text).includes('vendedor')),
-        hasDisplayName: texts.some((text) => normalize(text).includes('mvera')),
+        hasDisplayName: texts.some((text) => normalize(text).includes('selleria')),
         hasAdminLabel: texts.some((text) => normalize(text).includes('admin')),
         visibleSignals: texts.filter((text) => {
           const value = normalize(text)
-          return value.includes('salir') || value.includes('mvera') || value.includes('vendedor') || value.includes('admin')
+          return value.includes('salir') || value.includes('selleria') || value.includes('vendedor') || value.includes('admin')
         }).slice(0, 12),
       }
     })()
@@ -495,7 +495,7 @@ async function run() {
     await waitFor(`
       () => {
         const text = document.body.innerText || ''
-        return text.includes('Salir') && (text.includes('mvera') || text.includes('Vendedor') || text.includes('Admin'))
+        return text.includes('Salir') && (text.includes('sellerIA') || text.includes('Vendedor') || text.includes('Admin'))
       }
     `, 15000)
 
