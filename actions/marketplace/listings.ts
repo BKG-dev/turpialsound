@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import {
   createListingSchema,
   type CreateListingInput,
@@ -279,6 +280,10 @@ export async function updateListingStatus(
 
     await db.mpListing.update({ where: { id }, data: { status } })
     await db.$disconnect()
+    revalidatePath('/marketplace')
+    if (listing.slug) {
+      revalidatePath(`/marketplace/${listing.slug}`)
+    }
     return { success: true, data: undefined, message: `Listing ${status.toLowerCase()}` }
   } catch (err) {
     await db.$disconnect().catch(() => {})
@@ -349,6 +354,8 @@ export async function createListing(
       'listing_image',
       listing.id,
     )
+    revalidatePath('/marketplace')
+    revalidatePath(`/marketplace/${listing.slug}`)
     return { success: true, data: listing, message: 'Listing creado correctamente' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
