@@ -539,8 +539,8 @@ No tocar:
 - Mode: `manual_preview`.
 - Preview objetivo: `https://turpialsound-mpwpxahfc-cerberus77s-projects.vercel.app`.
 - Credenciales registradas para esta sesion:
-  - buyerIA: `buyerIA / BuyerIA_QA_2026!`
-  - SUPER: `mvera / 13894619`
+  - buyerIA: `buyerIA / <QA_BUYER_PASSWORD>`
+  - SUPER: `mvera / <QA_ADMIN_PASSWORD>`
 - Resultado: `NO EJECUTADO`.
 - Bloqueo exacto: esta sesion de Codex no tiene una herramienta de browser interactivo controlable para hacer login, adjuntar archivo y abrir el proxy. Usar Playwright/CDP, server actions reverse engineered o HTTP ad hoc violaria dispatcher/AGENTS.
 - No hubo upload de proof, status de upload, `paymentProofUrl` ni validacion del proxy.
@@ -553,8 +553,8 @@ No tocar:
 - Mode: `manual_preview`.
 - Preview usado: `https://turpialsound-mpwpxahfc-cerberus77s-projects.vercel.app`.
 - Credenciales usadas:
-  - buyerIA: `buyerIA / BuyerIA_QA_2026!`
-  - SUPER: `mvera / 13894619`
+  - buyerIA: `buyerIA / <QA_BUYER_PASSWORD>`
+  - SUPER: `mvera / <QA_ADMIN_PASSWORD>`
 - Resultado:
   - buyerIA subio proof nuevo.
   - `paymentProofUrl` final quedo bajo `/api/marketplace/payment-proofs/...`.
