@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Menu, X } from 'lucide-react'
-import { mainNavItems, ctaNav, ctaWaHref } from '@/content/navigation'
+import { mainNavItems, ctaNav } from '@/content/navigation'
 
 export function MobileMenu() {
   const [open, setOpen] = useState(false)
@@ -67,9 +67,7 @@ export function MobileMenu() {
 
           <div className="mt-6 border-t border-brand-border pt-6">
             <a
-              href={ctaWaHref}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={ctaNav.href}
               className="btn-silky-primary font-semibold transition-all duration-250 hover:brightness-110 inline-flex items-center justify-center gap-2 font-medium leading-none text-base px-6 py-3 rounded w-full"
             >
               {ctaNav.label}

@@ -37,8 +37,8 @@ export default function ServiciosPage() {
         eyebrow="Servicios"
         heading="Excelencia Técnica en Cada Etapa."
         subheading="Grabación, mezcla, masterización, producción integral y servicios especializados. Todo bajo un mismo techo y un solo estándar de industria. Porque tu música merece el mejor camino posible."
-        ctaLabel="Ver todos los servicios"
-        ctaHref="/contacto"
+        ctaLabel="Reservar ahora"
+        ctaHref="/reservas"
       />
 
       {/* ── SECCIÓN UNIFICADA: Servicios principales + Galería 3D ──────── */}
@@ -127,7 +127,7 @@ export default function ServiciosPage() {
           heading="¿Por dónde empezamos?"
           subheading="Ya sea que necesites grabar, producir o ensayar, tenemos el espacio y el equipo para llevarte al siguiente nivel."
           ctaLabel="Consultar disponibilidad"
-          ctaHref="/contacto"
+          ctaHref="/reservas"
           imageSrc="/images/instalaciones3.jpg"
         />
       </StackingSection>

@@ -42,7 +42,7 @@ export default function VideoSessionPage() {
         heading="Tu música, capturada en el entorno donde nació."
         subheading="Producción audiovisual dentro del estudio. Contenido auténtico para artistas que quieren mostrar su proceso."
       >
-        <Button as="link" href="/contacto" variant="primary" size="lg">
+        <Button as="link" href="/reservas" variant="primary" size="lg">
           Cotizar video session
         </Button>
       </PageHero>

@@ -1,4 +1,4 @@
-import { ctaNav, ctaWaHref } from '@/content/navigation'
+import { ctaNav } from '@/content/navigation'
 import { MobileMenu } from '@/components/layout/MobileMenu'
 import { AnimatedLogo } from '@/components/layout/AnimatedLogo'
 import { AnimatedNavLinks } from '@/components/layout/AnimatedNavLinks'
@@ -36,9 +36,7 @@ export function SiteHeader() {
        * twMerge en Button garantiza que estas clases prevalezcan sobre size="sm".
        */}
       <a
-        href={ctaWaHref}
-        target="_blank"
-        rel="noopener noreferrer"
+        href={ctaNav.href}
         className={cn(
           'btn-silky-primary font-semibold transition-all duration-250 hover:brightness-110',
           'inline-flex items-center justify-center gap-2 font-medium leading-none text-sm',
