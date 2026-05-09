@@ -10,6 +10,7 @@ import {
   setSessionCookie,
   clearSessionCookie,
 } from '@/lib/marketplace/auth'
+import type { MpSessionPayload } from '@/lib/marketplace/auth'
 
 // Re-export so UI components have a single server-action import point
 export { getSession as getMpSession }
@@ -101,63 +102,109 @@ export async function registerMpUser(
 
 export async function loginMpUser(
   raw: unknown,
-): Promise<ActionResult<{ userId: string; displayName: string; email: string; role: string }>> {
+): Promise<ActionResult<MpSessionPayload>> {
   const parsed = loginSchema.safeParse(raw)
   if (!parsed.success) {
     const errors = parsed.error.flatten().fieldErrors as Record<string, string[]>
-    return { success: false, message: 'Datos inválidos', errors }
+    return { success: false, message: 'Datos inv\u00e1lidos', errors }
   }
 
-  const { identifier, password } = parsed.data
+  const identifier = parsed.data.identifier.trim()
+  const { password } = parsed.data
+
+  if (!identifier) {
+    return {
+      success: false,
+      message: 'Datos inv\u00e1lidos',
+      errors: { identifier: ['Email o usuario requerido'] },
+    }
+  }
+
   const prisma = await getPrisma()
 
   try {
-    const user = await prisma.mpUser.findFirst({
-      where: {
-        OR: [{ email: identifier }, { displayName: identifier }],
-      },
-      select: {
-        id: true,
-        email: true,
-        displayName: true,
-        isSeller: true,
-        role: true,
-        passwordHash: true,
-        isBanned: true,
-      },
+    const authUserSelect = {
+      id: true,
+      email: true,
+      displayName: true,
+      isSeller: true,
+      role: true,
+      passwordHash: true,
+      isBanned: true,
+      createdAt: true,
+    }
+
+    let user = await prisma.mpUser.findUnique({
+      where: { email: identifier },
+      select: authUserSelect,
     })
 
+    if (!user) {
+      user = await prisma.mpUser.findFirst({
+        where: {
+          email: {
+            equals: identifier,
+            mode: 'insensitive',
+          },
+        },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        select: authUserSelect,
+      })
+    }
+
+    if (!user) {
+      user = await prisma.mpUser.findFirst({
+        where: { displayName: identifier },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        select: authUserSelect,
+      })
+    }
+
+    if (!user) {
+      user = await prisma.mpUser.findFirst({
+        where: {
+          displayName: {
+            equals: identifier,
+            mode: 'insensitive',
+          },
+        },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        select: authUserSelect,
+      })
+    }
+
     if (!user || !user.passwordHash) {
-      return { success: false, message: 'Usuario o contraseña incorrectos' }
+      return { success: false, message: 'Usuario o contrase\u00f1a incorrectos' }
     }
 
     if (user.isBanned) {
-      return { success: false, message: 'Cuenta suspendida. Contacta soporte.' }
+      return { success: false, message: 'Usuario o contrase\u00f1a incorrectos' }
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash)
     if (!valid) {
-      return { success: false, message: 'Usuario o contraseña incorrectos' }
+      return { success: false, message: 'Usuario o contrase\u00f1a incorrectos' }
     }
 
-    await setSessionCookie({
+    const sessionUser: MpSessionPayload = {
       userId: user.id,
       email: user.email,
       displayName: user.displayName,
       isSeller: user.isSeller,
       role: user.role,
-    })
+    }
+
+    await setSessionCookie(sessionUser)
 
     return {
       success: true,
-      data: { userId: user.id, displayName: user.displayName, email: user.email, role: user.role },
+      data: sessionUser,
       message: `Bienvenido, ${user.displayName}`,
     }
   } finally {
     await prisma.$disconnect().catch(() => {})
   }
 }
-
 // ─── LOGOUT ───────────────────────────────────────────────────────────────────
 
 export async function logoutMpUser(): Promise<void> {
