@@ -35,10 +35,10 @@ Usar primero el dispatcher y luego la ruta canonica documentada. No buscar scrip
 2. Confirmar Chrome instalado en:
    - `C:\Program Files\Google\Chrome\Application\chrome.exe`
 3. Confirmar cuentas QA persistentes cuando haya drift de datos:
-   - `buyerIA / BuyerIA_QA_2026!`
-   - `sellerIA / SellerIA_QA_2026!`
+   - `buyerIA / <QA_BUYER_PASSWORD>`
+   - `sellerIA / <QA_SELLER_PASSWORD>`
 4. Confirmar credenciales admin solo para smoke local:
-   - principal: `mvera / 13894619`
+   - principal: `mvera / <QA_ADMIN_PASSWORD>`
    - alterno: `Igor / bugdanoff`
 5. Confirmar envs minimas segun frente:
    - normalizacion QA: `DATABASE_URL`
@@ -190,8 +190,8 @@ Preview validado:
 - `https://turpialsound-mpwpxahfc-cerberus77s-projects.vercel.app`
 
 Credenciales usadas:
-- buyerIA: `buyerIA / BuyerIA_QA_2026!`
-- SUPER: `mvera / 13894619`
+- buyerIA: `buyerIA / <QA_BUYER_PASSWORD>`
+- SUPER: `mvera / <QA_ADMIN_PASSWORD>`
 
 Evidencia confirmada:
 - buyerIA subio un proof nuevo en preview.

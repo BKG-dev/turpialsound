@@ -13,19 +13,25 @@ type QaUserSpec = {
   phone: string
 }
 
+function requiredEnv(name: string): string {
+  const value = process.env[name]?.trim()
+  if (!value) throw new Error(`Falta variable requerida: ${name}`)
+  return value
+}
+
 const BUYER: QaUserSpec = {
-  email: 'buyerIA@local.test',
-  displayName: 'buyerIA',
-  password: 'BuyerIA_QA_2026!',
+  email: requiredEnv('QA_BUYER_EMAIL'),
+  displayName: requiredEnv('QA_BUYER_IDENTIFIER'),
+  password: requiredEnv('QA_BUYER_PASSWORD'),
   isSeller: false,
   bio: 'Cuenta QA persistente para recorridos buyer end-to-end del marketplace local.',
   phone: '+58 412 000 0001',
 }
 
 const SELLER: QaUserSpec = {
-  email: 'sellerIA@local.test',
-  displayName: 'sellerIA',
-  password: 'SellerIA_QA_2026!',
+  email: requiredEnv('QA_SELLER_EMAIL'),
+  displayName: requiredEnv('QA_SELLER_IDENTIFIER'),
+  password: requiredEnv('QA_SELLER_PASSWORD'),
   isSeller: true,
   bio: 'Cuenta QA persistente para recorridos seller end-to-end del marketplace local.',
   phone: '+58 412 000 0002',

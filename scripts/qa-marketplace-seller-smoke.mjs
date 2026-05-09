@@ -3,12 +3,27 @@ import { setTimeout as delay } from 'node:timers/promises'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import os from 'node:os'
+import { loadEnvConfig } from '@next/env'
+
+loadEnvConfig(process.cwd())
 
 const APP_URL = process.env.APP_URL || 'http://localhost:3002'
 const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
 const DEBUG_PORT = Number(process.env.DEBUG_PORT || '9222')
 const REUSE_BROWSER = process.env.REUSE_BROWSER === '1'
-const SELLER = { identifier: 'mvera', password: '13894619' }
+
+function requiredEnv(name) {
+  const value = process.env[name]
+  if (!value || !String(value).trim()) {
+    throw new Error(`Missing required env var: ${name}`)
+  }
+  return String(value).trim()
+}
+
+const SELLER = {
+  identifier: requiredEnv('QA_ADMIN_IDENTIFIER'),
+  password: requiredEnv('QA_ADMIN_PASSWORD'),
+}
 
 let ws
 let msgId = 0

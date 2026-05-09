@@ -3,6 +3,9 @@ import { setTimeout as delay } from 'node:timers/promises'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import { loadEnvConfig } from '@next/env'
+
+loadEnvConfig(process.cwd())
 
 const APP_URL = process.env.APP_URL || 'http://localhost:3002'
 const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
@@ -10,21 +13,29 @@ const DEBUG_PORT = Number(process.env.DEBUG_PORT || '9222')
 const REUSE_BROWSER = process.env.REUSE_BROWSER === '1'
 const QA_OUTPUT = process.env.QA_OUTPUT || ''
 
+function requiredEnv(name) {
+  const value = process.env[name]
+  if (!value || !String(value).trim()) {
+    throw new Error(`Missing required env var: ${name}`)
+  }
+  return String(value).trim()
+}
+
 const BUYER = {
-  identifier: 'buyerIA',
-  password: 'BuyerIA_QA_2026!',
-  email: 'buyerIA@local.test',
+  identifier: requiredEnv('QA_BUYER_IDENTIFIER'),
+  password: requiredEnv('QA_BUYER_PASSWORD'),
+  email: requiredEnv('QA_BUYER_EMAIL'),
 }
 
 const SELLER = {
-  identifier: 'sellerIA',
-  password: 'SellerIA_QA_2026!',
-  email: 'sellerIA@local.test',
+  identifier: requiredEnv('QA_SELLER_IDENTIFIER'),
+  password: requiredEnv('QA_SELLER_PASSWORD'),
+  email: requiredEnv('QA_SELLER_EMAIL'),
 }
 
 const ADMIN = {
-  identifier: 'mvera',
-  password: '13894619',
+  identifier: requiredEnv('QA_ADMIN_IDENTIFIER'),
+  password: requiredEnv('QA_ADMIN_PASSWORD'),
 }
 
 const LISTING = {
