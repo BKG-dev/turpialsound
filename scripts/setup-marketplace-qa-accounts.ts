@@ -13,24 +13,6 @@ type QaUserSpec = {
   phone: string
 }
 
-const BUYER: QaUserSpec = {
-  email: 'buyerIA@local.test',
-  displayName: 'buyerIA',
-  password: 'BuyerIA_QA_2026!',
-  isSeller: false,
-  bio: 'Cuenta QA persistente para recorridos buyer end-to-end del marketplace local.',
-  phone: '+58 412 000 0001',
-}
-
-const SELLER: QaUserSpec = {
-  email: 'sellerIA@local.test',
-  displayName: 'sellerIA',
-  password: 'SellerIA_QA_2026!',
-  isSeller: true,
-  bio: 'Cuenta QA persistente para recorridos seller end-to-end del marketplace local.',
-  phone: '+58 412 000 0002',
-}
-
 const SELLER_PAYOUT = {
   methodType: MpPayoutMethodType.PAGO_MOVIL,
   displayLabel: 'Cobro QA sellerIA',
@@ -71,10 +53,44 @@ function loadEnvFile(filePath: string) {
   }
 }
 
-async function getDb() {
+function loadQaEnv() {
   const root = process.cwd()
   loadEnvFile(path.join(root, '.env.local'))
   loadEnvFile(path.join(root, '.env'))
+}
+
+function requireEnv(name: string) {
+  const value = process.env[name]?.trim()
+  if (!value) {
+    throw new Error(`${name} no disponible en .env.local/.env`)
+  }
+  return value
+}
+
+function getQaUserSpecs() {
+  const buyer: QaUserSpec = {
+    email: requireEnv('QA_BUYER_EMAIL'),
+    displayName: requireEnv('QA_BUYER_IDENTIFIER'),
+    password: requireEnv('QA_BUYER_PASSWORD'),
+    isSeller: false,
+    bio: 'Cuenta QA persistente para recorridos buyer end-to-end del marketplace local.',
+    phone: '+58 412 000 0001',
+  }
+
+  const seller: QaUserSpec = {
+    email: requireEnv('QA_SELLER_EMAIL'),
+    displayName: requireEnv('QA_SELLER_IDENTIFIER'),
+    password: requireEnv('QA_SELLER_PASSWORD'),
+    isSeller: true,
+    bio: 'Cuenta QA persistente para recorridos seller end-to-end del marketplace local.',
+    phone: '+58 412 000 0002',
+  }
+
+  return { buyer, seller }
+}
+
+async function getDb() {
+  loadQaEnv()
 
   if (!process.env.DATABASE_URL) {
     throw new Error('DATABASE_URL no disponible en .env.local/.env')
@@ -261,9 +277,10 @@ async function ensureSellerListing(db: PrismaClient, sellerId: string) {
 
 async function main() {
   const db = await getDb()
+  const { buyer: buyerSpec, seller: sellerSpec } = getQaUserSpecs()
   try {
-    const buyer = await ensureUser(db, BUYER)
-    const seller = await ensureUser(db, SELLER)
+    const buyer = await ensureUser(db, buyerSpec)
+    const seller = await ensureUser(db, sellerSpec)
     const payout = await ensureSellerPayout(db, seller.id)
     const listing = await ensureSellerListing(db, seller.id)
 
@@ -273,8 +290,8 @@ async function main() {
       payout,
       listing,
       credentials: {
-        buyer: { identifier: BUYER.displayName, email: BUYER.email, password: BUYER.password },
-        seller: { identifier: SELLER.displayName, email: SELLER.email, password: SELLER.password },
+        buyer: { identifier: buyerSpec.displayName, email: buyerSpec.email, passwordSource: 'QA_BUYER_PASSWORD' },
+        seller: { identifier: sellerSpec.displayName, email: sellerSpec.email, passwordSource: 'QA_SELLER_PASSWORD' },
       },
     }
 

@@ -45,6 +45,31 @@
       "last_validated_at": "2026-04-21",
       "notes": "Ruta canonica para normalizar buyerIA, sellerIA, payout QA seller y listing persistente."
     },
+    "marketplace_login_smoke": {
+      "task_id": "marketplace_login_smoke",
+      "mode": "script",
+      "canonical_script": "node scripts/qa-marketplace-login-smoke.mjs",
+      "preconditions": [
+        "APP_URL activa",
+        "QA_BUYER_IDENTIFIER/QA_BUYER_PASSWORD disponibles en .env.local o entorno",
+        "QA_SELLER_IDENTIFIER/QA_SELLER_PASSWORD disponibles en .env.local o entorno",
+        "Chrome instalado"
+      ],
+      "allowed_fallbacks": [
+        "Si falta APP_URL, levantar la app y reintentar el mismo script",
+        "Si falta una variable QA_*, detenerse y reportar la precondicion exacta"
+      ],
+      "forbidden_fallbacks": [
+        "Hardcodear credenciales",
+        "Reverse engineering de server actions",
+        "Protocolo HTTP ad hoc para login"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md"
+      ],
+      "last_validated_at": "2026-05-09",
+      "notes": "Smoke corto para validar login UI de buyerIA y sellerIA usando credenciales QA desde env local."
+    },
     "buyer_seller_admin_smoke": {
       "task_id": "buyer_seller_admin_smoke",
       "mode": "script",
