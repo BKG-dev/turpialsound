@@ -42,7 +42,7 @@ export default function MezclaMasterizacionPage() {
         heading="El sonido final que tu producción merece."
         subheading="Mezcla y masterización como servicio independiente. Para material grabado aquí o en cualquier otro estudio."
       >
-        <Button as="link" href="/contacto" variant="primary" size="lg">
+        <Button as="link" href="/reservas" variant="primary" size="lg">
           Cotizar proyecto
         </Button>
       </PageHero>

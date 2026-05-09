@@ -51,7 +51,7 @@ export default function EstudioDeGrabacionPage() {
         heading="Sonido de Estudio. Criterio Sin Concesiones."
         subheading="Consola de referencia, microfonía de alto nivel y sala de control tratada acústicamente. El mismo espacio donde grabaron Oscar D'León, Domingo Quiñones y Dimensión Latina. Más de 30 años de criterio técnico al servicio de tu obra."
         ctaLabel="Cotizar sesión"
-        ctaHref="/contacto"
+        ctaHref="/reservas"
       />
 
       {/* Equipment */}
@@ -133,7 +133,7 @@ export default function EstudioDeGrabacionPage() {
           heading="¿Cuándo empezamos a grabar?"
           subheading="Cuéntanos sobre tu proyecto y armamos la sesión ideal para tu obra."
           ctaLabel="Cotizar sesión"
-          ctaHref="/contacto"
+          ctaHref="/reservas"
           imageSrc="/images/estudio-grabacion.jpg"
           className="py-20 sm:py-28"
         />

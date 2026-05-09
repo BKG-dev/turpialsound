@@ -105,6 +105,6 @@ export const pricingPackages: PricingPackage[] = [
     ],
     accent: 'cyan',
     ctaLabel: 'Reservar sesión',
-    ctaHref: '/contacto',
+    ctaHref: '/reservas',
   },
 ]

@@ -77,7 +77,7 @@ export default function ProduccionMusicalPage() {
         heading="Donde la Idea Se Convierte en Obra."
         subheading="Producción integral de alto nivel: arreglos, grabación, mezcla y masterización bajo un mismo criterio técnico. Más de 30 años materializando visiones musicales con estándar de exportación."
         ctaLabel="Hablar con el equipo"
-        ctaHref="/contacto"
+        ctaHref="/reservas"
       />
 
       {/* ── SPLIT LAYOUT: Proceso + "También puede interesarte" (izq) | Galería (der) ── */}
@@ -163,7 +163,7 @@ export default function ProduccionMusicalPage() {
           heading="¿Tienes un proyecto de producción?"
           subheading="Cuéntanos dónde estás y a dónde quieres llegar. Construimos el camino contigo."
           ctaLabel="Iniciar proyecto"
-          ctaHref="/contacto"
+          ctaHref="/reservas"
           imageSrc="/images/produccion1.jpg"
         />
       </StackingSection>

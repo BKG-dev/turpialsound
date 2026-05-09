@@ -42,7 +42,7 @@ export default function ArreglosMusicalesPage() {
         heading="Estructura y criterio para tu música."
         subheading="Arreglos completos o parciales para proyectos que necesitan dirección musical profesional."
       >
-        <Button as="link" href="/contacto" variant="primary" size="lg">
+        <Button as="link" href="/reservas" variant="primary" size="lg">
           Hablar con el equipo
         </Button>
       </PageHero>

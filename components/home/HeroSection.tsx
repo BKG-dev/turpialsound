@@ -397,7 +397,7 @@ export function HeroSection({
               setCanvasH(Math.max(40, Math.round(window.innerHeight - rect.bottom - 5)))
             }}
           >
-            <Button as="link" href="/contacto" variant="primary" size="lg">
+            <Button as="link" href="/reservas" variant="primary" size="lg">
               Reservar ahora
             </Button>
             <Button as="link" href="/servicios" variant="glow-cyan" size="lg">

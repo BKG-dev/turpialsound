@@ -39,8 +39,8 @@ export const mainNavItems: NavItem[] = [
 ]
 
 export const ctaNav: { label: string; href: Route } = {
-  label: 'Reservar por WhatsApp',
-  href: '/contacto',
+  label: 'Reservar ahora',
+  href: '/reservas',
 }
 
 export const ctaWaHref = 'https://wa.me/58414133305'
