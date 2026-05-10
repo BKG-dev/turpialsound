@@ -1,4 +1,29 @@
-﻿# Session Summary - Activa
+# Session Summary - Activa
+
+## Actualizacion urgente - Marketplace login QA/produccion - 2026-05-09
+
+- Objetivo cerrado: reparar login marketplace sin tocar tasas, booking, `/reservas`, DB, schema, migrations ni envs.
+- Commit productivo de login: `4f15e51` (`fix(marketplace): repair marketplace user login`).
+- Rama con fix runtime: `Manuel/s04b-marketplace-auth-login-fix-2026-05-09` / `deploy/s04b-auth-login-prod-2026-05-09`.
+- Rama actual de documentacion/QA scripts: `Manuel/s04d-qa-env-login-fix-2026-05-09`.
+- Commit de documentacion/QA scripts: `8d43d53` (`fix(qa): load marketplace credentials from env`).
+- Usuario QA correcto: `sellerIA`. `sellerID` no es el usuario QA acordado y debe fallar si no existe.
+- Password QA: no documentar en texto plano; se lee desde `QA_SELLER_PASSWORD` en env local/entorno autorizado.
+- Validacion preview `https://turpialsound-j5062s7m3-cerberus77s-projects.vercel.app`: `buyerIA` y `sellerIA` login OK via smoke `node scripts/qa-marketplace-login-smoke.mjs`.
+- BCV/tasas no forman parte de este hotfix. Produccion ya resuelve BCV fresco; no tocar `lib/bookings/reference-rate.ts` en este frente.
+- Para produccion sin cambios colaterales, desplegar/mergear solo el commit runtime `4f15e51`; no usar cambios de tasas ni refactors.
+
+## Diagnostico login sellerIA - 2026-05-09
+
+- Problema de codigo previo: `loginMpUser` usaba busqueda ambigua por `email OR displayName`, sin orden deterministico ni fallback case-insensitive.
+- Problema de sesion UI previo: `MarketplaceAuthModal` reconstruia la sesion de login con `isSeller: false`, falseando capacidades del usuario devuelto por DB.
+- Fix aplicado en `4f15e51`:
+  - `identifier.trim()` y password exacto sin trim.
+  - prioridad deterministica: email exacto, email case-insensitive, displayName exacto, displayName case-insensitive.
+  - errores genericos para evitar enumeracion.
+  - sesion devuelta desde DB con `userId`, `email`, `displayName`, `isSeller` y `role`.
+  - modal usa `result.data` sin hardcodear `isSeller`.
+- QA scripts actualizados en `8d43d53` para leer credenciales desde `QA_*` y no hardcodear claves.
 
 ## Estado real integrado - 2026-05-07
 

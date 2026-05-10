@@ -1,8 +1,26 @@
 # Next Window Brief - Turpial Sound
 
-**Fecha de actualizacion:** 2026-05-07
-**Frente activo:** Integracion reservas + marketplace estable
+**Fecha de actualizacion:** 2026-05-09
+**Frente activo:** Hotfix marketplace login QA/produccion
 **Tipo de nota:** Control Tower / siguiente ventana
+
+## Estado urgente
+
+- Produccion debe recibir solo el fix runtime de login marketplace si el objetivo es no cambiar nada mas.
+- Commit runtime recomendado: `4f15e51` (`fix(marketplace): repair marketplace user login`).
+- Archivos runtime tocados por ese commit: `actions/marketplace/auth.ts`, `components/marketplace/MarketplaceAuthModal.tsx`.
+- No tocar BCV/tasas: produccion ya devuelve tasa fresca y no necesita cambios en este hotfix.
+- No tocar booking, `/reservas`, Prisma schema, migrations, DB, Vercel envs ni Neon.
+- Usuario QA correcto: `sellerIA`; `sellerID` no es usuario QA canonico.
+- Credenciales QA no se documentan en texto plano; scripts usan `QA_*` desde env autorizado.
+- Rama de documentacion/QA scripts: `Manuel/s04d-qa-env-login-fix-2026-05-09` en commit `8d43d53`.
+
+## Validacion login
+
+- Preview validado: `https://turpialsound-j5062s7m3-cerberus77s-projects.vercel.app`.
+- Smoke corto validado: `node scripts/qa-marketplace-login-smoke.mjs`.
+- Resultado: `buyerIA` OK, `sellerIA` OK.
+- `sellerID` falla correctamente si no existe.
 
 ## Estado resumido
 
