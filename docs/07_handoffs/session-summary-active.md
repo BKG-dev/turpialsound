@@ -1,11 +1,34 @@
 # Session Summary - Activa
 
-## S00B - Replanteo Bus de Control / Marketplace Co-development - 2026-05-10
+## S00C — Agent Control Bus Runner — 2026-05-10
 
-- **Tipo de sesion:** documentacion, estrategia, planning y handoff. Cero codigo producto.
-- **Rama activa:** `Manuel/docs-replan-marketplace-codev-bus-2026-05-10`
-- **Base:** `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07`
+- **Tipo de sesion:** documentacion, metodologia, automatizacion operativa por prompts. Cero codigo producto.
+- **Rama activa:** `Manuel/docs-agent-control-bus-runner-2026-05-10`
+- **Base:** `Manuel/docs-replan-marketplace-codev-bus-2026-05-10` (que a su vez basea en `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07`)
 - **HEAD base de referencia:** `525602c`
+
+## Entregable creado
+
+- `docs/07_handoffs/AGENT_CONTROL_BUS_RUNNER.md` — Prompt universal para agentes Codex de Jean y Manuel.
+
+## Que resuelve
+
+Antes: coordinacion de sprints marketplace por copy/paste entre chats.
+Ahora: cualquier agente Codex lee `AGENT_CONTROL_BUS_RUNNER.md` y ejecuta su carril segun su rol.
+
+El runner incluye:
+- Entrada obligatoria (OPERATOR, SPRINT_ID, MODE)
+- Lectura del estado estrategico versionado
+- Identificacion de rol (Jean vs Manuel) con zonas autorizadas/prohibidas
+- Definiciones de sprint referenciadas desde `SPRINTS_CODEV_MARKETPLACE_2026-05-10.md`
+- Guardrails globales (anti-colision, anti-corrupcion, anti-fragmentacion)
+- Flujo de ejecucion completo (preflight → rama → implementar → validar → documentar → commit → push → reportar)
+- Flujo de alineacion (MODE=align) y cierre (MODE=close)
+- Reglas de QA canonico via dispatcher
+- Checklist de push a madre
+- Locks por dominio
+- 10 stop conditions universales
+- Ejemplo completo con S01 Manuel
 
 ## Confirmado
 
@@ -13,64 +36,26 @@
 - `main` no es la base operativa actual.
 - `/reservas` sigue congelado como zona sana bajo Jean.
 - `/marketplace` sigue en preview, no en produccion.
-- Preview `Manuel/*` esta habilitado en BKG Vercel `turpialsound`.
-- Login marketplace ya esta corregido a nivel runtime; el cierre QA formal pasa a S03.
-- Payment proof protegido ya existe a nivel tecnico; el cierre E2E operativo pasa a S04.
-
-## Decision cerrada
-
-1. **Bus de Control Nivel 2.5**
-   - Jean y Manuel desarrollan marketplace.
-   - Ambos pueden pushear a madre operativa.
-   - Jean sigue gateando `main`, produccion, release, envs criticos, schema y booking.
-
-2. **Modelo de sprints segregado**
-   - S01 Manuel - preview autonomy
-   - S02 Jean - discovery stabilization
-   - S03 Manuel - login QA closure
-   - S04 Jean - protected payment proof E2E
-   - S05 Manuel - delivery/receipt
-   - S06 Jean - payout closure
-   - S07 Jean - rates/finance/accounting
-   - S08 Manuel - UX/action center
-   - S09 Manuel - SEO/AEO/discovery publico
-   - S10 Jean - launch readiness / release gate
-
-3. **Reglas nuevas de madre operativa**
-   - push de ambos permitido solo con checklist
-   - preferido: rama propia por sprint y luego integracion a madre
-   - push directo a madre solo para docs o hotfix minimo validado
-   - trabajo exploratorio directo sobre madre: prohibido
+- Bus de Control Nivel 2.5: Jean y Manuel co-developean marketplace.
+- Sprints S01-S10 definidos en `SPRINTS_CODEV_MARKETPLACE_2026-05-10.md`.
 
 ## Pendiente operacional
 
-- Ejecutar **S01** con Manuel usando `docs/07_handoffs/prompt-s01-manuel-preview-smoke-autonomy-2026-05-10.md`
-- Ejecutar **S02** con Jean usando `docs/07_handoffs/prompt-s02-jean-discovery-runtime-stabilization-2026-05-10.md`
-- Mantener dispatcher QA como fuente canonica antes de cualquier smoke o cierre
-- Rotar secretos antes de S10
+- Ejecutar **S01** con Manuel usando `AGENT_CONTROL_BUS_RUNNER.md` con `OPERATOR=Manuel SPRINT_ID=S01 MODE=execute`.
+- Ejecutar **S02** con Jean usando `AGENT_CONTROL_BUS_RUNNER.md` con `OPERATOR=Jean SPRINT_ID=S02 MODE=execute`.
+- Mantener dispatcher QA como fuente canonica antes de cualquier smoke o cierre.
+- Rotar secretos antes de S10.
 
 ## Riesgos activos
 
-- **CRIT-001:** secretos expuestos en setup previo
-- **CRIT-002:** error Prisma/query en discovery de intento productivo
-- **HIGH-001:** colision humana en madre o zona critica sin lock
-- **HIGH-002:** booking tocado fuera de scope
+- **CRIT-001:** secretos expuestos en setup previo.
+- **CRIT-002:** error Prisma/query en discovery de intento productivo.
+- **HIGH-001:** colision humana en madre o zona critica sin lock.
 
-## Notas de trabajo
+## Archivos creados
 
-- El working tree ya venia sucio en docs/Obsidian antes de esta sesion. No se hizo reset ni stash.
-- Esta sesion se limito a docs/handoffs/Obsidian.
+- `docs/07_handoffs/AGENT_CONTROL_BUS_RUNNER.md`
 
-## Archivos actualizados o creados
+## Archivos actualizados
 
-- `docs/obsidian-vault/00_CENTRAL_TURPIAL.md`
-- `docs/obsidian-vault/ESTADO_NEGOCIO_TURPIAL_2026-05-10.md`
-- `docs/obsidian-vault/BUS_CONTROL_TURPIAL.md`
-- `docs/obsidian-vault/SPRINTS_GENERADOS_DESDE_OBSIDIAN_2026-05-10.md`
-- `docs/obsidian-vault/SPRINTS_CODEV_MARKETPLACE_2026-05-10.md`
-- `docs/obsidian-vault/ROADMAP_RESCATE.md`
-- `docs/obsidian-vault/BUGS_CRITICOS.md`
-- `docs/07_handoffs/next-window-brief.md`
-- `docs/07_handoffs/jean-obsidian-control-bus-brief-2026-05-10.md`
-- `docs/07_handoffs/prompt-s01-manuel-preview-smoke-autonomy-2026-05-10.md`
-- `docs/07_handoffs/prompt-s02-jean-discovery-runtime-stabilization-2026-05-10.md`
+- `docs/07_handoffs/session-summary-active.md`
