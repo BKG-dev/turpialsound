@@ -2,7 +2,7 @@
 
 **Fecha de actualizacion:** 2026-05-10
 **Frente activo:** S01 - BKG Preview Smoke Autonomy
-**Tipo de nota:** Control Tower / bloqueo real de preflight
+**Tipo de nota:** Control Tower / bloqueo real de preview deploy
 
 ## Estado actual de S01
 
@@ -10,25 +10,25 @@
 - **Base:** `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07` @ `525602c`
 - **Runner fuente:** `origin/Manuel/docs-control-bus-s02-unblock-2026-05-10`
 - **Scope validado:** `bkgs-projects-829c67c1/turpialsound`
-- **Preview nuevo:** no desplegado
+- **Preview nuevo:** intentado 2 veces, ambas con estado `Error`
 - **Smoke:** no ejecutado
-- **Motivo:** faltan `QA_BUYER_IDENTIFIER`, `QA_BUYER_PASSWORD`, `QA_SELLER_IDENTIFIER`, `QA_SELLER_PASSWORD` en Preview BKG
+- **Motivo:** Vercel fallo durante build en `https://turpialsound-1z5zoiwoy-bkgs-projects-829c67c1.vercel.app` y `https://turpialsound-fmy0je4lc-bkgs-projects-829c67c1.vercel.app`
+- **Env names criticos:** confirmados en Preview BKG, incluyendo `QA_*`
 
 ## Bloqueo rojo
 
-- S01 no puede continuar porque la validacion minima exige los env names QA presentes en Preview.
-- No se permite corregir eso desde este sprint porque tocar envs esta prohibido.
+- S01 no puede continuar porque la validacion minima exige un Preview BKG `Ready` y atribuible a la rama `Manuel/*`.
+- Los deploys fallaron del lado de Vercel antes de dejar una URL usable para `preview-runtime-guard.ts` y para el smoke canonico.
 - Cerberus no cierra nada y no se uso como fallback.
 
 ## Siguiente ventana recomendada
 
-1. Restaurar en Preview BKG los env names `QA_BUYER_IDENTIFIER`, `QA_BUYER_PASSWORD`, `QA_SELLER_IDENTIFIER`, `QA_SELLER_PASSWORD`.
-2. Reintentar S01 desde el mismo branch/worktree limpio.
-3. Solo despues de eso:
+1. Reintentar deploy Preview BKG desde el mismo branch/worktree limpio.
+2. Si el deploy queda `Ready`, continuar S01 en esta secuencia:
    - desplegar Preview BKG desde `Manuel/*`,
    - correr `preview-runtime-guard.ts`,
    - hacer smoke de `/`, `/marketplace`, `/reservas`, `/api/bcv-rate`, `/admin/login`, `/ops/payment-review`, `/payment-proofs/view`,
-   - resolver y correr `task_id=marketplace_login_smoke` si los `QA_*` ya existen.
+   - resolver y correr `task_id=marketplace_login_smoke` con el script canonico ya despachado en el dispatcher.
 
 **Fecha de actualizacion:** 2026-05-09
 **Frente activo:** Hotfix marketplace login QA/produccion

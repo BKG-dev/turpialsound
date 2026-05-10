@@ -11,27 +11,31 @@
 
 ## Resultado real
 
-- **Estado:** BLOQUEADO EN PREFLIGHT
+- **Estado:** BLOQUEADO EN PREVIEW DEPLOY
 - **Proyecto BKG confirmado:** `bkgs-projects-829c67c1/turpialsound`
 - **Identidad Vercel confirmada:** `jcarlosleon81-1948`
-- **`.vercel/project.json`:** recreado localmente en el worktree limpio como correccion de precondicion, sin stage
-- **Env names confirmados en Preview:** `DATABASE_URL`, `DIRECT_URL`, `MP_JWT_SECRET`, `TS_WEB_BLOB_READ_WRITE_TOKEN`, `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN`
-- **Env names faltantes en Preview:** `QA_BUYER_IDENTIFIER`, `QA_BUYER_PASSWORD`, `QA_SELLER_IDENTIFIER`, `QA_SELLER_PASSWORD`
+- **`.vercel/project.json`:** presente y apuntando a `turpialsound`
+- **Env names confirmados en Preview:** `DATABASE_URL`, `DIRECT_URL`, `MP_JWT_SECRET`, `TS_WEB_BLOB_READ_WRITE_TOKEN`, `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN`, `QA_BUYER_IDENTIFIER`, `QA_BUYER_PASSWORD`, `QA_SELLER_IDENTIFIER`, `QA_SELLER_PASSWORD`
+- **Deploy attempt 1:** `https://turpialsound-1z5zoiwoy-bkgs-projects-829c67c1.vercel.app` -> `Error` durante build
+- **Deploy attempt 2:** `https://turpialsound-fmy0je4lc-bkgs-projects-829c67c1.vercel.app` -> `Error` durante build
 
 ## Bloqueo rojo
 
-- La tarea S01 exige confirmar todos los env names criticos en Preview BKG antes de deploy/smoke.
-- Al faltar los `QA_*` en Preview, se activa la stop condition: **falta cualquiera de los env names criticos**.
+- La tarea S01 exige Preview BKG accesible y atribuible a la rama `Manuel/*`.
+- Los dos deploys generaron URL valida bajo `bkgs-projects-829c67c1`, pero Vercel devolvio `Error` durante `Building...` en ambos intentos.
+- Se activa la stop condition: **preview no despliega o no responde**.
 - Por esa razon:
-  - no se hizo deploy Preview nuevo,
   - no se corrio `preview-runtime-guard.ts`,
   - no se ejecuto smoke HTTP,
   - no se corrio `task_id=marketplace_login_smoke`.
 
 ## Proxima accion
 
-- Jean o el gatekeeper de Vercel debe restaurar los cuatro `QA_*` en Preview BKG `turpialsound`.
-- Luego Manuel puede reintentar `OPERATOR=Manuel SPRINT_ID=S01 MODE=execute` desde esta misma rama o un worktree limpio equivalente.
+- Reintentar el deploy Preview BKG desde esta misma rama cuando Vercel deje de devolver error de build vacio.
+- Si el siguiente deploy queda `Ready`, correr en secuencia:
+  - `npx tsx scripts/diagnostics/preview-runtime-guard.ts --base-url <preview-bkg-url>`
+  - smoke pasivo de `/`, `/marketplace`, `/reservas`, `/api/bcv-rate`, `/admin/login`, `/ops/payment-review`, `/payment-proofs/view`
+  - `task_id=marketplace_login_smoke` usando el script canonico sin hardcodear credenciales
 
 ## Actualizacion urgente - Marketplace login QA/produccion - 2026-05-09
 
