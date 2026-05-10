@@ -1,75 +1,77 @@
 # Next Window Brief - Turpial Sound
 
-**Fecha de actualizacion:** 2026-05-09
-**Frente activo:** Hotfix marketplace login QA/produccion
+**Fecha de actualizacion:** 2026-05-10
+**Frente activo:** S00 — Documentacion / Obsidian / Control Bus Sync
 **Tipo de nota:** Control Tower / siguiente ventana
 
-## Estado urgente
+## Estado actual
 
-- Produccion debe recibir solo el fix runtime de login marketplace si el objetivo es no cambiar nada mas.
-- Commit runtime recomendado: `4f15e51` (`fix(marketplace): repair marketplace user login`).
-- Archivos runtime tocados por ese commit: `actions/marketplace/auth.ts`, `components/marketplace/MarketplaceAuthModal.tsx`.
-- No tocar BCV/tasas: produccion ya devuelve tasa fresca y no necesita cambios en este hotfix.
-- No tocar booking, `/reservas`, Prisma schema, migrations, DB, Vercel envs ni Neon.
-- Usuario QA correcto: `sellerIA`; `sellerID` no es usuario QA canonico.
-- Credenciales QA no se documentan en texto plano; scripts usan `QA_*` desde env autorizado.
-- Rama de documentacion/QA scripts: `Manuel/s04d-qa-env-login-fix-2026-05-09` en commit `8d43d53`.
+- **Rama madre operativa:** `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07` (HEAD `525602c`).
+- **Sprint en curso:** S00 — Documentacion estrategica.
+- **Rama activa:** `Manuel/docs-strategic-obsidian-sprints-2026-05-10`.
+- **`/reservas`:** Congelado como zona sana.
+- **`/marketplace`:** Activo en preview, no en produccion.
+- **Login marketplace:** Reparado y validado en preview (commits `4f15e51`, `8d43d53`).
+- **Preview `Manuel/*`:** Funcional en BKG Vercel `turpialsound`.
 
-## Validacion login
+## Proxima ventana recomendada: S01
 
-- Preview validado: `https://turpialsound-j5062s7m3-cerberus77s-projects.vercel.app`.
-- Smoke corto validado: `node scripts/qa-marketplace-login-smoke.mjs`.
-- Resultado: `buyerIA` OK, `sellerIA` OK.
-- `sellerID` falla correctamente si no existe.
+**S01 — BKG Preview Smoke Autonomia**
 
-## Estado resumido
+- **Objetivo:** Confirmar que Manuel puede desplegar preview limpio desde `Manuel/*` en BKG Vercel con DB/JWT/Blob disponibles.
+- **Owner:** Manuel.
+- **Rama sugerida:** `Manuel/s01-preview-smoke-autonomy-2026-05-10`.
+- **Base:** `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07`.
+- **Que hacer:**
+  1. Crear rama desde madre.
+  2. Push y esperar preview deploy en BKG Vercel.
+  3. Ejecutar `npx tsx scripts/diagnostics/preview-runtime-guard.ts --base-url <preview-url>`.
+  4. Smoke HTTP: `/marketplace`, `/reservas`, `/api/bcv-rate`, `/admin/login`, `/ops/payment-review`.
+  5. Login smoke: `node scripts/qa-marketplace-login-smoke.mjs`.
+  6. Verificar que `/reservas` sigue intacto.
+- **Produccion:** Prohibido.
+- **Stop conditions:** Preview no responde, DB/JWT/Blob ausente, `/reservas` roto.
 
-- Rama madre real: `integration/today-reservas-marketplace-stable-2026-05-07`.
-- Commit estable: `c01ec60`.
-- `/reservas` congelado como zona sana.
-- `/marketplace` activo y funcional en la rama integrada.
-- BCV corregido con tasa fresca.
+## Sprints siguientes en secuencia
 
-## Regla de entorno DB (obligatoria)
+| Sprint | Nombre | Depende de |
+|--------|--------|-----------|
+| S02 | Discovery Stabilization | S01 |
+| S03 | Auth/Login QA Closure | S01 |
+| S04 | Payment Proof E2E | S01, S03 |
+| S05 | Delivery & Receipt Flow | S04 |
+| S06 | Admin Payout | S05 |
+| S07 | Rates Hardening | S06 |
+| S08 | UX / Action Center | S05, S06 |
+| S09 | SEO/AEO Discovery | S02 |
+| S10 | Launch Readiness | S01-S09 |
 
-- `DATABASE_URL`: pooled/pooler.
-- `DIRECT_URL`: direct/no-pooler.
-- Ambas al mismo proyecto/base Neon integrada.
-- Nunca imprimir secretos.
+## Riesgos activos a monitorear
 
-## Protocolo obligatorio si marketplace carga vacio
+1. **CRIT-001:** Secretos expuestos — rotar antes de S10.
+2. **CRIT-002:** Prisma query error en discovery — validar en S02 antes de produccion.
+3. **CRIT-003:** No deploy productivo sin release gate.
 
-1. Confirmar branch/commit exacto del deployment.
-2. Revisar Vercel runtime logs.
-3. Buscar logs `marketplace.discovery`.
-4. Distinguir `DB_MISSING` / `QUERY_ERROR` / `ZERO_ACTIVE` / `FILTERED_EMPTY`.
-5. Si aparece Prisma `P2021`, revisar DB target y tablas `mp_*` antes de tocar UI.
-6. Comparar `DATABASE_URL` y `DIRECT_URL` por fingerprint seguro (host hint, pooler true/false, sslmode).
-7. Nunca imprimir secretos.
-8. Corregir env/DB en Vercel Preview solo por Jean.
-9. Redeployar mismo commit.
-10. Solo tocar UI si DB y query estan correctas.
+## Guardrails
 
-## Metodologia Oreshnik-Codex 2.0
+- `DATABASE_URL` pooled, `DIRECT_URL` direct, mismo proyecto Neon.
+- Cero deploys a produccion sin Jean.
+- Cero cambios en booking desde Manuel.
+- Cero migraciones sin lock de arquitectura.
+- QA scripts via dispatcher canonico (`docs/07_handoffs/qa-dispatcher.json`).
 
-- 1 rama madre estable.
-- N worktrees separados.
-- N agentes Codex.
-- 1 owner por lock.
-- 1 commit/push por sprint cerrado.
-- 0 trabajo directo sobre madre.
-- 0 main.
-- 0 produccion.
-- 0 zonas sanas tocadas.
+## Documentos clave para la proxima ventana
 
-## Roles
+- `docs/obsidian-vault/00_CENTRAL_TURPIAL.md` — mapa central actualizado
+- `docs/obsidian-vault/ESTADO_NEGOCIO_TURPIAL_2026-05-10.md` — estado del negocio
+- `docs/obsidian-vault/BUS_CONTROL_TURPIAL.md` — reglas de coordinacion
+- `docs/obsidian-vault/SPRINTS_GENERADOS_DESDE_OBSIDIAN_2026-05-10.md` — plan de sprints
+- `docs/07_handoffs/qa-dispatcher.json` — despacho de QA
+- `docs/07_handoffs/jean-obsidian-control-bus-brief-2026-05-10.md` — brief para Jean
 
-- Jean: integracion, Vercel/envs, DB/Prisma/schema/migrations, booking/reservas, rama madre, merges, preview integrado.
-- Manuel: marketplace producto, buyer/seller/admin flow, QA operacional, rates, payout, estados, copy/UX operativo.
+## Preguntas para Jean
 
-## Ola 1
-
-- J1 Docs Control Tower.
-- J2 Preview Runtime Guard.
-- M1 Marketplace Protected Flow E2E.
-- M2 Marketplace QA Harness.
+1. Confirmar `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07` como rama madre operativa.
+2. Revisar Control Bus Nivel 2 (carriles y reglas).
+3. Plan para rotar secretos expuestos (CRIT-001).
+4. Plan para realinear `main`.

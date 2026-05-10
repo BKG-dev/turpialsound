@@ -1,47 +1,37 @@
 # Session Summary - Activa
 
-## Actualizacion urgente - Marketplace login QA/produccion - 2026-05-09
+## S00 — Documentacion / Obsidian / Control Bus Sync — 2026-05-10
 
-- Objetivo cerrado: reparar login marketplace sin tocar tasas, booking, `/reservas`, DB, schema, migrations ni envs.
-- Commit productivo de login: `4f15e51` (`fix(marketplace): repair marketplace user login`).
-- Rama con fix runtime: `Manuel/s04b-marketplace-auth-login-fix-2026-05-09` / `deploy/s04b-auth-login-prod-2026-05-09`.
-- Rama actual de documentacion/QA scripts: `Manuel/s04d-qa-env-login-fix-2026-05-09`.
-- Commit de documentacion/QA scripts: `8d43d53` (`fix(qa): load marketplace credentials from env`).
-- Usuario QA correcto: `sellerIA`. `sellerID` no es el usuario QA acordado y debe fallar si no existe.
-- Password QA: no documentar en texto plano; se lee desde `QA_SELLER_PASSWORD` en env local/entorno autorizado.
-- Validacion preview `https://turpialsound-j5062s7m3-cerberus77s-projects.vercel.app`: `buyerIA` y `sellerIA` login OK via smoke `node scripts/qa-marketplace-login-smoke.mjs`.
-- BCV/tasas no forman parte de este hotfix. Produccion ya resuelve BCV fresco; no tocar `lib/bookings/reference-rate.ts` en este frente.
-- Para produccion sin cambios colaterales, desplegar/mergear solo el commit runtime `4f15e51`; no usar cambios de tasas ni refactors.
+- **Sprint:** S00 — Documentacion estrategica, Obsidian vault, Control Bus, plan de sprints.
+- **Owner:** Manuel.
+- **Rama:** `Manuel/docs-strategic-obsidian-sprints-2026-05-10`.
+- **Base:** `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07` (HEAD `525602c`).
+- **Objetivo:** Dejar el repositorio con documentacion coherente como fuente de verdad estrategica. Cero cambios de codigo producto.
 
-## Diagnostico login sellerIA - 2026-05-09
+## Estado real integrado — 2026-05-10
 
-- Problema de codigo previo: `loginMpUser` usaba busqueda ambigua por `email OR displayName`, sin orden deterministico ni fallback case-insensitive.
-- Problema de sesion UI previo: `MarketplaceAuthModal` reconstruia la sesion de login con `isSeller: false`, falseando capacidades del usuario devuelto por DB.
-- Fix aplicado en `4f15e51`:
-  - `identifier.trim()` y password exacto sin trim.
-  - prioridad deterministica: email exacto, email case-insensitive, displayName exacto, displayName case-insensitive.
-  - errores genericos para evitar enumeracion.
-  - sesion devuelta desde DB con `userId`, `email`, `displayName`, `isSeller` y `role`.
-  - modal usa `result.data` sin hardcodear `isSeller`.
-- QA scripts actualizados en `8d43d53` para leer credenciales desde `QA_*` y no hardcodear claves.
+- **Rama madre operativa real:** `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07`.
+- **HEAD base de referencia:** `525602c`.
+- **Rama madre anterior (obsoleta):** `integration/today-reservas-marketplace-stable-2026-05-07` (commit `c01ec60`).
+- **`/reservas`:** Congelado como zona sana. Owner: Jean.
+- **`/marketplace`:** Activo en preview, no en produccion. Owner: Manuel.
+- **BCV:** Corregido y respondiendo con tasa fresca en produccion.
+- **Login marketplace:** Reparado (commit `4f15e51`), smoke validado en preview (`buyerIA` OK, `sellerIA` OK).
+- **Preview env `Manuel/*`:** Resuelto en BKG Vercel `turpialsound` — DATABASE_URL, DIRECT_URL, MP_JWT_SECRET, Blob/payment proof envs presentes.
+- **`main` y produccion:** No tocados. `main` no es la base operativa actual.
 
-## Estado real integrado - 2026-05-07
+## Incidentes aprendidos
 
-- Rama madre estable actual: `integration/today-reservas-marketplace-stable-2026-05-07`.
-- HEAD base de referencia de integracion: `cbc72e3`.
-- Commit estable operativo validado: `c01ec60` (`fix(marketplace): render active listings on public page`).
-- `/reservas` queda congelado como zona sana.
-- `/marketplace` queda activo y visible en rama integrada.
-- BCV corregido y respondiendo con tasa fresca (incluye fix `a96c247`).
-- Main y produccion no tocados.
-
-## Incidente aprendido - Marketplace vacio en Preview (2026-05-07)
-
+### Marketplace vacio en Preview (2026-05-07)
 - Sintoma: `/marketplace` vacio en Preview.
-- No fue causa raiz de UI ni filtros.
 - Causa real: Preview apuntando a DB incorrecta sin tablas `mp_*`.
-- Evidencia tecnica: Prisma `P2021` por ausencia de `public.mp_listings`.
-- Solucion real: corregir `DATABASE_URL` y `DIRECT_URL` al mismo proyecto/base Neon integrada.
+- Evidencia: Prisma `P2021` por ausencia de `public.mp_listings`.
+- Solucion: corregir `DATABASE_URL` y `DIRECT_URL` al mismo proyecto/base Neon integrada.
+
+### Intento de deploy productivo con error Prisma query (2026-05-09)
+- Sintoma: Error de Prisma query en marketplace discovery durante intento de deploy productivo.
+- Produccion fue rollbackeada/recuperada.
+- **Regla:** No asumir produccion-ready desde branch head. Preview smoke + runtime logs obligatorios antes de cualquier deploy productivo.
 
 ## Regla obligatoria de conexiones DB
 
@@ -49,28 +39,6 @@
 - `DIRECT_URL` debe ser direct/no-pooler.
 - Ambas deben apuntar al mismo proyecto/base Neon integrada.
 - Nunca imprimir secretos.
-
-## Protocolo obligatorio si marketplace carga vacio
-
-1. Confirmar branch/commit exacto del deployment.
-2. Revisar runtime logs del deployment.
-3. Buscar logs `marketplace.discovery`.
-4. Distinguir `DB_MISSING` / `QUERY_ERROR` / `ZERO_ACTIVE` / `FILTERED_EMPTY`.
-5. Si hay `P2021`, validar DB target y existencia real de tablas `mp_*` antes de tocar UI.
-6. Comparar `DATABASE_URL` y `DIRECT_URL` con fingerprint seguro (host hint, pooler, sslmode).
-7. Corregir env/DB de Preview solo por Jean.
-8. Redeployar el mismo commit tras corregir target DB.
-9. Solo tocar UI si DB/query/data ya estan correctas.
-
-## Smoke base esperado en Preview integrado
-
-- `/` responde.
-- `/marketplace` responde.
-- `/reservas` responde.
-- `/api/bcv-rate` responde.
-- `/admin/login` responde.
-- `/ops/payment-review` responde con control de acceso.
-- `/payment-proofs/view` sin token responde error controlado (no `500`).
 
 ## Metodologia Oreshnik-Codex 2.0
 
@@ -81,18 +49,61 @@
 - 1 commit/push por sprint cerrado.
 - 0 trabajo directo sobre madre.
 - 0 `main`.
-- 0 produccion.
+- 0 produccion sin release gate.
 - 0 cambios en zonas sanas fuera de scope.
 
 ## Roles operativos
 
-- Jean: integracion, merges, Vercel/envs, DB/Prisma/schema/migrations, rama madre, preview integrado, booking/reservas.
-- Manuel: marketplace producto, buyer/seller/admin flow, QA operacional, rates, payout, estados, copy/UX operativo.
+- **Jean:** Integracion, merges, Vercel/envs, DB/Prisma/schema/migrations, rama madre, preview integrado, produccion, booking/reservas.
+- **Manuel:** Marketplace producto, buyer/seller/admin flow, QA operacional, rates, payout, estados, copy/UX operativo, docs de negocio.
 
-## Ola 1 (fuente activa)
+## Control Bus — Nivel 2
 
-- J1 Docs Control Tower.
-- J2 Preview Runtime Guard.
-- M2 Marketplace QA Harness.
-- J3 Integration Gatekeeper.
-- M1 Marketplace Protected Flow E2E: fuera de esta integracion prep hasta autorizacion.
+Dos carriles con ownership claro. Ver `docs/obsidian-vault/BUS_CONTROL_TURPIAL.md`.
+
+## Sprints generados (S00-S10)
+
+Ver `docs/obsidian-vault/SPRINTS_GENERADOS_DESDE_OBSIDIAN_2026-05-10.md`.
+
+Secuencia priorizada:
+1. **S00** — Documentacion / Obsidian / Control Bus Sync ← ESTE SPRINT
+2. **S01** — BKG Preview Smoke Autonomia ← PROXIMO
+3. **S02** — Marketplace Runtime Discovery Stabilization
+4. **S03** — Marketplace Auth/Login QA Closure
+5. **S04** — Protected Payment Proof Flow E2E
+6. **S05** — Buyer/Seller Delivery & Receipt Flow
+7. **S06** — Admin Seller Payout Registration & Closure
+8. **S07** — Rates / Finance / Accounting Hardening
+9. **S08** — Marketplace UX / Action Center / Notifications
+10. **S09** — Public Marketplace SEO/AEO / Discovery Polish
+11. **S10** — Launch Readiness / Security Rotation / Release Gate
+
+## Lo que Manuel puede hacer solo
+
+- Crear ramas `Manuel/*` desde madre operativa.
+- Crear previews en BKG Vercel `turpialsound`.
+- Ejecutar QA scripts canonicos desde `docs/07_handoffs/qa-dispatcher.json`.
+- Desarrollar y probar marketplace runtime en preview.
+- Actualizar docs en `docs/obsidian-vault/`, `docs/07_handoffs/`, `docs/marketplace/`.
+
+## Lo que requiere Jean
+
+- Merge a rama madre/integracion.
+- Deploy a produccion.
+- Modificar Vercel envs.
+- Ejecutar migraciones Prisma.
+- Modificar schema DB.
+- Rotar credenciales/secrets en produccion.
+- Tocar booking/reservas.
+
+## Documentos actualizados/creados en S00
+
+- `docs/obsidian-vault/00_CENTRAL_TURPIAL.md` — actualizado
+- `docs/obsidian-vault/ESTADO_NEGOCIO_TURPIAL_2026-05-10.md` — nuevo
+- `docs/obsidian-vault/BUS_CONTROL_TURPIAL.md` — nuevo
+- `docs/obsidian-vault/ROADMAP_RESCATE.md` — actualizado
+- `docs/obsidian-vault/BUGS_CRITICOS.md` — actualizado
+- `docs/obsidian-vault/SPRINTS_GENERADOS_DESDE_OBSIDIAN_2026-05-10.md` — nuevo
+- `docs/07_handoffs/session-summary-active.md` — actualizado
+- `docs/07_handoffs/next-window-brief.md` — actualizado
+- `docs/07_handoffs/jean-obsidian-control-bus-brief-2026-05-10.md` — nuevo
