@@ -1,34 +1,36 @@
 # Next Window Brief - Turpial Sound
 
 **Fecha de actualizacion:** 2026-05-10
-**Frente activo:** S03 - Auth/Login QA Closure
-**Tipo de nota:** Control Tower / bloqueo real en normalizacion QA y auth data
+**Frente activo:** S03A - QA Accounts Normalization
+**Tipo de nota:** Control Tower / bloqueo real en auth data Preview BKG y smoke local sin CDP util
 
-## Estado actual de S03
+## Estado actual de S03A
 
-- **Rama de trabajo:** `Manuel/s03-auth-login-qa-closure-2026-05-10`
-- **Base inmediata:** `origin/Manuel/s01-preview-smoke-autonomy-2026-05-10`
+- **Rama de trabajo:** `Manuel/s03a-qa-accounts-normalization-2026-05-10`
+- **Base inmediata:** `origin/Manuel/s03-auth-login-qa-closure-2026-05-10`
 - **Base operativa ultima:** `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07` @ `525602c`
 - **Runner fuente:** `origin/Manuel/docs-control-bus-s02-unblock-2026-05-10`
 - **Preview BKG valido heredado de S01:** `https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app`
-- **Estado de smoke heredado:** `/` `200`, `/marketplace` `200`, `/reservas` `200`, `/api/bcv-rate` `200`, `/admin/login` `200`, `/ops/payment-review` `200`, `/payment-proofs/view` `400` controlado
-- **`task_id=marketplace_login_smoke`:** buyer falla con `usuario o contrasena incorrectos`; seller no corre por corte temprano
-- **`task_id=qa_accounts_normalization`:** existe en dispatcher, pero no es ejecutable aqui con las precondiciones disponibles
-- **Precondiciones faltantes para normalizacion:** `QA_BUYER_EMAIL` y `QA_SELLER_EMAIL` no estan en Preview ni en env local de este worktree
+- **Lock explicito vigente:** mutacion permitida solo sobre cuentas QA marketplace en Preview BKG; no produccion, no main, no booking, no schema, no migrations, no env changes remotas
+- **Env names confirmados sin valores:** `DATABASE_URL`, `DIRECT_URL`, `QA_BUYER_EMAIL`, `QA_BUYER_IDENTIFIER`, `QA_BUYER_PASSWORD`, `QA_SELLER_EMAIL`, `QA_SELLER_IDENTIFIER`, `QA_SELLER_PASSWORD`
+- **`task_id=qa_accounts_normalization`:** ejecutado por ruta exacta del dispatcher; falla por conflicto real de `displayName` para `sellerIA` contra otro correo ya presente en Preview BKG
+- **`task_id=marketplace_login_smoke`:** reintentado por ruta exacta del dispatcher; el harness aborta antes de buyer/seller porque Chrome local no abre CDP util bajo los flags canonicos
+- **Chequeo de preview:** `APP_URL` responde `200`, asi que el bloqueo del smoke no apunta a caida del deployment
 
 ## Bloqueo rojo
 
-- S03 no esta bloqueado por Preview BKG ni por `QA_*` basicos.
-- El bloqueo real queda en saneamiento de auth data QA fuera del scope operativo normal de S03.
-- Cerberus no cierra nada y no se uso como fallback.
+- S03A queda bloqueado por dos causas reales simultaneas:
+  - colision de auth data QA en Preview BKG para `sellerIA`,
+  - precondicion local del smoke canonico no satisfecha porque Chrome no expone CDP util en esta maquina.
+- No se uso fallback fuera del dispatcher.
+- Cerberus no participa en el cierre de este frente.
 
 ## Siguiente ventana recomendada
 
-1. Confirmar si Jean + Manuel autorizan lock para normalizacion QA/auth data.
-2. Si el lock existe y se dispone de `QA_BUYER_EMAIL` y `QA_SELLER_EMAIL` autorizados, correr `task_id=qa_accounts_normalization`.
-3. Reintentar `task_id=marketplace_login_smoke`.
-4. Si buyer y seller pasan, cerrar S03 y reintentar/cerrar S01.
-5. Jean debe quedarse en `S04 align` hasta que buyer/seller QA quede realmente cerrado, porque S04 exige `buyerIA` operativo como precondicion funcional.
+1. Jean debe resolver el conflicto real de `sellerIA` en Preview BKG o habilitar una ventana autorizada donde el script canonico pueda normalizar sin colision.
+2. Manuel debe reintentar `task_id=marketplace_login_smoke` desde una maquina/worktree con Chrome y CDP util para el harness canonico.
+3. Solo si buyer y seller pasan despues de eso, S03 puede reintentarse/cerrarse y S01 puede reintentarse/cerrarse.
+4. Jean debe permanecer en `S04 align` y no pasar a `S04 execute` mientras S03 siga abierto.
 
 **Fecha de actualizacion:** 2026-05-09
 **Frente activo:** Hotfix marketplace login QA/produccion

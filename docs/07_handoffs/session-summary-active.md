@@ -1,49 +1,50 @@
 # Session Summary - Activa
 
-## S03 - Auth/Login QA Closure - 2026-05-10
+## S03A - QA Accounts Normalization - 2026-05-10
 
 - **Operador:** Manuel
 - **Modo:** `execute`
-- **Rama activa:** `Manuel/s03-auth-login-qa-closure-2026-05-10`
-- **Base operativa preferida usada:** `origin/Manuel/s01-preview-smoke-autonomy-2026-05-10`
+- **Rama activa:** `Manuel/s03a-qa-accounts-normalization-2026-05-10`
+- **Base operativa preferida usada:** `origin/Manuel/s03-auth-login-qa-closure-2026-05-10`
 - **Base ultima de referencia:** `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07` @ `525602c`
 - **Fuente de runner usada:** `origin/Manuel/docs-control-bus-s02-unblock-2026-05-10`
+- **Lock explicito aplicado:** mutacion QA marketplace en Preview BKG limitada a `mpUser` buyer/seller QA, payout method seller QA y listing persistente QA si el script canonico lo requiere
 
 ## Resultado real
 
-- **Estado:** BLOQUEADO EN NORMALIZACION QA / AUTH DATA
+- **Estado:** BLOQUEADO EN NORMALIZACION QA / AUTH DATA + SMOKE LOCAL SIN CDP UTIL
 - **Proyecto BKG confirmado:** `bkgs-projects-829c67c1/turpialsound`
 - **Identidad Vercel confirmada:** `jcarlosleon81-1948`
-- **`.vercel/project.json`:** recreado localmente via `vercel link` y validado contra `turpialsound`
+- **`.vercel/project.json`:** recreado localmente solo para habilitar `vercel env pull` en el worktree limpio
 - **Preview BKG valido confirmado:** `https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app`
 - **Alias valido de rama S01:** `https://turpialsound-git-manuel-s01-previ-f46263-bkgs-projects-829c67c1.vercel.app`
-- **Env names confirmados sin imprimir valores:** `QA_BUYER_IDENTIFIER`, `QA_BUYER_PASSWORD`, `QA_SELLER_IDENTIFIER`, `QA_SELLER_PASSWORD`, `DATABASE_URL`, `DIRECT_URL`
-- **`task_id=marketplace_login_smoke`:** ruta exacta confirmada en dispatcher
-- **Fallo reproducido en S01 y heredado a S03:** buyer devuelve `usuario o contrasena incorrectos`; seller no llega a ejecutarse porque el script corta en buyer
+- **Env names confirmados sin imprimir valores:** `DATABASE_URL`, `DIRECT_URL`, `QA_BUYER_EMAIL`, `QA_BUYER_IDENTIFIER`, `QA_BUYER_PASSWORD`, `QA_SELLER_EMAIL`, `QA_SELLER_IDENTIFIER`, `QA_SELLER_PASSWORD`
+- **`task_id=qa_accounts_normalization`:** ruta exacta confirmada en dispatcher y ejecutada
+- **Resultado de normalizacion canonica:** falla por conflicto real de `displayName` en Preview BKG para `sellerIA` asociado a otro correo ya existente
+- **`task_id=marketplace_login_smoke`:** ruta exacta confirmada en dispatcher y reintentada contra Preview BKG Ready
+- **Resultado del smoke local:** el harness aborta antes de buyer/seller porque Chrome local no expone puerto CDP util bajo los flags canonicos; `APP_URL` del preview responde `200`
 
 ## Diagnostico raiz
 
-- El dispatcher SI contiene `task_id=qa_accounts_normalization` con script canonico `npx tsx scripts/setup-marketplace-qa-accounts.ts`.
-- Pero esa ruta NO aparece como validacion minima ni fallback documentado de S03; S03 solo cierra con `task_id=marketplace_login_smoke`.
-- El script `qa_accounts_normalization` muta `mpUser`, `mpPayoutMethod` y `mpListing`, por lo que sale del frente "docs y ajustes menores de login" de S03 y entra en datos/auth operativos.
-- En este worktree no existe `.env.local` ni `.env`.
-- En Preview BKG existen `QA_BUYER_IDENTIFIER`, `QA_BUYER_PASSWORD`, `QA_SELLER_IDENTIFIER`, `QA_SELLER_PASSWORD`, pero NO existen `QA_BUYER_EMAIL` ni `QA_SELLER_EMAIL`, que el script canonico de normalizacion requiere para upsert de cuentas.
-- Por lo tanto, aun ignorando el alcance, `qa_accounts_normalization` no es ejecutable aqui con las precondiciones disponibles sin introducir credenciales nuevas o tocar secretos.
+- El dispatcher SI contiene `task_id=qa_accounts_normalization` con script canonico `npx tsx scripts/setup-marketplace-qa-accounts.ts` y `task_id=marketplace_login_smoke` con script canonico `node scripts/qa-marketplace-login-smoke.mjs`.
+- En esta ventana las ocho variables requeridas estuvieron presentes via `vercel env pull` de Preview BKG al worktree local, sin imprimir valores.
+- El bloqueo rojo real de Preview BKG no fue falta de variables: fue drift de auth data en DB, especificamente conflicto de `displayName` para `sellerIA` contra otro correo ya existente. Eso impide que el upsert canonico normalice seller QA sin saneamiento previo del dato conflictivo.
+- El smoke de login no aporta señal buyer/seller en esta maquina porque el harness canonico depende de Chrome con CDP local y, bajo los flags actuales del script, el puerto de depuracion no queda accesible. Eso deja el smoke bloqueado por precondicion local/harness, no por indisponibilidad del preview.
 
 ## Bloqueo rojo
 
-- Se activa bloqueo real de S03: **la ruta canonica alternativa de normalizacion QA no es ejecutable en este carril con las precondiciones actuales y toca auth/data fuera del scope operativo de S03**.
-- Esto deja el frente en uno de estos estados todavia no cerrables desde aqui:
-  - drift de credencial QA,
-  - drift de cuenta QA en DB Preview,
-  - colision de auth data que requiere saneamiento controlado.
-- No se autorizo cambio de secretos ni lock doble explicito para mutar auth/DB desde este sprint.
+- Se activa bloqueo real de S03A: **Preview BKG conserva una colision de auth data QA en `mpUser` para `sellerIA`, y la ruta canonica de smoke local no puede completarse en esta maquina por CDP de Chrome no utilizable**.
+- El frente queda en estos estados no cerrables desde aqui:
+  - drift real de cuenta QA en DB Preview BKG,
+  - normalizacion canonica abortada antes de completar seller/payout/listing,
+  - login smoke canonico sin buyer/seller ejecutados por bloqueo local de browser harness.
+- No se tocaron produccion, `main`, booking, schema, migrations ni envs remotas desde Codex.
 
 ## Proxima accion
 
-- Si Jean + Manuel autorizan lock y existe fuente segura para `QA_BUYER_EMAIL` / `QA_SELLER_EMAIL`, ejecutar `task_id=qa_accounts_normalization` en un frente autorizado y luego reintentar `task_id=marketplace_login_smoke`.
-- Si no hay lock o no existen esos email vars autorizados, S03 queda formalmente bloqueado y no debe forzarse con metodos alternos.
-- S01 no puede cerrarse mientras `marketplace_login_smoke` siga fallando en buyer.
+- Jean debe sanear en Preview BKG el conflicto real de `displayName` sobre `sellerIA` o habilitar una ventana autorizada donde el script canonico pueda completar el upsert sin colision.
+- En paralelo, Manuel debe reintentar `task_id=marketplace_login_smoke` solo desde una maquina/worktree donde Chrome exponga CDP util con el harness canonico.
+- Hasta que ambas condiciones se resuelvan, S03 no puede cerrarse/reintentarse como OK y S01 tampoco puede cerrarse/reintentarse como OK.
 
 ## Actualizacion urgente - Marketplace login QA/produccion - 2026-05-09
 
