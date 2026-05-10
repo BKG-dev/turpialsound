@@ -25,6 +25,7 @@ type EnsureUserResult = {
   updated: boolean
   matchedByEmail: boolean
   matchedByDisplayName: boolean
+  quarantinedConflicts: number
 }
 
 type EnsureEntityResult = {
@@ -98,6 +99,11 @@ function requireEnv(name: string) {
 function maskId(id: string) {
   if (id.length <= 8) return `${id.slice(0, 2)}***${id.slice(-2)}`
   return `${id.slice(0, 4)}***${id.slice(-4)}`
+}
+
+function getLegacyDisplayName(displayName: string, id: string) {
+  const suffix = id.slice(-6).toLowerCase()
+  return `${displayName}__legacy__${suffix}`.slice(0, 50)
 }
 
 function getQaUserSpecs() {
@@ -186,7 +192,28 @@ function resolveQaUserTarget(spec: QaUserSpec, byEmail: QaUserMatch | null, byDi
 async function ensureUser(db: PrismaClient, spec: QaUserSpec): Promise<EnsureUserResult> {
   const passwordHash = await bcrypt.hash(spec.password, 12)
   const { byEmail, byDisplayName } = await findQaUserMatches(db, spec)
-  const target = resolveQaUserTarget(spec, byEmail, byDisplayName)
+  let quarantinedConflicts = 0
+
+  if (byEmail) {
+    const displayNameOnlyConflicts = byDisplayName.filter((candidate) => candidate.id !== byEmail.id)
+
+    if (displayNameOnlyConflicts.length > 0) {
+      for (const conflict of displayNameOnlyConflicts) {
+        await db.mpUser.update({
+          where: { id: conflict.id },
+          data: {
+            displayName: getLegacyDisplayName(spec.displayName, conflict.id),
+          },
+          select: { id: true },
+        })
+      }
+
+      quarantinedConflicts = displayNameOnlyConflicts.length
+    }
+  }
+
+  const refreshed = quarantinedConflicts > 0 ? await findQaUserMatches(db, spec) : { byEmail, byDisplayName }
+  const target = resolveQaUserTarget(spec, refreshed.byEmail, refreshed.byDisplayName)
 
   if (target.targetId) {
     const user = await db.mpUser.update({
@@ -215,6 +242,7 @@ async function ensureUser(db: PrismaClient, spec: QaUserSpec): Promise<EnsureUse
       updated: true,
       matchedByEmail: target.matchedByEmail,
       matchedByDisplayName: target.matchedByDisplayName,
+      quarantinedConflicts,
     }
   }
 
@@ -246,6 +274,7 @@ async function ensureUser(db: PrismaClient, spec: QaUserSpec): Promise<EnsureUse
     updated: false,
     matchedByEmail: false,
     matchedByDisplayName: false,
+    quarantinedConflicts,
   }
 }
 
@@ -370,6 +399,7 @@ async function main() {
               updated: buyer.updated,
               matchedByEmail: buyer.matchedByEmail,
               matchedByDisplayName: buyer.matchedByDisplayName,
+              quarantinedConflicts: buyer.quarantinedConflicts,
             },
             seller: {
               reconciled: true,
@@ -377,6 +407,7 @@ async function main() {
               updated: seller.updated,
               matchedByEmail: seller.matchedByEmail,
               matchedByDisplayName: seller.matchedByDisplayName,
+              quarantinedConflicts: seller.quarantinedConflicts,
             },
           },
           payout: {
@@ -395,6 +426,8 @@ async function main() {
             usersMatchedByEmail: Number(buyer.matchedByEmail) + Number(seller.matchedByEmail),
             usersMatchedByDisplayName:
               Number(buyer.matchedByDisplayName) + Number(seller.matchedByDisplayName),
+            usersQuarantinedFromQaNamespace:
+              Number(buyer.quarantinedConflicts) + Number(seller.quarantinedConflicts),
           },
         },
         null,
