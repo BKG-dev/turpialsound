@@ -1,75 +1,56 @@
 # Next Window Brief - Turpial Sound
 
-**Fecha de actualizacion:** 2026-05-09
-**Frente activo:** Hotfix marketplace login QA/produccion
-**Tipo de nota:** Control Tower / siguiente ventana
+**Fecha de actualizacion:** 2026-05-10
+**Frente activo:** S00B - Replanteo Bus de Control / Marketplace Co-development
+**Tipo de nota:** control tower / siguiente ventana
 
-## Estado urgente
+## Estado actual
 
-- Produccion debe recibir solo el fix runtime de login marketplace si el objetivo es no cambiar nada mas.
-- Commit runtime recomendado: `4f15e51` (`fix(marketplace): repair marketplace user login`).
-- Archivos runtime tocados por ese commit: `actions/marketplace/auth.ts`, `components/marketplace/MarketplaceAuthModal.tsx`.
-- No tocar BCV/tasas: produccion ya devuelve tasa fresca y no necesita cambios en este hotfix.
-- No tocar booking, `/reservas`, Prisma schema, migrations, DB, Vercel envs ni Neon.
-- Usuario QA correcto: `sellerIA`; `sellerID` no es usuario QA canonico.
-- Credenciales QA no se documentan en texto plano; scripts usan `QA_*` desde env autorizado.
-- Rama de documentacion/QA scripts: `Manuel/s04d-qa-env-login-fix-2026-05-09` en commit `8d43d53`.
+- **Rama madre operativa:** `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07`
+- **HEAD base de referencia:** `525602c`
+- **Rama documental activa:** `Manuel/docs-replan-marketplace-codev-bus-2026-05-10`
+- **Bus de Control:** Nivel 2.5 co-development marketplace
+- **`/reservas`:** congelado como zona sana
+- **`/marketplace`:** preview only
 
-## Validacion login
+## Proximas ventanas recomendadas
 
-- Preview validado: `https://turpialsound-j5062s7m3-cerberus77s-projects.vercel.app`.
-- Smoke corto validado: `node scripts/qa-marketplace-login-smoke.mjs`.
-- Resultado: `buyerIA` OK, `sellerIA` OK.
-- `sellerID` falla correctamente si no existe.
+### Ventana 1 - S01 Manuel
 
-## Estado resumido
+- **Sprint:** S01 - BKG Preview Smoke Autonomy
+- **Owner:** Manuel
+- **Reviewer:** Jean
+- **Rama sugerida:** `Manuel/s01-preview-smoke-autonomy-2026-05-10`
+- **Objetivo:** confirmar preview BKG funcional desde `Manuel/*`
+- **Cierre esperado:** Manuel puede validar preview real sin depender de produccion
+- **Prompt base:** `docs/07_handoffs/prompt-s01-manuel-preview-smoke-autonomy-2026-05-10.md`
 
-- Rama madre real: `integration/today-reservas-marketplace-stable-2026-05-07`.
-- Commit estable: `c01ec60`.
-- `/reservas` congelado como zona sana.
-- `/marketplace` activo y funcional en la rama integrada.
-- BCV corregido con tasa fresca.
+### Ventana 2 - S02 Jean
 
-## Regla de entorno DB (obligatoria)
+- **Sprint:** S02 - Marketplace Discovery Runtime Stabilization
+- **Owner:** Jean
+- **Reviewer:** Manuel
+- **Rama sugerida:** `Jean/s02-marketplace-discovery-runtime-stabilization-2026-05-10`
+- **Objetivo:** resolver o clasificar el error Prisma/query de discovery
+- **Cierre esperado:** `/marketplace` estable en Preview o error clasificado con stop real
+- **Prompt base:** `docs/07_handoffs/prompt-s02-jean-discovery-runtime-stabilization-2026-05-10.md`
 
-- `DATABASE_URL`: pooled/pooler.
-- `DIRECT_URL`: direct/no-pooler.
-- Ambas al mismo proyecto/base Neon integrada.
-- Nunca imprimir secretos.
+## Guardrails para la siguiente ventana
 
-## Protocolo obligatorio si marketplace carga vacio
+- Resolver `task_id` exacto en `docs/07_handoffs/qa-dispatcher.json` antes de cualquier QA.
+- No tocar booking, schema, env values ni produccion.
+- No mezclar S01 y S02 en la misma rama.
+- Si una validacion no tiene ruta canonica exacta, detener y reportar `GAP OPERATIVO`.
 
-1. Confirmar branch/commit exacto del deployment.
-2. Revisar Vercel runtime logs.
-3. Buscar logs `marketplace.discovery`.
-4. Distinguir `DB_MISSING` / `QUERY_ERROR` / `ZERO_ACTIVE` / `FILTERED_EMPTY`.
-5. Si aparece Prisma `P2021`, revisar DB target y tablas `mp_*` antes de tocar UI.
-6. Comparar `DATABASE_URL` y `DIRECT_URL` por fingerprint seguro (host hint, pooler true/false, sslmode).
-7. Nunca imprimir secretos.
-8. Corregir env/DB en Vercel Preview solo por Jean.
-9. Redeployar mismo commit.
-10. Solo tocar UI si DB y query estan correctas.
+## Riesgos a monitorear
 
-## Metodologia Oreshnik-Codex 2.0
+1. Secretos expuestos aun sin rotar.
+2. Discovery runtime todavia no clasificado para release.
+3. Colision en madre si no se respetan locks.
 
-- 1 rama madre estable.
-- N worktrees separados.
-- N agentes Codex.
-- 1 owner por lock.
-- 1 commit/push por sprint cerrado.
-- 0 trabajo directo sobre madre.
-- 0 main.
-- 0 produccion.
-- 0 zonas sanas tocadas.
+## Documentos clave
 
-## Roles
-
-- Jean: integracion, Vercel/envs, DB/Prisma/schema/migrations, booking/reservas, rama madre, merges, preview integrado.
-- Manuel: marketplace producto, buyer/seller/admin flow, QA operacional, rates, payout, estados, copy/UX operativo.
-
-## Ola 1
-
-- J1 Docs Control Tower.
-- J2 Preview Runtime Guard.
-- M1 Marketplace Protected Flow E2E.
-- M2 Marketplace QA Harness.
+- `docs/obsidian-vault/00_CENTRAL_TURPIAL.md`
+- `docs/obsidian-vault/BUS_CONTROL_TURPIAL.md`
+- `docs/obsidian-vault/SPRINTS_CODEV_MARKETPLACE_2026-05-10.md`
+- `docs/07_handoffs/session-summary-active.md`

@@ -1,57 +1,74 @@
 ---
 tags: ["#roadmap", "#status/urgent", "#status/live-source"]
+fecha: 2026-05-10
 ---
 
-# Roadmap de Rescate
+# Roadmap de Rescate - Marketplace Turpial Sound
 
-## Estado real activo (2026-05-07)
+## Estado real activo (2026-05-10)
 
-- Rama madre estable: `integration/today-reservas-marketplace-stable-2026-05-07`.
-- Commit estable: `c01ec60`.
-- `/reservas` congelado como zona sana.
-- `/marketplace` activo.
-- BCV corregido con tasa fresca.
+- **Rama madre operativa:** `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07`
+- **HEAD base de referencia:** `525602c`
+- **`/reservas`:** congelado como zona sana
+- **`/marketplace`:** activo en preview, no en produccion
+- **Bus de Control:** Nivel 2.5 co-development marketplace
+- **Jean y Manuel:** habilitados para desarrollo y cierre de sprints marketplace
+- **Gate de `main`/produccion:** Jean
 
-## Incidente clave aprendido
+## Cerrado
 
-- Marketplace vacio en Preview no fue problema de UI/filtros.
-- Causa raiz: DB target incorrecta sin tablas `mp_*`.
-- Error tecnico observado: Prisma `P2021` (`public.mp_listings` inexistente).
-- Solucion real: alinear `DATABASE_URL` (pooled) y `DIRECT_URL` (direct) al mismo proyecto Neon integrado.
+- [x] Marketplace vacio por DB target incorrecta - causa raiz identificada
+- [x] BCV corregido con tasa fresca
+- [x] Login marketplace reparado a nivel runtime
+- [x] Preview env `Manuel/*` funcional en BKG Vercel
+- [x] Payment proof protegido implementado a nivel tecnico
+- [x] Replanteo documental inicial de Obsidian/control bus
 
-## Protocolo obligatorio: marketplace vacio
+## En progreso
 
-1. Confirmar branch/commit exacto del deployment.
-2. Revisar Vercel runtime logs.
-3. Buscar logs `marketplace.discovery`.
-4. Distinguir `DB_MISSING` / `QUERY_ERROR` / `ZERO_ACTIVE` / `FILTERED_EMPTY`.
-5. Ante Prisma `P2021`, revisar DB target y tablas `mp_*` antes de tocar UI.
-6. Comparar `DATABASE_URL` vs `DIRECT_URL` con fingerprint seguro: host hint, pooler true/false, sslmode.
-7. Nunca imprimir secretos.
-8. Corregir env/DB en Preview solo por Jean.
-9. Redeployar mismo commit.
-10. Solo tocar UI si DB y query estan correctas.
+- [ ] **S00B - Replanteo Bus de Control / Marketplace Co-development**
+  - owner: Manuel
+  - rama: `Manuel/docs-replan-marketplace-codev-bus-2026-05-10`
+  - salida esperada: bus 2.5, sprints segregados, prompts S01/S02, handoffs alineados
 
-## Metodologia Oreshnik-Codex 2.0
+## Habilitado para ejecucion inmediata
 
-- 1 rama madre estable.
-- N worktrees separados.
-- N agentes Codex.
-- 1 owner por lock.
-- 1 commit/push por sprint cerrado.
-- 0 trabajo directo sobre madre.
-- 0 main.
-- 0 produccion.
-- 0 zonas sanas tocadas.
+- [ ] **S01 - BKG Preview Smoke Autonomy**
+  - owner: Manuel
+  - reviewer: Jean
+  - cierre: preview BKG autonomo
 
-## Roles
+- [ ] **S02 - Marketplace Discovery Runtime Stabilization**
+  - owner: Jean
+  - reviewer: Manuel
+  - cierre: discovery estable o error Prisma/query clasificado
 
-- Jean: integracion, Vercel/envs, DB/Prisma/schema/migrations, booking/reservas, rama madre, merges, preview integrado.
-- Manuel: marketplace producto, buyer/seller/admin flow, QA operacional, rates, payout, estados, copy/UX operativo.
+## Bloqueado
 
-## Ola 1
+- [ ] **Produccion marketplace**
+  - bloqueado por: S01-S09 incompletos, secretos sin rotar, gate de Jean requerido
 
-- J1 Docs Control Tower.
-- J2 Preview Runtime Guard.
-- M1 Marketplace Protected Flow E2E.
-- M2 Marketplace QA Harness.
+- [ ] **Cambios de schema/migrations**
+  - bloqueado por: lock Jean + Manuel y sprint de arquitectura
+
+## Decision
+
+El plan ya no corre por un solo carril marketplace. Ahora se reparte por ownership:
+
+- Jean toma runtime critico, proofs, payouts, finanzas y release.
+- Manuel toma preview autonomy, login QA, delivery/receipt, UX/action center y discovery publico.
+
+## Riesgos activos
+
+1. **CRIT-001:** secretos expuestos en setup previo. Rotacion obligatoria antes de launch.
+2. **CRIT-002:** error Prisma/query de discovery en intento de produccion. S02 lo resuelve o lo clasifica.
+3. **HIGH-001:** colision humana en madre o zona critica sin lock.
+4. **HIGH-002:** booking `/reservas` tocado por error.
+
+## Hilo conductor
+
+- Mapa central: [[00_CENTRAL_TURPIAL]]
+- Estado del negocio: [[ESTADO_NEGOCIO_TURPIAL_2026-05-10]]
+- Bus de control: [[BUS_CONTROL_TURPIAL]]
+- Plan operativo: [[SPRINTS_CODEV_MARKETPLACE_2026-05-10]]
+- Bugs criticos: [[BUGS_CRITICOS]]

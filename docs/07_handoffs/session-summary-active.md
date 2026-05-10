@@ -1,98 +1,76 @@
 # Session Summary - Activa
 
-## Actualizacion urgente - Marketplace login QA/produccion - 2026-05-09
+## S00B - Replanteo Bus de Control / Marketplace Co-development - 2026-05-10
 
-- Objetivo cerrado: reparar login marketplace sin tocar tasas, booking, `/reservas`, DB, schema, migrations ni envs.
-- Commit productivo de login: `4f15e51` (`fix(marketplace): repair marketplace user login`).
-- Rama con fix runtime: `Manuel/s04b-marketplace-auth-login-fix-2026-05-09` / `deploy/s04b-auth-login-prod-2026-05-09`.
-- Rama actual de documentacion/QA scripts: `Manuel/s04d-qa-env-login-fix-2026-05-09`.
-- Commit de documentacion/QA scripts: `8d43d53` (`fix(qa): load marketplace credentials from env`).
-- Usuario QA correcto: `sellerIA`. `sellerID` no es el usuario QA acordado y debe fallar si no existe.
-- Password QA: no documentar en texto plano; se lee desde `QA_SELLER_PASSWORD` en env local/entorno autorizado.
-- Validacion preview `https://turpialsound-j5062s7m3-cerberus77s-projects.vercel.app`: `buyerIA` y `sellerIA` login OK via smoke `node scripts/qa-marketplace-login-smoke.mjs`.
-- BCV/tasas no forman parte de este hotfix. Produccion ya resuelve BCV fresco; no tocar `lib/bookings/reference-rate.ts` en este frente.
-- Para produccion sin cambios colaterales, desplegar/mergear solo el commit runtime `4f15e51`; no usar cambios de tasas ni refactors.
+- **Tipo de sesion:** documentacion, estrategia, planning y handoff. Cero codigo producto.
+- **Rama activa:** `Manuel/docs-replan-marketplace-codev-bus-2026-05-10`
+- **Base:** `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07`
+- **HEAD base de referencia:** `525602c`
 
-## Diagnostico login sellerIA - 2026-05-09
+## Confirmado
 
-- Problema de codigo previo: `loginMpUser` usaba busqueda ambigua por `email OR displayName`, sin orden deterministico ni fallback case-insensitive.
-- Problema de sesion UI previo: `MarketplaceAuthModal` reconstruia la sesion de login con `isSeller: false`, falseando capacidades del usuario devuelto por DB.
-- Fix aplicado en `4f15e51`:
-  - `identifier.trim()` y password exacto sin trim.
-  - prioridad deterministica: email exacto, email case-insensitive, displayName exacto, displayName case-insensitive.
-  - errores genericos para evitar enumeracion.
-  - sesion devuelta desde DB con `userId`, `email`, `displayName`, `isSeller` y `role`.
-  - modal usa `result.data` sin hardcodear `isSeller`.
-- QA scripts actualizados en `8d43d53` para leer credenciales desde `QA_*` y no hardcodear claves.
+- La rama madre operativa real sigue siendo `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07`.
+- `main` no es la base operativa actual.
+- `/reservas` sigue congelado como zona sana bajo Jean.
+- `/marketplace` sigue en preview, no en produccion.
+- Preview `Manuel/*` esta habilitado en BKG Vercel `turpialsound`.
+- Login marketplace ya esta corregido a nivel runtime; el cierre QA formal pasa a S03.
+- Payment proof protegido ya existe a nivel tecnico; el cierre E2E operativo pasa a S04.
 
-## Estado real integrado - 2026-05-07
+## Decision cerrada
 
-- Rama madre estable actual: `integration/today-reservas-marketplace-stable-2026-05-07`.
-- HEAD base de referencia de integracion: `cbc72e3`.
-- Commit estable operativo validado: `c01ec60` (`fix(marketplace): render active listings on public page`).
-- `/reservas` queda congelado como zona sana.
-- `/marketplace` queda activo y visible en rama integrada.
-- BCV corregido y respondiendo con tasa fresca (incluye fix `a96c247`).
-- Main y produccion no tocados.
+1. **Bus de Control Nivel 2.5**
+   - Jean y Manuel desarrollan marketplace.
+   - Ambos pueden pushear a madre operativa.
+   - Jean sigue gateando `main`, produccion, release, envs criticos, schema y booking.
 
-## Incidente aprendido - Marketplace vacio en Preview (2026-05-07)
+2. **Modelo de sprints segregado**
+   - S01 Manuel - preview autonomy
+   - S02 Jean - discovery stabilization
+   - S03 Manuel - login QA closure
+   - S04 Jean - protected payment proof E2E
+   - S05 Manuel - delivery/receipt
+   - S06 Jean - payout closure
+   - S07 Jean - rates/finance/accounting
+   - S08 Manuel - UX/action center
+   - S09 Manuel - SEO/AEO/discovery publico
+   - S10 Jean - launch readiness / release gate
 
-- Sintoma: `/marketplace` vacio en Preview.
-- No fue causa raiz de UI ni filtros.
-- Causa real: Preview apuntando a DB incorrecta sin tablas `mp_*`.
-- Evidencia tecnica: Prisma `P2021` por ausencia de `public.mp_listings`.
-- Solucion real: corregir `DATABASE_URL` y `DIRECT_URL` al mismo proyecto/base Neon integrada.
+3. **Reglas nuevas de madre operativa**
+   - push de ambos permitido solo con checklist
+   - preferido: rama propia por sprint y luego integracion a madre
+   - push directo a madre solo para docs o hotfix minimo validado
+   - trabajo exploratorio directo sobre madre: prohibido
 
-## Regla obligatoria de conexiones DB
+## Pendiente operacional
 
-- `DATABASE_URL` debe ser pooled/pooler.
-- `DIRECT_URL` debe ser direct/no-pooler.
-- Ambas deben apuntar al mismo proyecto/base Neon integrada.
-- Nunca imprimir secretos.
+- Ejecutar **S01** con Manuel usando `docs/07_handoffs/prompt-s01-manuel-preview-smoke-autonomy-2026-05-10.md`
+- Ejecutar **S02** con Jean usando `docs/07_handoffs/prompt-s02-jean-discovery-runtime-stabilization-2026-05-10.md`
+- Mantener dispatcher QA como fuente canonica antes de cualquier smoke o cierre
+- Rotar secretos antes de S10
 
-## Protocolo obligatorio si marketplace carga vacio
+## Riesgos activos
 
-1. Confirmar branch/commit exacto del deployment.
-2. Revisar runtime logs del deployment.
-3. Buscar logs `marketplace.discovery`.
-4. Distinguir `DB_MISSING` / `QUERY_ERROR` / `ZERO_ACTIVE` / `FILTERED_EMPTY`.
-5. Si hay `P2021`, validar DB target y existencia real de tablas `mp_*` antes de tocar UI.
-6. Comparar `DATABASE_URL` y `DIRECT_URL` con fingerprint seguro (host hint, pooler, sslmode).
-7. Corregir env/DB de Preview solo por Jean.
-8. Redeployar el mismo commit tras corregir target DB.
-9. Solo tocar UI si DB/query/data ya estan correctas.
+- **CRIT-001:** secretos expuestos en setup previo
+- **CRIT-002:** error Prisma/query en discovery de intento productivo
+- **HIGH-001:** colision humana en madre o zona critica sin lock
+- **HIGH-002:** booking tocado fuera de scope
 
-## Smoke base esperado en Preview integrado
+## Notas de trabajo
 
-- `/` responde.
-- `/marketplace` responde.
-- `/reservas` responde.
-- `/api/bcv-rate` responde.
-- `/admin/login` responde.
-- `/ops/payment-review` responde con control de acceso.
-- `/payment-proofs/view` sin token responde error controlado (no `500`).
+- El working tree ya venia sucio en docs/Obsidian antes de esta sesion. No se hizo reset ni stash.
+- Esta sesion se limito a docs/handoffs/Obsidian.
 
-## Metodologia Oreshnik-Codex 2.0
+## Archivos actualizados o creados
 
-- 1 rama madre estable.
-- N worktrees separados.
-- N agentes Codex.
-- 1 owner por lock.
-- 1 commit/push por sprint cerrado.
-- 0 trabajo directo sobre madre.
-- 0 `main`.
-- 0 produccion.
-- 0 cambios en zonas sanas fuera de scope.
-
-## Roles operativos
-
-- Jean: integracion, merges, Vercel/envs, DB/Prisma/schema/migrations, rama madre, preview integrado, booking/reservas.
-- Manuel: marketplace producto, buyer/seller/admin flow, QA operacional, rates, payout, estados, copy/UX operativo.
-
-## Ola 1 (fuente activa)
-
-- J1 Docs Control Tower.
-- J2 Preview Runtime Guard.
-- M2 Marketplace QA Harness.
-- J3 Integration Gatekeeper.
-- M1 Marketplace Protected Flow E2E: fuera de esta integracion prep hasta autorizacion.
+- `docs/obsidian-vault/00_CENTRAL_TURPIAL.md`
+- `docs/obsidian-vault/ESTADO_NEGOCIO_TURPIAL_2026-05-10.md`
+- `docs/obsidian-vault/BUS_CONTROL_TURPIAL.md`
+- `docs/obsidian-vault/SPRINTS_GENERADOS_DESDE_OBSIDIAN_2026-05-10.md`
+- `docs/obsidian-vault/SPRINTS_CODEV_MARKETPLACE_2026-05-10.md`
+- `docs/obsidian-vault/ROADMAP_RESCATE.md`
+- `docs/obsidian-vault/BUGS_CRITICOS.md`
+- `docs/07_handoffs/next-window-brief.md`
+- `docs/07_handoffs/jean-obsidian-control-bus-brief-2026-05-10.md`
+- `docs/07_handoffs/prompt-s01-manuel-preview-smoke-autonomy-2026-05-10.md`
+- `docs/07_handoffs/prompt-s02-jean-discovery-runtime-stabilization-2026-05-10.md`
