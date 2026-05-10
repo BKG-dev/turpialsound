@@ -37,6 +37,15 @@ interface MessageEventInput {
   timestamp: string | null
 }
 
+interface ProcessWhatsappLabInboundMessageInput {
+  provider: 'meta' | 'evolution'
+  messageId: string
+  fromNormalized: string
+  textNormalized: string
+  phoneNumberIdOrInstance: string | null
+  timestamp: string | null
+}
+
 function randomCode(): string {
   const numeric = crypto.randomInt(0, 1_000_000).toString().padStart(6, '0')
   return `TS-${numeric}`
@@ -302,6 +311,19 @@ export async function processInboundTextMessage(input: MessageEventInput): Promi
 
   if (!fromNormalized || !textNormalized) return
 
+  await processWhatsappLabInboundMessage({
+    provider: 'meta',
+    messageId: input.messageId,
+    fromNormalized,
+    textNormalized,
+    phoneNumberIdOrInstance: input.phoneNumberId,
+    timestamp: input.timestamp,
+  })
+}
+
+export async function processWhatsappLabInboundMessage(input: ProcessWhatsappLabInboundMessageInput): Promise<void> {
+  if (!input.messageId || !input.fromNormalized || !input.textNormalized) return
+
   const duplicate = await messageAlreadyReceived(input.messageId)
   if (duplicate) return
 
@@ -311,16 +333,18 @@ export async function processInboundTextMessage(input: MessageEventInput): Promi
       action: ACTION_MESSAGE_RECEIVED,
       nextState: {
         messageId: input.messageId,
-        fromNormalized,
-        textNormalized,
-        phoneNumberId: input.phoneNumberId,
+        fromNormalized: input.fromNormalized,
+        textNormalized: input.textNormalized,
+        phoneNumberId: input.provider === 'meta' ? input.phoneNumberIdOrInstance : null,
+        instance: input.provider === 'evolution' ? input.phoneNumberIdOrInstance : null,
+        provider: input.provider,
         timestamp: input.timestamp,
         receivedAt: new Date().toISOString(),
       },
     },
   })
 
-  const codeHash = sha256Hex(textNormalized)
+  const codeHash = sha256Hex(input.textNormalized)
   const candidates = await findPendingChallengesByCodeHash(codeHash)
   if (candidates.length === 0) return
 
@@ -329,17 +353,17 @@ export async function processInboundTextMessage(input: MessageEventInput): Promi
       await recordChallengeFailure({
         challengeId: challenge.challengeId,
         messageId: input.messageId,
-        fromNormalized,
+        fromNormalized: input.fromNormalized,
         reason: 'EXPIRED',
       })
       continue
     }
 
-    if (!phonesMatchVe(challenge.phoneE164, fromNormalized)) {
+    if (!phonesMatchVe(challenge.phoneE164, input.fromNormalized)) {
       await recordChallengeFailure({
         challengeId: challenge.challengeId,
         messageId: input.messageId,
-        fromNormalized,
+        fromNormalized: input.fromNormalized,
         reason: 'PHONE_MISMATCH',
       })
       continue
@@ -352,7 +376,7 @@ export async function processInboundTextMessage(input: MessageEventInput): Promi
         nextState: {
           challengeId: challenge.challengeId,
           messageId: input.messageId,
-          fromNormalized,
+          fromNormalized: input.fromNormalized,
           verifiedAt: new Date().toISOString(),
         },
       },
