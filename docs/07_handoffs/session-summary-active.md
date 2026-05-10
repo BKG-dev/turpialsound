@@ -11,31 +11,34 @@
 
 ## Resultado real
 
-- **Estado:** BLOQUEADO EN PREVIEW DEPLOY
+- **Estado:** BLOQUEADO EN LOGIN QA
 - **Proyecto BKG confirmado:** `bkgs-projects-829c67c1/turpialsound`
 - **Identidad Vercel confirmada:** `jcarlosleon81-1948`
 - **`.vercel/project.json`:** presente y apuntando a `turpialsound`
 - **Env names confirmados en Preview:** `DATABASE_URL`, `DIRECT_URL`, `MP_JWT_SECRET`, `TS_WEB_BLOB_READ_WRITE_TOKEN`, `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN`, `QA_BUYER_IDENTIFIER`, `QA_BUYER_PASSWORD`, `QA_SELLER_IDENTIFIER`, `QA_SELLER_PASSWORD`
-- **Deploy attempt 1:** `https://turpialsound-1z5zoiwoy-bkgs-projects-829c67c1.vercel.app` -> `Error` durante build
-- **Deploy attempt 2:** `https://turpialsound-fmy0je4lc-bkgs-projects-829c67c1.vercel.app` -> `Error` durante build
+- **Preview BKG usado:** `https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app`
+- **Alias de rama:** `https://turpialsound-git-manuel-s01-previ-f46263-bkgs-projects-829c67c1.vercel.app`
+- **Branch/commit reportado por Vercel:** `Manuel/s01-preview-smoke-autonomy-2026-05-10` @ `30e7e0d`
+- **`preview-runtime-guard.ts`:** `PASS` / `OK`
+- **DB target:** pooled + direct consistentes, mismo proyecto/base probable = `yes`
+- **Marketplace metadata:** `mp_*` = `15`, `mp_listings` = `true`, `mp_users` = `true`, `ACTIVE` = `8`
+- **Smoke HTTP base:** `/` `200`, `/marketplace` `200`, `/reservas` `200`, `/api/bcv-rate` `200`, `/admin/login` `200`, `/ops/payment-review` `200`, `/payment-proofs/view` `400` controlado sin token
+- **`task_id=marketplace_login_smoke`:** ejecutado 2 veces con script canonico sobre Preview BKG
 
 ## Bloqueo rojo
 
-- La tarea S01 exige Preview BKG accesible y atribuible a la rama `Manuel/*`.
-- Los dos deploys generaron URL valida bajo `bkgs-projects-829c67c1`, pero Vercel devolvio `Error` durante `Building...` en ambos intentos.
-- Se activa la stop condition: **preview no despliega o no responde**.
+- El Preview BKG ya no esta bloqueado y el runtime guard da `PASS`, asi que el bloqueo rojo remanente se mueve a QA de login.
+- El script canonico `node scripts/qa-marketplace-login-smoke.mjs` corre fuera del sandbox, abre el modal correcto y falla de forma reproducible en buyer con `usuario o contrasena incorrectos`.
+- Se activa el bloqueo real: **`marketplace_login_smoke` falla en buyerIA sobre Preview BKG valido**.
 - Por esa razon:
-  - no se corrio `preview-runtime-guard.ts`,
-  - no se ejecuto smoke HTTP,
-  - no se corrio `task_id=marketplace_login_smoke`.
+  - seller no llega a ejecutarse dentro del script porque el flujo se detiene en buyer,
+  - S01 no queda cerrado todavia.
 
 ## Proxima accion
 
-- Reintentar el deploy Preview BKG desde esta misma rama cuando Vercel deje de devolver error de build vacio.
-- Si el siguiente deploy queda `Ready`, correr en secuencia:
-  - `npx tsx scripts/diagnostics/preview-runtime-guard.ts --base-url <preview-bkg-url>`
-  - smoke pasivo de `/`, `/marketplace`, `/reservas`, `/api/bcv-rate`, `/admin/login`, `/ops/payment-review`, `/payment-proofs/view`
-  - `task_id=marketplace_login_smoke` usando el script canonico sin hardcodear credenciales
+- Tratar el bloqueo remanente como frente de login QA, no como problema de preview deploy.
+- Verificar que `QA_BUYER_IDENTIFIER` y `QA_BUYER_PASSWORD` en Preview correspondan a la cuenta buyer canonica esperada por el smoke.
+- Si hay drift de cuenta QA, normalizar cuentas con la ruta canonica documentada antes de reintentar el login smoke.
 
 ## Actualizacion urgente - Marketplace login QA/produccion - 2026-05-09
 
