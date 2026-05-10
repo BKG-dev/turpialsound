@@ -157,3 +157,11 @@
 - Meta no valida el codigo del challenge; Meta solo entrega el mensaje entrante al webhook.
 - La validacion de codigo y telefono ocurre 100% en backend del lab.
 - Limitacion de numeracion: `from/wa_id` puede llegar sin `+`; se aplica normalizacion tolerante para Venezuela.
+
+## LAB Evolution Webhook - 2026-05-10
+
+- Endpoint: `POST /api/whatsapp/evolution-webhook`.
+- Gate fail-closed: si `EVOLUTION_WEBHOOK_ENABLED !== true`, responde `404`.
+- Autenticacion aceptada por cualquiera de estas vias:
+  - Header `x-evolution-secret`.
+  - Query param `?secret=...` (fallback para Evolution Manager cuando no envia header).

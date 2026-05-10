@@ -12,9 +12,11 @@ export async function POST(request: NextRequest) {
   }
 
   const expectedSecret = process.env.EVOLUTION_WEBHOOK_SECRET?.trim() ?? ''
-  const receivedSecret = request.headers.get('x-evolution-secret')?.trim() ?? ''
+  const headerSecret = request.headers.get('x-evolution-secret')?.trim() ?? ''
+  const querySecret = request.nextUrl.searchParams.get('secret')?.trim() ?? ''
+  const isAuthorized = headerSecret === expectedSecret || querySecret === expectedSecret
 
-  if (!expectedSecret || receivedSecret !== expectedSecret) {
+  if (!expectedSecret || !isAuthorized) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
