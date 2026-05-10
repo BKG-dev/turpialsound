@@ -26,11 +26,12 @@ fecha: 2026-05-10
 ### CRIT-002: Error Prisma/query en discovery durante intento de deploy productivo
 
 - **Severidad:** CRITICO
-- **Estado:** ABIERTO - requiere clasificacion
-- **Descripcion:** el intento de produccion alrededor de `525602c` disparo error Prisma/query en marketplace discovery
+- **Estado:** ABIERTO - requiere reintento S02 en Preview BKG
+- **Descripcion:** el intento de produccion alrededor de `525602c` disparo error Prisma/query en marketplace discovery. Jean corrio S02 con el runner `7e8c40a`, pero el bus se bloqueo por `GAP OPERATIVO` al no existir `task_id` exacto en el dispatcher. Un smoke hecho sobre URL historica de Cerberus NO cierra este riesgo.
 - **Owner:** Jean (fix o clasificacion runtime) + Manuel (review)
 - **Sprint asociado:** S02
 - **Bloquea:** produccion
+- **Accion requerida:** pushear el hotfix documental del Bus, reintentar S02 con el runner actualizado y cerrar solo con Preview bajo `bkgs-projects-829c67c1`
 
 ### CRIT-003: No desplegar a produccion desde branch head no verificado
 
@@ -81,7 +82,7 @@ fecha: 2026-05-10
 
 - **Severidad:** MEDIO
 - **Estado:** MONITOR
-- **Descripcion:** algunos sprints futuros pueden requerir ruta QA exacta aun no indexada en dispatcher
+- **Descripcion:** el gap detectado en S02 confirmo que un runner puede quedar por delante del dispatcher; un Preview historico de Cerberus tampoco puede suplir una ruta canonica faltante
 - **Accion:** si falta entrada exacta, detenerse y registrar `GAP OPERATIVO`
 
 ## Confirmado como cerrado

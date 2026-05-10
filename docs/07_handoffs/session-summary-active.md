@@ -1,61 +1,48 @@
 # Session Summary - Activa
 
-## S00C — Agent Control Bus Runner — 2026-05-10
+## S00D - Fix Control Bus S02 Unblock - 2026-05-10
 
-- **Tipo de sesion:** documentacion, metodologia, automatizacion operativa por prompts. Cero codigo producto.
-- **Rama activa:** `Manuel/docs-agent-control-bus-runner-2026-05-10`
-- **Base:** `Manuel/docs-replan-marketplace-codev-bus-2026-05-10` (que a su vez basea en `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07`)
-- **HEAD base de referencia:** `525602c`
+- **Tipo de sesion:** hotfix documental del Bus de Control. Cero codigo producto, cero runtime, cero booking.
+- **Rama activa:** `Manuel/docs-control-bus-s02-unblock-2026-05-10`
+- **Base:** `origin/Manuel/docs-agent-control-bus-runner-2026-05-10`
+- **HEAD base de referencia:** `7e8c40a`
 
-## Entregable creado
+## Estado confirmado
 
-- `docs/07_handoffs/AGENT_CONTROL_BUS_RUNNER.md` — Prompt universal para agentes Codex de Jean y Manuel.
+- Jean intento ejecutar **S02** con el runner `7e8c40a`.
+- El runner cayo en `GAP OPERATIVO` porque `docs/07_handoffs/qa-dispatcher.json` no tenia `task_id` exacto para discovery runtime stabilization.
+- El arbol local sucio del workspace original no debe bloquear por si solo si el sprint puede migrarse a un worktree limpio.
+- Un smoke hecho contra URLs con scope `cerberus77s-projects` NO vale para cerrar S02.
+- El cierre valido de S02 exige Preview BKG bajo `bkgs-projects-829c67c1`.
 
-## Que resuelve
+## Hotfix en curso
 
-Antes: coordinacion de sprints marketplace por copy/paste entre chats.
-Ahora: cualquier agente Codex lee `AGENT_CONTROL_BUS_RUNNER.md` y ejecuta su carril segun su rol.
+- Alta de `task_id=S02_MARKETPLACE_DISCOVERY_RUNTIME_STABILIZATION` en el dispatcher QA.
+- Runner endurecido para:
+  - exigir worktree limpio cuando el workspace original este sucio,
+  - no bloquear por un `?? var/` aislado si se puede crear ese worktree,
+  - exigir `vercel whoami` y `.vercel/project.json` antes de Preview,
+  - aceptar solo Preview `bkgs-projects-829c67c1`,
+  - rechazar `cerberus77s-projects`,
+  - recordar que Production sigue prohibida.
 
-El runner incluye:
-- Entrada obligatoria (OPERATOR, SPRINT_ID, MODE)
-- Lectura del estado estrategico versionado
-- Identificacion de rol (Jean vs Manuel) con zonas autorizadas/prohibidas
-- Definiciones de sprint referenciadas desde `SPRINTS_CODEV_MARKETPLACE_2026-05-10.md`
-- Guardrails globales (anti-colision, anti-corrupcion, anti-fragmentacion)
-- Flujo de ejecucion completo (preflight → rama → implementar → validar → documentar → commit → push → reportar)
-- Flujo de alineacion (MODE=align) y cierre (MODE=close)
-- Reglas de QA canonico via dispatcher
-- Checklist de push a madre
-- Locks por dominio
-- 10 stop conditions universales
-- Ejemplo completo con S01 Manuel
+## Desbloqueo esperado
 
-## Confirmado
-
-- La rama madre operativa real sigue siendo `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07`.
-- `main` no es la base operativa actual.
-- `/reservas` sigue congelado como zona sana bajo Jean.
-- `/marketplace` sigue en preview, no en produccion.
-- Bus de Control Nivel 2.5: Jean y Manuel co-developean marketplace.
-- Sprints S01-S10 definidos en `SPRINTS_CODEV_MARKETPLACE_2026-05-10.md`.
-
-## Pendiente operacional
-
-- Ejecutar **S01** con Manuel usando `AGENT_CONTROL_BUS_RUNNER.md` con `OPERATOR=Manuel SPRINT_ID=S01 MODE=execute`.
-- Ejecutar **S02** con Jean usando `AGENT_CONTROL_BUS_RUNNER.md` con `OPERATOR=Jean SPRINT_ID=S02 MODE=execute`.
-- Mantener dispatcher QA como fuente canonica antes de cualquier smoke o cierre.
-- Rotar secretos antes de S10.
+- S02 queda desbloqueado cuando este hotfix del Bus quede pusheado.
+- Proxima accion de Jean: reintentar `OPERATOR=Jean SPRINT_ID=S02 MODE=execute` usando el runner actualizado.
 
 ## Riesgos activos
 
 - **CRIT-001:** secretos expuestos en setup previo.
-- **CRIT-002:** error Prisma/query en discovery de intento productivo.
+- **CRIT-002:** discovery runtime sigue sin clasificacion final hasta el reintento de S02 en BKG.
 - **HIGH-001:** colision humana en madre o zona critica sin lock.
 
-## Archivos creados
+## Archivos objetivo del hotfix
 
 - `docs/07_handoffs/AGENT_CONTROL_BUS_RUNNER.md`
-
-## Archivos actualizados
-
+- `docs/07_handoffs/qa-dispatcher.json`
+- `docs/07_handoffs/qa-canonical-runbook.md`
 - `docs/07_handoffs/session-summary-active.md`
+- `docs/07_handoffs/next-window-brief.md`
+- `docs/obsidian-vault/BUGS_CRITICOS.md`
+- `docs/obsidian-vault/SPRINTS_CODEV_MARKETPLACE_2026-05-10.md`

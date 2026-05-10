@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-04-24",
+  "updated_at": "2026-05-10",
   "source_of_truth": {
     "dispatcher": "docs/07_handoffs/qa-dispatcher.json",
     "runbook": "docs/07_handoffs/qa-canonical-runbook.md",
@@ -120,6 +120,67 @@
       ],
       "last_validated_at": "2026-04-23",
       "notes": "Validacion oficial manual en preview para uploads nuevos de listing image hacia Blob publico no-booking."
+    },
+    "S02_MARKETPLACE_DISCOVERY_RUNTIME_STABILIZATION": {
+      "task_id": "S02_MARKETPLACE_DISCOVERY_RUNTIME_STABILIZATION",
+      "mode": "manual_preview",
+      "canonical_script": null,
+      "preconditions": [
+        "`vercel whoami` ejecutado y consistente con el scope operativo antes de tocar Preview",
+        "`.vercel/project.json` presente y revisado antes de Preview",
+        "Preview vigente bajo scope `bkgs-projects-829c67c1`",
+        "La URL objetivo NO contiene `cerberus77s-projects`",
+        "La validacion NO usa Production",
+        "Si el workspace original esta sucio, la ejecucion ocurre en worktree limpio"
+      ],
+      "canonical_manual_route": [
+        "Si el workspace original esta sucio, crear o reusar un worktree limpio antes de ejecutar S02.",
+        "Ejecutar `vercel whoami` y confirmar identidad/scope antes de cualquier smoke o diagnostico.",
+        "Abrir `.vercel/project.json` y confirmar que el proyecto objetivo corresponde al Preview BKG esperado.",
+        "Aceptar solo una URL Preview vigente bajo `bkgs-projects-829c67c1`.",
+        "Rechazar cualquier URL que contenga `cerberus77s-projects` o apunte a Production.",
+        "Ejecutar `npx tsx scripts/diagnostics/preview-runtime-guard.ts --smoke-http --base-url <preview_bkg_url>` como diagnostico seguro.",
+        "Hacer smoke del mismo Preview BKG sobre `/`, `/marketplace`, `/reservas`, `/api/bcv-rate`, `/admin/login`, `/ops/payment-review` y `/payment-proofs/view`.",
+        "Clasificar el resultado de discovery en exactamente uno de estos estados: `OK`, `DB_MISSING`, `QUERY_ERROR`, `ZERO_ACTIVE`, `FILTERED_EMPTY`, `UNKNOWN`.",
+        "Documentar evidencia y detenerse si el hallazgo exige schema, DB manual, env change, booking o Preview fuera de BKG."
+      ],
+      "required_routes": [
+        "/",
+        "/marketplace",
+        "/reservas",
+        "/api/bcv-rate",
+        "/admin/login",
+        "/ops/payment-review",
+        "/payment-proofs/view"
+      ],
+      "classification_outcomes": [
+        "OK",
+        "DB_MISSING",
+        "QUERY_ERROR",
+        "ZERO_ACTIVE",
+        "FILTERED_EMPTY",
+        "UNKNOWN"
+      ],
+      "allowed_fallbacks": [
+        "Corregir solo la precondicion documentada y reintentar la misma ruta canonica",
+        "Si cambia el deploy vigente, refrescar el Preview dentro del mismo scope `bkgs-projects-829c67c1`",
+        "Si no existe Preview BKG utilizable, detenerse y reportar la precondicion exacta"
+      ],
+      "forbidden_fallbacks": [
+        "Usar URLs `cerberus77s-projects` como smoke de cierre",
+        "Usar Production o dominios productivos",
+        "cdp improvisado",
+        "reverse engineering de server actions",
+        "protocolo HTTP ad hoc para UI flows"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/AGENT_CONTROL_BUS_RUNNER.md",
+        "docs/07_handoffs/preview-runtime-guard-2026-05-07.md",
+        "docs/07_handoffs/session-summary-active.md",
+        "docs/obsidian-vault/SPRINTS_CODEV_MARKETPLACE_2026-05-10.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Ruta canonica exacta agregada para desbloquear S02 despues del GAP OPERATIVO detectado en el runner 7e8c40a. El cierre de S02 solo vale con Preview BKG bajo `bkgs-projects-829c67c1`."
     },
     "payment_proof_sensitive_preview": {
       "task_id": "payment_proof_sensitive_preview",

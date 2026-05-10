@@ -1,6 +1,6 @@
 # AGENT CONTROL BUS RUNNER — Turpial Sound Marketplace
 
-> **Version:** 1.0.0
+> **Version:** 1.0.1
 > **Fecha:** 2026-05-10
 > **Proposito:** Prompt universal para cualquier agente Codex (Jean o Manuel) que ejecute sprints del Bus de Control Marketplace.
 > **Instruccion unica de entrada:** `Lee docs/07_handoffs/AGENT_CONTROL_BUS_RUNNER.md y ejecuta tu carril segun tu rol.`
@@ -185,16 +185,32 @@ El agente DEBE verificar estos guardrails antes de cualquier accion:
 2. Verificar que OPERATOR coincide con Owner principal del sprint.
 3. Verificar guardrails globales (seccion 5).
 4. Verificar que la base branch existe en remote.
-5. Verificar working tree: si esta sucio fuera de docs permitidos, reportar y detener.
+5. Verificar working tree del workspace original:
+   - si esta limpio, el sprint puede ejecutarse ahi;
+   - si esta sucio pero el agente puede crear un worktree limpio desde la base del sprint, eso NO bloquea por si solo (ejemplo: `?? var/`);
+   - si esta sucio y NO puede crear worktree limpio, reportar precondicion fallida y detener.
 
 ### Paso 2 — Crear rama
+
+La ejecucion del sprint SIEMPRE debe ocurrir en un arbol limpio. Si el workspace original esta sucio, el worktree limpio es obligatorio.
+
+Si el workspace original esta limpio:
 
 ```bash
 git fetch origin
 git checkout -b <rama_recomendada> origin/<base_branch>
 ```
 
-Si la rama ya existe localmente, preguntar si reusar o crear nueva.
+Si el workspace original esta sucio:
+
+```bash
+git fetch origin
+git worktree add -b <rama_recomendada> .worktrees/<sprint-slug> origin/<base_branch>
+cd .worktrees/<sprint-slug>
+```
+
+Si la rama ya existe localmente y ya tiene worktree limpio reutilizable, reusarlo.
+Si la rama ya esta ocupada por otra ejecucion activa, reportar `COLISION`.
 
 ### Paso 3 — Implementar
 
@@ -207,6 +223,11 @@ Ejecutar las tareas del sprint dentro de las zonas autorizadas. Reglas:
 ### Paso 4 — Validar
 
 Ejecutar la validacion minima definida en el sprint. Reglas:
+- Antes de cualquier Preview, ejecutar `vercel whoami`.
+- Antes de cualquier Preview, verificar `.vercel/project.json`.
+- Aceptar solo Preview URLs bajo scope `bkgs-projects-829c67c1`.
+- Rechazar cualquier URL que contenga `cerberus77s-projects`.
+- Production sigue prohibida aunque la URL responda `200`.
 - Antes de cualquier QA, resolver `task_id` exacto en `docs/07_handoffs/qa-dispatcher.json`.
 - Si la validacion requiere un `task_id` que no existe en el dispatcher, detenerse y reportar `GAP OPERATIVO`.
 - Si la validacion requiere un `task_id` que existe, usar la ruta canonica exacta del dispatcher.
@@ -348,6 +369,7 @@ Fuente de despacho obligatoria: `docs/07_handoffs/qa-dispatcher.json`
 | task_id | Modo | Script canonico |
 |---------|------|----------------|
 | `qa_accounts_normalization` | script | `npx tsx scripts/setup-marketplace-qa-accounts.ts` |
+| `S02_MARKETPLACE_DISCOVERY_RUNTIME_STABILIZATION` | manual_preview | N/A - manual con `preview-runtime-guard.ts` + clasificacion canonica |
 | `marketplace_login_smoke` | script | `node scripts/qa-marketplace-login-smoke.mjs` |
 | `buyer_seller_admin_smoke` | script | `node scripts/qa-marketplace-qa-accounts.mjs` |
 | `seller_publish_blob_public_preview` | manual_preview | N/A — manual |
@@ -406,6 +428,7 @@ Independientemente del sprint, el agente DEBE detenerse si:
 8. **BOOKING TOCADO:** El diff incluye archivos de booking `/reservas`.
 9. **MAIN TOCADO:** El diff incluye cambios que afectan `main`.
 10. **SECRETO EN DIFF:** El diff contiene credenciales, tokens o secretos en texto plano.
+11. **PREVIEW INVALIDO:** La validacion intenta cerrar con una URL fuera de `bkgs-projects-829c67c1`, usa `cerberus77s-projects`, omite `vercel whoami` o `.vercel/project.json`, o apunta a Production.
 
 ---
 

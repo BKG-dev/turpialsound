@@ -60,11 +60,11 @@ base: integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07
 - **Base branch:** `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07`
 - **Zonas autorizadas:** discovery/listings runtime, logs concisos, docs de hallazgo
 - **Zonas prohibidas:** booking, schema/migrations, envs, produccion
-- **Validacion minima:** reproducir o clasificar el error con runtime logs + `preview-runtime-guard.ts`; smoke preview de `/marketplace` sin usar metodos ad hoc
+- **Validacion minima:** `task_id=S02_MARKETPLACE_DISCOVERY_RUNTIME_STABILIZATION` desde dispatcher; `preview-runtime-guard.ts` sobre Preview BKG y clasificacion exacta `OK | DB_MISSING | QUERY_ERROR | ZERO_ACTIVE | FILTERED_EMPTY | UNKNOWN` con smoke de `/`, `/marketplace`, `/reservas`, `/api/bcv-rate`, `/admin/login`, `/ops/payment-review` y `/payment-proofs/view`
 - **Preview requerido:** si
 - **Push a madre permitido:** si, tras fix minimo validado o cierre documental con hallazgo reproducible
 - **Production permitido:** no hasta gate explicito
-- **Stop condition:** el fix exige schema, DB manual, env change o toca booking
+- **Stop condition:** el fix exige schema, DB manual, env change o toca booking; la validacion cae en `GAP OPERATIVO`; o el smoke intenta cerrar con Preview fuera de `bkgs-projects-829c67c1` o con URL `cerberus77s-projects`
 
 ### S03 - Auth/Login QA Closure
 

@@ -32,15 +32,19 @@ Usar primero el dispatcher y luego la ruta canonica documentada. No buscar scrip
    - Local QA por defecto: `http://localhost:3002`
    - Si la app corre en otro puerto, exportar `APP_URL` explicito antes de usar scripts
    - Preview para Blob/media: usar URL real del ultimo deploy
-2. Confirmar Chrome instalado en:
+   - Para S02 discovery runtime: usar solo Preview bajo `bkgs-projects-829c67c1`; no cerrar con URLs `cerberus77s-projects`
+2. Antes de cualquier Preview actual:
+   - ejecutar `vercel whoami`
+   - revisar `.vercel/project.json`
+3. Confirmar Chrome instalado en:
    - `C:\Program Files\Google\Chrome\Application\chrome.exe`
-3. Confirmar cuentas QA persistentes cuando haya drift de datos:
+4. Confirmar cuentas QA persistentes cuando haya drift de datos:
    - buyer: `QA_BUYER_IDENTIFIER` / `QA_BUYER_PASSWORD`
    - seller: `QA_SELLER_IDENTIFIER` / `QA_SELLER_PASSWORD`
-4. Confirmar credenciales admin solo para smoke local:
+5. Confirmar credenciales admin solo para smoke local:
    - principal: `QA_ADMIN_IDENTIFIER` / `QA_ADMIN_PASSWORD`
    - alterno: `Igor` con password local fuera del repo
-5. Confirmar envs minimas segun frente:
+6. Confirmar envs minimas segun frente:
    - normalizacion QA: `DATABASE_URL`
    - media publica no-booking: `TS_WEB_BLOB_READ_WRITE_TOKEN`
    - scripts headless: `APP_URL` opcional, `DEBUG_PORT` opcional, `REUSE_BROWSER` opcional
@@ -56,6 +60,7 @@ Usar primero el dispatcher y luego la ruta canonica documentada. No buscar scrip
 | Seller shell smoke | Local | `node scripts/qa-marketplace-seller-smoke.mjs` | app viva en `APP_URL`; credenciales seller locales validas | seller entra a dashboard y valida `Mis Ventas`, `Mensajes` y `Cobros` |
 | Admin smoke | Local | `node scripts/qa-marketplace-admin-smoke.mjs` | app viva en `APP_URL`; credenciales admin validas | admin entra al shell, tabs principales visibles y sin bloqueo basico |
 | Reconcile / payout lectura puntual | Local | `node scripts/qa-marketplace-reconcile.mjs` | app viva en `APP_URL`; seller/admin accesibles | lectura puntual de `Cobros` y superficies de conciliacion sin rerun completo |
+| S02 discovery runtime stabilization | Preview manual | `N/A - dispatcher exacto + preview-runtime-guard.ts` | `vercel whoami`; `.vercel/project.json`; Preview vigente bajo `bkgs-projects-829c67c1`; worktree limpio si el workspace original esta sucio | `/marketplace` queda estable o clasificado en `OK`, `DB_MISSING`, `QUERY_ERROR`, `ZERO_ACTIVE`, `FILTERED_EMPTY` o `UNKNOWN` sin usar Cerberus ni Production |
 | Blob/media verification | Preview manual | `N/A - validacion manual obligatoria por ahora` | preview viva; `TS_WEB_BLOB_READ_WRITE_TOKEN` configurado; login sellerIA posible | listing nuevo publicado con imagen nueva y URL final `https://*.public.blob.vercel-storage.com/...` |
 
 ## Regla de despacho
@@ -64,6 +69,14 @@ Usar primero el dispatcher y luego la ruta canonica documentada. No buscar scrip
 - Si el `task_id` existe y tiene ruta canonica exacta, usar esa ruta.
 - Si el `task_id` no existe, o existe pero no tiene ruta ejecutable exacta, detenerse y reportar `GAP OPERATIVO`.
 - No usar este runbook narrativo como sustituto del dispatcher.
+
+## Actualizacion 2026-05-10 - preview scope vigente para S02
+
+- El `task_id` exacto para discovery runtime es `S02_MARKETPLACE_DISCOVERY_RUNTIME_STABILIZATION`.
+- Las URLs `cerberus77s-projects` que aparecen mas abajo son evidencia historica de otras validaciones y NO sirven para cerrar S02.
+- Para discovery runtime actual, el unico scope valido de Preview es `bkgs-projects-829c67c1`.
+- Antes de cualquier Preview actual, correr `vercel whoami` y revisar `.vercel/project.json`.
+- Production sigue prohibida.
 
 ## Cuándo NO redescubrir alternativas
 
@@ -173,7 +186,7 @@ Regla adicional para este frente:
 - Si el objetivo no tiene entrada exacta, el primer resultado correcto es clasificarlo como `manual_preview`, `manual_local`, `blocked` o `gap`, no improvisar ejecucion.
 
 Siguiente paso minimo al retomar:
-1. reusar preview `mpwpxahfc` o el ultimo `Ready` mas reciente si cambia el deploy
+1. usar el ultimo Preview valido del scope vigente; no reutilizar `cerberus77s-projects` para cierres actuales
 2. ejecutar el smoke corto desde una sesion con browser interactivo funcional
 3. buyerIA adjunta proof nuevo
 4. admin/super abre el proof por `/api/marketplace/payment-proofs/...`
