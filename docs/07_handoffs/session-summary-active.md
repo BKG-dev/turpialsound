@@ -1,5 +1,38 @@
 # Session Summary - Activa
 
+## S01 - BKG Preview Smoke Autonomy - 2026-05-10
+
+- **Operador:** Manuel
+- **Modo:** `execute`
+- **Rama activa:** `Manuel/s01-preview-smoke-autonomy-2026-05-10`
+- **Base:** `origin/integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07`
+- **HEAD base de referencia:** `525602c`
+- **Fuente de runner usada:** `origin/Manuel/docs-control-bus-s02-unblock-2026-05-10`
+
+## Resultado real
+
+- **Estado:** BLOQUEADO EN PREFLIGHT
+- **Proyecto BKG confirmado:** `bkgs-projects-829c67c1/turpialsound`
+- **Identidad Vercel confirmada:** `jcarlosleon81-1948`
+- **`.vercel/project.json`:** recreado localmente en el worktree limpio como correccion de precondicion, sin stage
+- **Env names confirmados en Preview:** `DATABASE_URL`, `DIRECT_URL`, `MP_JWT_SECRET`, `TS_WEB_BLOB_READ_WRITE_TOKEN`, `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN`
+- **Env names faltantes en Preview:** `QA_BUYER_IDENTIFIER`, `QA_BUYER_PASSWORD`, `QA_SELLER_IDENTIFIER`, `QA_SELLER_PASSWORD`
+
+## Bloqueo rojo
+
+- La tarea S01 exige confirmar todos los env names criticos en Preview BKG antes de deploy/smoke.
+- Al faltar los `QA_*` en Preview, se activa la stop condition: **falta cualquiera de los env names criticos**.
+- Por esa razon:
+  - no se hizo deploy Preview nuevo,
+  - no se corrio `preview-runtime-guard.ts`,
+  - no se ejecuto smoke HTTP,
+  - no se corrio `task_id=marketplace_login_smoke`.
+
+## Proxima accion
+
+- Jean o el gatekeeper de Vercel debe restaurar los cuatro `QA_*` en Preview BKG `turpialsound`.
+- Luego Manuel puede reintentar `OPERATOR=Manuel SPRINT_ID=S01 MODE=execute` desde esta misma rama o un worktree limpio equivalente.
+
 ## Actualizacion urgente - Marketplace login QA/produccion - 2026-05-09
 
 - Objetivo cerrado: reparar login marketplace sin tocar tasas, booking, `/reservas`, DB, schema, migrations ni envs.
