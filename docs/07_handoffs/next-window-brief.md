@@ -1,32 +1,34 @@
 # Next Window Brief - Turpial Sound
 
 **Fecha de actualizacion:** 2026-05-10
-**Frente activo:** S01 - BKG Preview Smoke Autonomy
-**Tipo de nota:** Control Tower / preview validado, bloqueo real en login QA
+**Frente activo:** S03 - Auth/Login QA Closure
+**Tipo de nota:** Control Tower / bloqueo real en normalizacion QA y auth data
 
-## Estado actual de S01
+## Estado actual de S03
 
-- **Rama de trabajo:** `Manuel/s01-preview-smoke-autonomy-2026-05-10`
-- **Base:** `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07` @ `525602c`
+- **Rama de trabajo:** `Manuel/s03-auth-login-qa-closure-2026-05-10`
+- **Base inmediata:** `origin/Manuel/s01-preview-smoke-autonomy-2026-05-10`
+- **Base operativa ultima:** `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07` @ `525602c`
 - **Runner fuente:** `origin/Manuel/docs-control-bus-s02-unblock-2026-05-10`
-- **Scope validado:** `bkgs-projects-829c67c1/turpialsound`
-- **Preview BKG valido:** `https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app`
-- **Alias de rama:** `https://turpialsound-git-manuel-s01-previ-f46263-bkgs-projects-829c67c1.vercel.app`
-- **Smoke:** runtime guard `PASS`; rutas clave responden; `/payment-proofs/view` da `400` controlado sin token
-- **Motivo del bloqueo remanente:** `task_id=marketplace_login_smoke` falla en buyer con `usuario o contrasena incorrectos`
-- **Env names criticos:** confirmados en Preview BKG, incluyendo `QA_*`
+- **Preview BKG valido heredado de S01:** `https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app`
+- **Estado de smoke heredado:** `/` `200`, `/marketplace` `200`, `/reservas` `200`, `/api/bcv-rate` `200`, `/admin/login` `200`, `/ops/payment-review` `200`, `/payment-proofs/view` `400` controlado
+- **`task_id=marketplace_login_smoke`:** buyer falla con `usuario o contrasena incorrectos`; seller no corre por corte temprano
+- **`task_id=qa_accounts_normalization`:** existe en dispatcher, pero no es ejecutable aqui con las precondiciones disponibles
+- **Precondiciones faltantes para normalizacion:** `QA_BUYER_EMAIL` y `QA_SELLER_EMAIL` no estan en Preview ni en env local de este worktree
 
 ## Bloqueo rojo
 
-- S01 ya no esta bloqueado por Preview ni por env names.
-- El bloqueo real queda en el smoke canonico de login sobre buyerIA.
+- S03 no esta bloqueado por Preview BKG ni por `QA_*` basicos.
+- El bloqueo real queda en saneamiento de auth data QA fuera del scope operativo normal de S03.
 - Cerberus no cierra nada y no se uso como fallback.
 
 ## Siguiente ventana recomendada
 
-1. Resolver el frente de credenciales/login QA buyer en Preview BKG.
-2. Reintentar `task_id=marketplace_login_smoke` con el mismo script canonico.
-3. Si buyer y seller pasan, cerrar S01 y mover el frente formal a S03.
+1. Confirmar si Jean + Manuel autorizan lock para normalizacion QA/auth data.
+2. Si el lock existe y se dispone de `QA_BUYER_EMAIL` y `QA_SELLER_EMAIL` autorizados, correr `task_id=qa_accounts_normalization`.
+3. Reintentar `task_id=marketplace_login_smoke`.
+4. Si buyer y seller pasan, cerrar S03 y reintentar/cerrar S01.
+5. Jean debe quedarse en `S04 align` hasta que buyer/seller QA quede realmente cerrado, porque S04 exige `buyerIA` operativo como precondicion funcional.
 
 **Fecha de actualizacion:** 2026-05-09
 **Frente activo:** Hotfix marketplace login QA/produccion

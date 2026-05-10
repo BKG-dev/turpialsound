@@ -1,44 +1,49 @@
 # Session Summary - Activa
 
-## S01 - BKG Preview Smoke Autonomy - 2026-05-10
+## S03 - Auth/Login QA Closure - 2026-05-10
 
 - **Operador:** Manuel
 - **Modo:** `execute`
-- **Rama activa:** `Manuel/s01-preview-smoke-autonomy-2026-05-10`
-- **Base:** `origin/integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07`
-- **HEAD base de referencia:** `525602c`
+- **Rama activa:** `Manuel/s03-auth-login-qa-closure-2026-05-10`
+- **Base operativa preferida usada:** `origin/Manuel/s01-preview-smoke-autonomy-2026-05-10`
+- **Base ultima de referencia:** `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07` @ `525602c`
 - **Fuente de runner usada:** `origin/Manuel/docs-control-bus-s02-unblock-2026-05-10`
 
 ## Resultado real
 
-- **Estado:** BLOQUEADO EN LOGIN QA
+- **Estado:** BLOQUEADO EN NORMALIZACION QA / AUTH DATA
 - **Proyecto BKG confirmado:** `bkgs-projects-829c67c1/turpialsound`
 - **Identidad Vercel confirmada:** `jcarlosleon81-1948`
-- **`.vercel/project.json`:** presente y apuntando a `turpialsound`
-- **Env names confirmados en Preview:** `DATABASE_URL`, `DIRECT_URL`, `MP_JWT_SECRET`, `TS_WEB_BLOB_READ_WRITE_TOKEN`, `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN`, `QA_BUYER_IDENTIFIER`, `QA_BUYER_PASSWORD`, `QA_SELLER_IDENTIFIER`, `QA_SELLER_PASSWORD`
-- **Preview BKG usado:** `https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app`
-- **Alias de rama:** `https://turpialsound-git-manuel-s01-previ-f46263-bkgs-projects-829c67c1.vercel.app`
-- **Branch/commit reportado por Vercel:** `Manuel/s01-preview-smoke-autonomy-2026-05-10` @ `30e7e0d`
-- **`preview-runtime-guard.ts`:** `PASS` / `OK`
-- **DB target:** pooled + direct consistentes, mismo proyecto/base probable = `yes`
-- **Marketplace metadata:** `mp_*` = `15`, `mp_listings` = `true`, `mp_users` = `true`, `ACTIVE` = `8`
-- **Smoke HTTP base:** `/` `200`, `/marketplace` `200`, `/reservas` `200`, `/api/bcv-rate` `200`, `/admin/login` `200`, `/ops/payment-review` `200`, `/payment-proofs/view` `400` controlado sin token
-- **`task_id=marketplace_login_smoke`:** ejecutado 2 veces con script canonico sobre Preview BKG
+- **`.vercel/project.json`:** recreado localmente via `vercel link` y validado contra `turpialsound`
+- **Preview BKG valido confirmado:** `https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app`
+- **Alias valido de rama S01:** `https://turpialsound-git-manuel-s01-previ-f46263-bkgs-projects-829c67c1.vercel.app`
+- **Env names confirmados sin imprimir valores:** `QA_BUYER_IDENTIFIER`, `QA_BUYER_PASSWORD`, `QA_SELLER_IDENTIFIER`, `QA_SELLER_PASSWORD`, `DATABASE_URL`, `DIRECT_URL`
+- **`task_id=marketplace_login_smoke`:** ruta exacta confirmada en dispatcher
+- **Fallo reproducido en S01 y heredado a S03:** buyer devuelve `usuario o contrasena incorrectos`; seller no llega a ejecutarse porque el script corta en buyer
+
+## Diagnostico raiz
+
+- El dispatcher SI contiene `task_id=qa_accounts_normalization` con script canonico `npx tsx scripts/setup-marketplace-qa-accounts.ts`.
+- Pero esa ruta NO aparece como validacion minima ni fallback documentado de S03; S03 solo cierra con `task_id=marketplace_login_smoke`.
+- El script `qa_accounts_normalization` muta `mpUser`, `mpPayoutMethod` y `mpListing`, por lo que sale del frente "docs y ajustes menores de login" de S03 y entra en datos/auth operativos.
+- En este worktree no existe `.env.local` ni `.env`.
+- En Preview BKG existen `QA_BUYER_IDENTIFIER`, `QA_BUYER_PASSWORD`, `QA_SELLER_IDENTIFIER`, `QA_SELLER_PASSWORD`, pero NO existen `QA_BUYER_EMAIL` ni `QA_SELLER_EMAIL`, que el script canonico de normalizacion requiere para upsert de cuentas.
+- Por lo tanto, aun ignorando el alcance, `qa_accounts_normalization` no es ejecutable aqui con las precondiciones disponibles sin introducir credenciales nuevas o tocar secretos.
 
 ## Bloqueo rojo
 
-- El Preview BKG ya no esta bloqueado y el runtime guard da `PASS`, asi que el bloqueo rojo remanente se mueve a QA de login.
-- El script canonico `node scripts/qa-marketplace-login-smoke.mjs` corre fuera del sandbox, abre el modal correcto y falla de forma reproducible en buyer con `usuario o contrasena incorrectos`.
-- Se activa el bloqueo real: **`marketplace_login_smoke` falla en buyerIA sobre Preview BKG valido**.
-- Por esa razon:
-  - seller no llega a ejecutarse dentro del script porque el flujo se detiene en buyer,
-  - S01 no queda cerrado todavia.
+- Se activa bloqueo real de S03: **la ruta canonica alternativa de normalizacion QA no es ejecutable en este carril con las precondiciones actuales y toca auth/data fuera del scope operativo de S03**.
+- Esto deja el frente en uno de estos estados todavia no cerrables desde aqui:
+  - drift de credencial QA,
+  - drift de cuenta QA en DB Preview,
+  - colision de auth data que requiere saneamiento controlado.
+- No se autorizo cambio de secretos ni lock doble explicito para mutar auth/DB desde este sprint.
 
 ## Proxima accion
 
-- Tratar el bloqueo remanente como frente de login QA, no como problema de preview deploy.
-- Verificar que `QA_BUYER_IDENTIFIER` y `QA_BUYER_PASSWORD` en Preview correspondan a la cuenta buyer canonica esperada por el smoke.
-- Si hay drift de cuenta QA, normalizar cuentas con la ruta canonica documentada antes de reintentar el login smoke.
+- Si Jean + Manuel autorizan lock y existe fuente segura para `QA_BUYER_EMAIL` / `QA_SELLER_EMAIL`, ejecutar `task_id=qa_accounts_normalization` en un frente autorizado y luego reintentar `task_id=marketplace_login_smoke`.
+- Si no hay lock o no existen esos email vars autorizados, S03 queda formalmente bloqueado y no debe forzarse con metodos alternos.
+- S01 no puede cerrarse mientras `marketplace_login_smoke` siga fallando en buyer.
 
 ## Actualizacion urgente - Marketplace login QA/produccion - 2026-05-09
 
