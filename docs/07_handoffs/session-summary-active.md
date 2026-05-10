@@ -71,3 +71,41 @@
 - M2 Marketplace QA Harness.
 - J3 Integration Gatekeeper.
 - M1 Marketplace Protected Flow E2E: fuera de esta integracion prep hasta autorizacion.
+
+## LAB Meta Embedded Signup Coexistence - 2026-05-10
+
+- Se creo la pagina LAB_ONLY: `/lab/meta-embedded-signup`.
+- Gate de seguridad habilitado por query param: `/lab/meta-embedded-signup?secret=...`.
+- Fail-closed activo: si falta `META_EMBEDDED_SIGNUP_LAB_SECRET`, o no coincide, responde `404`.
+- Listener `window.message` implementado para `WA_EMBEDDED_SIGNUP` aceptando solo:
+  - `https://www.facebook.com`
+  - `https://web.facebook.com`
+- Payload mostrado en pantalla de forma saneada (sin tokens): `type`, `event`, `data.waba_id`, `data.phone_number_id`, `data.business_id`.
+
+### Variables ENV requeridas (LAB)
+
+- `NEXT_PUBLIC_META_APP_ID=2448823618894016`
+- `NEXT_PUBLIC_META_EMBEDDED_SIGNUP_CONFIG_ID=1332825818761234`
+- `META_EMBEDDED_SIGNUP_LAB_ENABLED=true`
+- `META_EMBEDDED_SIGNUP_LAB_SECRET=<secreto-largo-unico>`
+
+### Datos Meta usados en el LAB
+
+- `META_APP_ID`: `2448823618894016`
+- `META_EMBEDDED_SIGNUP_CONFIG_ID`: `1332825818761234`
+- `FB.login` configurado con `config_id`, `response_type=code`, `override_default_response_type=true`, `extras.featureType=whatsapp_business_app_onboarding`.
+
+### Como probar en Preview
+
+1. Configurar variables ENV LAB en el entorno Preview.
+2. Deploy del branch con esta pagina.
+3. Abrir `/lab/meta-embedded-signup?secret=...`.
+4. Pulsar `Iniciar Embedded Signup de WhatsApp`.
+5. Revisar en pantalla `status`, presencia/no presencia de `authResponse.code` y eventos `WA_EMBEDDED_SIGNUP`.
+6. En movil con WhatsApp Business App, abrir Plataforma para empresas y escanear QR si Meta lo presenta en el flujo.
+
+### Configuracion adicional en Meta despues del deploy
+
+1. Agregar el dominio de Preview en Facebook Login for Business / dominios permitidos para JavaScript SDK (si aplica en la app/config).
+2. Agregar redirect URI valido si el flujo de Embedded Signup lo exige para esa configuracion.
+3. Verificar que la configuracion Embedded Signup seleccionada tenga habilitado el flujo de coexistencia de WhatsApp Business App.
