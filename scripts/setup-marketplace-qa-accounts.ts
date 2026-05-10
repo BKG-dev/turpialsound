@@ -5,12 +5,40 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient, MpPayoutMethodType } from '../generated/prisma/client'
 
 type QaUserSpec = {
+  label: 'buyer' | 'seller'
   email: string
   displayName: string
   password: string
   isSeller: boolean
   bio: string
   phone: string
+}
+
+type QaUserMatch = {
+  id: string
+  createdAt: Date
+}
+
+type EnsureUserResult = {
+  id: string
+  created: boolean
+  updated: boolean
+  matchedByEmail: boolean
+  matchedByDisplayName: boolean
+}
+
+type EnsureEntityResult = {
+  created: boolean
+  updated: boolean
+}
+
+class DuplicateQaConflictError extends Error {
+  code = 'DUPLICATE_QA_CONFLICT'
+
+  constructor(spec: QaUserSpec, ids: string[]) {
+    const maskedIds = ids.map(maskId)
+    super(`DUPLICATE_QA_CONFLICT:${spec.label}:${maskedIds.join(',')}`)
+  }
 }
 
 const SELLER_PAYOUT = {
@@ -67,8 +95,14 @@ function requireEnv(name: string) {
   return value
 }
 
+function maskId(id: string) {
+  if (id.length <= 8) return `${id.slice(0, 2)}***${id.slice(-2)}`
+  return `${id.slice(0, 4)}***${id.slice(-4)}`
+}
+
 function getQaUserSpecs() {
   const buyer: QaUserSpec = {
+    label: 'buyer',
     email: requireEnv('QA_BUYER_EMAIL'),
     displayName: requireEnv('QA_BUYER_IDENTIFIER'),
     password: requireEnv('QA_BUYER_PASSWORD'),
@@ -78,6 +112,7 @@ function getQaUserSpecs() {
   }
 
   const seller: QaUserSpec = {
+    label: 'seller',
     email: requireEnv('QA_SELLER_EMAIL'),
     displayName: requireEnv('QA_SELLER_IDENTIFIER'),
     password: requireEnv('QA_SELLER_PASSWORD'),
@@ -100,35 +135,91 @@ async function getDb() {
   return new PrismaClient({ adapter })
 }
 
-async function ensureUser(db: PrismaClient, spec: QaUserSpec) {
-  const passwordHash = await bcrypt.hash(spec.password, 12)
-
-  const displayNameConflict = await db.mpUser.findFirst({
-    where: {
-      displayName: spec.displayName,
-      email: { not: spec.email },
-    },
-    select: { id: true, email: true, displayName: true },
+async function findQaUserMatches(db: PrismaClient, spec: QaUserSpec) {
+  const byEmail = await db.mpUser.findUnique({
+    where: { email: spec.email },
+    select: { id: true, createdAt: true },
   })
 
-  if (displayNameConflict) {
-    throw new Error(`Conflicto de displayName para ${spec.displayName}: ${displayNameConflict.email}`)
+  const byDisplayName = await db.mpUser.findMany({
+    where: { displayName: spec.displayName },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    select: { id: true, createdAt: true },
+  })
+
+  return { byEmail, byDisplayName }
+}
+
+function resolveQaUserTarget(spec: QaUserSpec, byEmail: QaUserMatch | null, byDisplayName: QaUserMatch[]) {
+  const uniqueIds = new Set<string>()
+
+  if (byEmail) uniqueIds.add(byEmail.id)
+  for (const candidate of byDisplayName) uniqueIds.add(candidate.id)
+
+  if (uniqueIds.size > 1) {
+    throw new DuplicateQaConflictError(spec, [...uniqueIds])
   }
 
-  return db.mpUser.upsert({
-    where: { email: spec.email },
-    update: {
-      displayName: spec.displayName,
-      passwordHash,
-      isSeller: spec.isSeller,
-      role: 'USER',
-      isBanned: false,
-      bio: spec.bio,
-      phone: spec.phone,
-      whatsappConsent: true,
-      whatsappConsentAt: new Date(),
-    },
-    create: {
+  if (byEmail) {
+    return {
+      targetId: byEmail.id,
+      matchedByEmail: true,
+      matchedByDisplayName: byDisplayName.some((candidate) => candidate.id === byEmail.id),
+    }
+  }
+
+  if (byDisplayName.length === 1) {
+    return {
+      targetId: byDisplayName[0].id,
+      matchedByEmail: false,
+      matchedByDisplayName: true,
+    }
+  }
+
+  return {
+    targetId: null,
+    matchedByEmail: false,
+    matchedByDisplayName: false,
+  }
+}
+
+async function ensureUser(db: PrismaClient, spec: QaUserSpec): Promise<EnsureUserResult> {
+  const passwordHash = await bcrypt.hash(spec.password, 12)
+  const { byEmail, byDisplayName } = await findQaUserMatches(db, spec)
+  const target = resolveQaUserTarget(spec, byEmail, byDisplayName)
+
+  if (target.targetId) {
+    const user = await db.mpUser.update({
+      where: { id: target.targetId },
+      data: {
+        email: spec.email,
+        displayName: spec.displayName,
+        passwordHash,
+        isSeller: spec.isSeller,
+        role: 'USER',
+        isBanned: false,
+        bio: spec.bio,
+        phone: spec.phone,
+        whatsappConsent: true,
+        whatsappConsentAt: new Date(),
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
+        verificationLevel: 'basic',
+      },
+      select: { id: true },
+    })
+
+    return {
+      id: user.id,
+      created: false,
+      updated: true,
+      matchedByEmail: target.matchedByEmail,
+      matchedByDisplayName: target.matchedByDisplayName,
+    }
+  }
+
+  const user = await db.mpUser.create({
+    data: {
       email: spec.email,
       displayName: spec.displayName,
       passwordHash,
@@ -144,19 +235,21 @@ async function ensureUser(db: PrismaClient, spec: QaUserSpec) {
       isVerified: false,
       totalPurchases: 0,
       totalSales: 0,
+      isBanned: false,
     },
-    select: {
-      id: true,
-      email: true,
-      displayName: true,
-      role: true,
-      isSeller: true,
-      isBanned: true,
-    },
+    select: { id: true },
   })
+
+  return {
+    id: user.id,
+    created: true,
+    updated: false,
+    matchedByEmail: false,
+    matchedByDisplayName: false,
+  }
 }
 
-async function ensureSellerPayout(db: PrismaClient, sellerId: string) {
+async function ensureSellerPayout(db: PrismaClient, sellerId: string): Promise<EnsureEntityResult> {
   const existing = await db.mpPayoutMethod.findFirst({
     where: {
       userId: sellerId,
@@ -171,7 +264,7 @@ async function ensureSellerPayout(db: PrismaClient, sellerId: string) {
       data: { isDefault: false },
     })
 
-    return db.mpPayoutMethod.update({
+    await db.mpPayoutMethod.update({
       where: { id: existing.id },
       data: {
         methodType: SELLER_PAYOUT.methodType,
@@ -181,13 +274,9 @@ async function ensureSellerPayout(db: PrismaClient, sellerId: string) {
         isActive: true,
         isDefault: true,
       },
-      select: {
-        id: true,
-        methodType: true,
-        displayLabel: true,
-        isDefault: true,
-      },
     })
+
+    return { created: false, updated: true }
   }
 
   await db.mpPayoutMethod.updateMany({
@@ -195,7 +284,7 @@ async function ensureSellerPayout(db: PrismaClient, sellerId: string) {
     data: { isDefault: false },
   })
 
-  return db.mpPayoutMethod.create({
+  await db.mpPayoutMethod.create({
     data: {
       userId: sellerId,
       methodType: SELLER_PAYOUT.methodType,
@@ -205,23 +294,19 @@ async function ensureSellerPayout(db: PrismaClient, sellerId: string) {
       isActive: true,
       isDefault: true,
     },
-    select: {
-      id: true,
-      methodType: true,
-      displayLabel: true,
-      isDefault: true,
-    },
   })
+
+  return { created: true, updated: false }
 }
 
-async function ensureSellerListing(db: PrismaClient, sellerId: string) {
+async function ensureSellerListing(db: PrismaClient, sellerId: string): Promise<EnsureEntityResult> {
   const existing = await db.mpListing.findUnique({
     where: { slug: QA_LISTING.slug },
     select: { id: true },
   })
 
   if (existing) {
-    return db.mpListing.update({
+    await db.mpListing.update({
       where: { id: existing.id },
       data: {
         sellerId,
@@ -238,17 +323,12 @@ async function ensureSellerListing(db: PrismaClient, sellerId: string) {
         status: 'ACTIVE',
         publishedAt: new Date(),
       },
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        status: true,
-        sellerId: true,
-      },
     })
+
+    return { created: false, updated: true }
   }
 
-  return db.mpListing.create({
+  await db.mpListing.create({
     data: {
       sellerId,
       title: QA_LISTING.title,
@@ -265,14 +345,9 @@ async function ensureSellerListing(db: PrismaClient, sellerId: string) {
       status: 'ACTIVE',
       publishedAt: new Date(),
     },
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      status: true,
-      sellerId: true,
-    },
   })
+
+  return { created: true, updated: false }
 }
 
 async function main() {
@@ -284,18 +359,48 @@ async function main() {
     const payout = await ensureSellerPayout(db, seller.id)
     const listing = await ensureSellerListing(db, seller.id)
 
-    const summary = {
-      buyer,
-      seller,
-      payout,
-      listing,
-      credentials: {
-        buyer: { identifier: buyerSpec.displayName, email: buyerSpec.email, passwordSource: 'QA_BUYER_PASSWORD' },
-        seller: { identifier: sellerSpec.displayName, email: sellerSpec.email, passwordSource: 'QA_SELLER_PASSWORD' },
-      },
-    }
-
-    console.log(JSON.stringify(summary, null, 2))
+    console.log(
+      JSON.stringify(
+        {
+          ok: true,
+          users: {
+            buyer: {
+              reconciled: true,
+              created: buyer.created,
+              updated: buyer.updated,
+              matchedByEmail: buyer.matchedByEmail,
+              matchedByDisplayName: buyer.matchedByDisplayName,
+            },
+            seller: {
+              reconciled: true,
+              created: seller.created,
+              updated: seller.updated,
+              matchedByEmail: seller.matchedByEmail,
+              matchedByDisplayName: seller.matchedByDisplayName,
+            },
+          },
+          payout: {
+            ensured: true,
+            created: payout.created,
+            updated: payout.updated,
+          },
+          listing: {
+            ensured: true,
+            created: listing.created,
+            updated: listing.updated,
+          },
+          counts: {
+            usersCreated: Number(buyer.created) + Number(seller.created),
+            usersUpdated: Number(buyer.updated) + Number(seller.updated),
+            usersMatchedByEmail: Number(buyer.matchedByEmail) + Number(seller.matchedByEmail),
+            usersMatchedByDisplayName:
+              Number(buyer.matchedByDisplayName) + Number(seller.matchedByDisplayName),
+          },
+        },
+        null,
+        2,
+      ),
+    )
   } finally {
     await db.$disconnect().catch(() => {})
   }
