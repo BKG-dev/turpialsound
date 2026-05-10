@@ -1,8 +1,25 @@
 # Next Window Brief - Turpial Sound
 
-**Fecha de actualizacion:** 2026-05-09
-**Frente activo:** Hotfix marketplace login QA/produccion
+**Fecha de actualizacion:** 2026-05-10
+**Frente activo:** S02 - Marketplace Discovery Runtime Stabilization (Jean)
 **Tipo de nota:** Control Tower / siguiente ventana
+
+## Estado S02 (ejecutado)
+
+- **Runner fuente:** `origin/Manuel/docs-control-bus-s02-unblock-2026-05-10` @ `9a8faae`.
+- **Rama:** `Jean/s02-marketplace-discovery-runtime-stabilization-2026-05-10`.
+- **Base:** `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07` @ `525602c`.
+- **Preview valido usado para cierre:** `https://turpialsound-nukiu73zg-bkgs-projects-829c67c1.vercel.app`.
+- **Preview invalido para cierre:** cualquier `cerberus77s-projects`.
+- **Clasificacion canonica S02:** `QUERY_ERROR` (diagnostico con `preview-runtime-guard` reporta `DATABASE_URL missing` local), con smoke BKG estable en rutas core.
+- **Guardrails respetados:** sin booking, sin main, sin produccion, sin envs, sin schema.
+
+## Proxima ventana recomendada
+
+- **Sprint:** S03 - Auth/Login QA Closure
+- **Owner:** Manuel
+- **Reviewer:** Jean
+- **Objetivo:** cerrar buyer/seller/admin login en Preview real con ruta QA canonica.
 
 ## Estado urgente
 

@@ -1,5 +1,44 @@
 # Session Summary - Activa
 
+## S02 — Marketplace Discovery Runtime Stabilization (Jean) — 2026-05-10
+
+- **Runner fuente:** `origin/Manuel/docs-control-bus-s02-unblock-2026-05-10` @ `9a8faae`.
+- **Modo:** `OPERATOR=Jean SPRINT_ID=S02 MODE=execute`.
+- **Rama de sprint:** `Jean/s02-marketplace-discovery-runtime-stabilization-2026-05-10`.
+- **Base real:** `origin/integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07` @ `525602c`.
+- **Worktree:** ejecucion en arbol limpio (`C:\proyectos\turpialsound-jean-s02-clean-2026-05-10`) por workspace original sucio (`?? var/`), sin borrar `var/`.
+
+### Validacion canonica S02 (dispatcher)
+
+- `task_id`: `S02_MARKETPLACE_DISCOVERY_RUNTIME_STABILIZATION` (manual_preview) presente en `docs/07_handoffs/qa-dispatcher.json`.
+- `vercel whoami`: `jcarlosleon81-1948`.
+- `.vercel/project.json` verificado tras `vercel link --project turpialsound --scope bkgs-projects-829c67c1`.
+- Preview usado (valido BKG): `https://turpialsound-nukiu73zg-bkgs-projects-829c67c1.vercel.app`.
+- Preview rechazado para cierre: cualquier URL `cerberus77s-projects`.
+- Diagnostico: `npx tsx scripts/diagnostics/preview-runtime-guard.ts --smoke-http --base-url <preview_bkg_url>`.
+  - Conclusion del guard: `QUERY_ERROR` por `DATABASE_URL missing` en entorno local de diagnostico.
+  - Smoke HTTP del guard: `/marketplace`, `/reservas`, `/api/bcv-rate`, `/admin/login`, `/ops/payment-review` en `200`.
+- Smoke adicional de rutas requeridas:
+  - `/` `200`
+  - `/marketplace` `200`
+  - `/reservas` `200`
+  - `/api/bcv-rate` `200`
+  - `/admin/login` `200`
+  - `/ops/payment-review` `200`
+  - `/payment-proofs/view` `400` (error controlado, no `500`)
+
+### Clasificacion S02
+
+- **Estado clasificado:** `QUERY_ERROR`.
+- **Lectura operativa:** discovery responde en Preview BKG sin ruptura HTTP, pero el diagnostico canonicamente arroja `QUERY_ERROR` por falta de `DATABASE_URL` local para metadatos DB.
+- **Stop condition:** no se activo (`sin booking`, `sin schema`, `sin env change`, `sin produccion`, `sin main`).
+
+### Resultado del sprint
+
+- S02 ejecutado con evidencia canonicamente trazable en Preview BKG.
+- Cambio de esta ventana: documental/handoff (sin cambios runtime de producto).
+- Proximo sprint sugerido: `S03` (Auth/Login QA Closure) con Manuel.
+
 ## Actualizacion urgente - Marketplace login QA/produccion - 2026-05-09
 
 - Objetivo cerrado: reparar login marketplace sin tocar tasas, booking, `/reservas`, DB, schema, migrations ni envs.

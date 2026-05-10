@@ -4,6 +4,16 @@ tags: ["#roadmap", "#status/urgent", "#status/live-source"]
 
 # Roadmap de Rescate
 
+## Actualizacion S02 (2026-05-10)
+
+- Sprint ejecutado: `S02` (Jean) en rama `Jean/s02-marketplace-discovery-runtime-stabilization-2026-05-10`.
+- Runner aplicado: `AGENT_CONTROL_BUS_RUNNER.md` v1.0.1 desde `origin/Manuel/docs-control-bus-s02-unblock-2026-05-10` (`9a8faae`).
+- Preview de cierre usado: `https://turpialsound-nukiu73zg-bkgs-projects-829c67c1.vercel.app`.
+- Clasificacion canonica registrada: `QUERY_ERROR` en `preview-runtime-guard` por `DATABASE_URL missing` local de diagnostico.
+- Smoke BKG estable: `/`, `/marketplace`, `/reservas`, `/api/bcv-rate`, `/admin/login`, `/ops/payment-review` en `200`; `/payment-proofs/view` en `400` controlado.
+- Sin cambios en booking, main, produccion, envs ni schema.
+- Siguiente ventana recomendada: `S03` (Auth/Login QA Closure, Manuel owner).
+
 ## Estado real activo (2026-05-07)
 
 - Rama madre estable: `integration/today-reservas-marketplace-stable-2026-05-07`.
