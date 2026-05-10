@@ -109,3 +109,51 @@
 1. Agregar el dominio de Preview en Facebook Login for Business / dominios permitidos para JavaScript SDK (si aplica en la app/config).
 2. Agregar redirect URI valido si el flujo de Embedded Signup lo exige para esa configuracion.
 3. Verificar que la configuracion Embedded Signup seleccionada tenga habilitado el flujo de coexistencia de WhatsApp Business App.
+
+## LAB WhatsApp Reserva Token - 2026-05-10
+
+- Se creo pagina LAB_ONLY: `/lab/whatsapp-reserva-token` con gate por `?secret=...`.
+- Se crearon endpoints:
+  - `POST /api/whatsapp/lab/challenge`
+  - `GET /api/whatsapp/lab/status`
+  - `GET /api/whatsapp/webhook` (verificacion Meta)
+  - `POST /api/whatsapp/webhook` (recepcion de mensajes entrantes)
+- Persistencia del lab: `audit_log` via `prisma.auditLog` con `bookingRequestId: null` y `nextState` saneado (sin payload crudo, sin secretos).
+
+### Acciones canonicas usadas en audit_log
+
+- `whatsapp_reserva_token.challenge_created`
+- `whatsapp_reserva_token.message_received`
+- `whatsapp_reserva_token.challenge_verified`
+- `whatsapp_reserva_token.challenge_failed`
+- `whatsapp_reserva_token.challenge_expired`
+
+### Variables ENV requeridas (LAB WhatsApp)
+
+- `WHATSAPP_LAB_ENABLED=true`
+- `WHATSAPP_LAB_SECRET=<secreto-largo-unico>`
+- `WHATSAPP_LAB_INBOUND_NUMBER_LABEL=`
+- `WHATSAPP_WEBHOOK_VERIFY_TOKEN=`
+- `WHATSAPP_APP_SECRET=`
+- `WHATSAPP_PHONE_NUMBER_ID=`
+- `WHATSAPP_BUSINESS_ACCOUNT_ID=`
+
+### Configuracion en Meta (Webhook)
+
+1. Callback URL: `https://<preview-url>/api/whatsapp/webhook`
+2. Verify token: valor de `WHATSAPP_WEBHOOK_VERIFY_TOKEN`
+3. Webhook field: `messages`
+
+### Flujo de prueba del LAB
+
+1. Abrir `/lab/whatsapp-reserva-token?secret=...`
+2. Escribir WhatsApp del usuario
+3. Pulsar `Generar codigo`
+4. Enviar el codigo al WhatsApp conectado/prueba
+5. Esperar polling de estado hasta `verified`
+
+### Notas operativas
+
+- Meta no valida el codigo del challenge; Meta solo entrega el mensaje entrante al webhook.
+- La validacion de codigo y telefono ocurre 100% en backend del lab.
+- Limitacion de numeracion: `from/wa_id` puede llegar sin `+`; se aplica normalizacion tolerante para Venezuela.
