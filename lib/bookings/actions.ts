@@ -10,6 +10,7 @@ import { syncBookingToGoogleCalendar } from '@/lib/bookings/google-calendar'
 import {
   getOperationalStatus,
   getPaymentDeadline,
+  PAYMENT_WINDOW_MINUTES,
   mapOperationalStatusToBookingStatus,
   setOperationalStatusInInternalNotes,
 } from '@/lib/bookings/operations'
@@ -30,6 +31,8 @@ const WHATSAPP_CONSENT_AT_PREFIX = '[wa_consent_at:'
 const CARACAS_UTC_OFFSET_MINUTES = -4 * 60
 const BOOKING_SUBMIT_MAX_ATTEMPTS = 3
 const RETRYABLE_BOOKING_SUBMIT_ERROR_CODES = new Set(['P2034', 'P2002', '40001', '40P01'])
+const ACTIVE_HOLD_BLOCKING_ERROR =
+  'Ya tienes una solicitud pendiente de pago o revision. Completa esa solicitud antes de crear una nueva.'
 
 function getUnknownErrorCode(error: unknown): string | null {
   if (typeof error !== 'object' || error === null) {
@@ -328,6 +331,36 @@ export async function submitBookingRequest(
       try {
         submitResult = await prisma.$transaction(
           async (tx) => {
+            const activeHoldCutoff = new Date(Date.now() - PAYMENT_WINDOW_MINUTES * 60 * 1000)
+            const existingActiveHolds = await tx.bookingRequest.count({
+              where: {
+                status: 'under_review',
+                AND: [
+                  {
+                    OR: [{ requesterEmail }, { requesterPhone }],
+                  },
+                  {
+                    OR: [
+                      { internalNotes: { contains: '[ops_status:payment_reported]' } },
+                      {
+                        AND: [
+                          { internalNotes: { contains: '[ops_status:pending_payment]' } },
+                          { createdAt: { gte: activeHoldCutoff } },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            })
+
+            if (existingActiveHolds > 0) {
+              return {
+                success: false,
+                error: ACTIVE_HOLD_BLOCKING_ERROR,
+              } satisfies SubmitBookingResult
+            }
+
             const year = new Date().getFullYear()
             const existing = await tx.bookingRequest.count({
               where: { publicCode: { startsWith: `TUR-${year}-` } },
