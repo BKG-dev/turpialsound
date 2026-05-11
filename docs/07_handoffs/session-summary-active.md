@@ -1,73 +1,52 @@
-﻿# Session Summary - Activa
+# S03J Session Summary — Sprint 3 QA Harness CLOSED
 
-## Estado real integrado - 2026-05-07
+> Branch: Manuel/s03j-qa-final-regression-2026-05-11
+> Base: S03I (Manuel/s03i-qa-admin-payout-2026-05-11)
+> Date: 2026-05-11
+> Sprint: S03J — FINAL REGRESSION + DOCS CONSOLIDATION
+> Status: CLOSED — 12/12 modules PASS
 
-- Rama madre estable actual: `integration/today-reservas-marketplace-stable-2026-05-07`.
-- HEAD base de referencia de integracion: `cbc72e3`.
-- Commit estable operativo validado: `c01ec60` (`fix(marketplace): render active listings on public page`).
-- `/reservas` queda congelado como zona sana.
-- `/marketplace` queda activo y visible en rama integrada.
-- BCV corregido y respondiendo con tasa fresca (incluye fix `a96c247`).
-- Main y produccion no tocados.
+## Sprint 3 Complete Chain
 
-## Incidente aprendido - Marketplace vacio en Preview (2026-05-07)
+| Sprint | Modules | Result | Branch |
+|--------|---------|--------|--------|
+| S03E | Architecture | Design | `Manuel/s03e-*` |
+| S03F | QA-00..03 | 4/4 PASS | `Manuel/s03f-*` |
+| S03G | QA-04..06 | 3/3 PASS | `Manuel/s03g-*` |
+| S03H | QA-08..09 | 2/2 PASS | `Manuel/s03h-*` |
+| S03I | QA-07,10,11 | 3/3 PASS | `Manuel/s03i-*` |
+| S03J | QA-12 | 12/12 PASS | `Manuel/s03j-*` |
 
-- Sintoma: `/marketplace` vacio en Preview.
-- No fue causa raiz de UI ni filtros.
-- Causa real: Preview apuntando a DB incorrecta sin tablas `mp_*`.
-- Evidencia tecnica: Prisma `P2021` por ausencia de `public.mp_listings`.
-- Solucion real: corregir `DATABASE_URL` y `DIRECT_URL` al mismo proyecto/base Neon integrada.
+## Key commits
 
-## Regla obligatoria de conexiones DB
+```
+S03J: dda740f  feat(qa): implement full regression suite
+S03I: 522c00c  feat(qa): validate admin review payout dashboards
+S03H: a3a9084  feat(qa): validate marketplace delivery receipt flow
+S03G: 3952497  feat(qa): validate marketplace purchase payment proof
+S03F: 9ce6fb3  fix(qa): harden marketplace qa credential bootstrap
+```
 
-- `DATABASE_URL` debe ser pooled/pooler.
-- `DIRECT_URL` debe ser direct/no-pooler.
-- Ambas deben apuntar al mismo proyecto/base Neon integrada.
-- Nunca imprimir secretos.
+## Docs created/updated
 
-## Protocolo obligatorio si marketplace carga vacio
+- `docs/obsidian-vault/S03_QA_HARNESS_INDEX.md` — Dashboard maestro Obsidian
+- `docs/07_handoffs/S03_FINAL_QA_HARNESS_CLOSURE_2026-05-11.md` — Cierre consolidado
+- `docs/obsidian-vault/00_CENTRAL_TURPIAL.md` — Actualizado con links S03
+- `docs/obsidian-vault/ROADMAP_RESCATE.md` — M2 QA Harness S03 CLOSED
+- `docs/07_handoffs/session-summary-active.md` — Este archivo
+- `docs/07_handoffs/next-window-brief.md` — Brief para próximo agente
 
-1. Confirmar branch/commit exacto del deployment.
-2. Revisar runtime logs del deployment.
-3. Buscar logs `marketplace.discovery`.
-4. Distinguir `DB_MISSING` / `QUERY_ERROR` / `ZERO_ACTIVE` / `FILTERED_EMPTY`.
-5. Si hay `P2021`, validar DB target y existencia real de tablas `mp_*` antes de tocar UI.
-6. Comparar `DATABASE_URL` y `DIRECT_URL` con fingerprint seguro (host hint, pooler, sslmode).
-7. Corregir env/DB de Preview solo por Jean.
-8. Redeployar el mismo commit tras corregir target DB.
-9. Solo tocar UI si DB/query/data ya estan correctas.
+## Docs-only branch for mother
 
-## Smoke base esperado en Preview integrado
+`Manuel/docs-sync-s03-complete-obsidian-to-mother-2026-05-11`
+Base: `origin/integration/today-reservas-marketplace-stable-2026-05-07`
+Jean debe revisar y mergear hacia la rama madre.
 
-- `/` responde.
-- `/marketplace` responde.
-- `/reservas` responde.
-- `/api/bcv-rate` responde.
-- `/admin/login` responde.
-- `/ops/payment-review` responde con control de acceso.
-- `/payment-proofs/view` sin token responde error controlado (no `500`).
+## Next step
 
-## Metodologia Oreshnik-Codex 2.0
+S04: Browser/UI E2E con Playwright (autorizado).
+Base: `Manuel/s03j-qa-final-regression-2026-05-11`.
 
-- 1 rama madre estable.
-- N worktrees separados.
-- N agentes Codex.
-- 1 owner por lock.
-- 1 commit/push por sprint cerrado.
-- 0 trabajo directo sobre madre.
-- 0 `main`.
-- 0 produccion.
-- 0 cambios en zonas sanas fuera de scope.
+## Permanent rule
 
-## Roles operativos
-
-- Jean: integracion, merges, Vercel/envs, DB/Prisma/schema/migrations, rama madre, preview integrado, booking/reservas.
-- Manuel: marketplace producto, buyer/seller/admin flow, QA operacional, rates, payout, estados, copy/UX operativo.
-
-## Ola 1 (fuente activa)
-
-- J1 Docs Control Tower.
-- J2 Preview Runtime Guard.
-- M2 Marketplace QA Harness.
-- J3 Integration Gatekeeper.
-- M1 Marketplace Protected Flow E2E: fuera de esta integracion prep hasta autorizacion.
+Sprint cerrado = validacion + commit + push + docs/Obsidian/handoffs + siguiente paso.

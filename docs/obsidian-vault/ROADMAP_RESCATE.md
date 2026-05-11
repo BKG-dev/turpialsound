@@ -54,4 +54,12 @@ tags: ["#roadmap", "#status/urgent", "#status/live-source"]
 - J1 Docs Control Tower.
 - J2 Preview Runtime Guard.
 - M1 Marketplace Protected Flow E2E.
-- M2 Marketplace QA Harness.
+- M2 Marketplace QA Harness: **S03 CLOSED — 12/12 PASS (2026-05-11).**
+  - S03F: login + publish + discovery validados. Bootstrap + doctor creados.
+  - S03G: purchase initiation + payment report + proof upload validados.
+  - S03H: seller delivery + buyer receipt validados.
+  - S03I: admin review + payout + dashboards validados.
+  - S03J: full regression 12/12 PASS.
+  - Sin Playwright. Sin CDP. Todo server-side Prisma directo.
+  - Ver [[S03_QA_HARNESS_INDEX]] para dashboard completo.
+  - Próximo: S04 browser/UI E2E o siguiente sprint funcional.
