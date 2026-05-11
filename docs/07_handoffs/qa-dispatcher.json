@@ -440,6 +440,58 @@
       "implemented_at": "2026-05-11",
       "last_validated_at": "2026-05-11"
     },
+    "s05_delivery_receipt_flow": {
+      "task_id": "s05_delivery_receipt_flow",
+      "mode": "script",
+      "module": "S05",
+      "layer": "B",
+      "canonical_script": "npx tsx scripts/qa/modules/qa-s05-delivery-receipt-flow.mjs",
+      "preconditions": ["QA-08 passed", "QA-09 passed", "TX DELIVERY_CONFIRMED or RELEASED"],
+      "notes": "End-to-end delivery receipt flow: escrow, seller deliver, buyer confirm, state order, chat thread, timestamps. 9/9 PASS.",
+      "status": "IMPLEMENTED — 9/9 PASS (S05)",
+      "sprint_target": "S05",
+      "implemented_at": "2026-05-11",
+      "last_validated_at": "2026-05-11"
+    },
+    "s07_rates_accounting": {
+      "task_id": "s07_rates_accounting",
+      "mode": "script",
+      "module": "S07",
+      "layer": "B",
+      "canonical_script": "npx tsx scripts/qa/modules/qa-s07-tasas-accounting.mjs",
+      "preconditions": ["DATABASE_URL", "rate env vars present"],
+      "notes": "Rates infrastructure: BCV snapshots, Binance snapshots, frozen rates, fee consistency, payout records. 11/11 PASS.",
+      "status": "IMPLEMENTED — 11/11 PASS (S07)",
+      "sprint_target": "S07",
+      "implemented_at": "2026-05-11",
+      "last_validated_at": "2026-05-11"
+    },
+    "s08_action_center_ux": {
+      "task_id": "s08_action_center_ux",
+      "mode": "script",
+      "module": "S08",
+      "layer": "B",
+      "canonical_script": "npx tsx scripts/qa/modules/qa-s08-action-center-ux.mjs",
+      "preconditions": ["QA-11 passed", "chat thread exists for QA TX"],
+      "notes": "Action center UX: chat threads, messages, unread counts, buyer/seller stats, status history, admin escrow. 11/11 PASS.",
+      "status": "IMPLEMENTED — 11/11 PASS (S08)",
+      "sprint_target": "S08",
+      "implemented_at": "2026-05-11",
+      "last_validated_at": "2026-05-11"
+    },
+    "s09_discovery_publico": {
+      "task_id": "s09_discovery_publico",
+      "mode": "script",
+      "module": "S09",
+      "layer": "C",
+      "canonical_script": "npx tsx scripts/qa/modules/qa-s09-discovery-publico.mjs",
+      "preconditions": ["QA-03 passed", "APP_URL accessible"],
+      "notes": "Public discovery: home page, SEO metadata, listing detail, categories, DB counts. 9/9 PASS.",
+      "status": "IMPLEMENTED — 9/9 PASS (S09)",
+      "sprint_target": "S09",
+      "implemented_at": "2026-05-11",
+      "last_validated_at": "2026-05-11"
+    },
     "qa_marketplace_orchestrator": {
       "task_id": "qa_marketplace_orchestrator",
       "mode": "script",

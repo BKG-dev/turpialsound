@@ -15,6 +15,10 @@ const MODULES = [
   { id: 'QA-10', name: 'Admin Payout', path: './modules/qa-10-payout.mjs', layer: 'B/D', aliases: ['qa-10', 'qa10', 'payout', 'qa_admin_payout'] },
   { id: 'QA-11', name: 'Dashboards', path: './modules/qa-11-dashboards.mjs', layer: 'C/D', aliases: ['qa-11', 'qa11', 'dashboards', 'qa_dashboards'] },
   { id: 'QA-12', name: 'Final Regression', path: './modules/qa-12-regression.mjs', layer: 'A-D', aliases: ['qa-12', 'qa12', 'regression', 'qa_full_regression'] },
+  { id: 'S05', name: 'Delivery & Receipt Flow', path: './modules/qa-s05-delivery-receipt-flow.mjs', layer: 'B', aliases: ['s05', 'delivery-flow', 'qa_s05_delivery_receipt'] },
+  { id: 'S07', name: 'Rates & Accounting', path: './modules/qa-s07-tasas-accounting.mjs', layer: 'B', aliases: ['s07', 'rates', 'qa_s07_rates_accounting'] },
+  { id: 'S08', name: 'Action Center & UX', path: './modules/qa-s08-action-center-ux.mjs', layer: 'B', aliases: ['s08', 'action-center', 'qa_s08_action_center'] },
+  { id: 'S09', name: 'Discovery Publico', path: './modules/qa-s09-discovery-publico.mjs', layer: 'C', aliases: ['s09', 'discovery-publico', 'qa_s09_discovery'] },
 ]
 
 function resolveModuleId(input) {
