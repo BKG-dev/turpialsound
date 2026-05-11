@@ -11,12 +11,19 @@ tags: ["#status/live-source", "#area/backend", "#area/ui", "#area/ops"]
 - `/reservas` congelado como zona sana.
 - `/marketplace` activo.
 
+## S02 Discovery Runtime Closure (2026-05-11)
+
+- [x] S02 cerrado documentalmente. Discovery runtime estabilizado en Preview BKG.
+- [x] Clasificacion canonica: `QUERY_ERROR` con smoke BKG estable (6/6 rutas).
+- [x] Ver [[S02_DISCOVERY_RUNTIME_INDEX]] y [[S02_FINAL_DISCOVERY_RUNTIME_CLOSURE_2026-05-11]].
+
 ## P0 cerrado del dia
 
 - [x] Marketplace vacio por UI/filtros (descartado).
 - [x] Causa raiz real identificada: DB target de Preview sin tablas `mp_*`.
 - [x] Prisma `P2021` asociado a `public.mp_listings` inexistente.
 - [x] BCV corregido con tasa fresca.
+- [x] Login marketplace reparado (commit `4f15e51`).
 
 ## Guardrails operativos (obligatorios)
 

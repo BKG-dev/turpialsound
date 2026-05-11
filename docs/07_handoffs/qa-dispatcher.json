@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "updated_at": "2026-04-24",
+  "version": 2,
+  "updated_at": "2026-05-11",
   "source_of_truth": {
     "dispatcher": "docs/07_handoffs/qa-dispatcher.json",
     "runbook": "docs/07_handoffs/qa-canonical-runbook.md",
@@ -44,6 +44,31 @@
       ],
       "last_validated_at": "2026-04-21",
       "notes": "Ruta canonica para normalizar buyerIA, sellerIA, payout QA seller y listing persistente."
+    },
+    "marketplace_login_smoke": {
+      "task_id": "marketplace_login_smoke",
+      "mode": "script",
+      "canonical_script": "node scripts/qa-marketplace-login-smoke.mjs",
+      "preconditions": [
+        "APP_URL activa",
+        "QA_BUYER_IDENTIFIER/QA_BUYER_PASSWORD disponibles en .env.local o entorno",
+        "QA_SELLER_IDENTIFIER/QA_SELLER_PASSWORD disponibles en .env.local o entorno",
+        "Chrome instalado"
+      ],
+      "allowed_fallbacks": [
+        "Si falta APP_URL, levantar la app y reintentar el mismo script",
+        "Si falta una variable QA_*, detenerse y reportar la precondicion exacta"
+      ],
+      "forbidden_fallbacks": [
+        "Hardcodear credenciales",
+        "Reverse engineering de server actions",
+        "Protocolo HTTP ad hoc para login"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md"
+      ],
+      "last_validated_at": "2026-05-09",
+      "notes": "Smoke corto para validar login UI de buyerIA y sellerIA usando credenciales QA desde env local."
     },
     "buyer_seller_admin_smoke": {
       "task_id": "buyer_seller_admin_smoke",
@@ -203,6 +228,47 @@
       ],
       "last_validated_at": "2026-04-22",
       "notes": "Smoke local del shell seller para Mi Tienda, Mis Ventas, Mensajes y Cobros."
+    },
+    "S02_MARKETPLACE_DISCOVERY_RUNTIME_STABILIZATION": {
+      "task_id": "S02_MARKETPLACE_DISCOVERY_RUNTIME_STABILIZATION",
+      "mode": "manual_preview",
+      "canonical_script": null,
+      "module": "S02",
+      "layer": "A",
+      "preconditions": [
+        "Preview BKG vigente accesible via Vercel (scope: bkgs-projects-829c67c1)",
+        "vercel whoami = jcarlosleon81-1948",
+        "Preview NO debe ser cerberus77s-projects"
+      ],
+      "canonical_manual_route": [
+        "Confirmar Preview BKG Ready mas reciente.",
+        "Ejecutar npx tsx scripts/diagnostics/preview-runtime-guard.ts --smoke-http --base-url <preview_bkg_url>.",
+        "Smoke HTTP de rutas core: /, /marketplace, /reservas, /api/bcv-rate, /admin/login, /ops/payment-review.",
+        "Clasificar resultado: DB_MISSING / QUERY_ERROR / ZERO_ACTIVE / FILTERED_EMPTY.",
+        "Si smoke estable pero guard reporta QUERY_ERROR por DATABASE_URL faltante local, clasificar como QUERY_ERROR con smoke BKG estable."
+      ],
+      "allowed_fallbacks": [
+        "Corregir solo la precondicion documentada y reintentar la misma ruta",
+        "Si el preview objetivo deja de responder, esperar redeploy y reintentar"
+      ],
+      "forbidden_fallbacks": [
+        "cdp improvisado",
+        "reverse engineering de server actions",
+        "protocolo HTTP ad hoc para UI flows",
+        "usar preview cerberus77s-projects como valido",
+        "tocar booking, schema, envs o produccion"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/session-summary-active.md",
+        "docs/07_handoffs/next-window-brief.md",
+        "docs/obsidian-vault/ROADMAP_RESCATE.md",
+        "docs/obsidian-vault/BUGS_CRITICOS.md"
+      ],
+      "status": "IMPLEMENTED — QUERY_ERROR clasificado con smoke BKG estable (6/6 rutas 200). Discovery runtime estabilizado en Preview.",
+      "sprint_target": "S02",
+      "implemented_at": "2026-05-10",
+      "last_validated_at": "2026-05-11",
+      "notes": "Sprint cerrado documentalmente. Error Prisma P2021 raiz ya estaba cerrado en BUGS_CRITICOS.md. S02 consolida el cierre con evidencia trazable de diagnostico + smoke HTTP."
     },
     "reconcile_read_only": {
       "task_id": "reconcile_read_only",
