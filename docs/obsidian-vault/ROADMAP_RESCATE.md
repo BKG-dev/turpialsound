@@ -14,6 +14,16 @@ tags: ["#roadmap", "#status/urgent", "#status/live-source"]
 - Sin cambios en booking, main, produccion, envs ni schema.
 - Siguiente ventana recomendada: `S03` (Auth/Login QA Closure, Manuel owner).
 
+## Preview 3spd7suth - Lab Meta/WhatsApp Mapping
+
+- URL: `https://turpialsound-3spd7suth-bkgs-projects-829c67c1.vercel.app/`
+- Deployment id: `dpl_BsfocbQfmiCQmyUvob7TFGRbovqY`
+- Rama inferida: `origin/lab/meta-embedded-signup-coexistence-2026-05-10`
+- Commit candidato: `53477ff`
+- Estado: rama lab paralela validada
+- No integrada en: `integration/today`, `integration-prep`, `prod/current`
+- Decision: requiere consolidacion selectiva posterior; no merge ciego.
+
 ## Estado real activo (2026-05-07)
 
 - Rama madre estable: `integration/today-reservas-marketplace-stable-2026-05-07`.
