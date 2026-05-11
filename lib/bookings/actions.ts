@@ -23,6 +23,7 @@ import {
 } from '@/lib/storage/payment-proofs'
 import { sendBookingNotifications } from '@/lib/bookings/notifications'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
+import { isLabPhoneVerifiedRecently } from '@/lib/whatsapp/lab-token-store'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const WHATSAPP_REGEX = /^\+58(412|414|416|424|426)\d{7}$/
@@ -264,6 +265,17 @@ export async function submitBookingRequest(
       return {
         success: false,
         error: 'Debes autorizar el seguimiento operativo por WhatsApp para continuar.',
+      }
+    }
+
+    const whatsappVerification = await isLabPhoneVerifiedRecently(requesterPhone)
+    if (!whatsappVerification.ok) {
+      return {
+        success: false,
+        error:
+          whatsappVerification.reason === 'expired'
+            ? 'Tu verificacion de WhatsApp vencio. Verifica nuevamente antes de crear la reserva.'
+            : 'Debes verificar tu WhatsApp antes de crear la solicitud de reserva.',
       }
     }
 

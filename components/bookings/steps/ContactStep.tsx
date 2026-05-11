@@ -1,6 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/Button'
 
 export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
@@ -28,6 +29,24 @@ interface ContactStepProps {
   phone: string
   whatsappConsentAccepted: boolean
   whatsappConsentError?: string | null
+  whatsappVerificationStatus:
+    | 'idle'
+    | 'loading'
+    | 'pending'
+    | 'verified'
+    | 'failed'
+    | 'expired'
+    | 'not_found'
+  whatsappVerificationCode?: string | null
+  whatsappVerificationError?: string | null
+  whatsappVerificationChallengeId?: string | null
+  whatsappVerificationExpiresAt?: string | null
+  whatsappVerificationVerifiedAt?: string | null
+  whatsappVerificationPhone?: string | null
+  onStartWhatsappVerification: () => void
+  onRetryOpenWhatsapp: () => void
+  onCopyWhatsappCode: () => void
+  onManualWhatsappStatusCheck: () => void
   onNameChange: (value: string) => void
   onEmailChange: (value: string) => void
   onPhoneChange: (value: string) => void
@@ -40,6 +59,17 @@ export function ContactStep({
   phone,
   whatsappConsentAccepted,
   whatsappConsentError,
+  whatsappVerificationStatus,
+  whatsappVerificationCode,
+  whatsappVerificationError,
+  whatsappVerificationChallengeId,
+  whatsappVerificationExpiresAt,
+  whatsappVerificationVerifiedAt,
+  whatsappVerificationPhone,
+  onStartWhatsappVerification,
+  onRetryOpenWhatsapp,
+  onCopyWhatsappCode,
+  onManualWhatsappStatusCheck,
   onNameChange,
   onEmailChange,
   onPhoneChange,
@@ -49,6 +79,9 @@ export function ContactStep({
   const emailInvalid = emailHasContent && !isValidEmail(email)
   const phoneHasContent = phone.trim().length > 0
   const phoneInvalid = phoneHasContent && !isValidWhatsappVe(phone)
+  const canStartVerification = !phoneInvalid && phoneHasContent && whatsappConsentAccepted
+  const isVerificationInProgress =
+    whatsappVerificationStatus === 'loading' || whatsappVerificationStatus === 'pending'
 
   return (
     <div className="space-y-4 md:space-y-3">
@@ -188,6 +221,104 @@ export function ContactStep({
               >
                 {whatsappConsentError}
               </p>
+            )}
+          </div>
+
+          <div className="mt-3 rounded-lg border border-brand-border/80 bg-brand-bg/20 p-3">
+            <p className="text-[11px] text-text-secondary">
+              Para apartar este horario necesitamos confirmar tu WhatsApp. Esto evita reservas
+              falsas y protege la disponibilidad de las salas.
+            </p>
+
+            {whatsappVerificationStatus === 'verified' ? (
+              <div className="mt-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2">
+                <p className="text-[11px] font-medium text-emerald-300">WhatsApp verificado</p>
+                <p className="text-[10px] text-emerald-200/90">
+                  Numero validado: {whatsappVerificationPhone ?? normalizeWhatsappVe(phone)}
+                </p>
+                {whatsappVerificationVerifiedAt ? (
+                  <p className="text-[10px] text-emerald-200/90">
+                    Verificado: {new Date(whatsappVerificationVerifiedAt).toLocaleString('es-VE')}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <div className="mt-2 space-y-2">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={onStartWhatsappVerification}
+                  disabled={!canStartVerification || isVerificationInProgress}
+                >
+                  {whatsappVerificationStatus === 'loading'
+                    ? 'Preparando verificacion...'
+                    : 'Verificar WhatsApp'}
+                </Button>
+
+                {whatsappVerificationStatus === 'pending' && (
+                  <div className="rounded-md border border-accent-gold/30 bg-accent-gold/10 px-3 py-2">
+                    <p className="text-[11px] font-medium text-text-primary">Esperando verificacion...</p>
+                    <p className="mt-1 text-[10px] text-text-secondary">
+                      Envia el mensaje que abrimos en WhatsApp. Esta pagina detectara la
+                      verificacion automaticamente.
+                    </p>
+                    {whatsappVerificationExpiresAt ? (
+                      <p className="mt-1 text-[10px] text-text-muted">
+                        Expira: {new Date(whatsappVerificationExpiresAt).toLocaleString('es-VE')}
+                      </p>
+                    ) : null}
+                  </div>
+                )}
+
+                {(whatsappVerificationStatus === 'pending' ||
+                  whatsappVerificationStatus === 'failed' ||
+                  whatsappVerificationStatus === 'expired' ||
+                  whatsappVerificationStatus === 'not_found') && (
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <Button type="button" variant="ghost" size="sm" onClick={onRetryOpenWhatsapp}>
+                      Abrir WhatsApp de nuevo
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={onCopyWhatsappCode}
+                      disabled={!whatsappVerificationCode}
+                    >
+                      Copiar codigo
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={onManualWhatsappStatusCheck}
+                      disabled={!whatsappVerificationChallengeId}
+                    >
+                      Ya envie el mensaje
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={onStartWhatsappVerification}
+                      disabled={!canStartVerification}
+                    >
+                      Cambiar numero
+                    </Button>
+                  </div>
+                )}
+
+                {whatsappVerificationStatus === 'expired' && (
+                  <p className="text-[10px] text-amber-300">
+                    La verificacion vencio. Verifica nuevamente para continuar.
+                  </p>
+                )}
+
+                {whatsappVerificationError && (
+                  <p className="text-[10px] text-red-300">{whatsappVerificationError}</p>
+                )}
+              </div>
             )}
           </div>
         </div>
