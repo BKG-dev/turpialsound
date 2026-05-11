@@ -1,4 +1,94 @@
-# Session Summary - Activa
+# S02 Session Summary — Sprint 2 Discovery Runtime CLOSED
+
+> Branch: jean/s02-marketplace-discovery-runtime-stabilization-2026-05-10
+> Base: integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07
+> Date: 2026-05-11
+> Sprint: S02 — Marketplace Discovery Runtime Stabilization
+> Status: CLOSED — Error clasificado, runtime estable en Preview BKG
+> Final commit: 4c3908e
+
+## S02 Complete
+
+| Modulo | Resultado | Evidencia |
+|--------|-----------|-----------|
+| Preview Runtime Guard | PASS | Guard + smoke HTTP en Preview BKG |
+| Smoke HTTP rutas core | PASS (6/6) | `/`, `/marketplace`, `/reservas`, `/api/bcv-rate`, `/admin/login`, `/ops/payment-review` → `200` |
+| Clasificacion discovery | QUERY_ERROR | `DATABASE_URL missing` local; smoke BKG estable |
+| Login marketplace QA | PASS | buyerIA + sellerIA smoke OK |
+| Discovery listings | PASS | Listings publicos visibles en Preview |
+
+## Key commits S02
+
+```
+4c3908e  docs(control-bus): execute s02 discovery runtime on bkg preview
+525602c  docs(qa): record marketplace login hotfix scope
+8d43d53  fix(qa): load marketplace credentials from env
+4f15e51  fix(marketplace): repair marketplace user login
+43d97c4  fix(marketplace): refresh public discovery listings
+```
+
+## Docs created/updated (closure)
+
+- `docs/07_handoffs/S02_FINAL_DISCOVERY_RUNTIME_CLOSURE_2026-05-11.md` — Cierre consolidado S02
+- `docs/obsidian-vault/S02_DISCOVERY_RUNTIME_INDEX.md` — Dashboard maestro Obsidian S02
+- `docs/obsidian-vault/00_CENTRAL_TURPIAL.md` — Actualizado con S02 CLOSED
+- `docs/obsidian-vault/ROADMAP_RESCATE.md` — S02 Discovery Runtime CLOSED
+- `docs/obsidian-vault/BUGS_CRITICOS.md` — S02 resolution registrada
+- `docs/07_handoffs/qa-dispatcher.json` — S02 task_id registrado
+- `docs/07_handoffs/session-summary-active.md` — Este archivo
+- `docs/07_handoffs/next-window-brief.md` — Brief actualizado
+
+## Next step
+
+S03: Auth/Login QA Closure (Manuel owner). Ya ejecutado y cerrado con 12/12 PASS en QA Harness.
+Proximo sprint activo: S04 — Payment Proof Protected E2E (Jean owner).
+
+## Permanent rule
+
+Sprint cerrado = validacion + commit + push + docs/Obsidian/handoffs + siguiente paso.
+
+---
+
+## Historical context (pre-closure)
+
+### S02 — Marketplace Discovery Runtime Stabilization (Jean) — 2026-05-10
+
+- **Runner fuente:** `origin/Manuel/docs-control-bus-s02-unblock-2026-05-10` @ `9a8faae`.
+- **Modo:** `OPERATOR=Jean SPRINT_ID=S02 MODE=execute`.
+- **Rama de sprint:** `Jean/s02-marketplace-discovery-runtime-stabilization-2026-05-10`.
+- **Base real:** `origin/integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07` @ `525602c`.
+- **Worktree:** ejecucion en arbol limpio (`C:\proyectos\turpialsound-jean-s02-clean-2026-05-10`) por workspace original sucio (`?? var/`), sin borrar `var/`.
+
+### Validacion canonica S02 (dispatcher)
+
+- `task_id`: `S02_MARKETPLACE_DISCOVERY_RUNTIME_STABILIZATION` (manual_preview) presente en `docs/07_handoffs/qa-dispatcher.json`.
+- `vercel whoami`: `jcarlosleon81-1948`.
+- `.vercel/project.json` verificado tras `vercel link --project turpialsound --scope bkgs-projects-829c67c1`.
+- Preview usado (valido BKG): `https://turpialsound-nukiu73zg-bkgs-projects-829c67c1.vercel.app`.
+- Preview rechazado para cierre: cualquier URL `cerberus77s-projects`.
+- Diagnostico: `npx tsx scripts/diagnostics/preview-runtime-guard.ts --smoke-http --base-url <preview_bkg_url>`.
+  - Conclusion del guard: `QUERY_ERROR` por `DATABASE_URL missing` en entorno local de diagnostico.
+  - Smoke HTTP del guard: `/marketplace`, `/reservas`, `/api/bcv-rate`, `/admin/login`, `/ops/payment-review` en `200`.
+- Smoke adicional de rutas requeridas:
+  - `/` `200`
+  - `/marketplace` `200`
+  - `/reservas` `200`
+  - `/api/bcv-rate` `200`
+  - `/admin/login` `200`
+  - `/ops/payment-review` `200`
+  - `/payment-proofs/view` `400` (error controlado, no `500`)
+
+### Clasificacion S02
+
+- **Estado clasificado:** `QUERY_ERROR`.
+- **Lectura operativa:** discovery responde en Preview BKG sin ruptura HTTP, pero el diagnostico canonicamente arroja `QUERY_ERROR` por falta de `DATABASE_URL` local para metadatos DB.
+- **Stop condition:** no se activo (`sin booking`, `sin schema`, `sin env change`, `sin produccion`, `sin main`).
+
+### Resultado del sprint
+
+- S02 ejecutado con evidencia canonicamente trazable en Preview BKG.
+- Cambio de esta ventana: documental/handoff (sin cambios runtime de producto).
+- Proximo sprint sugerido: `S03` (Auth/Login QA Closure) con Manuel.
 
 ## Actualizacion urgente - Marketplace login QA/produccion - 2026-05-09
 

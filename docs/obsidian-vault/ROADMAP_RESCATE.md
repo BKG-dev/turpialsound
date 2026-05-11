@@ -4,6 +4,20 @@ tags: ["#roadmap", "#status/urgent", "#status/live-source"]
 
 # Roadmap de Rescate
 
+## S02 — Marketplace Discovery Runtime Stabilization: CLOSED (2026-05-11)
+
+- Sprint: `S02` — CLOSED.
+- Owner: Jean. Reviewer: Manuel.
+- Rama final: `jean/s02-marketplace-discovery-runtime-stabilization-2026-05-10`.
+- Commit final: `4c3908e` (5 commits total).
+- Resultado: Error clasificado como `QUERY_ERROR` con smoke BKG estable (6/6 rutas 200).
+- Preview de cierre: `https://turpialsound-nukiu73zg-bkgs-projects-829c67c1.vercel.app`.
+- Clasificacion canonica: `QUERY_ERROR` por `DATABASE_URL missing` local de diagnostico.
+- Sin cambios en booking, main, produccion, envs ni schema.
+- Ver [[S02_DISCOVERY_RUNTIME_INDEX]] para dashboard completo.
+- Ver [[S02_FINAL_DISCOVERY_RUNTIME_CLOSURE_2026-05-11]] para cierre consolidado.
+- Proximo: S03 (ya cerrado 12/12 PASS QA Harness), S04 en curso.
+
 ## Estado real activo (2026-05-07)
 
 - Rama madre estable: `integration/today-reservas-marketplace-stable-2026-05-07`.
