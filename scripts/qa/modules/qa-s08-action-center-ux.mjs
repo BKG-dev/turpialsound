@@ -3,7 +3,7 @@ import { getPrisma, disconnectPrisma } from '../lib/db-read.mjs'
 
 const LISTING_SLUG = 'qa-e2e-s03f-selleria-discovery'
 
-async function run() {
+export async function run(/* report */) {
   const checks = []
   loadEnv()
 
@@ -106,5 +106,3 @@ async function run() {
 
   return { ok: allOk, checks, passed, failed, total: checks.length }
 }
-
-run().catch(console.error)

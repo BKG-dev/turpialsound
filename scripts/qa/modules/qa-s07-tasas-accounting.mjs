@@ -1,7 +1,7 @@
 import { loadEnv, getEnv } from '../lib/env.mjs'
 import { getPrisma, disconnectPrisma } from '../lib/db-read.mjs'
 
-async function run() {
+export async function run(/* report */) {
   const checks = []
   loadEnv()
   console.log('=== S07 Tasas & Accounting (Jean) ===\n')
@@ -118,6 +118,5 @@ async function run() {
   const passed = checks.filter(c => c.ok).length
   console.log(`\n${passed}/${checks.length} PASS`)
   console.log(passed === checks.length ? 'S07 TASAS & ACCOUNTING: PASS' : 'S07 TASAS & ACCOUNTING: PASS (partial)')
+  return { ok: passed === checks.length, checks, passed, failed: checks.length - passed, total: checks.length }
 }
-
-run().catch(console.error)

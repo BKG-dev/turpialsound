@@ -4,7 +4,7 @@ import { getPrisma, disconnectPrisma } from '../lib/db-read.mjs'
 const APP_URL = 'https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app'
 const LISTING_SLUG = 'qa-e2e-s03f-selleria-discovery'
 
-async function run() {
+export async function run(/* report */) {
   const checks = []
   loadEnv()
   console.log('=== S09 Discovery Publico & SEO (Manuel) ===\n')
@@ -62,6 +62,5 @@ async function run() {
   const passed = checks.filter(c => c.ok).length
   console.log(`\n${passed}/${checks.length} PASS`)
   console.log(passed === checks.length ? 'S09 PASS' : 'S09 PARTIAL')
+  return { ok: passed === checks.length, checks, passed, failed: checks.length - passed, total: checks.length }
 }
-
-run().catch(console.error)
