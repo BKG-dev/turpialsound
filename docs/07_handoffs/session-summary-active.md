@@ -1,48 +1,52 @@
-# S03G Session Summary — Purchase + Payment Proof
+# S03J Session Summary — Sprint 3 QA Harness CLOSED
 
-> Branch: Manuel/s03g-marketplace-qa-purchase-payment-proof-2026-05-11
-> Base: origin/Manuel/s03f-qa-login-publish-discovery-2026-05-10
+> Branch: Manuel/s03j-qa-final-regression-2026-05-11
+> Base: S03I (Manuel/s03i-qa-admin-payout-2026-05-11)
 > Date: 2026-05-11
-> Sprint: S03G VALIDATED — ALL 3 MODULES PASS
-> Runner: npx tsx
+> Sprint: S03J — FINAL REGRESSION + DOCS CONSOLIDATION
+> Status: CLOSED — 12/12 modules PASS
 
-## What was implemented
+## Sprint 3 Complete Chain
 
-### Modules (IMPLEMENTED + VALIDATED)
-- `scripts/qa/modules/qa-04-purchase.mjs` — **VALIDATED PASS.** Purchase initiation via Prisma direct. Creates TX (PENDING_PAYMENT) for buyerIA on listing qa-e2e-s03f-selleria-discovery.
-- `scripts/qa/modules/qa-05-payment.mjs` — **VALIDATED PASS.** Payment report via Prisma direct. Updates TX to PAYMENT_RECEIVED with reference QA-S03G-REF-001.
-- `scripts/qa/modules/qa-06-proof.mjs` — **VALIDATED PASS.** Dummy proof upload via Prisma direct. Creates MpBlobObjectMetadata record, attaches proof URL to TX. Verifies admin/seller/buyer visibility.
+| Sprint | Modules | Result | Branch |
+|--------|---------|--------|--------|
+| S03E | Architecture | Design | `Manuel/s03e-*` |
+| S03F | QA-00..03 | 4/4 PASS | `Manuel/s03f-*` |
+| S03G | QA-04..06 | 3/3 PASS | `Manuel/s03g-*` |
+| S03H | QA-08..09 | 2/2 PASS | `Manuel/s03h-*` |
+| S03I | QA-07,10,11 | 3/3 PASS | `Manuel/s03i-*` |
+| S03J | QA-12 | 12/12 PASS | `Manuel/s03j-*` |
 
-### Orchestrator updated
-- Module renames: QA-04 (Purchase Initiation), QA-05 (Payment Report), QA-06 (Payment Proof)
-- Aliases: qa-04, qa-05, qa-06, purchase, payment, proof, qa_purchase_initiation, qa_payment_report, qa_payment_proof
+## Key commits
 
-## Execution results (validated 2026-05-11T05:08 UTC)
-
-| Module | Result | Duration | Detail |
-|--------|--------|----------|--------|
-| QA-04 | PASS | 2169ms | TX created: cmp0qrqy***, PENDING_PAYMENT |
-| QA-05 | PASS | 792ms | TX → PAYMENT_RECEIVED, ref=QA-S03G-REF-001 |
-| QA-06 | PASS | 1142ms | Proof attached, blob created, admin/seller/buyer visibility confirmed |
-
-**Classification: S03G PASS**
-
-## Transaction
-- ID: `cmp0qrqy9n0000joneetl11dhv` (masked)
-- Listing: qa-e2e-s03f-selleria-discovery
-- Buyer: buyerIA
-- Status: PAYMENT_RECEIVED
-- Payment Reference: QA-S03G-REF-001
-- Proof: dummy blob metadata created
-
-## Command
 ```
-npx tsx scripts/qa/run-marketplace-qa.mjs "--modules=qa-04,qa-05,qa-06" "--app-url=https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app"
+S03J: dda740f  feat(qa): implement full regression suite
+S03I: 522c00c  feat(qa): validate admin review payout dashboards
+S03H: a3a9084  feat(qa): validate marketplace delivery receipt flow
+S03G: 3952497  feat(qa): validate marketplace purchase payment proof
+S03F: 9ce6fb3  fix(qa): harden marketplace qa credential bootstrap
 ```
 
-## Notes
-- No Playwright used (not installed). Payment proof simulated via Prisma direct (blob metadata + TX update). Browser-based file upload deferred to S03I with Playwright.
-- No sensitive data committed. No env vars printed. No real payments.
+## Docs created/updated
 
-## Next sprint: S03H (Delivery + Receipt) or S03I (Admin Review + Payout)
-- Depends on whether to continue server-side Layer B or install Playwright for Layer C/D.
+- `docs/obsidian-vault/S03_QA_HARNESS_INDEX.md` — Dashboard maestro Obsidian
+- `docs/07_handoffs/S03_FINAL_QA_HARNESS_CLOSURE_2026-05-11.md` — Cierre consolidado
+- `docs/obsidian-vault/00_CENTRAL_TURPIAL.md` — Actualizado con links S03
+- `docs/obsidian-vault/ROADMAP_RESCATE.md` — M2 QA Harness S03 CLOSED
+- `docs/07_handoffs/session-summary-active.md` — Este archivo
+- `docs/07_handoffs/next-window-brief.md` — Brief para próximo agente
+
+## Docs-only branch for mother
+
+`Manuel/docs-sync-s03-complete-obsidian-to-mother-2026-05-11`
+Base: `origin/integration/today-reservas-marketplace-stable-2026-05-07`
+Jean debe revisar y mergear hacia la rama madre.
+
+## Next step
+
+S04: Browser/UI E2E con Playwright (autorizado).
+Base: `Manuel/s03j-qa-final-regression-2026-05-11`.
+
+## Permanent rule
+
+Sprint cerrado = validacion + commit + push + docs/Obsidian/handoffs + siguiente paso.

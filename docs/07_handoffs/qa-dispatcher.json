@@ -1,6 +1,6 @@
 {
-  "version": 4,
-  "updated_at": "2026-05-11T05:10:00",
+  "version": 5,
+  "updated_at": "2026-05-11T06:00:00",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
     "layers": {
@@ -9,8 +9,8 @@
       "C": "browser smoke — minimal UI validation",
       "D": "E2E module — browser + server + assets"
     },
-    "orchestrator": "node scripts/qa/run-marketplace-qa.mjs",
-    "cdp_status": "LEGACY/FLAKY — migrating to Playwright (pending authorization) + server-side"
+    "orchestrator": "npx tsx scripts/qa/run-marketplace-qa.mjs",
+    "cdp_status": "LEGACY/FLAKY — replaced by server-side Prisma direct (Layer B). Playwright deferred to S04 for UI E2E."
   },
   "source_of_truth": {
     "dispatcher": "docs/07_handoffs/qa-dispatcher.json",
@@ -367,66 +367,78 @@
       "mode": "script",
       "module": "QA-07",
       "layer": "B/C",
-      "canonical_script": "node scripts/qa/run-marketplace-qa.mjs --module=QA-07",
-      "preconditions": ["QA-06 passed (TX PAYMENT_RECEIVED)", "SUPER logged in"],
-      "notes": "Server-side: validatePayment(). Browser: verify proof proxy access.",
-      "status": "STUB — implement in S03I",
-      "sprint_target": "S03I"
+      "canonical_script": "npx tsx scripts/qa/run-marketplace-qa.mjs --module=QA-07",
+      "preconditions": ["QA-06 passed (TX PAYMENT_RECEIVED)"],
+      "notes": "Server-side admin review: status flow verification, proof URL check. Lenient on final state (accepts any valid state in pipeline).",
+      "status": "IMPLEMENTED — status flow + proof URL check + buyer/seller identity",
+      "sprint_target": "S03I",
+      "implemented_at": "2026-05-11",
+      "last_validated_at": "2026-05-11"
     },
     "qa_seller_delivery": {
       "task_id": "qa_seller_delivery",
       "mode": "script",
       "module": "QA-08",
       "layer": "B",
-      "canonical_script": "node scripts/qa/run-marketplace-qa.mjs --module=QA-08",
-      "preconditions": ["QA-07 passed (TX IN_ESCROW)", "sellerIA logged in"],
-      "notes": "Server-side: sellerDeliver(). No browser.",
-      "status": "STUB — implement in S03H",
-      "sprint_target": "S03H"
+      "canonical_script": "npx tsx scripts/qa/run-marketplace-qa.mjs --module=QA-08",
+      "preconditions": ["QA-05 passed (TX PAYMENT_RECEIVED)"],
+      "notes": "Server-side: inline admin validation (PAYMENT_RECEIVED -> IN_ESCROW) + seller delivery (seller_delivered event). No browser.",
+      "status": "IMPLEMENTED — admin validate + seller deliver in one module",
+      "sprint_target": "S03H",
+      "implemented_at": "2026-05-11",
+      "last_validated_at": "2026-05-11"
     },
     "qa_buyer_receipt": {
       "task_id": "qa_buyer_receipt",
       "mode": "script",
       "module": "QA-09",
       "layer": "B",
-      "canonical_script": "node scripts/qa/run-marketplace-qa.mjs --module=QA-09",
-      "preconditions": ["QA-08 passed (seller delivered)", "buyerIA logged in"],
-      "notes": "Server-side: confirmDelivery(). No browser.",
-      "status": "STUB — implement in S03H",
-      "sprint_target": "S03H"
+      "canonical_script": "npx tsx scripts/qa/run-marketplace-qa.mjs --module=QA-09",
+      "preconditions": ["QA-08 passed (seller delivered)"],
+      "notes": "Server-side: buyer confirms delivery (IN_ESCROW -> DELIVERY_CONFIRMED). No browser.",
+      "status": "IMPLEMENTED — buyer confirm + state transition",
+      "sprint_target": "S03H",
+      "implemented_at": "2026-05-11",
+      "last_validated_at": "2026-05-11"
     },
     "qa_admin_payout": {
       "task_id": "qa_admin_payout",
       "mode": "script",
       "module": "QA-10",
       "layer": "B/D",
-      "canonical_script": "node scripts/qa/run-marketplace-qa.mjs --module=QA-10",
-      "preconditions": ["QA-09 passed (TX DELIVERY_CONFIRMED)", "SUPER logged in"],
-      "notes": "Server-side: releaseEscrow() + adminMarkSellerPaid(). UI: verify payout.",
-      "status": "STUB — implement in S03I",
-      "sprint_target": "S03I"
+      "canonical_script": "npx tsx scripts/qa/run-marketplace-qa.mjs --module=QA-10",
+      "preconditions": ["QA-09 passed (TX DELIVERY_CONFIRMED)"],
+      "notes": "Server-side: releaseEscrow (DELIVERY_CONFIRMED -> RELEASED) + MpPayout creation. No browser.",
+      "status": "IMPLEMENTED — release escrow + payout record",
+      "sprint_target": "S03I",
+      "implemented_at": "2026-05-11",
+      "last_validated_at": "2026-05-11"
     },
     "qa_dashboards": {
       "task_id": "qa_dashboards",
       "mode": "script",
       "module": "QA-11",
       "layer": "C/D",
-      "canonical_script": "node scripts/qa/run-marketplace-qa.mjs --module=QA-11",
+      "canonical_script": "npx tsx scripts/qa/run-marketplace-qa.mjs --module=QA-11",
       "preconditions": ["Various TX states from prior modules"],
-      "notes": "Browser smoke: buyer/seller/admin dashboards, action center, notifications.",
-      "status": "STUB — implement in S03I",
-      "sprint_target": "S03I"
+      "notes": "Server-side dashboard data verification: buyer/seller/admin stats, TX counts, listing counts. No browser.",
+      "status": "IMPLEMENTED — buyer/seller/admin stats + visibility",
+      "sprint_target": "S03I",
+      "implemented_at": "2026-05-11",
+      "last_validated_at": "2026-05-11"
     },
     "qa_full_regression": {
       "task_id": "qa_full_regression",
       "mode": "script",
       "module": "QA-12",
       "layer": "A-D",
-      "canonical_script": "node scripts/qa/run-marketplace-qa.mjs",
-      "preconditions": ["QA-00 through QA-11 complete"],
-      "notes": "Full marketplace QA regression suite.",
-      "status": "STUB — implement in S03J",
-      "sprint_target": "S03J"
+      "canonical_script": "npx tsx scripts/qa/run-marketplace-qa.mjs",
+      "preconditions": ["QA-00 through QA-11 implemented", "env vars present"],
+      "notes": "Full marketplace QA regression suite. Imports and runs all 12 modules in sequence. Validated 12/12 PASS.",
+      "status": "IMPLEMENTED — 12/12 PASS full regression",
+      "sprint_target": "S03J",
+      "implemented_at": "2026-05-11",
+      "last_validated_at": "2026-05-11"
     },
     "qa_marketplace_orchestrator": {
       "task_id": "qa_marketplace_orchestrator",
@@ -436,10 +448,10 @@
       "canonical_script": "npx tsx scripts/qa/run-marketplace-qa.mjs",
       "preconditions": ["NODE_ENV=development", "APP_URL activa", "QA_* env vars in .env.local"],
       "notes": "Runs all implemented QA modules in sequence. Supports --module=<ID> for single module, --modules=<ID1,ID2,...> for multiple, --app-url=<URL> to override APP_URL. Runner: npx tsx (required for generated/prisma/client .ts import).",
-      "status": "PARTIAL — QA-00 through QA-03 implemented. QA-04 through QA-12 remain stubs.",
-      "sprint_target": "S03F (partial) → S03J (full)",
-      "implemented_at": "2026-05-10",
-      "last_validated_at": "2026-05-10"
+      "status": "VALIDATED — 12/12 PASS full regression S03J",
+      "sprint_target": "S03J",
+      "implemented_at": "2026-05-11",
+      "last_validated_at": "2026-05-11"
     }
   }
 }
