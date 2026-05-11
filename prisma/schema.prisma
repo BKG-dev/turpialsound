@@ -777,6 +777,10 @@ model MpPayout {
   // External payout tracking
   externalPayoutId String? // External payment reference
 
+  // Audit trail
+  reference String? // Human-readable payout reference (e.g. PAYOUT-20260511-001)
+  auditHash String? // SHA-256 hash of payout details for tamper evidence
+
   // Completion
   completedAt   DateTime?
   failureReason String?
