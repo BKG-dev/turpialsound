@@ -54,4 +54,5 @@ tags: ["#roadmap", "#status/urgent", "#status/live-source"]
 - J1 Docs Control Tower.
 - J2 Preview Runtime Guard.
 - M1 Marketplace Protected Flow E2E.
-- M2 Marketplace QA Harness.
+- M2 Marketplace QA Harness (S03F PASS 2026-05-11: login + publish + discovery validados; bootstrap + doctor creados).
+  - S03G pendiente: Purchase + Payment Proof.

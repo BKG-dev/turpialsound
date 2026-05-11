@@ -73,49 +73,61 @@ S03E ── Architecture + Base ── (done)
 
 ## 3. Detailed Sprint Breakdown
 
-### S03F — Login, Publish, Discovery ✅ IMPLEMENTED (2026-05-10)
+### S03F — Login, Publish, Discovery ✅ VALIDATED PASS (2026-05-11)
 
-**Status: IMPLEMENTED — awaiting env vars for execution**
+**Status: PASS — all 4 modules validated against Preview BKG DB. Commit: 9ce6fb3.**
 
-**Prerequisites:**
+**Prerequisites met:**
 - `setup-marketplace-qa-accounts.ts` executed (QA accounts normalized).
-- `.env.local` with `DATABASE_URL`, `APP_URL`, QA credentials. ⚠️ QA_* vars missing — manual Vercel pull needed.
+- `.env.local` populated via `vercel env pull` + `ensure-marketplace-qa-env.ps1` with DATABASE_URL, APP_URL, QA_* credentials.
+- Runner: `npx tsx` (required for generated/prisma/client .ts import).
 
 **Tasks completed:**
-1. ✅ `scripts/qa/lib/db-read.mjs` — Prisma factory, table checks, user/listing lookups
+1. ✅ `scripts/qa/lib/db-read.mjs` — Prisma factory (tsx-compatible), table checks, user/listing lookups
 2. ✅ `scripts/qa/lib/server-action.mjs` — HTTP server action call helper
 3. ✅ `scripts/qa/lib/session.mjs` — bcrypt-based credential validation
-4. ✅ `scripts/qa/modules/qa-00-preflight.mjs` — Full preflight: env, APP_URL, DB tables, QA users, candidateCount
-5. ✅ `scripts/qa/modules/qa-01-login.mjs` — Server-side login: bcrypt hash validation, profile checks, admin optional
-6. ✅ `scripts/qa/modules/qa-02-publish.mjs` — Listing create/reconcile via Prisma (slug=qa-e2e-s03f-selleria-discovery)
-7. ✅ `scripts/qa/modules/qa-03-discovery.mjs` — DB read + HTTP fetch discovery, classifies DATA_PASS/UI_PASS/BROWSER_REQUIRED
+4. ✅ `scripts/qa/modules/qa-00-preflight.mjs` — Full preflight: PASS (env, APP_URL, DB 11/11 tables, QA users, candidateCount=1)
+5. ✅ `scripts/qa/modules/qa-01-login.mjs` — Server-side login: PASS (buyerIA/sellerIA AUTH_DATA_PASS, mvera SUPER)
+6. ✅ `scripts/qa/modules/qa-02-publish.mjs` — Listing created: PASS (slug=qa-e2e-s03f-selleria-discovery, ACTIVE)
+7. ✅ `scripts/qa/modules/qa-03-discovery.mjs` — Discovery: PASS (UI_PASS — listing in server-rendered HTML)
 
-**Expected output (when env vars present):**
-- Login validated without CDP.
-- Listing created and visible.
-- Report JSON + MD.
+**Harden artifacts:**
+- `scripts/qa/ensure-marketplace-qa-env.ps1` — PowerShell bootstrap (backup, vercel pull, secure password prompt)
+- `scripts/qa/doctor-marketplace-qa-env.mjs` — JSON doctor (boolean presence of all 11 required env vars)
+- `.env.example` — QA var names without values
 
-**Decision gate:** Playwright not installed (not needed yet for S03F — QA-03 uses HTTP fetch fallback).
+**Canonical commands:**
+```
+powershell -ExecutionPolicy Bypass -File scripts/qa/ensure-marketplace-qa-env.ps1
+npx tsx scripts/qa/doctor-marketplace-qa-env.mjs
+npx tsx scripts/qa/run-marketplace-qa.mjs --modules=qa-00,qa-01,qa-02,qa-03 --app-url=https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app
+```
+
+**Decision gate resolved:** No CDP needed. No Playwright needed for S03F. Discovery achieved UI_PASS via HTTP fetch of server-rendered HTML.
 
 ---
 
 ### S03G — Purchase + Payment Proof
 
+**Status: PENDING (next sprint after S03F)**
+
 **Prerequisites:**
-- S03F completed (login works, listing exists).
-- `D:\Users\mvera\Downloads` has at least one `.jpg`/`.png` file for proof simulation.
+- S03F completed (login works, listing `qa-e2e-s03f-selleria-discovery` ACTIVE).
+- `.env.local` with QA_* vars (use `ensure-marketplace-qa-env.ps1`).
+- Playwright authorized and installed for browser-based file upload.
 
 **Tasks:**
-1. Implement `scripts/qa/modules/qa-04-qa.mjs` — server-side Q&A (ask + answer).
-2. Implement `scripts/qa/modules/qa-05-purchase.mjs` — server-side purchase initiation.
-3. Implement `scripts/qa/modules/qa-06-proof.mjs` — browser-based payment proof upload with local asset.
+1. Implement `scripts/qa/modules/qa-05-purchase.mjs` — server-side purchase initiation via Prisma or server action.
+2. Implement `scripts/qa/modules/qa-06-proof.mjs` — buyer payment report + proof upload (browser + local asset).
+3. Implement `scripts/qa/fixtures/payment-proof-dummy.png` — dummy QA fixture (no sensitive data).
 
 **Expected output:**
-- Q&A cycle validated.
 - Transaction created in `PENDING_PAYMENT`.
-- Payment proof uploaded and TX transitions to `PAYMENT_RECEIVED`.
+- Payment reported and proof uploaded.
+- TX transitions to `PAYMENT_RECEIVED`.
+- Buyer/seller/admin can see correct state.
 
-**Risk:** File upload requires browser. If CDP still blocked, Playwright must be authorized and installed.
+**Risk:** File upload requires browser. Playwright authorized for S03G.
 
 ---
 
