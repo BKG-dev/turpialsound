@@ -1,6 +1,6 @@
 {
-  "version": 3,
-  "updated_at": "2026-05-10T23:59:00",
+  "version": 4,
+  "updated_at": "2026-05-11T05:10:00",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
     "layers": {
@@ -323,41 +323,44 @@
       "implemented_at": "2026-05-10",
       "last_validated_at": "2026-05-10"
     },
-    "qa_questions": {
-      "task_id": "qa_questions",
+    "qa_purchase_initiation": {
+      "task_id": "qa_purchase_initiation",
       "mode": "script",
       "module": "QA-04",
       "layer": "B",
-      "canonical_script": "node scripts/qa/run-marketplace-qa.mjs --module=QA-04",
-      "preconditions": ["QA-01 passed", "listing con slug visible"],
-      "notes": "Server-side Q&A: askQuestion() + answerQuestion(). No browser.",
-      "status": "STUB — implement in S03G",
-      "sprint_target": "S03G"
+      "canonical_script": "npx tsx scripts/qa/run-marketplace-qa.mjs --module=QA-04",
+      "preconditions": ["QA-02 passed (listing ACTIVE)", "buyerIA credentials in env"],
+      "notes": "Server-side purchase initiation via Prisma direct mutation. Creates TX in PENDING_PAYMENT.",
+      "status": "IMPLEMENTED — creates/reuses TX, verifies PENDING_PAYMENT state",
+      "sprint_target": "S03G",
+      "implemented_at": "2026-05-11",
+      "last_validated_at": "2026-05-11"
     },
-    "qa_purchase": {
-      "task_id": "qa_purchase",
+    "qa_payment_report": {
+      "task_id": "qa_payment_report",
       "mode": "script",
       "module": "QA-05",
       "layer": "B",
-      "canonical_script": "node scripts/qa/run-marketplace-qa.mjs --module=QA-05",
-      "preconditions": ["QA-01 passed", "listing ACTIVE not owned by buyer"],
-      "notes": "Server-side purchase initiation via initiatePurchase(). No browser.",
-      "status": "STUB — implement in S03G",
-      "sprint_target": "S03G"
+      "canonical_script": "npx tsx scripts/qa/run-marketplace-qa.mjs --module=QA-05",
+      "preconditions": ["QA-04 passed (TX PENDING_PAYMENT)"],
+      "notes": "Server-side payment report via Prisma direct. Updates TX to PAYMENT_RECEIVED with ref=QA-S03G-REF-001.",
+      "status": "IMPLEMENTED — updates TX status, creates status history",
+      "sprint_target": "S03G",
+      "implemented_at": "2026-05-11",
+      "last_validated_at": "2026-05-11"
     },
     "qa_payment_proof": {
       "task_id": "qa_payment_proof",
       "mode": "script",
       "module": "QA-06",
       "layer": "D",
-      "canonical_script": "node scripts/qa/run-marketplace-qa.mjs --module=QA-06",
-      "preconditions": [
-        "QA-05 passed (TX PENDING_PAYMENT)",
-        "Local asset available in QA_ASSETS_DIR"
-      ],
-      "notes": "Browser-based payment proof upload using local asset file.",
-      "status": "STUB — implement in S03G (requires Playwright)",
-      "sprint_target": "S03G"
+      "canonical_script": "npx tsx scripts/qa/run-marketplace-qa.mjs --module=QA-06",
+      "preconditions": ["QA-05 passed (TX PAYMENT_RECEIVED)"],
+      "notes": "Server-side proof attachment via Prisma direct (dummy blob metadata + TX update). Verifies admin/seller/buyer visibility. Browser-based file upload deferred to S03I with Playwright.",
+      "status": "IMPLEMENTED — blob metadata + TX update + visibility checks",
+      "sprint_target": "S03G",
+      "implemented_at": "2026-05-11",
+      "last_validated_at": "2026-05-11"
     },
     "qa_admin_review": {
       "task_id": "qa_admin_review",

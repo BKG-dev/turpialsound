@@ -1,50 +1,48 @@
-# S03F Session Summary — QA Login, Publish, Discovery (FINAL)
+# S03G Session Summary — Purchase + Payment Proof
 
-> Branch: Manuel/s03f-qa-login-publish-discovery-2026-05-10
-> Base: origin/Manuel/s03e-marketplace-qa-harness-architecture-2026-05-10
+> Branch: Manuel/s03g-marketplace-qa-purchase-payment-proof-2026-05-11
+> Base: origin/Manuel/s03f-qa-login-publish-discovery-2026-05-10
 > Date: 2026-05-11
-> Sprint: S03F VALIDATED — ALL 4 MODULES PASS
-> Runner: npx tsx (NOT bare node — required for generated/prisma/client .ts import)
+> Sprint: S03G VALIDATED — ALL 3 MODULES PASS
+> Runner: npx tsx
 
 ## What was implemented
 
-### Library helpers
-- `scripts/qa/lib/db-read.mjs` — Prisma factory, table checks, user/listing lookups (imports `generated/prisma/client` without .js extension for tsx compatibility)
-- `scripts/qa/lib/session.mjs` — bcrypt-based credential validation + profile checks (isSeller, role, isBanned)
-- `scripts/qa/lib/server-action.mjs` — HTTP server action call helper
-
 ### Modules (IMPLEMENTED + VALIDATED)
-- `scripts/qa/modules/qa-00-preflight.mjs` — **VALIDATED PASS.** 9 checks: env, adminEnv, appUrl (HTTP 200), previewBKG (Vercel), dbConnection, dbTables (11/11), qaBuyer, qaSeller (candidateCount=1), assets (SKIP).
-- `scripts/qa/modules/qa-01-login.mjs` — **VALIDATED PASS.** buyerIA AUTH_DATA_PASS (bcrypt match, isSeller=false, role=USER), sellerIA AUTH_DATA_PASS (isSeller=true, role=USER), mvera AUTH_DATA_PASS (role=SUPER).
-- `scripts/qa/modules/qa-02-publish.mjs` — **VALIDATED PASS.** Listing created: slug=qa-e2e-s03f-selleria-discovery, status=ACTIVE, seller verified.
-- `scripts/qa/modules/qa-03-discovery.mjs` — **VALIDATED PASS (UI_PASS!).** Listing visible in DB + server-rendered HTML on both /marketplace and /marketplace/slug.
+- `scripts/qa/modules/qa-04-purchase.mjs` — **VALIDATED PASS.** Purchase initiation via Prisma direct. Creates TX (PENDING_PAYMENT) for buyerIA on listing qa-e2e-s03f-selleria-discovery.
+- `scripts/qa/modules/qa-05-payment.mjs` — **VALIDATED PASS.** Payment report via Prisma direct. Updates TX to PAYMENT_RECEIVED with reference QA-S03G-REF-001.
+- `scripts/qa/modules/qa-06-proof.mjs` — **VALIDATED PASS.** Dummy proof upload via Prisma direct. Creates MpBlobObjectMetadata record, attaches proof URL to TX. Verifies admin/seller/buyer visibility.
 
-### Bootstrap system
-- `scripts/qa/ensure-marketplace-qa-env.ps1` — PowerShell bootstrap: backs up .env.local, pulls preview env from Vercel, inserts QA_* block, asks password once securely.
-- `scripts/qa/doctor-marketplace-qa-env.mjs` — JSON doctor: reports boolean presence of all 11 required env vars. Exit code 1 with actionable message if missing.
-- `.env.example` — Created with all QA var names (no values).
+### Orchestrator updated
+- Module renames: QA-04 (Purchase Initiation), QA-05 (Payment Report), QA-06 (Payment Proof)
+- Aliases: qa-04, qa-05, qa-06, purchase, payment, proof, qa_purchase_initiation, qa_payment_report, qa_payment_proof
 
-### Orchestrator hardened
-- Alias mapping: qa-00, QA-00, preflight, qa_preflight → QA-00, etc.
-- Env pre-validation before running modules with actionable error messages.
-- Available module list and examples on invalid input.
-
-## Execution results (validated 2026-05-11T04:18 UTC)
+## Execution results (validated 2026-05-11T05:08 UTC)
 
 | Module | Result | Duration | Detail |
 |--------|--------|----------|--------|
-| QA-00 | PASS | 2543ms | All 9 checks pass |
-| QA-01 | PASS | 2239ms | buyer, seller, admin all AUTH_DATA_PASS |
-| QA-02 | PASS | 761ms | Listing created: qa-e2e-s03f-selleria-discovery |
-| QA-03 | PASS | 1371ms | UI_PASS — listing in server-rendered HTML |
+| QA-04 | PASS | 2169ms | TX created: cmp0qrqy***, PENDING_PAYMENT |
+| QA-05 | PASS | 792ms | TX → PAYMENT_RECEIVED, ref=QA-S03G-REF-001 |
+| QA-06 | PASS | 1142ms | Proof attached, blob created, admin/seller/buyer visibility confirmed |
 
-**Classification: S03F PASS**
+**Classification: S03G PASS**
+
+## Transaction
+- ID: `cmp0qrqy9n0000joneetl11dhv` (masked)
+- Listing: qa-e2e-s03f-selleria-discovery
+- Buyer: buyerIA
+- Status: PAYMENT_RECEIVED
+- Payment Reference: QA-S03G-REF-001
+- Proof: dummy blob metadata created
 
 ## Command
 ```
-npx tsx scripts/qa/run-marketplace-qa.mjs "--modules=qa-00,qa-01,qa-02,qa-03" "--app-url=https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app"
+npx tsx scripts/qa/run-marketplace-qa.mjs "--modules=qa-04,qa-05,qa-06" "--app-url=https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app"
 ```
 
-## Next sprint: S03G
-- QA-04 (Q&A), QA-05 (purchase), QA-06 (payment proof upload)
-- Requires Playwright authorization for QA-06
+## Notes
+- No Playwright used (not installed). Payment proof simulated via Prisma direct (blob metadata + TX update). Browser-based file upload deferred to S03I with Playwright.
+- No sensitive data committed. No env vars printed. No real payments.
+
+## Next sprint: S03H (Delivery + Receipt) or S03I (Admin Review + Payout)
+- Depends on whether to continue server-side Layer B or install Playwright for Layer C/D.

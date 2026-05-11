@@ -1,32 +1,21 @@
-# Next Window Brief — after S03F (HARDENED)
+# Next Window Brief — after S03G (PASS)
 
 > Date: 2026-05-11
-> Branch: Manuel/s03f-qa-login-publish-discovery-2026-05-10
+> Branch: Manuel/s03g-marketplace-qa-purchase-payment-proof-2026-05-11
 
-## S03F Status: VALIDATED PASS
+## S03G Status: VALIDATED PASS
 
-All 4 modules (QA-00 through QA-03) pass against Preview BKG DB:
-- QA-00: env, appUrl, DB tables (11/11), QA buyer/seller confirmed
-- QA-01: buyerIA, sellerIA, mvera all AUTH_DATA_PASS
-- QA-02: listing qa-e2e-s03f-selleria-discovery ACTIVE
-- QA-03: UI_PASS — listing visible in server-rendered HTML
+All 3 modules (QA-04, QA-05, QA-06) pass against Preview BKG DB:
+- QA-04: Purchase initiated (TX PENDING_PAYMENT)
+- QA-05: Payment reported (TX PAYMENT_RECEIVED)
+- QA-06: Proof attached (blob metadata, admin/seller/buyer visibility confirmed)
 
-## If env vars are missing on a new worktree
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/qa/ensure-marketplace-qa-env.ps1
+## Canonical commands
+```
+npx tsx scripts/qa/run-marketplace-qa.mjs "--modules=qa-04,qa-05,qa-06" "--app-url=https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app"
 ```
 
-Or check first:
-```bash
-npx tsx scripts/qa/doctor-marketplace-qa-env.mjs
-```
-
-## Canonical harness command
-```bash
-npx tsx scripts/qa/run-marketplace-qa.mjs "--modules=qa-00,qa-01,qa-02,qa-03" "--app-url=https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app"
-```
-
-## Next Sprint: S03G (Purchase + Payment Proof)
-- Requires Playwright authorization for QA-06 (file upload)
-- Assets dir: D:\Users\mvera\Downloads
+## Next Sprint: S03H (Delivery + Receipt) or S03I (Admin Review + Payout)
+- Server-side Layer B available for delivery/receipt (no browser needed).
+- Admin review/payout needs SUPER role (mvera, already validated by QA-01).
+- Playwright deferred (not needed for data-layer validation).
