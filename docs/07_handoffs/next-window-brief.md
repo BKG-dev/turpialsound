@@ -1,50 +1,50 @@
-# Next Window Brief — S03 Complete
+# Next Window Brief — S11 Complete → S12 Ready
 
 > Date: 2026-05-11
-> Branch: Manuel/s03j-qa-final-regression-2026-05-11
+> Mother: `integration/today-reservas-marketplace-stable-2026-05-07` @ `48e4479`
 
-## Current state: S03 CLOSED — 12/12 PASS
+## Current state: S11 CLOSED — 3/3 PASS, MERGED TO MOTHER
 
-Sprint 3 QA Harness Marketplace fully validated. No pending work.
+Playwright + Chromium instalado en rama madre. Helpers y spec S11 funcionando.
 
 ## What to read first
 
-1. [[00_CENTRAL_TURPIAL]] — Mapa central del proyecto (actualizado)
-2. [[S03_QA_HARNESS_INDEX]] — Dashboard maestro Obsidian del Sprint 3
-3. [[S03_FINAL_QA_HARNESS_CLOSURE_2026-05-11]] — Cierre consolidado
-4. `docs/07_handoffs/QA_E2E_ROADMAP_2026-05-10.md` — Roadmap detallado
-5. `docs/07_handoffs/qa-dispatcher.json` — Dispatcher v4 con task_ids
+1. `docs/obsidian-vault/NEXT_PHASE_PLAN_S11_S20.md` — Plan S11-S20
+2. `docs/07_handoffs/session-summary-active.md` — Resumen S11
+3. `scripts/qa/playwright/login.mjs` — Helper de login Playwright (reusable para S12+)
 
-## Key facts
+## Credenciales QA
 
-- 12/12 modules PASS. Zero browser. Zero CDP. Zero Playwright.
-- Runner: `npx tsx`. Not bare `node`.
-- Bootstrap: `scripts/qa/ensure-marketplace-qa-env.ps1`
-- Doctor: `scripts/qa/doctor-marketplace-qa-env.mjs`
-- Credentials: buyerIA, sellerIA, mvera (same QA password, never in Git).
-- Listing: `qa-e2e-s03f-selleria-discovery` (ACTIVE on preview BKG).
+| Rol | Identificador | Env var |
+|-----|--------------|---------|
+| Buyer | buyerIA | QA_BUYER_IDENTIFIER, QA_BUYER_PASSWORD |
+| Seller | sellerIA | QA_SELLER_IDENTIFIER, QA_SELLER_PASSWORD |
+| Admin | mvera | QA_ADMIN_IDENTIFIER, QA_ADMIN_PASSWORD |
 
-## Canonical command
+## S12 — Próximo sprint (Jean)
+
+- **Owner:** Jean
+- **Branch:** `jean/s12-purchase-flow-browser-2026-05-12`
+- **Base:** `integration/today-reservas-marketplace-stable-2026-05-07` (Playwright ya disponible)
+- **Tareas:** Navegar listing QA → click "Comprar" → Pago Móvil → Confirmar → Screenshots
+- **Reutilizar:** `scripts/qa/playwright/login.mjs` para login buyer
+
+## Canonical commands
 
 ```bash
-npx tsx scripts/qa/run-marketplace-qa.mjs "--modules=qa-12" "--app-url=https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app"
+# Bootstrap credenciales QA
+powershell -ExecutionPolicy Bypass -File scripts/qa/ensure-marketplace-qa-env.ps1
+
+# Doctor env
+npx tsx scripts/qa/doctor-marketplace-qa-env.mjs
+
+# S11 login smoke
+npx tsx scripts/qa/playwright/s11-login-smoke.spec.mjs
 ```
 
-## Next real step
+## DO NOT
 
-**S04: Browser/UI E2E with Playwright.**
-Base branch: `Manuel/s03j-qa-final-regression-2026-05-11`.
-Playwright authorized. Target: validate real UX: login UI, forms, file picker, dashboards, notifications.
-
-## Jean's action
-
-Review + merge docs-only branch into mother:
-`Manuel/docs-sync-s03-complete-obsidian-to-mother-2026-05-11`
-
-## Do NOT repeat
-
-- Do not re-implement S03 modules.
-- Do not use CDP.
-- Do not touch booking/reservas.
-- Do not touch production/main.
-- Do not commit .env.local, var/qa-results, or secrets.
+- No tocar booking/reservas
+- No deploy a produccion
+- No tocar main
+- No commitear .env.local o secretos
