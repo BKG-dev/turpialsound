@@ -204,6 +204,11 @@ async function updateOperationalStatus(formData: FormData) {
   const currentOperationalStatus = getOperationalStatus(current)
   const primaryItem = current.items[0]
 
+  if (effectiveNextStatus === 'confirmed' && currentOperationalStatus === 'confirmed') {
+    revalidatePath('/admin')
+    redirect(returnPath)
+  }
+
   if (effectiveNextStatus === 'confirmed') {
     if (currentOperationalStatus === 'expired' || currentOperationalStatus === 'cancelled') {
       buildConfirmGuardRedirect(returnPath, 'expired_or_cancelled')
