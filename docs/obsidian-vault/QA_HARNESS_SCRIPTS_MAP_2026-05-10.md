@@ -64,9 +64,9 @@
 | `qa-01-login.mjs` | **IMPLEMENTED** — bcrypt + Prisma | B | Login server-side: bcrypt password hash + profile checks | No | **Solo reads** | No | `session.mjs`, QA-00 | S03F ✅ |
 | `qa-02-publish.mjs` | **IMPLEMENTED** — Prisma direct mutation | B | Crear/reconciliar listing QA via Prisma (slug=qa-e2e-s03f-selleria-discovery) | No | **Escribe listing QA** | No | QA-01 | S03F ✅ |
 | `qa-03-discovery.mjs` | **IMPLEMENTED** — DB + HTTP fetch | C | DB read + HTTP fetch /marketplace, classify DATA_PASS/UI_PASS/BROWSER_REQUIRED | **Parcial** (HTTP fetch) | No | No | QA-02 | S03F ✅ |
-| `qa-04-qa.mjs` | **STUB** | B | Q&A: `askQuestion()` + `answerQuestion()` via server | No | **Solo reads** | No | QA-01 | S03G |
-| `qa-05-purchase.mjs` | **STUB** | B | `initiatePurchase()` via server + DB verify | No | **Solo reads** | No | QA-01 | S03G |
-| `qa-06-proof.mjs` | **STUB** | D | Upload payment proof usando asset local | **Sí** (file picker) | No | **Sí** — `D:\Users\mvera\Downloads` | QA-05, `assets.mjs` | S03G |
+| `qa-04-purchase.mjs` | **IMPLEMENTED** — Prisma direct mutation | B | Purchase initiation: creates TX PENDING_PAYMENT for buyerIA on listing QA | No | **Escribe TX QA** | No | QA-02 | S03G ✅ |
+| `qa-05-payment.mjs` | **IMPLEMENTED** — Prisma direct mutation | B | Payment report: updates TX to PAYMENT_RECEIVED, sets ref=QA-S03G-REF-001 | No | **Escribe TX QA** | No | QA-04 | S03G ✅ |
+| `qa-06-proof.mjs` | **IMPLEMENTED** — Prisma direct + blob metadata | D | Payment proof: creates dummy blob metadata, attaches proof URL, verifies visibility | No | **Escribe blob/TX QA** | No (dummy blob) | QA-05 | S03G ✅ |
 | `qa-07-admin.mjs` | **STUB** | B/C | Admin: `validatePayment()` server + proof proxy UI | Opcional (UI) | **Solo reads** | No | QA-06, SUPER login | S03I |
 | `qa-08-delivery.mjs` | **STUB** | B | `sellerDeliver()` via server | No | **Solo reads** | No | QA-07 | S03H |
 | `qa-09-receipt.mjs` | **STUB** | B | `confirmDelivery()` via server | No | **Solo reads** | No | QA-08 | S03H |
