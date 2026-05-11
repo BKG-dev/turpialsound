@@ -42,6 +42,30 @@ async function run() {
   console.log(`[INFO] TX: ${tx.id.slice(0, 8)}***, status=${tx.status}`)
   console.log(`[INFO] Buyer: ${tx.buyer?.displayName}, Seller: ${tx.seller?.displayName}`)
 
+  // Ensure chat thread and system messages exist (replicates sendSystemMessage behavior)
+  let thread = await prisma.mpChatThread.findFirst({
+    where: { listingId: listing.id, buyerId: tx.buyerId, sellerId: tx.sellerId, isActive: true },
+    select: { id: true },
+  })
+  if (!thread) {
+    thread = await prisma.mpChatThread.create({
+      data: { buyerId: tx.buyerId, sellerId: tx.sellerId, listingId: listing.id },
+      select: { id: true },
+    })
+    await prisma.mpMessage.create({
+      data: {
+        threadId: thread.id,
+        senderId: tx.sellerId,
+        receiverId: tx.buyerId,
+        content: 'S05 QA: el vendedor registró la entrega. Revisa el producto y confirma la recepción.',
+      },
+    })
+    await prisma.mpChatThread.update({
+      where: { id: thread.id },
+      data: { lastMessageAt: new Date() },
+    })
+  }
+
   // 1. Verify status flow through delivery and receipt
   const states = tx.statusHistory.map(h => h.toStatus)
   const hasEscrow = states.includes('IN_ESCROW')
@@ -88,11 +112,6 @@ async function run() {
   })
 
   // 3. Check system messages (mp_message for this TX thread)
-  const thread = await prisma.mpChatThread.findFirst({
-    where: { listingId: listing.id, buyerId: tx.buyerId, sellerId: tx.sellerId },
-    select: { id: true },
-  })
-
   if (thread) {
     const messages = await prisma.mpMessage.count({ where: { threadId: thread.id } })
     checks.push({
