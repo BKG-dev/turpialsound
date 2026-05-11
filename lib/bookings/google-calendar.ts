@@ -203,9 +203,7 @@ function shouldMaintainCalendarEvent(status: OperationalBookingStatus): boolean 
     status === 'pending_payment' ||
     status === 'payment_reported' ||
     status === 'payment_verified' ||
-    status === 'confirmed' ||
-    status === 'cancelled' ||
-    status === 'expired'
+    status === 'confirmed'
   )
 }
 
