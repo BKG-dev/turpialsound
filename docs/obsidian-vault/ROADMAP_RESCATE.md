@@ -4,15 +4,19 @@ tags: ["#roadmap", "#status/urgent", "#status/live-source"]
 
 # Roadmap de Rescate
 
-## Actualizacion S02 (2026-05-10)
+## S02 — Marketplace Discovery Runtime Stabilization: CLOSED (2026-05-11)
 
-- Sprint ejecutado: `S02` (Jean) en rama `Jean/s02-marketplace-discovery-runtime-stabilization-2026-05-10`.
-- Runner aplicado: `AGENT_CONTROL_BUS_RUNNER.md` v1.0.1 desde `origin/Manuel/docs-control-bus-s02-unblock-2026-05-10` (`9a8faae`).
-- Preview de cierre usado: `https://turpialsound-nukiu73zg-bkgs-projects-829c67c1.vercel.app`.
-- Clasificacion canonica registrada: `QUERY_ERROR` en `preview-runtime-guard` por `DATABASE_URL missing` local de diagnostico.
-- Smoke BKG estable: `/`, `/marketplace`, `/reservas`, `/api/bcv-rate`, `/admin/login`, `/ops/payment-review` en `200`; `/payment-proofs/view` en `400` controlado.
+- Sprint: `S02` — CLOSED.
+- Owner: Jean. Reviewer: Manuel.
+- Rama final: `jean/s02-marketplace-discovery-runtime-stabilization-2026-05-10`.
+- Commit final: `4c3908e` (5 commits total).
+- Resultado: Error clasificado como `QUERY_ERROR` con smoke BKG estable (6/6 rutas 200).
+- Preview de cierre: `https://turpialsound-nukiu73zg-bkgs-projects-829c67c1.vercel.app`.
+- Clasificacion canonica: `QUERY_ERROR` por `DATABASE_URL missing` local de diagnostico.
 - Sin cambios en booking, main, produccion, envs ni schema.
-- Siguiente ventana recomendada: `S03` (Auth/Login QA Closure, Manuel owner).
+- Ver [[S02_DISCOVERY_RUNTIME_INDEX]] para dashboard completo.
+- Ver [[S02_FINAL_DISCOVERY_RUNTIME_CLOSURE_2026-05-11]] para cierre consolidado.
+- Proximo: S03 (ya cerrado 12/12 PASS QA Harness), S04 en curso.
 
 ## Estado real activo (2026-05-07)
 
