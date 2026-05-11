@@ -80,9 +80,6 @@ export function ContactStep({
   const phoneHasContent = phone.trim().length > 0
   const phoneInvalid = phoneHasContent && !isValidWhatsappVe(phone)
   const canStartVerification = !phoneInvalid && phoneHasContent && whatsappConsentAccepted
-  const isVerificationInProgress =
-    whatsappVerificationStatus === 'loading' || whatsappVerificationStatus === 'pending'
-
   return (
     <div className="space-y-4 md:space-y-3">
       <p className="text-sm text-text-secondary md:text-[11px]">
@@ -244,18 +241,6 @@ export function ContactStep({
               </div>
             ) : (
               <div className="mt-2 space-y-2">
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="sm"
-                  onClick={onStartWhatsappVerification}
-                  disabled={!canStartVerification || isVerificationInProgress}
-                >
-                  {whatsappVerificationStatus === 'loading'
-                    ? 'Preparando verificacion...'
-                    : 'Verificar WhatsApp'}
-                </Button>
-
                 {whatsappVerificationStatus === 'pending' && (
                   <div className="rounded-md border border-accent-gold/30 bg-accent-gold/10 px-3 py-2">
                     <p className="text-[11px] font-medium text-text-primary">Esperando verificacion...</p>

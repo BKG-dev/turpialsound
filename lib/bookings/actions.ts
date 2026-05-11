@@ -34,6 +34,7 @@ const BOOKING_SUBMIT_MAX_ATTEMPTS = 3
 const RETRYABLE_BOOKING_SUBMIT_ERROR_CODES = new Set(['P2034', 'P2002', '40001', '40P01'])
 const ACTIVE_HOLD_BLOCKING_ERROR =
   'Ya tienes una solicitud pendiente de pago o revision. Completa esa solicitud antes de crear una nueva.'
+const QA_PREVIEW_BYPASS_PHONE = '+584142743886'
 
 function getUnknownErrorCode(error: unknown): string | null {
   if (typeof error !== 'object' || error === null) {
@@ -344,33 +345,39 @@ export async function submitBookingRequest(
         submitResult = await prisma.$transaction(
           async (tx) => {
             const activeHoldCutoff = new Date(Date.now() - PAYMENT_WINDOW_MINUTES * 60 * 1000)
-            const existingActiveHolds = await tx.bookingRequest.count({
-              where: {
-                status: 'under_review',
-                AND: [
-                  {
-                    OR: [{ requesterEmail }, { requesterPhone }],
-                  },
-                  {
-                    OR: [
-                      { internalNotes: { contains: '[ops_status:payment_reported]' } },
-                      {
-                        AND: [
-                          { internalNotes: { contains: '[ops_status:pending_payment]' } },
-                          { createdAt: { gte: activeHoldCutoff } },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              },
-            })
+            const shouldBypassActiveHoldGuard =
+              // QA preview bypass for repeated booking hold tests; inactive in production.
+              requesterPhone === QA_PREVIEW_BYPASS_PHONE && process.env.VERCEL_ENV !== 'production'
 
-            if (existingActiveHolds > 0) {
-              return {
-                success: false,
-                error: ACTIVE_HOLD_BLOCKING_ERROR,
-              } satisfies SubmitBookingResult
+            if (!shouldBypassActiveHoldGuard) {
+              const existingActiveHolds = await tx.bookingRequest.count({
+                where: {
+                  status: 'under_review',
+                  AND: [
+                    {
+                      OR: [{ requesterEmail }, { requesterPhone }],
+                    },
+                    {
+                      OR: [
+                        { internalNotes: { contains: '[ops_status:payment_reported]' } },
+                        {
+                          AND: [
+                            { internalNotes: { contains: '[ops_status:pending_payment]' } },
+                            { createdAt: { gte: activeHoldCutoff } },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              })
+
+              if (existingActiveHolds > 0) {
+                return {
+                  success: false,
+                  error: ACTIVE_HOLD_BLOCKING_ERROR,
+                } satisfies SubmitBookingResult
+              }
             }
 
             const year = new Date().getFullYear()

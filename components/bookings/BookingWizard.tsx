@@ -106,6 +106,7 @@ const BOOKING_DRAFT_STORAGE_KEY = 'turpial_booking_draft_v1'
 const BOOKING_DRAFT_TTL_MS = 2 * 60 * 60 * 1000
 const WHATSAPP_VERIFICATION_TTL_MS = 30 * 60 * 1000
 const WHATSAPP_STATUS_POLL_MS = 2500
+const TURPIAL_WHATSAPP_BOOKING_NUMBER = '584246707078'
 
 const INITIAL_WHATSAPP_VERIFICATION_STATE: WhatsappVerificationState = {
   status: 'idle',
@@ -528,8 +529,10 @@ export function BookingWizard({
         expiresAt: string
       }
 
-      const whatsappText = encodeURIComponent(payload.code)
-      const whatsappUrl = `https://wa.me/?text=${whatsappText}`
+      const whatsappText = encodeURIComponent(
+        `Codigo de verificacion Turpial Sound: ${payload.code}`,
+      )
+      const whatsappUrl = `https://wa.me/${TURPIAL_WHATSAPP_BOOKING_NUMBER}?text=${whatsappText}`
       window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
 
       setWhatsappVerification({
@@ -567,8 +570,10 @@ export function BookingWizard({
 
   function handleRetryOpenWhatsapp() {
     if (!whatsappVerification.code) return
-    const whatsappText = encodeURIComponent(whatsappVerification.code)
-    const whatsappUrl = `https://wa.me/?text=${whatsappText}`
+    const whatsappText = encodeURIComponent(
+      `Codigo de verificacion Turpial Sound: ${whatsappVerification.code}`,
+    )
+    const whatsappUrl = `https://wa.me/${TURPIAL_WHATSAPP_BOOKING_NUMBER}?text=${whatsappText}`
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
   }
 
@@ -649,6 +654,18 @@ export function BookingWizard({
     window.localStorage.setItem(BOOKING_DRAFT_STORAGE_KEY, JSON.stringify(draft))
   }, [hasRestoredDraft, currentStep, furthestStep, data, whatsappVerification])
 
+  useEffect(() => {
+    if (currentStep !== 4) return
+    if (!isWhatsappVerificationFresh) return
+
+    const timer = window.setTimeout(() => {
+      setCurrentStep((value) => (value === 4 ? 5 : value))
+      setFurthestStep((value) => Math.max(value, 5))
+    }, 450)
+
+    return () => window.clearTimeout(timer)
+  }, [currentStep, isWhatsappVerificationFresh])
+
   const canProceed =
     currentStep === 0
       ? selectedServiceSlug !== null
@@ -667,6 +684,19 @@ export function BookingWizard({
               : currentStep === 5
                 ? true
                 : false
+  const contactDataIsComplete =
+    data.requesterName.trim() !== '' &&
+    isValidEmail(data.requesterEmail) &&
+    isValidWhatsappVe(data.requesterPhone) &&
+    data.whatsappConsentAccepted
+  const isContactVerificationRunning =
+    whatsappVerification.status === 'loading' || whatsappVerification.status === 'pending'
+
+  const contactPrimaryCtaLabel = isWhatsappVerificationFresh
+    ? 'Continuar al resumen'
+    : isContactVerificationRunning
+      ? 'Esperando verificacion...'
+      : 'Verificar WhatsApp y continuar'
 
   function focusWhatsappConsentBlock() {
     const consentBlock = document.getElementById('requester-whatsapp-consent-block')
@@ -740,6 +770,26 @@ export function BookingWizard({
     setSubmitError(null)
     setWhatsappVerification(INITIAL_WHATSAPP_VERIFICATION_STATE)
     window.localStorage.removeItem(BOOKING_DRAFT_STORAGE_KEY)
+  }
+
+  async function handleContactPrimaryAction() {
+    if (!contactDataIsComplete) {
+      if (!data.whatsappConsentAccepted) {
+        setContactConsentError('Debes autorizar el seguimiento por WhatsApp para continuar.')
+        focusWhatsappConsentBlock()
+      }
+      return
+    }
+
+    if (isWhatsappVerificationFresh) {
+      handleNext()
+      return
+    }
+
+    if (!isContactVerificationRunning) {
+      setSubmitError(null)
+      await handleStartWhatsappVerification()
+    }
   }
 
   function markCopied(key: string) {
@@ -1679,9 +1729,22 @@ export function BookingWizard({
         </span>
 
         {currentStep < totalSteps - 1 ? (
-          <Button variant="primary" size="sm" onClick={handleNext} disabled={!canProceed}>
-            Continuar
-          </Button>
+          currentStep === 4 ? (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                void handleContactPrimaryAction()
+              }}
+              disabled={!contactDataIsComplete || isContactVerificationRunning}
+            >
+              {contactPrimaryCtaLabel}
+            </Button>
+          ) : (
+            <Button variant="primary" size="sm" onClick={handleNext} disabled={!canProceed}>
+              Continuar
+            </Button>
+          )
         ) : (
           <Button
             variant="primary"
