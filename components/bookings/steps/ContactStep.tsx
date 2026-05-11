@@ -81,12 +81,12 @@ export function ContactStep({
   const phoneInvalid = phoneHasContent && !isValidWhatsappVe(phone)
   const canStartVerification = !phoneInvalid && phoneHasContent && whatsappConsentAccepted
   return (
-    <div className="space-y-4 md:space-y-3">
-      <p className="text-sm text-text-secondary md:text-[11px]">
+    <div className="space-y-3 md:space-y-2.5">
+      <p className="text-[12px] text-text-secondary md:text-[11px]">
         Necesitamos tus datos para contactarte y confirmar tu solicitud.
       </p>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-2">
+      <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-2">
         <div>
           <label
             htmlFor="requester-name"
@@ -221,14 +221,13 @@ export function ContactStep({
             )}
           </div>
 
-          <div className="mt-3 rounded-lg border border-brand-border/80 bg-brand-bg/20 p-3">
-            <p className="text-[11px] text-text-secondary">
-              Para apartar este horario necesitamos confirmar tu WhatsApp. Esto evita reservas
-              falsas y protege la disponibilidad de las salas.
+          <div className="mt-2.5 rounded-lg border border-brand-border/80 bg-brand-bg/20 p-2.5">
+            <p className="text-[10px] text-text-secondary">
+              Confirmamos tu WhatsApp para proteger la disponibilidad de las salas.
             </p>
 
             {whatsappVerificationStatus === 'verified' ? (
-              <div className="mt-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2">
+              <div className="mt-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1.5">
                 <p className="text-[11px] font-medium text-emerald-300">WhatsApp verificado</p>
                 <p className="text-[10px] text-emerald-200/90">
                   Numero validado: {whatsappVerificationPhone ?? normalizeWhatsappVe(phone)}
@@ -242,14 +241,10 @@ export function ContactStep({
             ) : (
               <div className="mt-2 space-y-2">
                 {whatsappVerificationStatus === 'pending' && (
-                  <div className="rounded-md border border-accent-gold/30 bg-accent-gold/10 px-3 py-2">
+                  <div className="rounded-md border border-accent-gold/30 bg-accent-gold/10 px-2.5 py-1.5">
                     <p className="text-[11px] font-medium text-text-primary">Esperando verificacion...</p>
-                    <p className="mt-1 text-[10px] text-text-secondary">
-                      Envia el mensaje que abrimos en WhatsApp. Esta pagina detectara la
-                      verificacion automaticamente.
-                    </p>
                     {whatsappVerificationExpiresAt ? (
-                      <p className="mt-1 text-[10px] text-text-muted">
+                      <p className="mt-0.5 text-[10px] text-text-muted">
                         Expira: {new Date(whatsappVerificationExpiresAt).toLocaleString('es-VE')}
                       </p>
                     ) : null}
@@ -260,7 +255,7 @@ export function ContactStep({
                   whatsappVerificationStatus === 'failed' ||
                   whatsappVerificationStatus === 'expired' ||
                   whatsappVerificationStatus === 'not_found') && (
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div className="grid grid-cols-2 gap-1.5">
                     <Button type="button" variant="ghost" size="sm" onClick={onRetryOpenWhatsapp}>
                       Abrir WhatsApp de nuevo
                     </Button>

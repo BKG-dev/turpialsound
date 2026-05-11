@@ -529,9 +529,7 @@ export function BookingWizard({
         expiresAt: string
       }
 
-      const whatsappText = encodeURIComponent(
-        `Codigo de verificacion Turpial Sound: ${payload.code}`,
-      )
+      const whatsappText = encodeURIComponent(payload.code)
       const whatsappUrl = `https://wa.me/${TURPIAL_WHATSAPP_BOOKING_NUMBER}?text=${whatsappText}`
       window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
 
@@ -570,9 +568,7 @@ export function BookingWizard({
 
   function handleRetryOpenWhatsapp() {
     if (!whatsappVerification.code) return
-    const whatsappText = encodeURIComponent(
-      `Codigo de verificacion Turpial Sound: ${whatsappVerification.code}`,
-    )
+    const whatsappText = encodeURIComponent(whatsappVerification.code)
     const whatsappUrl = `https://wa.me/${TURPIAL_WHATSAPP_BOOKING_NUMBER}?text=${whatsappText}`
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
   }
