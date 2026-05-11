@@ -1,32 +1,29 @@
-# Next Window Brief - Turpial Sound
+# Next Window Brief — after S03F
 
-**Fecha de actualizacion:** 2026-05-10
-**Frente activo:** S03D - Login Smoke Harness Validation
-**Tipo de nota:** Control Tower / harness local mejorado, bloqueo restante en CDP-websocket local de la maquina de Manuel
+> Date: 2026-05-10
+> Branch: Manuel/s03f-qa-login-publish-discovery-2026-05-10
 
-## Estado actual de S03D
+## Current State
+S03F modules (QA-00 through QA-03) are IMPLEMENTED but cannot execute because QA credentials (QA_BUYER_*, QA_SELLER_*) are missing from .env.local and .env.
 
-- **Rama de trabajo:** `Manuel/s03d-login-smoke-harness-validation-2026-05-10`
-- **Base inmediata:** `origin/Manuel/s03c-qa-seller-duplicate-reconcile-2026-05-10`
-- **Preview BKG valido:** `https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app`
-- **APP_URL status:** `200`
-- **Env presence sin valores:** `DATABASE_URL`, `DIRECT_URL`, `QA_BUYER_EMAIL`, `QA_BUYER_IDENTIFIER`, `QA_BUYER_PASSWORD`, `QA_SELLER_EMAIL`, `QA_SELLER_IDENTIFIER`, `QA_SELLER_PASSWORD`
-- **Cuentas QA:** ya no bloquean
-- **Resultado de `task_id=marketplace_login_smoke`:** sigue sin resultado buyer/seller por bloqueo local de CDP/websocket
-- **Validaciones:** `git diff --check` OK, `npx tsc --noEmit` OK, `npm run build` OK
+## Critical Action Required
+1. Run `vercel env pull .env.local --environment=preview --scope bkgs-projects-829c67c1` (requires Vercel login)
+2. Or manually add the following env vars to .env.local:
+   - QA_BUYER_EMAIL, QA_BUYER_IDENTIFIER, QA_BUYER_PASSWORD
+   - QA_SELLER_EMAIL, QA_SELLER_IDENTIFIER, QA_SELLER_PASSWORD
+   - APP_URL=https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app
+3. Optionally add QA_ADMIN_IDENTIFIER, QA_ADMIN_PASSWORD for admin login validation
 
-## Bloqueo rojo
+## Once env vars are present
+Run: `node scripts/qa/run-marketplace-qa.mjs --modules=qa-00,qa-01,qa-02,qa-03 --app-url=https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app`
 
-- Ya no es bloqueo de DB ni de normalizacion QA.
-- El bloqueo vigente es estrictamente local al harness en Windows de Manuel:
-  - `node fetch` contra CDP local falla
-  - Chrome cae por fatal de GPU process
-  - Edge mejora con `--in-process-gpu`, pero el smoke canonico sigue sin completar la sesion websocket/CDP hasta buyer/seller
+## Expected Results
+- QA-00: PASS (envs, DB, tables, accounts)
+- QA-01: PASS (buyer/seller bcrypt validation), SKIP admin if no admin envs
+- QA-02: PASS (listing created/updated, ACTIVE in DB)
+- QA-03: DATA_DISCOVERY_PASS (DB read) + possibly UI_PASS (HTTP fetch) or BROWSER_REQUIRED
 
-## Siguiente ventana recomendada
-
-1. Mantener S03 abierto; no declararlo cerrado todavia.
-2. Reintentar el smoke solo desde un entorno local donde el websocket/CDP del browser quede estable.
-3. No tocar DB ni producto en el siguiente intento salvo evidencia nueva.
-4. S01 no puede cerrarse aun.
-5. S04 no puede pasar a `execute`; solo `align/prep`.
+## Next Sprint: S03G
+- Implement QA-04 (Q&A), QA-05 (purchase), QA-06 (payment proof upload)
+- Requires Playwright authorization before QA-06 implementation
+- Assets dir: D:\Users\mvera\Downloads

@@ -17,6 +17,27 @@ const MODULES = [
   { id: 'QA-12', name: 'Final Regression', path: './modules/qa-12-regression.mjs', layer: 'A-D' },
 ]
 
+function parseArgv() {
+  const args = {}
+  for (const arg of process.argv.slice(2)) {
+    if (arg.startsWith('--module=')) {
+      args.module = arg.replace('--module=', '')
+    } else if (arg.startsWith('--modules=')) {
+      args.modules = arg.replace('--modules=', '').split(',').map(s => s.trim()).filter(Boolean)
+    } else if (arg.startsWith('--app-url=')) {
+      args.appUrl = arg.replace('--app-url=', '')
+    } else if (arg.startsWith('--')) {
+      const eq = arg.indexOf('=')
+      if (eq > 0) {
+        args[arg.slice(2, eq)] = arg.slice(eq + 1)
+      } else {
+        args[arg.slice(2)] = true
+      }
+    }
+  }
+  return args
+}
+
 async function runModule(mod, report) {
   const started = Date.now()
   console.log(`[${mod.id}] ${mod.name} ...`)
@@ -66,6 +87,13 @@ async function runModule(mod, report) {
 async function main() {
   loadEnv()
 
+  const args = parseArgv()
+
+  // Override APP_URL from CLI if provided
+  if (args.appUrl) {
+    process.env.APP_URL = args.appUrl
+  }
+
   const env = process.env.NODE_ENV || 'development'
   if (env !== 'development') {
     console.log('QA harness solo corre en entorno development (NODE_ENV=development)')
@@ -73,22 +101,31 @@ async function main() {
     process.exit(1)
   }
 
-  const report = new ReportBuilder({ appUrl: process.env.APP_URL || 'http://localhost:3002' })
+  const appUrl = process.env.APP_URL || 'http://localhost:3002'
+  const report = new ReportBuilder({ appUrl })
   report.start()
 
   console.log(`Turpial Marketplace QA Harness`)
-  console.log(`App URL: ${report.appUrl}`)
+  console.log(`App URL: ${appUrl}`)
   console.log(`Run ID: ${report.runId}`)
   console.log(`Modules: ${MODULES.length}\n`)
 
-  const runOnly = process.argv.find((arg) => arg.startsWith('--module='))
-  const selectedModules = runOnly
-    ? MODULES.filter((m) => m.id === runOnly.replace('--module=', ''))
-    : MODULES
-
-  if (runOnly && selectedModules.length === 0) {
-    console.log(`Module not found: ${runOnly.replace('--module=', '')}`)
-    process.exit(1)
+  // Resolve which modules to run
+  let selectedModules
+  if (args.module) {
+    selectedModules = MODULES.filter((m) => m.id === args.module)
+    if (selectedModules.length === 0) {
+      console.log(`Module not found: ${args.module}`)
+      process.exit(1)
+    }
+  } else if (args.modules) {
+    selectedModules = args.modules.map(id => MODULES.find(m => m.id === id)).filter(Boolean)
+    if (selectedModules.length === 0) {
+      console.log(`No valid modules found for: ${args.modules.join(',')}`)
+      process.exit(1)
+    }
+  } else {
+    selectedModules = MODULES
   }
 
   for (const mod of selectedModules) {

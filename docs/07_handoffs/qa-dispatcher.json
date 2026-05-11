@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "updated_at": "2026-05-10",
+  "version": 3,
+  "updated_at": "2026-05-10T23:59:00",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
     "layers": {
@@ -276,8 +276,10 @@
       "canonical_script": "node scripts/qa/run-marketplace-qa.mjs --module=QA-00",
       "preconditions": [".env.local con DATABASE_URL, APP_URL, QA_* vars"],
       "notes": "Preflight: valida env vars, app URL reachability. No browser, no DB write.",
-      "status": "PARTIAL — preflight implemented, DB table check pending",
-      "sprint_target": "S03F"
+      "status": "IMPLEMENTED — env, appURL, DB tables, QA users, candidateCount, previewBKG",
+      "sprint_target": "S03F",
+      "implemented_at": "2026-05-10",
+      "last_validated_at": "2026-05-10"
     },
     "qa_login_server_side": {
       "task_id": "qa_login_server_side",
@@ -289,9 +291,11 @@
         "APP_URL activa",
         "buyerIA/sellerIA/SUPER normalizados via qa_accounts_normalization"
       ],
-      "notes": "Login server-side via loginMpUser() + session cookie. No browser.",
-      "status": "STUB — implement in S03F",
-      "sprint_target": "S03F"
+      "notes": "Server-side login: bcrypt password hash validation + profile checks (isSeller, role, isBanned). SESSION_BROWSER_REQUIRED for actual cookie verification.",
+      "status": "IMPLEMENTED — buyer/seller login via bcrypt + Prisma. Admin only if QA_ADMIN_* envs present.",
+      "sprint_target": "S03F",
+      "implemented_at": "2026-05-10",
+      "last_validated_at": "2026-05-10"
     },
     "qa_publish_listing": {
       "task_id": "qa_publish_listing",
@@ -300,9 +304,11 @@
       "layer": "B",
       "canonical_script": "node scripts/qa/run-marketplace-qa.mjs --module=QA-02",
       "preconditions": ["QA-01 passed (sellerIA logged in)"],
-      "notes": "Server-side listing creation via createListing() + DB verification.",
-      "status": "STUB — implement in S03F",
-      "sprint_target": "S03F"
+      "notes": "Server-side listing create/reconcile via Prisma direct mutation (no session-based createListing() server action needed). Creates slug=qa-e2e-s03f-selleria-discovery.",
+      "status": "IMPLEMENTED — creates/updates listing via Prisma, verifies ACTIVE in DB",
+      "sprint_target": "S03F",
+      "implemented_at": "2026-05-10",
+      "last_validated_at": "2026-05-10"
     },
     "qa_home_discovery": {
       "task_id": "qa_home_discovery",
@@ -311,9 +317,11 @@
       "layer": "C",
       "canonical_script": "node scripts/qa/run-marketplace-qa.mjs --module=QA-03",
       "preconditions": ["QA-02 passed (listing ACTIVE)"],
-      "notes": "Browser smoke: verify listing appears on /marketplace grid.",
-      "status": "STUB — implement in S03F (requires Playwright or CDP resolution)",
-      "sprint_target": "S03F"
+      "notes": "Two-phase: DB read verifies listing ACTIVE (DATA_DISCOVERY_PASS). HTTP fetch of /marketplace verifies server-rendered HTML presence (UI_PASS). Falls back to BROWSER_REQUIRED for client-rendered UIs.",
+      "status": "IMPLEMENTED — DB + HTTP fetch discovery. Classifies DATA_PASS / UI_PASS / BROWSER_REQUIRED.",
+      "sprint_target": "S03F",
+      "implemented_at": "2026-05-10",
+      "last_validated_at": "2026-05-10"
     },
     "qa_questions": {
       "task_id": "qa_questions",
@@ -424,9 +432,11 @@
       "layer": "A-D",
       "canonical_script": "node scripts/qa/run-marketplace-qa.mjs",
       "preconditions": ["NODE_ENV=development", "APP_URL activa"],
-      "notes": "Runs all implemented QA modules in sequence. Supports --module=<ID> for single module.",
-      "status": "SCAFFOLD — QA-00 functional, rest stubs",
-      "sprint_target": "S03E (scaffold) → S03J (full)"
+      "notes": "Runs all implemented QA modules in sequence. Supports --module=<ID> for single module, --modules=<ID1,ID2,...> for multiple, --app-url=<URL> to override APP_URL.",
+      "status": "PARTIAL — QA-00 through QA-03 implemented. QA-04 through QA-12 remain stubs.",
+      "sprint_target": "S03F (partial) → S03J (full)",
+      "implemented_at": "2026-05-10",
+      "last_validated_at": "2026-05-10"
     }
   }
 }

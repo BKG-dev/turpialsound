@@ -43,9 +43,9 @@
 | `assets.mjs` | **READY** | A | `findAssets()`, `validateAsset()`, `pickPaymentProof()` desde `D:\Users\mvera\Downloads` | No | No | `node:fs` | S03G |
 | `failures.mjs` | **READY** | A | 23 failure codes, `classifyError()`, `formatFailure()` | No | No | None | S03F |
 | `retry.mjs` | **READY** | A | `withRetry(fn, {maxAttempts})` con límites por código de fallo | No | No | `failures.mjs` | S03F |
-| `db-read.mjs` | **PENDING** | B | Safe read-only Prisma queries | No | **Solo reads** | `DATABASE_URL`, Prisma | S03F |
-| `server-action.mjs` | **PENDING** | B | QA-only endpoints / Prisma validation helpers | No | **Solo reads** | App URL, Prisma | S03F |
-| `session.mjs` | **PENDING** | B | Server-side login validation via Prisma | No | **Solo reads** | `db-read.mjs` | S03F |
+| `db-read.mjs` | **IMPLEMENTED** | B | Safe read-only Prisma queries: getPrisma, checkDbTables, findUserByIdentifier, findListingBySlug | No | **Solo reads** | `DATABASE_URL`, Prisma | S03F ✅ |
+| `server-action.mjs` | **IMPLEMENTED** | B | HTTP server action call helper + session cookie header builder | No | **Solo reads** | App URL, fetch | S03F ✅ |
+| `session.mjs` | **IMPLEMENTED** | B | Server-side login validation: bcrypt verify + profile checks (isSeller, role, isBanned) | No | **Solo reads** | `db-read.mjs`, bcryptjs | S03F ✅ |
 
 ---
 
@@ -53,10 +53,10 @@
 
 | Script | Status | Capa | Qué valida | Browser? | DB touch? | Assets? | Depende de | Próximo sprint |
 |--------|--------|------|------------|----------|-----------|---------|------------|----------------|
-| `qa-00-preflight.mjs` | **PARTIAL** — env + appUrl funcional | A | Env vars presentes, app URL responde 200 | No | No | No | `env.mjs`, `app-url.mjs` | S03F (completar DB table check) |
-| `qa-01-login.mjs` | **STUB** | B | Login server-side: `loginMpUser()` via Prisma + session | No | **Solo reads** | No | `session.mjs`, QA-00 | S03F |
-| `qa-02-publish.mjs` | **STUB** | B | Crear listing via `createListing()` + DB verify | No | **Solo reads** | No | QA-01 | S03F |
-| `qa-03-discovery.mjs` | **STUB** | C | Verificar listing aparece en `/marketplace` grid | **Sí** (Playwright o CDP) | No | No | QA-02 | S03F |
+| `qa-00-preflight.mjs` | **IMPLEMENTED** — env, appURL, DB, tables, accounts, candidateCount | A | Env vars presentes, app URL responde 200, DB tables, QA users | No | No | No | `env.mjs`, `app-url.mjs`, `db-read.mjs` | S03F ✅ |
+| `qa-01-login.mjs` | **IMPLEMENTED** — bcrypt + Prisma | B | Login server-side: bcrypt password hash + profile checks | No | **Solo reads** | No | `session.mjs`, QA-00 | S03F ✅ |
+| `qa-02-publish.mjs` | **IMPLEMENTED** — Prisma direct mutation | B | Crear/reconciliar listing QA via Prisma (slug=qa-e2e-s03f-selleria-discovery) | No | **Escribe listing QA** | No | QA-01 | S03F ✅ |
+| `qa-03-discovery.mjs` | **IMPLEMENTED** — DB + HTTP fetch | C | DB read + HTTP fetch /marketplace, classify DATA_PASS/UI_PASS/BROWSER_REQUIRED | **Parcial** (HTTP fetch) | No | No | QA-02 | S03F ✅ |
 | `qa-04-qa.mjs` | **STUB** | B | Q&A: `askQuestion()` + `answerQuestion()` via server | No | **Solo reads** | No | QA-01 | S03G |
 | `qa-05-purchase.mjs` | **STUB** | B | `initiatePurchase()` via server + DB verify | No | **Solo reads** | No | QA-01 | S03G |
 | `qa-06-proof.mjs` | **STUB** | D | Upload payment proof usando asset local | **Sí** (file picker) | No | **Sí** — `D:\Users\mvera\Downloads` | QA-05, `assets.mjs` | S03G |
@@ -71,7 +71,7 @@
 
 | Script | Status | Capa | Qué valida | Próximo sprint |
 |--------|--------|------|------------|----------------|
-| `run-marketplace-qa.mjs` | **SCAFFOLD** — funcional con QA-00 | A-D | Corre todos los módulos en secuencia. Soporta `--module=<ID>`. | S03J (full) |
+| `run-marketplace-qa.mjs` | **PARTIAL** — QA-00..QA-03 implemented, supports --modules= & --app-url= | A-D | Corre todos los módulos en secuencia. Soporta `--module=<ID>`, `--modules=<ID1,ID2,...>`, `--app-url=<URL>`. | S03F (partial) → S03J (full) |
 
 ---
 

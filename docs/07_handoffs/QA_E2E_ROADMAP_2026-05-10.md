@@ -73,28 +73,29 @@ S03E ── Architecture + Base ── (done)
 
 ## 3. Detailed Sprint Breakdown
 
-### S03F — Login, Publish, Discovery
+### S03F — Login, Publish, Discovery ✅ IMPLEMENTED (2026-05-10)
+
+**Status: IMPLEMENTED — awaiting env vars for execution**
 
 **Prerequisites:**
 - `setup-marketplace-qa-accounts.ts` executed (QA accounts normalized).
-- `.env.local` with `DATABASE_URL`, `APP_URL`, QA credentials.
-- App running on `APP_URL`.
+- `.env.local` with `DATABASE_URL`, `APP_URL`, QA credentials. ⚠️ QA_* vars missing — manual Vercel pull needed.
 
-**Tasks:**
-1. Implement `scripts/qa/lib/db-read.mjs` — safe read-only Prisma queries for state verification.
-2. Implement `scripts/qa/lib/server-action.mjs` — call Next.js server actions programmatically via HTTP.
-3. Implement `scripts/qa/lib/session.mjs` — login via `loginMpUser`, extract session cookie, verify.
-4. Implement `scripts/qa/modules/qa-00-preflight.mjs` — check env, app URL, DB tables.
-5. Implement `scripts/qa/modules/qa-01-login.mjs` — server-side login validation for buyer, seller, admin.
-6. Implement `scripts/qa/modules/qa-02-publish.mjs` — server-side listing creation + DB verification.
-7. Implement `scripts/qa/modules/qa-03-discovery.mjs` — browser smoke: verify listing appears on `/marketplace`.
+**Tasks completed:**
+1. ✅ `scripts/qa/lib/db-read.mjs` — Prisma factory, table checks, user/listing lookups
+2. ✅ `scripts/qa/lib/server-action.mjs` — HTTP server action call helper
+3. ✅ `scripts/qa/lib/session.mjs` — bcrypt-based credential validation
+4. ✅ `scripts/qa/modules/qa-00-preflight.mjs` — Full preflight: env, APP_URL, DB tables, QA users, candidateCount
+5. ✅ `scripts/qa/modules/qa-01-login.mjs` — Server-side login: bcrypt hash validation, profile checks, admin optional
+6. ✅ `scripts/qa/modules/qa-02-publish.mjs` — Listing create/reconcile via Prisma (slug=qa-e2e-s03f-selleria-discovery)
+7. ✅ `scripts/qa/modules/qa-03-discovery.mjs` — DB read + HTTP fetch discovery, classifies DATA_PASS/UI_PASS/BROWSER_REQUIRED
 
-**Expected output:**
+**Expected output (when env vars present):**
 - Login validated without CDP.
 - Listing created and visible.
 - Report JSON + MD.
 
-**Decision gate:** Authorize Playwright installation if browser smoke QA-03 fails with CDP.
+**Decision gate:** Playwright not installed (not needed yet for S03F — QA-03 uses HTTP fetch fallback).
 
 ---
 

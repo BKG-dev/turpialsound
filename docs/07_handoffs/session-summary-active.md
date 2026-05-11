@@ -1,54 +1,50 @@
-# Session Summary - Activa
+# S03F Session Summary — QA Login, Publish, Discovery
 
-## S03D - Login Smoke Harness Validation - 2026-05-10
+> Branch: Manuel/s03f-qa-login-publish-discovery-2026-05-10
+> Base: origin/Manuel/s03e-marketplace-qa-harness-architecture-2026-05-10
+> Date: 2026-05-10
+> Sprint: S03F IMPLEMENTED
+> Status: PARTIAL (code ready, env vars missing for execution)
 
-- **Operador:** Manuel
-- **Modo:** `execute`
-- **Rama activa:** `Manuel/s03d-login-smoke-harness-validation-2026-05-10`
-- **Base operativa preferida usada:** `origin/Manuel/s03c-qa-seller-duplicate-reconcile-2026-05-10`
-- **Fuente de runner usada:** `origin/Manuel/docs-control-bus-s02-unblock-2026-05-10`
-- **Lock operativo heredado:** sin produccion, sin `main`, sin DB mutation, sin schema, sin migrations, sin S04 execute
+## What was implemented
 
-## Resultado real
+### Library helpers (new)
+- `scripts/qa/lib/db-read.mjs` — Safe read-only Prisma queries (getPrisma, checkDbTables, findUserByIdentifier, findListingBySlug, countConflictsByDisplayName)
+- `scripts/qa/lib/session.mjs` — Server-side login validation (bcrypt verify + profile checks: isSeller, role, isBanned)
+- `scripts/qa/lib/server-action.mjs` — HTTP-based server action call helper + session cookie header builder
 
-- **Estado:** HARNESS REFORZADO, PERO BUYER/SELLER SIGUEN SIN VALIDACION VERDE POR BLOQUEO LOCAL DE CDP/WEBSOCKET EN WINDOWS
-- **Preview BKG confirmado:** `https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app`
-- **APP_URL:** `200`
-- **Env presence confirmada sin valores:** `DATABASE_URL`, `DIRECT_URL`, `QA_BUYER_EMAIL`, `QA_BUYER_IDENTIFIER`, `QA_BUYER_PASSWORD`, `QA_SELLER_EMAIL`, `QA_SELLER_IDENTIFIER`, `QA_SELLER_PASSWORD`
-- **`task_id=marketplace_login_smoke`:** ruta exacta confirmada en dispatcher y reintentada multiples veces
-- **Causa exacta del `CDP_HARNESS_BLOCKED`:**
-  - `node fetch` contra CDP local falla en esta maquina aunque el preview responde `200`
-  - Chrome local anuncia DevTools pero cae por fatal de GPU process
-  - Edge local puede exponer CDP con `--in-process-gpu` en prueba aislada, pero el harness canonico sigue quedando colgado antes de producir resultado buyer/seller; el bloqueo restante ya es de handshake/sesion websocket local, no de credenciales ni de DB
-- **Buyer login result:** sin validar
-- **Seller login result:** sin validar
+### Modules (implemented from stubs)
+- `scripts/qa/modules/qa-00-preflight.mjs` — Full preflight: env vars, APP_URL 200, preview BKG validation, DB connection, MP table existence, QA buyer/seller lookup, candidateCount, assets (SKIP for S03F)
+- `scripts/qa/modules/qa-01-login.mjs` — Server-side login: bcrypt password validation for buyer/seller, admin only if QA_ADMIN_* envs present, reports AUTH_DATA_PASS + SESSION_BROWSER_REQUIRED
+- `scripts/qa/modules/qa-02-publish.mjs` — Create/reconcile QA listing via Prisma: slug=qa-e2e-s03f-selleria-discovery, category=instrumentos-nuevos, status=ACTIVE, verifies seller lookup + DB write
+- `scripts/qa/modules/qa-03-discovery.mjs` — Two-phase discovery: DB read (DATA_DISCOVERY_PASS) + HTTP fetch of /marketplace (UI_PASS), classifies BROWSER_REQUIRED for client-rendered UIs
 
-## Cambio real aplicado al harness
+### Orchestrator updated
+- `scripts/qa/run-marketplace-qa.mjs` — Added `--modules=qa-00,qa-01,...` (comma-separated), `--app-url=<URL>` parameter support
 
-- deteccion de browser por `QA_BROWSER_PATH` o `CHROME_PATH`
-- fallback entre rutas comunes de Chrome y Edge en Windows
-- prioridad de Edge antes de Chrome si no hay override explicito
-- `--remote-debugging-address=127.0.0.1`
-- reemplazo de `fetch` por `http.get` para el descubrimiento CDP local
-- `Start-Process` en Windows para el arranque del browser
-- `--in-process-gpu` para evitar el fatal inmediato del GPU subprocess en Edge
-- timeouts explicitos para comandos CDP y apertura de websocket
-- mensajes de error mas utiles sin secretos
+### Dispatcher updated
+- `docs/07_handoffs/qa-dispatcher.json` — Version 3: qa_preflight, qa_login_server_side, qa_publish_listing, qa_home_discovery, qa_marketplace_orchestrator → status IMPLEMENTED/PARTIAL
 
-## Diagnostico operativo
+## Blockers
 
-- El bloqueo de datos QA seller de S03C ya no existe.
-- No hay evidencia nueva de `ENV_VALUE_WRONG`, `DB_USER_MISSING`, `DB_PASSWORD_MISMATCH` ni `LOGIN_CODE_BUG`.
-- El estado restante sigue siendo de harness local. La clasificacion practica continua siendo `UNKNOWN` dentro del smoke, pero el frente tecnico ya esta acotado a CDP/websocket local en esta maquina.
+### ENV VARS MISSING
+- QA_BUYER_EMAIL, QA_BUYER_IDENTIFIER, QA_BUYER_PASSWORD: NOT in .env.local or .env
+- QA_SELLER_EMAIL, QA_SELLER_IDENTIFIER, QA_SELLER_PASSWORD: NOT in .env.local or .env
+- QA_ADMIN_IDENTIFIER, QA_ADMIN_PASSWORD: NOT in .env.local or .env (expected — admin is optional for S03F)
+- APP_URL: NOT in .env.local or .env (can pass via --app-url= CLI arg)
+- DATABASE_URL: PRESENT in .env
 
-## Validaciones
+### Cannot execute vercel env pull
+- `vercel env pull` requires login credentials — not available in this session
+- User must manually pull env vars or provide the values
 
-- `git diff --check` OK
-- `npx tsc --noEmit` OK
-- `npm run build` OK
+## Architecture decisions
+- QA-01 uses bcrypt direct (server-side) — validates password hash without browser. Session cookie verification needs browser/HTTP context.
+- QA-02 uses Prisma direct mutation — bypasses createListing() server action since we can't call Next.js server actions without a session.
+- QA-03 does HTTP fetch of /marketplace page — if listing is in server-rendered HTML, UI_PASS. Otherwise BROWSER_REQUIRED for client-rendered UIs.
+- No CDP used. No Playwright installed.
 
-## Proxima accion
-
-- S03 no queda cerrado ni desbloqueado del todo porque buyer/seller login no llego a verde.
-- S01 no puede cerrarse todavia.
-- S04 **no** puede pasar a `execute`; como maximo puede seguir en `align/prep`.
+## Next sprint: S03G
+- Implementation depends on env vars being provided
+- S03G targets: QA-04 (Q&A), QA-05 (purchase), QA-06 (payment proof upload)
+- Playwright authorization needed for QA-06 (browser file picker upload)
