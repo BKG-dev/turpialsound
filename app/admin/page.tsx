@@ -21,10 +21,13 @@ import {
   expireOverduePendingPayments,
   getPaymentDeadline,
   getOperationalStatus,
+  isPaymentReportedWithinWindow,
   isOperationalBookingStatus,
   mapOperationalStatusToBookingStatus,
   OPERATIONAL_BOOKING_STATUSES,
   OPERATIONAL_STATUS_LABELS,
+  PAYMENT_WINDOW_MINUTES,
+  resolvePaymentReportedAt,
   setOperationalStatusInInternalNotes,
   type OperationalBookingStatus,
 } from '@/lib/bookings/operations'
@@ -44,12 +47,14 @@ interface AdminPageProps {
         status?: SearchParamValue
         resource?: SearchParamValue
         calendarSync?: SearchParamValue
+        guard?: SearchParamValue
       }>
     | {
         date?: SearchParamValue
         status?: SearchParamValue
         resource?: SearchParamValue
         calendarSync?: SearchParamValue
+        guard?: SearchParamValue
       }
 }
 
@@ -119,6 +124,10 @@ function withQueryParam(path: string, key: string, value: string): string {
   return serialized ? `${basePath}?${serialized}` : basePath
 }
 
+function buildConfirmGuardRedirect(path: string, guardReason: string): never {
+  redirect(withQueryParam(path, 'guard', guardReason))
+}
+
 async function updateOperationalStatus(formData: FormData) {
   'use server'
 
@@ -152,6 +161,7 @@ async function updateOperationalStatus(formData: FormData) {
         take: 1,
         orderBy: { createdAt: 'asc' },
         select: {
+          id: true,
           serviceVariant: {
             select: {
               name: true,
@@ -164,10 +174,25 @@ async function updateOperationalStatus(formData: FormData) {
           },
           resource: {
             select: {
+              id: true,
               name: true,
             },
           },
         },
+      },
+      paymentProofs: {
+        where: { isActive: true },
+        take: 1,
+        orderBy: { uploadedAt: 'desc' },
+        select: {
+          uploadedAt: true,
+        },
+      },
+      auditLogs: {
+        where: { action: 'payment_reported_by_customer' },
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+        select: { nextState: true },
       },
     },
   })
@@ -177,6 +202,69 @@ async function updateOperationalStatus(formData: FormData) {
   }
 
   const currentOperationalStatus = getOperationalStatus(current)
+  const primaryItem = current.items[0]
+
+  if (effectiveNextStatus === 'confirmed') {
+    if (currentOperationalStatus === 'expired' || currentOperationalStatus === 'cancelled') {
+      buildConfirmGuardRedirect(returnPath, 'expired_or_cancelled')
+    }
+
+    if (current.status === 'rejected') {
+      buildConfirmGuardRedirect(returnPath, 'rejected')
+    }
+
+    if (!primaryItem?.id || !primaryItem.resource?.id || !current.eventDate || !current.eventEndDate) {
+      buildConfirmGuardRedirect(returnPath, 'missing_data')
+    }
+
+    if (currentOperationalStatus !== 'payment_reported' && currentOperationalStatus !== 'confirmed') {
+      buildConfirmGuardRedirect(returnPath, 'not_payment_reported')
+    }
+
+    const paymentReportedAt = resolvePaymentReportedAt({
+      paymentReportAuditState: current.auditLogs[0]?.nextState,
+      paymentProofUploadedAt: current.paymentProofs[0]?.uploadedAt ?? null,
+    })
+
+    if (
+      currentOperationalStatus === 'payment_reported' &&
+      !isPaymentReportedWithinWindow({
+        createdAt: current.createdAt,
+        paymentReportedAt,
+      })
+    ) {
+      buildConfirmGuardRedirect(returnPath, 'payment_reported_late')
+    }
+
+    const overlapCutoff = new Date(Date.now() - PAYMENT_WINDOW_MINUTES * 60 * 1000)
+    const conflictingCount = await prisma.bookingRequest.count({
+      where: {
+        id: { not: bookingRequestId },
+        eventDate: { lt: current.eventEndDate },
+        AND: [{ eventEndDate: { gt: current.eventDate } }],
+        items: {
+          some: {
+            resourceId: primaryItem.resource.id,
+          },
+        },
+        OR: [
+          { status: { in: ['approved', 'confirmed'] } },
+          {
+            status: 'under_review',
+            OR: [
+              { createdAt: { gte: overlapCutoff } },
+              { internalNotes: { contains: '[ops_status:payment_reported]' } },
+            ],
+          },
+        ],
+      },
+    })
+
+    if (conflictingCount > 0) {
+      buildConfirmGuardRedirect(returnPath, 'resource_conflict')
+    }
+  }
+
   const hasOperationalStatusChanged = currentOperationalStatus !== effectiveNextStatus
 
   if (!hasOperationalStatusChanged) {
@@ -233,8 +321,6 @@ async function updateOperationalStatus(formData: FormData) {
     effectiveNextStatus === 'pending_payment'
       ? null
       : getBookingNotificationEventForOperationalStatus(effectiveNextStatus)
-  const primaryItem = current.items[0]
-
   if (notificationEvent) {
     await sendBookingNotifications(notificationEvent, {
       publicCode: current.publicCode,
@@ -323,6 +409,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const requestedStatus = getSingleValue(params.status)
   const resourceFilter = getSingleValue(params.resource)
   const calendarSyncState = getSingleValue(params.calendarSync)
+  const guardState = getSingleValue(params.guard)
   const statusFilter: OperationalBookingStatus | 'all' =
     requestedStatus && isOperationalBookingStatus(requestedStatus) ? requestedStatus : 'all'
 
@@ -461,6 +548,36 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             El estado se guardo, pero falta configurar variables de Google Calendar en el entorno
             interno.
+          </section>
+        ) : null}
+
+        {guardState === 'expired_or_cancelled' || guardState === 'rejected' ? (
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            La reserva ya vencio o fue cancelada/rechazada y no puede confirmarse automaticamente.
+          </section>
+        ) : null}
+
+        {guardState === 'missing_data' ? (
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            La reserva no tiene informacion suficiente para confirmarse.
+          </section>
+        ) : null}
+
+        {guardState === 'not_payment_reported' ? (
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Solo se puede confirmar cuando la reserva esta en pago reportado.
+          </section>
+        ) : null}
+
+        {guardState === 'payment_reported_late' ? (
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            El pago fue reportado fuera de la ventana. Requiere revision manual.
+          </section>
+        ) : null}
+
+        {guardState === 'resource_conflict' ? (
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            El recurso o sala ya no esta disponible para ese horario.
           </section>
         ) : null}
 

@@ -46,12 +46,52 @@ export interface ExpireOverduePendingPaymentsResult {
   calendarFailed: number
 }
 
+interface JsonObject {
+  [key: string]: unknown
+}
+
 function parseOptionalAmount(value: unknown): number | null {
   if (value === null || value === undefined) return null
   if (typeof value === 'number') return Number.isFinite(value) ? value : null
 
   const numericValue = Number(value)
   return Number.isFinite(numericValue) ? numericValue : null
+}
+
+export function resolvePaymentReportedAt(input: {
+  paymentReportAuditState?: unknown
+  paymentProofUploadedAt?: Date | null
+}): Date | null {
+  const auditState =
+    input.paymentReportAuditState && typeof input.paymentReportAuditState === 'object'
+      ? (input.paymentReportAuditState as JsonObject)
+      : null
+  const rawFromAudit = auditState?.paymentReportedAt
+  const fromAudit =
+    typeof rawFromAudit === 'string' && rawFromAudit.trim()
+      ? new Date(rawFromAudit)
+      : null
+
+  if (fromAudit && !Number.isNaN(fromAudit.getTime())) {
+    return fromAudit
+  }
+
+  if (input.paymentProofUploadedAt && !Number.isNaN(input.paymentProofUploadedAt.getTime())) {
+    return input.paymentProofUploadedAt
+  }
+
+  return null
+}
+
+export function isPaymentReportedWithinWindow(input: {
+  createdAt: Date
+  paymentReportedAt: Date | null
+}): boolean {
+  if (!input.paymentReportedAt) {
+    return false
+  }
+
+  return input.paymentReportedAt.getTime() <= getPaymentDeadline(input.createdAt).getTime()
 }
 
 export function getPaymentDeadline(createdAt: Date): Date {
@@ -236,6 +276,16 @@ export async function expireOverduePendingPayments(options?: {
         where: {
           id: booking.id,
           status: 'under_review',
+          createdAt: { lt: cutoff },
+          paymentProofs: {
+            none: {
+              isActive: true,
+            },
+          },
+          OR: [
+            { internalNotes: null },
+            { internalNotes: { not: { contains: '[ops_status:payment_reported]' } } },
+          ],
         },
         data: {
           status: 'rejected',
