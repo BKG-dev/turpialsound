@@ -1,4 +1,5 @@
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
+import http from 'node:http'
 import { existsSync, readFileSync } from 'node:fs'
 import fs from 'node:fs/promises'
 import os from 'node:os'
@@ -6,8 +7,16 @@ import path from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 
 const APP_URL = process.env.APP_URL || 'http://localhost:3002'
-const CHROME = process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
 const DEBUG_PORT = Number(process.env.DEBUG_PORT || String(9300 + Math.floor(Math.random() * 500)))
+const DEBUG_HOST = '127.0.0.1'
+const BROWSER_PATH_CANDIDATES = [
+  process.env.QA_BROWSER_PATH,
+  process.env.CHROME_PATH,
+  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+  'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+].filter(Boolean)
 
 function loadEnvFile(filePath) {
   if (!existsSync(filePath)) return
@@ -51,8 +60,14 @@ const USERS = [
 let ws
 let msgId = 0
 let chrome
+let browserPid = null
+let browserUserDataDir
+let browserPathInUse = null
+let browserStdoutPath = null
+let browserStderrPath = null
 const pending = new Map()
 const pageSession = { id: null }
+const browserDiagnostics = []
 
 function normalize(text) {
   return String(text || '')
@@ -72,46 +87,235 @@ function onMessage(raw) {
   else resolve(data.result)
 }
 
+function noteBrowserDiagnostic(line) {
+  const text = String(line || '').trim()
+  if (!text) return
+  browserDiagnostics.push(text)
+  if (browserDiagnostics.length > 12) browserDiagnostics.shift()
+}
+
+function getBrowserCandidates() {
+  return [...new Set(BROWSER_PATH_CANDIDATES)].filter((candidate) => existsSync(candidate))
+}
+
+function escapePowerShell(value) {
+  return String(value).replace(/'/g, "''")
+}
+
+function isBrowserAlive() {
+  if (browserPid) {
+    try {
+      process.kill(browserPid, 0)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  return chrome?.exitCode === null || chrome?.exitCode === undefined
+}
+
+function collectBrowserDiagnostics() {
+  const lines = [...browserDiagnostics]
+  for (const logPath of [browserStdoutPath, browserStderrPath]) {
+    if (!logPath || !existsSync(logPath)) continue
+    const content = readFileSync(logPath, 'utf8')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+    lines.push(...content)
+  }
+  return [...new Set(lines)].slice(-8)
+}
+
+function getDebuggerUrlFromDiagnostics() {
+  const diagnostics = collectBrowserDiagnostics()
+  for (const line of diagnostics) {
+    const match = line.match(/DevTools listening on (ws:\/\/\S+)/)
+    if (match) return match[1]
+  }
+  return null
+}
+
+async function cleanupBrowser() {
+  try { ws?.close() } catch {}
+  ws = null
+  if (browserPid) {
+    try { process.kill(browserPid) } catch {}
+    browserPid = null
+  }
+  try { chrome?.kill() } catch {}
+  chrome = null
+  if (browserUserDataDir) {
+    await fs.rm(browserUserDataDir, { recursive: true, force: true }).catch(() => {})
+    browserUserDataDir = null
+  }
+  browserStdoutPath = null
+  browserStderrPath = null
+}
+
+function readJson(url, timeoutMs = 3000) {
+  return new Promise((resolve, reject) => {
+    const req = http.get(url, (res) => {
+      let body = ''
+      res.setEncoding('utf8')
+      res.on('data', (chunk) => {
+        body += chunk
+      })
+      res.on('end', () => {
+        if (res.statusCode !== 200) {
+          reject(new Error(`CDP endpoint returned ${res.statusCode}`))
+          return
+        }
+
+        try {
+          resolve(JSON.parse(body))
+        } catch (error) {
+          reject(error)
+        }
+      })
+    })
+
+    req.setTimeout(timeoutMs, () => {
+      req.destroy(new Error(`timeout after ${timeoutMs}ms`))
+    })
+    req.on('error', reject)
+  })
+}
+
 function send(method, params = {}, sessionId = pageSession.id) {
   const id = ++msgId
   const payload = { id, method, params }
   if (sessionId) payload.sessionId = sessionId
   ws.send(JSON.stringify(payload))
-  return new Promise((resolve, reject) => pending.set(id, { resolve, reject }))
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      pending.delete(id)
+      reject(new Error(`CDP command timeout: ${method}`))
+    }, 15000)
+    pending.set(id, {
+      resolve: (value) => {
+        clearTimeout(timeout)
+        resolve(value)
+      },
+      reject: (error) => {
+        clearTimeout(timeout)
+        reject(error)
+      },
+    })
+  })
 }
 
-async function startBrowser() {
-  const userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'turpial-login-smoke-'))
-  chrome = spawn(CHROME, [
+async function startBrowser(candidate) {
+  browserDiagnostics.length = 0
+  browserUserDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'turpial-login-smoke-'))
+  browserPathInUse = candidate
+  browserStdoutPath = path.join(browserUserDataDir, 'stdout.log')
+  browserStderrPath = path.join(browserUserDataDir, 'stderr.log')
+  const args = [
+    `--remote-debugging-address=${DEBUG_HOST}`,
     `--remote-debugging-port=${DEBUG_PORT}`,
-    '--headless=new',
+    '--headless',
     '--disable-gpu',
+    '--in-process-gpu',
     '--no-first-run',
     '--no-default-browser-check',
-    `--user-data-dir=${userDataDir}`,
+    `--user-data-dir=${browserUserDataDir}`,
     'about:blank',
-  ], { stdio: 'ignore' })
+  ]
+
+  if (process.platform === 'win32') {
+    const quotedArgs = args.map((arg) => `'${escapePowerShell(arg)}'`).join(', ')
+    const command = [
+      `$p = Start-Process -FilePath '${escapePowerShell(candidate)}'`,
+      `-ArgumentList @(${quotedArgs})`,
+      '-WindowStyle Hidden',
+      `-RedirectStandardOutput '${escapePowerShell(browserStdoutPath)}'`,
+      `-RedirectStandardError '${escapePowerShell(browserStderrPath)}'`,
+      '-PassThru',
+      '; Write-Output $p.Id',
+    ].join(' ')
+    const result = spawnSync('powershell.exe', ['-NoProfile', '-Command', command], {
+      encoding: 'utf8',
+    })
+    if (result.status !== 0) {
+      throw new Error(`Start-Process failed for ${path.basename(candidate)}: ${(result.stderr || result.stdout || '').trim()}`)
+    }
+    browserPid = Number.parseInt(result.stdout.trim(), 10)
+    if (!Number.isFinite(browserPid)) {
+      throw new Error(`Unable to capture browser pid for ${path.basename(candidate)}`)
+    }
+  } else {
+    chrome = spawn(candidate, args, { stdio: ['ignore', 'pipe', 'pipe'] })
+    chrome.stdout?.on('data', (chunk) => noteBrowserDiagnostic(chunk))
+    chrome.stderr?.on('data', (chunk) => noteBrowserDiagnostic(chunk))
+    chrome.on('error', (error) => noteBrowserDiagnostic(`spawn error: ${error.message}`))
+    chrome.on('exit', (code, signal) => noteBrowserDiagnostic(`browser exit code=${code} signal=${signal}`))
+  }
+
   await delay(1200)
 }
 
-async function connectBrowser() {
-  let version
-  let lastError
-  for (let attempt = 0; attempt < 30; attempt += 1) {
+async function initializeBrowser() {
+  const browserCandidates = getBrowserCandidates()
+  if (browserCandidates.length === 0) {
+    throw new Error('No browser candidate found. Set QA_BROWSER_PATH or CHROME_PATH.')
+  }
+
+  const errors = []
+
+  for (const candidate of browserCandidates) {
     try {
-      version = await fetch(`http://127.0.0.1:${DEBUG_PORT}/json/version`).then((r) => r.json())
-      break
+      await startBrowser(candidate)
+      await connectBrowser()
+      return
     } catch (error) {
-      lastError = error
-      await delay(300)
+      errors.push(error instanceof Error ? error.message : String(error))
+      await cleanupBrowser()
     }
   }
-  if (!version) throw lastError
 
-  ws = new WebSocket(version.webSocketDebuggerUrl)
+  throw new Error(errors.join(' | '))
+}
+
+async function connectBrowser() {
+  let debuggerUrl = null
+  let lastError
+  for (let attempt = 0; attempt < 45; attempt += 1) {
+    if (!isBrowserAlive()) {
+      const diagnostics = collectBrowserDiagnostics().join(' | ') || 'no diagnostics'
+      throw new Error(`Browser exited before CDP was ready (${path.basename(browserPathInUse || 'unknown')}): ${diagnostics}`)
+    }
+
+    try {
+      debuggerUrl = getDebuggerUrlFromDiagnostics()
+      if (debuggerUrl) break
+      const version = await readJson(`http://${DEBUG_HOST}:${DEBUG_PORT}/json/version`, 2500)
+      debuggerUrl = version.webSocketDebuggerUrl
+      if (debuggerUrl) break
+    } catch (error) {
+      lastError = error
+    }
+
+    await delay(250 + attempt * 50)
+  }
+  if (!debuggerUrl) {
+    const diagnostics = collectBrowserDiagnostics().join(' | ')
+    const message = lastError instanceof Error ? lastError.message : String(lastError || 'unknown CDP error')
+    throw new Error(`CDP unavailable for ${path.basename(browserPathInUse || 'unknown')}: ${message}${diagnostics ? ` | ${diagnostics}` : ''}`)
+  }
+
+  ws = new WebSocket(debuggerUrl)
   await new Promise((resolve, reject) => {
-    ws.addEventListener('open', resolve, { once: true })
-    ws.addEventListener('error', reject, { once: true })
+    const timeout = setTimeout(() => reject(new Error('CDP websocket open timeout')), 15000)
+    ws.addEventListener('open', () => {
+      clearTimeout(timeout)
+      resolve()
+    }, { once: true })
+    ws.addEventListener('error', (error) => {
+      clearTimeout(timeout)
+      reject(error)
+    }, { once: true })
   })
   ws.addEventListener('message', (event) => onMessage(event.data))
 
@@ -313,8 +517,7 @@ async function loginAs(user) {
 }
 
 async function main() {
-  await startBrowser()
-  await connectBrowser()
+  await initializeBrowser()
 
   const results = []
   for (const user of USERS) {
@@ -324,6 +527,7 @@ async function main() {
   console.log(JSON.stringify({
     ok: true,
     appUrl: APP_URL,
+    browser: path.basename(browserPathInUse || ''),
     users: results,
   }, null, 2))
 }
@@ -333,10 +537,10 @@ main().catch(async (error) => {
   console.error(JSON.stringify({
     ok: false,
     error: error.message,
+    browser: browserPathInUse ? path.basename(browserPathInUse) : null,
     snapshot,
   }, null, 2))
   process.exitCode = 1
 }).finally(() => {
-  try { ws?.close() } catch {}
-  try { chrome?.kill() } catch {}
+  cleanupBrowser().catch(() => {})
 })

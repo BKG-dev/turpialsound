@@ -1,30 +1,32 @@
 # Next Window Brief - Turpial Sound
 
 **Fecha de actualizacion:** 2026-05-10
-**Frente activo:** S03C - QA Seller Duplicate Reconcile
-**Tipo de nota:** Control Tower / duplicado QA seller reconciliado, bloqueo restante solo en smoke local sin CDP util
+**Frente activo:** S03D - Login Smoke Harness Validation
+**Tipo de nota:** Control Tower / harness local mejorado, bloqueo restante en CDP-websocket local de la maquina de Manuel
 
-## Estado actual de S03C
+## Estado actual de S03D
 
-- **Rama de trabajo:** `Manuel/s03c-qa-seller-duplicate-reconcile-2026-05-10`
-- **Base inmediata:** `origin/Manuel/s03b-qa-login-normalization-fix-2026-05-10`
-- **Runner fuente:** `origin/Manuel/docs-control-bus-s02-unblock-2026-05-10`
+- **Rama de trabajo:** `Manuel/s03d-login-smoke-harness-validation-2026-05-10`
+- **Base inmediata:** `origin/Manuel/s03c-qa-seller-duplicate-reconcile-2026-05-10`
 - **Preview BKG valido:** `https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app`
-- **Lock explicito vigente:** mutacion permitida solo sobre cuentas QA marketplace en Preview BKG; no produccion, no main, no booking, no schema, no migrations, no env changes remotas
-- **Env names confirmados sin valores:** `DATABASE_URL`, `DIRECT_URL`, `QA_BUYER_EMAIL`, `QA_BUYER_IDENTIFIER`, `QA_BUYER_PASSWORD`, `QA_SELLER_EMAIL`, `QA_SELLER_IDENTIFIER`, `QA_SELLER_PASSWORD`
-- **Resultado de `task_id=qa_accounts_normalization`:** OK
-- **Resultado read-only posterior:** seller QA quedo unico de nuevo para `email` y `displayName` canonicos
-- **Resultado de `task_id=marketplace_login_smoke`:** sigue bloqueado localmente por `CDP_HARNESS_BLOCKED`
+- **APP_URL status:** `200`
+- **Env presence sin valores:** `DATABASE_URL`, `DIRECT_URL`, `QA_BUYER_EMAIL`, `QA_BUYER_IDENTIFIER`, `QA_BUYER_PASSWORD`, `QA_SELLER_EMAIL`, `QA_SELLER_IDENTIFIER`, `QA_SELLER_PASSWORD`
+- **Cuentas QA:** ya no bloquean
+- **Resultado de `task_id=marketplace_login_smoke`:** sigue sin resultado buyer/seller por bloqueo local de CDP/websocket
 - **Validaciones:** `git diff --check` OK, `npx tsc --noEmit` OK, `npm run build` OK
 
 ## Bloqueo rojo
 
-- El bloqueo rojo de datos QA seller ya no existe.
-- El unico bloqueo vigente es la imposibilidad local de completar el smoke canonico de login en esta maquina.
-- No existe otra ruta canonica de login en el dispatcher.
+- Ya no es bloqueo de DB ni de normalizacion QA.
+- El bloqueo vigente es estrictamente local al harness en Windows de Manuel:
+  - `node fetch` contra CDP local falla
+  - Chrome cae por fatal de GPU process
+  - Edge mejora con `--in-process-gpu`, pero el smoke canonico sigue sin completar la sesion websocket/CDP hasta buyer/seller
 
 ## Siguiente ventana recomendada
 
-1. Manuel debe reintentar `task_id=marketplace_login_smoke` desde una maquina/worktree con Chrome y CDP util.
-2. Si buyer y seller pasan, S03 puede cerrarse y S01 puede reintentarse/cerrarse.
-3. Jean no debe pasar `S04 execute`; solo puede seguir `S04 align/prep` hasta que el smoke canonico quede verde.
+1. Mantener S03 abierto; no declararlo cerrado todavia.
+2. Reintentar el smoke solo desde un entorno local donde el websocket/CDP del browser quede estable.
+3. No tocar DB ni producto en el siguiente intento salvo evidencia nueva.
+4. S01 no puede cerrarse aun.
+5. S04 no puede pasar a `execute`; solo `align/prep`.
