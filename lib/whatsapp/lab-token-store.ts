@@ -8,6 +8,7 @@ const ACTION_CHALLENGE_VERIFIED = 'whatsapp_reserva_token.challenge_verified'
 const ACTION_CHALLENGE_FAILED = 'whatsapp_reserva_token.challenge_failed'
 const ACTION_CHALLENGE_EXPIRED = 'whatsapp_reserva_token.challenge_expired'
 const CHALLENGE_TTL_MINUTES = 10
+export const LAB_VERIFICATION_TTL_MINUTES = 30
 
 type ChallengeStatus = 'not_found' | 'pending' | 'verified' | 'failed' | 'expired'
 
@@ -27,6 +28,12 @@ interface ChallengeStatusView {
   expiresAt: string | null
   verifiedAt: string | null
   failedReason: string | null
+}
+
+interface VerificationSnapshot {
+  challengeId: string
+  status: ChallengeStatus
+  verifiedAt: string | null
 }
 
 interface MessageEventInput {
@@ -223,6 +230,78 @@ export async function getLabChallengeStatus(challengeId: string): Promise<Challe
     verifiedAt: null,
     failedReason: null,
   }
+}
+
+export async function getLatestLabPhoneVerification(
+  phoneRaw: string,
+): Promise<VerificationSnapshot | null> {
+  const phoneCandidates = normalizeVePhoneCandidates(phoneRaw)
+  if (phoneCandidates.length === 0) {
+    return null
+  }
+
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000)
+  const createdLogs = await prisma.auditLog.findMany({
+    where: {
+      bookingRequestId: null,
+      action: ACTION_CHALLENGE_CREATED,
+      createdAt: { gte: since },
+    },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      nextState: true,
+    },
+    take: 300,
+  })
+
+  for (const log of createdLogs) {
+    const createdState = parseCreatedState(log.nextState)
+    if (!createdState) continue
+
+    const matchesPhone = phoneCandidates.some((candidate) =>
+      phonesMatchVe(createdState.phoneE164, candidate),
+    )
+    if (!matchesPhone) continue
+
+    const statusView = await getLabChallengeStatus(createdState.challengeId)
+    return {
+      challengeId: createdState.challengeId,
+      status: statusView.status,
+      verifiedAt: statusView.verifiedAt,
+    }
+  }
+
+  return null
+}
+
+export async function isLabPhoneVerifiedRecently(phoneRaw: string): Promise<{
+  ok: boolean
+  reason: 'not_found' | 'not_verified' | 'missing_verified_at' | 'expired' | null
+}> {
+  const verification = await getLatestLabPhoneVerification(phoneRaw)
+  if (!verification) {
+    return { ok: false, reason: 'not_found' }
+  }
+
+  if (verification.status !== 'verified') {
+    return { ok: false, reason: 'not_verified' }
+  }
+
+  if (!verification.verifiedAt) {
+    return { ok: false, reason: 'missing_verified_at' }
+  }
+
+  const verifiedAtMs = new Date(verification.verifiedAt).getTime()
+  if (!Number.isFinite(verifiedAtMs)) {
+    return { ok: false, reason: 'missing_verified_at' }
+  }
+
+  const ttlMs = LAB_VERIFICATION_TTL_MINUTES * 60 * 1000
+  if (Date.now() - verifiedAtMs > ttlMs) {
+    return { ok: false, reason: 'expired' }
+  }
+
+  return { ok: true, reason: null }
 }
 
 interface PendingChallenge {

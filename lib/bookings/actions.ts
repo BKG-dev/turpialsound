@@ -23,6 +23,7 @@ import {
 } from '@/lib/storage/payment-proofs'
 import { sendBookingNotifications } from '@/lib/bookings/notifications'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
+import { isLabPhoneVerifiedRecently } from '@/lib/whatsapp/lab-token-store'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const WHATSAPP_REGEX = /^\+58(412|414|416|424|426)\d{7}$/
@@ -33,6 +34,7 @@ const BOOKING_SUBMIT_MAX_ATTEMPTS = 3
 const RETRYABLE_BOOKING_SUBMIT_ERROR_CODES = new Set(['P2034', 'P2002', '40001', '40P01'])
 const ACTIVE_HOLD_BLOCKING_ERROR =
   'Ya tienes una solicitud pendiente de pago o revision. Completa esa solicitud antes de crear una nueva.'
+const QA_PREVIEW_BYPASS_PHONE = '+584142743886'
 
 function getUnknownErrorCode(error: unknown): string | null {
   if (typeof error !== 'object' || error === null) {
@@ -267,6 +269,17 @@ export async function submitBookingRequest(
       }
     }
 
+    const whatsappVerification = await isLabPhoneVerifiedRecently(requesterPhone)
+    if (!whatsappVerification.ok) {
+      return {
+        success: false,
+        error:
+          whatsappVerification.reason === 'expired'
+            ? 'Tu verificacion de WhatsApp vencio. Verifica nuevamente antes de crear la reserva.'
+            : 'Debes verificar tu WhatsApp antes de crear la solicitud de reserva.',
+      }
+    }
+
     const serviceVariant = await prisma.serviceVariant.findUnique({
       where: { slug: input.variantSlug },
       include: { service: true },
@@ -332,33 +345,39 @@ export async function submitBookingRequest(
         submitResult = await prisma.$transaction(
           async (tx) => {
             const activeHoldCutoff = new Date(Date.now() - PAYMENT_WINDOW_MINUTES * 60 * 1000)
-            const existingActiveHolds = await tx.bookingRequest.count({
-              where: {
-                status: 'under_review',
-                AND: [
-                  {
-                    OR: [{ requesterEmail }, { requesterPhone }],
-                  },
-                  {
-                    OR: [
-                      { internalNotes: { contains: '[ops_status:payment_reported]' } },
-                      {
-                        AND: [
-                          { internalNotes: { contains: '[ops_status:pending_payment]' } },
-                          { createdAt: { gte: activeHoldCutoff } },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              },
-            })
+            const shouldBypassActiveHoldGuard =
+              // QA preview bypass for repeated booking hold tests; inactive in production.
+              requesterPhone === QA_PREVIEW_BYPASS_PHONE && process.env.VERCEL_ENV !== 'production'
 
-            if (existingActiveHolds > 0) {
-              return {
-                success: false,
-                error: ACTIVE_HOLD_BLOCKING_ERROR,
-              } satisfies SubmitBookingResult
+            if (!shouldBypassActiveHoldGuard) {
+              const existingActiveHolds = await tx.bookingRequest.count({
+                where: {
+                  status: 'under_review',
+                  AND: [
+                    {
+                      OR: [{ requesterEmail }, { requesterPhone }],
+                    },
+                    {
+                      OR: [
+                        { internalNotes: { contains: '[ops_status:payment_reported]' } },
+                        {
+                          AND: [
+                            { internalNotes: { contains: '[ops_status:pending_payment]' } },
+                            { createdAt: { gte: activeHoldCutoff } },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              })
+
+              if (existingActiveHolds > 0) {
+                return {
+                  success: false,
+                  error: ACTIVE_HOLD_BLOCKING_ERROR,
+                } satisfies SubmitBookingResult
+              }
             }
 
             const year = new Date().getFullYear()
