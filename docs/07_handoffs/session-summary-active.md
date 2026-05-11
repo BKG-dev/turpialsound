@@ -1,5 +1,16 @@
 # Session Summary - Activa
 
+## Preview 3spd7suth — Lab Meta/WhatsApp Mapping
+
+- **URL preview:** `https://turpialsound-3spd7suth-bkgs-projects-829c67c1.vercel.app/`
+- **Deployment id:** `dpl_BsfocbQfmiCQmyUvob7TFGRbovqY`
+- **Fecha de deploy:** `Sun May 10 2026 17:57:17 -0400`
+- **Rama inferida:** `origin/lab/meta-embedded-signup-coexistence-2026-05-10`
+- **Commit candidato:** `53477ff`
+- **Estado:** rama lab paralela validada
+- **Confirmación:** no integrada en `integration/today`, no integrada en `integration-prep`, no integrada en `prod/current`
+- **Decisión:** si esos cambios deben entrar al bus principal, requieren consolidación selectiva posterior; no merge ciego.
+
 ## S02 — Marketplace Discovery Runtime Stabilization (Jean) — 2026-05-10
 
 - **Runner fuente:** `origin/Manuel/docs-control-bus-s02-unblock-2026-05-10` @ `9a8faae`.
