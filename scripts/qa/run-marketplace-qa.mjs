@@ -1,21 +1,49 @@
-import { loadEnv } from './lib/env.mjs'
+import { loadEnv, getEnv } from './lib/env.mjs'
 import { ReportBuilder } from './lib/report.mjs'
 
 const MODULES = [
-  { id: 'QA-00', name: 'Preflight', path: './modules/qa-00-preflight.mjs', layer: 'A' },
-  { id: 'QA-01', name: 'Login', path: './modules/qa-01-login.mjs', layer: 'B' },
-  { id: 'QA-02', name: 'Publish', path: './modules/qa-02-publish.mjs', layer: 'B' },
-  { id: 'QA-03', name: 'Discovery', path: './modules/qa-03-discovery.mjs', layer: 'C' },
-  { id: 'QA-04', name: 'Q&A', path: './modules/qa-04-qa.mjs', layer: 'B' },
-  { id: 'QA-05', name: 'Purchase', path: './modules/qa-05-purchase.mjs', layer: 'B' },
-  { id: 'QA-06', name: 'Payment Proof', path: './modules/qa-06-proof.mjs', layer: 'D' },
-  { id: 'QA-07', name: 'Admin Review', path: './modules/qa-07-admin.mjs', layer: 'B/C' },
-  { id: 'QA-08', name: 'Seller Delivery', path: './modules/qa-08-delivery.mjs', layer: 'B' },
-  { id: 'QA-09', name: 'Buyer Receipt', path: './modules/qa-09-receipt.mjs', layer: 'B' },
-  { id: 'QA-10', name: 'Admin Payout', path: './modules/qa-10-payout.mjs', layer: 'B/D' },
-  { id: 'QA-11', name: 'Dashboards', path: './modules/qa-11-dashboards.mjs', layer: 'C/D' },
-  { id: 'QA-12', name: 'Final Regression', path: './modules/qa-12-regression.mjs', layer: 'A-D' },
+  { id: 'QA-00', name: 'Preflight', path: './modules/qa-00-preflight.mjs', layer: 'A', aliases: ['qa-00', 'qa00', 'preflight', 'qa_preflight'] },
+  { id: 'QA-01', name: 'Login', path: './modules/qa-01-login.mjs', layer: 'B', aliases: ['qa-01', 'qa01', 'login', 'qa_login_server_side'] },
+  { id: 'QA-02', name: 'Publish', path: './modules/qa-02-publish.mjs', layer: 'B', aliases: ['qa-02', 'qa02', 'publish', 'qa_publish_listing'] },
+  { id: 'QA-03', name: 'Discovery', path: './modules/qa-03-discovery.mjs', layer: 'C', aliases: ['qa-03', 'qa03', 'discovery', 'qa_home_discovery'] },
+  { id: 'QA-04', name: 'Q&A', path: './modules/qa-04-qa.mjs', layer: 'B', aliases: ['qa-04', 'qa04', 'qa', 'qa_questions'] },
+  { id: 'QA-05', name: 'Purchase', path: './modules/qa-05-purchase.mjs', layer: 'B', aliases: ['qa-05', 'qa05', 'purchase', 'qa_purchase'] },
+  { id: 'QA-06', name: 'Payment Proof', path: './modules/qa-06-proof.mjs', layer: 'D', aliases: ['qa-06', 'qa06', 'proof', 'qa_payment_proof'] },
+  { id: 'QA-07', name: 'Admin Review', path: './modules/qa-07-admin.mjs', layer: 'B/C', aliases: ['qa-07', 'qa07', 'admin', 'qa_admin_review'] },
+  { id: 'QA-08', name: 'Seller Delivery', path: './modules/qa-08-delivery.mjs', layer: 'B', aliases: ['qa-08', 'qa08', 'delivery', 'qa_seller_delivery'] },
+  { id: 'QA-09', name: 'Buyer Receipt', path: './modules/qa-09-receipt.mjs', layer: 'B', aliases: ['qa-09', 'qa09', 'receipt', 'qa_buyer_receipt'] },
+  { id: 'QA-10', name: 'Admin Payout', path: './modules/qa-10-payout.mjs', layer: 'B/D', aliases: ['qa-10', 'qa10', 'payout', 'qa_admin_payout'] },
+  { id: 'QA-11', name: 'Dashboards', path: './modules/qa-11-dashboards.mjs', layer: 'C/D', aliases: ['qa-11', 'qa11', 'dashboards', 'qa_dashboards'] },
+  { id: 'QA-12', name: 'Final Regression', path: './modules/qa-12-regression.mjs', layer: 'A-D', aliases: ['qa-12', 'qa12', 'regression', 'qa_full_regression'] },
 ]
+
+function resolveModuleId(input) {
+  if (!input) return null
+  const needle = input.trim().toLowerCase()
+  return MODULES.find(m =>
+    m.id.toLowerCase() === needle ||
+    (m.aliases && m.aliases.some(a => a.toLowerCase() === needle))
+  ) || null
+}
+
+const REQUIRED_ENV_VARS = [
+  'DATABASE_URL',
+  'APP_URL',
+  'QA_BUYER_EMAIL',
+  'QA_BUYER_IDENTIFIER',
+  'QA_BUYER_PASSWORD',
+  'QA_SELLER_EMAIL',
+  'QA_SELLER_IDENTIFIER',
+  'QA_SELLER_PASSWORD',
+]
+
+function validateEnv() {
+  const missing = []
+  for (const name of REQUIRED_ENV_VARS) {
+    if (!getEnv(name)) missing.push(name)
+  }
+  return { ok: missing.length === 0, missing }
+}
 
 function parseArgv() {
   const args = {}
@@ -89,7 +117,6 @@ async function main() {
 
   const args = parseArgv()
 
-  // Override APP_URL from CLI if provided
   if (args.appUrl) {
     process.env.APP_URL = args.appUrl
   }
@@ -98,6 +125,20 @@ async function main() {
   if (env !== 'development') {
     console.log('QA harness solo corre en entorno development (NODE_ENV=development)')
     console.log(`NODE_ENV actual: ${env}`)
+    process.exit(1)
+  }
+
+  // Pre-validation: check env
+  const envCheck = validateEnv()
+  if (!envCheck.ok) {
+    console.log('ENV CHECK FAILED')
+    console.log(`Missing vars: ${envCheck.missing.join(', ')}`)
+    console.log('')
+    console.log('Action required:')
+    console.log('  powershell -ExecutionPolicy Bypass -File scripts/qa/ensure-marketplace-qa-env.ps1')
+    console.log('')
+    console.log('Or verify with:')
+    console.log('  npx tsx scripts/qa/doctor-marketplace-qa-env.mjs')
     process.exit(1)
   }
 
@@ -110,19 +151,29 @@ async function main() {
   console.log(`Run ID: ${report.runId}`)
   console.log(`Modules: ${MODULES.length}\n`)
 
-  // Resolve which modules to run
   let selectedModules
   if (args.module) {
-    selectedModules = MODULES.filter((m) => m.id === args.module)
-    if (selectedModules.length === 0) {
-      console.log(`Module not found: ${args.module}`)
+    const mod = resolveModuleId(args.module)
+    if (!mod) {
+      console.log(`Module not found: "${args.module}"`)
+      console.log(`Available IDs: ${MODULES.map(m => m.id).join(', ')}`)
+      console.log(`Available aliases: qa-00, qa-01, ..., preflight, login, publish, discovery, ...`)
+      console.log(`Example: --modules=qa-00,qa-01,qa-02,qa-03`)
       process.exit(1)
     }
+    selectedModules = [mod]
   } else if (args.modules) {
-    selectedModules = args.modules.map(id => MODULES.find(m => m.id === id)).filter(Boolean)
+    selectedModules = args.modules.map(id => resolveModuleId(id)).filter(Boolean)
     if (selectedModules.length === 0) {
-      console.log(`No valid modules found for: ${args.modules.join(',')}`)
+      console.log(`No valid modules found.`)
+      console.log(`Requested: ${args.modules.join(', ')}`)
+      console.log(`Available IDs: ${MODULES.map(m => m.id).join(', ')}`)
+      console.log(`Example: --modules=qa-00,qa-01,qa-02,qa-03`)
       process.exit(1)
+    }
+    if (selectedModules.length < args.modules.length) {
+      const unresolved = args.modules.filter(id => !resolveModuleId(id))
+      console.log(`Warning: ${unresolved.length} module(s) not resolved: ${unresolved.join(', ')}`)
     }
   } else {
     selectedModules = MODULES

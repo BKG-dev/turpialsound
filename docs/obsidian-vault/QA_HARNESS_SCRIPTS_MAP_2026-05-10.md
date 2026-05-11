@@ -37,15 +37,22 @@
 
 | Script | Status | Capa | Qué valida | Browser? | DB touch? | Depende de | Próximo sprint |
 |--------|--------|------|------------|----------|-----------|------------|----------------|
-| `env.mjs` | **READY** | A | Carga `.env.local`/`.env`, `requireEnv()`, `maskSecret()` | No | No | `node:fs` | S03F (uso en todos los módulos) |
+| `env.mjs` | **IMPLEMENTED** | A | Carga `.env.local`/`.env`, `requireEnv()`, `maskSecret()`. Errores incluyen mensaje accionable: `Run: powershell ... ensure-marketplace-qa-env.ps1` | No | No | `node:fs` | S03F ✅ |
 | `report.mjs` | **READY** | A | `ReportBuilder`: JSON + MD reports, summary | No | No | `node:fs` | S03F |
 | `app-url.mjs` | **READY** | A | `checkAppUrl()`, `waitForAppUrl()` — TCP reachability | No | No | `env.mjs`, `fetch` | S03F |
 | `assets.mjs` | **READY** | A | `findAssets()`, `validateAsset()`, `pickPaymentProof()` desde `D:\Users\mvera\Downloads` | No | No | `node:fs` | S03G |
 | `failures.mjs` | **READY** | A | 23 failure codes, `classifyError()`, `formatFailure()` | No | No | None | S03F |
 | `retry.mjs` | **READY** | A | `withRetry(fn, {maxAttempts})` con límites por código de fallo | No | No | `failures.mjs` | S03F |
-| `db-read.mjs` | **IMPLEMENTED** | B | Safe read-only Prisma queries: getPrisma, checkDbTables, findUserByIdentifier, findListingBySlug | No | **Solo reads** | `DATABASE_URL`, Prisma | S03F ✅ |
+| `db-read.mjs` | **IMPLEMENTED** | B | Safe read-only Prisma queries: getPrisma, checkDbTables, findUserByIdentifier, findListingBySlug | No | **Solo reads** | `DATABASE_URL`, Prisma, tsx | S03F ✅ |
 | `server-action.mjs` | **IMPLEMENTED** | B | HTTP server action call helper + session cookie header builder | No | **Solo reads** | App URL, fetch | S03F ✅ |
 | `session.mjs` | **IMPLEMENTED** | B | Server-side login validation: bcrypt verify + profile checks (isSeller, role, isBanned) | No | **Solo reads** | `db-read.mjs`, bcryptjs | S03F ✅ |
+
+### Bootstrap & Doctor (scripts/qa/) — S03F
+
+| Script | Status | Capa | Qué hace | Browser? | DB touch? | Depende de | Próximo sprint |
+|--------|--------|------|----------|----------|-----------|------------|----------------|
+| `ensure-marketplace-qa-env.ps1` | **IMPLEMENTED** | A | Bootstrap: verifica/pull/crea .env.local con QA_* vars. Pide contraseña segura UNA vez. Nunca imprime secretos. | No | No | vercel CLI | S03F ✅ |
+| `doctor-marketplace-qa-env.mjs` | **IMPLEMENTED** | A | Doctor: JSON seguro con presencia booleana de todas las env vars necesarias. Exit code 1 con mensaje accionable si faltan. | No | No | `env.mjs` | S03F ✅ |
 
 ---
 

@@ -1,50 +1,50 @@
-# S03F Session Summary — QA Login, Publish, Discovery
+# S03F Session Summary — QA Login, Publish, Discovery (FINAL)
 
 > Branch: Manuel/s03f-qa-login-publish-discovery-2026-05-10
 > Base: origin/Manuel/s03e-marketplace-qa-harness-architecture-2026-05-10
-> Date: 2026-05-10
-> Sprint: S03F IMPLEMENTED
-> Status: PARTIAL (code ready, env vars missing for execution)
+> Date: 2026-05-11
+> Sprint: S03F VALIDATED — ALL 4 MODULES PASS
+> Runner: npx tsx (NOT bare node — required for generated/prisma/client .ts import)
 
 ## What was implemented
 
-### Library helpers (new)
-- `scripts/qa/lib/db-read.mjs` — Safe read-only Prisma queries (getPrisma, checkDbTables, findUserByIdentifier, findListingBySlug, countConflictsByDisplayName)
-- `scripts/qa/lib/session.mjs` — Server-side login validation (bcrypt verify + profile checks: isSeller, role, isBanned)
-- `scripts/qa/lib/server-action.mjs` — HTTP-based server action call helper + session cookie header builder
+### Library helpers
+- `scripts/qa/lib/db-read.mjs` — Prisma factory, table checks, user/listing lookups (imports `generated/prisma/client` without .js extension for tsx compatibility)
+- `scripts/qa/lib/session.mjs` — bcrypt-based credential validation + profile checks (isSeller, role, isBanned)
+- `scripts/qa/lib/server-action.mjs` — HTTP server action call helper
 
-### Modules (implemented from stubs)
-- `scripts/qa/modules/qa-00-preflight.mjs` — Full preflight: env vars, APP_URL 200, preview BKG validation, DB connection, MP table existence, QA buyer/seller lookup, candidateCount, assets (SKIP for S03F)
-- `scripts/qa/modules/qa-01-login.mjs` — Server-side login: bcrypt password validation for buyer/seller, admin only if QA_ADMIN_* envs present, reports AUTH_DATA_PASS + SESSION_BROWSER_REQUIRED
-- `scripts/qa/modules/qa-02-publish.mjs` — Create/reconcile QA listing via Prisma: slug=qa-e2e-s03f-selleria-discovery, category=instrumentos-nuevos, status=ACTIVE, verifies seller lookup + DB write
-- `scripts/qa/modules/qa-03-discovery.mjs` — Two-phase discovery: DB read (DATA_DISCOVERY_PASS) + HTTP fetch of /marketplace (UI_PASS), classifies BROWSER_REQUIRED for client-rendered UIs
+### Modules (IMPLEMENTED + VALIDATED)
+- `scripts/qa/modules/qa-00-preflight.mjs` — **VALIDATED PASS.** 9 checks: env, adminEnv, appUrl (HTTP 200), previewBKG (Vercel), dbConnection, dbTables (11/11), qaBuyer, qaSeller (candidateCount=1), assets (SKIP).
+- `scripts/qa/modules/qa-01-login.mjs` — **VALIDATED PASS.** buyerIA AUTH_DATA_PASS (bcrypt match, isSeller=false, role=USER), sellerIA AUTH_DATA_PASS (isSeller=true, role=USER), mvera AUTH_DATA_PASS (role=SUPER).
+- `scripts/qa/modules/qa-02-publish.mjs` — **VALIDATED PASS.** Listing created: slug=qa-e2e-s03f-selleria-discovery, status=ACTIVE, seller verified.
+- `scripts/qa/modules/qa-03-discovery.mjs` — **VALIDATED PASS (UI_PASS!).** Listing visible in DB + server-rendered HTML on both /marketplace and /marketplace/slug.
 
-### Orchestrator updated
-- `scripts/qa/run-marketplace-qa.mjs` — Added `--modules=qa-00,qa-01,...` (comma-separated), `--app-url=<URL>` parameter support
+### Bootstrap system
+- `scripts/qa/ensure-marketplace-qa-env.ps1` — PowerShell bootstrap: backs up .env.local, pulls preview env from Vercel, inserts QA_* block, asks password once securely.
+- `scripts/qa/doctor-marketplace-qa-env.mjs` — JSON doctor: reports boolean presence of all 11 required env vars. Exit code 1 with actionable message if missing.
+- `.env.example` — Created with all QA var names (no values).
 
-### Dispatcher updated
-- `docs/07_handoffs/qa-dispatcher.json` — Version 3: qa_preflight, qa_login_server_side, qa_publish_listing, qa_home_discovery, qa_marketplace_orchestrator → status IMPLEMENTED/PARTIAL
+### Orchestrator hardened
+- Alias mapping: qa-00, QA-00, preflight, qa_preflight → QA-00, etc.
+- Env pre-validation before running modules with actionable error messages.
+- Available module list and examples on invalid input.
 
-## Blockers
+## Execution results (validated 2026-05-11T04:18 UTC)
 
-### ENV VARS MISSING
-- QA_BUYER_EMAIL, QA_BUYER_IDENTIFIER, QA_BUYER_PASSWORD: NOT in .env.local or .env
-- QA_SELLER_EMAIL, QA_SELLER_IDENTIFIER, QA_SELLER_PASSWORD: NOT in .env.local or .env
-- QA_ADMIN_IDENTIFIER, QA_ADMIN_PASSWORD: NOT in .env.local or .env (expected — admin is optional for S03F)
-- APP_URL: NOT in .env.local or .env (can pass via --app-url= CLI arg)
-- DATABASE_URL: PRESENT in .env
+| Module | Result | Duration | Detail |
+|--------|--------|----------|--------|
+| QA-00 | PASS | 2543ms | All 9 checks pass |
+| QA-01 | PASS | 2239ms | buyer, seller, admin all AUTH_DATA_PASS |
+| QA-02 | PASS | 761ms | Listing created: qa-e2e-s03f-selleria-discovery |
+| QA-03 | PASS | 1371ms | UI_PASS — listing in server-rendered HTML |
 
-### Cannot execute vercel env pull
-- `vercel env pull` requires login credentials — not available in this session
-- User must manually pull env vars or provide the values
+**Classification: S03F PASS**
 
-## Architecture decisions
-- QA-01 uses bcrypt direct (server-side) — validates password hash without browser. Session cookie verification needs browser/HTTP context.
-- QA-02 uses Prisma direct mutation — bypasses createListing() server action since we can't call Next.js server actions without a session.
-- QA-03 does HTTP fetch of /marketplace page — if listing is in server-rendered HTML, UI_PASS. Otherwise BROWSER_REQUIRED for client-rendered UIs.
-- No CDP used. No Playwright installed.
+## Command
+```
+npx tsx scripts/qa/run-marketplace-qa.mjs "--modules=qa-00,qa-01,qa-02,qa-03" "--app-url=https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app"
+```
 
 ## Next sprint: S03G
-- Implementation depends on env vars being provided
-- S03G targets: QA-04 (Q&A), QA-05 (purchase), QA-06 (payment proof upload)
-- Playwright authorization needed for QA-06 (browser file picker upload)
+- QA-04 (Q&A), QA-05 (purchase), QA-06 (payment proof upload)
+- Requires Playwright authorization for QA-06

@@ -1,29 +1,32 @@
-# Next Window Brief — after S03F
+# Next Window Brief — after S03F (HARDENED)
 
-> Date: 2026-05-10
+> Date: 2026-05-11
 > Branch: Manuel/s03f-qa-login-publish-discovery-2026-05-10
 
-## Current State
-S03F modules (QA-00 through QA-03) are IMPLEMENTED but cannot execute because QA credentials (QA_BUYER_*, QA_SELLER_*) are missing from .env.local and .env.
+## S03F Status: VALIDATED PASS
 
-## Critical Action Required
-1. Run `vercel env pull .env.local --environment=preview --scope bkgs-projects-829c67c1` (requires Vercel login)
-2. Or manually add the following env vars to .env.local:
-   - QA_BUYER_EMAIL, QA_BUYER_IDENTIFIER, QA_BUYER_PASSWORD
-   - QA_SELLER_EMAIL, QA_SELLER_IDENTIFIER, QA_SELLER_PASSWORD
-   - APP_URL=https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app
-3. Optionally add QA_ADMIN_IDENTIFIER, QA_ADMIN_PASSWORD for admin login validation
+All 4 modules (QA-00 through QA-03) pass against Preview BKG DB:
+- QA-00: env, appUrl, DB tables (11/11), QA buyer/seller confirmed
+- QA-01: buyerIA, sellerIA, mvera all AUTH_DATA_PASS
+- QA-02: listing qa-e2e-s03f-selleria-discovery ACTIVE
+- QA-03: UI_PASS — listing visible in server-rendered HTML
 
-## Once env vars are present
-Run: `node scripts/qa/run-marketplace-qa.mjs --modules=qa-00,qa-01,qa-02,qa-03 --app-url=https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app`
+## If env vars are missing on a new worktree
 
-## Expected Results
-- QA-00: PASS (envs, DB, tables, accounts)
-- QA-01: PASS (buyer/seller bcrypt validation), SKIP admin if no admin envs
-- QA-02: PASS (listing created/updated, ACTIVE in DB)
-- QA-03: DATA_DISCOVERY_PASS (DB read) + possibly UI_PASS (HTTP fetch) or BROWSER_REQUIRED
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/qa/ensure-marketplace-qa-env.ps1
+```
 
-## Next Sprint: S03G
-- Implement QA-04 (Q&A), QA-05 (purchase), QA-06 (payment proof upload)
-- Requires Playwright authorization before QA-06 implementation
+Or check first:
+```bash
+npx tsx scripts/qa/doctor-marketplace-qa-env.mjs
+```
+
+## Canonical harness command
+```bash
+npx tsx scripts/qa/run-marketplace-qa.mjs "--modules=qa-00,qa-01,qa-02,qa-03" "--app-url=https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app"
+```
+
+## Next Sprint: S03G (Purchase + Payment Proof)
+- Requires Playwright authorization for QA-06 (file upload)
 - Assets dir: D:\Users\mvera\Downloads

@@ -27,7 +27,7 @@ export function loadEnv(cwd = process.cwd()) {
 
 export function requireEnv(name) {
   const value = process.env[name]?.trim()
-  if (!value) throw new Error(`ENV_MISSING: ${name} not found in .env.local/.env`)
+  if (!value) throw new Error(`ENV_MISSING: ${name} not found in .env.local/.env.\nRun: powershell -ExecutionPolicy Bypass -File scripts/qa/ensure-marketplace-qa-env.ps1`)
   return value
 }
 
@@ -46,7 +46,7 @@ export function requireEnvs(names) {
       missing.push(name)
     }
   }
-  if (missing.length) throw new Error(`ENV_MISSING: ${missing.join(', ')}`)
+  if (missing.length) throw new Error(`ENV_MISSING: ${missing.join(', ')}\nRun: powershell -ExecutionPolicy Bypass -File scripts/qa/ensure-marketplace-qa-env.ps1`)
   return result
 }
 
