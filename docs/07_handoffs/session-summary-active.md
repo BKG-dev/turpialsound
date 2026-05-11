@@ -1,5 +1,17 @@
 # S02 Session Summary — Sprint 2 Discovery Runtime CLOSED
 
+## WhatsApp Lab Preview Integration - Draft
+
+- **Rama creada:** `Jean/preview-whatsapp-lab-on-integration-prep-2026-05-11`
+- **Base usada:** `origin/integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07`
+- **Fuente preservada usada:** `origin/Jean/lab-whatsapp-validation-preserved-2026-05-11` (`53477ff`)
+- **Archivos lab traidos:** `app/api/whatsapp/evolution-webhook/route.ts`, `app/api/whatsapp/lab/challenge/route.ts`, `app/api/whatsapp/lab/status/route.ts`, `app/api/whatsapp/webhook/route.ts`, `app/lab/meta-embedded-signup/*`, `app/lab/whatsapp-reserva-token/*`, `lib/whatsapp/*` (allowlist)
+- **Confirmacion:** este frente es Preview/Lab controlado, no produccion
+- **Validacion ejecutada:** `npx tsc --noEmit` OK
+- **Riesgos remanentes:** `lab-token-store` es temporal/lab; `query secret fallback` del endpoint evolution se condiciono por `EVOLUTION_WEBHOOK_ALLOW_QUERY_SECRET`; no integrado aun a reservas reales
+- **Estado:** draft / no push / no deploy manual
+
+
 > Branch: jean/s02-marketplace-discovery-runtime-stabilization-2026-05-10
 > Base: integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07
 > Date: 2026-05-11
