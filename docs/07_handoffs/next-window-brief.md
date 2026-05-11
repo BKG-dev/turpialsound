@@ -1,57 +1,50 @@
-# Next Window Brief - Turpial Sound
+# Next Window Brief — S03 Complete
 
-**Fecha de actualizacion:** 2026-05-07
-**Frente activo:** Integracion reservas + marketplace estable
-**Tipo de nota:** Control Tower / siguiente ventana
+> Date: 2026-05-11
+> Branch: Manuel/s03j-qa-final-regression-2026-05-11
 
-## Estado resumido
+## Current state: S03 CLOSED — 12/12 PASS
 
-- Rama madre real: `integration/today-reservas-marketplace-stable-2026-05-07`.
-- Commit estable: `c01ec60`.
-- `/reservas` congelado como zona sana.
-- `/marketplace` activo y funcional en la rama integrada.
-- BCV corregido con tasa fresca.
+Sprint 3 QA Harness Marketplace fully validated. No pending work.
 
-## Regla de entorno DB (obligatoria)
+## What to read first
 
-- `DATABASE_URL`: pooled/pooler.
-- `DIRECT_URL`: direct/no-pooler.
-- Ambas al mismo proyecto/base Neon integrada.
-- Nunca imprimir secretos.
+1. [[00_CENTRAL_TURPIAL]] — Mapa central del proyecto (actualizado)
+2. [[S03_QA_HARNESS_INDEX]] — Dashboard maestro Obsidian del Sprint 3
+3. [[S03_FINAL_QA_HARNESS_CLOSURE_2026-05-11]] — Cierre consolidado
+4. `docs/07_handoffs/QA_E2E_ROADMAP_2026-05-10.md` — Roadmap detallado
+5. `docs/07_handoffs/qa-dispatcher.json` — Dispatcher v4 con task_ids
 
-## Protocolo obligatorio si marketplace carga vacio
+## Key facts
 
-1. Confirmar branch/commit exacto del deployment.
-2. Revisar Vercel runtime logs.
-3. Buscar logs `marketplace.discovery`.
-4. Distinguir `DB_MISSING` / `QUERY_ERROR` / `ZERO_ACTIVE` / `FILTERED_EMPTY`.
-5. Si aparece Prisma `P2021`, revisar DB target y tablas `mp_*` antes de tocar UI.
-6. Comparar `DATABASE_URL` y `DIRECT_URL` por fingerprint seguro (host hint, pooler true/false, sslmode).
-7. Nunca imprimir secretos.
-8. Corregir env/DB en Vercel Preview solo por Jean.
-9. Redeployar mismo commit.
-10. Solo tocar UI si DB y query estan correctas.
+- 12/12 modules PASS. Zero browser. Zero CDP. Zero Playwright.
+- Runner: `npx tsx`. Not bare `node`.
+- Bootstrap: `scripts/qa/ensure-marketplace-qa-env.ps1`
+- Doctor: `scripts/qa/doctor-marketplace-qa-env.mjs`
+- Credentials: buyerIA, sellerIA, mvera (same QA password, never in Git).
+- Listing: `qa-e2e-s03f-selleria-discovery` (ACTIVE on preview BKG).
 
-## Metodologia Oreshnik-Codex 2.0
+## Canonical command
 
-- 1 rama madre estable.
-- N worktrees separados.
-- N agentes Codex.
-- 1 owner por lock.
-- 1 commit/push por sprint cerrado.
-- 0 trabajo directo sobre madre.
-- 0 main.
-- 0 produccion.
-- 0 zonas sanas tocadas.
+```bash
+npx tsx scripts/qa/run-marketplace-qa.mjs "--modules=qa-12" "--app-url=https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app"
+```
 
-## Roles
+## Next real step
 
-- Jean: integracion, Vercel/envs, DB/Prisma/schema/migrations, booking/reservas, rama madre, merges, preview integrado.
-- Manuel: marketplace producto, buyer/seller/admin flow, QA operacional, rates, payout, estados, copy/UX operativo.
+**S04: Browser/UI E2E with Playwright.**
+Base branch: `Manuel/s03j-qa-final-regression-2026-05-11`.
+Playwright authorized. Target: validate real UX: login UI, forms, file picker, dashboards, notifications.
 
-## Ola 1
+## Jean's action
 
-- J1 Docs Control Tower.
-- J2 Preview Runtime Guard.
-- M1 Marketplace Protected Flow E2E.
-- M2 Marketplace QA Harness.
+Review + merge docs-only branch into mother:
+`Manuel/docs-sync-s03-complete-obsidian-to-mother-2026-05-11`
+
+## Do NOT repeat
+
+- Do not re-implement S03 modules.
+- Do not use CDP.
+- Do not touch booking/reservas.
+- Do not touch production/main.
+- Do not commit .env.local, var/qa-results, or secrets.
