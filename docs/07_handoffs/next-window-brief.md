@@ -1,57 +1,32 @@
-# Next Window Brief - Turpial Sound
+# Next Window Brief — after S03F (HARDENED)
 
-**Fecha de actualizacion:** 2026-05-07
-**Frente activo:** Integracion reservas + marketplace estable
-**Tipo de nota:** Control Tower / siguiente ventana
+> Date: 2026-05-11
+> Branch: Manuel/s03f-qa-login-publish-discovery-2026-05-10
 
-## Estado resumido
+## S03F Status: VALIDATED PASS
 
-- Rama madre real: `integration/today-reservas-marketplace-stable-2026-05-07`.
-- Commit estable: `c01ec60`.
-- `/reservas` congelado como zona sana.
-- `/marketplace` activo y funcional en la rama integrada.
-- BCV corregido con tasa fresca.
+All 4 modules (QA-00 through QA-03) pass against Preview BKG DB:
+- QA-00: env, appUrl, DB tables (11/11), QA buyer/seller confirmed
+- QA-01: buyerIA, sellerIA, mvera all AUTH_DATA_PASS
+- QA-02: listing qa-e2e-s03f-selleria-discovery ACTIVE
+- QA-03: UI_PASS — listing visible in server-rendered HTML
 
-## Regla de entorno DB (obligatoria)
+## If env vars are missing on a new worktree
 
-- `DATABASE_URL`: pooled/pooler.
-- `DIRECT_URL`: direct/no-pooler.
-- Ambas al mismo proyecto/base Neon integrada.
-- Nunca imprimir secretos.
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/qa/ensure-marketplace-qa-env.ps1
+```
 
-## Protocolo obligatorio si marketplace carga vacio
+Or check first:
+```bash
+npx tsx scripts/qa/doctor-marketplace-qa-env.mjs
+```
 
-1. Confirmar branch/commit exacto del deployment.
-2. Revisar Vercel runtime logs.
-3. Buscar logs `marketplace.discovery`.
-4. Distinguir `DB_MISSING` / `QUERY_ERROR` / `ZERO_ACTIVE` / `FILTERED_EMPTY`.
-5. Si aparece Prisma `P2021`, revisar DB target y tablas `mp_*` antes de tocar UI.
-6. Comparar `DATABASE_URL` y `DIRECT_URL` por fingerprint seguro (host hint, pooler true/false, sslmode).
-7. Nunca imprimir secretos.
-8. Corregir env/DB en Vercel Preview solo por Jean.
-9. Redeployar mismo commit.
-10. Solo tocar UI si DB y query estan correctas.
+## Canonical harness command
+```bash
+npx tsx scripts/qa/run-marketplace-qa.mjs "--modules=qa-00,qa-01,qa-02,qa-03" "--app-url=https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app"
+```
 
-## Metodologia Oreshnik-Codex 2.0
-
-- 1 rama madre estable.
-- N worktrees separados.
-- N agentes Codex.
-- 1 owner por lock.
-- 1 commit/push por sprint cerrado.
-- 0 trabajo directo sobre madre.
-- 0 main.
-- 0 produccion.
-- 0 zonas sanas tocadas.
-
-## Roles
-
-- Jean: integracion, Vercel/envs, DB/Prisma/schema/migrations, booking/reservas, rama madre, merges, preview integrado.
-- Manuel: marketplace producto, buyer/seller/admin flow, QA operacional, rates, payout, estados, copy/UX operativo.
-
-## Ola 1
-
-- J1 Docs Control Tower.
-- J2 Preview Runtime Guard.
-- M1 Marketplace Protected Flow E2E.
-- M2 Marketplace QA Harness.
+## Next Sprint: S03G (Purchase + Payment Proof)
+- Requires Playwright authorization for QA-06 (file upload)
+- Assets dir: D:\Users\mvera\Downloads

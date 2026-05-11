@@ -1,73 +1,50 @@
-﻿# Session Summary - Activa
+# S03F Session Summary — QA Login, Publish, Discovery (FINAL)
 
-## Estado real integrado - 2026-05-07
+> Branch: Manuel/s03f-qa-login-publish-discovery-2026-05-10
+> Base: origin/Manuel/s03e-marketplace-qa-harness-architecture-2026-05-10
+> Date: 2026-05-11
+> Sprint: S03F VALIDATED — ALL 4 MODULES PASS
+> Runner: npx tsx (NOT bare node — required for generated/prisma/client .ts import)
 
-- Rama madre estable actual: `integration/today-reservas-marketplace-stable-2026-05-07`.
-- HEAD base de referencia de integracion: `cbc72e3`.
-- Commit estable operativo validado: `c01ec60` (`fix(marketplace): render active listings on public page`).
-- `/reservas` queda congelado como zona sana.
-- `/marketplace` queda activo y visible en rama integrada.
-- BCV corregido y respondiendo con tasa fresca (incluye fix `a96c247`).
-- Main y produccion no tocados.
+## What was implemented
 
-## Incidente aprendido - Marketplace vacio en Preview (2026-05-07)
+### Library helpers
+- `scripts/qa/lib/db-read.mjs` — Prisma factory, table checks, user/listing lookups (imports `generated/prisma/client` without .js extension for tsx compatibility)
+- `scripts/qa/lib/session.mjs` — bcrypt-based credential validation + profile checks (isSeller, role, isBanned)
+- `scripts/qa/lib/server-action.mjs` — HTTP server action call helper
 
-- Sintoma: `/marketplace` vacio en Preview.
-- No fue causa raiz de UI ni filtros.
-- Causa real: Preview apuntando a DB incorrecta sin tablas `mp_*`.
-- Evidencia tecnica: Prisma `P2021` por ausencia de `public.mp_listings`.
-- Solucion real: corregir `DATABASE_URL` y `DIRECT_URL` al mismo proyecto/base Neon integrada.
+### Modules (IMPLEMENTED + VALIDATED)
+- `scripts/qa/modules/qa-00-preflight.mjs` — **VALIDATED PASS.** 9 checks: env, adminEnv, appUrl (HTTP 200), previewBKG (Vercel), dbConnection, dbTables (11/11), qaBuyer, qaSeller (candidateCount=1), assets (SKIP).
+- `scripts/qa/modules/qa-01-login.mjs` — **VALIDATED PASS.** buyerIA AUTH_DATA_PASS (bcrypt match, isSeller=false, role=USER), sellerIA AUTH_DATA_PASS (isSeller=true, role=USER), mvera AUTH_DATA_PASS (role=SUPER).
+- `scripts/qa/modules/qa-02-publish.mjs` — **VALIDATED PASS.** Listing created: slug=qa-e2e-s03f-selleria-discovery, status=ACTIVE, seller verified.
+- `scripts/qa/modules/qa-03-discovery.mjs` — **VALIDATED PASS (UI_PASS!).** Listing visible in DB + server-rendered HTML on both /marketplace and /marketplace/slug.
 
-## Regla obligatoria de conexiones DB
+### Bootstrap system
+- `scripts/qa/ensure-marketplace-qa-env.ps1` — PowerShell bootstrap: backs up .env.local, pulls preview env from Vercel, inserts QA_* block, asks password once securely.
+- `scripts/qa/doctor-marketplace-qa-env.mjs` — JSON doctor: reports boolean presence of all 11 required env vars. Exit code 1 with actionable message if missing.
+- `.env.example` — Created with all QA var names (no values).
 
-- `DATABASE_URL` debe ser pooled/pooler.
-- `DIRECT_URL` debe ser direct/no-pooler.
-- Ambas deben apuntar al mismo proyecto/base Neon integrada.
-- Nunca imprimir secretos.
+### Orchestrator hardened
+- Alias mapping: qa-00, QA-00, preflight, qa_preflight → QA-00, etc.
+- Env pre-validation before running modules with actionable error messages.
+- Available module list and examples on invalid input.
 
-## Protocolo obligatorio si marketplace carga vacio
+## Execution results (validated 2026-05-11T04:18 UTC)
 
-1. Confirmar branch/commit exacto del deployment.
-2. Revisar runtime logs del deployment.
-3. Buscar logs `marketplace.discovery`.
-4. Distinguir `DB_MISSING` / `QUERY_ERROR` / `ZERO_ACTIVE` / `FILTERED_EMPTY`.
-5. Si hay `P2021`, validar DB target y existencia real de tablas `mp_*` antes de tocar UI.
-6. Comparar `DATABASE_URL` y `DIRECT_URL` con fingerprint seguro (host hint, pooler, sslmode).
-7. Corregir env/DB de Preview solo por Jean.
-8. Redeployar el mismo commit tras corregir target DB.
-9. Solo tocar UI si DB/query/data ya estan correctas.
+| Module | Result | Duration | Detail |
+|--------|--------|----------|--------|
+| QA-00 | PASS | 2543ms | All 9 checks pass |
+| QA-01 | PASS | 2239ms | buyer, seller, admin all AUTH_DATA_PASS |
+| QA-02 | PASS | 761ms | Listing created: qa-e2e-s03f-selleria-discovery |
+| QA-03 | PASS | 1371ms | UI_PASS — listing in server-rendered HTML |
 
-## Smoke base esperado en Preview integrado
+**Classification: S03F PASS**
 
-- `/` responde.
-- `/marketplace` responde.
-- `/reservas` responde.
-- `/api/bcv-rate` responde.
-- `/admin/login` responde.
-- `/ops/payment-review` responde con control de acceso.
-- `/payment-proofs/view` sin token responde error controlado (no `500`).
+## Command
+```
+npx tsx scripts/qa/run-marketplace-qa.mjs "--modules=qa-00,qa-01,qa-02,qa-03" "--app-url=https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app"
+```
 
-## Metodologia Oreshnik-Codex 2.0
-
-- 1 rama madre estable.
-- N worktrees separados.
-- N agentes Codex.
-- 1 owner por lock.
-- 1 commit/push por sprint cerrado.
-- 0 trabajo directo sobre madre.
-- 0 `main`.
-- 0 produccion.
-- 0 cambios en zonas sanas fuera de scope.
-
-## Roles operativos
-
-- Jean: integracion, merges, Vercel/envs, DB/Prisma/schema/migrations, rama madre, preview integrado, booking/reservas.
-- Manuel: marketplace producto, buyer/seller/admin flow, QA operacional, rates, payout, estados, copy/UX operativo.
-
-## Ola 1 (fuente activa)
-
-- J1 Docs Control Tower.
-- J2 Preview Runtime Guard.
-- M2 Marketplace QA Harness.
-- J3 Integration Gatekeeper.
-- M1 Marketplace Protected Flow E2E: fuera de esta integracion prep hasta autorizacion.
+## Next sprint: S03G
+- QA-04 (Q&A), QA-05 (purchase), QA-06 (payment proof upload)
+- Requires Playwright authorization for QA-06
