@@ -1,11 +1,11 @@
 ---
 type: master-dashboard
-project: "Turpial Sound Marketplace"
+project: "Turpial Sound"
 status: active
-phase: "Fase B completa → iniciando Fase D"
-last_updated: "2026-05-11T04:30-04:00"
+phase: "Fase D en curso + Tracks paralelos activados (Plan Maestro 2026-05-12)"
+last_updated: "2026-05-12T14:27-04:00"
 mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
-mother_commit: "8999e32"
+mother_commit: "f7f2d1e"
 preview: "https://turpialsound-5qwhe7is1-bkgs-projects-829c67c1.vercel.app"
 tags:
   - "#central"
@@ -21,132 +21,221 @@ tags:
 
 > **Abrí este archivo al inicio de cada sesión. Tiene todo lo que necesitás.**
 
+> **📋 Plan Maestro vigente:** [[PLAN_MAESTRO_SPRINTS_2026-05-12]] — Leer antes de ejecutar cualquier sprint.
+
 ---
 
 ## 📍 ¿Dónde estamos?
 
-- **Rama madre:** `integration/today-reservas-marketplace-stable-2026-05-07` (commit `8999e32`)
+- **Rama madre:** `integration/today-reservas-marketplace-stable-2026-05-07` (commit `f7f2d1e`)
 - **Preview Vercel:** `https://turpialsound-5qwhe7is1-bkgs-projects-829c67c1.vercel.app`
-- **Fase A, B y parte de C COMPLETAS.** Iniciando Fase D (browser/Playwright).
-- **18 módulos QA automatizados.** 0 FAIL. Release Gate 🟢.
-- **/reservas congelado.** /marketplace activo y funcional.
+- **Fase A, B y C COMPLETAS.** Fase D en curso.
+- **18 módulos QA automatizados** + **1 spec Playwright (S11 login UI smoke).** 0 FAIL. Release Gate 🟢.
+- **/reservas congelado** (zona exclusiva Jean). /marketplace activo y funcional.
+- **5 Tracks de trabajo paralelo activados** con el Plan Maestro 2026-05-12.
 
 ---
 
-## ✅ ¿Qué se ha hecho? — S01-S10 COMPLETOS
+## 🗺️ Mapa rápido de tracks
+
+| Track | Color | Descripción | Owner principal |
+|-------|-------|-------------|-----------------|
+| 🟦 **T1 Marketplace** | S12-S21 | Flujo marketplace completo + carrito + location filters + release | Jean + Manuel |
+| 🟩 **T2 Booking** | S-JB-01 a S-JB-04 | Fixes booking + dashboard + tasas + reseñas | 👤 Jean |
+| 🟨 **T3 Crecimiento** | S-MK-01 a S-MK-06 | Mercado, KPIs, SEO/AEO, RRSS, marketing | 👤 Manuel |
+| 🟪 **T4 Admin-Legal** | S-ADM-01 a S-ADM-04 | Documentación legal, banco, Binance, marca, deploy CDA | 👤 Manuel (físico) |
+| 🟧 **T5 UI/UX** | S-UX-01 a S-UX-02 | UI Inmersiva + Refac Global | 👤 Manuel |
+
+---
+
+## ✅ ¿Qué se ha hecho? — S01-S11 COMPLETOS
 
 | Sprint | Owner | Qué resolvió | Resultado |
 |--------|-------|-------------|-----------|
-| [[S01]] | Manuel | Preview BKG autónomo | ✅ |
-| [[S02]] | Jean | Discovery runtime estable | ✅ |
-| [[S03]] | Manuel | QA Harness 12 módulos | 12/12 PASS |
-| [[S04]] | Jean | Payment proof protegido | 9/9 PASS |
-| [[S05]] | Manuel | Delivery & receipt flow | 9/9 PASS |
-| [[S06]] | Jean | Payout auditable (migración) | PASS |
-| [[S07]] | Jean | Tasas y accounting | 11/11 PASS |
-| [[S08]] | Manuel | Action center y UX | 11/11 PASS |
-| [[S09]] | Manuel | Discovery público y SEO | 9/9 PASS |
-| [[S10]] | Jean | Release gate | 10/10 🟢 |
+| S01 | 👤 Manuel | Preview BKG autónomo | ✅ |
+| S02 | 👤 Jean | Discovery runtime estable | ✅ |
+| S03 | 👤 Manuel | QA Harness 12 módulos | ✅ 12/12 PASS |
+| S04 | 👤 Jean | Payment proof protegido | ✅ 9/9 PASS |
+| S05 | 👤 Manuel | Delivery & receipt flow | ✅ 9/9 PASS |
+| S06 | 👤 Jean | Payout auditable (migración) | ✅ PASS |
+| S07 | 👤 Jean | Tasas y accounting | ✅ 11/11 PASS |
+| S08 | 👤 Manuel | Action center y UX | ✅ 11/11 PASS |
+| S09 | 👤 Manuel | Discovery público y SEO | ✅ 9/9 PASS |
+| S10 | 👤 Jean | Release gate | 🟢 10/10 |
+| S11 | 👤 Manuel | Playwright + login UI smoke | ✅ 3/3 PASS |
 
-> Ver detalle completo: [[S03_QA_HARNESS_INDEX]] | [[NEXT_PHASE_PLAN_S11_S20]]
-
----
-
-## 🚀 ¿Qué falta? — Fases D, E, F (S11-S20)
-
-### Fase D — Browser/UI E2E con Playwright
-
-| Sprint | Owner | Objetivo | Branch |
-|--------|-------|----------|--------|
-| **S11** 🔴 | Manuel | Playwright setup + login UI smoke | `Manuel/s11-playwright-login-ui` |
-| **S12** | Jean | Purchase flow browser E2E | `jean/s12-purchase-flow-browser` |
-| **S13** | Manuel | Payment proof upload browser | `Manuel/s13-proof-upload-browser` |
-
-### Fase E — Admin & Notificaciones
-
-| Sprint | Owner | Objetivo | Branch |
-|--------|-------|----------|--------|
-| **S14** | Jean | Admin dashboard browser | `jean/s14-admin-dashboard-browser` |
-| **S15** | Manuel | Notificaciones y chat | `Manuel/s15-notifications-chat` |
-| **S16** | Jean | Seller dashboard browser | `jean/s16-seller-dashboard-browser` |
-
-### Fase F — Cobertura completa + Launch
-
-| Sprint | Owner | Objetivo | Branch |
-|--------|-------|----------|--------|
-| **S17** | Manuel | Full regression browser | `Manuel/s17-full-regression-browser` |
-| **S18** | Jean | Performance + load | `jean/s18-performance-load` |
-| **S19** | Manuel | SEO/AEO audit | `Manuel/s19-seo-aeo-audit` |
-| **S20** | Jean | Production release gate | `jean/s20-production-release-gate` |
-
-> Ver plan detallado: [[NEXT_PHASE_PLAN_S11_S20]]
+> Ver detalle: [[S03_QA_HARNESS_INDEX]] | [[NEXT_PHASE_PLAN_S11_S20]]
 
 ---
 
-## 👤 ¿Quién hace qué?
+## 🔴 PRÓXIMO SPRINT — S12 (Jean)
 
-### Manuel
-**Gate keeper de:** QA de marketplace, UX operativa, copy, estados, dashboards, SEO.
-**Próximo sprint:** **S11** — Instalar Playwright, login UI smoke con screenshots.
-```
-git checkout -b Manuel/s11-playwright-login-ui-2026-05-12 origin/integration/today-reservas-marketplace-stable-2026-05-07
-```
+| Campo | Valor |
+|-------|-------|
+| **Sprint** | S12 — Purchase flow browser E2E |
+| **Owner** | 👤 Jean |
+| **Branch** | `jean/s12-purchase-flow-browser-2026-05-12` |
+| **Depende de** | S11 (Playwright instalado) |
+| **Estado** | 🔴 PENDIENTE |
 
-### Jean
-**Gate keeper de:** Integración, Vercel, DB, schema, merges a madre, preview, producción.
-**Próximo sprint:** **S12** — Purchase flow browser E2E (depende de S11).
-```
-git checkout -b jean/s12-purchase-flow-browser-2026-05-12 origin/integration/today-reservas-marketplace-stable-2026-05-07
-```
-**Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel.
+**Tareas:**
+- Navegar listing QA → click "Comprar" → Pago Móvil → Confirmar → Screenshots
+- Validar TX creada en DB con status `PENDING_PAYMENT`
+- Cierre: 3/3 screenshots + TX en DB
 
 ---
 
-## 🔧 Comandos canónicos (cada sesión)
+## 🔴 PENDIENTES INMEDIATOS (Jean)
 
-```bash
-# 1. Asegurar credenciales QA (pide contraseña UNA vez)
-powershell -ExecutionPolicy Bypass -File scripts/qa/ensure-marketplace-qa-env.ps1
-
-# 2. Verificar env vars
-npx tsx scripts/qa/doctor-marketplace-qa-env.mjs
-
-# 3. Full automated test suite (18 módulos)
-npx tsx scripts/qa/run-marketplace-qa.mjs \
-  "--modules=qa-12,s05,s07,s08,s09" \
-  "--app-url=https://turpialsound-5qwhe7is1-bkgs-projects-829c67c1.vercel.app"
-
-# 4. Release gate check
-npx tsx scripts/qa/modules/qa-s10-release-gate.mjs
-```
+| # | Pendiente | Sprint | Prioridad |
+|---|-----------|--------|-----------|
+| 1 | Push de cambios locales sin subir al repo | ACCIÓN INMEDIATA | 🔴 P0 |
+| 2 | Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel | ACCIÓN INMEDIATA | 🔴 P0 |
+| 3 | Iniciar S12 — Purchase flow browser E2E | S12 | 🔴 |
+| 4 | Iniciar S-JB-01 — Selección múltiple + cantidad temas | S-JB-01 | 🟡 |
 
 ---
 
-## 📋 Reglas permanentes
+## 🔴 PENDIENTES INMEDIATOS (Manuel)
 
-- ❌ No `main`. No producción sin release gate.
-- ❌ No booking `/reservas`. Es zona exclusiva de Jean.
-- ❌ No imprimir secrets, tokens, DATABASE_URL ni contraseñas.
-- ❌ No commitear `.env.local`, `var/qa-results/`, `.obsidian/`.
-- ✅ Sprint cerrado = validación + commit + push + docs + siguiente paso.
-- ✅ Multi-agente: Jean y Manuel en ramas separadas desde madre.
-- ✅ Locks: DB/schema requieren doble lock Jean+Manuel.
+| # | Pendiente | Sprint | Prioridad |
+|---|-----------|--------|-----------|
+| 1 | Verificar estado de constitución legal de Turpial Sound | S-ADM-01 | 🔴 P0 |
+| 2 | Preparar plan de despliegue para viernes 15 mayo 11AM CDA | S-ADM-04 | 🔴 P0 |
+| 3 | S-MK-01 — Análisis de mercado y competencia | S-MK-01 | 🟡 |
+| 4 | Revisar APIs RRSS disponibles | S-MK-04 (investigación) | 🟡 |
 
 ---
 
-## 🔗 Navegación rápida
+## 📊 RESUMEN DE ESTADO DE TRACKS
 
-| ¿Qué busco? | Archivo |
-|-------------|---------|
-| Dashboard de QA S03 | [[S03_QA_HARNESS_INDEX]] |
-| Plan siguiente fase S11-S20 | [[NEXT_PHASE_PLAN_S11_S20]] |
-| Protocolo de pruebas manuales | [[E2E_MANUAL_TEST_PROTOCOL_2026-05-11]] |
-| Roadmap de rescate | [[ROADMAP_RESCATE]] |
-| Bugs y guardrails | [[BUGS_CRITICOS]] |
-| Reglas del bus de control | [[BUS_CONTROL_TURPIAL]] |
-| Inventario de scripts QA | [[QA_HARNESS_SCRIPTS_MAP_2026-05-10]] |
-| Reporte cierre S03 | [[S03_FINAL_QA_HARNESS_CLOSURE_2026-05-11]] |
-| Cierres S04-S10 | `docs/07_handoffs/S04_PAYMENT_PROOF_CLOSURE*.md` → |
-| Dispatcher QA (task_ids) | `docs/07_handoffs/qa-dispatcher.json` |
-| Runner multi-agente | [[AGENT_CONTROL_BUS_RUNNER]] |
-| Estado del negocio | [[ESTADO_NEGOCIO_TURPIAL_2026-05-10]] |
+### 🟦 TRACK 1: Marketplace (S12-S21)
+
+| Sprint | Descripción | Owner | Estado |
+|--------|-------------|-------|--------|
+| S12 | Purchase flow browser E2E | 👤 Jean | 🔴 PENDIENTE |
+| S13 | Payment proof upload browser | 👤 Manuel | 🔴 PENDIENTE |
+| S14 | Admin dashboard + cierre pagos | 👤 Jean | 🔴 PENDIENTE |
+| S14B | Shopping cart marketplace | 👤 Manuel | 🔴 PENDIENTE |
+| S15 | Location filters + listing modal | 👤 Manuel | 🔴 PENDIENTE |
+| S16 | Notificaciones y chat | 👤 Manuel | 🔴 PENDIENTE |
+| S17 | Seller dashboard browser | 👤 Jean | 🔴 PENDIENTE |
+| S18 | Full regression browser | 👤 Manuel | 🔴 PENDIENTE |
+| S19 | Performance + load | 👤 Jean | 🔴 PENDIENTE |
+| S20 | SEO/AEO audit completo | 👤 Manuel | 🔴 PENDIENTE |
+| S21 | Production release gate | 👤 Jean | 🔴 PENDIENTE |
+
+### 🟩 TRACK 2: Booking
+
+| Sprint | Descripción | Owner | Estado |
+|--------|-------------|-------|--------|
+| S-JB-01 | Fixes críticos (selección múltiple, cantidad, WhatsApp) | 👤 Jean | 🔴 PENDIENTE |
+| S-JB-02 | Dashboard de reservas | 👤 Jean | 🔴 PENDIENTE |
+| S-JB-03 | Tasas horarias, sitemap, Vercel docs, mobile UI | 👤 Jean | 🔴 PENDIENTE |
+| S-JB-04 | Protocolo reseñas Google + descuentos | 👤 Jean | 🔴 PENDIENTE |
+
+### 🟨 TRACK 3: Crecimiento Digital
+
+| Sprint | Descripción | Owner | Estado |
+|--------|-------------|-------|--------|
+| S-MK-01 | Análisis de mercado y competencia | 👤 Manuel | 🔴 PENDIENTE |
+| S-MK-02 | Diseño KPI dashboard inteligente | 👤 Manuel | 🔴 PENDIENTE |
+| S-MK-03 | SEO/AEO full + Academia Turpial | 👤 Jean + Manuel | 🔴 PENDIENTE |
+| S-MK-04 | Automatización RRSS (setup APIs) | 👤 Manuel | 🔴 PENDIENTE |
+| S-MK-05 | Generación y despliegue contenido RRSS | 👤 Manuel | 🔴 PENDIENTE |
+| S-MK-06 | Plan marketing digital + despliegue | 👤 Manuel | 🔴 PENDIENTE |
+
+### 🟪 TRACK 4: Administrativo-Legal
+
+| Sprint | Descripción | Owner | Estado |
+|--------|-------------|-------|--------|
+| S-ADM-01 | Documentación legal + marca | 👤 Manuel (físico) | 🔴 PENDIENTE |
+| S-ADM-02 | Cuenta bancaria jurídica + Binance empresa | 👤 Manuel (físico) | 🔴 PENDIENTE |
+| S-ADM-03 | Modelos comerciales y jurídicos | 👤 Manuel (físico) | 🔴 PENDIENTE |
+| S-ADM-04 | Deploy CDA + configuración operativa | 👤 Manuel (físico) | 🔴 PENDIENTE |
+
+### 🟧 TRACK 5: UI/UX Premium
+
+| Sprint | Descripción | Owner | Estado |
+|--------|-------------|-------|--------|
+| S-UX-01 | UI Inmersiva Phase 1 (plan) | 👤 Manuel | 🔴 PENDIENTE |
+| S-UX-02 | UI Inmersiva Phase 2 + Refac Global | 👤 Manuel | 🔴 PENDIENTE |
+
+---
+
+## 📋 PRÓXIMO HITO CRÍTICO: Viernes 15 mayo 2026 — 11:00 AM VET
+
+**Deploy de la plataforma en La Casa del Artista:**
+- [ ] Preparar plan de despliegue con instrucciones precisas
+- [ ] Guía de usuario para el equipo de CDA
+- [ ] Roadmap de funcionalidades
+- [ ] Capacitación del equipo
+- [ ] Configuración de dispositivos (calendario, Gmail, notificaciones)
+
+---
+
+## 🔒 REGLAS DEL BUS (recordatorio rápido)
+
+| Zona | Regla |
+|------|-------|
+| `/reservas` | 🚫 Zona exclusiva Jean. Manuel no toca. |
+| `schema.prisma` | 🔒 Lock doble Jean+Manuel. No se modifica sin acuerdo. |
+| `.env` / secretos | 🚫 Nunca se commitean. |
+| `docs/obsidian-vault/` | 📋 Actualizar al cerrar cada sprint. |
+| `.obsidian/` | 🚫 Nunca se commitea (workspace local). |
+| `var/qa-results/` | 🚫 No se commitea. |
+
+---
+
+## 🔗 NAVEGACIÓN RÁPIDA
+
+**Documentos centrales:**
+- 📋 [[PLAN_MAESTRO_SPRINTS_2026-05-12]] — Plan maestro vigente con todos los tracks
+- 📋 [[NEXT_PHASE_PLAN_S11_S20]] — Plan detallado S11-S20
+- 📋 [[BUS_CONTROL_TURPIAL]] — Reglas del bus de control
+- 📋 [[BUGS_CRITICOS]] — Bugs y riesgos activos
+- 📋 [[ROADMAP_RESCATE]] — Roadmap de rescate
+- 📋 [[ESTADO_NEGOCIO_TURPIAL_2026-05-10]] — Estado del negocio
+- 📋 [[ARQUITECTURA_TASAS]] — Motor de tasas BCV/Binance
+
+**QA y Testing:**
+- 📋 [[S03_QA_HARNESS_INDEX]] — QA Harness (CERRADO 12/12)
+- 📋 [[E2E_MANUAL_TEST_PROTOCOL_2026-05-11]] — Protocolo E2E manual
+- 📋 [[QA_MARKETPLACE_INTEGRADO]] — Reglas de despacho QA
+- 📋 [[QA_HARNESS_SCRIPTS_MAP_2026-05-10]] — Inventario de scripts QA
+
+**Sprints:**
+- 📋 [[SPRINTS_CODEV_MARKETPLACE_2026-05-10]] — Definiciones S01-S10
+- 📋 [[SPRINTS_MARKETPLACE_PARALELO]] — Metodología paralela
+- 📋 [[SPRINTS_GENERADOS_DESDE_OBSIDIAN_2026-05-10]] — Índice ejecutivo
+
+**Marketplace docs:**
+- `docs/marketplace/00_IMPLEMENTATION_SUMMARY.md`
+- `docs/marketplace/01_ROADMAP_AND_STATUS.md`
+- `docs/marketplace/02_PAYMENT_ARCHITECTURE.md`
+- `docs/marketplace/03_API_INTEGRATION_PLAN.md`
+- `docs/marketplace/04_DISPUTES_&_SECURITY.md`
+- `docs/marketplace/05_GLOSARIO_DE_TERMINOS_UX.md`
+- `docs/marketplace/LOCATION_FILTERS_DESIGN_BRIEF.md`
+- `docs/marketplace/SEO_AEO_NEXT_AUDIT.md`
+
+**Handoffs:**
+- `docs/07_handoffs/qa-dispatcher.json`
+- `docs/07_handoffs/qa-canonical-runbook.md`
+- `docs/07_handoffs/next-window-brief.md`
+
+**Notas de reunión (intake):**
+- `docs/intake/Reunión iniciada a las 2026_05_12 00_28 UTC - Notas de Gemini.md`
+- `docs/intake/Reunión iniciada a las 2026_05_12 15_11 UTC - Notas de Gemini.md`
+- `docs/intake/cuestionario_maestro_cliente_turpial_song.md`
+
+**Instrucciones de diseño:**
+- `docs/INSTRUCCIONES_UI_INMERSIVA.md`
+- `docs/INSTRUCCIONES_REFAC_GLOBAL.md`
+
+**Control points:**
+- `docs/control-points/turpial_sound_control_point_01.md`
+
+---
+
+> **Última actualización:** 2026-05-12T14:27-04:00 | **Plan Maestro:** [[PLAN_MAESTRO_SPRINTS_2026-05-12]]

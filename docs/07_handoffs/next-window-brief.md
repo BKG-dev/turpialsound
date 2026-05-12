@@ -21,13 +21,25 @@ Playwright + Chromium instalado en rama madre. Helpers y spec S11 funcionando.
 | Seller | sellerIA | QA_SELLER_IDENTIFIER, QA_SELLER_PASSWORD |
 | Admin | mvera | QA_ADMIN_IDENTIFIER, QA_ADMIN_PASSWORD |
 
+## Plan Maestro vigente
+
+> 📋 **Leer antes de ejecutar:** [[PLAN_MAESTRO_SPRINTS_2026-05-12]]
+> 5 tracks, 27 sprints totales. Marketplace + Booking + Crecimiento + Admin-Legal + UI/UX.
+
 ## S12 — Próximo sprint (Jean)
 
-- **Owner:** Jean
+- **Owner:** 👤 Jean
 - **Branch:** `jean/s12-purchase-flow-browser-2026-05-12`
 - **Base:** `integration/today-reservas-marketplace-stable-2026-05-07` (Playwright ya disponible)
 - **Tareas:** Navegar listing QA → click "Comprar" → Pago Móvil → Confirmar → Screenshots
 - **Reutilizar:** `scripts/qa/playwright/login.mjs` para login buyer
+
+## Acciones inmediatas adicionales
+
+- **Jean:** Push de cambios locales pendientes al repo
+- **Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
+- **Manuel:** Verificar estado legal de la entidad
+- **Manuel:** Preparar deploy CDA (viernes 15 mayo 2026, 11AM VET)
 
 ## Canonical commands
 
