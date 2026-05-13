@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/refresh-bcv-rate",
+      "schedule": "*/30 * * * *"
+    }
+  ]
+}
