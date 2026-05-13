@@ -79,8 +79,6 @@ export function SocialVideoPlayer({ src, fallback, label = 'Turpial Sound' }: So
         style={{
           background:
             'linear-gradient(135deg, rgba(0,174,239,0.70) 0%, rgba(255,193,7,0.50) 50%, rgba(0,174,239,0.70) 100%)',
-          backgroundSize: '200% 200%',
-          animation: 'gradientShift 5s ease infinite',
         }}
       >
         {/* Inner container */}

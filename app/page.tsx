@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { Building2, Ear, Layers, Award } from 'lucide-react'
 import { PricingPreview } from '@/components/home/PricingPreview'
 import type { LucideIcon } from 'lucide-react'
@@ -11,12 +12,20 @@ import { Button } from '@/components/ui/Button'
 import { StatsBar } from '@/components/ui/StatsBar'
 import { SectionShell, SectionHeading } from '@/components/sections/SectionShell'
 import { CTASection } from '@/components/sections/CTASection'
-import { CinematicVideo } from '@/components/media/CinematicVideo'
-import { SocialVideoPlayer } from '@/components/media/SocialVideoPlayer'
 import { HeroSection } from '@/components/home/HeroSection'
 import { StackingSection } from '@/components/home/StackingSection'
 import { ServiceGallery } from '@/components/home/ServiceGallery'
 import { InstalacionesSection } from '@/components/home/InstalacionesSection'
+
+const CinematicVideo = dynamic(
+  () => import('@/components/media/CinematicVideo').then((mod) => mod.CinematicVideo),
+  { ssr: false },
+)
+
+const SocialVideoPlayer = dynamic(
+  () => import('@/components/media/SocialVideoPlayer').then((mod) => mod.SocialVideoPlayer),
+  { ssr: false },
+)
 
 export const metadata: Metadata = generatePageMetadata({
   title: 'Estudio de grabación y producción musical en Caracas',
@@ -103,7 +112,7 @@ export default function HomePage() {
       </StackingSection>
 
       {/* ── SERVICES GALLERY — stacking section 1 ─────────────────────── */}
-      <StackingSection index={1} waves>
+      <StackingSection index={1} waves className="home-belowfold-section">
         <SectionShell background="none">
           <SectionHeading
             eyebrow="Servicios principales"
@@ -124,7 +133,7 @@ export default function HomePage() {
       </StackingSection>
 
       {/* ── VIDEO / EL ESTUDIO — stacking section 2 ──────────────────── */}
-      <StackingSection index={2} background="surface" waves>
+      <StackingSection index={2} background="surface" waves className="home-belowfold-section">
         <SectionShell background="none">
           <div id="video-estudio" className="grid items-center gap-12 lg:grid-cols-[1fr_2fr]">
             {/* Text — left */}
@@ -157,7 +166,7 @@ export default function HomePage() {
       </StackingSection>
 
       {/* ── ARTISTAS DE ÉLITE — stacking section 3 ─────────────────────── */}
-      <StackingSection index={3} waves>
+      <StackingSection index={3} waves className="home-belowfold-section">
         <SectionShell background="none">
           <SectionHeading
             eyebrow="Trayectoria verificable"
@@ -204,7 +213,7 @@ export default function HomePage() {
       </StackingSection>
 
       {/* ── WHY US — stacking section 4 ──────────────────────────────── */}
-      <StackingSection index={4} waves>
+      <StackingSection index={4} waves className="home-belowfold-section">
         <SectionShell background="none">
           <SectionHeading
             eyebrow="Por qué Turpial Sound"
@@ -232,14 +241,14 @@ export default function HomePage() {
       </StackingSection>
 
       {/* ── PRICING PREVIEW — stacking section 5 ─────────────────────── */}
-      <StackingSection index={5} waves>
+      <StackingSection index={5} waves className="home-belowfold-section">
         <SectionShell background="none">
           <PricingPreview />
         </SectionShell>
       </StackingSection>
 
       {/* ── NUESTRAS INSTALACIONES — stacking section 6 ─────────────── */}
-      <StackingSection index={6} background="surface" waves>
+      <StackingSection index={6} background="surface" waves className="home-belowfold-section">
         <SectionShell background="none">
           <SectionHeading
             eyebrow="Nuestras instalaciones"
@@ -252,7 +261,7 @@ export default function HomePage() {
       </StackingSection>
 
       {/* ── CTA — stacking section 7 ─────────────────────────────────── */}
-      <StackingSection index={7}>
+      <StackingSection index={7} className="home-belowfold-section">
         <CTASection
           heading="¿Tienes un proyecto en mente?"
           subheading="Cuéntanos qué necesitas. Revisamos disponibilidad y armamos una propuesta."

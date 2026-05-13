@@ -13,7 +13,7 @@ interface CinematicVideoProps {
 
 export function CinematicVideo({
   src,
-  poster = '/images/artista-hero.jpg',
+  poster = '/images/artista-hero-768.webp',
   aspect = 'horizontal',
   label = 'Turpial Sound',
   className,
@@ -97,7 +97,7 @@ export function CinematicVideo({
       {src ? (
         <video
           ref={videoRef}
-          poster={poster}
+          poster={inView ? poster : undefined}
           className="absolute inset-0 h-full w-full object-cover"
           style={{ objectFit: 'cover', objectPosition: 'center', transform: 'scale(1.08)' }}
           playsInline
