@@ -37,6 +37,16 @@ import {
   sendBookingNotifications,
 } from '@/lib/bookings/notifications'
 import { buildAdminPaymentProofUrl } from '@/lib/bookings/operational-links'
+import { buildDashboardRange, getAdminDashboardSnapshot } from '@/lib/bookings/dashboard-queries'
+import {
+  CriticalAlertsPanel,
+  OccupancyByRoomPanel,
+  PaymentReviewQueuePanel,
+  QuickRevenueHistoryPanel,
+  RevenueCardPanel,
+  StatusBreakdownPanel,
+  TodayOperationsPanel,
+} from '@/components/admin/dashboard'
 
 type SearchParamValue = string | string[] | undefined
 
@@ -48,6 +58,7 @@ interface AdminPageProps {
         resource?: SearchParamValue
         calendarSync?: SearchParamValue
         guard?: SearchParamValue
+        range?: SearchParamValue
       }>
     | {
         date?: SearchParamValue
@@ -55,6 +66,7 @@ interface AdminPageProps {
         resource?: SearchParamValue
         calendarSync?: SearchParamValue
         guard?: SearchParamValue
+        range?: SearchParamValue
       }
 }
 
@@ -415,10 +427,13 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const resourceFilter = getSingleValue(params.resource)
   const calendarSyncState = getSingleValue(params.calendarSync)
   const guardState = getSingleValue(params.guard)
+  const rangeInput = getSingleValue(params.range)
+  const dashboardRange = buildDashboardRange(rangeInput)
   const statusFilter: OperationalBookingStatus | 'all' =
     requestedStatus && isOperationalBookingStatus(requestedStatus) ? requestedStatus : 'all'
 
   await expireOverduePendingPayments()
+  const dashboardSnapshot = await getAdminDashboardSnapshot(dashboardRange)
 
   const resources = await prisma.resource.findMany({
     where: { isActive: true },
@@ -585,6 +600,46 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             El recurso o sala ya no esta disponible para ese horario.
           </section>
         ) : null}
+
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+          <form className="mb-4 grid gap-3 md:grid-cols-[180px_auto] md:items-end">
+            <label className="space-y-1.5 text-sm text-slate-700">
+              <span className="font-medium">Rango dashboard</span>
+              <select
+                name="range"
+                defaultValue={dashboardRange.key}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+              >
+                <option value="7d">Ultimos 7 dias</option>
+                <option value="30d">Ultimos 30 dias</option>
+              </select>
+            </label>
+            <button
+              type="submit"
+              className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Actualizar metricas
+            </button>
+          </form>
+
+          <div className="space-y-4">
+            <RevenueCardPanel snapshot={dashboardSnapshot} />
+
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <PaymentReviewQueuePanel snapshot={dashboardSnapshot} />
+              <TodayOperationsPanel snapshot={dashboardSnapshot} />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <div className="space-y-4 lg:col-span-2">
+                <StatusBreakdownPanel snapshot={dashboardSnapshot} />
+                <OccupancyByRoomPanel snapshot={dashboardSnapshot} />
+                <QuickRevenueHistoryPanel snapshot={dashboardSnapshot} />
+              </div>
+              <CriticalAlertsPanel snapshot={dashboardSnapshot} />
+            </div>
+          </div>
+        </section>
 
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
           <form className="grid gap-4 md:grid-cols-[200px_180px_180px_auto_auto] md:items-end">
