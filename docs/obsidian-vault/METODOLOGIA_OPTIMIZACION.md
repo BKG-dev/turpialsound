@@ -6,260 +6,232 @@ metodologia: Oreshnik + Bus de Control Nivel 2.5
 
 # METODOLOGÍA ORESHNIK + BUS DE CONTROL — ANÁLISIS Y OPTIMIZACIÓN
 
-## Section 1: Current Model Assessment
+## Sección 1: Evaluación del Modelo Actual
 
-### 1.1 What Works Well
+### 1.1 Lo que funciona bien
 
-**Lock-per-domain system.** The 9-layer lock matrix (`BUS_CONTROL_TURPIAL.md:101-114`) is the strongest mechanism in the methodology. Double-lock for DB/schema, owner-exclusive for booking, Jean-gate for production — this prevents catastrophic collisions with zero ambiguity about who can touch what.
+**Sistema de locks por dominio.** La matriz de locks de 9 capas (`BUS_CONTROL_TURPIAL.md:101-114`) es el mecanismo más sólido de la metodología. Lock doble para DB/schema, propietario exclusivo para booking, Jean-gate para producción — esto previene colisiones catastróficas con cero ambigüedad sobre quién puede tocar qué.
 
-**QA dispatcher as canonical source of truth.** `qa-dispatcher.json` defines exact script paths, preconditions, allowed fallbacks, and forbidden methods. This eliminates the "which QA script should I run?" ambiguity that plagued earlier phases. The architecture's A-B-C-D layering (preflight → server-side → browser smoke → E2E) provides proportional validation.
+**QA dispatcher como fuente canónica de verdad.** `qa-dispatcher.json` define rutas exactas de scripts, precondiciones, fallbacks permitidos y métodos prohibidos. Esto elimina la ambigüedad de "¿qué script QA debo ejecutar?" que plagó fases anteriores. La arquitectura de capas A-B-C-D (preflight → server-side → browser smoke → E2E) proporciona validación proporcional.
 
-**Checklist-driven push gating.** The 9-item checklist before pushing to mother (`BUS_CONTROL_TURPIAL.md:90-99`) enforces discipline: no secrets, no cross-sprint contamination, no production deployment. The integration gatekeeper adds `LISTA_PARA_REVIEW`/`LISTA_PARA_MERGE` state machine.
+**Push gating basado en checklist.** El checklist de 9 items antes de hacer push a madre (`BUS_CONTROL_TURPIAL.md:90-99`) impone disciplina: no secretos, no contaminación entre sprints, no deploy a producción. El integration gatekeeper añade la máquina de estados `LISTA_PARA_REVIEW`/`LISTA_PARA_MERGE`.
 
-**Sprint reasignación rules.** The 6-rule protocol for operator unavailability (`BUS_CONTROL_TURPIAL.md:134-143`) handles real-world scheduling conflicts cleanly. Branch renaming, notification in CENTRAL_TURPIAL, and documented handoff prevent orphaned work.
+**Reglas de reasignación de sprints.** El protocolo de 6 reglas para indisponibilidad de operadores (`BUS_CONTROL_TURPIAL.md:134-143`) maneja conflictos de horario reales limpiamente. Renombrado de rama, notificación en CENTRAL_TURPIAL y handoff documentado previenen trabajo huérfano.
 
-**Multi-worktree isolation.** The project uses physical git worktrees (8 visible on disk) so agents never share the same working directory. This eliminates file-locking issues at the OS level.
+**Aislamiento multi-worktree.** El proyecto usa worktrees físicos de git (8 visibles en disco) para que los agentes nunca compartan el mismo directorio de trabajo. Esto elimina problemas de bloqueo de archivos a nivel de sistema operativo.
 
-**Clear role boundaries.** Jean owns production/billing/booking. Manuel owns QA/UX/marketplace product. Neither can cross without explicit lock.
+**Límites claros de roles.** Jean es dueño de producción/facturación/booking. Manuel es dueño de QA/UX/producto marketplace. Ninguno puede cruzar sin lock explícito.
 
-### 1.2 What Creates Friction
+### 1.2 Lo que genera fricción
 
-**Manual pre-flight is a human bottleneck.** The AGENT_CONTROL_BUS_RUNNER Step 1 (Preflight) requires the agent to read 6 large documents, verify 4 guardrail categories, check base branch existence, and validate working tree cleanliness — every single time. This is ~5 minutes of context-loading before any productive work begins. The `bootstrap-marketplace-qa.mjs --doctor` script referenced in PLAN_MAESTRO does not exist on disk.
+**Pre-flight manual es un cuello de botella humano.** El AGENT_CONTROL_BUS_RUNNER Paso 1 (Preflight) requiere que el agente lea 6 documentos extensos, verifique 4 categorías de guardrail, compruebe la existencia de la rama base y valide la limpieza del worktree — cada vez. Esto son ~5 minutos de carga de contexto antes de que comience cualquier trabajo productivo. El script `bootstrap-marketplace-qa.mjs --doctor` referenciado en PLAN_MAESTRO no existe en disco.
 
-**Oreshnik orchestrator is design-only.** `ORESHNIK_ORCHESTRATOR_DESIGN.md` describes `scripts/oreshnik/` with prompts, logs, runs subdirectories, and `oreshnik.ps1` runner — none of which exist. The `scripts/oreshnik/` directory is empty. The entire init → validate → execute → log → checkpoint automation is vaporware.
+**Oreshnik orchestrator es solo diseño.** `ORESHNIK_ORCHESTRATOR_DESIGN.md` describe `scripts/oreshnik/` con subdirectorios prompts, logs, runs, y el runner `oreshnik.ps1` — nada de esto existe. El directorio `scripts/oreshnik/` está vacío. Toda la automatización init → validate → execute → log → checkpoint es vaporware.
 
-**Stale worktrees from closed sprints.** Six of eight worktrees correspond to S01/S03 sub-sprints that were closed and merged weeks ago. These consume disk space and create confusion about what's "active."
+**Worktrees obsoletos de sprints cerrados.** Seis de ocho worktrees corresponden a sub-sprints S01/S03 que fueron cerrados y mergeados hace semanas. Consumen espacio en disco y crean confusión sobre qué está "activo".
 
-**Missing scripts in the canonical dispatcher.** Three task_ids in `qa-dispatcher.json` are annotated `MISSING on disk — GAP OPERATIVO`: `admin_local_smoke`, `buyer_only_short`, `reconcile_read_only`. These are referenced by the sprints but the scripts don't exist. The dispatcher notes say "replace with QA-07, QA-05/06, QA-10" — but the mappings are inconsistent between the legacy entries and their replacements.
+**Scripts faltantes en el dispatcher canónico.** Tres task_ids en `qa-dispatcher.json` están anotados como `MISSING on disk — GAP OPERATIVO`: `admin_local_smoke`, `buyer_only_short`, `reconcile_read_only`. Son referenciados por los sprints pero los scripts no existen. Las notas del dispatcher dicen "reemplazar con QA-07, QA-05/06, QA-10" — pero los mapeos son inconsistentes entre las entradas legacy y sus reemplazos.
 
-**Documentation duplication and drift.** The same information lives in at least 5 places: `BUS_CONTROL_TURPIAL.md`, `AGENT_CONTROL_BUS_RUNNER.md`, `SPRINTS_CODEV_MARKETPLACE_2026-05-10.md`, `PLAN_MAESTRO_SPRINTS_2026-05-12.md`, and `00_CENTRAL_TURPIAL.md`. Locks, roles, checkpoint rules, and sprint definitions are repeated across all. When one updates, the others lag. Example: `BUS_CONTROL_TURPIAL.md` references `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07` as mother branch, but `00_CENTRAL_TURPIAL.md` references `integration/today-reservas-marketplace-stable-2026-05-07` — two different mother branch names for the same code.
+**Duplicación y drift de documentación.** La misma información vive en al menos 5 lugares: `BUS_CONTROL_TURPIAL.md`, `AGENT_CONTROL_BUS_RUNNER.md`, `SPRINTS_CODEV_MARKETPLACE_2026-05-10.md`, `PLAN_MAESTRO_SPRINTS_2026-05-12.md` y `00_CENTRAL_TURPIAL.md`. Locks, roles, reglas de checkpoint y definiciones de sprints están repetidas en todos. Cuando uno se actualiza, los otros quedan atrasados. Ejemplo: `BUS_CONTROL_TURPIAL.md` referencia `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07` como rama madre, pero `00_CENTRAL_TURPIAL.md` referencia `integration/today-reservas-marketplace-stable-2026-05-07` — dos nombres de rama madre diferentes para el mismo código.
 
-**Closure report overhead.** Every sprint closure requires manually updating `session-summary-active.md`, `next-window-brief.md`, `ROADMAP_RESCATE.md`, optionally `BUGS_CRITICOS.md`, and writing a structured report. This is pure overhead — the git log already contains commits, files touched, and author. The report template could be auto-generated.
+**Sobrecarga de reportes de cierre.** Cada cierre de sprint requiere actualizar manualmente `session-summary-active.md`, `next-window-brief.md`, `ROADMAP_RESCATE.md`, opcionalmente `BUGS_CRITICOS.md`, y escribir un reporte estructurado. Esto es overhead puro — el git log ya contiene commits, archivos tocados y autor. La plantilla de reporte podría auto-generarse.
 
-**Context bloat.** The AGENT_CONTROL_BUS_RUNNER instructs agents to read 6 full documents before any action. `PLAN_MAESTRO_SPRINTS_2026-05-12.md` is 964 lines. An agent executing S12 doesn't need 800 lines about Booking, Crecimiento, Admin-Legal, and UI tracks. Most of the context is irrelevant per sprint.
+**Hinchazón de contexto.** El AGENT_CONTROL_BUS_RUNNER instruye a los agentes a leer 6 documentos completos antes de cualquier acción. `PLAN_MAESTRO_SPRINTS_2026-05-12.md` tiene 964 líneas. Un agente ejecutando S12 no necesita 800 líneas sobre Booking, Crecimiento, Admin-Legal y UI. La mayoría del contexto es irrelevante por sprint.
 
-**No pre-commit or pre-push automation.** The `.husky/` directory does not exist. There are zero git hooks. The 9-item push checklist is entirely manual — an agent can forget to verify `.env` exclusions, skip QA, or push to production with no automated guard.
+**Cero automatización pre-commit o pre-push.** El directorio `.husky/` no existe. Hay cero git hooks. El checklist de 9 items pre-push es completamente manual — un agente puede olvidar verificar exclusiones `.env`, saltarse QA, o hacer push a producción sin guarda automatizada.
 
-**No conflict detection.** Anti-colisión rules say "don't work on the same file" but there's no machine-readable zone map. Two agents starting S12 and S-JB-01 in parallel have to manually verify they won't collide — relying on human memory of which files belong to which domain.
+**Sin detección de colisiones.** Las reglas anti-colisión dicen "no trabajes en el mismo archivo" pero no hay un mapa de zonas legible por máquina. Dos agentes iniciando S12 y S-JB-01 en paralelo tienen que verificar manualmente que no colisionarán — dependiendo de memoria humana sobre qué archivos pertenecen a qué dominio.
 
-**No notification or dashboard automation.** When a sprint closes, nothing updates automatically. `00_CENTRAL_TURPIAL.md` and `PLAN_MAESTRO_SPRINTS_2026-05-12.md` must be manually edited. The other operator has to check these files to know what changed.
+**Sin automatización de notificación o dashboard.** Cuando un sprint se cierra, nada se actualiza automáticamente. `00_CENTRAL_TURPIAL.md` y `PLAN_MAESTRO_SPRINTS_2026-05-12.md` deben editarse manualmente. El otro operador tiene que revisar estos archivos para saber qué cambió.
 
-### 1.3 Identified Gaps
+### 1.3 Brechas Identificadas
 
-| Gap | Impact | Severity |
-|-----|--------|----------|
-| No automated pre-flight validation | Agents waste time re-verifying manually; missing env vars are discovered mid-sprint | High |
-| Oreshnik orchestrator not built | No automated checkpointing, no run manifests, no halt capability | High |
-| No file-to-sprint zone map | Collision detection is fully manual and error-prone | High |
-| Mother branch name drift between docs | Ambiguity about which branch is canonical mother | Medium |
-| Stale worktrees not auto-cleaned | Disk waste, confusion about active work | Medium |
-| Three QA task_ids are GAP OPERATIVO with conflicting replacement mappings | An agent encountering one of these mid-sprint will dead-stop | Medium |
-| No automated sprint scaffolding | Each sprint requires manual branch creation + template copy + env bootstrap | Medium |
-| No Vercel preview auto-deploy per sprint branch | Visual validation requires manual deploy or running app locally | Medium |
-| Closure reports are fully manual | ~10 minutes of documentation per sprint that could be automated | Low |
-| No parallel console safety matrix | Operators cannot quickly assess whether two sprints are safe to run simultaneously | Low |
+| Brecha | Impacto | Severidad |
+|--------|---------|-----------|
+| Sin validación pre-flight automatizada | Los agentes pierden tiempo re-verificando manualmente; vars de entorno faltantes se descubren a mitad del sprint | Alta |
+| Oreshnik orchestrator no construido | Sin checkpointing automatizado, sin manifiestos de ejecución, sin capacidad de halt | Alta |
+| Sin mapa de zonas archivo→sprint | La detección de colisiones es completamente manual y propensa a errores | Alta |
+| Drift del nombre de rama madre entre documentos | Ambigüedad sobre cuál rama es la madre canónica | Media |
+| Worktrees obsoletos no auto-limpiados | Desperdicio de disco, confusión sobre trabajo activo | Media |
+| Tres task_ids de QA son GAP OPERATIVO con mapeos de reemplazo inconsistentes | Un agente que encuentre uno de estos a mitad del sprint se detendrá en seco | Media |
+| Sin scaffolding automatizado de sprints | Cada sprint requiere creación manual de rama + copia de plantilla + bootstrap de entorno | Media |
+| Sin auto-deploy de preview Vercel por rama de sprint | La validación visual requiere deploy manual o ejecutar la app localmente | Media |
+| Reportes de cierre completamente manuales | ~10 minutos de documentación por sprint que podrían automatizarse | Baja |
+| Sin matriz de seguridad de consolas paralelas | Los operadores no pueden evaluar rápidamente si dos sprints son seguros de ejecutar simultáneamente | Baja |
 
 ---
 
-## Section 2: Specific Optimizations
+## Sección 2: Optimizaciones Específicas
 
-### 2.1 Pre-flight Automation
+### 2.1 Automatización de Pre-flight
 
-**What:** Auto-run the doctor/bootstrap scripts as git pre-commit and pre-push hooks instead of requiring manual invocation at the start of each sprint.
+**Qué:** Auto-ejecutar los scripts doctor/bootstrap como git hooks pre-commit y pre-push en lugar de requerir invocación manual al inicio de cada sprint.
 
-**Why:** The current model requires the agent or operator to manually run:
+**Por qué:** El modelo actual requiere que el agente u operador ejecute manualmente:
 ```
 powershell -ExecutionPolicy Bypass -File scripts/qa/ensure-marketplace-qa-env.ps1
 npx tsx scripts/qa/doctor-marketplace-qa-env.mjs
 ```
-every time they start a new sprint. These scripts validate that DATABASE_URL, QA credentials, APP_URL exist and are reachable. If missing, the sprint fails mid-execution rather than before it starts. Automating this as a pre-commit hook means no commit leaves the machine without validated environment.
+cada vez que inician un nuevo sprint. Estos scripts validan que DATABASE_URL, credenciales QA y APP_URL existan y sean accesibles. Si faltan, el sprint falla a mitad de ejecución en lugar de antes de empezar. Automatizar esto como hook pre-commit significa que ningún commit sale de la máquina sin entorno validado.
 
-**How to implement:**
-1. Create `.husky/pre-commit` (install `husky` or use a plain `.git/hooks/pre-commit`):
+**Cómo implementar:**
+1. Crear `.husky/pre-commit` (instalar `husky` o usar un `.git/hooks/pre-commit` plano):
    ```bash
    #!/bin/bash
-   # Turpial pre-flight: validate env vars before commit
+   # Turpial pre-flight: validar vars de entorno antes del commit
    node scripts/qa/doctor-marketplace-qa-env.mjs || {
-     echo "Pre-flight failed. Run: powershell -File scripts/qa/ensure-marketplace-qa-env.ps1"
+     echo "Pre-flight falló. Ejecuta: powershell -File scripts/qa/ensure-marketplace-qa-env.ps1"
      exit 1
    }
    ```
-2. Create `.husky/pre-push`:
+2. Crear `.husky/pre-push`:
    ```bash
    #!/bin/bash
-   # Turpial pre-push: verify no .env, no secrets, no production deploy
+   # Turpial pre-push: verificar no .env, no secretos, no deploy a producción
    git diff --check origin/$(git rev-parse --abbrev-ref HEAD)..HEAD
-   # Check no .env files staged
+   # Verificar que no hay archivos .env en el diff
    if git diff --name-only HEAD | grep -q '\.env'; then
-     echo "BLOCKED: .env files in diff. Remove before push."
+     echo "BLOQUEADO: archivos .env en el diff. Elimínalos antes de push."
      exit 1
    fi
-   # Check no booking files if on marketplace sprint
+   # Verificar que no hay archivos de booking si es un sprint de marketplace
    if git diff --name-only HEAD | grep -q '/reservas/'; then
-     echo "BLOCKED: /reservas files in diff. Booking zone requires explicit lock."
+     echo "BLOQUEADO: archivos /reservas en el diff. Booking requiere lock explícito."
      exit 1
    fi
    ```
-3. Create `scripts/oreshnik/preflight-check.ps1` as a standalone script that runs: doctor env → `pnpm lint` → `npx tsc --noEmit` → reports status.
+3. Crear `scripts/oreshnik/preflight-check.ps1` como script standalone que ejecuta: doctor env → `pnpm lint` → `npx tsc --noEmit` → reporta estado.
 
-**Expected impact:** Eliminates ~5 minutes of manual pre-flight per sprint. Catches missing env vars, lint errors, and type errors before commit, not after. Prevents the single most common failure mode: discovering missing DATABASE_URL mid-implementation.
+**Impacto esperado:** Elimina ~5 minutos de pre-flight manual por sprint. Detecta vars de entorno faltantes, errores de lint, y errores de tipo antes del commit, no después. Previene el modo de falla más común: descubrir DATABASE_URL faltante a mitad de la implementación.
 
-**Risk:** Pre-commit hooks can be bypassed with `--no-verify`. The methodology already prohibits this; the hook is defense-in-depth.
+**Riesgo:** Los hooks pre-commit pueden evadirse con `--no-verify`. La metodología ya prohíbe esto; el hook es defensa en profundidad.
 
 ---
 
-### 2.2 Conflict Detection via Zone Map
+### 2.2 Detección de Colisiones mediante Mapa de Zonas
 
-**What:** A machine-readable JSON file that maps every file and directory in the project to the sprint(s) and track(s) that can touch it. Before an agent starts work or pushes, a script checks this map to detect if two active branches would collide on the same files.
+**Qué:** Un archivo JSON legible por máquina que mapea cada archivo y directorio del proyecto al sprint(s) y track(s) que pueden tocarlo. Antes de que un agente empiece a trabajar o haga push, un script consulta este mapa para detectar si dos ramas activas colisionarían en los mismos archivos.
 
-**Why:** Currently the Bus de Control says "don't work on the same file" but provides zero tooling to check this. With 27 sprints across 5 tracks, manual verification is impractical. Example collision risk: S15 (location filters) touches `components/marketplace/` while S14B (shopping cart) touches `components/marketplace/MarketplaceCard.tsx` — no one knows unless they search every file.
+**Por qué:** Actualmente el Bus de Control dice "no trabajes en el mismo archivo" pero no proporciona ninguna herramienta para verificarlo. Con 27 sprints en 5 tracks, la verificación manual es impráctica. Ejemplo de riesgo de colisión: S15 (location filters) toca `components/marketplace/` mientras S14B (shopping cart) toca `components/marketplace/MarketplaceCard.tsx` — nadie lo sabe a menos que busque cada archivo.
 
-**How to implement:**
-1. Create `docs/07_handoffs/zone-map.json`:
+**Cómo implementar:**
+1. Crear `docs/07_handoffs/zone-map.json`:
    ```json
    {
      "zones": {
        "app/(public)/marketplace/**": {
-         "track": "T1",
-         "sprints": ["S09", "S15", "S20"],
-         "criticality": "normal",
-         "lock": "owner_per_sprint"
+         "track": "T1", "sprints": ["S09","S15","S20"], "criticality": "normal", "lock": "owner_per_sprint"
        },
        "app/(public)/reservas/**": {
-         "track": "T2",
-         "sprints": ["S-JB-01", "S-JB-02", "S-JB-03", "S-JB-04"],
-         "criticality": "critical",
-         "lock": "jean_exclusive"
+         "track": "T2", "sprints": ["S-JB-01","S-JB-02","S-JB-03","S-JB-04"], "criticality": "critical", "lock": "jean_exclusive"
        },
        "prisma/schema.prisma": {
-         "track": "any",
-         "sprints": [],
-         "criticality": "critical",
-         "lock": "double_jean_manuel"
+         "track": "any", "sprints": [], "criticality": "critical", "lock": "double_jean_manuel"
        },
        "prisma/migrations/**": {
-         "track": "any",
-         "sprints": [],
-         "criticality": "critical",
-         "lock": "double_jean_manuel"
+         "track": "any", "sprints": [], "criticality": "critical", "lock": "double_jean_manuel"
        },
        "components/marketplace/**": {
-         "track": "T1",
-         "sprints": ["S14B", "S15", "S16", "S17", "S-UX-01", "S-UX-02"],
-         "criticality": "normal",
-         "lock": "owner_per_sprint"
+         "track": "T1", "sprints": ["S14B","S15","S16","S17","S-UX-01","S-UX-02"], "criticality": "normal", "lock": "owner_per_sprint"
        },
        "app/api/marketplace/payment-proofs/**": {
-         "track": "T1",
-         "sprints": ["S04", "S13"],
-         "criticality": "critical",
-         "lock": "double_jean_manuel"
+         "track": "T1", "sprints": ["S04","S13"], "criticality": "critical", "lock": "double_jean_manuel"
        },
        "app/api/marketplace/rates/**": {
-         "track": "T1",
-         "sprints": ["S07"],
-         "criticality": "critical",
-         "lock": "double_jean_manuel"
+         "track": "T1", "sprints": ["S07"], "criticality": "critical", "lock": "double_jean_manuel"
        },
        "docs/**": {
-         "track": "any",
-         "sprints": ["*"],
-         "criticality": "low",
-         "lock": "light"
+         "track": "any", "sprints": ["*"], "criticality": "low", "lock": "light"
        },
        "scripts/qa/**": {
-         "track": "any",
-         "sprints": ["S03", "S11", "S12", "S18"],
-         "criticality": "normal",
-         "lock": "owner_per_sprint"
+         "track": "any", "sprints": ["S03","S11","S12","S18"], "criticality": "normal", "lock": "owner_per_sprint"
        }
      }
    }
    ```
-2. Create `scripts/oreshnik/zone-check.ps1`:
+2. Crear `scripts/oreshnik/zone-check.ps1`:
    ```powershell
-   # Usage: ./zone-check.ps1 -Sprint S14B
-   # Reads zone-map.json, prints "SAFE" or "COLLISION: <file> with <sprint>"
+   # Uso: ./zone-check.ps1 -Sprint S14B
+   # Lee zone-map.json, imprime "SEGURO" o "COLISIÓN: <archivo> con <sprint>"
    param([string]$Sprint)
-   # 1. Resolve sprint's zones from zone-map.json
-   # 2. Git diff of current branch → list files touched
-   # 3. Check each touched file against zone-map for conflicting sprints
-   # 4. Report collisions
+   # 1. Resolver zonas del sprint desde zone-map.json
+   # 2. Git diff de la rama actual → listar archivos tocados
+   # 3. Verificar cada archivo tocado contra zone-map por sprints conflictivos
+   # 4. Reportar colisiones
    ```
-3. Run as pre-push hook: if the diff touches a zone locked by another active sprint, block the push and report the collision.
+3. Ejecutar como hook pre-push: si el diff toca una zona bloqueada por otro sprint activo, bloquear el push y reportar la colisión.
 
-**Expected impact:** Eliminates the "we didn't know we touched the same file" failure mode. Enables true parallel work with confidence. Reduces lock-related sprint blockages by detecting conflicts before work begins.
+**Impacto esperado:** Elimina el modo de falla "no sabíamos que tocamos el mismo archivo". Habilita trabajo paralelo real con confianza. Reduce bloqueos de sprints relacionados con locks al detectar conflictos antes de que el trabajo comience.
 
-**Effort:** Medium. Writing the zone map is the bulk of the work (~60 zones to catalog). The checker script is ~50 lines of PowerShell.
+**Esfuerzo:** Medio. Escribir el mapa de zonas es el grueso del trabajo (~60 zonas a catalogar). El script verificador son ~50 líneas de PowerShell.
 
 ---
 
-### 2.3 Automated Sprint Scaffolding
+### 2.3 Scaffolding Automatizado de Sprints
 
-**What:** A single PowerShell script `scripts/oreshnik/scaffold-sprint.ps1` that, given a sprint ID and operator name, creates the branch from mother, applies the sprint template, bootstraps `QA_*` env vars, and opens the worktree — all in one command.
+**Qué:** Un solo script PowerShell `scripts/oreshnik/scaffold-sprint.ps1` que, dado un ID de sprint y nombre de operador, crea la rama desde madre, aplica la plantilla del sprint, inicializa las vars de entorno `QA_*` y abre el worktree — todo en un solo comando.
 
-**Why:** Currently starting a sprint requires:
+**Por qué:** Actualmente iniciar un sprint requiere:
 1. `git fetch origin`
 2. `git checkout -b Manuel/s12-... origin/integration/today-...` 
-3. Run `ensure-marketplace-qa-env.ps1` if credentials missing
-4. Run `doctor-marketplace-qa-env.mjs` to verify
-5. Manually verify the 4 guardrail categories from BUS runner
-6. Read 6+ documents for context
+3. Ejecutar `ensure-marketplace-qa-env.ps1` si faltan credenciales
+4. Ejecutar `doctor-marketplace-qa-env.mjs` para verificar
+5. Verificar manualmente las 4 categorías de guardrail del BUS runner
+6. Leer 6+ documentos para contexto
 
-This is 6 manual steps that could be one command.
+Son 6 pasos manuales que podrían ser un solo comando.
 
-**How to implement:**
+**Cómo implementar:**
 ```powershell
 # scripts/oreshnik/scaffold-sprint.ps1
 param(
-  [Parameter(Mandatory)] [string]$SprintId,   # e.g., "S12"
+  [Parameter(Mandatory)] [string]$SprintId,   # ej. "S12"
   [Parameter(Mandatory)] [string]$Operator,    # "Jean" | "Manuel"
   [string]$BaseBranch = "integration/today-reservas-marketplace-stable-2026-05-07",
   [string]$AppUrl = "https://turpialsound-5qwhe7is1-bkgs-projects-829c67c1.vercel.app"
 )
-
-# 1. Validate sprint exists in PLAN_MAESTRO
-# 2. Check operator is the owner (or valid fallback)
-# 3. Verify no active worktree for this sprint
-# 4. Verify mother branch exists: git fetch origin
-# 5. Create branch: git checkout -b $Operator/$sprintName-$date origin/$BaseBranch
-# 6. Create worktree: git worktree add ../$worktreeName $branchName
-# 7. Run ensure-marketplace-qa-env.ps1 in the new worktree
-# 8. Run doctor-marketplace-qa-env.mjs in the new worktree
-# 9. Run zone-check.ps1 to verify no collisions
-# 10. Print ready status: branch, worktree path, next steps
+# 1. Validar que el sprint existe en PLAN_MAESTRO
+# 2. Verificar que el operador es el owner (o fallback válido)
+# 3. Verificar que no hay worktree activo para este sprint
+# 4. Verificar que la rama madre existe: git fetch origin
+# 5. Crear rama: git checkout -b $Operator/$sprintName-$date origin/$BaseBranch
+# 6. Crear worktree: git worktree add ../$worktreeName $branchName
+# 7. Ejecutar ensure-marketplace-qa-env.ps1 en el nuevo worktree
+# 8. Ejecutar doctor-marketplace-qa-env.mjs en el nuevo worktree
+# 9. Ejecutar zone-check.ps1 para verificar que no hay colisiones
+# 10. Imprimir estado listo: rama, ruta del worktree, próximos pasos
 ```
 
-**Expected impact:** Reduces sprint startup from ~10 minutes to ~30 seconds. Eliminates manual copy-paste errors in branch naming. Guarantees pre-flight is always run.
+**Impacto esperado:** Reduce el inicio de sprint de ~10 minutos a ~30 segundos. Elimina errores de copiar/pegar en nombres de rama. Garantiza que el pre-flight siempre se ejecuta.
 
-**Risk:** Must validate the sprint-template exists before scaffolding. The script should refuse to scaffold a sprint that's already in-progress or whose dependencies aren't met.
+**Riesgo:** Debe validar que la plantilla del sprint existe antes de hacer scaffold. El script debe negarse a hacer scaffold de un sprint que ya está en progreso o cuyas dependencias no están cumplidas.
 
 ---
 
-### 2.4 Oreshnik Runner Implementation
+### 2.4 Implementación del Runner Oreshnik
 
-**What:** Build `scripts/oreshnik/oreshnik.ps1` exactly as designed in `ORESHNIK_ORCHESTRATOR_DESIGN.md` — a central orchestrator that manages `init → validate → execute → log → checkpoint` cycles with human-in-the-loop gates.
+**Qué:** Construir `scripts/oreshnik/oreshnik.ps1` exactamente como está diseñado en `ORESHNIK_ORCHESTRATOR_DESIGN.md` — un orquestador central que gestiona ciclos `init → validate → execute → log → checkpoint` con puertas human-in-the-loop.
 
-**Why:** The design document exists but zero code was written. The `scripts/oreshnik/` directory is empty. Without the runner, every agent reinvents its own execution loop — no standardized logging, no checkpoint pausing, no halt capability. This is the single biggest gap between design and implementation.
+**Por qué:** El documento de diseño existe pero se escribió cero código. El directorio `scripts/oreshnik/` está vacío. Sin el runner, cada agente reinventa su propio bucle de ejecución — sin logging estandarizado, sin pausa de checkpoint, sin capacidad de halt. Esta es la brecha más grande entre diseño e implementación.
 
-**How to implement:**
-1. Create the directory structure:
+**Cómo implementar:**
+1. Crear la estructura de directorios:
    ```
    scripts/oreshnik/
-   ├── prompts/         # Prompt files with frontmatter (id, agent, sprint)
-   ├── logs/            # Execution logs per run
-   ├── runs/            # Run manifests (YYYYMMDD-HHMM.json)
-   └── oreshnik.ps1     # Main runner
+   ├── prompts/         # Archivos de prompt con frontmatter (id, agent, sprint)
+   ├── logs/            # Logs de ejecución por run
+   ├── runs/            # Manifiestos de ejecución (YYYYMMDD-HHMM.json)
+   └── oreshnik.ps1     # Runner principal
    ```
-2. Implement `oreshnik.ps1` with commands:
-   - `./oreshnik.ps1 scaffold --sprint S12 --operator Manuel` (calls scaffold-sprint.ps1)
-   - `./oreshnik.ps1 run --sprint S12 --mode execute` (reads sprint definition, runs pre-flight, executes, logs)
-   - `./oreshnik.ps1 align --sprint S12` (read-only pre-condition check, no modifications)
-   - `./oreshnik.ps1 close --sprint S12` (generates closure report, updates docs)
-   - `./oreshnik.ps1 status` (shows active run status)
-   - `./oreshnik.ps1 halt` (stops any running process)
-   - `./oreshnik.ps1 cleanup` (removes stale worktrees from closed sprints)
-3. Each run creates a manifest:
+2. Implementar `oreshnik.ps1` con comandos:
+   - `./oreshnik.ps1 scaffold --sprint S12 --operator Manuel` (llama a scaffold-sprint.ps1)
+   - `./oreshnik.ps1 run --sprint S12 --mode execute` (lee definición del sprint, ejecuta pre-flight, ejecuta, loguea)
+   - `./oreshnik.ps1 align --sprint S12` (verificación de precondiciones solo lectura, sin modificaciones)
+   - `./oreshnik.ps1 close --sprint S12` (genera reporte de cierre, actualiza docs)
+   - `./oreshnik.ps1 status` (muestra estado de ejecución activa)
+   - `./oreshnik.ps1 halt` (detiene cualquier proceso en ejecución)
+   - `./oreshnik.ps1 cleanup` (elimina worktrees obsoletos de sprints cerrados)
+3. Cada ejecución crea un manifiesto:
    ```json
    {
      "timestamp": "2026-05-12T23:00:00-04:00",
@@ -278,275 +250,233 @@ param(
      ]
    }
    ```
-4. Human-in-the-loop gates: Before any `git commit` or `git push`, oreshnik stops and waits for confirmation. The operator types `continue` or `halt` in the console.
+4. Puertas human-in-the-loop: Antes de cualquier `git commit` o `git push`, oreshnik se detiene y espera confirmación. El operador escribe `continue` o `halt` en la consola.
 
-**Expected impact:** Single biggest efficiency gain. Standardizes the execution loop that every sprint follows. Creates audit trail (run manifests) for every sprint. Enables resumability — if a session crashes, the run manifest tells exactly what step was active.
+**Impacto esperado:** La ganancia de eficiencia más grande. Estandariza el bucle de ejecución que todo sprint sigue. Crea rastro de auditoría (manifiestos de ejecución) para cada sprint. Habilita reanudabilidad — si una sesión crashea, el manifiesto de ejecución indica exactamente qué paso estaba activo.
 
-**Effort:** High. ~200 lines of PowerShell for the runner core, plus integration with scaffold/preflight/QA/zone-check scripts. 2-3 hours of implementation.
-
----
-
-### 2.5 CI/CD-lite with Vercel Previews
-
-**What:** Auto-deploy each sprint branch to a unique Vercel preview URL (e.g., `turpialsound-s12-manuel.vercel.app`) for immediate visual validation without local build.
-
-**Why:** Every sprint in the methodology specifies "Preview required: yes." Currently, preview validation means either:
-- Deploying manually to the central BKG preview (overwriting whatever was there)
-- Running `next dev` locally
-
-Manual deploy to shared preview creates a race condition — two operators deploying different branches overwrite each other. Local dev requires the operator to have the full stack running. Auto-preview-per-branch eliminates both problems.
-
-**How to implement:**
-1. Configure Vercel Git integration to auto-deploy all branches matching `Jean/*` and `Manuel/*` to preview environments.
-2. Add a comment in the PR/merge flow that links to the preview URL.
-3. Add to `zone-map.json` a `vercel_preview_url` field per sprint, populated automatically.
-4. The oreshnik runner reads the preview URL and reports it in the run manifest.
-
-**Expected impact:** Every sprint gets isolated, non-conflicting visual validation. Eliminates the "who deployed to the preview?" coordination problem. Reduces need for local Next.js dev server.
-
-**Risk:** Preview URLs expose work-in-progress publicly. The current BKG preview is already public, so this is not a new risk. Sensitive env vars must be properly scoped per preview (already handled by Vercel).
+**Esfuerzo:** Alto. ~200 líneas de PowerShell para el núcleo del runner, más integración con scripts de scaffold/preflight/QA/zone-check. 2-3 horas de implementación.
 
 ---
 
-### 2.6 Automated Closure Reports
+### 2.5 CI/CD-lite con Previews de Vercel
 
-**What:** Generate sprint closure reports automatically from `git log`, test results, and zone-map information, instead of manually writing them in `session-summary-active.md`, `next-window-brief.md`, and the markdown report template.
+**Qué:** Auto-desplegar cada rama de sprint a una URL preview única de Vercel (ej. `turpialsound-s12-manuel.vercel.app`) para validación visual inmediata sin build local.
 
-**Why:** The closure workflow (AGENT_CONTROL_BUS_RUNNER Section 8) requires manually updating 3-4 documents plus writing a structured report. Git already knows the branch, commits, files touched, and timestamps. Test scripts already produce PASS/FAIL output. The closure report is essentially a query over data that already exists.
+**Por qué:** Cada sprint en la metodología especifica "Preview requerido: sí". Actualmente, la validación de preview significa:
+- Desplegar manualmente al preview BKG central (sobrescribiendo lo que había)
+- Ejecutar `next dev` localmente
 
-**How to implement:**
-1. Create `scripts/oreshnik/generate-closure-report.ps1`:
+El deploy manual a preview compartido crea una condición de carrera — dos operadores desplegando ramas diferentes se sobrescriben mutuamente. El auto-preview por rama elimina ambos problemas.
+
+**Cómo implementar:**
+1. Configurar Vercel Git integration para auto-desplegar todas las ramas que coincidan con `Jean/*` y `Manuel/*` a entornos preview.
+2. Añadir un comentario en el flujo de PR/merge que enlace a la URL del preview.
+3. Añadir al `zone-map.json` un campo `vercel_preview_url` por sprint, poblado automáticamente.
+4. El runner oreshnik lee la URL del preview y la reporta en el manifiesto de ejecución.
+
+**Impacto esperado:** Cada sprint recibe validación visual aislada y sin conflictos. Elimina el problema de coordinación "¿quién desplegó al preview?". Reduce la necesidad de servidor Next.js dev local.
+
+**Riesgo:** Las URLs de preview exponen trabajo en progreso públicamente. El preview BKG actual ya es público, así que esto no es un riesgo nuevo. Las vars de entorno sensibles deben estar correctamente delimitadas por preview (ya manejado por Vercel).
+
+---
+
+### 2.6 Reportes de Cierre Automatizados
+
+**Qué:** Generar reportes de cierre de sprint automáticamente desde `git log`, resultados de tests e información del mapa de zonas, en lugar de escribirlos manualmente en `session-summary-active.md`, `next-window-brief.md` y la plantilla de reporte markdown.
+
+**Por qué:** El flujo de cierre (AGENT_CONTROL_BUS_RUNNER Sección 8) requiere actualizar manualmente 3-4 documentos más escribir un reporte estructurado. Git ya conoce la rama, commits, archivos tocados y timestamps. Los scripts de test ya producen salida PASS/FAIL. El reporte de cierre es esencialmente una consulta sobre datos que ya existen.
+
+**Cómo implementar:**
+1. Crear `scripts/oreshnik/generate-closure-report.ps1`:
    ```powershell
    param([string]$SprintId)
-   # 1. git log on sprint branch → extract commits, hashes, files
-   # 2. Parse QA stdout/logs → extract PASS/FAIL counts
-   # 3. zone-map.json → extract zones touched, locks verified
-   # 4. Generate markdown report following the canonical template
-   # 5. Optionally: auto-update session-summary-active.md
+   # 1. git log en la rama del sprint → extraer commits, hashes, archivos
+   # 2. Parsear stdout/logs de QA → extraer conteos PASS/FAIL
+   # 3. zone-map.json → extraer zonas tocadas, locks verificados
+   # 4. Generar reporte markdown siguiendo la plantilla canónica
+   # 5. Opcionalmente: auto-actualizar session-summary-active.md
    ```
-2. The report template from `AGENT_CONTROL_BUS_RUNNER.md:262-276` is already well-defined — the script fills in the blanks.
-3. Operator reviews and approves before the report is committed (human-in-the-loop).
+2. La plantilla de reporte de `AGENT_CONTROL_BUS_RUNNER.md:262-276` ya está bien definida — el script llena los espacios en blanco.
+3. El operador revisa y aprueba antes de que el reporte sea commiteado (human-in-the-loop).
 
-**Expected impact:** Reduces closure overhead from ~10 minutes to ~30 seconds. Eliminates copy-paste errors in report fields. Ensures consistent format across all sprint closures.
+**Impacto esperado:** Reduce el overhead de cierre de ~10 minutos a ~30 segundos. Elimina errores de copiar/pegar en campos del reporte. Garantiza formato consistente en todos los cierres de sprint.
 
 ---
 
-### 2.7 Token/Context Optimization
+### 2.7 Optimización de Tokens/Contexto
 
-**What:** Pre-load only the files relevant to a specific sprint instead of requiring agents to read the entire `PLAN_MAESTRO_SPRINTS_2026-05-12.md` (964 lines), all 6 BUS runner documents, and every cross-reference.
+**Qué:** Precargar solo los archivos relevantes para un sprint específico en lugar de requerir que los agentes lean el `PLAN_MAESTRO_SPRINTS_2026-05-12.md` completo (964 líneas), los 6 documentos del BUS runner y cada referencia cruzada.
 
-**Why:** The AGENT_CONTROL_BUS_RUNNER instructs agents to read 6 full documents before any action. An agent executing S12 (Playwright purchase flow browser E2E) receives ~1500 lines of context, 80% of which is about Booking, Legal, Marketing, and other tracks irrelevant to the task. This wastes both tokens and cognitive load — the agent is more likely to miss relevant constraints buried in noise.
+**Por qué:** El AGENT_CONTROL_BUS_RUNNER instruye a los agentes a leer 6 documentos completos antes de cualquier acción. Un agente ejecutando S12 (Playwright purchase flow browser E2E) recibe ~1500 líneas de contexto, 80% de las cuales son sobre Booking, Legal, Marketing y otros tracks irrelevantes para la tarea. Esto desperdicia tanto tokens como carga cognitiva — el agente es más propenso a pasar por alto restricciones relevantes enterradas en el ruido.
 
-**How to implement:**
-1. Create per-sprint context files: `docs/07_handoffs/sprint-context/S12.json`
+**Cómo implementar:**
+1. Crear archivos de contexto por sprint: `docs/07_handoffs/sprint-context/S12.json`
    ```json
    {
-     "sprint": "S12",
-     "track": "T1",
-     "owner": "Manuel",
+     "sprint": "S12", "track": "T1", "owner": "Manuel",
      "branch": "Manuel/s12-purchase-flow-browser-2026-05-12",
      "base": "integration/today-reservas-marketplace-stable-2026-05-07",
      "depends_on": ["S11"],
-     "zones_autorizadas": [
-       "scripts/qa/playwright/**",
-       "scripts/qa/fixtures/**",
-       "var/qa-results/s12-*/**",
-       "docs/07_handoffs/**"
-     ],
-     "zonas_prohibidas": [
-       "app/", "components/", "actions/", "lib/", "prisma/",
-       "app/(public)/reservas/**",
-       "app/api/marketplace/payment-proofs/**"
-     ],
+     "zonas_autorizadas": ["scripts/qa/playwright/**", "scripts/qa/fixtures/**", "var/qa-results/s12-*/**", "docs/07_handoffs/**"],
+     "zonas_prohibidas": ["app/", "components/", "actions/", "lib/", "prisma/", "app/(public)/reservas/**", "app/api/marketplace/payment-proofs/**"],
      "locks_requeridos": [],
-     "validacion": {
-       "task_id": "qa_full_regression",
-       "canonical_script": "npx tsx scripts/qa/run-marketplace-qa.mjs"
-     },
-     "stop_conditions": [
-       "Booking files in diff",
-       "Schema/migration required",
-       "Secret in diff"
-     ],
-     "relevant_docs": [
-       "docs/07_handoffs/next-window-brief.md",
-       "scripts/qa/playwright/login.mjs"
-     ]
+     "validacion": { "task_id": "qa_full_regression", "canonical_script": "npx tsx scripts/qa/run-marketplace-qa.mjs" },
+     "stop_conditions": ["Booking files in diff", "Schema/migration required", "Secret in diff"],
+     "relevant_docs": ["docs/07_handoffs/next-window-brief.md", "scripts/qa/playwright/login.mjs"]
    }
    ```
-2. Modify AGENT_CONTROL_BUS_RUNNER step 1: instead of reading 6 general docs, read the sprint-specific context file. The context file is pre-generated from `zone-map.json` + sprint definitions.
-3. Implement `scripts/oreshnik/sprint-context.ps1 --sprint S12` that auto-generates the context file from zone-map and sprint definitions.
+2. Modificar AGENT_CONTROL_BUS_RUNNER paso 1: en lugar de leer 6 documentos generales, leer el archivo de contexto específico del sprint. El archivo de contexto es pre-generado desde `zone-map.json` + definiciones de sprint.
+3. Implementar `scripts/oreshnik/sprint-context.ps1 --sprint S12` que auto-genera el archivo de contexto desde zone-map y definiciones de sprint.
 
-**Expected impact:** Reduces context window consumption by ~70% per sprint. Agent receives exactly what it needs — zones, locks, validation, stop conditions — without noise from other tracks. Reduces likelihood of constraint violations caused by information overload.
+**Impacto esperado:** Reduce el consumo de ventana de contexto en ~70% por sprint. El agente recibe exactamente lo que necesita — zonas, locks, validación, condiciones de parada — sin ruido de otros tracks. Reduce la probabilidad de violaciones de restricciones causadas por sobrecarga de información.
 
-**Effort:** Medium-low. Requires generating context files once per sprint. Can be part of the scaffold step.
+**Esfuerzo:** Medio-bajo. Requiere generar archivos de contexto una vez por sprint. Puede ser parte del paso de scaffold.
 
 ---
 
-### 2.8 Notification System (Dashboard Auto-Update)
+### 2.8 Sistema de Notificación (Auto-Actualización del Dashboard)
 
-**What:** When a sprint closes, auto-update `00_CENTRAL_TURPIAL.md` and notify collaborators by touching a marker file that both operators' systems can detect. Simple implementation: a git post-commit hook that writes a marker, and a dashboard script that reads it.
+**Qué:** Cuando un sprint se cierra, auto-actualizar `00_CENTRAL_TURPIAL.md` y notificar a los colaboradores tocando un archivo marcador que los sistemas de ambos operadores puedan detectar. Implementación simple: un hook git post-commit que escribe un marcador, y un script de dashboard que lo lee.
 
-**Why:** Currently, when one operator closes a sprint, the other operator has zero notification. They discover the state change by manually reading `00_CENTRAL_TURPIAL.md` or `next-window-brief.md`. In practice, this means state goes stale and both operators may start sprint planning based on outdated information.
+**Por qué:** Actualmente, cuando un operador cierra un sprint, el otro operador tiene cero notificación. Descubren el cambio de estado leyendo manualmente `00_CENTRAL_TURPIAL.md` o `next-window-brief.md`. En la práctica, esto significa que el estado se vuelve obsoleto y ambos operadores pueden empezar a planificar sprints basados en información desactualizada.
 
-**How to implement (lightweight version):**
+**Cómo implementar (versión ligera):**
 1. `scripts/oreshnik/update-dashboard.ps1`:
    ```powershell
    param([string]$SprintId, [string]$NewStatus)
-   # 1. Read 00_CENTRAL_TURPIAL.md
-   # 2. Update sprint table row for $SprintId: change 🔴 PENDIENTE → ✅ CERRADO
-   # 3. Update PLAN_MAESTRO_SPRINTS_2026-05-12.md similarly
-   # 4. Write marker: var/sprint-events/$(Get-Date -Format 'yyyyMMdd-HHmmss')_$SprintId_$NewStatus.json
-   # 5. Commit both dashboard updates
+   # 1. Leer 00_CENTRAL_TURPIAL.md
+   # 2. Actualizar fila de tabla del sprint para $SprintId: cambiar 🔴 PENDIENTE → ✅ CERRADO
+   # 3. Actualizar PLAN_MAESTRO_SPRINTS_2026-05-12.md de manera similar
+   # 4. Escribir marcador: var/sprint-events/$(Get-Date -Format 'yyyyMMdd-HHmmss')_$SprintId_$NewStatus.json
+   # 5. Commitear ambas actualizaciones del dashboard
    ```
-2. The marker file `var/sprint-events/` serves as an event log. Both operators' machines run `oreshnik.ps1 status` to see recent events.
-3. The closure report generator (Section 2.6) calls this automatically.
+2. El archivo marcador `var/sprint-events/` sirve como registro de eventos. Las máquinas de ambos operadores ejecutan `oreshnik.ps1 status` para ver eventos recientes.
+3. El generador de reportes de cierre (Sección 2.6) llama a esto automáticamente.
 
-**Expected impact:** Eliminates the "I didn't know you already closed S13" coordination failure. Keeps the central dashboard as the single source of truth. The marker file provides an event log decoupled from dashboard formatting.
+**Impacto esperado:** Elimina la falla de coordinación "no sabía que ya cerraste S13". Mantiene el dashboard central como fuente única de verdad. El archivo marcador proporciona un registro de eventos desacoplado del formato del dashboard.
 
-**Effort:** Low. ~50 lines of PowerShell. No external dependencies.
-
----
-
-### 2.9 Parallel Console Manager (Safety Matrix)
-
-**What:** Define a formal matrix: Sprint → Files Touched → Safe to Parallel With → Max Consoles. Create rules for when and how many parallel agent consoles can safely run based on the zone map.
-
-**Why:** The methodology says "una zona activa por persona" but with 5 tracks and 27 sprints, the question of "can S12 and S-JB-01 run simultaneously?" requires manual checking of zone overlaps. There's no formal guidance on how many consoles are safe.
-
-**How to implement:**
-1. Create `docs/07_handoffs/parallel-console-matrix.json`:
-   ```json
-   {
-     "max_total_consoles": 4,
-     "max_per_operator": 2,
-     "rule": "Any two sprints can run in parallel if their zone sets are disjoint",
-     "matrix": {
-       "S12": {
-         "zones_touched": ["scripts/qa/playwright/*", "var/qa-results/s12-*"],
-         "safe_with": ["S-JB-01", "S-JB-02", "S-JB-03", "S-JB-04", "S-MK-01", "S-MK-02", "S-MK-03", "S-MK-04", "S-MK-05", "S-MK-06", "S-ADM-01", "S-ADM-02", "S-ADM-03", "S-ADM-04", "S-UX-01", "S-UX-02"],
-         "unsafe_with": ["S13", "S14", "S14B", "S18"],
-         "reason_unsafe": "S13 requires S12. S14 requires S13. S14B shares marketplace-components zone. S18 is regression dependent."
-       },
-       "S-JB-01": {
-         "zones_touched": ["app/(public)/reservas/*", "app/api/reservas/*", "components/reservas/*"],
-         "safe_with": ["S12", "S13", "S14", "S14B", "S15", "S16", "S17", "S-MK-*", "S-ADM-*", "S-UX-*"],
-         "unsafe_with": ["S-JB-02", "S-JB-03", "S-JB-04"],
-         "reason_unsafe": "Same track, sequential dependency. Also shares /reservas zone."
-       }
-     }
-   }
-   ```
-2. `scripts/oreshnik/parallel-check.ps1 --sprint S12` reads the matrix and prints which other sprints are safe to run in parallel.
-3. Integrate into oreshnik runner: before `execute` mode, check that no conflicting sprint is active.
-
-**Expected impact:** Operators can make parallelization decisions in seconds instead of manually diffing zone sets. Prevents the most dangerous failure mode: two agents mutating overlapping files simultaneously.
-
-**Current state recommendation (see Section 4):** Based on zone analysis, 3 consoles can run safely RIGHT NOW: T1 (marketplace), T2 (booking), and T3 (crecimiento) have zero file overlap with each other.
+**Esfuerzo:** Bajo. ~50 líneas de PowerShell. Sin dependencias externas.
 
 ---
 
-## Section 3: Implementation Prioritization
+### 2.9 Gestor de Consolas Paralelas (Matriz de Seguridad)
 
-### Ranking by Impact/Effort Ratio
+**Qué:** Definir una matriz formal: Sprint → Archivos Tocados → Seguro en Paralelo Con → Máximo de Consolas. Crear reglas para cuándo y cuántas consolas de agentes paralelas pueden ejecutarse de manera segura basadas en el mapa de zonas.
 
-| # | Optimization | Impact | Effort | Ratio | Category |
-|---|-------------|--------|--------|-------|----------|
-| 1 | Zone Map + Conflict Detection (2.2) | Prevents P0 collisions | Medium | Highest | Safety |
-| 2 | Pre-flight Automation (2.1) | Catches env failures early | Low | Highest | Safety + Efficiency |
-| 3 | Sprint Context Files (2.7) | Reduces context bloat 70% | Medium-Low | Very High | Efficiency |
-| 4 | Automated Closure Reports (2.6) | Saves 10 min/sprint | Low | Very High | Efficiency |
-| 5 | Parallel Console Matrix (2.9) | Enables true parallelism | Low | Very High | Safety + Speed |
-| 6 | Automated Sprint Scaffolding (2.3) | Saves 10 min/sprint start | Medium | High | Efficiency |
-| 7 | Notification System (2.8) | Keeps operators in sync | Low | High | Coordination |
-| 8 | Oreshnik Runner (2.4) | Standardizes all workflows | High | Medium | Foundation |
-| 9 | Vercel Preview Auto-Deploy (2.5) | Per-sprint visual validation | Medium | Medium | Quality |
+**Por qué:** La metodología dice "una zona activa por persona" pero con 5 tracks y 27 sprints, la pregunta "¿pueden S12 y S-JB-01 ejecutarse simultáneamente?" requiere verificación manual de solapamiento de zonas. No hay guía formal sobre cuántas consolas son seguras.
 
-### Implementation Schedule
+**Cómo implementar:**
+1. Crear `docs/07_handoffs/parallel-console-matrix.json`
+2. `scripts/oreshnik/parallel-check.ps1 --sprint S12` lee la matriz e imprime qué otros sprints son seguros de ejecutar en paralelo.
+3. Integrar en el runner oreshnik: antes del modo `execute`, verificar que ningún sprint conflictivo esté activo.
 
-**Immediately (this week):**
+**Impacto esperado:** Los operadores pueden tomar decisiones de paralelización en segundos en lugar de hacer diff manual de conjuntos de zonas. Previene el modo de falla más peligroso: dos agentes mutando archivos solapados simultáneamente.
 
-1. **Pre-flight Automation (2.1)** — Install git hooks. 30 minutes. Instant protection.
-2. **Sprint Context Files (2.7)** — Generate context files for S12, S13, S14, S-JB-01. 45 minutes. Immediate token savings.
-3. **Zone Map (2.2)** — Build `zone-map.json` covering all 5 tracks. 2 hours. Foundation for 2.9, 2.4, and 2.3.
-
-**Short-term (next sprint cycle):**
-
-4. **Parallel Console Matrix (2.9)** — Derive from zone-map. 30 minutes.
-5. **Automated Sprint Scaffolding (2.3)** — Build on top of zone-map + pre-flight hook. 1.5 hours.
-6. **Automated Closure Reports (2.6)** — 1 hour.
-
-**Medium-term (after S14 closes):**
-
-7. **Oreshnik Runner (2.4)** — Build the full runner integrating scaffolding, zone-check, closure reports. 3 hours. Required before scaling beyond 3 parallel consoles.
-8. **Notification System (2.8)** — 30 minutes once oreshnik runner exists.
-9. **Vercel Preview Auto-Deploy (2.5)** — Requires Jean (Vercel admin). 30 minutes configuration.
+**Recomendación de estado actual (ver Sección 4):** Basado en análisis de zonas, 3 consolas pueden ejecutarse seguras AHORA MISMO: T1 (marketplace), T2 (booking) y T3 (crecimiento) tienen cero solapamiento de archivos entre sí.
 
 ---
 
-## Section 4: Recommended Console Allocation for Current State
+## Sección 3: Priorización de Implementación
 
-### Safe Parallel Consoles RIGHT NOW
+### Ranking por Relación Impacto/Esfuerzo
 
-Based on zone analysis of current active state (2026-05-12):
+| # | Optimización | Impacto | Esfuerzo | Relación | Categoría |
+|---|-------------|--------|---------|----------|----------|
+| 1 | Mapa de Zonas + Detección de Colisiones (2.2) | Previene colisiones P0 | Medio | Máxima | Seguridad |
+| 2 | Automatización Pre-flight (2.1) | Detecta fallos de entorno temprano | Bajo | Máxima | Seguridad + Eficiencia |
+| 3 | Archivos de Contexto por Sprint (2.7) | Reduce hinchazón de contexto 70% | Medio-Bajo | Muy Alta | Eficiencia |
+| 4 | Reportes de Cierre Automatizados (2.6) | Ahorra 10 min/sprint | Bajo | Muy Alta | Eficiencia |
+| 5 | Matriz de Consolas Paralelas (2.9) | Habilita paralelismo real | Bajo | Muy Alta | Seguridad + Velocidad |
+| 6 | Scaffolding Automatizado de Sprints (2.3) | Ahorra 10 min/inicio de sprint | Medio | Alta | Eficiencia |
+| 7 | Sistema de Notificación (2.8) | Mantiene operadores sincronizados | Bajo | Alta | Coordinación |
+| 8 | Runner Oreshnik (2.4) | Estandariza todos los flujos | Alto | Media | Fundación |
+| 9 | Auto-Deploy Preview Vercel (2.5) | Validación visual por sprint | Medio | Media | Calidad |
 
-| Console | Sprint | Track | Operator | Zone Risk | Can Parallel With |
-|---------|--------|-------|----------|-----------|-------------------|
-| **Console A** | S12 (Playwright purchase) | T1 Marketplace | Manuel | Low — only touches `scripts/qa/playwright/`, `var/qa-results/s12-*` | Console B, Console C |
-| **Console B** | S-JB-01 (Booking fixes) | T2 Booking | Jean | Medium — touches `app/(public)/reservas/*`, `app/api/reservas/*` | Console A, Console C |
-| **Console C** | S-MK-01 (Mercado/competencia) | T3 Crecimiento | Manuel | Low — docs only, zero code | Console A, Console B |
+### Calendario de Implementación
 
-**Why these three are safe:**
-- T1 (marketplace Playwright scripts) and T2 (booking) touch completely disjoint file trees.
-- T3 is docs-only — no code, no collision risk with either T1 or T2.
-- T4 (Admin-Legal) and T5 (UI/UX) require physical/design actions from Manuel — not parallelizable as agent work.
+**Inmediato (esta semana):**
 
-### What Must NOT Run in Parallel
+1. **Automatización Pre-flight (2.1)** — Instalar git hooks. 30 minutos. Protección instantánea.
+2. **Archivos de Contexto por Sprint (2.7)** — Generar archivos de contexto para S12, S13, S14, S-JB-01. 45 minutos. Ahorro inmediato de tokens.
+3. **Mapa de Zonas (2.2)** — Construir `zone-map.json` cubriendo los 5 tracks. 2 horas. Fundación para 2.9, 2.4 y 2.3.
 
-- **S12 and S13**: Sequential dependency. S13 requires S12's screenshots and TX state.
-- **S-JB-01 and S-JB-02**: Same track, sequential. S-JB-02 depends on S-JB-01 fixes.
-- **S14B and S15**: Both touch `components/marketplace/**`. Zone collision risk.
-- **S-UX-01 and any marketplace code sprint**: UX refactor touches the same component files. Must gate after T1/T2 stabilize.
+**Corto plazo (próximo ciclo de sprints):**
 
-### Max Consoles
+4. **Matriz de Consolas Paralelas (2.9)** — Derivar del mapa de zonas. 30 minutos.
+5. **Scaffolding Automatizado de Sprints (2.3)** — Construir sobre mapa de zonas + hook pre-flight. 1.5 horas.
+6. **Reportes de Cierre Automatizados (2.6)** — 1 hora.
 
-| Scenario | Max Consoles | Explanation |
-|----------|-------------|-------------|
-| **Current state** | **3** | 2 operator machines × 3 safe zones (T1, T2, T3) — but each operator can realistically run only 1 agent console effectively at a time, so practical max is 2 with 1 docs background |
-| **After zone-map + oreshnik runner** | **4** | 2 operators × 2 agent consoles each, with automated collision detection |
-| **Theoretical max** | **6** | If all 5 tracks had disjoint zones, but this project's tracks T1 and T5 both touch `components/` so they can't all run simultaneously |
+**Mediano plazo (después de cerrar S14):**
 
-### Risk Mitigation for Multi-Console Work
+7. **Runner Oreshnik (2.4)** — Construir el runner completo integrando scaffolding, zone-check, reportes de cierre. 3 horas. Requerido antes de escalar más allá de 3 consolas paralelas.
+8. **Sistema de Notificación (2.8)** — 30 minutos una vez que exista el runner oreshnik.
+9. **Auto-Deploy Preview Vercel (2.5)** — Requiere a Jean (admin Vercel). 30 minutos de configuración.
 
-1. **Before starting any console**: Run `zone-check.ps1 --sprint <ID>` to verify no active collisions.
-2. **Push discipline**: No push to mother without running the pre-push hook (Section 2.1). This is the single highest-value guard.
-3. **Worktree discipline**: Each sprint gets its own worktree. Never work directly in the main checkout for sprint work.
-4. **Commit message convention**: Prefix every commit with the sprint ID, e.g., `[S12] feat: purchase flow Playwright spec`. This makes `git log` instantly scannable for which sprint touched what.
-5. **Close before open**: Jean gatekeeps merge to mother. No sprint branch merges to mother without Jean's explicit review and the 9-item checklist from BUS_CONTROL_TURPIAL.
+---
 
-### Immediate Next Actions for Operators
+## Sección 4: Asignación Recomendada de Consolas para el Estado Actual
+
+### Consolas Paralelas Seguras AHORA MISMO
+
+Basado en análisis de zonas del estado activo actual (2026-05-12):
+
+| Consola | Sprint | Track | Operador | Riesgo de Zona | Puede Paralelizar Con |
+|---------|--------|-------|----------|----------------|----------------------|
+| **Consola A** | S12 (Playwright) | T1 Marketplace | Manuel | Bajo — solo toca `scripts/qa/playwright/`, `var/qa-results/s12-*` | Consola B, Consola C |
+| **Consola B** | S-JB-01 (Booking) | T2 Booking | Jean | Medio — toca `app/(public)/reservas/*`, `app/api/reservas/*` | Consola A, Consola C |
+| **Consola C** | S-MK-01 (Mercado) | T3 Crecimiento | Manuel | Bajo — solo docs, cero código | Consola A, Consola B |
+
+**Por qué estas tres son seguras:**
+- T1 (Playwright marketplace) y T2 (booking) tocan árboles de archivos completamente disjuntos.
+- T3 es solo docs — sin código, sin riesgo de colisión con T1 o T2.
+- T4 (Admin-Legal) y T5 (UI/UX) requieren acciones físicas/de diseño de Manuel — no paralelizables como trabajo de agente.
+
+### Lo que NO debe ejecutarse en paralelo
+
+- **S12 y S13**: Dependencia secuencial. S13 requiere los screenshots y estado TX de S12.
+- **S-JB-01 y S-JB-02**: Mismo track, secuencial. S-JB-02 depende de los fixes de S-JB-01.
+- **S14B y S15**: Ambos tocan `components/marketplace/**`. Riesgo de colisión de zona.
+- **S-UX-01 y cualquier sprint de código marketplace**: Refactor UX toca los mismos archivos de componentes. Debe esperar a que T1/T2 se estabilicen.
+
+### Máximo de Consolas
+
+| Escenario | Máx. Consolas | Explicación |
+|-----------|--------------|-------------|
+| **Estado actual** | **3** | 2 máquinas de operadores × 3 zonas seguras (T1, T2, T3) — pero cada operador puede manejar efectivamente solo 1 consola de agente a la vez, así que el máximo práctico es 2 con 1 en background de docs |
+| **Después de zone-map + runner oreshnik** | **4** | 2 operadores × 2 consolas de agente cada uno, con detección de colisiones automatizada |
+| **Máximo teórico** | **6** | Si los 5 tracks tuvieran zonas disjuntas, pero en este proyecto los tracks T1 y T5 ambos tocan `components/` así que no pueden ejecutarse todos simultáneamente |
+
+### Mitigación de Riesgos para Trabajo Multi-Consola
+
+1. **Antes de iniciar cualquier consola**: Ejecutar `zone-check.ps1 --sprint <ID>` para verificar que no hay colisiones activas.
+2. **Disciplina de push**: No hacer push a madre sin ejecutar el hook pre-push (Sección 2.1). Esta es la guarda de mayor valor individual.
+3. **Disciplina de worktree**: Cada sprint recibe su propio worktree. Nunca trabajar directamente en el checkout principal para trabajo de sprint.
+4. **Convención de mensajes de commit**: Prefijar cada commit con el ID del sprint, ej. `qa(s12): purchase flow Playwright spec`. Esto hace que `git log` sea instantáneamente escaneable para saber qué sprint tocó qué.
+5. **Cerrar antes de abrir**: Jean controla el merge a madre. Ninguna rama de sprint se mergea a madre sin la revisión explícita de Jean y el checklist de 9 items de BUS_CONTROL_TURPIAL.
+
+### Próximas Acciones Inmediatas para los Operadores
 
 **Jean:**
-1. Push pending local changes (P0, blocking everything)
-2. Configure `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` in Vercel
-3. Start Console B: `S-JB-01` in worktree `jean/s-jb-01-booking-fixes-2026-05-13`
-4. Review Manuel's S12 closure when ready
+1. Hacer push de cambios locales pendientes (P0, bloquea todo)
+2. Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
+3. Iniciar Consola B: `S-JB-01` en worktree `jean/s-jb-01-booking-fixes-2026-05-13`
+4. Revisar el cierre de S12 de Manuel cuando esté listo
 
 **Manuel:**
-1. Start Console A: `S12` in worktree `Manuel/s12-purchase-flow-browser-2026-05-12` (Playwright already installed on mother)
-2. After S12 closes → S13 → S14 (sequential in T1)
-3. Console C: `S-MK-01` market analysis can run in parallel with S12 since it's docs-only
+1. Iniciar Consola A: `S12` en worktree `Manuel/s12-purchase-flow-browser-2026-05-12`
+2. Después de cerrar S12 → S13 → S14 (secuencial en T1)
+3. Consola C: `S-MK-01` análisis de mercado puede ejecutarse en paralelo con S12 ya que es solo docs
+4. S-ADM-01: Verificar estado legal de la entidad (acción física)
 
 ---
 
-## Appendix: Current State Snapshot (2026-05-12)
+## Apéndice: Instantánea del Estado Actual (2026-05-12)
 
 ```
-Mother branch: integration/today-reservas-marketplace-stable-2026-05-07 @ f7f2d1e
-Active worktree:  Manuel/s14b-shopping-cart-share @ 7a658b4 (main checkout NOT mother — discrepancy)
-Stale worktrees:  6 (closed sprints S01/S03, never cleaned up)
-Pending P0:        Jean's uncommitted local changes, missing Vercel token
-Next sprint:       S12 (Manuel, reasignado)
+Rama madre:  integration/today-reservas-marketplace-stable-2026-05-07 @ 953c6af
+Sprints completados: S01-S11 ✅, S14B ✅, S-MK-01/02 ✅
+Ramas activas:  S12 (completado, por mergear), S13 (completado, por mergear), S14 (en progreso)
+Worktrees obsoletos: 6 (sprints cerrados S01/S03, nunca limpiados)
+Pendiente P0:   CRON_SECRET en Vercel para el scheduler BCV
+Próximo sprint: S14 (Manuel, admin dashboard + cierre pagos)
 ```
-
-**Discrepancy note:** The main checkout is on `Manuel/s14b-shopping-cart-share`, not on mother. This means the current directory is a sprint branch, not the canonical mother. All scaffolding should use `origin/integration/today-reservas-marketplace-stable-2026-05-07` explicitly as base, not the current HEAD.
