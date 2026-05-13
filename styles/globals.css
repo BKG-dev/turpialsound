@@ -957,6 +957,22 @@ body:has(.mp-route-shell) main.pt-16 {
   }
 }
 
+@media (max-width: 1024px) {
+  .home-perf .text-gradient-animated,
+  .home-perf .accent-line-animated,
+  .home-perf .card-premium-wrapper::before {
+    animation: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-perf .text-gradient-animated,
+  .home-perf .accent-line-animated,
+  .home-perf .card-premium-wrapper::before {
+    animation: none !important;
+  }
+}
+
 .mp-theme-root .mp-themed-panel {
   background: var(--mp-panel);
   border-color: var(--mp-border);

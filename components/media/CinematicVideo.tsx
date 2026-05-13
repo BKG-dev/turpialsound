@@ -1,8 +1,6 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-
-const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
+import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 interface CinematicVideoProps {
@@ -15,40 +13,65 @@ interface CinematicVideoProps {
 
 export function CinematicVideo({
   src,
-  poster,
+  poster = '/images/artista-hero.jpg',
   aspect = 'horizontal',
   label = 'Turpial Sound',
   className,
 }: CinematicVideoProps) {
-  // Arranca como true porque el video tiene autoplay (muted + playsInline)
-  const [playing, setPlaying] = useState(true)
+  const [playing, setPlaying] = useState(false)
   const [hovered, setHovered] = useState(false)
+  const [inView, setInView] = useState(false)
+  const [loaded, setLoaded] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  useIsomorphicLayoutEffect(() => {
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '240px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const vid = videoRef.current
+    if (!vid || !src || !inView || loaded) return
+    vid.src = src
+    vid.load()
+    setLoaded(true)
+  }, [inView, loaded, src])
+
+  useEffect(() => {
     const vid = videoRef.current
     if (!vid) return
-    // Restaurar src tras cleanup de Strict Mode — React omite el update del DOM
-    // si el valor del prop no cambió, así que la restauración debe ser explícita.
-    if (src && (!vid.src || vid.src === window.location.href)) vid.src = src
     return () => {
       vid.pause()
       vid.src = ''
     }
-  }, [src])
+  }, [])
 
   function handleToggle() {
     if (!videoRef.current) return
     if (playing) {
       videoRef.current.pause()
+      setPlaying(false)
     } else {
       void videoRef.current.play()
+      setPlaying(true)
     }
-    setPlaying((prev) => !prev)
   }
 
   return (
     <div
+      ref={containerRef}
       className={cn(
         'relative overflow-hidden rounded-2xl bg-brand-surface',
         aspect === 'horizontal' ? 'aspect-video' : 'aspect-[9/16] max-w-sm mx-auto',
@@ -65,68 +88,29 @@ export function CinematicVideo({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Bottom gradient overlay */}
       <div
         className="pointer-events-none absolute inset-0 z-10"
-        style={{
-          background: 'linear-gradient(to bottom, transparent 40%, rgba(10,10,10,0.9) 100%)',
-        }}
+        style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(10,10,10,0.9) 100%)' }}
         aria-hidden="true"
       />
 
       {src ? (
         <video
           ref={videoRef}
-          src={src}
           poster={poster}
           className="absolute inset-0 h-full w-full object-cover"
-          style={{ objectFit: 'cover', objectPosition: 'center', transform: 'scale(1.2)' }}
+          style={{ objectFit: 'cover', objectPosition: 'center', transform: 'scale(1.08)' }}
           playsInline
           muted
           loop
-          autoPlay
+          preload="none"
           disablePictureInPicture
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
           onEnded={() => setPlaying(false)}
         />
-      ) : (
-        /* Cinematic placeholder */
-        <div className="absolute inset-0 flex items-center justify-center">
-          {/* Dual-tone radial glow */}
-          <div
-            className="absolute inset-0 animate-pulse-glow"
-            style={{
-              background:
-                'radial-gradient(ellipse 70% 60% at 30% 40%, rgba(0,174,239,0.12) 0%, transparent 60%), radial-gradient(ellipse 50% 50% at 70% 60%, rgba(255,193,7,0.08) 0%, transparent 60%)',
-            }}
-            aria-hidden="true"
-          />
+      ) : null}
 
-          {/* Center decoration */}
-          <div className="relative z-10 flex flex-col items-center gap-3">
-            <div
-              className="h-px w-20 opacity-40"
-              style={{
-                background: 'linear-gradient(90deg, transparent, #00AEEF, transparent)',
-              }}
-              aria-hidden="true"
-            />
-            <span className="font-display text-xs tracking-[0.3em] text-text-muted uppercase">
-              {label}
-            </span>
-            <div
-              className="h-px w-20 opacity-40"
-              style={{
-                background: 'linear-gradient(90deg, transparent, #FFC107, transparent)',
-              }}
-              aria-hidden="true"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Play / Pause control */}
       <button
         onClick={handleToggle}
         className={cn(
@@ -156,7 +140,6 @@ export function CinematicVideo({
         </span>
       </button>
 
-      {/* Label bottom-left */}
       <div className="absolute bottom-0 left-0 z-20 p-5">
         <p className="font-display text-xs tracking-[0.25em] text-text-muted uppercase">{label}</p>
       </div>

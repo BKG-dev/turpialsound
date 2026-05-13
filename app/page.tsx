@@ -56,7 +56,7 @@ export default function HomePage() {
   const localBusinessSchema = buildLocalBusinessSchema()
 
   return (
-    <>
+    <div className="home-perf">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
@@ -65,7 +65,6 @@ export default function HomePage() {
       {/* ── HERO — cinematic, full-screen ─────────────────────────────── */}
       <HeroSection
         videoSrc="/video/turpial-sound-studio.webm"
-        audioSrc="/audio/turpial-sound-ambient.mp3"
       />
 
       {/* ── STATS BAR ─────────────────────────────────────────────────── */}
@@ -127,7 +126,7 @@ export default function HomePage() {
       {/* ── VIDEO / EL ESTUDIO — stacking section 2 ──────────────────── */}
       <StackingSection index={2} background="surface" waves>
         <SectionShell background="none">
-          <div className="grid items-center gap-12 lg:grid-cols-[1fr_2fr]">
+          <div id="video-estudio" className="grid items-center gap-12 lg:grid-cols-[1fr_2fr]">
             {/* Text — left */}
             <div>
               <div className="mb-4 flex items-center gap-3">
@@ -261,6 +260,6 @@ export default function HomePage() {
           imageSrc="/images/consola.jpg"
         />
       </StackingSection>
-    </>
+    </div>
   )
 }
