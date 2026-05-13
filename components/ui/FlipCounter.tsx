@@ -88,7 +88,7 @@ export function FlipCounter() {
     <div className="flex flex-col items-center py-8">
       <p
         className="font-display tracking-[0.2em] text-sm uppercase mb-5"
-        style={{ color: 'var(--color-text-muted, rgba(255,255,255,0.35))' }}
+        style={{ color: 'var(--color-text-secondary, #c0c0c0)' }}
       >
         Tu presencia resuena. Eres el visitante...
       </p>
