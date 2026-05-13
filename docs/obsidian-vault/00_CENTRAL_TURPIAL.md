@@ -96,10 +96,11 @@ tags:
 
 | # | Pendiente | Sprint | Prioridad |
 |---|-----------|--------|-----------|
-| 1 | Push de cambios locales del core web business al repo | ACCIÓN INMEDIATA | 🔴 P0 |
-| 2 | Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel | ACCIÓN INMEDIATA | 🔴 P0 |
-| 3 | S12-S14 REASIGNADOS a Manuel temporalmente | — | ℹ️ |
-| 4 | Retomar S-JB-01 (Booking fixes) al liberarse | S-JB-01 | 🟡 |
+| 1 | ⚠️ **Configurar Vercel Previews por Sprint** — Ver [[ACCION_P1_JEAN_VERCEL_PREVIEWS]] | LOCK GLOBAL | 🔴 P0 |
+| 2 | Push de cambios locales del core web business al repo | ACCIÓN INMEDIATA | 🔴 P0 |
+| 3 | Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel | ACCIÓN INMEDIATA | 🔴 P0 |
+| 4 | S12-S14 REASIGNADOS a Manuel temporalmente | — | ℹ️ |
+| 5 | Retomar S-JB-01 (Booking fixes) al liberarse | S-JB-01 | 🟡 |
 
 ---
 
