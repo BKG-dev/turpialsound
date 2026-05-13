@@ -68,8 +68,8 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO (YA DOCUMENTADO)
 
-- **S12:** Purchase flow browser E2E → **Jean** (rama `jean/s12-purchase-flow-browser-2026-05-12`)
-- **S13-S20:** Plan S11-S20 vigente (ver [[NEXT_PHASE_PLAN_S11_S20]])
+- **S12:** Purchase flow browser E2E → **Manuel (reasignado)** (rama `Manuel/s12-purchase-flow-browser-2026-05-12`)
+- **S13-S14:** Manuel (reasignado). Jean retoma en S-JB-01 al liberarse del core web business.
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
 - **Pendiente Jean:** Push de cambios locales sin subir
 - **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
@@ -102,11 +102,13 @@ TRACK 5 🟧 UI/UX:        S-UX-01 → S-UX-02
 
 | Campo | Valor |
 |-------|-------|
-| **Owner** | 👤 Jean |
-| **Branch** | `jean/s12-purchase-flow-browser-2026-05-12` |
+| **Owner primary** | 👤 Manuel (reasignado 2026-05-12 — Jean en core web business) |
+| **Owner fallback** | 👤 Jean (si Manuel no puede, o al terminar core web business) |
+| **Branch** | `Manuel/s12-purchase-flow-browser-2026-05-12` |
 | **Base** | `integration/today-reservas-marketplace-stable-2026-05-07` |
 | **Depende de** | S11 (Playwright instalado) |
 | **Tipo** | 🔧 TÉCNICO |
+| **Reasignación** | Jean ocupado en core web business. Manuel toma S12-S14. Jean retoma en S-JB-01. |
 
 **Tareas:**
 1. Navegar listing QA → click "Comprar"
@@ -124,7 +126,8 @@ TRACK 5 🟧 UI/UX:        S-UX-01 → S-UX-02
 
 | Campo | Valor |
 |-------|-------|
-| **Owner** | 👤 Manuel |
+| **Owner primary** | 👤 Manuel (reasignado) |
+| **Owner fallback** | 👤 Jean |
 | **Branch** | `Manuel/s13-proof-upload-browser-2026-05-12` |
 | **Depende de** | S12 |
 | **Tipo** | 🔧 TÉCNICO |
@@ -144,8 +147,9 @@ TRACK 5 🟧 UI/UX:        S-UX-01 → S-UX-02
 
 | Campo | Valor |
 |-------|-------|
-| **Owner** | 👤 Jean |
-| **Branch** | `jean/s14-admin-dashboard-browser-2026-05-12` |
+| **Owner primary** | 👤 Manuel (reasignado) |
+| **Owner fallback** | 👤 Jean |
+| **Branch** | `Manuel/s14-admin-dashboard-browser-2026-05-12` |
 | **Depende de** | S13 |
 | **Tipo** | 🔧 TÉCNICO |
 

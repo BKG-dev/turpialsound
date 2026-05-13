@@ -131,6 +131,17 @@ Esto significa:
 - booking `/reservas`
 - rotacion de secretos y rollback
 
+## Reasignación de Sprints (Nuevo — 2026-05-12)
+
+Cuando un owner está inactivo (sleep, off, core business), el otro operador PUEDE tomar sus sprints bajo estas reglas:
+
+1. **Notificación:** Actualizar `00_CENTRAL_TURPIAL` y `PLAN_MAESTRO_SPRINTS` con la reasignación ANTES de comenzar.
+2. **Branch renombrada:** El nuevo owner crea su propia branch (ej: `jean/s12` → `Manuel/s12`).
+3. **Zonas críticas con lock doble:** S12-S14 (purchase → proof → admin) pueden ser tomados por Manuel porque son zona marketplace (Manuel tiene acceso full).
+4. **Zona booking `/reservas`:** Jean es dueño exclusivo. Manuel puede tomar S-JB-01 a S-JB-04 SOLO si Jean está inactivo >48h Y autoriza explícitamente. Booking NO se toca sin autorización.
+5. **Al retomar:** El owner original hace pull de la branch del sustituto, revisa el diff, y continúa o crea nueva branch desde donde quedó.
+6. **Documentación:** Cada reasignación debe registrarse en el handoff y en el commit message.
+
 ## Pendiente
 
 - Registrar cobertura QA exacta adicional en dispatcher cuando haga falta para sprints no cubiertos.

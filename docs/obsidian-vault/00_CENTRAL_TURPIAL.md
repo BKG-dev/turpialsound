@@ -68,13 +68,13 @@ tags:
 
 ---
 
-## 🔴 PRÓXIMO SPRINT — S12 (Jean)
+## 🔴 PRÓXIMO SPRINT — S12 (Manuel, reasignado)
 
 | Campo | Valor |
 |-------|-------|
 | **Sprint** | S12 — Purchase flow browser E2E |
-| **Owner** | 👤 Jean |
-| **Branch** | `jean/s12-purchase-flow-browser-2026-05-12` |
+| **Owner** | 👤 Manuel (← reasignado de Jean. Jean en core web business) |
+| **Branch** | `Manuel/s12-purchase-flow-browser-2026-05-12` |
 | **Depende de** | S11 (Playwright instalado) |
 | **Estado** | 🔴 PENDIENTE |
 
@@ -82,6 +82,7 @@ tags:
 - Navegar listing QA → click "Comprar" → Pago Móvil → Confirmar → Screenshots
 - Validar TX creada en DB con status `PENDING_PAYMENT`
 - Cierre: 3/3 screenshots + TX en DB
+- Al terminar: continuar S13 → S14 (Manuel) o entregar a Jean si ya está libre
 
 ---
 
@@ -89,10 +90,10 @@ tags:
 
 | # | Pendiente | Sprint | Prioridad |
 |---|-----------|--------|-----------|
-| 1 | Push de cambios locales sin subir al repo | ACCIÓN INMEDIATA | 🔴 P0 |
+| 1 | Push de cambios locales del core web business al repo | ACCIÓN INMEDIATA | 🔴 P0 |
 | 2 | Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel | ACCIÓN INMEDIATA | 🔴 P0 |
-| 3 | Iniciar S12 — Purchase flow browser E2E | S12 | 🔴 |
-| 4 | Iniciar S-JB-01 — Selección múltiple + cantidad temas | S-JB-01 | 🟡 |
+| 3 | S12-S14 REASIGNADOS a Manuel temporalmente | — | ℹ️ |
+| 4 | Retomar S-JB-01 (Booking fixes) al liberarse | S-JB-01 | 🟡 |
 
 ---
 
