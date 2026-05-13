@@ -1,7 +1,7 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { MapPin, Phone, Mail } from 'lucide-react'
 import { MapEmbed } from '@/components/layout/MapEmbed'
-import { LogoGlb } from '@/components/media/LogoGlb'
 import { FlipCounter } from '@/components/ui/FlipCounter'
 import { footerNavItems, ctaNav } from '@/content/navigation'
 import { siteConfig } from '@/content/site'
@@ -95,7 +95,14 @@ export function SiteFooter() {
             {/* Logo 3D — centrado en el espacio libre entre contacto y bottom bar */}
             <div className="flex flex-1 items-center justify-center pt-6">
               <div className="-translate-x-12 translate-y-[15px]">
-                <LogoGlb width={368} height={230} />
+                <Image
+                  src="/images/logo-footer.png"
+                  alt="Logo Turpial Sound"
+                  width={368}
+                  height={230}
+                  loading="lazy"
+                  className="h-auto w-[368px] object-contain"
+                />
               </div>
             </div>
           </div>

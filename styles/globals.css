@@ -1480,3 +1480,29 @@ body:has(.mp-route-shell) main.pt-16 {
   content-visibility: auto;
   contain-intrinsic-size: 1000px;
 }
+
+/* PageSpeed mobile hardening: keep premium look with static gradients, no costly motion */
+@media (max-width: 768px), (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .text-gradient-animated,
+  .accent-line-animated,
+  .navbar-gradient,
+  .navbar-gradient::before,
+  .navbar-gradient::after,
+  .btn-silky-primary,
+  .btn-silky-primary::before,
+  .btn-gradient-outline,
+  .btn-gradient-outline::before,
+  .card-premium-wrapper::before,
+  .animate-pulse-glow {
+    animation: none !important;
+    transition-property: color, background-color, border-color, opacity, transform !important;
+    transition-duration: 120ms !important;
+    background-position: 50% 50% !important;
+    box-shadow: none !important;
+  }
+}
