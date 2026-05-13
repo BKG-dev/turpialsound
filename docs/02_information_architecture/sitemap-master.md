@@ -4,6 +4,38 @@
 > Última actualización: 2026-03-26
 > Fuente base: `docs/01_strategy/` + `turpial_sound_control_point_01.md` + CLAUDE.md
 
+## Estado real en produccion al 2026-05-11 (sitemap real)
+
+**Proposito:** registrar el sitemap real desplegado en https://www.turpialsound.com/sitemap.xml tras el hotfix 92fd6a3.
+
+### URLs reales en produccion
+
+1. https://www.turpialsound.com/
+2. https://www.turpialsound.com/reservas
+3. https://www.turpialsound.com/salas-de-ensayo
+4. https://www.turpialsound.com/estudio-de-grabacion
+5. https://www.turpialsound.com/servicios
+6. https://www.turpialsound.com/contacto
+7. https://www.turpialsound.com/recursos
+8. https://www.turpialsound.com/recursos/preguntas-frecuentes
+9. https://www.turpialsound.com/marketplace
+
+### Exclusiones explicitas
+
+- /admin, /ops, /api, /payment-proofs, /marketplace/admin, /marketplace/dashboard, /lab.
+- Listings individuales del marketplace (/marketplace/{slug}).
+- Slugs dinamicos, query params, usuarios, perfiles, vendedores, filtros.
+- URLs preview Vercel, localhost.
+
+### Notas para reconciliacion posterior
+
+- Este sitemap real es un snapshot limpio para Google Search Console. No incluye subpaginas sugeridas ni rutas aun no publicadas.
+- El sitemap maestro (este documento) define la arquitectura deseada. El sitemap real es un subconjunto de URLs publicas aprobadas sin DB.
+- Para cualquier expansion futura del sitemap real, referirse a este documento y a docs/obsidian-vault/00_CENTRAL_TURPIAL.md#Sitemap Hotfix Produccion.
+
+---
+
+
 ---
 
 ## Leyenda de estado por sección
