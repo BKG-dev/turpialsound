@@ -129,7 +129,7 @@ function PriceCard({
       {/* ── ZONA 3: Bloque de precio — h-[6.5rem] fijo ──────────── */}
       {/* label (9px) · prefijo (text-sm) · monto (2.75rem=44px)    */}
       <div className="mt-3 flex h-[6.5rem] shrink-0 flex-col justify-start overflow-hidden">
-        <span className="font-display text-[10px] tracking-[0.22em] uppercase leading-none text-text-muted">
+        <span className="font-display text-[10px] tracking-[0.22em] uppercase leading-none text-text-secondary">
           {label}
         </span>
 
@@ -353,7 +353,7 @@ export function PricingPreview() {
           {/* BCV note */}
           <div className="flex items-center gap-1.5">
             <Info size={10} style={{ color: 'var(--color-cyan)' }} aria-hidden="true" />
-            <span className="whitespace-nowrap font-display text-[9px] tracking-wider text-text-muted">
+            <span className="whitespace-nowrap font-display text-[10px] tracking-wider text-text-secondary">
               {loading
                 ? 'Obteniendo tasa BCV…'
                 : isFallback
@@ -383,7 +383,7 @@ export function PricingPreview() {
         ))}
       </div>
 
-      <p className="mt-4 font-display text-[9px] tracking-wider text-text-muted max-w-[1400px] mx-auto">
+      <p className="mt-4 font-display text-[10px] tracking-wider text-text-secondary max-w-[1400px] mx-auto">
         * Referencias orientativas. El valor final se confirma en la orden de servicio.
       </p>
     </div>

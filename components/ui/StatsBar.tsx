@@ -44,26 +44,24 @@ export function StatsBar() {
               className="group flex flex-col items-center gap-2 px-6 py-6 text-center"
               variants={itemVariants}
             >
-              {/* Icon with gradient halo container */}
-              <div className="relative mb-1 flex h-8 w-8 items-center justify-center">
-                {/* Halo pulse ring */}
-                <span
-                  className="pointer-events-none absolute inset-0 rounded-full animate-pulse-glow"
-                  style={{
-                    background:
-                      'radial-gradient(circle, rgba(0,174,239,0.22) 0%, transparent 70%)',
-                  }}
-                  aria-hidden="true"
-                />
-                <Icon
-                  size={16}
-                  className="relative z-10 shrink-0"
-                  style={{ color: 'var(--color-cyan)' }}
-                  aria-hidden="true"
-                />
-              </div>
-              <dt className="font-display text-2xl text-gradient-animated leading-none">{value}</dt>
-              <dd className="text-xs tracking-wide text-text-muted uppercase">{label}</dd>
+              <dt className="font-display text-2xl text-gradient-animated leading-none">
+                <span className="relative mb-1 flex h-8 w-8 items-center justify-center mx-auto" aria-hidden="true">
+                  <span
+                    className="pointer-events-none absolute inset-0 rounded-full animate-pulse-glow"
+                    style={{
+                      background:
+                        'radial-gradient(circle, rgba(0,174,239,0.22) 0%, transparent 70%)',
+                    }}
+                  />
+                  <Icon
+                    size={16}
+                    className="relative z-10 shrink-0"
+                    style={{ color: 'var(--color-cyan)' }}
+                  />
+                </span>
+                <span>{value}</span>
+              </dt>
+              <dd className="text-xs tracking-wide text-text-secondary uppercase">{label}</dd>
             </motion.div>
           ))}
         </motion.dl>

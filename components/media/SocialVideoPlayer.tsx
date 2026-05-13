@@ -1,19 +1,13 @@
 'use client'
 
-/**
- * SocialVideoPlayer — Vertical 9:16 video for RRSS content.
- * Wrapped in animated plasma cyan/gold gradient border.
- * Sources are lazy-loaded via IntersectionObserver — no decode/mount until in viewport.
- */
-
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 import { Play, Pause } from 'lucide-react'
 
 interface SocialVideoPlayerProps {
-  src: string        // primary .webm
-  fallback?: string  // .mp4 fallback for Safari/iOS
+  src: string
+  fallback?: string
   label?: string
 }
 
@@ -23,7 +17,6 @@ export function SocialVideoPlayer({ src, fallback, label = 'Turpial Sound' }: So
   const [playing, setPlaying] = useState(false)
   const [inView, setInView] = useState(false)
 
-  // Lazy-load: mount sources only once container enters viewport
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -40,16 +33,14 @@ export function SocialVideoPlayer({ src, fallback, label = 'Turpial Sound' }: So
     return () => observer.disconnect()
   }, [])
 
-  // Set src imperatively once in viewport — avoids src="" attribute interference
   useEffect(() => {
     if (!inView || !videoRef.current) return
     const v = videoRef.current
     const canWebm = v.canPlayType('video/webm') !== ''
-    v.src = (canWebm || !fallback) ? src : (fallback ?? src)
+    v.src = canWebm || !fallback ? src : (fallback ?? src)
     v.load()
   }, [inView, src, fallback])
 
-  // useIsomorphicLayoutEffect: cleanup runs synchronously before DOM removal.
   useIsomorphicLayoutEffect(() => {
     const v = videoRef.current
     if (!v) return
@@ -73,7 +64,6 @@ export function SocialVideoPlayer({ src, fallback, label = 'Turpial Sound' }: So
 
   return (
     <div ref={containerRef} className="relative mx-auto w-full">
-      {/* Animated plasma border — cyan/gold numinoso */}
       <div
         className="rounded-2xl p-[2px]"
         style={{
@@ -81,12 +71,7 @@ export function SocialVideoPlayer({ src, fallback, label = 'Turpial Sound' }: So
             'linear-gradient(135deg, rgba(0,174,239,0.70) 0%, rgba(255,193,7,0.50) 50%, rgba(0,174,239,0.70) 100%)',
         }}
       >
-        {/* Inner container */}
-        <div
-          className="relative overflow-hidden rounded-2xl bg-brand-bg"
-          style={{ aspectRatio: '9 / 16' }}
-        >
-          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+        <div className="relative overflow-hidden rounded-2xl bg-brand-bg" style={{ aspectRatio: '9 / 16' }}>
           <video
             ref={videoRef}
             loop
@@ -98,10 +83,15 @@ export function SocialVideoPlayer({ src, fallback, label = 'Turpial Sound' }: So
             style={{ cursor: 'pointer' }}
             aria-label={label}
           >
-            {/* src set imperatively by useEffect once inView — no <source> children needed */}
+            <track
+              kind="captions"
+              src="/captions/turpial-sound-video-rrss.vtt"
+              srcLang="es"
+              label="Español"
+              default
+            />
           </video>
 
-          {/* Play overlay — visible when paused */}
           {!playing && (
             <button
               onClick={toggle}
@@ -120,7 +110,6 @@ export function SocialVideoPlayer({ src, fallback, label = 'Turpial Sound' }: So
             </button>
           )}
 
-          {/* Pause button — subtle, bottom-right, only when playing */}
           {playing && (
             <button
               onClick={toggle}

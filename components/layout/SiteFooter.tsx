@@ -23,7 +23,7 @@ export function SiteFooter() {
             >
               TURPIAL SOUND
             </Link>
-            <p className="mt-4 text-sm text-text-muted">
+            <p className="mt-4 text-sm text-text-secondary">
               Hub premium de ensayo, grabación y producción musical en Caracas.
             </p>
             {/* Animated accent line */}
@@ -41,7 +41,7 @@ export function SiteFooter() {
 
           {/* Navigation */}
           <nav aria-label="Navegación del pie de página">
-            <p className="mb-4 font-display text-xs tracking-[0.25em] text-text-muted uppercase">
+            <p className="mb-4 font-display text-xs tracking-[0.25em] text-text-secondary uppercase">
               Navegación
             </p>
             <ul className="flex flex-col gap-2">
@@ -60,7 +60,7 @@ export function SiteFooter() {
 
           {/* Contact — flex column so logo fills remaining space and centers */}
           <div className="flex flex-col">
-            <p className="mb-4 font-display text-xs tracking-[0.25em] text-text-muted uppercase">
+            <p className="mb-4 font-display text-xs tracking-[0.25em] text-text-secondary uppercase">
               Contacto
             </p>
             <ul className="flex flex-col gap-4 text-sm text-text-secondary">
@@ -108,12 +108,12 @@ export function SiteFooter() {
 
         {/* Bottom bar */}
         <div className="flex flex-col items-center justify-between gap-4 border-t border-brand-border pt-8 sm:flex-row">
-          <p className="text-xs text-text-muted">
+          <p className="text-xs text-text-secondary">
             © {currentYear} {siteConfig.name}. Todos los derechos reservados.
           </p>
           <Link
             href="/politica-de-privacidad"
-            className="text-xs text-text-muted transition-colors duration-250 hover:text-text-secondary"
+            className="text-xs text-text-secondary transition-colors duration-250 hover:text-text-primary"
           >
             Política de privacidad
           </Link>

@@ -92,7 +92,8 @@ export function FlipCounter() {
       >
         Tu presencia resuena. Eres el visitante...
       </p>
-      <div className="flex gap-1.5" aria-label={`${count} visitantes`}>
+      <div className="flex gap-1.5">
+        <span className="sr-only">{count} visitantes</span>
         {digits.map((digit, i) => (
           <DigitSlot key={i} digit={digit} delay={i * 0.14} />
         ))}
