@@ -59,7 +59,6 @@ export function HeroSection({ videoSrc }: HeroSectionProps) {
             style={{
               color: '#F5F5F5',
               fontWeight: 500,
-              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
             }}
           >
             Donde el criterio técnico hace la diferencia. Hub premium de ensayo,
