@@ -3,7 +3,7 @@ type: master-dashboard
 project: "Turpial Sound"
 status: active
 phase: "Fase D en curso + Tracks paralelos activados (Plan Maestro 2026-05-12)"
-last_updated: "2026-05-12T14:27-04:00"
+last_updated: "2026-05-13T01:13-04:00"
 mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
 mother_commit: "f7f2d1e"
 preview: "https://turpialsound-5qwhe7is1-bkgs-projects-829c67c1.vercel.app"
@@ -63,6 +63,12 @@ tags:
 | S09 | 👤 Manuel | Discovery público y SEO | ✅ 9/9 PASS |
 | S10 | 👤 Jean | Release gate | 🟢 10/10 |
 | S11 | 👤 Manuel | Playwright + login UI smoke | ✅ 3/3 PASS |
+| S12 | 👤 Manuel | Purchase flow browser E2E | ✅ 9/9 PASS |
+| S13 | 👤 Manuel | Payment proof upload browser | ✅ PASS |
+| S14B | 👤 Manuel | Shopping cart + share listing | ✅ PASS |
+| S-MK-01 | 👤 Manuel | Análisis mercado + KPIs | ✅ PASS |
+| — | 👤 Manuel | Scheduler BCV dual frecuencia | ✅ PASS |
+| — | 👤 Manuel | Análisis metodología Oreshnik | ✅ PASS |
 
 > Ver detalle: [[S03_QA_HARNESS_INDEX]] | [[NEXT_PHASE_PLAN_S11_S20]]
 
