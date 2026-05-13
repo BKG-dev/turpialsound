@@ -209,6 +209,19 @@ export interface CategoryMeta {
 
 // ─── Platform Config ──────────────────────────────────────────────────────────
 
+// ─── Cart ──────────────────────────────────────────────────────────────────────
+
+export interface CartItem {
+  listingId: string
+  slug: string
+  title: string
+  price: number
+  image: string | null
+  sellerName: string
+  sellerId: string
+  quantity: number
+}
+
 export const MARKETPLACE_CONFIG = {
   COMMISSION_RATE: 0.05,         // 5% — asume el vendedor/talento
   MIN_LISTING_PRICE_USD: 1,

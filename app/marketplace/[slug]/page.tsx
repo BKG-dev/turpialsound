@@ -7,6 +7,8 @@ import { getListingQuestions } from '@/actions/marketplace/questions'
 import { getSession } from '@/lib/marketplace/auth'
 import { ListingQASection } from '@/components/marketplace/ListingQASection'
 import { ListingDetailActions } from '@/components/marketplace/ListingDetailActions'
+import { AddToCartButton } from '@/components/marketplace/AddToCartButton'
+import { ShareListingButton } from '@/components/marketplace/ShareListingButton'
 import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
 import { SmartMarketplaceAuthBar } from '@/components/marketplace/MarketplaceAuthBar'
 import type { Listing } from '@/types/marketplace'
@@ -466,6 +468,11 @@ export default async function ListingPage({ params }: ListingPageParams) {
                   y la confirmacion correspondiente.
                 </p>
               </section>
+
+              <div className="flex flex-wrap gap-2 pt-2">
+                <AddToCartButton listing={listing} currentUserId={session?.userId ?? null} variant="detail" />
+                <ShareListingButton listing={listing} variant="detail" />
+              </div>
 
               <ListingDetailActions
                 listing={listing}

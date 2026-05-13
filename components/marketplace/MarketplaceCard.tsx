@@ -5,6 +5,8 @@ import { Star, MapPin, Clock, Shield, BadgeCheck, Heart, ImageIcon } from 'lucid
 import { cn } from '@/lib/utils'
 import type { Listing, ProductListing, ServiceListing } from '@/types/marketplace'
 import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
+import { AddToCartButton } from '@/components/marketplace/AddToCartButton'
+import { ShareListingButton } from '@/components/marketplace/ShareListingButton'
 
 // ─── Category fallback images ─────────────────────────────────────────────────
 // Used when a listing has no uploaded photo.
@@ -175,11 +177,12 @@ function AvailabilityOverlay({ listing }: { listing: Listing }) {
 
 // ─── Product Card ─────────────────────────────────────────────────────────────
 
-function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }: {
+function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite, currentUserId }: {
   listing: ProductListing
   onClick: () => void
   isFavorited?: boolean
   onToggleFavorite?: (id: string) => void
+  currentUserId?: string | null
 }) {
   const [hovered, setHovered] = useState(false)
   const [localFav, setLocalFav] = useState(isFavorited)
@@ -321,6 +324,11 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
           <Shield size={11} className="mt-0.5 flex-shrink-0 text-[#00aeef] opacity-70" />
           <span>Operacion protegida con revision de pago</span>
         </div>
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: 'var(--mp-border)' }}>
+          <AddToCartButton listing={listing} currentUserId={currentUserId} variant="card" />
+          <ShareListingButton listing={listing} variant="card" />
+        </div>
       </div>
     </div>
   )
@@ -328,11 +336,12 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite }
 
 // ─── Service Card ─────────────────────────────────────────────────────────────
 
-function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }: {
+function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite, currentUserId }: {
   listing: ServiceListing
   onClick: () => void
   isFavorited?: boolean
   onToggleFavorite?: (id: string) => void
+  currentUserId?: string | null
 }) {
   const [hovered, setHovered] = useState(false)
   const [localFav, setLocalFav] = useState(isFavorited)
@@ -479,6 +488,11 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
           <Shield size={11} className="mt-0.5 flex-shrink-0 text-[#ffc107] opacity-70" />
           <span>Pago protegido con revision del equipo</span>
         </div>
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: 'var(--mp-border)' }}>
+          <AddToCartButton listing={listing} currentUserId={currentUserId} variant="card" />
+          <ShareListingButton listing={listing} variant="card" />
+        </div>
       </div>
     </div>
   )
@@ -486,16 +500,17 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite }
 
 // ─── Unified export ───────────────────────────────────────────────────────────
 
-export function MarketplaceCard({ listing, onClick, isFavorited = false, onToggleFavorite }: {
+export function MarketplaceCard({ listing, onClick, isFavorited = false, onToggleFavorite, currentUserId }: {
   listing: Listing
   onClick?: () => void
   isFavorited?: boolean
   onToggleFavorite?: (id: string) => void
+  currentUserId?: string | null
 }) {
   const handleClick = onClick ?? (() => {})
 
   if (listing.type === 'product') {
-    return <ProductCard listing={listing} onClick={handleClick} isFavorited={isFavorited} onToggleFavorite={onToggleFavorite} />
+    return <ProductCard listing={listing} onClick={handleClick} isFavorited={isFavorited} onToggleFavorite={onToggleFavorite} currentUserId={currentUserId} />
   }
-  return <ServiceCard listing={listing} onClick={handleClick} isFavorited={isFavorited} onToggleFavorite={onToggleFavorite} />
+  return <ServiceCard listing={listing} onClick={handleClick} isFavorited={isFavorited} onToggleFavorite={onToggleFavorite} currentUserId={currentUserId} />
 }
