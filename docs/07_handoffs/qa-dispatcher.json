@@ -492,6 +492,19 @@
       "implemented_at": "2026-05-11",
       "last_validated_at": "2026-05-11"
     },
+    "s16_notifications_chat": {
+      "task_id": "s16_notifications_chat",
+      "mode": "script",
+      "module": "S16",
+      "layer": "D",
+      "canonical_script": "npx tsx scripts/qa/playwright/s16-chat-notifications.spec.mjs",
+      "preconditions": ["APP_URL activa", "QA_BUYER_IDENTIFIER/QA_SELLER_IDENTIFIER configurados", "Playwright instalado", "Listing QA persistente activo"],
+      "notes": "S16 — Validacion E2E browser de chat buyer-seller, envio de mensaje, verificacion de recepcion y conteo de no leidos.",
+      "status": "IMPLEMENTED",
+      "sprint_target": "S16",
+      "implemented_at": "2026-05-14",
+      "last_validated_at": "2026-05-14"
+    },
     "qa_marketplace_orchestrator": {
       "task_id": "qa_marketplace_orchestrator",
       "mode": "script",

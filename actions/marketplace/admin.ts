@@ -457,6 +457,19 @@ export async function adminValidatePayment(
       })
 
       await db.$disconnect()
+
+      // S16: Notify seller when admin validates payment (funds in escrow)
+      if (approved) {
+        void sendSystemMessage({
+          buyerId: tx.buyerId,
+          sellerId: tx.sellerId,
+          listingId: tx.listingId,
+          senderId: session.userId,
+          receiverId: tx.sellerId,
+          content: '🔒 ESCROW — Pago validado por admin. Fondos retenidos en escrow hasta que el comprador confirme recepcion.',
+        }).catch(() => {})
+      }
+
       return {
         success: true,
         data: undefined,
@@ -513,6 +526,17 @@ export async function adminReleaseEscrow(txId: string, note: string): Promise<Ac
       })
 
       await db.$disconnect()
+
+      // S16: Notify seller on escrow release
+      void sendSystemMessage({
+        buyerId: tx.buyerId,
+        sellerId: tx.sellerId,
+        listingId: tx.listingId,
+        senderId: session.userId,
+        receiverId: tx.sellerId,
+        content: '💰 PAGO LIBERADO — El admin libero el pago a tu cuenta. Revisa tu metodo de pago registrado.',
+      }).catch(() => {})
+
       return { success: true, data: undefined, message: 'Pago del vendedor liberado' }
     } catch (err) {
       await db.$disconnect().catch(() => {})
