@@ -1,0 +1,43 @@
+{
+	"nodes":[
+		{"id":"start","x":400,"y":-100,"width":250,"height":80,"type":"text","text":"# 🟢 INICIO DE SESION\nLeer [[INSTRUCCION_APERTURA_SESION]]\nLeer [[00_CENTRAL_TURPIAL]]\nDeterminar: OPERATOR + SPRINT_ID","color":"#10b981"},
+		{"id":"preflight","x":400,"y":50,"width":250,"height":90,"type":"text","text":"# 🔍 PRE-FLIGHT\n1. `git fetch origin --prune`\n2. Verificar rama madre\n3. `.env.local` vars presentes?\n4. `DATABASE_URL` valida?\n5. `APP_URL` reachable?\n\n**Script:** `npx tsx scripts/qa/run-marketplace-qa.mjs --module=QA-00`","color":"#6366f1"},
+		{"id":"zonecheck","x":400,"y":190,"width":250,"height":90,"type":"text","text":"# 🗺️ ZONE CHECK (futuro)\nVerificar que el sprint no\ncolisiona con otro activo.\n\n**Futuro:** `scripts/oreshnik/zone-check.ps1`\n**Hoy:** revisar [[00_CENTRAL_TURPIAL]]\ntabla de tracks","color":"#6b7280"},
+		{"id":"branch","x":400,"y":330,"width":250,"height":90,"type":"text","text":"# 🌿 CREAR RAMA\n`git checkout -b {Operator}/{sprint}-{fecha}`\ndesde `integration/today-reservas-\nmarketplace-stable-2026-05-07`\n\n**Convencion:**\n`Manuel/s12-...` | `Jean/s-jb-01-...`","color":"#f59e0b"},
+		{"id":"execute","x":400,"y":470,"width":250,"height":100,"type":"text","text":"# 🔧 EJECUTAR SPRINT\n1. Implementar scope del sprint\n2. Ejecutar QA modules asignados\n3. Playwright specs si aplica\n4. Screenshots en `var/qa-results/`\n5. Commits con prefijo:\n   `qa(s12):` `feat(s14b):` `fix(s-jb-01):`","color":"#ef4444"},
+		{"id":"validate","x":400,"y":620,"width":250,"height":100,"type":"text","text":"# ✅ VALIDACION\n1. `git diff --check`\n2. `npx tsc --noEmit`\n3. `pnpm build`\n4. QA modules PASS\n5. Playwright specs PASS\n6. Sin P0 abiertos\n7. Sin secrets en diff\n8. Sin archivos de /reservas\n   (si es sprint marketplace)","color":"#8b5cf6"},
+		{"id":"close","x":400,"y":770,"width":250,"height":100,"type":"text","text":"# 📋 CERRAR SPRINT\n1. Actualizar [[00_CENTRAL_TURPIAL]]\n2. Actualizar track en\n   [[PLAN_MAESTRO_SPRINTS]]\n3. Commit + push a rama del sprint\n4. Notificar al otro operador\n5. Reporte de cierre:\n   PASS/FAIL + artefactos + riesgos","color":"#14b8a6"},
+		{"id":"mergegate","x":700,"y":470,"width":270,"height":110,"type":"text","text":"# 🚪 MERGE GATE (JEAN)\n**SOLO Jean ejecuta este paso**\n\n1. Revisar rama del sprint\n2. Verificar checklist de cierre\n3. `git merge` a madre:\n   `integration/today-reservas-\n   marketplace-stable-2026-05-07`\n4. `git push origin` madre\n5. Notificar a Manuel","color":"#ec4899"},
+		{"id":"smoke","x":700,"y":630,"width":270,"height":100,"type":"text","text":"# 🔥 SMOKE POST-MERGE\n**Manuel ejecuta:**\n1. `/` → carga\n2. `/marketplace` → listings visibles\n3. `/reservas` → funcional\n4. `/api/bcv-rate` → JSON\n5. `/admin/login` → carga\n6. `/ops/payment-review` → carga\n7. QA-00 + QA-03 + login smoke","color":"#f97316"},
+		{"id":"release","x":700,"y":780,"width":270,"height":100,"type":"text","text":"# 🚀 RELEASE A MAIN\n**SOLO Jean ejecuta**\n**SOLO si smoke OK + Manuel OK**\n\n1. `git checkout main`\n2. `git merge integration/today-\n   reservas-marketplace-stable-...`\n3. `git push origin main`\n4. Vercel auto-deploy a produccion\n5. Smoke post-produccion:\n   verificar `turpialsound.com`","color":"#22c55e"},
+		{"id":"fail","x":100,"y":620,"width":200,"height":80,"type":"text","text":"# ⛔ ALGO FALLO?\n- Conflictos → coordinar\n- tsc fail → arreglar tipos\n- build fail → dependencias\n- P0 → PARAR, no mergear\n- Marketplace vacio → DB target\n- /reservas roto → Jean revisa","color":"#ef4444"},
+		{"id":"oreshnik","x":1000,"y":50,"width":250,"height":140,"type":"text","text":"# 🔮 ORESHNIK (FUTURO)\nAutomatizacion planeada:\n\n✅ Pre-flight manual (hoy)\n⬜ `scripts/oreshnik/oreshnik.ps1`\n⬜ `zone-map.json`\n⬜ `scaffold-sprint.ps1`\n⬜ `zone-check.ps1`\n⬜ `generate-closure-report.ps1`\n⬜ `update-dashboard.ps1`\n⬜ `.husky/pre-commit`\n⬜ `.husky/pre-push`\n⬜ Vercel preview por sprint\n\n**Estado:** DISEÑO COMPLETO\nCero codigo implementado","color":"#6b7280"},
+		{"id":"roles","x":100,"y":50,"width":200,"height":130,"type":"text","text":"# 👥 ROLES\n\n**JEAN (BKG-dev)**\n- Gatekeeper main/produccion\n- Owner /reservas\n- Merge a madre\n- DB/schema (lock doble)\n- Vercel envs criticos\n\n**MANUEL (Manuel Vera)**\n- QA marketplace\n- Playwright specs\n- Docs/vault\n- Smoke post-merge\n- S-ADM (accion fisica)","color":"#a855f7"},
+		{"id":"docs","x":100,"y":230,"width":200,"height":120,"type":"text","text":"# 📚 DOCS CANONICOS\n\n1. [[00_CENTRAL_TURPIAL]]\n   ⬅ Fuente unica de verdad\n2. [[INSTRUCCION_APERTURA_SESION]]\n   ⬅ Leer al abrir sesion\n3. [[PLAN_MAESTRO_SPRINTS]]\n   ⬅ Definiciones de sprints\n4. [[BUS_CONTROL_TURPIAL]]\n   ⬅ Reglas del bus\n5. `qa-dispatcher.json`\n   ⬅ Despacho QA","color":"#6366f1"},
+		{"id":"lock","x":100,"y":400,"width":200,"height":100,"type":"text","text":"# 🔒 LOCKS\n\n- `/reservas` → Jean exclusivo\n- `schema.prisma` → lock doble\n- `.env` → nunca commit\n- `main` → solo Jean mergea\n- `vercel --prod` → solo Jean\n- Rama madre → solo Jean\n  mergea (con checklist)","color":"#f59e0b"},
+		{"id":"sprintlegend","x":1000,"y":230,"width":250,"height":90,"type":"text","text":"# 📊 ESTADO DE SPRINTS\n\n✅ CERRADO (S01-S14B)\n🟡 PARCIAL (S-JB-01/02/03, S19)\n🔴 PENDIENTE (S15-S21)\n\n**Proximo sprint despues\nde reconciliacion:**\nS15 (Manuel) o S-JB-01 (Jean)\nsegun zone-check","color":"#14b8a6"},
+		{"id":"reconcile","x":700,"y":50,"width":270,"height":100,"type":"text","text":"# ⚠️ AHORA: RECONCILIACION\n**Estado actual 2026-05-14**\n\nDos ramas divergentes:\n- `Manuel/integration-s12-s14b-...`\n- `integration/preserve-dashboard-...`\n\nJean debe unificar → validar →\nmergear a madre → smoke → main\n\n**Ver [[INSTRUCCION_APERTURA_SESION]]**","color":"#ef4444"}
+	],
+	"edges":[
+		{"id":"e-start-preflight","fromNode":"start","fromSide":"bottom","toNode":"preflight","toSide":"top"},
+		{"id":"e-preflight-zone","fromNode":"preflight","fromSide":"bottom","toNode":"zonecheck","toSide":"top"},
+		{"id":"e-zone-branch","fromNode":"zonecheck","fromSide":"bottom","toNode":"branch","toSide":"top"},
+		{"id":"e-branch-execute","fromNode":"branch","fromSide":"bottom","toNode":"execute","toSide":"top"},
+		{"id":"e-execute-validate","fromNode":"execute","fromSide":"bottom","toNode":"validate","toSide":"top"},
+		{"id":"e-validate-close","fromNode":"validate","fromSide":"bottom","toNode":"close","toSide":"top"},
+		{"id":"e-close-mergegate","fromNode":"close","fromSide":"right","toNode":"mergegate","toSide":"left","label":"Jean revisa"},
+		{"id":"e-mergegate-smoke","fromNode":"mergegate","fromSide":"bottom","toNode":"smoke","toSide":"top","label":"Manuel valida"},
+		{"id":"e-smoke-release","fromNode":"smoke","fromSide":"bottom","toNode":"release","toSide":"top","label":"Jean mergea"},
+		{"id":"e-execute-fail","fromNode":"execute","fromSide":"left","toNode":"fail","toSide":"right","label":"si falla"},
+		{"id":"e-validate-fail","fromNode":"validate","fromSide":"left","toNode":"fail","toSide":"right","label":"si falla"},
+		{"id":"e-fail-execute","fromNode":"fail","fromSide":"top","toNode":"execute","toSide":"left","label":"corregir y reintentar"},
+		{"id":"e-roles-preflight","fromNode":"roles","fromSide":"right","toNode":"preflight","toSide":"left"},
+		{"id":"e-docs-zone","fromNode":"docs","fromSide":"right","toNode":"zonecheck","toSide":"left"},
+		{"id":"e-lock-validate","fromNode":"lock","fromSide":"right","toNode":"validate","toSide":"left"},
+		{"id":"e-oreshnik-zone","fromNode":"oreshnik","fromSide":"left","toNode":"zonecheck","toSide":"right","label":"automatiza"},
+		{"id":"e-oreshnik-branch","fromNode":"oreshnik","fromSide":"left","toNode":"branch","toSide":"right","label":"automatiza"},
+		{"id":"e-oreshnik-close","fromNode":"oreshnik","fromSide":"left","toNode":"close","toSide":"right","label":"automatiza"},
+		{"id":"e-sprintlegend-execute","fromNode":"sprintlegend","fromSide":"left","toNode":"execute","toSide":"right"},
+		{"id":"e-reconcile-preflight","fromNode":"reconcile","fromSide":"left","toNode":"preflight","toSide":"right","label":"PASO 0 OBLIGATORIO"}
+	]
+}
