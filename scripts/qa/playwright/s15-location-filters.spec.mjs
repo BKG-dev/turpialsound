@@ -44,7 +44,7 @@ async function main() {
   try {
     // ── 1. Login como seller ──
     console.log('1. Login sellerIA...')
-    const creds = getQACredentials('seller')
+    const creds = getQACredentials().seller
     await page.goto(appUrl, { waitUntil: 'domcontentloaded', timeout: 30000 })
     await page.waitForTimeout(2000)
     const loggedIn = await loginViaMarketplaceModal(page, creds.identifier, creds.password)
