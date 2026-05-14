@@ -426,6 +426,10 @@ model MpUser {
   // Role — SOCIO and SUPER are exempt from platform commission
   role MpUserRole @default(USER)
 
+  // Location (S15)
+  city  String?
+  state String?
+
   // Contact & Notifications
   phone             String? // e.g. "+58 414 123 4567"
   whatsappConsent   Boolean   @default(false)
@@ -521,6 +525,11 @@ model MpListing {
 
   status MpListingStatus @default(DRAFT)
 
+  // Location (S15)
+  city            String?
+  state           String?
+  isLocationPublic Boolean @default(true)
+
   // SEO
   slug String @unique
 
@@ -540,6 +549,7 @@ model MpListing {
   @@index([status])
   @@index([category])
   @@index([slug])
+  @@index([state, city])
   @@map("mp_listings")
 }
 

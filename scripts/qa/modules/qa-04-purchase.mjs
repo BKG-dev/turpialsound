@@ -37,8 +37,11 @@ export async function run(report) {
     checks.push({ check: 'buyerLookup', status: 'PASS', detail: `Buyer: ${buyer.displayName} (${buyer.email})` })
   }
 
-  // 2. Lookup listing
-  const listing = await findListingBySlug(LISTING_SLUG)
+  // 2. Lookup listing with inventory + location
+  const listing = await prisma.mpListing.findFirst({
+    where: { slug: LISTING_SLUG },
+    select: { id: true, sellerId: true, title: true, slug: true, status: true, price: true, currency: true, inventory: true, hasInventory: true, city: true, state: true },
+  })
   if (!listing) {
     checks.push({ check: 'listingLookup', status: 'FAIL', detail: `Listing ${LISTING_SLUG} not found` })
     report.addModule(MODULE_ID, 'FAIL', { failureCode: FailureCode.LISTING_CREATE_FAILED, failureDetail: `Listing ${LISTING_SLUG} not found`, startedAt, finishedAt: new Date().toISOString(), checks })
@@ -53,7 +56,8 @@ export async function run(report) {
     return { ok: false, error: 'Listing not ACTIVE', code: 'LISTING_NOT_ACTIVE' }
   }
 
-  checks.push({ check: 'listingLookup', status: 'PASS', detail: `Listing: ${listing.title}, status=${listing.status}, price=${listing.price}` })
+  const inventoryBefore = listing.inventory ?? null
+  checks.push({ check: 'listingLookup', status: 'PASS', detail: `Listing: ${listing.title}, status=${listing.status}, price=${listing.price}, inventory=${inventoryBefore}, city=${listing.city}, state=${listing.state}` })
 
   // 3. Check for existing QA transaction
   const existingTx = await prisma.mpTransaction.findFirst({
@@ -94,9 +98,16 @@ export async function run(report) {
             transactionId: record.id,
             toStatus: 'PENDING_PAYMENT',
             changedBy: buyer.id,
-            reason: 'S03G QA purchase initiation',
+            reason: 'S15 QA purchase initiation with inventory',
           },
         })
+        // S15: Decrement inventory on purchase
+        if (listing.hasInventory && listing.inventory != null && listing.inventory > 0) {
+          await txn.mpListing.update({
+            where: { id: listing.id },
+            data: { inventory: listing.inventory - 1 },
+          })
+        }
         return record
       })
       checks.push({ check: 'txCreate', status: 'PASS', detail: `TX created: ${transaction.id.slice(0, 8)}***, status=PENDING_PAYMENT` })
@@ -108,13 +119,28 @@ export async function run(report) {
     }
   }
 
-  // 4. Verify TX in DB
+  // 4. Verify TX in DB + inventory decrement
   const verify = await prisma.mpTransaction.findUnique({
     where: { id: transaction.id },
     select: { id: true, status: true, buyerId: true, sellerId: true, listingId: true, amount: true },
   })
   const txValid = verify && verify.status === 'PENDING_PAYMENT' && verify.buyerId === buyer.id
   checks.push({ check: 'txVerify', status: txValid ? 'PASS' : 'FAIL', detail: txValid ? `TX verified: status=${verify.status}` : 'TX verification failed' })
+
+  // S15: Verify inventory decrement
+  const listingAfter = await prisma.mpListing.findUnique({
+    where: { id: listing.id },
+    select: { inventory: true },
+  })
+  const expectedInventory = (inventoryBefore != null) ? inventoryBefore - 1 : null
+  const inventoryOk = expectedInventory === null || listingAfter?.inventory === expectedInventory
+  checks.push({
+    check: 'inventoryDecrement',
+    status: inventoryOk ? 'PASS' : 'FAIL',
+    detail: inventoryOk
+      ? `Inventory: ${inventoryBefore} -> ${listingAfter?.inventory} (decrement correct)`
+      : `Inventory mismatch: before=${inventoryBefore}, expected=${expectedInventory}, actual=${listingAfter?.inventory}`,
+  })
 
   await disconnectPrisma()
 

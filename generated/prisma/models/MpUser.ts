@@ -55,6 +55,8 @@ export type MpUserMinAggregateOutputType = {
   totalPurchases: number | null
   passwordHash: string | null
   role: $Enums.MpUserRole | null
+  city: string | null
+  state: string | null
   phone: string | null
   whatsappConsent: boolean | null
   whatsappConsentAt: Date | null
@@ -84,6 +86,8 @@ export type MpUserMaxAggregateOutputType = {
   totalPurchases: number | null
   passwordHash: string | null
   role: $Enums.MpUserRole | null
+  city: string | null
+  state: string | null
   phone: string | null
   whatsappConsent: boolean | null
   whatsappConsentAt: Date | null
@@ -113,6 +117,8 @@ export type MpUserCountAggregateOutputType = {
   totalPurchases: number
   passwordHash: number
   role: number
+  city: number
+  state: number
   phone: number
   whatsappConsent: number
   whatsappConsentAt: number
@@ -156,6 +162,8 @@ export type MpUserMinAggregateInputType = {
   totalPurchases?: true
   passwordHash?: true
   role?: true
+  city?: true
+  state?: true
   phone?: true
   whatsappConsent?: true
   whatsappConsentAt?: true
@@ -185,6 +193,8 @@ export type MpUserMaxAggregateInputType = {
   totalPurchases?: true
   passwordHash?: true
   role?: true
+  city?: true
+  state?: true
   phone?: true
   whatsappConsent?: true
   whatsappConsentAt?: true
@@ -214,6 +224,8 @@ export type MpUserCountAggregateInputType = {
   totalPurchases?: true
   passwordHash?: true
   role?: true
+  city?: true
+  state?: true
   phone?: true
   whatsappConsent?: true
   whatsappConsentAt?: true
@@ -330,6 +342,8 @@ export type MpUserGroupByOutputType = {
   totalPurchases: number
   passwordHash: string | null
   role: $Enums.MpUserRole
+  city: string | null
+  state: string | null
   phone: string | null
   whatsappConsent: boolean
   whatsappConsentAt: Date | null
@@ -382,6 +396,8 @@ export type MpUserWhereInput = {
   totalPurchases?: Prisma.IntFilter<"MpUser"> | number
   passwordHash?: Prisma.StringNullableFilter<"MpUser"> | string | null
   role?: Prisma.EnumMpUserRoleFilter<"MpUser"> | $Enums.MpUserRole
+  city?: Prisma.StringNullableFilter<"MpUser"> | string | null
+  state?: Prisma.StringNullableFilter<"MpUser"> | string | null
   phone?: Prisma.StringNullableFilter<"MpUser"> | string | null
   whatsappConsent?: Prisma.BoolFilter<"MpUser"> | boolean
   whatsappConsentAt?: Prisma.DateTimeNullableFilter<"MpUser"> | Date | string | null
@@ -423,6 +439,8 @@ export type MpUserOrderByWithRelationInput = {
   totalPurchases?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrderInput | Prisma.SortOrder
   role?: Prisma.SortOrder
+  city?: Prisma.SortOrderInput | Prisma.SortOrder
+  state?: Prisma.SortOrderInput | Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   whatsappConsent?: Prisma.SortOrder
   whatsappConsentAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -468,6 +486,8 @@ export type MpUserWhereUniqueInput = Prisma.AtLeast<{
   totalPurchases?: Prisma.IntFilter<"MpUser"> | number
   passwordHash?: Prisma.StringNullableFilter<"MpUser"> | string | null
   role?: Prisma.EnumMpUserRoleFilter<"MpUser"> | $Enums.MpUserRole
+  city?: Prisma.StringNullableFilter<"MpUser"> | string | null
+  state?: Prisma.StringNullableFilter<"MpUser"> | string | null
   phone?: Prisma.StringNullableFilter<"MpUser"> | string | null
   whatsappConsent?: Prisma.BoolFilter<"MpUser"> | boolean
   whatsappConsentAt?: Prisma.DateTimeNullableFilter<"MpUser"> | Date | string | null
@@ -508,6 +528,8 @@ export type MpUserOrderByWithAggregationInput = {
   totalPurchases?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrderInput | Prisma.SortOrder
   role?: Prisma.SortOrder
+  city?: Prisma.SortOrderInput | Prisma.SortOrder
+  state?: Prisma.SortOrderInput | Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   whatsappConsent?: Prisma.SortOrder
   whatsappConsentAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -545,6 +567,8 @@ export type MpUserScalarWhereWithAggregatesInput = {
   totalPurchases?: Prisma.IntWithAggregatesFilter<"MpUser"> | number
   passwordHash?: Prisma.StringNullableWithAggregatesFilter<"MpUser"> | string | null
   role?: Prisma.EnumMpUserRoleWithAggregatesFilter<"MpUser"> | $Enums.MpUserRole
+  city?: Prisma.StringNullableWithAggregatesFilter<"MpUser"> | string | null
+  state?: Prisma.StringNullableWithAggregatesFilter<"MpUser"> | string | null
   phone?: Prisma.StringNullableWithAggregatesFilter<"MpUser"> | string | null
   whatsappConsent?: Prisma.BoolWithAggregatesFilter<"MpUser"> | boolean
   whatsappConsentAt?: Prisma.DateTimeNullableWithAggregatesFilter<"MpUser"> | Date | string | null
@@ -574,6 +598,8 @@ export type MpUserCreateInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -615,6 +641,8 @@ export type MpUserUncheckedCreateInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -656,6 +684,8 @@ export type MpUserUpdateInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -697,6 +727,8 @@ export type MpUserUncheckedUpdateInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -738,6 +770,8 @@ export type MpUserCreateManyInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -767,6 +801,8 @@ export type MpUserUpdateManyMutationInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -796,6 +832,8 @@ export type MpUserUncheckedUpdateManyInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -825,6 +863,8 @@ export type MpUserCountOrderByAggregateInput = {
   totalPurchases?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  city?: Prisma.SortOrder
+  state?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   whatsappConsent?: Prisma.SortOrder
   whatsappConsentAt?: Prisma.SortOrder
@@ -860,6 +900,8 @@ export type MpUserMaxOrderByAggregateInput = {
   totalPurchases?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  city?: Prisma.SortOrder
+  state?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   whatsappConsent?: Prisma.SortOrder
   whatsappConsentAt?: Prisma.SortOrder
@@ -889,6 +931,8 @@ export type MpUserMinOrderByAggregateInput = {
   totalPurchases?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  city?: Prisma.SortOrder
+  state?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   whatsappConsent?: Prisma.SortOrder
   whatsappConsentAt?: Prisma.SortOrder
@@ -1135,6 +1179,8 @@ export type MpUserCreateWithoutPayoutMethodsInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1175,6 +1221,8 @@ export type MpUserUncheckedCreateWithoutPayoutMethodsInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1231,6 +1279,8 @@ export type MpUserUpdateWithoutPayoutMethodsInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1271,6 +1321,8 @@ export type MpUserUncheckedUpdateWithoutPayoutMethodsInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1311,6 +1363,8 @@ export type MpUserCreateWithoutListingsInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1351,6 +1405,8 @@ export type MpUserUncheckedCreateWithoutListingsInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1396,6 +1452,8 @@ export type MpUserCreateWithoutFavoriteListingsInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1436,6 +1494,8 @@ export type MpUserUncheckedCreateWithoutFavoriteListingsInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1492,6 +1552,8 @@ export type MpUserUpdateWithoutListingsInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1532,6 +1594,8 @@ export type MpUserUncheckedUpdateWithoutListingsInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1591,6 +1655,8 @@ export type MpUserScalarWhereInput = {
   totalPurchases?: Prisma.IntFilter<"MpUser"> | number
   passwordHash?: Prisma.StringNullableFilter<"MpUser"> | string | null
   role?: Prisma.EnumMpUserRoleFilter<"MpUser"> | $Enums.MpUserRole
+  city?: Prisma.StringNullableFilter<"MpUser"> | string | null
+  state?: Prisma.StringNullableFilter<"MpUser"> | string | null
   phone?: Prisma.StringNullableFilter<"MpUser"> | string | null
   whatsappConsent?: Prisma.BoolFilter<"MpUser"> | boolean
   whatsappConsentAt?: Prisma.DateTimeNullableFilter<"MpUser"> | Date | string | null
@@ -1620,6 +1686,8 @@ export type MpUserCreateWithoutAskedQuestionsInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1660,6 +1728,8 @@ export type MpUserUncheckedCreateWithoutAskedQuestionsInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1716,6 +1786,8 @@ export type MpUserUpdateWithoutAskedQuestionsInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1756,6 +1828,8 @@ export type MpUserUncheckedUpdateWithoutAskedQuestionsInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1796,6 +1870,8 @@ export type MpUserCreateWithoutChatThreadsAsBuyerInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1836,6 +1912,8 @@ export type MpUserUncheckedCreateWithoutChatThreadsAsBuyerInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1881,6 +1959,8 @@ export type MpUserCreateWithoutChatThreadsAsSellerInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1921,6 +2001,8 @@ export type MpUserUncheckedCreateWithoutChatThreadsAsSellerInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1977,6 +2059,8 @@ export type MpUserUpdateWithoutChatThreadsAsBuyerInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2017,6 +2101,8 @@ export type MpUserUncheckedUpdateWithoutChatThreadsAsBuyerInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2068,6 +2154,8 @@ export type MpUserUpdateWithoutChatThreadsAsSellerInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2108,6 +2196,8 @@ export type MpUserUncheckedUpdateWithoutChatThreadsAsSellerInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2148,6 +2238,8 @@ export type MpUserCreateWithoutSentMessagesInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2188,6 +2280,8 @@ export type MpUserUncheckedCreateWithoutSentMessagesInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2233,6 +2327,8 @@ export type MpUserCreateWithoutReceivedMessagesInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2273,6 +2369,8 @@ export type MpUserUncheckedCreateWithoutReceivedMessagesInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2329,6 +2427,8 @@ export type MpUserUpdateWithoutSentMessagesInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2369,6 +2469,8 @@ export type MpUserUncheckedUpdateWithoutSentMessagesInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2420,6 +2522,8 @@ export type MpUserUpdateWithoutReceivedMessagesInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2460,6 +2564,8 @@ export type MpUserUncheckedUpdateWithoutReceivedMessagesInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2500,6 +2606,8 @@ export type MpUserCreateWithoutBuyerTransactionsInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2540,6 +2648,8 @@ export type MpUserUncheckedCreateWithoutBuyerTransactionsInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2585,6 +2695,8 @@ export type MpUserCreateWithoutSellerTransactionsInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2625,6 +2737,8 @@ export type MpUserUncheckedCreateWithoutSellerTransactionsInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2681,6 +2795,8 @@ export type MpUserUpdateWithoutBuyerTransactionsInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2721,6 +2837,8 @@ export type MpUserUncheckedUpdateWithoutBuyerTransactionsInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2772,6 +2890,8 @@ export type MpUserUpdateWithoutSellerTransactionsInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2812,6 +2932,8 @@ export type MpUserUncheckedUpdateWithoutSellerTransactionsInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2852,6 +2974,8 @@ export type MpUserCreateWithoutDisputesInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2892,6 +3016,8 @@ export type MpUserUncheckedCreateWithoutDisputesInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2948,6 +3074,8 @@ export type MpUserUpdateWithoutDisputesInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2988,6 +3116,8 @@ export type MpUserUncheckedUpdateWithoutDisputesInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3028,6 +3158,8 @@ export type MpUserCreateWithoutMpPayoutsInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -3068,6 +3200,8 @@ export type MpUserUncheckedCreateWithoutMpPayoutsInput = {
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -3124,6 +3258,8 @@ export type MpUserUpdateWithoutMpPayoutsInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3164,6 +3300,8 @@ export type MpUserUncheckedUpdateWithoutMpPayoutsInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3204,6 +3342,8 @@ export type MpUserUpdateWithoutFavoriteListingsInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3244,6 +3384,8 @@ export type MpUserUncheckedUpdateWithoutFavoriteListingsInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3284,6 +3426,8 @@ export type MpUserUncheckedUpdateManyWithoutFavoriteListingsInput = {
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3443,6 +3587,8 @@ export type MpUserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   totalPurchases?: boolean
   passwordHash?: boolean
   role?: boolean
+  city?: boolean
+  state?: boolean
   phone?: boolean
   whatsappConsent?: boolean
   whatsappConsentAt?: boolean
@@ -3485,6 +3631,8 @@ export type MpUserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   totalPurchases?: boolean
   passwordHash?: boolean
   role?: boolean
+  city?: boolean
+  state?: boolean
   phone?: boolean
   whatsappConsent?: boolean
   whatsappConsentAt?: boolean
@@ -3514,6 +3662,8 @@ export type MpUserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   totalPurchases?: boolean
   passwordHash?: boolean
   role?: boolean
+  city?: boolean
+  state?: boolean
   phone?: boolean
   whatsappConsent?: boolean
   whatsappConsentAt?: boolean
@@ -3543,6 +3693,8 @@ export type MpUserSelectScalar = {
   totalPurchases?: boolean
   passwordHash?: boolean
   role?: boolean
+  city?: boolean
+  state?: boolean
   phone?: boolean
   whatsappConsent?: boolean
   whatsappConsentAt?: boolean
@@ -3555,7 +3707,7 @@ export type MpUserSelectScalar = {
   updatedAt?: boolean
 }
 
-export type MpUserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "emailVerified" | "emailVerifiedAt" | "displayName" | "bio" | "avatarUrl" | "isVerified" | "verifiedAt" | "verificationLevel" | "isSeller" | "sellerRating" | "totalSales" | "totalPurchases" | "passwordHash" | "role" | "phone" | "whatsappConsent" | "whatsappConsentAt" | "passwordResetToken" | "passwordResetTokenExpiresAt" | "isBanned" | "bannedAt" | "bannedReason" | "createdAt" | "updatedAt", ExtArgs["result"]["mpUser"]>
+export type MpUserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "emailVerified" | "emailVerifiedAt" | "displayName" | "bio" | "avatarUrl" | "isVerified" | "verifiedAt" | "verificationLevel" | "isSeller" | "sellerRating" | "totalSales" | "totalPurchases" | "passwordHash" | "role" | "city" | "state" | "phone" | "whatsappConsent" | "whatsappConsentAt" | "passwordResetToken" | "passwordResetTokenExpiresAt" | "isBanned" | "bannedAt" | "bannedReason" | "createdAt" | "updatedAt", ExtArgs["result"]["mpUser"]>
 export type MpUserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   listings?: boolean | Prisma.MpUser$listingsArgs<ExtArgs>
   payoutMethods?: boolean | Prisma.MpUser$payoutMethodsArgs<ExtArgs>
@@ -3607,6 +3759,8 @@ export type $MpUserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     totalPurchases: number
     passwordHash: string | null
     role: $Enums.MpUserRole
+    city: string | null
+    state: string | null
     phone: string | null
     whatsappConsent: boolean
     whatsappConsentAt: Date | null
@@ -4068,6 +4222,8 @@ export interface MpUserFieldRefs {
   readonly totalPurchases: Prisma.FieldRef<"MpUser", 'Int'>
   readonly passwordHash: Prisma.FieldRef<"MpUser", 'String'>
   readonly role: Prisma.FieldRef<"MpUser", 'MpUserRole'>
+  readonly city: Prisma.FieldRef<"MpUser", 'String'>
+  readonly state: Prisma.FieldRef<"MpUser", 'String'>
   readonly phone: Prisma.FieldRef<"MpUser", 'String'>
   readonly whatsappConsent: Prisma.FieldRef<"MpUser", 'Boolean'>
   readonly whatsappConsentAt: Prisma.FieldRef<"MpUser", 'DateTime'>

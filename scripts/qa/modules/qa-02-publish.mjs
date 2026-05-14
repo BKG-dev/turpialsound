@@ -14,6 +14,10 @@ const QA_LISTING = {
   tags: ['qa', 's03f', 'discovery', 'selleria'],
   price: '125.00',
   currency: 'USD',
+  // S15 Location fields
+  city: 'Caracas',
+  state: 'Distrito Capital',
+  isLocationPublic: true,
 }
 
 export async function run(report) {
@@ -105,12 +109,15 @@ export async function run(report) {
           currency: QA_LISTING.currency,
           coverImageUrl: null,
           mediaUrls: [],
-          hasInventory: false,
-          inventory: null,
+          hasInventory: true,
+          inventory: 10,
+          city: QA_LISTING.city,
+          state: QA_LISTING.state,
+          isLocationPublic: QA_LISTING.isLocationPublic,
           status: 'ACTIVE',
           publishedAt: new Date(),
         },
-        select: { id: true, slug: true, status: true, title: true, price: true, category: true },
+        select: { id: true, slug: true, status: true, title: true, price: true, category: true, inventory: true, city: true, state: true, isLocationPublic: true },
       })
       listingAction = 'updated'
     } else {
@@ -125,21 +132,24 @@ export async function run(report) {
           currency: QA_LISTING.currency,
           coverImageUrl: null,
           mediaUrls: [],
-          hasInventory: false,
-          inventory: null,
+          hasInventory: true,
+          inventory: 10,
+          city: QA_LISTING.city,
+          state: QA_LISTING.state,
+          isLocationPublic: QA_LISTING.isLocationPublic,
           slug: QA_LISTING.slug,
           status: 'ACTIVE',
           publishedAt: new Date(),
         },
-        select: { id: true, slug: true, status: true, title: true, price: true, category: true },
+        select: { id: true, slug: true, status: true, title: true, price: true, category: true, inventory: true, city: true, state: true, isLocationPublic: true },
       })
     }
 
     checks.push({
       check: 'listingCreate',
       status: 'PASS',
-      detail: `Listing ${listingAction}: slug=${listing.slug}, status=${listing.status}, price=${listing.price}`,
-      listing: { id: listing.id, slug: listing.slug, status: listing.status, title: listing.title },
+      detail: `Listing ${listingAction}: slug=${listing.slug}, status=${listing.status}, price=${listing.price}, inventory=${listing.inventory}, city=${listing.city}, state=${listing.state}, locationPublic=${listing.isLocationPublic}`,
+      listing: { id: listing.id, slug: listing.slug, status: listing.status, title: listing.title, inventory: listing.inventory, city: listing.city, state: listing.state },
     })
   } catch (error) {
     checks.push({
@@ -158,13 +168,16 @@ export async function run(report) {
     return { ok: false, error: error.message, code: FailureCode.LISTING_CREATE_FAILED }
   }
 
-  // ── 3. Verify listing is ACTIVE in DB ─────────────────────────────────────
+  // ── 3. Verify listing is ACTIVE in DB with location fields ─────────────────
   const verify = await prisma.mpListing.findUnique({
     where: { id: listing.id },
-    select: { id: true, slug: true, status: true, sellerId: true },
+    select: { id: true, slug: true, status: true, sellerId: true, inventory: true, city: true, state: true, isLocationPublic: true },
   })
 
   const isActive = verify && verify.status === 'ACTIVE' && verify.sellerId === seller.id
+  const locationOk = verify && verify.city === QA_LISTING.city && verify.state === QA_LISTING.state && verify.isLocationPublic === true
+  const inventoryOk = verify && verify.hasInventory !== false && verify.inventory > 0
+
   checks.push({
     check: 'listingVerify',
     status: isActive ? 'PASS' : 'FAIL',
@@ -173,6 +186,20 @@ export async function run(report) {
       : verify
         ? `Status=${verify.status}, sellerId mismatch`
         : 'Listing not found after create/update',
+  })
+  checks.push({
+    check: 'locationFields',
+    status: locationOk ? 'PASS' : 'FAIL',
+    detail: locationOk
+      ? `Location: city=${verify.city}, state=${verify.state}, isPublic=${verify.isLocationPublic}`
+      : `Location mismatch: expected city=${QA_LISTING.city} state=${QA_LISTING.state}, got city=${verify?.city} state=${verify?.state}`,
+  })
+  checks.push({
+    check: 'inventorySetup',
+    status: inventoryOk ? 'PASS' : 'FAIL',
+    detail: inventoryOk
+      ? `Inventory: hasInventory=true, stock=${verify.inventory}`
+      : `Inventory setup failed: stock=${verify?.inventory}`,
   })
 
   await disconnectPrisma()

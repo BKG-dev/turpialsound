@@ -52,6 +52,9 @@ export type MpListingMinAggregateOutputType = {
   hasInventory: boolean | null
   inventory: number | null
   status: $Enums.MpListingStatus | null
+  city: string | null
+  state: string | null
+  isLocationPublic: boolean | null
   slug: string | null
   viewCount: number | null
   favoriteCount: number | null
@@ -72,6 +75,9 @@ export type MpListingMaxAggregateOutputType = {
   hasInventory: boolean | null
   inventory: number | null
   status: $Enums.MpListingStatus | null
+  city: string | null
+  state: string | null
+  isLocationPublic: boolean | null
   slug: string | null
   viewCount: number | null
   favoriteCount: number | null
@@ -94,6 +100,9 @@ export type MpListingCountAggregateOutputType = {
   hasInventory: number
   inventory: number
   status: number
+  city: number
+  state: number
+  isLocationPublic: number
   slug: number
   viewCount: number
   favoriteCount: number
@@ -130,6 +139,9 @@ export type MpListingMinAggregateInputType = {
   hasInventory?: true
   inventory?: true
   status?: true
+  city?: true
+  state?: true
+  isLocationPublic?: true
   slug?: true
   viewCount?: true
   favoriteCount?: true
@@ -150,6 +162,9 @@ export type MpListingMaxAggregateInputType = {
   hasInventory?: true
   inventory?: true
   status?: true
+  city?: true
+  state?: true
+  isLocationPublic?: true
   slug?: true
   viewCount?: true
   favoriteCount?: true
@@ -172,6 +187,9 @@ export type MpListingCountAggregateInputType = {
   hasInventory?: true
   inventory?: true
   status?: true
+  city?: true
+  state?: true
+  isLocationPublic?: true
   slug?: true
   viewCount?: true
   favoriteCount?: true
@@ -281,6 +299,9 @@ export type MpListingGroupByOutputType = {
   hasInventory: boolean
   inventory: number | null
   status: $Enums.MpListingStatus
+  city: string | null
+  state: string | null
+  isLocationPublic: boolean
   slug: string
   viewCount: number
   favoriteCount: number
@@ -326,6 +347,9 @@ export type MpListingWhereInput = {
   hasInventory?: Prisma.BoolFilter<"MpListing"> | boolean
   inventory?: Prisma.IntNullableFilter<"MpListing"> | number | null
   status?: Prisma.EnumMpListingStatusFilter<"MpListing"> | $Enums.MpListingStatus
+  city?: Prisma.StringNullableFilter<"MpListing"> | string | null
+  state?: Prisma.StringNullableFilter<"MpListing"> | string | null
+  isLocationPublic?: Prisma.BoolFilter<"MpListing"> | boolean
   slug?: Prisma.StringFilter<"MpListing"> | string
   viewCount?: Prisma.IntFilter<"MpListing"> | number
   favoriteCount?: Prisma.IntFilter<"MpListing"> | number
@@ -352,6 +376,9 @@ export type MpListingOrderByWithRelationInput = {
   hasInventory?: Prisma.SortOrder
   inventory?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
+  city?: Prisma.SortOrderInput | Prisma.SortOrder
+  state?: Prisma.SortOrderInput | Prisma.SortOrder
+  isLocationPublic?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   viewCount?: Prisma.SortOrder
   favoriteCount?: Prisma.SortOrder
@@ -382,6 +409,9 @@ export type MpListingWhereUniqueInput = Prisma.AtLeast<{
   hasInventory?: Prisma.BoolFilter<"MpListing"> | boolean
   inventory?: Prisma.IntNullableFilter<"MpListing"> | number | null
   status?: Prisma.EnumMpListingStatusFilter<"MpListing"> | $Enums.MpListingStatus
+  city?: Prisma.StringNullableFilter<"MpListing"> | string | null
+  state?: Prisma.StringNullableFilter<"MpListing"> | string | null
+  isLocationPublic?: Prisma.BoolFilter<"MpListing"> | boolean
   viewCount?: Prisma.IntFilter<"MpListing"> | number
   favoriteCount?: Prisma.IntFilter<"MpListing"> | number
   createdAt?: Prisma.DateTimeFilter<"MpListing"> | Date | string
@@ -407,6 +437,9 @@ export type MpListingOrderByWithAggregationInput = {
   hasInventory?: Prisma.SortOrder
   inventory?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
+  city?: Prisma.SortOrderInput | Prisma.SortOrder
+  state?: Prisma.SortOrderInput | Prisma.SortOrder
+  isLocationPublic?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   viewCount?: Prisma.SortOrder
   favoriteCount?: Prisma.SortOrder
@@ -437,6 +470,9 @@ export type MpListingScalarWhereWithAggregatesInput = {
   hasInventory?: Prisma.BoolWithAggregatesFilter<"MpListing"> | boolean
   inventory?: Prisma.IntNullableWithAggregatesFilter<"MpListing"> | number | null
   status?: Prisma.EnumMpListingStatusWithAggregatesFilter<"MpListing"> | $Enums.MpListingStatus
+  city?: Prisma.StringNullableWithAggregatesFilter<"MpListing"> | string | null
+  state?: Prisma.StringNullableWithAggregatesFilter<"MpListing"> | string | null
+  isLocationPublic?: Prisma.BoolWithAggregatesFilter<"MpListing"> | boolean
   slug?: Prisma.StringWithAggregatesFilter<"MpListing"> | string
   viewCount?: Prisma.IntWithAggregatesFilter<"MpListing"> | number
   favoriteCount?: Prisma.IntWithAggregatesFilter<"MpListing"> | number
@@ -458,6 +494,9 @@ export type MpListingCreateInput = {
   hasInventory?: boolean
   inventory?: number | null
   status?: $Enums.MpListingStatus
+  city?: string | null
+  state?: string | null
+  isLocationPublic?: boolean
   slug: string
   viewCount?: number
   favoriteCount?: number
@@ -484,6 +523,9 @@ export type MpListingUncheckedCreateInput = {
   hasInventory?: boolean
   inventory?: number | null
   status?: $Enums.MpListingStatus
+  city?: string | null
+  state?: string | null
+  isLocationPublic?: boolean
   slug: string
   viewCount?: number
   favoriteCount?: number
@@ -508,6 +550,9 @@ export type MpListingUpdateInput = {
   hasInventory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inventory?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumMpListingStatusFieldUpdateOperationsInput | $Enums.MpListingStatus
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isLocationPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   favoriteCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -534,6 +579,9 @@ export type MpListingUncheckedUpdateInput = {
   hasInventory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inventory?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumMpListingStatusFieldUpdateOperationsInput | $Enums.MpListingStatus
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isLocationPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   favoriteCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -559,6 +607,9 @@ export type MpListingCreateManyInput = {
   hasInventory?: boolean
   inventory?: number | null
   status?: $Enums.MpListingStatus
+  city?: string | null
+  state?: string | null
+  isLocationPublic?: boolean
   slug: string
   viewCount?: number
   favoriteCount?: number
@@ -580,6 +631,9 @@ export type MpListingUpdateManyMutationInput = {
   hasInventory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inventory?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumMpListingStatusFieldUpdateOperationsInput | $Enums.MpListingStatus
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isLocationPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   favoriteCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -602,6 +656,9 @@ export type MpListingUncheckedUpdateManyInput = {
   hasInventory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inventory?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumMpListingStatusFieldUpdateOperationsInput | $Enums.MpListingStatus
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isLocationPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   favoriteCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -642,6 +699,9 @@ export type MpListingCountOrderByAggregateInput = {
   hasInventory?: Prisma.SortOrder
   inventory?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  city?: Prisma.SortOrder
+  state?: Prisma.SortOrder
+  isLocationPublic?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   viewCount?: Prisma.SortOrder
   favoriteCount?: Prisma.SortOrder
@@ -669,6 +729,9 @@ export type MpListingMaxOrderByAggregateInput = {
   hasInventory?: Prisma.SortOrder
   inventory?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  city?: Prisma.SortOrder
+  state?: Prisma.SortOrder
+  isLocationPublic?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   viewCount?: Prisma.SortOrder
   favoriteCount?: Prisma.SortOrder
@@ -689,6 +752,9 @@ export type MpListingMinOrderByAggregateInput = {
   hasInventory?: Prisma.SortOrder
   inventory?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  city?: Prisma.SortOrder
+  state?: Prisma.SortOrder
+  isLocationPublic?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   viewCount?: Prisma.SortOrder
   favoriteCount?: Prisma.SortOrder
@@ -868,6 +934,9 @@ export type MpListingCreateWithoutSellerInput = {
   hasInventory?: boolean
   inventory?: number | null
   status?: $Enums.MpListingStatus
+  city?: string | null
+  state?: string | null
+  isLocationPublic?: boolean
   slug: string
   viewCount?: number
   favoriteCount?: number
@@ -892,6 +961,9 @@ export type MpListingUncheckedCreateWithoutSellerInput = {
   hasInventory?: boolean
   inventory?: number | null
   status?: $Enums.MpListingStatus
+  city?: string | null
+  state?: string | null
+  isLocationPublic?: boolean
   slug: string
   viewCount?: number
   favoriteCount?: number
@@ -926,6 +998,9 @@ export type MpListingCreateWithoutFavoritedByInput = {
   hasInventory?: boolean
   inventory?: number | null
   status?: $Enums.MpListingStatus
+  city?: string | null
+  state?: string | null
+  isLocationPublic?: boolean
   slug: string
   viewCount?: number
   favoriteCount?: number
@@ -951,6 +1026,9 @@ export type MpListingUncheckedCreateWithoutFavoritedByInput = {
   hasInventory?: boolean
   inventory?: number | null
   status?: $Enums.MpListingStatus
+  city?: string | null
+  state?: string | null
+  isLocationPublic?: boolean
   slug: string
   viewCount?: number
   favoriteCount?: number
@@ -999,6 +1077,9 @@ export type MpListingScalarWhereInput = {
   hasInventory?: Prisma.BoolFilter<"MpListing"> | boolean
   inventory?: Prisma.IntNullableFilter<"MpListing"> | number | null
   status?: Prisma.EnumMpListingStatusFilter<"MpListing"> | $Enums.MpListingStatus
+  city?: Prisma.StringNullableFilter<"MpListing"> | string | null
+  state?: Prisma.StringNullableFilter<"MpListing"> | string | null
+  isLocationPublic?: Prisma.BoolFilter<"MpListing"> | boolean
   slug?: Prisma.StringFilter<"MpListing"> | string
   viewCount?: Prisma.IntFilter<"MpListing"> | number
   favoriteCount?: Prisma.IntFilter<"MpListing"> | number
@@ -1036,6 +1117,9 @@ export type MpListingCreateWithoutQuestionsInput = {
   hasInventory?: boolean
   inventory?: number | null
   status?: $Enums.MpListingStatus
+  city?: string | null
+  state?: string | null
+  isLocationPublic?: boolean
   slug: string
   viewCount?: number
   favoriteCount?: number
@@ -1061,6 +1145,9 @@ export type MpListingUncheckedCreateWithoutQuestionsInput = {
   hasInventory?: boolean
   inventory?: number | null
   status?: $Enums.MpListingStatus
+  city?: string | null
+  state?: string | null
+  isLocationPublic?: boolean
   slug: string
   viewCount?: number
   favoriteCount?: number
@@ -1100,6 +1187,9 @@ export type MpListingUpdateWithoutQuestionsInput = {
   hasInventory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inventory?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumMpListingStatusFieldUpdateOperationsInput | $Enums.MpListingStatus
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isLocationPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   favoriteCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1125,6 +1215,9 @@ export type MpListingUncheckedUpdateWithoutQuestionsInput = {
   hasInventory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inventory?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumMpListingStatusFieldUpdateOperationsInput | $Enums.MpListingStatus
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isLocationPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   favoriteCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1148,6 +1241,9 @@ export type MpListingCreateWithoutTransactionsInput = {
   hasInventory?: boolean
   inventory?: number | null
   status?: $Enums.MpListingStatus
+  city?: string | null
+  state?: string | null
+  isLocationPublic?: boolean
   slug: string
   viewCount?: number
   favoriteCount?: number
@@ -1173,6 +1269,9 @@ export type MpListingUncheckedCreateWithoutTransactionsInput = {
   hasInventory?: boolean
   inventory?: number | null
   status?: $Enums.MpListingStatus
+  city?: string | null
+  state?: string | null
+  isLocationPublic?: boolean
   slug: string
   viewCount?: number
   favoriteCount?: number
@@ -1212,6 +1311,9 @@ export type MpListingUpdateWithoutTransactionsInput = {
   hasInventory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inventory?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumMpListingStatusFieldUpdateOperationsInput | $Enums.MpListingStatus
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isLocationPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   favoriteCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1237,6 +1339,9 @@ export type MpListingUncheckedUpdateWithoutTransactionsInput = {
   hasInventory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inventory?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumMpListingStatusFieldUpdateOperationsInput | $Enums.MpListingStatus
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isLocationPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   favoriteCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1260,6 +1365,9 @@ export type MpListingCreateManySellerInput = {
   hasInventory?: boolean
   inventory?: number | null
   status?: $Enums.MpListingStatus
+  city?: string | null
+  state?: string | null
+  isLocationPublic?: boolean
   slug: string
   viewCount?: number
   favoriteCount?: number
@@ -1281,6 +1389,9 @@ export type MpListingUpdateWithoutSellerInput = {
   hasInventory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inventory?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumMpListingStatusFieldUpdateOperationsInput | $Enums.MpListingStatus
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isLocationPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   favoriteCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1305,6 +1416,9 @@ export type MpListingUncheckedUpdateWithoutSellerInput = {
   hasInventory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inventory?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumMpListingStatusFieldUpdateOperationsInput | $Enums.MpListingStatus
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isLocationPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   favoriteCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1329,6 +1443,9 @@ export type MpListingUncheckedUpdateManyWithoutSellerInput = {
   hasInventory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inventory?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumMpListingStatusFieldUpdateOperationsInput | $Enums.MpListingStatus
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isLocationPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   favoriteCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1350,6 +1467,9 @@ export type MpListingUpdateWithoutFavoritedByInput = {
   hasInventory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inventory?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumMpListingStatusFieldUpdateOperationsInput | $Enums.MpListingStatus
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isLocationPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   favoriteCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1375,6 +1495,9 @@ export type MpListingUncheckedUpdateWithoutFavoritedByInput = {
   hasInventory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inventory?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumMpListingStatusFieldUpdateOperationsInput | $Enums.MpListingStatus
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isLocationPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   favoriteCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1399,6 +1522,9 @@ export type MpListingUncheckedUpdateManyWithoutFavoritedByInput = {
   hasInventory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inventory?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   status?: Prisma.EnumMpListingStatusFieldUpdateOperationsInput | $Enums.MpListingStatus
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isLocationPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   viewCount?: Prisma.IntFieldUpdateOperationsInput | number
   favoriteCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1470,6 +1596,9 @@ export type MpListingSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   hasInventory?: boolean
   inventory?: boolean
   status?: boolean
+  city?: boolean
+  state?: boolean
+  isLocationPublic?: boolean
   slug?: boolean
   viewCount?: boolean
   favoriteCount?: boolean
@@ -1497,6 +1626,9 @@ export type MpListingSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   hasInventory?: boolean
   inventory?: boolean
   status?: boolean
+  city?: boolean
+  state?: boolean
+  isLocationPublic?: boolean
   slug?: boolean
   viewCount?: boolean
   favoriteCount?: boolean
@@ -1520,6 +1652,9 @@ export type MpListingSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   hasInventory?: boolean
   inventory?: boolean
   status?: boolean
+  city?: boolean
+  state?: boolean
+  isLocationPublic?: boolean
   slug?: boolean
   viewCount?: boolean
   favoriteCount?: boolean
@@ -1543,6 +1678,9 @@ export type MpListingSelectScalar = {
   hasInventory?: boolean
   inventory?: boolean
   status?: boolean
+  city?: boolean
+  state?: boolean
+  isLocationPublic?: boolean
   slug?: boolean
   viewCount?: boolean
   favoriteCount?: boolean
@@ -1551,7 +1689,7 @@ export type MpListingSelectScalar = {
   publishedAt?: boolean
 }
 
-export type MpListingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sellerId" | "title" | "description" | "category" | "tags" | "price" | "currency" | "coverImageUrl" | "mediaUrls" | "hasInventory" | "inventory" | "status" | "slug" | "viewCount" | "favoriteCount" | "createdAt" | "updatedAt" | "publishedAt", ExtArgs["result"]["mpListing"]>
+export type MpListingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sellerId" | "title" | "description" | "category" | "tags" | "price" | "currency" | "coverImageUrl" | "mediaUrls" | "hasInventory" | "inventory" | "status" | "city" | "state" | "isLocationPublic" | "slug" | "viewCount" | "favoriteCount" | "createdAt" | "updatedAt" | "publishedAt", ExtArgs["result"]["mpListing"]>
 export type MpListingInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   seller?: boolean | Prisma.MpUserDefaultArgs<ExtArgs>
   transactions?: boolean | Prisma.MpListing$transactionsArgs<ExtArgs>
@@ -1588,6 +1726,9 @@ export type $MpListingPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     hasInventory: boolean
     inventory: number | null
     status: $Enums.MpListingStatus
+    city: string | null
+    state: string | null
+    isLocationPublic: boolean
     slug: string
     viewCount: number
     favoriteCount: number
@@ -2034,6 +2175,9 @@ export interface MpListingFieldRefs {
   readonly hasInventory: Prisma.FieldRef<"MpListing", 'Boolean'>
   readonly inventory: Prisma.FieldRef<"MpListing", 'Int'>
   readonly status: Prisma.FieldRef<"MpListing", 'MpListingStatus'>
+  readonly city: Prisma.FieldRef<"MpListing", 'String'>
+  readonly state: Prisma.FieldRef<"MpListing", 'String'>
+  readonly isLocationPublic: Prisma.FieldRef<"MpListing", 'Boolean'>
   readonly slug: Prisma.FieldRef<"MpListing", 'String'>
   readonly viewCount: Prisma.FieldRef<"MpListing", 'Int'>
   readonly favoriteCount: Prisma.FieldRef<"MpListing", 'Int'>
