@@ -23,26 +23,43 @@ export async function GET(request: Request) {
   const status = searchParams.get('status') || 'all'
 
   try {
-    const payoutWhere: Record<string, unknown> = {}
-    if (status !== 'all') payoutWhere.status = status.toUpperCase()
-
-    const payouts = await db.mpPayout.findMany({
-      where: payoutWhere as any,
-      orderBy: { completedAt: 'desc' },
-      include: {
-        seller: {
-          select: {
-            id: true,
-            displayName: true,
-            email: true,
-            phone: true,
-            sellerRating: true,
-            reviewCount: true,
-            totalSales: true,
+    let payouts
+    if (status !== 'all') {
+      payouts = await db.mpPayout.findMany({
+        where: { status: status.toUpperCase() },
+        orderBy: { completedAt: 'desc' },
+        include: {
+          seller: {
+            select: {
+              id: true,
+              displayName: true,
+              email: true,
+              phone: true,
+              sellerRating: true,
+              reviewCount: true,
+              totalSales: true,
+            },
           },
         },
-      },
-    })
+      })
+    } else {
+      payouts = await db.mpPayout.findMany({
+        orderBy: { completedAt: 'desc' },
+        include: {
+          seller: {
+            select: {
+              id: true,
+              displayName: true,
+              email: true,
+              phone: true,
+              sellerRating: true,
+              reviewCount: true,
+              totalSales: true,
+            },
+          },
+        },
+      })
+    }
 
     // Enrich with transaction data and payout method
     const enriched = await Promise.all(
