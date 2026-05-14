@@ -181,7 +181,7 @@ Codigo correcto + DB incorrecta = UI vacia.
 | S18 | Full regression browser | 👤 Manuel | ✅ CERRADO 2026-05-14 |
 | S19 | Performance + load | 👤 Jean | 🟡 PARCIAL (LCP/a11y) |
 | S20 | SEO/AEO audit completo | 👤 Manuel | ✅ CERRADO 2026-05-14 |
-| S21 | Production release gate | 👤 Jean | 🔴 PENDIENTE |
+| S-REV-01 | Ratings, reviews + Full E2E | 👤 Manuel | ✅ CERRADO 2026-05-14 |
 
 ### 🟩 TRACK 2: Booking
 
