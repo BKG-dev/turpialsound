@@ -682,6 +682,31 @@ function SellFlow({
               </select>
             </div>
 
+            {/* S15 Location */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs text-[#a0a0a0]">Estado</label>
+                <input type="text" value={formValues.state ?? ''} onChange={e => onFieldChange('state', e.target.value)}
+                  placeholder="Ej: Distrito Capital"
+                  className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[var(--mp-text-faint)] outline-none"
+                  style={fieldInputStyle('state', fieldErrors)}
+                  onFocus={onFocus('state')} onBlur={onBlur('state')} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs text-[#a0a0a0]">Ciudad</label>
+                <input type="text" value={formValues.city ?? ''} onChange={e => onFieldChange('city', e.target.value)}
+                  placeholder="Ej: Caracas"
+                  className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[var(--mp-text-faint)] outline-none"
+                  style={fieldInputStyle('city', fieldErrors)}
+                  onFocus={onFocus('city')} onBlur={onBlur('city')} />
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-xs text-[#a0a0a0] cursor-pointer">
+              <input type="checkbox" checked={formValues.isLocationPublic !== 'false'} onChange={e => onFieldChange('isLocationPublic', e.target.checked ? 'true' : 'false')}
+                className="rounded accent-[var(--mp-accent)]" />
+              Ubicacion visible en el listing
+            </label>
+
             {/* Image upload */}
             <div className="space-y-2">
               <label className="text-xs text-[#a0a0a0]">
@@ -1059,7 +1084,11 @@ export function MarketplaceModals({
         tags: [],
         price: parseFloat(rawPrice) || 0,
         currency: 'USD',
-        hasInventory: false,
+        hasInventory: formValues.hasInventory === 'true',
+        inventory: formValues.inventory ? parseInt(formValues.inventory) : undefined,
+        city: formValues.city || undefined,
+        state: formValues.state || undefined,
+        isLocationPublic: formValues.isLocationPublic !== 'false',
         coverImageUrl: uploadedImageUrls[0],
         mediaUrls: uploadedImageUrls.slice(1),
       })

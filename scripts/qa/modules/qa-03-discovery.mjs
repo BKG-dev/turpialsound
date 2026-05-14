@@ -75,12 +75,15 @@ async function checkViaDb(slug) {
     const exact = listings.find(l => l.slug === slug)
 
     if (exact) {
+      const locationOk = exact.city && exact.state
       return {
         check: 'dbDiscovery',
         status: 'PASS',
         detail: `DATA_DISCOVERY_PASS: ${listings.length} active listing(s) found for slug pattern '${slug}'`,
-        exactMatch: { id: exact.id, slug: exact.slug, status: exact.status, title: exact.title, category: exact.category },
+        exactMatch: { id: exact.id, slug: exact.slug, status: exact.status, title: exact.title, category: exact.category, city: exact.city, state: exact.state, isLocationPublic: exact.isLocationPublic, inventory: exact.inventory },
         totalActive: listings.length,
+        locationOk,
+        locationDetail: locationOk ? `Location: ${exact.city}, ${exact.state}` : 'Location fields missing/empty',
       }
     }
 
