@@ -844,10 +844,19 @@ export async function adminUnbanUser(userId: string): Promise<ActionResult> {
 export async function adminSetUserRole(
   userId: string,
   role: 'USER' | 'SOCIO' | 'SUPER',
+  confirmPassword?: string,
 ): Promise<ActionResult> {
   try {
     const session = await requireSuper()
     if (userId === session.userId) return { success: false, message: 'No puedes cambiar tu propio rol' }
+
+    // Require password confirmation for elevation to SUPER
+    if (role === 'SUPER') {
+      const requiredPass = process.env.SUPER_ADMIN_ELEVATION_PASS
+      if (requiredPass && confirmPassword !== requiredPass) {
+        return { success: false, message: 'Contrasena de elevacion incorrecta. Requerida para asignar rol SUPER.' }
+      }
+    }
 
     const db = await getDb()
     if (!db) return { success: false, message: 'Base de datos no disponible' }

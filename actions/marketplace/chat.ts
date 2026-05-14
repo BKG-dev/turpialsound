@@ -114,10 +114,10 @@ export async function sendMessage(
         ])
         if (receiver?.whatsappConsent && receiver.phone) {
           await sendWhatsAppNotification(
-            receiver.phone,
-            sender?.displayName ?? 'Turpial Market',
-            content.trim(),
-          )
+          receiver.phone,
+          'new_message',
+          { senderName: sender?.displayName ?? 'Turpial Market', preview: content.trim() },
+        )
         }
       } catch { /* silently ignore */ }
     })()

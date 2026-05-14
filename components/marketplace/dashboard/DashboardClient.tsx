@@ -259,11 +259,11 @@ function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
     },
     PAYMENT_RECEIVED: {
       buyer: 'Estamos validando tu pago. Te avisaremos cuando avance.',
-      seller: 'El comprador ya reporto el pago. La revision manual esta en curso y te notificaremos cuando la operacion avance.',
+      seller: 'El comprador ya reporto el pago. Estamos verificando y te notificaremos cuando la operacion avance.',
     },
     VALIDATING: {
       buyer: 'Estamos validando tu pago. Te avisaremos cuando avance.',
-      seller: 'La revision manual sigue en curso. Te notificaremos cuando el pago quede conciliado.',
+      seller: 'El pago esta siendo verificado. Te notificaremos cuando quede conciliado.',
     },
     IN_ESCROW: {
       buyer: 'Los fondos estan protegidos. Coordina la entrega con el vendedor.',
@@ -274,8 +274,8 @@ function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
       seller: 'El comprador confirmo recepcion. El pago al vendedor queda pendiente de liberacion admin.',
     },
     RELEASED: {
-      buyer: 'La operacion esta en cola de pago al vendedor. El equipo procesara el pago manual en breve.',
-      seller: 'El pago esta pendiente de ser enviado por el equipo. Asegurate de tener tus datos de cobro actualizados.',
+      buyer: 'La operacion esta completa. El vendedor recibira su pago.',
+      seller: 'El pago esta siendo procesado por el equipo. Asegurate de tener tus datos de cobro actualizados.',
     },
     DISPUTED: {
       buyer: 'La operacion esta en revision. No se liberaran fondos hasta resolverla.',
