@@ -72,9 +72,7 @@ export default function HomePage() {
       />
 
       {/* ── HERO — cinematic, full-screen ─────────────────────────────── */}
-      <HeroSection
-        videoSrc="/video/turpial-sound-studio.webm"
-      />
+      <HeroSection showStudioLink />
 
       {/* ── STATS BAR ─────────────────────────────────────────────────── */}
       <StatsBar />

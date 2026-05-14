@@ -1,11 +1,12 @@
 import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
+import { HeroCinematicLayer } from '@/components/home/HeroCinematicLayer'
 
 interface HeroSectionProps {
-  videoSrc?: string
+  showStudioLink?: boolean
 }
 
-export function HeroSection({ videoSrc }: HeroSectionProps) {
+export function HeroSection({ showStudioLink = true }: HeroSectionProps) {
   return (
     <section
       className="relative flex min-h-screen min-h-[100dvh] snap-start items-center overflow-hidden -mt-16 pt-0"
@@ -19,6 +20,7 @@ export function HeroSection({ videoSrc }: HeroSectionProps) {
         quality={70}
         className="object-cover object-center opacity-55"
       />
+      <HeroCinematicLayer />
 
       <div
         className="pointer-events-none absolute inset-0"
@@ -72,7 +74,7 @@ export function HeroSection({ videoSrc }: HeroSectionProps) {
             <Button as="link" href="/servicios" variant="glow-cyan" size="lg">
               Ver servicios
             </Button>
-            {videoSrc ? (
+            {showStudioLink ? (
               <a
                 href="#video-estudio"
                 className="font-display text-xs tracking-[0.2em] uppercase text-text-secondary transition-opacity hover:opacity-80"
