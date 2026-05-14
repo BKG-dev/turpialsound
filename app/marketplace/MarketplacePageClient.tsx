@@ -234,6 +234,8 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
   const [priceMax, setPriceMax] = useState('')
   const [hideUnavailable, setHideUnavailable] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [filterCity, setFilterCity] = useState('')
+  const [filterState, setFilterState] = useState('')
 
   // Auth & Session from global context
   const {
@@ -421,8 +423,20 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
       if (!isAvailable) return false
     }
 
+    // S15: Location filters
+    if (filterState.trim()) {
+      const state = filterState.trim().toLowerCase()
+      const listingState = ((l as any).state ?? '').toString().toLowerCase()
+      if (!listingState.includes(state)) return false
+    }
+    if (filterCity.trim()) {
+      const city = filterCity.trim().toLowerCase()
+      const listingCity = ((l as any).city ?? '').toString().toLowerCase()
+      if (!listingCity.includes(city)) return false
+    }
+
     return true
-  }, [activeTab, searchQuery, filterCategory, priceMin, priceMax, hideUnavailable])
+  }, [activeTab, searchQuery, filterCategory, priceMin, priceMax, hideUnavailable, filterCity, filterState])
 
   const filteredExtra = extraListings.filter(applyFilters)
   const filteredDb    = dbListings.filter(applyFilters)
@@ -907,6 +921,26 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
                     value={priceMax}
                     onChange={e => setPriceMax(e.target.value)}
                     placeholder="Precio maximo USD"
+                    className="px-3 py-2 rounded-lg text-xs outline-none"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f2f2f2' }}
+                  />
+
+                  {/* State filter */}
+                  <input
+                    type="text"
+                    value={filterState}
+                    onChange={e => setFilterState(e.target.value)}
+                    placeholder="Estado (ej: Distrito Capital)"
+                    className="px-3 py-2 rounded-lg text-xs outline-none"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f2f2f2' }}
+                  />
+
+                  {/* City filter */}
+                  <input
+                    type="text"
+                    value={filterCity}
+                    onChange={e => setFilterCity(e.target.value)}
+                    placeholder="Ciudad (ej: Caracas)"
                     className="px-3 py-2 rounded-lg text-xs outline-none"
                     style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f2f2f2' }}
                   />
