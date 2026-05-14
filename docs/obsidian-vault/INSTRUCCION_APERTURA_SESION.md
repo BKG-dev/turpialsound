@@ -177,16 +177,44 @@ npx vercel inspect <url-del-deploy> --logs
 npx vercel logs <url-del-deploy>
 ```
 
-**Si un deploy falla REALMENTE, Jean debe:**
-1. Ir a Vercel Dashboard → Settings → Notifications → agregar email de ambos
-2. O agregar Slack/Discord webhook para alertas instantaneas
-3. Verificar que `vercel.json` no tenga errores de config
+### ⚠️ ARREGLAR EL FALSO "Deployment failed" (ACCION PARA JEAN)
 
-**Sobre el cron job (`/api/cron/refresh-bcv-rate`):**
-- Corre cada 30 min en Vercel (requiere plan Pro o superior)
-- No requiere `CRON_SECRET` para funcionar (es opcional)
-- Si esta en plan Hobby, el cron simplemente no se ejecuta (no rompe nada)
-- Para habilitar: Jean configura `CRON_SECRET` en Vercel env vars
+Jean debe hacer esto UNA VEZ en Vercel Dashboard:
+
+1. Ir a https://vercel.com/bkgs-projects-829c67c1/turpialsound/settings/git
+2. Verificar que "GitHub" esta conectado y el repo `BKG-dev/turpialsound` es correcto
+3. **Branch pattern:** asegurar que incluye `Manuel/*` y `Jean/*` (o poner `*` para todas)
+4. En "Deployment Protection", desactivar "Vercel Authentication" para previews (opcional, facilita smoke)
+5. Ir a Settings → Notifications → agregar email de Manuel para alertas de deploy failure
+6. Configurar Slack/Discord webhook si tienen
+
+**Verificacion post-fix:**
+```bash
+# Despues de configurar, hacer un push de prueba y verificar:
+npx vercel list --environment preview | head -5
+# Debe mostrar el deploy con status ● Ready y sin errores en GitHub
+```
+
+### Cron job BCV
+
+El `vercel.json` tiene el cron configurado asi actualmente:
+
+```json
+{
+  "crons": [{
+    "path": "/api/cron/refresh-bcv-rate",
+    "schedule": "0 20,21,22 * * 1-5"
+  }]
+}
+```
+
+Esto ejecuta el refresco de tasa BCV a las **4 PM, 5 PM y 6 PM VET, lunes a viernes**. Ya no corre 24/7 cada 30 min.
+
+**Detalles tecnicos:**
+- La ruta `/api/cron/refresh-bcv-rate` internamente usa `shouldRefresh()` del BCV scheduler que decide si realmente refresca o hace skip
+- Si el plan Vercel es Hobby, el cron simplemente se ignora (no genera error ni costo)
+- Si quieren eliminar el cron completamente, borrar la seccion `crons` de `vercel.json`
+- `CRON_SECRET` es opcional — si se configura en Vercel env vars, la ruta exige autorizacion Bearer
 
 ---
 
