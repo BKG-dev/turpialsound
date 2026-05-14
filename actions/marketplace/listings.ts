@@ -142,7 +142,7 @@ export async function getActiveListings(filters?: {
 
     const [listings, snapshot] = await Promise.all([
       db.mpListing.findMany({
-        where: where as any,
+        where: where as Record<string, unknown>,
         orderBy: { createdAt: 'desc' },
         include: { seller: true },
       }),
