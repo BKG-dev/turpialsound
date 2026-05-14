@@ -1,12 +1,29 @@
 ---
 type: master-dashboard
 project: "Turpial Sound"
-status: reconciling
+status: post-reconciliation
 phase: "Fase E: Sprints marketplace cerrados. Pre-release."
+last_updated: "2026-05-14T13:58-04:00"
+mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
+mother_head: "01cdb73"
+production_branch: "prod/current-www-turpialsound-2026-05-08"
+production_head: "92fd6a3"
+tags:
+  - "#central"
+  - "#map"
+  - "#status/live-source"
+  - "#dashboard"
+  - "#manuel"
+  - "#jean"
+---
 
-## 🚨 ESTADO ACTUAL — RECONCILIACION COMPLETADA (2026-05-14 13:48 VET)
+# Turpial Sound — Dashboard Activo
 
-**Existen DOS ramas de integracion (UNIFICADAS en madre `84e15d4`):**
+> **ESTE ES EL DOCUMENTO CANONICO. Si hay conflicto con cualquier otro archivo, este manda.**
+
+## ESTADO ACTUAL — RECONCILIACION COMPLETADA (2026-05-14 13:58 VET)
+
+**Existen DOS ramas de integracion (UNIFICADAS en madre `01cdb73`):**
 
 | Rama | Operador | Commits | Contenido |
 |------|----------|---------|-----------|
