@@ -3,9 +3,9 @@ type: master-dashboard
 project: "Turpial Sound"
 status: post-reconciliation
 phase: "Fase E: Sprints marketplace cerrados. Pre-release."
-last_updated: "2026-05-14T15:41-04:00"
+last_updated: "2026-05-14T16:29-04:00"
 mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
-mother_head: "7ea5660"
+mother_head: "dfca178"
 production_branch: "prod/current-www-turpialsound-2026-05-08"
 production_head: "92fd6a3"
 tags:
@@ -284,7 +284,10 @@ git push origin main
 | Rama | Ultimo Preview | Fecha | Estado |
 |------|---------------|-------|--------|
 | **Madre** `integration/today-reservas-marketplace-stable-2026-05-07` | `de53170` | 2026-05-14 | 🔴 Sin preview |
-| `Manuel/s-rev-01-reviews-ratings-full-e2e` | `turpialsound-2z0aoc1rc` | 2026-05-14 13:00 | ● Ready |
+| **Madre** `integration/today-reservas-marketplace-stable-2026-05-07` | `dfca178` | 2026-05-14 16:29 | ● Ready |
+| `Manuel/s-ds-01-dropsocial-referral` | — | 2026-05-14 16:18 | En deploy |
+| `Manuel/s-opt-01-loc-inv-src-lang` | `8dl39wqiw` | 2026-05-14 15:40 | ● Ready |
+| `Manuel/s-rev-01-reviews-ratings-full-e2e` | `2z0aoc1rc` | 2026-05-14 13:00 | ● Ready |
 | `Manuel/s-mk-04-05-06-rrss-marketing` | `66cd47d` | 2026-05-14 12:33 | ● Ready |
 | `Manuel/s-mk-02-kpi-dashboard` | `68d8886` | 2026-05-14 | ● Ready |
 | `Manuel/s20-seo-aeo-audit` | `4c16ae1` | 2026-05-14 | ● Ready |
