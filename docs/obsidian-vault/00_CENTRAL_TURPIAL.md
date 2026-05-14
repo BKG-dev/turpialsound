@@ -3,7 +3,7 @@ type: master-dashboard
 project: "Turpial Sound"
 status: reconciling
 phase: "Fase D cerrada. Reconciliando ramas Jean+Manuel para push a madre."
-last_updated: "2026-05-14T03:55-04:00"
+last_updated: "2026-05-14T05:01-04:00"
 mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
 production_branch: "prod/current-www-turpialsound-2026-05-08"
 production_head: "92fd6a3"
@@ -147,6 +147,7 @@ Codigo correcto + DB incorrecta = UI vacia.
 | **S13** | `Manuel/s13-proof-upload-browser-2026-05-12` | ✅ PASS |
 | **S14** | `Manuel/s14-admin-dashboard-payment-closure-2026-05-13` | ✅ BCV scheduler + metodologia |
 | **S14B** | `Manuel/s14b-shopping-cart-share` | ✅ Shopping cart + share + market analysis |
+| **S15** | `Manuel/s15-location-filters-2026-05-14` | ✅ Location filters + listing modal + inventory |
 | **S-MK-01** | (incluido en S14B) | ✅ Analisis de mercado |
 | — | Metodologia Oreshnik | ✅ Analisis de optimizacion |
 | — | BCV dual-frequency scheduler | ✅ Implementado |
@@ -157,11 +158,10 @@ Codigo correcto + DB incorrecta = UI vacia.
 
 | # | Accion | Prioridad |
 |---|--------|-----------|
-| 1 | **Esperar a que Jean haga el merge de reconciliacion** a la rama madre | 🔴 P0 |
-| 2 | **Hacer pull de la rama madre unificada** cuando Jean confirme | 🔴 P0 |
-| 3 | **Ejecutar smoke de marketplace** sobre la rama madre unificada | 🔴 P0 |
-| 4 | Preparar plan de despliegue para viernes 15 mayo 11AM CDA | 🟡 |
-| 5 | Verificar estado legal de la entidad (S-ADM-01) | 🟡 |
+| 1 | **CERRAR S15** y preparar merge a madre | 🔴 P0 |
+| 2 | **S16: Notificaciones y chat** | 🟡 Proximo sprint |
+| 3 | Preparar plan de despliegue para viernes 15 mayo 11AM CDA | 🟡 |
+| 4 | Verificar estado legal de la entidad (S-ADM-01) | 🟡 |
 
 ---
 
@@ -175,7 +175,7 @@ Codigo correcto + DB incorrecta = UI vacia.
 | S13 | Payment proof upload browser | 👤 Manuel | ✅ CERRADO |
 | S14 | Admin dashboard + BCV scheduler | 👤 Manuel | ✅ CERRADO |
 | S14B | Shopping cart + share listing | 👤 Manuel | ✅ CERRADO |
-| S15 | Location filters + listing modal | 👤 Manuel | 🔴 PENDIENTE |
+| S15 | Location filters + listing modal | 👤 Manuel | ✅ CERRADO 2026-05-14 |
 | S16 | Notificaciones y chat | 👤 Manuel | 🔴 PENDIENTE |
 | S17 | Seller dashboard browser | 👤 Jean | 🔴 PENDIENTE |
 | S18 | Full regression browser | 👤 Manuel | 🔴 PENDIENTE |
