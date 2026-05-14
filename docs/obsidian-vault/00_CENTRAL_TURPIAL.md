@@ -199,9 +199,9 @@ Codigo correcto + DB incorrecta = UI vacia.
 | S-MK-01 | Analisis de mercado y competencia | 👤 Manuel | ✅ CERRADO |
 | S-MK-02 | KPI dashboard inteligente | 👤 Manuel | ✅ CERRADO 2026-05-14 |
 | S-MK-03 | SEO/AEO full + Academia | 👤 Jean + Manuel | 🟡 PARCIAL |
-| S-MK-04 | Automatizacion RRSS | 👤 Manuel | 🔴 PENDIENTE |
-| S-MK-05 | Contenido RRSS | 👤 Manuel | 🔴 PENDIENTE |
-| S-MK-06 | Plan marketing | 👤 Manuel | 🔴 PENDIENTE |
+| S-MK-04 | Automatizacion RRSS | 👤 Manuel | ✅ CERRADO 2026-05-14 |
+| S-MK-05 | Contenido RRSS | 👤 Manuel | ✅ CERRADO 2026-05-14 |
+| S-MK-06 | Plan marketing | 👤 Manuel | ✅ CERRADO 2026-05-14 |
 
 ### 🟪 TRACK 4: Admin-Legal — 🔴 todo pendiente (accion fisica Manuel)
 ### 🟧 TRACK 5: UI/UX — 🔴 todo pendiente
