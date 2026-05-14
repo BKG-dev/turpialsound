@@ -1,7 +1,11 @@
 ﻿import type { AdminDashboardSnapshot } from '@/lib/bookings/dashboard-queries'
 
 function formatDateTime(date: Date): string {
-  return new Intl.DateTimeFormat('es-VE', { dateStyle: 'short', timeStyle: 'short' }).format(date)
+  return new Intl.DateTimeFormat('es-VE', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Caracas',
+  }).format(date)
 }
 
 export function PaymentReviewQueuePanel({ snapshot }: { snapshot: AdminDashboardSnapshot }) {
