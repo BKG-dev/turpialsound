@@ -180,7 +180,7 @@ Codigo correcto + DB incorrecta = UI vacia.
 | S17 | Seller dashboard browser | 👤 Jean | 🔴 PENDIENTE |
 | S18 | Full regression browser | 👤 Manuel | ✅ CERRADO 2026-05-14 |
 | S19 | Performance + load | 👤 Jean | 🟡 PARCIAL (LCP/a11y) |
-| S20 | SEO/AEO audit completo | 👤 Manuel | 🔴 PENDIENTE |
+| S20 | SEO/AEO audit completo | 👤 Manuel | ✅ CERRADO 2026-05-14 |
 | S21 | Production release gate | 👤 Jean | 🔴 PENDIENTE |
 
 ### 🟩 TRACK 2: Booking
