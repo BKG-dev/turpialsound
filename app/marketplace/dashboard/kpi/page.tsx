@@ -11,8 +11,6 @@ export const metadata: Metadata = generatePageMetadata({
   path: '/marketplace/dashboard/kpi',
 })
 
-type KPI = { label: string; value: string; change: string; trend: 'up' | 'down' | 'neutral' }
-
 async function getKPIStats() {
   const db = await getDb()
   if (!db) return []
