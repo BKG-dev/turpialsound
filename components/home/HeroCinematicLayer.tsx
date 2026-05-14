@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const HERO_VIDEO_SRC = '/video/turpial-hero-cinematic.webm'
-const DESKTOP_DELAY_MS = 3000
+const HERO_VIDEO_FALLBACK_SRC = '/video/turpial-sound-studio.mp4'
+const DESKTOP_DELAY_MS = 1500
+const IDLE_FALLBACK_MS = 1200
 
 type ConnectionInfo = {
   saveData?: boolean
@@ -17,11 +19,13 @@ type NavigatorWithConnection = Navigator & {
 export function HeroCinematicLayer() {
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false)
   const [videoReady, setVideoReady] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     let cancelled = false
     let idleId: number | null = null
     let delayId: ReturnType<typeof setTimeout> | null = null
+    let idleFallbackId: ReturnType<typeof setTimeout> | null = null
 
     const win = window
     const nav = navigator as NavigatorWithConnection
@@ -37,16 +41,19 @@ export function HeroCinematicLayer() {
 
     const triggerDeferredLoad = () => {
       if (cancelled) return
+      let started = false
 
       const armDelay = () => {
-        if (cancelled) return
+        if (cancelled || started) return
+        started = true
         delayId = setTimeout(() => {
           if (!cancelled) setShouldLoadVideo(true)
         }, DESKTOP_DELAY_MS)
       }
 
       if ('requestIdleCallback' in win) {
-        idleId = win.requestIdleCallback(armDelay, { timeout: 1500 })
+        idleId = win.requestIdleCallback(armDelay, { timeout: IDLE_FALLBACK_MS })
+        idleFallbackId = setTimeout(armDelay, IDLE_FALLBACK_MS + 150)
       } else {
         delayId = setTimeout(armDelay, 300)
       }
@@ -67,18 +74,31 @@ export function HeroCinematicLayer() {
       if (delayId !== null) {
         clearTimeout(delayId)
       }
+      if (idleFallbackId !== null) {
+        clearTimeout(idleFallbackId)
+      }
     }
   }, [])
+
+  useEffect(() => {
+    if (!shouldLoadVideo || !videoRef.current) return
+    const video = videoRef.current
+    video.play().catch(() => {})
+  }, [shouldLoadVideo])
 
   if (!shouldLoadVideo) {
     return null
   }
 
   return (
-    <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+    <div className="pointer-events-none absolute inset-0 z-[2]" aria-hidden="true">
       <video
+        ref={videoRef}
         className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 ease-out"
-        style={{ opacity: videoReady ? 0.34 : 0 }}
+        style={{
+          opacity: videoReady ? 0.45 : 0,
+          filter: 'brightness(0.72) saturate(1.05) contrast(1.03)',
+        }}
         autoPlay
         muted
         loop
@@ -91,6 +111,7 @@ export function HeroCinematicLayer() {
         onCanPlay={() => setVideoReady(true)}
       >
         <source src={HERO_VIDEO_SRC} type="video/webm" />
+        <source src={HERO_VIDEO_FALLBACK_SRC} type="video/mp4" />
       </video>
     </div>
   )
