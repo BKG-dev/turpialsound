@@ -7,6 +7,8 @@ export const MARKETPLACE_ANALYTICS_EVENT_TYPES = [
   'favorite_click',
   'checkout_start',
   'assistant_admin_db_status_view',
+  'cart_checkout',
+  'share_click',
 ] as const
 
 export type MarketplaceAnalyticsEventType = (typeof MARKETPLACE_ANALYTICS_EVENT_TYPES)[number]

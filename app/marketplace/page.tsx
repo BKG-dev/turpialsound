@@ -4,6 +4,8 @@ import { generatePageMetadata } from '@/lib/metadata'
 import { getActiveListings } from '@/actions/marketplace/listings'
 import MarketplacePageClient from './MarketplacePageClient'
 
+export const dynamic = 'force-dynamic'
+
 const marketplaceUrl = `${siteConfig.url}/marketplace`
 const marketplaceDescription =
   'Marketplace musical de Turpial Sound para comprar y vender instrumentos, equipos de audio, accesorios y servicios musicales en Venezuela con revision del equipo y operacion protegida.'

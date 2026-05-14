@@ -12,6 +12,7 @@ import {
   UserCircle2,
 } from 'lucide-react'
 import { MarketplaceThemeToggle } from '@/components/marketplace/MarketplaceTheme'
+import { CartIcon } from '@/components/marketplace/CartIcon'
 import { useBcvRate } from '@/lib/hooks/useBcvRate'
 import { getMpSession, logoutMpUser } from '@/actions/marketplace/auth'
 import { getUnreadCount } from '@/actions/marketplace/chat'
@@ -347,6 +348,8 @@ export function MarketplaceAuthBar({
                 </Link>
               )}
 
+              <CartIcon />
+
               {onMessagesClick ? (
                 <button
                   type="button"
@@ -422,6 +425,7 @@ export function MarketplaceAuthBar({
             </>
           ) : onLogin || onRegister ? (
             <div className="flex items-center gap-2">
+              <CartIcon />
               <MarketplaceThemeToggle compact className="mp-authbar-theme-toggle h-6 shrink-0" />
               {onLogin && (
                 <button

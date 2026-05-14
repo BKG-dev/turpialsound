@@ -369,13 +369,7 @@ function LoginForm({ onSuccess, onForgot }: { onSuccess: (s: MpSessionPayload) =
         return
       }
 
-      onSuccess({
-        userId: result.data.userId,
-        email: result.data.email,
-        displayName: result.data.displayName,
-        isSeller: false, // will be refreshed from cookie on next nav
-        role: result.data.role,
-      })
+      onSuccess(result.data)
     })
   }
 

@@ -997,6 +997,7 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
                       onClick={() => handleListingClick(listing)}
                       isFavorited={favoritedIds.has(listing.id)}
                       onToggleFavorite={handleToggleFavorite}
+                      currentUserId={session?.userId}
                     />
                   </motion.div>
                 ))}
