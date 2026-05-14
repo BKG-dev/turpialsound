@@ -1,10 +1,4 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/refresh-bcv-rate",
-      "schedule": "0 12,21,22,23 * * 1-5"
-    }
-  ],
   "github": {
     "enabled": true,
     "silent": false,
