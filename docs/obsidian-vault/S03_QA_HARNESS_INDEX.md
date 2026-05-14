@@ -96,7 +96,11 @@ Sprint 3 del Marketplace QA Harness está **CERRADO**.
 2. **Credenciales QA no son problema recurrente.** El bootstrap `ensure-marketplace-qa-env.ps1` + doctor `doctor-marketplace-qa-env.mjs` lo resuelven en un solo paso.
 3. **Runner canónico es `npx tsx`**, no `node`. Requerido porque `generated/prisma/client.ts` es TypeScript.
 4. **S03 completo sin browser.** Los 12 módulos validan data layer. UI browser queda para S04 si se necesita validar UX real.
-5. **QA-02 y QA-04→QA-10 mutan DB QA controlada** (listing, transacción, payout, blob metadata). Solo datos marcados como QA.
+5. **QA-02 y QA-04→QA-10 mutan DB QA controlada** (listing, transaccion, payout, blob metadata). Solo datos marcados como QA.
+6. **S15 agrega location + inventory a QA-02/03/04**. Validacion de campos city, state, isLocationPublic + decremento de inventario en purchase.
+7. **S16 agrega system messages y Playwright chat E2E**. `sendSystemMessage` en admin validatePayment y releaseEscrow.
+8. **S20 agrega SEO/AEO audit script**. `qa-s20-seo-aeo-audit.mjs` con 10 paginas auditadas.
+9. **S-REV-01 agrega MpReview model y Full E2E 14 pasos**. `s-rev-01-full-e2e.spec.mjs` con screenshots de cada paso.
 
 ## G. Próximo paso real
 

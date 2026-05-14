@@ -205,3 +205,35 @@ JEAN RELEASE → git merge a main → Vercel → turpialsound.com
 - 🐛 **Bugs:** [[BUGS_CRITICOS]]
 - 💱 **Tasas:** [[FLUJO_TASAS_BCV]]
 - 🧪 **QA:** [[QA_HARNESS_CANVAS_2026-05-10]]
+
+---
+
+## 📋 Actualización Automática de Documentación — Protocolo anti-recurrencia
+
+> **Objetivo:** Cada sprint cerrado deja TODOS los documentos actualizados.
+
+### Documentos que DEBEN actualizarse al cerrar sprint
+
+| # | Documento | Qué actualizar |
+|---|-----------|---------------|
+| 1 | `00_CENTRAL_TURPIAL.md` | `last_updated`, estado sprint, tracks, Vercel link |
+| 2 | `PLAN_MAESTRO_SPRINTS` | `last_updated`, sprint a COMPLETADO |
+| 3 | `S03_QA_HARNESS_INDEX` | Nuevos modulos QA, decisiones |
+| 4 | `docs/marketplace/01_ROADMAP_AND_STATUS` | Nuevas features, APIs |
+| 5 | `qa-dispatcher.json` | Registrar task_id canonico |
+| 6 | `qa-canonical-runbook.md` | Documentar entradas nuevas |
+
+### Trazabilidad código → docs
+
+- `prisma/schema.prisma` → `ARQUITECTURA_TASAS`, `01_ROADMAP_AND_STATUS`
+- `actions/marketplace/*.ts` → `01_ROADMAP_AND_STATUS`
+- `scripts/qa/modules/*.mjs` → `qa-dispatcher.json`, `S03_QA_HARNESS_INDEX`
+- `scripts/qa/playwright/*.mjs` → `qa-dispatcher.json`, `qa-canonical-runbook`
+- `components/marketplace/*.tsx` / `app/marketplace/**` → `01_ROADMAP_AND_STATUS`
+
+### Verificación de consistencia
+
+```bash
+Select-String "last_updated|actualizado" docs/obsidian-vault/00_CENTRAL_TURPIAL.md docs/obsidian-vault/PLAN_MAESTRO_SPRINTS_2026-05-12.md docs/obsidian-vault/INSTRUCCION_APERTURA_SESION.md docs/obsidian-vault/METODOLOGIA_ORESHNIK_ANEXO.md docs/marketplace/01_ROADMAP_AND_STATUS.md
+# Todas las fechas deben coincidir
+```

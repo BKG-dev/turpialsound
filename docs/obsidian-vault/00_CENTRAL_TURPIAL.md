@@ -2,41 +2,11 @@
 type: master-dashboard
 project: "Turpial Sound"
 status: reconciling
-phase: "Fase D cerrada. Reconciliando ramas Jean+Manuel para push a madre."
-last_updated: "2026-05-14T13:03-04:00"
-mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
-production_branch: "prod/current-www-turpialsound-2026-05-08"
-production_head: "92fd6a3"
-tags:
-  - "#central"
-  - "#map"
-  - "#status/live-source"
-  - "#dashboard"
-  - "#manuel"
-  - "#jean"
-  - "#reconciliation"
----
+phase: "Fase E: Sprints marketplace cerrados. Pre-release."
 
-# 🏠 Turpial Sound — Dashboard Activo
+## 🚨 ESTADO ACTUAL — RECONCILIACION COMPLETADA (2026-05-14 13:48 VET)
 
-> **ESTE ES EL DOCUMENTO CANONICO. Si hay conflicto con cualquier otro archivo, este manda.**
->
-> **Nexo metodologia:** [[METODOLOGIA_ORESHNIK_ANEXO]] | **Canvas:** [[FLUJO_PROTOCOLO_TRABAJO]]
-> **Apertura sesion:** [[INSTRUCCION_APERTURA_SESION]] | **Plan Maestro:** [[PLAN_MAESTRO_SPRINTS_2026-05-12]]
-
----
-
-## Principio central
-
-```
-Codigo correcto + DB incorrecta = UI vacia.
-```
-
----
-
-## 🚨 ESTADO ACTUAL — RECONCILIACION EN CURSO (2026-05-14 01:23 VET)
-
-**Existen DOS ramas de integracion divergentes que deben unificarse:**
+**Existen DOS ramas de integracion (UNIFICADAS en madre `84e15d4`):**
 
 | Rama | Operador | Commits | Contenido |
 |------|----------|---------|-----------|
@@ -158,10 +128,10 @@ Codigo correcto + DB incorrecta = UI vacia.
 
 | # | Accion | Prioridad |
 |---|--------|-----------|
-| 1 | **CERRAR S15** y preparar merge a madre | 🔴 P0 |
-| 2 | **S16: Notificaciones y chat** | 🟡 Proximo sprint |
-| 3 | Preparar plan de despliegue para viernes 15 mayo 11AM CDA | 🟡 |
-| 4 | Verificar estado legal de la entidad (S-ADM-01) | 🟡 |
+| 1 | **Preparar plan de despliegue CDA** (viernes 15 mayo 11AM) | 🔴 P0 |
+| 2 | **Verificar estado legal de la entidad** (S-ADM-01) | 🔴 P0 |
+| 3 | **S-UX-01:** UI/UX marketplace | 🟡 Proximo sprint |
+| 4 | Ejecutar QA full regression post-merge Jean | 🟡 |
 
 ---
 

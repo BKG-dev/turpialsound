@@ -1,7 +1,8 @@
 # MARKETPLACE ROADMAP & STATUS
 
-**Actualizado:** 2026-05-11
-**Estado:** Marketplace funcional en preview BKG. QA harness completo (18 modulos server-side + 1 spec Playwright login UI). S11 CLOSED, S12 listo.
+**Actualizado:** 2026-05-14 13:50 VET
+**Estado:** Marketplace completo S12-S-REV-01. 14 sprints cerrados. Ratings, reviews, KPI, SEO, export pagos implementados.
+**Preview Vercel:** `turpialsound-2z0aoc1rc-bkgs-projects-829c67c1.vercel.app`
 **Scope:** Marketplace separado del booking
 **Fuente viva de seguimiento:** `docs/obsidian-vault/*`
 

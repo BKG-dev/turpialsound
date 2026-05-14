@@ -3,7 +3,7 @@ type: master-plan
 project: "Turpial Sound"
 status: active
 version: "1.0"
-last_updated: "2026-05-12T14:27-04:00"
+last_updated: "2026-05-14T13:50-04:00"
 methodology: "Oreshnik + Bus de Control Nivel 2.5"
 mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
 tags:
@@ -70,6 +70,13 @@ tags:
 | **S-MK-01** | Análisis de mercado y competencia | 👤 Manuel | ✅ CERRADO (incluido en S14B) |
 | — | Metodología Oreshnik: análisis de optimización | 👤 Manuel | ✅ CERRADO 2026-05-13 |
 | — | BCV dual-frequency rate scheduler | 👤 Manuel | ✅ CERRADO 2026-05-13 |
+| **S15** | Location filters + listing modal + inventory | 👤 Manuel | ✅ CERRADO 2026-05-14 |
+| **S16** | Notificaciones y chat + system messages | 👤 Manuel | ✅ CERRADO 2026-05-14 |
+| **S18** | Full regression (25 PASS, 0 FAIL) | 👤 Manuel | ✅ CERRADO 2026-05-14 |
+| **S20** | SEO/AEO audit (10 páginas) | 👤 Manuel | ✅ CERRADO 2026-05-14 |
+| **S-MK-02** | KPI dashboard (8 métricas) | 👤 Manuel | ✅ CERRADO 2026-05-14 |
+| **S-MK-04/05/06** | RRSS + Marketing plan | 👤 Manuel | ✅ CERRADO 2026-05-14 |
+| **S-REV-01** | Ratings, reviews + Full E2E + payout export | 👤 Manuel | ✅ CERRADO 2026-05-14 |
 
 **Fases A, B, C, D COMPLETAS. Fase E (reconciliacion + release) en curso.**
 
