@@ -239,9 +239,11 @@ git push origin main
 
 ## 🔗 NAVEGACION
 
-- 📋 [[PLAN_MAESTRO_SPRINTS_2026-05-12]] — Plan maestro (desactualizado en tracks, actualizar despues de reconciliacion)
+- 🧠 [[METODOLOGIA_ORESHNIK_ANEXO]] — **NEXO de la metodologia. Leer antes de todo.**
+- 📊 [[FLUJO_PROTOCOLO_TRABAJO]] — Canvas visual del proceso completo
 - 📋 [[INSTRUCCION_APERTURA_SESION]] — QUE HACER al abrir Kilo (Jean y Manuel)
-- 📋 [[METODOLOGIA_OPTIMIZACION]] — Analisis de optimizacion Oreshnik
+- 📋 [[PLAN_MAESTRO_SPRINTS_2026-05-12]] — Plan maestro (desactualizado en tracks, actualizar despues de reconciliacion)
+- 📋 [[METODOLOGIA_OPTIMIZACION]] — Analisis detallado de optimizacion Oreshnik
 - 📋 [[BUS_CONTROL_TURPIAL]] — Reglas del bus
 - 📋 [[BUGS_CRITICOS]] — Bugs activos
 - 📋 [[NEXT_PHASE_PLAN_S11_S20]] — Plan detallado S11-S20
