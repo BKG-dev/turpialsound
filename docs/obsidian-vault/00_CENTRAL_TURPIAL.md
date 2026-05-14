@@ -286,4 +286,24 @@ git push origin main
 
 ---
 
-> **Ultima actualizacion:** 2026-05-14T01:23-04:00 | **Estado:** ESPERANDO RECONCILIACION DE JEAN | **Tag:** `cp-manuel-s12-s14b-pre-merge-jean-2026-05-14`
+> **Ultima actualizacion:** 2026-05-14T13:04-04:00 | **Estado:** S-REV-01 cerrado. Ratings + Full E2E + Export payouts. | **Tag:** `cp-manuel-s12-s14b-pre-merge-jean-2026-05-14`
+
+---
+
+## 🚀 Vercel Preview Links
+
+> **Actualizado en cada push. Ambos operadores verifican el deploy.**
+
+| Rama | Ultimo Preview | Fecha | Estado |
+|------|---------------|-------|--------|
+| **Madre** `integration/today-reservas-marketplace-stable-2026-05-07` | `de53170` | 2026-05-14 | 🔴 Sin preview |
+| `Manuel/s-rev-01-reviews-ratings-full-e2e` | `turpialsound-2z0aoc1rc` | 2026-05-14 13:00 | ● Ready |
+| `Manuel/s-mk-04-05-06-rrss-marketing` | `66cd47d` | 2026-05-14 12:33 | ● Ready |
+| `Manuel/s-mk-02-kpi-dashboard` | `68d8886` | 2026-05-14 | ● Ready |
+| `Manuel/s20-seo-aeo-audit` | `4c16ae1` | 2026-05-14 | ● Ready |
+| `Manuel/s18-full-regression` | `7dad444` | 2026-05-14 | ● Ready |
+| `Manuel/s16-notifications-chat` | `a6b1a87` | 2026-05-14 | ● Ready |
+| `Manuel/s15-location-filters` | `ec61354` | 2026-05-14 | ● Ready |
+| `Jean/s-jb-01-booking-fixes` | — | — | 🔴 Pendiente |
+
+**Formato:** `https://turpialsound-XXXXX-bkgs-projects-829c67c1.vercel.app`
