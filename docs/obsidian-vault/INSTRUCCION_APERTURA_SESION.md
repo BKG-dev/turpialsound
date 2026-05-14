@@ -162,6 +162,34 @@ SOY MANUEL (Manuel Vera). Mi tarea es validar el marketplace despues de la recon
 
 ---
 
+## 🚀 VERIFICACION DE DEPLOY EN VERCEL (AMBOS)
+
+Al pushear cualquier rama `Manuel/*` o `Jean/*`, Vercel auto-despliega a Preview. PERO GitHub puede mostrar "Deployment failed" aunque el deploy este OK (problema de integracion GitHub↔Vercel). Para NO depender de GitHub:
+
+```bash
+# Ver los ultimos 10 deploys y su estado
+npx vercel list
+
+# Inspeccionar el deploy mas reciente (build log)
+npx vercel inspect <url-del-deploy> --logs
+
+# Ver logs en tiempo real
+npx vercel logs <url-del-deploy>
+```
+
+**Si un deploy falla REALMENTE, Jean debe:**
+1. Ir a Vercel Dashboard → Settings → Notifications → agregar email de ambos
+2. O agregar Slack/Discord webhook para alertas instantaneas
+3. Verificar que `vercel.json` no tenga errores de config
+
+**Sobre el cron job (`/api/cron/refresh-bcv-rate`):**
+- Corre cada 30 min en Vercel (requiere plan Pro o superior)
+- No requiere `CRON_SECRET` para funcionar (es opcional)
+- Si esta en plan Hobby, el cron simplemente no se ejecuta (no rompe nada)
+- Para habilitar: Jean configura `CRON_SECRET` en Vercel env vars
+
+---
+
 ## 📅 PROXIMO HITO: Viernes 15 mayo 2026 — 11:00 AM VET
 
 **Deploy de la plataforma en La Casa del Artista (S-ADM-04):**
