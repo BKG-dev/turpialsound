@@ -76,7 +76,8 @@ export const ModelName = {
   MpBinanceRateSnapshot: 'MpBinanceRateSnapshot',
   MpReferenceRateSnapshot: 'MpReferenceRateSnapshot',
   MpWebhookLog: 'MpWebhookLog',
-  MpReview: 'MpReview'
+  MpReview: 'MpReview',
+  MpReferralLink: 'MpReferralLink'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -542,6 +543,21 @@ export const MpReviewScalarFieldEnum = {
 } as const
 
 export type MpReviewScalarFieldEnum = (typeof MpReviewScalarFieldEnum)[keyof typeof MpReviewScalarFieldEnum]
+
+
+export const MpReferralLinkScalarFieldEnum = {
+  id: 'id',
+  referrerId: 'referrerId',
+  listingId: 'listingId',
+  code: 'code',
+  clicks: 'clicks',
+  conversions: 'conversions',
+  totalEarned: 'totalEarned',
+  isActive: 'isActive',
+  createdAt: 'createdAt'
+} as const
+
+export type MpReferralLinkScalarFieldEnum = (typeof MpReferralLinkScalarFieldEnum)[keyof typeof MpReferralLinkScalarFieldEnum]
 
 
 export const SortOrder = {

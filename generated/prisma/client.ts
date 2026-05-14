@@ -171,3 +171,8 @@ export type MpWebhookLog = Prisma.MpWebhookLogModel
  * 
  */
 export type MpReview = Prisma.MpReviewModel
+/**
+ * Model MpReferralLink
+ * 
+ */
+export type MpReferralLink = Prisma.MpReferralLinkModel

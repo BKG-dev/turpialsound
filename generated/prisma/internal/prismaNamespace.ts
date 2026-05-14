@@ -409,7 +409,8 @@ export const ModelName = {
   MpBinanceRateSnapshot: 'MpBinanceRateSnapshot',
   MpReferenceRateSnapshot: 'MpReferenceRateSnapshot',
   MpWebhookLog: 'MpWebhookLog',
-  MpReview: 'MpReview'
+  MpReview: 'MpReview',
+  MpReferralLink: 'MpReferralLink'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -425,7 +426,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "siteCounter" | "service" | "serviceVariant" | "resource" | "user" | "bookingRequest" | "bookingRequestItem" | "paymentProof" | "approval" | "auditLog" | "mpUser" | "mpPayoutMethod" | "mpListing" | "mpListingQuestion" | "mpChatThread" | "mpMessage" | "mpTransaction" | "mpTransactionStatusHistory" | "mpDispute" | "mpPayout" | "mpAnalyticsEvent" | "mpBlobObjectMetadata" | "mpBinanceRateSnapshot" | "mpReferenceRateSnapshot" | "mpWebhookLog" | "mpReview"
+    modelProps: "siteCounter" | "service" | "serviceVariant" | "resource" | "user" | "bookingRequest" | "bookingRequestItem" | "paymentProof" | "approval" | "auditLog" | "mpUser" | "mpPayoutMethod" | "mpListing" | "mpListingQuestion" | "mpChatThread" | "mpMessage" | "mpTransaction" | "mpTransactionStatusHistory" | "mpDispute" | "mpPayout" | "mpAnalyticsEvent" | "mpBlobObjectMetadata" | "mpBinanceRateSnapshot" | "mpReferenceRateSnapshot" | "mpWebhookLog" | "mpReview" | "mpReferralLink"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2353,6 +2354,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    MpReferralLink: {
+      payload: Prisma.$MpReferralLinkPayload<ExtArgs>
+      fields: Prisma.MpReferralLinkFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MpReferralLinkFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MpReferralLinkFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>
+        }
+        findFirst: {
+          args: Prisma.MpReferralLinkFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MpReferralLinkFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>
+        }
+        findMany: {
+          args: Prisma.MpReferralLinkFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>[]
+        }
+        create: {
+          args: Prisma.MpReferralLinkCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>
+        }
+        createMany: {
+          args: Prisma.MpReferralLinkCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MpReferralLinkCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>[]
+        }
+        delete: {
+          args: Prisma.MpReferralLinkDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>
+        }
+        update: {
+          args: Prisma.MpReferralLinkUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>
+        }
+        deleteMany: {
+          args: Prisma.MpReferralLinkDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MpReferralLinkUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MpReferralLinkUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>[]
+        }
+        upsert: {
+          args: Prisma.MpReferralLinkUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>
+        }
+        aggregate: {
+          args: Prisma.MpReferralLinkAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMpReferralLink>
+        }
+        groupBy: {
+          args: Prisma.MpReferralLinkGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpReferralLinkGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MpReferralLinkCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpReferralLinkCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -2841,6 +2916,21 @@ export const MpReviewScalarFieldEnum = {
 export type MpReviewScalarFieldEnum = (typeof MpReviewScalarFieldEnum)[keyof typeof MpReviewScalarFieldEnum]
 
 
+export const MpReferralLinkScalarFieldEnum = {
+  id: 'id',
+  referrerId: 'referrerId',
+  listingId: 'listingId',
+  code: 'code',
+  clicks: 'clicks',
+  conversions: 'conversions',
+  totalEarned: 'totalEarned',
+  isActive: 'isActive',
+  createdAt: 'createdAt'
+} as const
+
+export type MpReferralLinkScalarFieldEnum = (typeof MpReferralLinkScalarFieldEnum)[keyof typeof MpReferralLinkScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -3288,6 +3378,7 @@ export type GlobalOmitConfig = {
   mpReferenceRateSnapshot?: Prisma.MpReferenceRateSnapshotOmit
   mpWebhookLog?: Prisma.MpWebhookLogOmit
   mpReview?: Prisma.MpReviewOmit
+  mpReferralLink?: Prisma.MpReferralLinkOmit
 }
 
 /* Types for Logging */

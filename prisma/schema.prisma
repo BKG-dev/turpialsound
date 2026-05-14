@@ -957,3 +957,24 @@ model MpReview {
   @@index([listingId])
   @@map("mp_reviews")
 }
+
+// ─────────────────────────────────────────────────────────────────
+// DROPSOCIAL REFERRAL LINKS (S-DS-01)
+// ─────────────────────────────────────────────────────────────────
+
+model MpReferralLink {
+  id          String   @id @default(cuid())
+  referrerId  String
+  listingId   String
+  code        String   @unique
+  clicks      Int      @default(0)
+  conversions Int      @default(0)
+  totalEarned Decimal  @default(0) @db.Decimal(10, 2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([referrerId])
+  @@index([listingId])
+  @@index([code])
+  @@map("mp_referral_links")
+}

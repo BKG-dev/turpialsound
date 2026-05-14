@@ -47,5 +47,5 @@ export async function notifyBusinessWhatsApp(
   type: NotifType,
   details: { senderName?: string; preview?: string; amount?: string; txId?: string },
 ): Promise<void> {
-  void sendWhatsAppNotification('+4168017844', type, details)
+  void sendWhatsAppNotification('+584168017844', type, details)
 }
