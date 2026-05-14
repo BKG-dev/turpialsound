@@ -4,12 +4,13 @@ tags: ["#status/live-source", "#area/backend", "#area/ui", "#area/ops"]
 
 # Bugs Criticos
 
-## Estado real 2026-05-07
+## Estado real 2026-05-11
 
 - Rama madre estable: `integration/today-reservas-marketplace-stable-2026-05-07`.
-- Commit estable: `c01ec60`.
+- Commit estable: `f7f2d1e`.
 - `/reservas` congelado como zona sana.
 - `/marketplace` activo.
+- Playwright + Chromium instalado en rama madre (S11).
 
 ## P0 cerrado del dia
 
@@ -25,6 +26,15 @@ tags: ["#status/live-source", "#area/backend", "#area/ui", "#area/ops"]
 - Ambas al mismo proyecto/base Neon integrada.
 - Nunca imprimir secretos.
 - Correccion env/DB Preview solo por Jean.
+
+## Playwright guardrails (S11+)
+
+- `@playwright/test ^1.59.1` instalado global. No reinstalar sin lock.
+- Chromium instalado via `npx playwright install chromium`.
+- Helpers canónicos: `scripts/qa/playwright/login.mjs`, `scripts/qa/playwright/screenshot.mjs`.
+- Screenshots y reports en `var/qa-results/` (no commitear).
+- No usar `chromium.launch({ headless: false })` en CI/servidor.
+- No hardcodear credenciales en specs.
 
 ## Protocolo obligatorio si marketplace carga vacio
 

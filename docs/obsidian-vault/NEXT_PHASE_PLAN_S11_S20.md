@@ -3,7 +3,7 @@ type: phase-plan
 project: "Turpial Sound Marketplace"
 status: active
 phase: "Fase D → Fase F"
-last_updated: "2026-05-11T04:30-04:00"
+last_updated: "2026-05-11T17:06-04:00"
 mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
 tags:
   - "#phase-plan"
@@ -27,7 +27,8 @@ tags:
 - ✅ **Fase B COMPLETA** (S04-S06): Payment proof protegido, delivery/receipt, payout auditable.
 - ✅ **Fase C PARCIAL** (S07-S09): Tasas/accounting, action center UX, discovery público.
 - 🟢 **S10 Release Gate:** 10/10 READY.
-- 🔴 **Fase D PENDIENTE** (S11-S13): Browser/UI E2E con Playwright.
+- ✅ **Fase D INICIADA** (S11-S13): S11 completo. Playwright + login UI smoke 3/3 PASS en rama madre.
+- 🔴 **S12 PENDIENTE:** Purchase flow browser E2E (Jean).
 
 ---
 
@@ -35,18 +36,12 @@ tags:
 
 > **Objetivo:** Reemplazar validación server-side con tests browser reales. Screenshots, traces, interacción UI.
 
-### S11 — Playwright setup + Login UI smoke
+### S11 — Playwright setup + Login UI smoke ✅ CLOSED
 - **Owner:** Manuel
-- **Branch:** `Manuel/s11-playwright-login-ui-2026-05-12`
-- **Base:** `integration/today-reservas-marketplace-stable-2026-05-07`
-- **Tareas:**
-  1. `npm install -D @playwright/test && npx playwright install chromium`
-  2. Crear helpers de navegación: `scripts/qa/playwright/login.mjs`, `screenshot.mjs`
-  3. Login UI: buyerIA, sellerIA, mvera. Screenshot de cada sesión.
-  4. Validar modal de auth, redirección post-login, header con nombre.
-  5. Generar reporte HTML con screenshots.
-- **Validación:** `npx tsx scripts/qa/playwright/s11-login-smoke.spec.mjs`
-- **Output:** `var/qa-results/s11-login-report/`
+- **Branch:** `Manuel/s11-playwright-login-ui-2026-05-12` (MERGED)
+- **Resultado:** 3/3 PASS (buyerIA, sellerIA, mvera). 6 screenshots.
+- **Commit en madre:** `48e4479` merge(s11)
+- **Artefactos:** `scripts/qa/playwright/login.mjs`, `screenshot.mjs`, `s11-login-smoke.spec.mjs`
 
 ### S12 — Purchase flow browser E2E
 - **Owner:** Jean
@@ -124,8 +119,8 @@ tags:
 ## Dependencias entre sprints
 
 ```
-S11 (Manuel)
-  └─► S12 (Jean)
+✅ S11 (Manuel) — COMPLETO — 3/3 PASS
+  └─► 🔴 S12 (Jean) — EN CURSO
         └─► S13 (Manuel)
               └─► S14 (Jean) + S15 (Manuel) [paralelo]
                     └─► S16 (Jean)
@@ -148,7 +143,8 @@ S11 (Manuel)
 ## ¿Qué significa "producto 100% listo"?
 
 - [x] **Backend funcional:** Login, publish, discovery, compra, pago, delivery, receipt, payout. (S01-S10)
-- [ ] **UI validada con browser:** Todos los flujos probados con Playwright + screenshots. (S11-S17)
+- [x] **Playwright setup + login UI smoke:** Instalado en rama madre. 3/3 PASS. (S11)
+- [ ] **UI validada con browser:** Todos los flujos probados con Playwright + screenshots. (S12-S17)
 - [ ] **Admin dashboard:** Validaciones, escrow, payouts funcionales. (S14)
 - [ ] **Notificaciones:** Chat buyer↔seller, system messages. (S15)
 - [ ] **Performance:** Lighthouse > 80, Core Web Vitals OK. (S18)

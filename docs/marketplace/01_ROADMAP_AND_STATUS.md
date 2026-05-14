@@ -1,7 +1,7 @@
 # MARKETPLACE ROADMAP & STATUS
 
-**Actualizado:** 2026-04-23
-**Estado:** Marketplace funcional en produccion tecnica
+**Actualizado:** 2026-05-11
+**Estado:** Marketplace funcional en preview BKG. QA harness completo (18 modulos server-side + 1 spec Playwright login UI). S11 CLOSED, S12 listo.
 **Scope:** Marketplace separado del booking
 **Fuente viva de seguimiento:** `docs/obsidian-vault/*`
 
@@ -20,11 +20,12 @@
 | Chat persistente | Completo |
 | Favoritos | Completo |
 | Q&A publica | Completo |
-| Checkout | Completo en modo manual temporal |
+| Checkout | Completo en modo manual temporal (transicion a confirmacion de entrega implementada) |
 | Pasarelas automaticas | Diferidas |
 | Cron T+7 | Pendiente |
-| Upload de imagenes productivo | Implementado con Vercel Blob publico no-booking; pendiente QA viva |
+| Upload de imagenes productivo | Implementado con Vercel Blob publico no-booking; QA viva completada |
 | TypeScript | Limpio (`npx tsc --noEmit`) |
+| Playwright UI testing | Instalado en rama madre (S11). Login UI smoke 3/3 PASS. |
 
 ---
 
@@ -68,6 +69,8 @@ El proyecto entra en una etapa de estabilizacion del marketplace antes de integr
 - Checkout sin mocks de pago
 - Listing no se agota antes de validacion real
 - Documentacion base sincronizada
+- QA harness server-side 12/12 PASS
+- Playwright login UI smoke 3/3 PASS
 
 ### Aun no cumplido
 
@@ -75,6 +78,8 @@ El proyecto entra en una etapa de estabilizacion del marketplace antes de integr
 - Configurar y validar Vercel Blob no-booking con `TS_WEB_BLOB_READ_WRITE_TOKEN`
 - Implementar cron T+7
 - Definir roadmap real de pasarelas
+- Purchase flow browser E2E (S12)
+- Full regression browser (S17)
 
 ---
 
@@ -100,11 +105,12 @@ El proyecto entra en una etapa de estabilizacion del marketplace antes de integr
 - escrow coherente
 
 ### Fase C - Infraestructura pendiente
-**Estado:** Pendiente
+**Estado:** En curso
 
 - cron T+7
 - QA viva de storage de imagenes/comprobantes
 - endurecimiento operativo
+- Playwright setup (S11 completo)
 
 ### Fase D - Pasarelas
 **Estado:** Diferida

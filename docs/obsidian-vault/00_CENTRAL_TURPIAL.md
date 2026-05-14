@@ -76,13 +76,13 @@ tags:
 
 ## 🔴 PRÓXIMO SPRINT — S12 (Manuel, reasignado)
 
-| Campo | Valor |
-|-------|-------|
-| **Sprint** | S12 — Purchase flow browser E2E |
-| **Owner** | 👤 Manuel (← reasignado de Jean. Jean en core web business) |
-| **Branch** | `Manuel/s12-purchase-flow-browser-2026-05-12` |
-| **Depende de** | S11 (Playwright instalado) |
-| **Estado** | 🔴 PENDIENTE |
+| Campo          | Valor                                                       |
+| -------------- | ----------------------------------------------------------- |
+| **Sprint**     | S12 — Purchase flow browser E2E                             |
+| **Owner**      | 👤 Manuel (← reasignado de Jean. Jean en core web business) |
+| **Branch**     | `Manuel/s12-purchase-flow-browser-2026-05-12`               |
+| **Depende de** | S11 (Playwright instalado)                                  |
+| **Estado**     | 🔴 PENDIENTE                                                |
 
 **Tareas:**
 - Navegar listing QA → click "Comprar" → Pago Móvil → Confirmar → Screenshots
@@ -119,19 +119,19 @@ tags:
 
 ### 🟦 TRACK 1: Marketplace (S12-S21)
 
-| Sprint | Descripción | Owner | Estado |
-|--------|-------------|-------|--------|
-| S12 | Purchase flow browser E2E | 👤 Jean | 🔴 PENDIENTE |
-| S13 | Payment proof upload browser | 👤 Manuel | 🔴 PENDIENTE |
-| S14 | Admin dashboard + cierre pagos | 👤 Jean | 🔴 PENDIENTE |
-| S14B | Shopping cart marketplace | 👤 Manuel | 🔴 PENDIENTE |
-| S15 | Location filters + listing modal | 👤 Manuel | 🔴 PENDIENTE |
-| S16 | Notificaciones y chat | 👤 Manuel | 🔴 PENDIENTE |
-| S17 | Seller dashboard browser | 👤 Jean | 🔴 PENDIENTE |
-| S18 | Full regression browser | 👤 Manuel | 🔴 PENDIENTE |
-| S19 | Performance + load | 👤 Jean | 🔴 PENDIENTE |
-| S20 | SEO/AEO audit completo | 👤 Manuel | 🔴 PENDIENTE |
-| S21 | Production release gate | 👤 Jean | 🔴 PENDIENTE |
+| Sprint | Descripción                      | Owner     | Estado       |
+| ------ | -------------------------------- | --------- | ------------ |
+| S12    | Purchase flow browser E2E        | 👤 Jean   | 🔴 PENDIENTE |
+| S13    | Payment proof upload browser     | 👤 Manuel | 🔴 PENDIENTE |
+| S14    | Admin dashboard + cierre pagos   | 👤 Jean   | 🔴 PENDIENTE |
+| S14B   | Shopping cart marketplace        | 👤 Manuel | 🔴 PENDIENTE |
+| S15    | Location filters + listing modal | 👤 Manuel | 🔴 PENDIENTE |
+| S16    | Notificaciones y chat            | 👤 Manuel | 🔴 PENDIENTE |
+| S17    | Seller dashboard browser         | 👤 Jean   | 🔴 PENDIENTE |
+| S18    | Full regression browser          | 👤 Manuel | 🔴 PENDIENTE |
+| S19    | Performance + load               | 👤 Jean   | 🔴 PENDIENTE |
+| S20    | SEO/AEO audit completo           | 👤 Manuel | 🔴 PENDIENTE |
+| S21    | Production release gate          | 👤 Jean   | 🔴 PENDIENTE |
 
 ### 🟩 TRACK 2: Booking
 

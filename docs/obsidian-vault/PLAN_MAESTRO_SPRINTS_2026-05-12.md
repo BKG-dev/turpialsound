@@ -297,12 +297,12 @@ TRACK 5 🟧 UI/UX:        S-UX-01 → S-UX-02
 
 ### S19 — Performance + Load
 
-| Campo | Valor |
-|-------|-------|
-| **Owner** | 👤 Jean |
-| **Branch** | `jean/s19-performance-load-2026-05-12` |
-| **Depende de** | S18 |
-| **Tipo** | 🔧 TÉCNICO |
+| Campo          | Valor                                  |
+| -------------- | -------------------------------------- |
+| **Owner**      | 👤 Jean                                |
+| **Branch**     | `jean/s19-performance-load-2026-05-12` |
+| **Depende de** | S18                                    |
+| **Tipo**       | 🔧 TÉCNICO                             |
 
 **Tareas:**
 1. Lighthouse: Performance, Accessibility, Best Practices, SEO

@@ -1,0 +1,225 @@
+{
+  "runId": "2026-05-11T04-15-17-413Z",
+  "appUrl": "https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app",
+  "startedAt": "2026-05-11T04:15:17.414Z",
+  "finishedAt": "2026-05-11T04:15:27.006Z",
+  "modules": [
+    {
+      "module": "QA-00",
+      "status": "RUNNING",
+      "durationMs": null,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [],
+      "startedAt": "2026-05-11T04:15:17.481Z",
+      "finishedAt": null
+    },
+    {
+      "module": "QA-00",
+      "status": "FAIL",
+      "durationMs": 3719,
+      "failureCode": "PREFLIGHT_FAILED",
+      "failureDetail": "Some checks failed. See details.",
+      "checks": [
+        {
+          "check": "env",
+          "status": "PASS"
+        },
+        {
+          "check": "adminEnv",
+          "status": "PASS",
+          "detail": "QA_ADMIN_* present"
+        },
+        {
+          "check": "appUrl",
+          "status": "PASS",
+          "detail": "HTTP 200"
+        },
+        {
+          "check": "previewBKG",
+          "status": "PASS",
+          "detail": "Vercel preview detected (BKG)"
+        },
+        {
+          "check": "dbConnection",
+          "status": "PASS"
+        },
+        {
+          "check": "dbTables",
+          "status": "FAIL",
+          "detail": "Missing: mp_users, mp_listings, mp_transactions, mp_listing_questions, mp_chat_threads, mp_messages, mp_disputes, mp_payouts, mp_payout_methods, mp_transaction_status_history, mp_blob_object_metadata",
+          "tables": [
+            {
+              "table": "mp_users",
+              "exists": false
+            },
+            {
+              "table": "mp_listings",
+              "exists": false
+            },
+            {
+              "table": "mp_transactions",
+              "exists": false
+            },
+            {
+              "table": "mp_listing_questions",
+              "exists": false
+            },
+            {
+              "table": "mp_chat_threads",
+              "exists": false
+            },
+            {
+              "table": "mp_messages",
+              "exists": false
+            },
+            {
+              "table": "mp_disputes",
+              "exists": false
+            },
+            {
+              "table": "mp_payouts",
+              "exists": false
+            },
+            {
+              "table": "mp_payout_methods",
+              "exists": false
+            },
+            {
+              "table": "mp_transaction_status_history",
+              "exists": false
+            },
+            {
+              "table": "mp_blob_object_metadata",
+              "exists": false
+            }
+          ]
+        },
+        {
+          "check": "qaBuyer",
+          "status": "FAIL",
+          "detail": "\nInvalid `prisma.mpUser.findUnique()` invocation in\nD:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\scripts\\qa\\lib\\db-read.mjs:65:34\n\n  62 export async function findUserByIdentifier(identifier) {\n  63   const prisma = await getPrisma()\n  64 \n→ 65   let user = await prisma.mpUser.findUnique(\nThe table `public.mp_users` does not exist in the current database."
+        },
+        {
+          "check": "qaSeller",
+          "status": "FAIL",
+          "detail": "\nInvalid `prisma.mpUser.findUnique()` invocation in\nD:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\scripts\\qa\\lib\\db-read.mjs:65:34\n\n  62 export async function findUserByIdentifier(identifier) {\n  63   const prisma = await getPrisma()\n  64 \n→ 65   let user = await prisma.mpUser.findUnique(\nThe table `public.mp_users` does not exist in the current database."
+        },
+        {
+          "check": "assets",
+          "status": "SKIP",
+          "detail": "Not required for S03F"
+        }
+      ],
+      "startedAt": "2026-05-11T04:15:17.481Z",
+      "finishedAt": "2026-05-11T04:15:21.200Z"
+    },
+    {
+      "module": "QA-01",
+      "status": "RUNNING",
+      "durationMs": null,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [],
+      "startedAt": "2026-05-11T04:15:21.256Z",
+      "finishedAt": null
+    },
+    {
+      "module": "QA-01",
+      "status": "FAIL",
+      "durationMs": 1280,
+      "failureCode": "DB_QUERY_ERROR",
+      "failureDetail": "\nInvalid `prisma.mpUser.findUnique()` invocation in\nD:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\scripts\\qa\\lib\\db-read.mjs:65:34\n\n  62 export async function findUserByIdentifier(identifier) {\n  63   const prisma = await getPrisma()\n  64 \n→ 65   let user = await prisma.mpUser.findUnique(\nThe table `public.mp_users` does not exist in the current database.",
+      "checks": [
+        {
+          "check": "buyer",
+          "status": "FAIL",
+          "code": "DB_QUERY_ERROR",
+          "detail": "\nInvalid `prisma.mpUser.findUnique()` invocation in\nD:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\scripts\\qa\\lib\\db-read.mjs:65:34\n\n  62 export async function findUserByIdentifier(identifier) {\n  63   const prisma = await getPrisma()\n  64 \n→ 65   let user = await prisma.mpUser.findUnique(\nThe table `public.mp_users` does not exist in the current database."
+        },
+        {
+          "check": "seller",
+          "status": "FAIL",
+          "code": "DB_QUERY_ERROR",
+          "detail": "\nInvalid `prisma.mpUser.findUnique()` invocation in\nD:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\scripts\\qa\\lib\\db-read.mjs:65:34\n\n  62 export async function findUserByIdentifier(identifier) {\n  63   const prisma = await getPrisma()\n  64 \n→ 65   let user = await prisma.mpUser.findUnique(\nThe table `public.mp_users` does not exist in the current database."
+        },
+        {
+          "check": "admin",
+          "status": "FAIL",
+          "code": "DB_QUERY_ERROR",
+          "detail": "\nInvalid `prisma.mpUser.findUnique()` invocation in\nD:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\scripts\\qa\\lib\\db-read.mjs:65:34\n\n  62 export async function findUserByIdentifier(identifier) {\n  63   const prisma = await getPrisma()\n  64 \n→ 65   let user = await prisma.mpUser.findUnique(\nThe table `public.mp_users` does not exist in the current database."
+        }
+      ],
+      "startedAt": "2026-05-11T04:15:21.256Z",
+      "finishedAt": "2026-05-11T04:15:22.536Z"
+    },
+    {
+      "module": "QA-02",
+      "status": "RUNNING",
+      "durationMs": null,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [],
+      "startedAt": "2026-05-11T04:15:22.547Z",
+      "finishedAt": null
+    },
+    {
+      "module": "QA-02",
+      "status": "FAIL",
+      "durationMs": 444,
+      "failureCode": "UNKNOWN",
+      "failureDetail": "\nInvalid `prisma.mpUser.findUnique()` invocation in\nD:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\scripts\\qa\\lib\\db-read.mjs:65:34\n\n  62 export async function findUserByIdentifier(identifier) {\n  63   const prisma = await getPrisma()\n  64 \n→ 65   let user = await prisma.mpUser.findUnique(\nThe table `public.mp_users` does not exist in the current database.",
+      "checks": [],
+      "startedAt": "2026-05-11T04:15:22.536Z",
+      "finishedAt": "2026-05-11T04:15:22.980Z"
+    },
+    {
+      "module": "QA-03",
+      "status": "RUNNING",
+      "durationMs": null,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [],
+      "startedAt": "2026-05-11T04:15:22.989Z",
+      "finishedAt": null
+    },
+    {
+      "module": "QA-03",
+      "status": "FAIL",
+      "durationMs": 4016,
+      "failureCode": "LISTING_NOT_VISIBLE_HOME",
+      "failureDetail": "\nInvalid `prisma.mpListing.findMany()` invocation in\nD:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\scripts\\qa\\lib\\db-read.mjs:143:27\n\n  140 \n  141 export async function findActiveListingsBySlug(slug) {\n  142   const prisma = await getPrisma()\n→ 143   return prisma.mpListing.findMany(\nThe table `public.mp_listings` does not exist in the current database.",
+      "checks": [
+        {
+          "check": "dbDiscovery",
+          "status": "FAIL",
+          "detail": "\nInvalid `prisma.mpListing.findMany()` invocation in\nD:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\scripts\\qa\\lib\\db-read.mjs:143:27\n\n  140 \n  141 export async function findActiveListingsBySlug(slug) {\n  142   const prisma = await getPrisma()\n→ 143   return prisma.mpListing.findMany(\nThe table `public.mp_listings` does not exist in the current database."
+        },
+        {
+          "check": "http_https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app/marketplace",
+          "status": "FAIL",
+          "detail": "Listing not found in server-rendered HTML (may be client-rendered)",
+          "htmlLength": 264239
+        },
+        {
+          "check": "http_https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app/marketplace/qa-e2e-s03f-selleria-discovery",
+          "status": "FAIL",
+          "detail": "HTTP 404"
+        },
+        {
+          "check": "classification",
+          "status": "PARTIAL",
+          "detail": "BROWSER_REQUIRED — listing exists in DB (DATA_PASS) but not in server-rendered HTML. UI validation needs browser (Playwright/CDP)."
+        }
+      ],
+      "startedAt": "2026-05-11T04:15:22.989Z",
+      "finishedAt": "2026-05-11T04:15:27.005Z"
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "passed": 0,
+    "failed": 4,
+    "skipped": 0
+  }
+}

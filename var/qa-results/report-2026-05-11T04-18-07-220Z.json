@@ -1,0 +1,297 @@
+{
+  "runId": "2026-05-11T04-18-07-220Z",
+  "appUrl": "https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app",
+  "startedAt": "2026-05-11T04:18:07.221Z",
+  "finishedAt": "2026-05-11T04:18:14.243Z",
+  "modules": [
+    {
+      "module": "QA-00",
+      "status": "RUNNING",
+      "durationMs": null,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [],
+      "startedAt": "2026-05-11T04:18:07.294Z",
+      "finishedAt": null
+    },
+    {
+      "module": "QA-00",
+      "status": "PASS",
+      "durationMs": 2543,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [
+        {
+          "check": "env",
+          "status": "PASS"
+        },
+        {
+          "check": "adminEnv",
+          "status": "PASS",
+          "detail": "QA_ADMIN_* present"
+        },
+        {
+          "check": "appUrl",
+          "status": "PASS",
+          "detail": "HTTP 200"
+        },
+        {
+          "check": "previewBKG",
+          "status": "PASS",
+          "detail": "Vercel preview detected (BKG)"
+        },
+        {
+          "check": "dbConnection",
+          "status": "PASS"
+        },
+        {
+          "check": "dbTables",
+          "status": "PASS",
+          "detail": "11 tables OK",
+          "tables": [
+            {
+              "table": "mp_users",
+              "exists": true
+            },
+            {
+              "table": "mp_listings",
+              "exists": true
+            },
+            {
+              "table": "mp_transactions",
+              "exists": true
+            },
+            {
+              "table": "mp_listing_questions",
+              "exists": true
+            },
+            {
+              "table": "mp_chat_threads",
+              "exists": true
+            },
+            {
+              "table": "mp_messages",
+              "exists": true
+            },
+            {
+              "table": "mp_disputes",
+              "exists": true
+            },
+            {
+              "table": "mp_payouts",
+              "exists": true
+            },
+            {
+              "table": "mp_payout_methods",
+              "exists": true
+            },
+            {
+              "table": "mp_transaction_status_history",
+              "exists": true
+            },
+            {
+              "table": "mp_blob_object_metadata",
+              "exists": true
+            }
+          ]
+        },
+        {
+          "check": "qaBuyer",
+          "status": "PASS",
+          "detail": "Found: buyerIA (buyerIA@local.test), role=USER, isSeller=false",
+          "user": {
+            "email": "buyerIA@local.test",
+            "displayName": "buyerIA",
+            "role": "USER",
+            "isSeller": false,
+            "isBanned": false
+          }
+        },
+        {
+          "check": "qaSeller",
+          "status": "PASS",
+          "detail": "Found: sellerIA (sellerIA@local.test), role=USER, isSeller=true, candidateCount=1",
+          "user": {
+            "email": "sellerIA@local.test",
+            "displayName": "sellerIA",
+            "role": "USER",
+            "isSeller": true,
+            "isBanned": false
+          },
+          "candidateCount": 1
+        },
+        {
+          "check": "assets",
+          "status": "SKIP",
+          "detail": "Not required for S03F"
+        }
+      ],
+      "startedAt": "2026-05-11T04:18:07.294Z",
+      "finishedAt": "2026-05-11T04:18:09.837Z"
+    },
+    {
+      "module": "QA-01",
+      "status": "RUNNING",
+      "durationMs": null,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [],
+      "startedAt": "2026-05-11T04:18:09.855Z",
+      "finishedAt": null
+    },
+    {
+      "module": "QA-01",
+      "status": "PASS",
+      "durationMs": 2239,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [
+        {
+          "check": "buyer",
+          "status": "PASS",
+          "detail": "AUTH_DATA_PASS: buyerIA (buyerIA@local.test)",
+          "result": {
+            "id": "cmo8s1ypo00001sneqb7uf2wz",
+            "email": "buyerIA@local.test",
+            "displayName": "buyerIA",
+            "isSeller": false,
+            "role": "USER",
+            "isBanned": false
+          },
+          "sessionNote": "SESSION_BROWSER_REQUIRED — session cookie validation needs browser/HTTP context"
+        },
+        {
+          "check": "seller",
+          "status": "PASS",
+          "detail": "AUTH_DATA_PASS: sellerIA (sellerIA@local.test)",
+          "result": {
+            "id": "cmo8s1z8b00011snebee13ges",
+            "email": "sellerIA@local.test",
+            "displayName": "sellerIA",
+            "isSeller": true,
+            "role": "USER",
+            "isBanned": false
+          },
+          "sessionNote": "SESSION_BROWSER_REQUIRED — session cookie validation needs browser/HTTP context"
+        },
+        {
+          "check": "admin",
+          "status": "PASS",
+          "detail": "AUTH_DATA_PASS: mvera (mvera@dev.local), role=SUPER",
+          "result": {
+            "id": "cmnw0qtms00001cnew7o28bnp",
+            "email": "mvera@dev.local",
+            "displayName": "mvera",
+            "isSeller": true,
+            "role": "SUPER",
+            "isBanned": false
+          },
+          "sessionNote": "SESSION_BROWSER_REQUIRED — session cookie validation needs browser/HTTP context"
+        }
+      ],
+      "startedAt": "2026-05-11T04:18:09.855Z",
+      "finishedAt": "2026-05-11T04:18:12.094Z"
+    },
+    {
+      "module": "QA-02",
+      "status": "RUNNING",
+      "durationMs": null,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [],
+      "startedAt": "2026-05-11T04:18:12.102Z",
+      "finishedAt": null
+    },
+    {
+      "module": "QA-02",
+      "status": "PASS",
+      "durationMs": 761,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [
+        {
+          "check": "sellerLookup",
+          "status": "PASS",
+          "detail": "Found sellerIA: sellerIA (sellerIA@local.test), id=cmo8***"
+        },
+        {
+          "check": "listingCreate",
+          "status": "PASS",
+          "detail": "Listing created: slug=qa-e2e-s03f-selleria-discovery, status=ACTIVE, price=125",
+          "listing": {
+            "id": "cmp0oykxl0000z8ne2wu9cjwh",
+            "slug": "qa-e2e-s03f-selleria-discovery",
+            "status": "ACTIVE",
+            "title": "QA S03F sellerIA Discovery"
+          }
+        },
+        {
+          "check": "listingVerify",
+          "status": "PASS",
+          "detail": "DB verify: listing ACTIVE, seller matches"
+        }
+      ],
+      "startedAt": "2026-05-11T04:18:12.102Z",
+      "finishedAt": "2026-05-11T04:18:12.863Z"
+    },
+    {
+      "module": "QA-03",
+      "status": "RUNNING",
+      "durationMs": null,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [],
+      "startedAt": "2026-05-11T04:18:12.871Z",
+      "finishedAt": null
+    },
+    {
+      "module": "QA-03",
+      "status": "PASS",
+      "durationMs": 1371,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [
+        {
+          "check": "dbDiscovery",
+          "status": "PASS",
+          "detail": "DATA_DISCOVERY_PASS: 1 active listing(s) found for slug pattern 'qa-e2e-s03f-selleria-discovery'",
+          "exactMatch": {
+            "id": "cmp0oykxl0000z8ne2wu9cjwh",
+            "slug": "qa-e2e-s03f-selleria-discovery",
+            "status": "ACTIVE",
+            "title": "QA S03F sellerIA Discovery",
+            "category": "instrumentos-nuevos"
+          },
+          "totalActive": 1
+        },
+        {
+          "check": "http_https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app/marketplace",
+          "status": "PASS",
+          "detail": "UI_PASS: listing found in HTML (by slug)",
+          "foundBySlug": true,
+          "foundByTitle": true
+        },
+        {
+          "check": "http_https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app/marketplace/qa-e2e-s03f-selleria-discovery",
+          "status": "PASS",
+          "detail": "UI_PASS: listing found in HTML (by slug)",
+          "foundBySlug": true,
+          "foundByTitle": true
+        },
+        {
+          "check": "classification",
+          "status": "PASS",
+          "detail": "UI_PASS — listing visible in both DB and server-rendered HTML"
+        }
+      ],
+      "startedAt": "2026-05-11T04:18:12.871Z",
+      "finishedAt": "2026-05-11T04:18:14.242Z"
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0
+  }
+}
