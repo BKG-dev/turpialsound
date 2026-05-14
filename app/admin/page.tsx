@@ -101,6 +101,7 @@ function formatDateTime(value: Date): string {
   return new Intl.DateTimeFormat('es-VE', {
     dateStyle: 'medium',
     timeStyle: 'short',
+    timeZone: 'America/Caracas',
   }).format(value)
 }
 
@@ -112,6 +113,7 @@ function formatSchedule(eventDate: Date, eventEndDate: Date | null): string {
 
   const end = new Intl.DateTimeFormat('es-VE', {
     timeStyle: 'short',
+    timeZone: 'America/Caracas',
   }).format(eventEndDate)
   return `${start} - ${end}`
 }
