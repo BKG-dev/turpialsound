@@ -3,7 +3,7 @@ type: master-dashboard
 project: "Turpial Sound"
 status: reconciling
 phase: "Fase D cerrada. Reconciliando ramas Jean+Manuel para push a madre."
-last_updated: "2026-05-14T05:01-04:00"
+last_updated: "2026-05-14T13:03-04:00"
 mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
 production_branch: "prod/current-www-turpialsound-2026-05-08"
 production_head: "92fd6a3"

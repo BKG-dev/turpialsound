@@ -19,32 +19,27 @@ tags:
 
 ---
 
-## 🏗️ Analogía: Una fábrica de software
+## 🏗️ Resumen en 30 segundos
 
-Turpial Sound es una fábrica con **dos operadores** (Jean y Manuel) y una **línea de producción** de 5 estaciones que va de la idea al producto en `turpialsound.com`.
+Turpial Sound = **2 operadores** (Jean + Manuel) + **5 estaciones** de trabajo + **1 rama madre** + **4 reglas de oro**.
 
 ```
-  ESTACIÓN 1        ESTACIÓN 2        ESTACIÓN 3        ESTACIÓN 4           ESTACIÓN 5
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    ┌──────────────┐
-│ DOCS         │  │ RAMA PROPIA  │  │ CÓDIGO + QA  │  │ VALIDACIÓN   │    │ PRODUCCIÓN   │
-│ CANÓNICOS    │→ │              │→ │              │→ │ + MERGE GATE │ →  │ turpialsound │
-│              │  │              │  │              │  │              │    │ .com         │
-└──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘    └──────────────┘
-   Ambos leen        Ambos crean       Ambos codean       Jean mergea         Jean + Manuel
-   docs              rama/sprint       + testean          Manuel valida       validan prod
+ABRIR SESIÓN → Leer docs → Crear rama → Codear → Validar (10 checks) → Push → Vercel preview → Jean merge a madre → Smoke → Main
 ```
+
+**Cada push requiere:** `tsc --noEmit` + `pnpm build` + `git diff --check` + sin ESLint errors + vercel preview OK.
 
 ---
 
-## 📋 Las 5 Estaciones — Detalle
+## 📋 Las 5 Estaciones
 
 | # | Estación | Quién | Qué hace | Evidencia |
 |---|----------|-------|----------|-----------|
 | 1 | **Docs canónicos** | Ambos | Leer [[INSTRUCCION_APERTURA_SESION]] + [[00_CENTRAL_TURPIAL]] | Sesión iniciada |
-| 2 | **Rama propia** | Ambos | `git checkout -b {Op}/{sprint}-{fecha}` desde `integration/today-reservas-marketplace-stable-2026-05-07` | Rama creada |
-| 3 | **Código + QA** | Ambos | Implementar scope. QA modules. Playwright. Commits con prefijo `qa(sXX):` | Commits |
-| 4 | **Validación + Gate** | Jean (mergea), Manuel (valida) | `tsc --noEmit` + `pnpm build` + QA PASS + sin secrets + sin `/reservas` | Checklist 8/8 |
-| 5 | **Producción** | Jean | `git merge` a main → Vercel auto-deploy → smoke post-prod | `turpialsound.com` OK |
+| 2 | **Rama propia** | Ambos | `git checkout -b {Op}/{sprint}-{fecha}` desde madre | Rama creada |
+| 3 | **Código + QA** | Ambos | Implementar scope, QA modules, Playwright, commits con prefijo | Commits |
+| 4 | **Validación + Gate** | Jean (mergea), Manuel (valida) | 10 checks pre-push + Vercel preview | Checklist 10/10 |
+| 5 | **Producción** | Jean | `git merge` a main → Vercel auto-deploy → smoke | `turpialsound.com` OK |
 
 ---
 
@@ -52,10 +47,10 @@ Turpial Sound es una fábrica con **dos operadores** (Jean y Manuel) y una **lí
 
 | # | Regla | Razón |
 |---|-------|-------|
-| 1 | **Una sola rama madre** | `integration/today-reservas-marketplace-stable-2026-05-07`. Sin esto, divergencia de ramas. |
+| 1 | **Una sola rama madre** | `integration/today-reservas-marketplace-stable-2026-05-07`. Sin esto, divergencia. |
 | 2 | **Jean es el gatekeeper** | Solo Jean mergea a madre y main. Nadie despliega directo a prod. |
 | 3 | **Zonas exclusivas** | `/reservas` = Jean. `schema.prisma` = lock doble Jean+Manuel. |
-| 4 | **Cerrar antes de abrir** | Un sprint no empieza hasta que el anterior en su track está ✅ CERRADO. |
+| 4 | **Cerrar antes de abrir** | Sprint no empieza hasta que el anterior en su track está ✅ CERRADO. |
 
 ---
 
@@ -66,6 +61,88 @@ Turpial Sound es una fábrica con **dos operadores** (Jean y Manuel) y una **lí
 | **Zona** | `/reservas`, DB/schema, prod, merge gate, Vercel envs | `/marketplace`, QA, Playwright, docs, SEO, vault |
 | **Puede** | Mergear a madre y main, gatekeeper de prod | Ejecutar sprints marketplace, QA, smoke, docs |
 | **NO puede** | Desplegar sin validación de Manuel | Tocar `/reservas`, mergear a madre, tocar schema sin Jean |
+
+---
+
+## ✅ Pre-Push Checklist — OBLIGATORIO
+
+> **Sin excepción. Si un solo check falla, el push se cancela.**
+
+| # | Check | Comando | Bloquea |
+|---|-------|---------|---------|
+| 1 | **ESLint** | `pnpm run lint` | ✅ Error fatal |
+| 2 | **TypeScript** | `npx tsc --noEmit` | ✅ No compila |
+| 3 | **Build** | `pnpm run build` | ✅ No despliega |
+| 4 | **Diff whitespace** | `git diff --check` | ✅ Whitespace corrupto |
+| 5 | **Indentación** | Revisar tabs/spaces | ⚠️ Advertencia |
+| 6 | **No .env en diff** | `git diff --name-only \| grep .env` | ✅ Riesgo seguridad |
+| 7 | **No /reservas** | Si el sprint es marketplace | ✅ Zona exclusiva Jean |
+| 8 | **No `as any`** | ESLint `no-explicit-any` | ✅ Error Vercel |
+| 9 | **No type sin usar** | ESLint `no-unused-vars` | ✅ Error Vercel |
+| 10 | **Vercel preview** | Verificar deploy OK | ✅ Sin preview no hay smoke |
+
+### Script de validación pre-push
+
+```bash
+npx tsc --noEmit || return
+pnpm run build || return
+git diff --check || return
+git diff --name-only HEAD~1..HEAD | grep "\.env" && echo "SECRETS!" && return
+git push origin <rama>
+npx vercel list | head -3
+```
+
+---
+
+## 🚀 Vercel Preview Link
+
+Al pushear, Vercel auto-despliega una preview. Obtener el link:
+
+```bash
+npx vercel list | head -3
+# https://turpialsound-XXXXX-bkgs-projects-829c67c1.vercel.app
+```
+
+**Compartir el link con el otro operador.** Si falla el build, inspeccionar:
+
+```bash
+npx vercel inspect <url> --logs
+```
+
+---
+
+## 🤝 Sincronización Bidireccional
+
+Protocolo para que Jean y Manuel SIEMPRE vean la misma versión de docs.
+
+### Al abrir sesión (AMBOS)
+
+```bash
+git fetch origin --prune
+git checkout integration/today-reservas-marketplace-stable-2026-05-07
+git pull origin integration/today-reservas-marketplace-stable-2026-05-07
+# Verificar:
+Select-String "last_updated" docs/obsidian-vault/00_CENTRAL_TURPIAL.md
+```
+
+Si `last_updated` no coincide con la última fecha conocida → **ALERTA**.
+
+### Al cerrar sprint
+
+1. Actualizar `00_CENTRAL_TURPIAL.md`
+2. `last_updated` = fecha/hora actual
+3. Commit + push a rama del sprint
+4. **Avisar al otro operador:** "SXX cerrado, rama lista"
+5. Jean mergea a madre + push
+6. Ambos: `git fetch && git pull madre` en próxima sesión
+
+### ⚠️ Obsidian
+
+**Cerrar Obsidian antes de `git checkout`.** Si estuvo abierto:
+
+```bash
+git checkout HEAD -- docs/obsidian-vault/
+```
 
 ---
 
@@ -80,74 +157,51 @@ CREAR RAMA → git checkout -b {Operador}/{sprint}-{fecha}
   ↓
 EJECUTAR → Código + QA + Playwright + commits con prefijo
   ↓
-VALIDAR → tsc + build + QA PASS + sin secrets + sin /reservas
+VALIDAR → 10 checks pre-push (tsc + build + diff + ESLint + preview)
   ↓
-CERRAR → Actualizar 00_CENTRAL + PLAN_MAESTRO + commit + push + notificar
+CERRAR → Actualizar 00_CENTRAL + commit + push + avisar al otro
   ↓
-JEAN MERGE GATE → Revisar + git merge a madre + push
+JEAN MERGE GATE → git merge a madre + push + Vercel preview link
   ↓
-MANUEL SMOKE → /, /marketplace, /reservas, /api/bcv-rate, /admin/login → OK
+MANUEL SMOKE → /, /marketplace, /reservas, /api/bcv-rate, /admin/login
   ↓
 JEAN RELEASE → git merge a main → Vercel → turpialsound.com
 ```
-
-> **Canvas visual interactivo:** [[FLUJO_PROTOCOLO_TRABAJO]]
 
 ---
 
 ## 🧠 Oreshnik: HOY vs FUTURO
 
-| Componente | HOY (manual) | FUTURO (Oreshnik automatizado) |
-|-----------|-------------|-------------------------------|
-| Pre-flight | Ejecutar QA-00 manual | `.husky/pre-commit` automático |
-| Zone check | Leer tabla en 00_CENTRAL | `zone-map.json` + `zone-check.ps1` |
-| Crear rama | `git checkout -b` manual | `scaffold-sprint.ps1` un comando |
-| Ejecutar | Manual | `oreshnik.ps1 run --sprint S15` |
+| Componente | HOY (manual) | FUTURO (Oreshnik) |
+|-----------|-------------|-------------------|
+| Pre-flight | QA-00 manual | `.husky/pre-commit` |
+| Zone check | Leer 00_CENTRAL | `zone-map.json` + `zone-check.ps1` |
+| Crear rama | `git checkout -b` | `scaffold-sprint.ps1` |
+| Pre-push | Manual 10 checks | `.husky/pre-push` |
 | Cerrar | Editar docs a mano | `generate-closure-report.ps1` |
-| Notificar | Manual (mirar git) | `update-dashboard.ps1` + marcadores |
-| Vercel preview | Auto por push | Preview único por rama `Manuel/*` |
+| Vercel preview | `npx vercel list` | Link en commit message |
 
 ---
 
-## ⚡ Estado Actual — 2026-05-14
-
-```
-FASE: RECONCILIACIÓN (PASO 0 — BLOQUEA TODO)
-
-  Manuel/integration-s12-s14b-... ──┐
-                                      ├──→ Jean unifica → madre → validar → main
-  integration/preserve-dashboard-... ──┘
-```
-
-| Track | Cerrado | Parcial | Pendiente |
-|-------|---------|---------|-----------|
-| 🟦 Marketplace | S01-S14B | S19 | S15-S21 |
-| 🟩 Booking | — | S-JB-01/02/03 | S-JB-04 |
-| 🟨 Crecimiento | S-MK-01 | S-MK-03 | S-MK-02/04/05/06 |
-| 🟪 Admin-Legal | — | — | S-ADM-01 a 04 |
-| 🟧 UI/UX | — | — | S-UX-01/02 |
-
----
-
-## 📖 Documentos Canónicos (en orden de autoridad)
+## 📖 Documentos Canónicos
 
 | # | Documento | Función |
 |---|-----------|---------|
-| 1 | [[00_CENTRAL_TURPIAL]] | **Fuente única de verdad.** Estado de todo. Manda sobre cualquier otro. |
-| 2 | [[INSTRUCCION_APERTURA_SESION]] | Qué hacer al abrir Kilo. Instrucciones separadas Jean/Manuel. |
-| 3 | [[PLAN_MAESTRO_SPRINTS_2026-05-12]] | Definiciones de los 27 sprints en 5 tracks. |
-| 4 | [[BUS_CONTROL_TURPIAL]] | Reglas del bus, locks, checklist de push. |
-| 5 | [[METODOLOGIA_OPTIMIZACION]] | Análisis detallado de optimizaciones (lo que se va a construir). |
-| 6 | `docs/07_handoffs/qa-dispatcher.json` | Despacho canónico de QA. |
+| 1 | [[00_CENTRAL_TURPIAL]] | **Fuente única de verdad.** Manda sobre todos. |
+| 2 | [[INSTRUCCION_APERTURA_SESION]] | Qué hacer al abrir Kilo (Jean + Manuel). |
+| 3 | [[PLAN_MAESTRO_SPRINTS_2026-05-12]] | 27 sprints en 5 tracks. |
+| 4 | [[BUS_CONTROL_TURPIAL]] | Reglas del bus, locks, checklist. |
+| 5 | [[METODOLOGIA_OPTIMIZACION]] | Detalle de automatizaciones Oreshnik. |
+| 6 | `docs/07_handoffs/qa-dispatcher.json` | Despacho canónico QA. |
 
 ---
 
 ## 🔗 Enlaces rápidos
 
-- 📊 **Canvas visual:** [[FLUJO_PROTOCOLO_TRABAJO]]
-- 🚀 **Apertura de sesión:** [[INSTRUCCION_APERTURA_SESION]]
-- 🏠 **Dashboard central:** [[00_CENTRAL_TURPIAL]]
-- 📋 **Plan maestro:** [[PLAN_MAESTRO_SPRINTS_2026-05-12]]
-- 🐛 **Bugs críticos:** [[BUGS_CRITICOS]]
-- 💱 **Flujo de tasas:** [[FLUJO_TASAS_BCV]]
-- 🧪 **QA Harness:** [[QA_HARNESS_CANVAS_2026-05-10]]
+- 📊 **Canvas:** [[FLUJO_PROTOCOLO_TRABAJO]]
+- 🚀 **Apertura:** [[INSTRUCCION_APERTURA_SESION]]
+- 🏠 **Dashboard:** [[00_CENTRAL_TURPIAL]]
+- 📋 **Plan:** [[PLAN_MAESTRO_SPRINTS_2026-05-12]]
+- 🐛 **Bugs:** [[BUGS_CRITICOS]]
+- 💱 **Tasas:** [[FLUJO_TASAS_BCV]]
+- 🧪 **QA:** [[QA_HARNESS_CANVAS_2026-05-10]]
