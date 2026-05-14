@@ -426,12 +426,12 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
     // S15: Location filters
     if (filterState.trim()) {
       const state = filterState.trim().toLowerCase()
-      const listingState = ((l as Record<string, unknown>).state ?? '').toString().toLowerCase()
+      const listingState = String(((l as unknown) as Record<string, unknown>).state ?? '').toLowerCase()
       if (!listingState.includes(state)) return false
     }
     if (filterCity.trim()) {
       const city = filterCity.trim().toLowerCase()
-      const listingCity = ((l as Record<string, unknown>).city ?? '').toString().toLowerCase()
+      const listingCity = String(((l as unknown) as Record<string, unknown>).city ?? '').toLowerCase()
       if (!listingCity.includes(city)) return false
     }
 

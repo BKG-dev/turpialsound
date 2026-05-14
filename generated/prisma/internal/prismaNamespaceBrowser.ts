@@ -75,7 +75,8 @@ export const ModelName = {
   MpBlobObjectMetadata: 'MpBlobObjectMetadata',
   MpBinanceRateSnapshot: 'MpBinanceRateSnapshot',
   MpReferenceRateSnapshot: 'MpReferenceRateSnapshot',
-  MpWebhookLog: 'MpWebhookLog'
+  MpWebhookLog: 'MpWebhookLog',
+  MpReview: 'MpReview'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -255,6 +256,7 @@ export const MpUserScalarFieldEnum = {
   verificationLevel: 'verificationLevel',
   isSeller: 'isSeller',
   sellerRating: 'sellerRating',
+  reviewCount: 'reviewCount',
   totalSales: 'totalSales',
   totalPurchases: 'totalPurchases',
   passwordHash: 'passwordHash',
@@ -525,6 +527,21 @@ export const MpWebhookLogScalarFieldEnum = {
 } as const
 
 export type MpWebhookLogScalarFieldEnum = (typeof MpWebhookLogScalarFieldEnum)[keyof typeof MpWebhookLogScalarFieldEnum]
+
+
+export const MpReviewScalarFieldEnum = {
+  id: 'id',
+  buyerId: 'buyerId',
+  sellerId: 'sellerId',
+  listingId: 'listingId',
+  transactionId: 'transactionId',
+  rating: 'rating',
+  title: 'title',
+  comment: 'comment',
+  createdAt: 'createdAt'
+} as const
+
+export type MpReviewScalarFieldEnum = (typeof MpReviewScalarFieldEnum)[keyof typeof MpReviewScalarFieldEnum]
 
 
 export const SortOrder = {

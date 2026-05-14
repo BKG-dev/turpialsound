@@ -414,7 +414,8 @@ model MpUser {
 
   // Seller-specific fields
   isSeller     Boolean  @default(true)
-  sellerRating Decimal? @db.Decimal(3, 2) // 0.00 to 5.00
+  sellerRating Decimal? @db.Decimal(3, 2) // 0.00 to 5.00 — computed from reviews
+  reviewCount  Int      @default(0) // derived count
   totalSales   Int      @default(0)
 
   // Buyer-specific fields
@@ -458,6 +459,8 @@ model MpUser {
   chatThreadsAsSeller MpChatThread[]      @relation("MpChatSeller")
   disputes            MpDispute[]
   mpPayouts           MpPayout[]
+  writtenReviews      MpReview[]          @relation("MpReviewBuyer")
+  receivedReviews     MpReview[]          @relation("MpReviewSeller")
   askedQuestions      MpListingQuestion[] @relation("MpAskedQuestions")
   favoriteListings    MpListing[]         @relation("UserFavorites")
 
@@ -544,6 +547,7 @@ model MpListing {
   transactions MpTransaction[]
   questions    MpListingQuestion[]
   favoritedBy  MpUser[]            @relation("UserFavorites")
+  reviews      MpReview[]
 
   @@index([sellerId])
   @@index([status])
@@ -710,6 +714,7 @@ model MpTransaction {
   @@index([idempotencyKey])
   @@index([frozenRateSource])
   @@index([rateSnapshotId])
+  reviews      MpReview[]
   @@map("mp_transactions")
 }
 
@@ -925,4 +930,30 @@ model MpWebhookLog {
   @@index([processed])
   @@index([createdAt])
   @@map("mp_webhook_logs")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// REVIEWS & RATINGS (S-REV-01)
+// ─────────────────────────────────────────────────────────────────
+
+model MpReview {
+  id            String   @id @default(cuid())
+  buyerId       String
+  buyer         MpUser   @relation("MpReviewBuyer", fields: [buyerId], references: [id])
+  sellerId      String
+  seller        MpUser   @relation("MpReviewSeller", fields: [sellerId], references: [id])
+  listingId     String?
+  listing       MpListing? @relation(fields: [listingId], references: [id])
+  transactionId String?
+  transaction   MpTransaction? @relation(fields: [transactionId], references: [id])
+  rating        Int      // 1-5
+  title         String?
+  comment       String?
+  createdAt     DateTime @default(now())
+
+  @@index([sellerId])
+  @@index([buyerId])
+  @@index([transactionId])
+  @@index([listingId])
+  @@map("mp_reviews")
 }
