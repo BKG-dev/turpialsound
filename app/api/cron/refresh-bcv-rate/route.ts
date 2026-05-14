@@ -1,5 +1,5 @@
 import { resolveReferenceRate } from '@/lib/marketplace/reference-rate'
-import { isPeakWindow, markRefreshed, shouldRefresh, getScheduleDescription } from '@/lib/marketplace/bcv-scheduler'
+import { markRefreshed, shouldRefresh, getScheduleDescription } from '@/lib/marketplace/bcv-scheduler'
 import { NextResponse } from 'next/server'
 
 /**
