@@ -176,7 +176,7 @@ Codigo correcto + DB incorrecta = UI vacia.
 | S14 | Admin dashboard + BCV scheduler | 👤 Manuel | ✅ CERRADO |
 | S14B | Shopping cart + share listing | 👤 Manuel | ✅ CERRADO |
 | S15 | Location filters + listing modal | 👤 Manuel | ✅ CERRADO 2026-05-14 |
-| S16 | Notificaciones y chat | 👤 Manuel | 🔴 PENDIENTE |
+| S16 | Notificaciones y chat | 👤 Manuel | ✅ CERRADO 2026-05-14 |
 | S17 | Seller dashboard browser | 👤 Jean | 🔴 PENDIENTE |
 | S18 | Full regression browser | 👤 Manuel | 🔴 PENDIENTE |
 | S19 | Performance + load | 👤 Jean | 🟡 PARCIAL (LCP/a11y) |
