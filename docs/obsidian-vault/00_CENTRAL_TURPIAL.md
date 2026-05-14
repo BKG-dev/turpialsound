@@ -1,249 +1,252 @@
 ---
 type: master-dashboard
 project: "Turpial Sound"
-status: active
-phase: "Fase D en curso + Tracks paralelos activados (Plan Maestro 2026-05-12)"
-last_updated: "2026-05-13T01:13-04:00"
+status: reconciling
+phase: "Fase D cerrada. Reconciliando ramas Jean+Manuel para push a madre."
+last_updated: "2026-05-14T00:02-04:00"
 mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
-mother_commit: "f7f2d1e"
-preview: "https://turpialsound-5qwhe7is1-bkgs-projects-829c67c1.vercel.app"
 tags:
   - "#central"
   - "#map"
   - "#status/live-source"
   - "#dashboard"
-  - "#multi-agent"
   - "#manuel"
   - "#jean"
+  - "#reconciliation"
 ---
 
 # 🏠 Turpial Sound — Dashboard Activo
 
-> **Abrí este archivo al inicio de cada sesión. Tiene todo lo que necesitás.**
-
-> **📋 Plan Maestro vigente:** [[PLAN_MAESTRO_SPRINTS_2026-05-12]] — Leer antes de ejecutar cualquier sprint.
-
----
-
-## 📍 ¿Dónde estamos?
-
-- **Rama madre:** `integration/today-reservas-marketplace-stable-2026-05-07` (commit `f7f2d1e`)
-- **Preview Vercel:** `https://turpialsound-5qwhe7is1-bkgs-projects-829c67c1.vercel.app`
-- **Fase A, B y C COMPLETAS.** Fase D en curso.
-- **18 módulos QA automatizados** + **1 spec Playwright (S11 login UI smoke).** 0 FAIL. Release Gate 🟢.
-- **/reservas congelado** (zona exclusiva Jean). /marketplace activo y funcional.
-- **5 Tracks de trabajo paralelo activados** con el Plan Maestro 2026-05-12.
+> **ESTE ES EL DOCUMENTO CANONICO. Si hay conflicto con cualquier otro archivo, este manda.**
+>
+> **Plan Maestro:** [[PLAN_MAESTRO_SPRINTS_2026-05-12]] | **Apertura:** [[INSTRUCCION_APERTURA_SESION]]
 
 ---
 
-## 🗺️ Mapa rápido de tracks
+## 🚨 ESTADO ACTUAL — RECONCILIACION EN CURSO (2026-05-14 00:02 VET)
 
-| Track | Color | Descripción | Owner principal |
-|-------|-------|-------------|-----------------|
-| 🟦 **T1 Marketplace** | S12-S21 | Flujo marketplace completo + carrito + location filters + release | Jean + Manuel |
-| 🟩 **T2 Booking** | S-JB-01 a S-JB-04 | Fixes booking + dashboard + tasas + reseñas | 👤 Jean |
-| 🟨 **T3 Crecimiento** | S-MK-01 a S-MK-06 | Mercado, KPIs, SEO/AEO, RRSS, marketing | 👤 Manuel |
-| 🟪 **T4 Admin-Legal** | S-ADM-01 a S-ADM-04 | Documentación legal, banco, Binance, marca, deploy CDA | 👤 Manuel (físico) |
-| 🟧 **T5 UI/UX** | S-UX-01 a S-UX-02 | UI Inmersiva + Refac Global | 👤 Manuel |
+**Existen DOS ramas de integracion divergentes que deben unificarse:**
 
----
+| Rama | Operador | Commits | Contenido |
+|------|----------|---------|-----------|
+| `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` | 👤 Manuel | 51 commits | S12, S13, S14, S14B, BCV, metodologia, QA harness, Playwright |
+| `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` | 👤 Jean | 20 commits | Booking fixes, WhatsApp lab, performance, a11y, AEO, admin dashboard |
+| **Ancestro comun** | — | `20e88e1` (May 9) | — |
+| **Rama madre** | — | `integration/today-reservas-marketplace-stable-2026-05-07` | ESTA es la unica rama madre valida |
 
-## ✅ ¿Qué se ha hecho? — S01-S11 COMPLETOS
-
-| Sprint | Owner | Qué resolvió | Resultado |
-|--------|-------|-------------|-----------|
-| S01 | 👤 Manuel | Preview BKG autónomo | ✅ |
-| S02 | 👤 Jean | Discovery runtime estable | ✅ |
-| S03 | 👤 Manuel | QA Harness 12 módulos | ✅ 12/12 PASS |
-| S04 | 👤 Jean | Payment proof protegido | ✅ 9/9 PASS |
-| S05 | 👤 Manuel | Delivery & receipt flow | ✅ 9/9 PASS |
-| S06 | 👤 Jean | Payout auditable (migración) | ✅ PASS |
-| S07 | 👤 Jean | Tasas y accounting | ✅ 11/11 PASS |
-| S08 | 👤 Manuel | Action center y UX | ✅ 11/11 PASS |
-| S09 | 👤 Manuel | Discovery público y SEO | ✅ 9/9 PASS |
-| S10 | 👤 Jean | Release gate | 🟢 10/10 |
-| S11 | 👤 Manuel | Playwright + login UI smoke | ✅ 3/3 PASS |
-| S12 | 👤 Manuel | Purchase flow browser E2E | ✅ 9/9 PASS |
-| S13 | 👤 Manuel | Payment proof upload browser | ✅ PASS |
-| S14B | 👤 Manuel | Shopping cart + share listing | ✅ PASS |
-| S-MK-01 | 👤 Manuel | Análisis mercado + KPIs | ✅ PASS |
-| — | 👤 Manuel | Scheduler BCV dual frecuencia | ✅ PASS |
-| — | 👤 Manuel | Análisis metodología Oreshnik | ✅ PASS |
-
-> Ver detalle: [[S03_QA_HARNESS_INDEX]] | [[NEXT_PHASE_PLAN_S11_S20]]
+**Produccion actual (turpialsound.com):** Deploy `nahska58r` de Jean (NO incluye marketplace de Manuel).
 
 ---
 
-## 🔴 PRÓXIMO SPRINT — S12 (Manuel, reasignado)
+## 👤 JEAN (BKG-dev) — ESTADO
 
-| Campo          | Valor                                                       |
-| -------------- | ----------------------------------------------------------- |
-| **Sprint**     | S12 — Purchase flow browser E2E                             |
-| **Owner**      | 👤 Manuel (← reasignado de Jean. Jean en core web business) |
-| **Branch**     | `Manuel/s12-purchase-flow-browser-2026-05-12`               |
-| **Depende de** | S11 (Playwright instalado)                                  |
-| **Estado**     | 🔴 PENDIENTE                                                |
+### Sprints cerrados por Jean
 
-**Tareas:**
-- Navegar listing QA → click "Comprar" → Pago Móvil → Confirmar → Screenshots
-- Validar TX creada en DB con status `PENDING_PAYMENT`
-- Cierre: 3/3 screenshots + TX en DB
-- Al terminar: continuar S13 → S14 (Manuel) o entregar a Jean si ya está libre
+| Sprint | Descripcion | Evidencia |
+|--------|-------------|-----------|
+| S02 | Discovery runtime estable | ✅ Mergeado a prod via Ola1 |
+| S04 | Payment proof protegido (9/9 PASS) | ✅ Mergeado a integracion |
+| S06 | Payout auditable | ✅ Mergeado a integracion |
+| S07 | Tasas y accounting (11/11 PASS) | ✅ Mergeado a integracion |
+| S10 | Release gate (10/10 🟢) | ✅ Implementado, no mergeado |
 
----
+### Trabajo de Jean fuera de metodologia (May 10-13) → YA INCORPORADO en su rama
 
-## 🔴 PENDIENTES INMEDIATOS (Jean)
+| Fecha | Commit | Mapeo a sprint del plan |
+|-------|--------|------------------------|
+| May 13 | feat(admin): booking dashboard command center | 🟡 S-JB-02 parcial |
+| May 13 | fix(bookings): QA hold bypass + sitemap | 🟡 S-JB-03 parcial |
+| May 13 | fix(performance): mobile animations, main-thread, LCP, lighthouse | 🟡 S19 parcial |
+| May 12-13 | fix(accessibility): lighthouse a11y (3 commits) | 🟡 S19 parcial |
+| May 12 | feat(aeo): Caracas rehearsal room guide | 🟡 S-MK-03 parcial |
+| May 11 | fix(bookings): whatsapp verification, calendar, duplicate holds, idempotent | 🟡 S-JB-01 parcial |
+| May 10 | feat(lab): whatsapp webhook + meta signup | Fuera de plan |
 
-| # | Pendiente | Sprint | Prioridad |
-|---|-----------|--------|-----------|
-| 1 | ⚠️ **Configurar Vercel Previews por Sprint** — Ver [[ACCION_P1_JEAN_VERCEL_PREVIEWS]] | LOCK GLOBAL | 🔴 P0 |
-| 2 | Push de cambios locales del core web business al repo | ACCIÓN INMEDIATA | 🔴 P0 |
-| 3 | Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel | ACCIÓN INMEDIATA | 🔴 P0 |
-| 4 | S12-S14 REASIGNADOS a Manuel temporalmente | — | ℹ️ |
-| 5 | Retomar S-JB-01 (Booking fixes) al liberarse | S-JB-01 | 🟡 |
+### 🔴 LO QUE JEAN DEBE HACER AHORA
 
----
-
-## 🔴 PENDIENTES INMEDIATOS (Manuel)
-
-| # | Pendiente | Sprint | Prioridad |
-|---|-----------|--------|-----------|
-| 1 | Verificar estado de constitución legal de Turpial Sound | S-ADM-01 | 🔴 P0 |
-| 2 | Preparar plan de despliegue para viernes 15 mayo 11AM CDA | S-ADM-04 | 🔴 P0 |
-| 3 | S-MK-01 — Análisis de mercado y competencia | S-MK-01 | 🟡 |
-| 4 | Revisar APIs RRSS disponibles | S-MK-04 (investigación) | 🟡 |
+| # | Accion | Prioridad |
+|---|--------|-----------|
+| 1 | **Mergear `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` en su rama** o viceversa | 🔴 P0 — BLOQUEA TODO |
+| 2 | **Resolver conflictos** en `actions/marketplace/auth.ts`, `app/admin/page.tsx`, `.env.example`, `next.config.mjs` | 🔴 P0 |
+| 3 | **Validar pre-merge**: `git diff --check`, `npx tsc --noEmit`, `pnpm build` | 🔴 P0 |
+| 4 | **Mergear rama unificada a madre** `integration/today-reservas-marketplace-stable-2026-05-07` | 🔴 P0 |
+| 5 | **Smoke post-merge**: `/`, `/marketplace`, `/reservas`, `/api/bcv-rate`, `/admin/login` | 🔴 P0 |
+| 6 | Ejecutar S10 release gate: `npx tsx scripts/qa/modules/qa-s10-release-gate.mjs` | 🟡 |
+| 7 | Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel | 🟡 |
+| 8 | NO desplegar a produccion hasta que Manuel confirme smoke de marketplace | 🚫 |
 
 ---
 
-## 📊 RESUMEN DE ESTADO DE TRACKS
+## 👤 MANUEL (Manuel Vera) — ESTADO
+
+### Sprints cerrados por Manuel (sesion May 12-13)
+
+| Sprint | Rama | Resultado |
+|--------|------|-----------|
+| S01 | Preview BKG autonomo | ✅ |
+| S03 | QA Harness 12 modulos | ✅ 12/12 PASS |
+| S05 | Delivery & receipt flow | ✅ 9/9 PASS |
+| S08 | Action center y UX | ✅ 11/11 PASS |
+| S09 | Discovery publico y SEO | ✅ 9/9 PASS |
+| S11 | Playwright + login UI smoke | ✅ 3/3 PASS |
+| **S12** | `Manuel/s12-purchase-flow-browser-2026-05-12` | ✅ 9/9 PASS — purchase flow browser E2E |
+| **S13** | `Manuel/s13-proof-upload-browser-2026-05-12` | ✅ PASS — payment proof upload browser |
+| **S14** | `Manuel/s14-admin-dashboard-payment-closure-2026-05-13` | ✅ PASS — BCV scheduler + metodologia |
+| **S14B** | `Manuel/s14b-shopping-cart-share` | ✅ PASS — shopping cart + share + market analysis |
+| **S-MK-01** | (incluido en S14B) | ✅ PASS — analisis de mercado y competencia |
+
+**Rama de integracion:** `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` (YA PUSHEADA)
+
+### 🔴 LO QUE MANUEL DEBE HACER AHORA
+
+| # | Accion | Prioridad |
+|---|--------|-----------|
+| 1 | **Esperar a que Jean haga el merge de reconciliacion** a la rama madre | 🔴 P0 |
+| 2 | **Hacer pull de la rama madre unificada** cuando Jean confirme | 🔴 P0 |
+| 3 | **Ejecutar smoke de marketplace** sobre la rama madre unificada: `/marketplace`, compra, proof upload | 🔴 P0 |
+| 4 | **Verificar que el BCV scheduler funciona** con `CRON_SECRET` en Vercel | 🟡 |
+| 5 | Preparar plan de despliegue para viernes 15 mayo 11AM CDA | 🟡 |
+| 6 | Verificar estado legal de la entidad (S-ADM-01) | 🟡 |
+
+---
+
+## 📊 TRACKS — ESTADO REAL (NO lo que dice el plan maestro obsoleto)
 
 ### 🟦 TRACK 1: Marketplace (S12-S21)
 
-| Sprint | Descripción                      | Owner     | Estado       |
-| ------ | -------------------------------- | --------- | ------------ |
-| S12    | Purchase flow browser E2E        | 👤 Jean   | 🔴 PENDIENTE |
-| S13    | Payment proof upload browser     | 👤 Manuel | 🔴 PENDIENTE |
-| S14    | Admin dashboard + cierre pagos   | 👤 Jean   | 🔴 PENDIENTE |
-| S14B   | Shopping cart marketplace        | 👤 Manuel | 🔴 PENDIENTE |
-| S15    | Location filters + listing modal | 👤 Manuel | 🔴 PENDIENTE |
-| S16    | Notificaciones y chat            | 👤 Manuel | 🔴 PENDIENTE |
-| S17    | Seller dashboard browser         | 👤 Jean   | 🔴 PENDIENTE |
-| S18    | Full regression browser          | 👤 Manuel | 🔴 PENDIENTE |
-| S19    | Performance + load               | 👤 Jean   | 🔴 PENDIENTE |
-| S20    | SEO/AEO audit completo           | 👤 Manuel | 🔴 PENDIENTE |
-| S21    | Production release gate          | 👤 Jean   | 🔴 PENDIENTE |
+| Sprint | Descripcion | Owner | Estado |
+|--------|-------------|-------|--------|
+| S12 | Purchase flow browser E2E | 👤 Manuel | ✅ CERRADO |
+| S13 | Payment proof upload browser | 👤 Manuel | ✅ CERRADO |
+| S14 | Admin dashboard + BCV scheduler | 👤 Manuel | ✅ CERRADO |
+| S14B | Shopping cart + share listing | 👤 Manuel | ✅ CERRADO |
+| S15 | Location filters + listing modal | 👤 Manuel | 🔴 PENDIENTE — requiere lock doble schema |
+| S16 | Notificaciones y chat | 👤 Manuel | 🔴 PENDIENTE |
+| S17 | Seller dashboard browser | 👤 Jean | 🔴 PENDIENTE |
+| S18 | Full regression browser | 👤 Manuel | 🔴 PENDIENTE |
+| S19 | Performance + load | 👤 Jean | 🟡 PARCIAL — Jean avanzo LCP/a11y fuera de metodologia |
+| S20 | SEO/AEO audit completo | 👤 Manuel | 🔴 PENDIENTE |
+| S21 | Production release gate | 👤 Jean | 🔴 PENDIENTE |
 
 ### 🟩 TRACK 2: Booking
 
-| Sprint | Descripción | Owner | Estado |
+| Sprint | Descripcion | Owner | Estado |
 |--------|-------------|-------|--------|
-| S-JB-01 | Fixes críticos (selección múltiple, cantidad, WhatsApp) | 👤 Jean | 🔴 PENDIENTE |
-| S-JB-02 | Dashboard de reservas | 👤 Jean | 🔴 PENDIENTE |
-| S-JB-03 | Tasas horarias, sitemap, Vercel docs, mobile UI | 👤 Jean | 🔴 PENDIENTE |
-| S-JB-04 | Protocolo reseñas Google + descuentos | 👤 Jean | 🔴 PENDIENTE |
+| S-JB-01 | Fixes criticos (seleccion multiple, cantidad, WhatsApp) | 👤 Jean | 🟡 PARCIAL — WhatsApp verification, calendar, holds hecho |
+| S-JB-02 | Dashboard de reservas | 👤 Jean | 🟡 PARCIAL — admin booking dashboard command center hecho |
+| S-JB-03 | Tasas horarias, sitemap, Vercel docs, mobile UI | 👤 Jean | 🟡 PARCIAL — sitemap fix hecho |
+| S-JB-04 | Protocolo resenas Google + descuentos | 👤 Jean | 🔴 PENDIENTE |
 
-### 🟨 TRACK 3: Crecimiento Digital
+### 🟨 TRACK 3: Crecimiento
 
-| Sprint | Descripción | Owner | Estado |
+| Sprint | Descripcion | Owner | Estado |
 |--------|-------------|-------|--------|
-| S-MK-01 | Análisis de mercado y competencia | 👤 Manuel | 🔴 PENDIENTE |
-| S-MK-02 | Diseño KPI dashboard inteligente | 👤 Manuel | 🔴 PENDIENTE |
-| S-MK-03 | SEO/AEO full + Academia Turpial | 👤 Jean + Manuel | 🔴 PENDIENTE |
-| S-MK-04 | Automatización RRSS (setup APIs) | 👤 Manuel | 🔴 PENDIENTE |
-| S-MK-05 | Generación y despliegue contenido RRSS | 👤 Manuel | 🔴 PENDIENTE |
-| S-MK-06 | Plan marketing digital + despliegue | 👤 Manuel | 🔴 PENDIENTE |
+| S-MK-01 | Analisis de mercado y competencia | 👤 Manuel | ✅ CERRADO |
+| S-MK-02 | KPI dashboard inteligente | 👤 Manuel | 🔴 PENDIENTE |
+| S-MK-03 | SEO/AEO full + Academia | 👤 Jean + Manuel | 🟡 PARCIAL — AEO guide hecho por Jean |
+| S-MK-04 | Automatizacion RRSS | 👤 Manuel | 🔴 PENDIENTE |
+| S-MK-05 | Contenido RRSS | 👤 Manuel | 🔴 PENDIENTE |
+| S-MK-06 | Plan marketing | 👤 Manuel | 🔴 PENDIENTE |
 
-### 🟪 TRACK 4: Administrativo-Legal
+### 🟪 TRACK 4: Admin-Legal
 
-| Sprint | Descripción | Owner | Estado |
-|--------|-------------|-------|--------|
-| S-ADM-01 | Documentación legal + marca | 👤 Manuel (físico) | 🔴 PENDIENTE |
-| S-ADM-02 | Cuenta bancaria jurídica + Binance empresa | 👤 Manuel (físico) | 🔴 PENDIENTE |
-| S-ADM-03 | Modelos comerciales y jurídicos | 👤 Manuel (físico) | 🔴 PENDIENTE |
-| S-ADM-04 | Deploy CDA + configuración operativa | 👤 Manuel (físico) | 🔴 PENDIENTE |
+Todos 🔴 PENDIENTE. Requieren accion fisica de Manuel.
 
-### 🟧 TRACK 5: UI/UX Premium
+### 🟧 TRACK 5: UI/UX
 
-| Sprint | Descripción | Owner | Estado |
-|--------|-------------|-------|--------|
-| S-UX-01 | UI Inmersiva Phase 1 (plan) | 👤 Manuel | 🔴 PENDIENTE |
-| S-UX-02 | UI Inmersiva Phase 2 + Refac Global | 👤 Manuel | 🔴 PENDIENTE |
+Todos 🔴 PENDIENTE.
 
 ---
 
-## 📋 PRÓXIMO HITO CRÍTICO: Viernes 15 mayo 2026 — 11:00 AM VET
+## 📋 PROTOCOLO DE RECONCILIACION A PRUEBA DE FALLAS
 
-**Deploy de la plataforma en La Casa del Artista:**
-- [ ] Preparar plan de despliegue con instrucciones precisas
-- [ ] Guía de usuario para el equipo de CDA
-- [ ] Roadmap de funcionalidades
-- [ ] Capacitación del equipo
-- [ ] Configuración de dispositivos (calendario, Gmail, notificaciones)
+### Paso 1 — Jean unifica las ramas
+
+```bash
+# Opcion A: Jean mergea Manuel en su rama
+git checkout integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13
+git pull origin Manuel/integration-s12-s14b-marketplace-closure-2026-05-13
+# Resolver conflictos...
+git push origin integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13
+
+# Opcion B: Crear nueva rama unificada desde madre
+git checkout integration/today-reservas-marketplace-stable-2026-05-07
+git checkout -b integration/unified-2026-05-14
+git merge Manuel/integration-s12-s14b-marketplace-closure-2026-05-13
+git merge integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13
+# Resolver conflictos...
+```
+
+### Paso 2 — Validacion pre-merge a madre
+
+```bash
+git diff --check                    # DEBE dar OK
+npx tsc --noEmit                    # DEBE dar OK
+pnpm build                          # DEBE dar OK
+```
+
+### Paso 3 — Merge a madre y smoke
+
+```bash
+git checkout integration/today-reservas-marketplace-stable-2026-05-07
+git merge integration/unified-2026-05-14
+git push origin integration/today-reservas-marketplace-stable-2026-05-07
+```
+
+**Smoke obligatorio en Preview:**
+- `/` → OK
+- `/marketplace` → listings visibles, no vacio
+- `/reservas` → funcional, no roto
+- `/api/bcv-rate` → responde JSON
+- `/admin/login` → carga
+- `/ops/payment-review` → carga
+
+### Paso 4 — Manuel valida marketplace
+
+Manuel ejecuta sobre la rama madre unificada:
+```bash
+npx tsx scripts/qa/run-marketplace-qa.mjs --module=QA-00   # Preflight
+npx tsx scripts/qa/run-marketplace-qa.mjs --module=QA-03   # Discovery
+npx tsx scripts/qa/playwright/s11-login-smoke.spec.mjs       # Login smoke
+```
+
+### Paso 5 — Jean autoriza y mergea a main
+
+**SOLO cuando:** smoke limpio + Manuel confirma marketplace OK + sin P0 abiertos.
+
+```bash
+git checkout main
+git merge integration/today-reservas-marketplace-stable-2026-05-07
+git push origin main
+```
 
 ---
 
-## 🔒 REGLAS DEL BUS (recordatorio rápido)
+## 🔒 REGLAS DEL BUS — RECORDATORIO
 
-| Zona | Regla |
-|------|-------|
-| `/reservas` | 🚫 Zona exclusiva Jean. Manuel no toca. |
-| `schema.prisma` | 🔒 Lock doble Jean+Manuel. No se modifica sin acuerdo. |
-| `.env` / secretos | 🚫 Nunca se commitean. |
-| `docs/obsidian-vault/` | 📋 Actualizar al cerrar cada sprint. |
-| `.obsidian/` | 🚫 Nunca se commitea (workspace local). |
-| `var/qa-results/` | 🚫 No se commitea. |
+| Regla | Detalle |
+|-------|---------|
+| 🚫 **NO desplegar directo a produccion** | Todo merge va a madre primero, luego a `main` |
+| 👤 **Merge a madre solo por Jean** | Jean es el gatekeeper de `integration/today-reservas-marketplace-stable-2026-05-07` |
+| 🔒 **Schema/prisma = lock doble** | Jean + Manuel deben acordar antes de tocar `schema.prisma` |
+| 🚫 **NO tocar /reservas sin Jean** | Zona exclusiva Jean |
+| 📋 **Actualizar ESTE documento al cerrar** | `00_CENTRAL_TURPIAL.md` es la fuente unica de verdad |
+| 🔑 **NO commitear .env ni secretos** | `.env.local`, backups, tokens |
+| 🏷️ **Commits con prefijo de sprint** | `qa(s12):`, `feat(s14b):`, `fix(s-jb-01):` |
+| ⚠️ **Si hay P0 → PARAR todo** | No se avanza hasta resolver |
 
 ---
 
-## 🔗 NAVEGACIÓN RÁPIDA
+## 🔗 NAVEGACION
 
-**Documentos centrales:**
-- 📋 [[PLAN_MAESTRO_SPRINTS_2026-05-12]] — Plan maestro vigente con todos los tracks
+- 📋 [[PLAN_MAESTRO_SPRINTS_2026-05-12]] — Plan maestro (desactualizado en tracks, actualizar despues de reconciliacion)
+- 📋 [[INSTRUCCION_APERTURA_SESION]] — QUE HACER al abrir Kilo (Jean y Manuel)
+- 📋 [[METODOLOGIA_OPTIMIZACION]] — Analisis de optimizacion Oreshnik
+- 📋 [[BUS_CONTROL_TURPIAL]] — Reglas del bus
+- 📋 [[BUGS_CRITICOS]] — Bugs activos
 - 📋 [[NEXT_PHASE_PLAN_S11_S20]] — Plan detallado S11-S20
-- 📋 [[BUS_CONTROL_TURPIAL]] — Reglas del bus de control
-- 📋 [[BUGS_CRITICOS]] — Bugs y riesgos activos
-- 📋 [[ROADMAP_RESCATE]] — Roadmap de rescate
-- 📋 [[ESTADO_NEGOCIO_TURPIAL_2026-05-10]] — Estado del negocio
-- 📋 [[ARQUITECTURA_TASAS]] — Motor de tasas BCV/Binance
-
-**QA y Testing:**
-- 📋 [[S03_QA_HARNESS_INDEX]] — QA Harness (CERRADO 12/12)
-- 📋 [[E2E_MANUAL_TEST_PROTOCOL_2026-05-11]] — Protocolo E2E manual
-- 📋 [[QA_MARKETPLACE_INTEGRADO]] — Reglas de despacho QA
-- 📋 [[QA_HARNESS_SCRIPTS_MAP_2026-05-10]] — Inventario de scripts QA
-
-**Sprints:**
-- 📋 [[SPRINTS_CODEV_MARKETPLACE_2026-05-10]] — Definiciones S01-S10
-- 📋 [[SPRINTS_MARKETPLACE_PARALELO]] — Metodología paralela
-- 📋 [[SPRINTS_GENERADOS_DESDE_OBSIDIAN_2026-05-10]] — Índice ejecutivo
-
-**Marketplace docs:**
-- `docs/marketplace/00_IMPLEMENTATION_SUMMARY.md`
-- `docs/marketplace/01_ROADMAP_AND_STATUS.md`
-- `docs/marketplace/02_PAYMENT_ARCHITECTURE.md`
-- `docs/marketplace/03_API_INTEGRATION_PLAN.md`
-- `docs/marketplace/04_DISPUTES_&_SECURITY.md`
-- `docs/marketplace/05_GLOSARIO_DE_TERMINOS_UX.md`
-- `docs/marketplace/LOCATION_FILTERS_DESIGN_BRIEF.md`
-- `docs/marketplace/SEO_AEO_NEXT_AUDIT.md`
-
-**Handoffs:**
-- `docs/07_handoffs/qa-dispatcher.json`
-- `docs/07_handoffs/qa-canonical-runbook.md`
-- `docs/07_handoffs/next-window-brief.md`
-
-**Notas de reunión (intake):**
-- `docs/intake/Reunión iniciada a las 2026_05_12 00_28 UTC - Notas de Gemini.md`
-- `docs/intake/Reunión iniciada a las 2026_05_12 15_11 UTC - Notas de Gemini.md`
-- `docs/intake/cuestionario_maestro_cliente_turpial_song.md`
-
-**Instrucciones de diseño:**
-- `docs/INSTRUCCIONES_UI_INMERSIVA.md`
-- `docs/INSTRUCCIONES_REFAC_GLOBAL.md`
-
-**Control points:**
-- `docs/control-points/turpial_sound_control_point_01.md`
+- 📋 `docs/07_handoffs/qa-dispatcher.json` — Dispatcher QA
 
 ---
 
-> **Última actualización:** 2026-05-12T14:27-04:00 | **Plan Maestro:** [[PLAN_MAESTRO_SPRINTS_2026-05-12]]
+> **Ultima actualizacion:** 2026-05-14T00:02-04:00 | **Estado:** ESPERANDO RECONCILIACION DE JEAN

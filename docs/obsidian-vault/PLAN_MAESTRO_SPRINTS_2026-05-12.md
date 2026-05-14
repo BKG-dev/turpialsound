@@ -61,17 +61,35 @@ tags:
 | S07 | Tasas & accounting (11/11) | Jean | ✅ |
 | S08 | Action center & UX (11/11) | Manuel | ✅ |
 | S09 | Public discovery & SEO (9/9) | Manuel | ✅ |
-| S10 | Release gate (10/10 🟢) | Jean | ✅ |
-| S11 | Playwright + login smoke (3/3) | Manuel | ✅ CERRADO |
+| S10 | Release gate (10/10 🟢) | Jean | ✅ implementado, pendiente merge |
+| S11 | Playwright + login UI smoke (3/3) | Manuel | ✅ CERRADO |
+| **S12** | Purchase flow browser E2E (9/9 PASS) | 👤 Manuel (reasignado) | ✅ CERRADO 2026-05-13 |
+| **S13** | Payment proof upload browser E2E | 👤 Manuel (reasignado) | ✅ CERRADO 2026-05-13 |
+| **S14** | Admin dashboard + BCV scheduler | 👤 Manuel (reasignado) | ✅ CERRADO 2026-05-13 |
+| **S14B** | Shopping cart + share listing | 👤 Manuel | ✅ CERRADO 2026-05-12 |
+| **S-MK-01** | Análisis de mercado y competencia | 👤 Manuel | ✅ CERRADO (incluido en S14B) |
+| — | Metodología Oreshnik: análisis de optimización | 👤 Manuel | ✅ CERRADO 2026-05-13 |
+| — | BCV dual-frequency rate scheduler | 👤 Manuel | ✅ CERRADO 2026-05-13 |
 
-**Fases A, B, C COMPLETAS. Fase D iniciada.**
+**Fases A, B, C, D COMPLETAS. Fase E (reconciliacion + release) en curso.**
 
-### 🔴 PENDIENTE INMEDIATO (YA DOCUMENTADO)
+### 🟡 TRABAJO PARCIAL DE JEAN (fuera de metodologia — requiere incorporacion)
 
-- **S12:** Purchase flow browser E2E → **Manuel (reasignado)** (rama `Manuel/s12-purchase-flow-browser-2026-05-12`)
-- **S13-S14:** Manuel (reasignado). Jean retoma en S-JB-01 al liberarse del core web business.
+| Trabajo | Mapeo a sprint | Estado |
+|---------|---------------|--------|
+| WhatsApp verification + calendar holds + admin idempotent + QA bypass | S-JB-01 parcial | 🟡 En rama `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` |
+| Admin booking dashboard command center | S-JB-02 parcial | 🟡 En rama de Jean |
+| Sitemap public-only fix | S-JB-03 parcial | 🟡 En rama de Jean + desplegado a prod |
+| Performance LCP + mobile animations + a11y (6 commits) | S19 parcial | 🟡 En rama de Jean |
+| AEO Caracas rehearsal room guide | S-MK-03 parcial | 🟡 En rama de Jean |
+| WhatsApp webhook lab + Meta signup | Fuera de plan | 🟡 En rama de Jean |
+
+### 🔴 PENDIENTE INMEDIATO
+
+- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `integration/today-reservas-marketplace-stable-2026-05-07`
+- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Push de cambios locales sin subir
+- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
 - **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
 
 ---
