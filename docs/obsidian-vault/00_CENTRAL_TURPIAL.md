@@ -197,7 +197,7 @@ Codigo correcto + DB incorrecta = UI vacia.
 | Sprint | Descripcion | Owner | Estado |
 |--------|-------------|-------|--------|
 | S-MK-01 | Analisis de mercado y competencia | 👤 Manuel | ✅ CERRADO |
-| S-MK-02 | KPI dashboard inteligente | 👤 Manuel | 🔴 PENDIENTE |
+| S-MK-02 | KPI dashboard inteligente | 👤 Manuel | ✅ CERRADO 2026-05-14 |
 | S-MK-03 | SEO/AEO full + Academia | 👤 Jean + Manuel | 🟡 PARCIAL |
 | S-MK-04 | Automatizacion RRSS | 👤 Manuel | 🔴 PENDIENTE |
 | S-MK-05 | Contenido RRSS | 👤 Manuel | 🔴 PENDIENTE |
