@@ -1,8 +1,45 @@
 ---
 tags: ["#area/backend", "#architecture", "#marketplace", "#rates"]
+last_updated: "2026-05-13"
 ---
 
 # Arquitectura del Motor de Tasas
+
+## Scheduler BCV — Actualización Automática (Nuevo 2026-05-13)
+
+### Política de actualización
+
+| Ventana | Frecuencia | Días |
+|---------|-----------|------|
+| 🔴 **PEAK** 4pm-7pm VET (20:00-23:00 UTC) | **Cada 30 min** | Lun-Vie |
+| 🟢 **OFF-PEAK** Resto de horas | **Cada 60 min** | Lun-Vie noches + fines de semana |
+
+### Implementación
+
+| Archivo | Rol |
+|---------|-----|
+| `lib/marketplace/bcv-scheduler.ts` | Lógica de ventana peak/off-peak, control de intervalo |
+| `app/api/cron/refresh-bcv-rate/route.ts` | Endpoint llamado por Vercel Cron |
+| `vercel.json` | Configuración del cron job (`*/30 * * * *`) |
+
+### Funcionamiento
+
+1. Vercel Cron dispara `GET /api/cron/refresh-bcv-rate` cada 30 min
+2. El endpoint consulta `bcv-scheduler.ts` para determinar si debe refrescar:
+   - Si `shouldRefresh()` → true: ejecuta `resolveReferenceRate()` y persiste
+   - Si `shouldRefresh()` → false: salta (aún dentro del intervalo)
+3. En **PEAK** (30 min): se ejecuta en cada llamado del cron
+4. En **OFF-PEAK** (60 min): se ejecuta cada 2do llamado del cron (30min × 2 = 60min)
+5. La tasa resuelta se persiste en DB (`mp_reference_rate_snapshots`) y en archivo/caché
+
+### Seguridad
+- `CRON_SECRET` requerido como Bearer token en producción
+- Sin este header → 401 Unauthorized
+
+### Comando manual
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" https://turpialsound.vercel.app/api/cron/refresh-bcv-rate
+```
 
 ## Estado real al 2026-04-29
 

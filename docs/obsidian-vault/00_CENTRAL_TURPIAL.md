@@ -1,99 +1,289 @@
-We need to apply the suggested edit to the original code. The original code is a markdown file with YAML front matter and content. The suggested edit shows changes: update date, add production branch info, sitemap hotfix section, etc. We need to output the complete modified file, preserving all unchanged parts, and only output code.
-
-We'll compare original and suggested edit. The suggested edit replaces the entire content after the YAML front matter? Actually, the original starts with "---\ntags: ..." then etc. The suggested edit shows a full new version with changes. We need to output that new version as the result.
-
-Thus, output the suggested edit exactly as given.```
 ---
-tags: ["#central", "#map", "#status/live-source"]
+type: master-dashboard
+project: "Turpial Sound"
+status: reconciling
+phase: "Fase D cerrada. Reconciliando ramas Jean+Manuel para push a madre."
+last_updated: "2026-05-14T01:23-04:00"
+mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
+production_branch: "prod/current-www-turpialsound-2026-05-08"
+production_head: "92fd6a3"
+tags:
+  - "#central"
+  - "#map"
+  - "#status/live-source"
+  - "#dashboard"
+  - "#manuel"
+  - "#jean"
+  - "#reconciliation"
 ---
 
-# Mapa de Contenido Principal
+# 🏠 Turpial Sound — Dashboard Activo
 
-## Estado canonico activo (2026-05-11)
+> **ESTE ES EL DOCUMENTO CANONICO. Si hay conflicto con cualquier otro archivo, este manda.**
+>
+> **Nexo metodologia:** [[METODOLOGIA_ORESHNIK_ANEXO]] | **Canvas:** [[FLUJO_PROTOCOLO_TRABAJO]]
+> **Apertura sesion:** [[INSTRUCCION_APERTURA_SESION]] | **Plan Maestro:** [[PLAN_MAESTRO_SPRINTS_2026-05-12]]
 
-- Rama de produccion real: `prod/current-www-turpialsound-2026-05-08`.
-- HEAD produccion actual: `92fd6a3` (`fix(seo): restrict sitemap to approved public urls`).
-- Rama madre estable integracion: `integration/today-reservas-marketplace-stable-2026-05-07`.
-- Commit estable integracion: `c01ec60`.
-- `/reservas` congelado como zona sana.
-- `/marketplace` activo.
-- BCV corregido con tasa fresca.
-- Sitemap produccion: restringido a 9 URLs publicas aprobadas (ver [[#Sitemap Hotfix Produccion]]).
+---
 
 ## Principio central
 
+```
 Codigo correcto + DB incorrecta = UI vacia.
+```
 
-## Reglas de conexion DB
+---
 
-- `DATABASE_URL` pooled/pooler.
-- `DIRECT_URL` direct/no-pooler.
-- Mismo proyecto/base Neon integrada para ambas.
-- Nunca imprimir secretos.
+## 🚨 ESTADO ACTUAL — RECONCILIACION EN CURSO (2026-05-14 01:23 VET)
 
-## Metodologia Oreshnik-Codex 2.0
+**Existen DOS ramas de integracion divergentes que deben unificarse:**
 
-- 1 rama madre estable.
-- N worktrees separados.
-- N agentes Codex.
-- 1 owner por lock.
-- 1 commit/push por sprint cerrado.
-- 0 trabajo directo sobre madre.
-- 0 main.
-- 0 produccion.
-- 0 zonas sanas tocadas.
+| Rama | Operador | Commits | Contenido |
+|------|----------|---------|-----------|
+| `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` | 👤 Manuel | 51 commits | S12, S13, S14, S14B, BCV, metodologia, QA harness, Playwright |
+| `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` | 👤 Jean | 20 commits | Booking fixes, WhatsApp lab, performance, a11y, AEO, admin dashboard, sitemap |
+| **Ancestro comun** | — | `20e88e1` (May 9) | — |
+| **Rama madre** | — | `integration/today-reservas-marketplace-stable-2026-05-07` | ESTA es la unica rama madre valida |
+| **Produccion** | — | `prod/current-www-turpialsound-2026-05-08` @ `92fd6a3` | Deploy `nahska58r` en `turpialsound.com` |
 
-## Roles
+---
 
-- Jean: integracion, Vercel/envs, DB/Prisma/schema/migrations, booking/reservas, rama madre, merges, preview integrado.
-- Manuel: marketplace producto, buyer/seller/admin flow, QA operacional, rates, payout, estados, copy/UX operativo.
+## 🌐 Produccion actual
 
-## Ola 1
+| Campo | Valor |
+|-------|-------|
+| **Rama** | `prod/current-www-turpialsound-2026-05-08` |
+| **HEAD** | `92fd6a3` — `fix(seo): restrict sitemap to approved public urls` |
+| **Deploy Vercel** | `nahska58r` |
+| **URL** | `https://www.turpialsound.com` |
+| **Sitemap** | Restringido a 9 URLs publicas aprobadas (ver [[#Sitemap Hotfix]]) |
+| **/reservas** | Congelado como zona sana |
+| **/marketplace** | Activo y funcional (sin trabajo de Manuel — solo base Jean) |
 
-- J1 Docs Control Tower.
-- J2 Preview Runtime Guard.
-- M1 Marketplace Protected Flow E2E.
-- M2 Marketplace QA Harness.
+### Sitemap Hotfix
 
-## Sitemap Hotfix Produccion
+| Campo | Valor |
+|-------|-------|
+| **Rama hotfix** | `hotfix/prod-sitemap-public-only-2026-05-11` |
+| **Origen** | `hotfix/sitemap-public-only-from-20be7a2-2026-05-11` |
+| **Fecha** | 2026-05-11 |
+| **Objetivo** | Sitemap limpio para Google Search Console sin DB, slugs dinamicos ni rutas privas |
 
-- Hotfix aplicado: `92fd6a3 fix(seo): restrict sitemap to approved public urls`.
-- Rama hotfix: `hotfix/prod-sitemap-public-only-2026-05-11`.
-- Rama hotfix origen (desde preview): `hotfix/sitemap-public-only-from-20be7a2-2026-05-11`.
-- Commit origen: `11eb23e` (cherry-picked a produccion).
-- Fecha: 2026-05-11.
-- Objetivo: sitemap limpio para Google Search Console sin DB, slugs dinamicos ni rutas privadas.
-- Base: `https://www.turpialsound.com`.
+**9 URLs aprobadas:** `/`, `/reservas`, `/salas-de-ensayo`, `/estudio-de-grabacion`, `/servicios`, `/contacto`, `/recursos`, `/recursos/preguntas-frecuentes`, `/marketplace`
 
-### URLs aprobadas en sitemap
+**Exclusiones:** `/admin`, `/ops`, `/api`, `/payment-proofs`, `/marketplace/admin`, `/marketplace/dashboard`, `/lab`, listings individuales, slugs dinamicos, query params, previews Vercel
 
-1. `https://www.turpialsound.com/`
-2. `https://www.turpialsound.com/reservas`
-3. `https://www.turpialsound.com/salas-de-ensayo`
-4. `https://www.turpialsound.com/estudio-de-grabacion`
-5. `https://www.turpialsound.com/servicios`
-6. `https://www.turpialsound.com/contacto`
-7. `https://www.turpialsound.com/recursos`
-8. `https://www.turpialsound.com/recursos/preguntas-frecuentes`
-9. `https://www.turpialsound.com/marketplace`
+---
 
-### Exclusiones explícitas
+## 📐 Metodologia
 
-- `/admin`, `/ops`, `/api`, `/payment-proofs`, `/marketplace/admin`, `/marketplace/dashboard`, `/lab`.
-- Listings individuales del marketplace (`/marketplace/{slug}`).
-- Slugs dinamicos, query params, usuarios, perfiles, vendedores, filtros.
-- URLs preview Vercel, localhost.
+- **1 rama madre estable:** `integration/today-reservas-marketplace-stable-2026-05-07`
+- **N worktrees separados** — un worktree por sprint
+- **N agentes Codex** — un agente por operador por sprint
+- **1 owner por lock** — Jean o Manuel, no ambos
+- **1 commit/push por sprint cerrado**
+- **0 trabajo directo sobre madre**
+- **0 main sin validacion**
+- **0 produccion sin release gate**
+- **0 zonas sanas tocadas** sin lock explicito
 
-### Archivo modificado
+> Ver detalle completo: [[METODOLOGIA_ORESHNIK_ANEXO]]
 
-- Unico archivo: `app/sitemap.ts`.
-- Sin consulta DB, sin `getDb()`, sin Prisma, sin `siteConfig`.
-- Sin tocar `lib/bookings/google-calendar.ts`, `content/site.ts`, `reservas`, `marketplace` funcional, pagos, DB, schema, migrations, `package.json`, `pnpm-lock.yaml`, `.env` ni secretos.
+---
 
-## Enlaces relacionados
+## 👤 JEAN (BKG-dev) — ESTADO
 
-- [[ROADMAP_RESCATE]]
-- [[BUGS_CRITICOS]]
-- [[SPRINTS_MARKETPLACE_PARALELO]]
-- [[QA_MARKETPLACE_INTEGRADO]]
-- [[ARQUITECTURA_TASAS]]
+### Sprints cerrados
+
+| Sprint | Descripcion | Evidencia |
+|--------|-------------|-----------|
+| S02 | Discovery runtime estable | ✅ Mergeado a prod via Ola1 |
+| S04 | Payment proof protegido (9/9 PASS) | ✅ Mergeado a integracion |
+| S06 | Payout auditable | ✅ Mergeado a integracion |
+| S07 | Tasas y accounting (11/11 PASS) | ✅ Mergeado a integracion |
+| S10 | Release gate (10/10 🟢) | ✅ Implementado, pendiente merge |
+
+### Trabajo fuera de metodologia (May 10-13) — YA INCORPORADO en su rama
+
+| Fecha | Commit | Mapeo a sprint |
+|-------|--------|----------------|
+| May 13 | feat(admin): booking dashboard command center | 🟡 S-JB-02 parcial |
+| May 13 | fix(bookings): QA hold bypass + sitemap | 🟡 S-JB-03 parcial |
+| May 13 | fix(performance): mobile animations, LCP, lighthouse | 🟡 S19 parcial |
+| May 12-13 | fix(accessibility): lighthouse a11y (3 commits) | 🟡 S19 parcial |
+| May 12 | feat(aeo): Caracas rehearsal room guide | 🟡 S-MK-03 parcial |
+| May 11 | fix(bookings): whatsapp, calendar, holds, idempotent | 🟡 S-JB-01 parcial |
+| May 10 | feat(lab): whatsapp webhook + meta signup | Fuera de plan |
+
+### 🔴 LO QUE JEAN DEBE HACER AHORA
+
+| # | Accion | Prioridad |
+|---|--------|-----------|
+| 1 | **Mergear `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` en su rama** | 🔴 P0 |
+| 2 | **Resolver conflictos** en `actions/marketplace/auth.ts`, `app/admin/page.tsx`, `.env.example` | 🔴 P0 |
+| 3 | **Validar pre-merge**: `git diff --check`, `npx tsc --noEmit`, `pnpm build` | 🔴 P0 |
+| 4 | **Mergear rama unificada a madre** | 🔴 P0 |
+| 5 | **Smoke post-merge**: `/`, `/marketplace`, `/reservas`, `/api/bcv-rate`, `/admin/login` | 🔴 P0 |
+| 6 | Ejecutar S10 release gate: `npx tsx scripts/qa/modules/qa-s10-release-gate.mjs` | 🟡 |
+| 7 | Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel | 🟡 |
+| 8 | NO desplegar a produccion hasta que Manuel confirme smoke de marketplace | 🚫 |
+| 9 | Arreglar GitHub↔Vercel: Dashboard → Git Settings → Branch pattern incluir `Manuel/*` | 🟡 |
+
+---
+
+## 👤 MANUEL (Manuel Vera) — ESTADO
+
+### Sprints cerrados (sesion May 12-13)
+
+| Sprint | Rama | Resultado |
+|--------|------|-----------|
+| S01 | Preview BKG autonomo | ✅ |
+| S03 | QA Harness 12 modulos | ✅ 12/12 PASS |
+| S05 | Delivery & receipt flow | ✅ 9/9 PASS |
+| S08 | Action center y UX | ✅ 11/11 PASS |
+| S09 | Discovery publico y SEO | ✅ 9/9 PASS |
+| S11 | Playwright + login UI smoke | ✅ 3/3 PASS |
+| **S12** | `Manuel/s12-purchase-flow-browser-2026-05-12` | ✅ 9/9 PASS |
+| **S13** | `Manuel/s13-proof-upload-browser-2026-05-12` | ✅ PASS |
+| **S14** | `Manuel/s14-admin-dashboard-payment-closure-2026-05-13` | ✅ BCV scheduler + metodologia |
+| **S14B** | `Manuel/s14b-shopping-cart-share` | ✅ Shopping cart + share + market analysis |
+| **S-MK-01** | (incluido en S14B) | ✅ Analisis de mercado |
+| — | Metodologia Oreshnik | ✅ Analisis de optimizacion |
+| — | BCV dual-frequency scheduler | ✅ Implementado |
+
+**Rama de integracion:** `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13`
+
+### 🔴 LO QUE MANUEL DEBE HACER AHORA
+
+| # | Accion | Prioridad |
+|---|--------|-----------|
+| 1 | **Esperar a que Jean haga el merge de reconciliacion** a la rama madre | 🔴 P0 |
+| 2 | **Hacer pull de la rama madre unificada** cuando Jean confirme | 🔴 P0 |
+| 3 | **Ejecutar smoke de marketplace** sobre la rama madre unificada | 🔴 P0 |
+| 4 | Preparar plan de despliegue para viernes 15 mayo 11AM CDA | 🟡 |
+| 5 | Verificar estado legal de la entidad (S-ADM-01) | 🟡 |
+
+---
+
+## 📊 TRACKS — ESTADO REAL
+
+### 🟦 TRACK 1: Marketplace (S12-S21)
+
+| Sprint | Descripcion | Owner | Estado |
+|--------|-------------|-------|--------|
+| S12 | Purchase flow browser E2E | 👤 Manuel | ✅ CERRADO |
+| S13 | Payment proof upload browser | 👤 Manuel | ✅ CERRADO |
+| S14 | Admin dashboard + BCV scheduler | 👤 Manuel | ✅ CERRADO |
+| S14B | Shopping cart + share listing | 👤 Manuel | ✅ CERRADO |
+| S15 | Location filters + listing modal | 👤 Manuel | 🔴 PENDIENTE |
+| S16 | Notificaciones y chat | 👤 Manuel | 🔴 PENDIENTE |
+| S17 | Seller dashboard browser | 👤 Jean | 🔴 PENDIENTE |
+| S18 | Full regression browser | 👤 Manuel | 🔴 PENDIENTE |
+| S19 | Performance + load | 👤 Jean | 🟡 PARCIAL (LCP/a11y) |
+| S20 | SEO/AEO audit completo | 👤 Manuel | 🔴 PENDIENTE |
+| S21 | Production release gate | 👤 Jean | 🔴 PENDIENTE |
+
+### 🟩 TRACK 2: Booking
+
+| Sprint | Descripcion | Owner | Estado |
+|--------|-------------|-------|--------|
+| S-JB-01 | Fixes criticos (multiple, cantidad, WhatsApp) | 👤 Jean | 🟡 PARCIAL |
+| S-JB-02 | Dashboard de reservas | 👤 Jean | 🟡 PARCIAL |
+| S-JB-03 | Tasas horarias, sitemap, Vercel docs | 👤 Jean | 🟡 PARCIAL |
+| S-JB-04 | Protocolo resenas Google + descuentos | 👤 Jean | 🔴 PENDIENTE |
+
+### 🟨 TRACK 3: Crecimiento
+
+| Sprint | Descripcion | Owner | Estado |
+|--------|-------------|-------|--------|
+| S-MK-01 | Analisis de mercado y competencia | 👤 Manuel | ✅ CERRADO |
+| S-MK-02 | KPI dashboard inteligente | 👤 Manuel | 🔴 PENDIENTE |
+| S-MK-03 | SEO/AEO full + Academia | 👤 Jean + Manuel | 🟡 PARCIAL |
+| S-MK-04 | Automatizacion RRSS | 👤 Manuel | 🔴 PENDIENTE |
+| S-MK-05 | Contenido RRSS | 👤 Manuel | 🔴 PENDIENTE |
+| S-MK-06 | Plan marketing | 👤 Manuel | 🔴 PENDIENTE |
+
+### 🟪 TRACK 4: Admin-Legal — 🔴 todo pendiente (accion fisica Manuel)
+### 🟧 TRACK 5: UI/UX — 🔴 todo pendiente
+
+---
+
+## 🟢 Ola 1 — Completada
+
+| Componente | Descripcion | Estado |
+|-----------|-------------|--------|
+| J1 Docs Control Tower | Jean | ✅ |
+| J2 Preview Runtime Guard | Jean | ✅ |
+| M1 Marketplace Protected Flow E2E | Manuel | ✅ |
+| M2 Marketplace QA Harness | Manuel | ✅ |
+
+---
+
+## 📋 PROTOCOLO DE RECONCILIACION
+
+### Paso 1 — Jean unifica las ramas
+```bash
+git checkout integration/today-reservas-marketplace-stable-2026-05-07
+git checkout -b integration/unified-2026-05-14
+git merge Manuel/integration-s12-s14b-marketplace-closure-2026-05-13
+git merge integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13
+```
+
+### Paso 2 — Validacion
+```bash
+git diff --check && npx tsc --noEmit && pnpm build
+```
+
+### Paso 3 — Merge a madre
+```bash
+git checkout integration/today-reservas-marketplace-stable-2026-05-07
+git merge integration/unified-2026-05-14
+git push origin integration/today-reservas-marketplace-stable-2026-05-07
+```
+
+### Paso 4 — Smoke (Manuel)
+`/`, `/marketplace`, `/reservas`, `/api/bcv-rate`, `/admin/login`, `/ops/payment-review`
+
+### Paso 5 — Release a main (Jean, solo si smoke OK)
+```bash
+git checkout main
+git merge integration/today-reservas-marketplace-stable-2026-05-07
+git push origin main
+```
+
+---
+
+## 🔒 REGLAS DEL BUS
+
+| Regla | Detalle |
+|-------|---------|
+| 🚫 **NO desplegar directo a produccion** | Todo va madre → validacion → main → Vercel |
+| 👤 **Merge a madre solo por Jean** | Jean es el gatekeeper |
+| 🔒 **Schema/prisma = lock doble** | Jean + Manuel deben acordar |
+| 🚫 **NO tocar /reservas sin Jean** | Zona exclusiva Jean |
+| 📋 **Actualizar ESTE documento al cerrar sprint** | Fuente unica de verdad |
+| 🔑 **NO commitear .env ni secretos** | `.env.local`, backups, tokens |
+| 🏷️ **Commits con prefijo de sprint** | `qa(s12):`, `feat(s14b):`, `fix(s-jb-01):` |
+| ⚠️ **Si hay P0 → PARAR todo** | No se avanza hasta resolver |
+| 💱 **Reglas DB:** `DATABASE_URL` pooled, `DIRECT_URL` direct, misma BD Neon | Nunca imprimir secretos |
+
+---
+
+## 📖 NAVEGACION
+
+- 🧠 [[METODOLOGIA_ORESHNIK_ANEXO]] — **NEXO metodologia. Leer antes de todo.**
+- 📊 [[FLUJO_PROTOCOLO_TRABAJO]] — Canvas visual del proceso completo
+- 📋 [[INSTRUCCION_APERTURA_SESION]] — QUE HACER al abrir Kilo (Jean y Manuel)
+- 📋 [[PLAN_MAESTRO_SPRINTS_2026-05-12]] — Plan maestro 5 tracks 27 sprints
+- 📋 [[METODOLOGIA_OPTIMIZACION]] — Analisis detallado de optimizacion Oreshnik
+- 📋 [[BUS_CONTROL_TURPIAL]] — Reglas del bus, locks, checklist
+- 📋 [[BUGS_CRITICOS]] — Bugs activos
+- 📋 [[ROADMAP_RESCATE]] — Roadmap de rescate
+- 📋 [[ARQUITECTURA_TASAS]] — Motor de tasas BCV/Binance
+- 📋 [[S03_QA_HARNESS_INDEX]] — QA Harness (CERRADO 12/12)
+- 📋 `docs/07_handoffs/qa-dispatcher.json` — Dispatcher QA
+- 📋 `docs/07_handoffs/integration-gatekeeper-2026-05-07.md` — Gatekeeper
+
+---
+
+> **Ultima actualizacion:** 2026-05-14T01:23-04:00 | **Estado:** ESPERANDO RECONCILIACION DE JEAN | **Tag:** `cp-manuel-s12-s14b-pre-merge-jean-2026-05-14`

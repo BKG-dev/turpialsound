@@ -1,16 +1,30 @@
 ---
 tags: ["#roadmap", "#status/urgent", "#status/live-source"]
+last_updated: "2026-05-12T14:27-04:00"
 ---
 
-# Roadmap de Rescate
+# Roadmap de Rescate → Roadmap de Consolidación
 
-## Estado real activo (2026-05-07)
+> **Actualización 2026-05-12:** El rescate de S01-S11 está COMPLETO. Ahora entramos en fase de **consolidación total** con el Plan Maestro de Sprints.
+
+## Estado real activo (2026-05-12)
 
 - Rama madre estable: `integration/today-reservas-marketplace-stable-2026-05-07`.
-- Commit estable: `c01ec60`.
-- `/reservas` congelado como zona sana.
+- Commit estable: `f7f2d1e`.
+- `/reservas` congelado como zona sana (zona exclusiva Jean).
 - `/marketplace` activo.
 - BCV corregido con tasa fresca.
+- **S11 CLOSED:** Playwright + login UI smoke 3/3 PASS en rama madre.
+- **S12 READY:** Purchase flow browser E2E (Jean).
+- **Plan Maestro vigente:** [[PLAN_MAESTRO_SPRINTS_2026-05-12]] — 5 tracks, 27 sprints totales.
+
+## Del rescate a la consolidación
+
+| Fase anterior | Fase actual |
+|---------------|-------------|
+| Rescate S01-S11 (completado ✅) | Consolidación S12-S21 + Tracks paralelos (en curso 🔴) |
+| Enfoque: reparar, estabilizar, QA base | Enfoque: completar, automatizar, producir, crecer |
+| Solo Marketplace | Marketplace + Booking + SEO/RRSS + Legal + UI |
 
 ## Incidente clave aprendido
 
@@ -54,4 +68,17 @@ tags: ["#roadmap", "#status/urgent", "#status/live-source"]
 - J1 Docs Control Tower.
 - J2 Preview Runtime Guard.
 - M1 Marketplace Protected Flow E2E.
-- M2 Marketplace QA Harness.
+- M2 Marketplace QA Harness: **S03 CLOSED — 12/12 PASS (2026-05-11).**
+  - S03F: login + publish + discovery validados. Bootstrap + doctor creados.
+  - S03G: purchase initiation + payment report + proof upload validados.
+  - S03H: seller delivery + buyer receipt validados.
+  - S03I: admin review + payout + dashboards validados.
+  - S03J: full regression 12/12 PASS.
+  - Sin Playwright. Sin CDP. Todo server-side Prisma directo.
+  - Ver [[S03_QA_HARNESS_INDEX]] para dashboard completo.
+- M3 Playwright UI Smoke: **S11 CLOSED — 3/3 PASS (2026-05-11).**
+  - Playwright + Chromium instalado en rama madre.
+  - Helpers `login.mjs` y `screenshot.mjs` reusables.
+  - Spec `s11-login-smoke.spec.mjs`: buyerIA, sellerIA, mvera.
+  - 6 screenshots en `var/qa-results/s11-login-report/`.
+  - Próximo: S12 purchase flow browser E2E (Jean).
