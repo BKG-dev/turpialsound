@@ -883,7 +883,7 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
               >
                 {/* Search */}
                 <div className="relative">
-                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#5a5a5a' }} />
+                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--mp-text-disabled)' }} />
                   <input
                     type="text"
                     value={searchQuery}
@@ -900,7 +900,7 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
                     <button
                       onClick={() => setSearchQuery('')}
                       className="absolute right-2 top-1/2 -translate-y-1/2"
-                      style={{ color: '#5a5a5a' }}
+                      style={{ color: 'var(--mp-text-disabled)' }}
                     >
                       <X size={12} />
                     </button>

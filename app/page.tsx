@@ -71,6 +71,11 @@ export default function HomePage() {
       {/* ── STATS BAR ─────────────────────────────────────────────────── */}
       <StatsBar />
 
+      {/* ── PRICING PREVIEW — inmediatamente debajo del hero ──────────── */}
+      <div className="pb-16">
+        <PricingPreview />
+      </div>
+
       {/* ── SOCIAL VIDEO — RRSS vertical, stacking 0 ──────────────────── */}
       <StackingSection index={0} waves>
         <SectionShell background="none">
@@ -171,7 +176,7 @@ export default function HomePage() {
               { src: '/images/odl_800.jpg', name: 'Oscar D\'León' },
               { src: '/images/dq_800.jpg',  name: 'Domingo Quiñones' },
               { src: '/images/dl_800.jpg',  name: 'Dimensión Latina' },
-              { src: '/images/FQ.JPG',      name: 'Frank Quintero' },
+              { src: '/images/FQ.jpg',      name: 'Frank Quintero' },
             ].map(({ src, name }) => (
               <div
                 key={name}
@@ -229,13 +234,6 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-        </SectionShell>
-      </StackingSection>
-
-      {/* ── PRICING PREVIEW — stacking section 5 ─────────────────────── */}
-      <StackingSection index={5} waves>
-        <SectionShell background="none">
-          <PricingPreview />
         </SectionShell>
       </StackingSection>
 
