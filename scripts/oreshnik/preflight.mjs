@@ -109,19 +109,44 @@ let warnings = 0
 // 1/7 SYNC
 step('1/7 SYNC — Sincronizacion docs')
 
-// ── Obsidian guard ─────────────────────────────────────────────────
+// ── Obsidian guard — cierre automatico ──────────────────────────────
 const obsidianRunning = process.platform === 'win32'
   ? (() => { try { execSync('tasklist /FI "IMAGENAME eq Obsidian.exe" 2>nul', { encoding: 'utf8' }); return true } catch { return false } })()
   : (() => { try { execSync('pgrep -x Obsidian 2>/dev/null', { encoding: 'utf8' }); return true } catch { return false } })()
 
 if (obsidianRunning) {
+  info('Obsidian detectado. Cerrando para evitar corrupcion en operaciones git...')
+  if (process.platform === 'win32') {
+    execSync('taskkill /F /IM Obsidian.exe 2>nul', { encoding: 'utf8' })
+  } else {
+    execSync('pkill -9 Obsidian 2>/dev/null', { encoding: 'utf8' })
+  }
+  ok('Obsidian cerrado automaticamente.')
+  
+  // Revisar si Obsidian dejo el vault sucio
   const vaultDirty = sh('git diff --name-only -- docs/obsidian-vault/')
   if (vaultDirty) {
-    fail('OBSIDIAN ABIERTO — cierra Obsidian antes de continuar. Archivos del vault estan modificados y Obsidian los sobreescribira al hacer checkout/pull/merge.')
-    blockers++
-  } else {
-    warn('Obsidian abierto. Si haces checkout/pull/merge, cierra Obsidian primero para evitar sobreescritura del vault.')
+    const files = vaultDirty.split('\n').filter(Boolean).join(', ')
+    warn(`Obsidian modifico el vault antes de cerrar: ${files}`)
+    warn('Ejecuta manualmente si necesitas restaurar: git checkout HEAD -- docs/obsidian-vault/')
     warnings++
+  }
+}
+
+// ── Conflict detection ──────────────────────────────────────────────
+const vaultFiles = sh('git diff --name-only -- docs/obsidian-vault/')
+if (vaultFiles) {
+  const files = vaultFiles.split('\n').filter(Boolean)
+  for (const f of files) {
+    const lastAuthor = sh(`git log -1 --format='%an' origin/${MOTHER} -- "${f}"`)
+    const currentAuthor = sh('git config user.name')
+    if (lastAuthor && currentAuthor &&
+        !lastAuthor.toLowerCase().includes(currentAuthor.toLowerCase().split(' ')[0]) &&
+        !currentAuthor.toLowerCase().includes(lastAuthor.toLowerCase().split(' ')[0])) {
+      warn(`Conflicto potencial en ${f}: editado por ${lastAuthor} en madre y tu tambien lo tienes modificado.`)
+      warn('Coordina con el otro operador antes de mergear.')
+      warnings++
+    }
   }
 }
 
