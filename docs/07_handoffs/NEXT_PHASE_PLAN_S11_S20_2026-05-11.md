@@ -1,6 +1,6 @@
-# Siguiente Fase — S04-S10 Resumen Ejecutivo
+﻿# Siguiente Fase — S04-S10 Resumen Ejecutivo
 
-> Rama madre: `integration/today-reservas-marketplace-stable-2026-05-07`
+> Rama madre: `RAMA MADRE`
 > Commit merge: `e659cb3`
 > Preview: `https://turpialsound-q59tvyccd-bkgs-projects-829c67c1.vercel.app`
 
@@ -72,14 +72,14 @@
 ## Para Manuel (próximo sprint inmediato: S11)
 
 1. Instalar Playwright: `npm install -D @playwright/test && npx playwright install chromium`
-2. Crear branch: `git checkout -b Manuel/s11-playwright-login-ui-2026-05-12 origin/integration/today-reservas-marketplace-stable-2026-05-07`
+2. Crear branch: `git checkout -b Manuel/s11-playwright-login-ui-2026-05-12 origin/RAMA MADRE`
 3. Implementar login smoke con Playwright (navegar, login buyer/seller/admin, screenshot)
 4. Usar el mismo patrón de módulos QA (export run, report, checks)
 
 ## Para Jean (próximo sprint inmediato: S12)
 
 1. Esperar que S11 termine (Playwright base)
-2. Crear branch: `git checkout -b jean/s12-purchase-flow-browser-2026-05-12 origin/integration/today-reservas-marketplace-stable-2026-05-07`
+2. Crear branch: `git checkout -b jean/s12-purchase-flow-browser-2026-05-12 origin/RAMA MADRE`
 3. Implementar purchase flow browser E2E con Playwright
 
 ---

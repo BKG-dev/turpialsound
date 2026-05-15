@@ -1,10 +1,10 @@
----
+﻿---
 type: phase-plan
 project: "Turpial Sound Marketplace"
 status: active
 phase: "Fase D → Fase F"
 last_updated: "2026-05-11T17:06-04:00"
-mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
+mother_branch: "RAMA MADRE"
 tags:
   - "#phase-plan"
   - "#sprint/s11-s20"
@@ -28,7 +28,7 @@ tags:
 - ✅ **Fase C PARCIAL** (S07-S09): Tasas/accounting, action center UX, discovery público.
 - 🟢 **S10 Release Gate:** 10/10 READY.
 - ✅ **Fase D INICIADA** (S11-S13): S11 completo. Playwright + login UI smoke 3/3 PASS en rama madre.
-- 🔴 **S12 PENDIENTE:** Purchase flow browser E2E (Jean).
+- ✅ **S12 CERRADO:** Purchase flow browser E2E (Manuel).
 
 ---
 
@@ -46,7 +46,7 @@ tags:
 ### S12 — Purchase flow browser E2E
 - **Owner:** Jean
 - **Branch:** `jean/s12-purchase-flow-browser-2026-05-12`
-- **Base:** `integration/today-reservas-marketplace-stable-2026-05-07`
+- **Base:** `RAMA MADRE`
 - **Depende de:** S11 (Playwright instalado)
 - **Tareas:**
   1. Navegar listing QA → click "Comprar"
@@ -59,7 +59,7 @@ tags:
 ### S13 — Payment proof upload browser
 - **Owner:** Manuel
 - **Branch:** `Manuel/s13-proof-upload-browser-2026-05-12`
-- **Base:** `integration/today-reservas-marketplace-stable-2026-05-07`
+- **Base:** `RAMA MADRE`
 - **Tareas:**
   1. Crear fixture `scripts/qa/fixtures/payment-proof-dummy.png`
   2. File chooser: seleccionar comprobante dummy

@@ -8,7 +8,7 @@
 #>
 
 param(
-    [string]$MotherBranch = "integration/today-reservas-marketplace-stable-2026-05-07"
+    [string]$MotherBranch = "RAMA-MADRE"
 )
 
 $ErrorActionPreference = "Continue"

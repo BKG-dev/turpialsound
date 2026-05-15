@@ -1,6 +1,6 @@
-# E2E Manual Test Protocol — Turpial Marketplace QA Harness
+﻿# E2E Manual Test Protocol — Turpial Marketplace QA Harness
 
-> Rama madre: `integration/today-reservas-marketplace-stable-2026-05-07`
+> Rama madre: `RAMA MADRE`
 > Commit: `e659cb3`
 > Fecha: 2026-05-11
 > Preview: `https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app`

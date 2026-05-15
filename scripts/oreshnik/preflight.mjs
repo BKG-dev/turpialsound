@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const CACHE_DIR = join(__dirname, 'runs')
 const CACHE_FILE = join(CACHE_DIR, '.preflight-cache.json')
-const MOTHER = 'integration/today-reservas-marketplace-stable-2026-05-07'
+const MOTHER = 'RAMA-MADRE'
 
 const sprintId = process.argv.includes('--sprint') 
   ? process.argv[process.argv.indexOf('--sprint') + 1] 
@@ -35,7 +35,7 @@ const descFlag = process.argv.includes('--desc')
   : null
 
 // Mother branch patterns: integration/*, main, master, prod/*
-const MOTHER_PATTERNS = [/^integration\/.*/, /^main$/, /^master$/, /^prod\/.*/]
+const MOTHER_PATTERNS = [/^integration\/.*/, /^hotfix\/.*/, /^RAMA[-_]MADRE$/, /^main$/, /^master$/, /^prod\/.*/]
 
 function isMotherBranch(branch) {
   return MOTHER_PATTERNS.some(p => p.test(branch))
@@ -60,7 +60,7 @@ function sanitizeBranchName(str) {
 }
 
 const operator = resolveOperator()
-const today = ''
+const today = getToday()
 function getToday() { return new Date().toISOString().slice(0, 10) }
 
 const RED = '\x1b[31m'
@@ -108,6 +108,70 @@ let warnings = 0
 
 // 1/7 SYNC
 step('1/7 SYNC — Sincronizacion docs')
+
+// ── Obsidian guard — cierre automatico ──────────────────────────────
+const obsidianRunning = process.platform === 'win32'
+  ? (() => { try { execSync('tasklist /FI "IMAGENAME eq Obsidian.exe" 2>nul', { encoding: 'utf8' }); return true } catch { return false } })()
+  : (() => { try { execSync('pgrep -x Obsidian 2>/dev/null', { encoding: 'utf8' }); return true } catch { return false } })()
+
+if (obsidianRunning) {
+  info('Obsidian detectado. Cerrando para evitar corrupcion en operaciones git...')
+  try {
+    if (process.platform === 'win32') {
+      execSync('taskkill /F /IM Obsidian.exe 2>nul', { encoding: 'utf8' })
+    } else {
+      execSync('pkill -9 Obsidian 2>/dev/null', { encoding: 'utf8' })
+    }
+    ok('Obsidian cerrado automaticamente.')
+  } catch {
+    ok('Obsidian ya estaba cerrado o no se pudo cerrar.')
+  }
+  
+  // Revisar si Obsidian dejo el vault sucio
+  const vaultDirty = sh('git diff --name-only -- docs/obsidian-vault/')
+  if (vaultDirty) {
+    const files = vaultDirty.split('\n').filter(Boolean).join(', ')
+    warn(`Obsidian modifico el vault antes de cerrar: ${files}`)
+    warn('Ejecuta manualmente si necesitas restaurar: git checkout HEAD -- docs/obsidian-vault/')
+    warnings++
+  }
+}
+
+// ── Conflict detection ──────────────────────────────────────────────
+const vaultFiles = sh('git diff --name-only -- docs/obsidian-vault/')
+if (vaultFiles) {
+  const files = vaultFiles.split('\n').filter(Boolean)
+  for (const f of files) {
+    const lastAuthor = sh(`git log -1 --format='%an' origin/${MOTHER} -- "${f}"`)
+    const currentAuthor = sh('git config user.name')
+    if (lastAuthor && currentAuthor &&
+        !lastAuthor.toLowerCase().includes(currentAuthor.toLowerCase().split(' ')[0]) &&
+        !currentAuthor.toLowerCase().includes(lastAuthor.toLowerCase().split(' ')[0])) {
+      warn(`Conflicto potencial en ${f}: editado por ${lastAuthor} en madre y tu tambien lo tienes modificado.`)
+      warn('Coordina con el otro operador antes de mergear.')
+      warnings++
+    }
+  }
+
+  // Auto-actualizar last_updated en 00_CENTRAL cuando hay cambios reales en el vault
+  const centralPath = resolve(__dirname, '..', '..', 'docs', 'obsidian-vault', '00_CENTRAL_TURPIAL.md')
+  if (existsSync(centralPath)) {
+    const nowLocal = new Date()
+    const dd = String(nowLocal.getDate()).padStart(2, '0')
+    const mm = String(nowLocal.getMonth() + 1).padStart(2, '0')
+    const yy = String(nowLocal.getFullYear()).slice(2)
+    const hh = String(nowLocal.getHours()).padStart(2, '0')
+    const min = String(nowLocal.getMinutes()).padStart(2, '0')
+    const timestamp = `${dd}/${mm}/${yy} ${hh}:${min}`
+    const content = readFileSync(centralPath, 'utf8')
+    const updated = content.replace(/last_updated:\s*"[^"]*"/, `last_updated: "${timestamp}"`)
+    if (updated !== content) {
+      writeFileSync(centralPath, updated, 'utf8')
+      info(`last_updated actualizado: ${timestamp}`)
+    }
+  }
+}
+
 const syncCode = sh('powershell -ExecutionPolicy Bypass -File scripts/oreshnik/sync-obsidian.ps1')
 console.log(syncCode)
 const syncOk = !syncCode.includes('FAIL')
@@ -120,13 +184,18 @@ if (syncOk) {
     const committedContent = sh(`git show HEAD:docs/obsidian-vault/00_CENTRAL_TURPIAL.md`)
     const m = committedContent.match(/last_updated:\s*"([^"]+)"/)
     if (m) {
-      const docDate = new Date(m[1].replace(/-04:00$/, '-04:00'))
-      const hoursStale = (now - docDate) / 3600000
-      if (hoursStale > 4) {
-        warn(`00_CENTRAL sin actualizar hace ${hoursStale.toFixed(0)}h. Contenido puede estar desactualizado.`)
-        warnings++
-      } else if (hoursStale > 1) {
-        info(`00_CENTRAL actualizado hace ${hoursStale.toFixed(0)}h.`)
+      // Formato dd/mm/yy hh:mm (ej: 15/05/26 14:26)
+      const parts = m[1].split(/[\s\/:]/)
+      if (parts.length >= 5) {
+        const [d, mo, y, h, min] = parts.map(Number)
+        const docDate = new Date(2000 + y, mo - 1, d, h, min)
+        const hoursStale = (now - docDate) / 3600000
+        if (hoursStale > 4) {
+          warn(`00_CENTRAL sin actualizar hace ${hoursStale.toFixed(0)}h. Contenido puede estar desactualizado.`)
+          warnings++
+        } else if (hoursStale > 1) {
+          info(`00_CENTRAL actualizado hace ${hoursStale.toFixed(0)}h.`)
+        }
       }
     }
   }

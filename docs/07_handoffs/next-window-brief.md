@@ -1,7 +1,7 @@
-# Next Window Brief — S11 Complete → S12 Ready
+﻿# Next Window Brief — S11 Complete → S12 Ready
 
 > Date: 2026-05-11
-> Mother: `integration/today-reservas-marketplace-stable-2026-05-07` @ `48e4479`
+> Mother: `RAMA MADRE` @ `48e4479`
 
 ## Current state: S11 CLOSED — 3/3 PASS, MERGED TO MOTHER
 
@@ -30,7 +30,7 @@ Playwright + Chromium instalado en rama madre. Helpers y spec S11 funcionando.
 
 - **Owner:** 👤 Jean
 - **Branch:** `jean/s12-purchase-flow-browser-2026-05-12`
-- **Base:** `integration/today-reservas-marketplace-stable-2026-05-07` (Playwright ya disponible)
+- **Base:** `RAMA MADRE` (Playwright ya disponible)
 - **Tareas:** Navegar listing QA → click "Comprar" → Pago Móvil → Confirmar → Screenshots
 - **Reutilizar:** `scripts/qa/playwright/login.mjs` para login buyer
 

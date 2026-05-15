@@ -2,7 +2,7 @@
 
 ## Estado real integrado - 2026-05-07
 
-- Rama madre estable actual: `integration/today-reservas-marketplace-stable-2026-05-07`.
+- Rama madre estable actual: `RAMA MADRE`.
 - HEAD base de referencia de integracion: `cbc72e3`.
 - Commit estable operativo validado: `c01ec60` (`fix(marketplace): render active listings on public page`).
 - `/reservas` queda congelado como zona sana.

@@ -91,8 +91,8 @@ Cerrar el 100% de los pendientes del proyecto Turpial Sound — técnicos y admi
 
 | Sprint | Owner | Objetivo |
 |--------|-------|----------|
-| **S-UX-01** | 👤 Manuel | Plan técnico UI Inmersiva (sin tocar código) |
-| **S-UX-02** | 👤 Manuel | Implementación UI Inmersiva + Refac Global |
+| **S-UX-01** | 👤 Manuel | Plan técnico UI Inmersiva (sin tocar código) | ✅ CERRADO 2026-05-15 |
+| **S-UX-02** | 👤 Manuel | Implementación UI Inmersiva + Refac Global | ✅ CERRADO 2026-05-15 |
 
 ---
 

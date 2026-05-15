@@ -1,4 +1,4 @@
----
+﻿---
 type: devops
 area: "Vercel Deployments"
 fecha: 2026-05-14
@@ -16,7 +16,7 @@ tags: ["#vercel", "#deploy", "#preview", "#status/live-source"]
 
 | Campo | Valor |
 |-------|-------|
-| **Branch** | `integration/today-reservas-marketplace-stable-2026-05-07` |
+| **Branch** | `RAMA MADRE` |
 | **HEAD** | `b0b6cd5` |
 | **Último deploy** | `dl8hs9ob4` |
 | **Estado** | ● Ready |

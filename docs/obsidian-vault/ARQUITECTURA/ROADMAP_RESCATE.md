@@ -1,4 +1,4 @@
----
+﻿---
 tags: ["#roadmap", "#status/urgent", "#status/live-source"]
 last_updated: "2026-05-12T14:27-04:00"
 ---
@@ -9,7 +9,7 @@ last_updated: "2026-05-12T14:27-04:00"
 
 ## Estado real activo (2026-05-12)
 
-- Rama madre estable: `integration/today-reservas-marketplace-stable-2026-05-07`.
+- Rama madre estable: `RAMA MADRE`.
 - Commit estable: `f7f2d1e`.
 - `/reservas` congelado como zona sana (zona exclusiva Jean).
 - `/marketplace` activo.

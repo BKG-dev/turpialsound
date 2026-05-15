@@ -1,10 +1,10 @@
----
+﻿---
 type: master-dashboard
 project: "Turpial Sound"
 status: post-reconciliation
 phase: "Fase E: Sprints marketplace cerrados. Pre-release."
-last_updated: "2026-05-15T12:10-04:00"
-mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
+last_updated: "15/05/26 14:26"
+mother_branch: "RAMA MADRE"
 mother_head: "dfca178"
 production_branch: "prod/current-www-turpialsound-2026-05-08"
 production_head: "92fd6a3"
@@ -30,7 +30,7 @@ tags:
 | `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` | 👤 Manuel | 51 commits | S12, S13, S14, S14B, BCV, metodologia, QA harness, Playwright |
 | `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` | 👤 Jean | 20 commits | Booking fixes, WhatsApp lab, performance, a11y, AEO, admin dashboard, sitemap |
 | **Ancestro comun** | — | `20e88e1` (May 9) | — |
-| **Rama madre** | — | `integration/today-reservas-marketplace-stable-2026-05-07` | ESTA es la unica rama madre valida |
+| **Rama madre** | — | `RAMA MADRE` | ESTA es la unica rama madre valida |
 | **Produccion** | — | `prod/current-www-turpialsound-2026-05-08` @ `92fd6a3` | Deploy `nahska58r` en `turpialsound.com` |
 
 ---
@@ -64,7 +64,8 @@ tags:
 
 ## 📐 Metodologia
 
-- **1 rama madre estable:** `integration/today-reservas-marketplace-stable-2026-05-07`
+- **1 rama madre estable:** `RAMA MADRE`
+- **Preflight v3.0:** `node scripts/oreshnik/preflight.mjs --sprint SXX --operator Op --desc "desc"` automatiza la creacion de ramas desde madre
 - **N worktrees separados** — un worktree por sprint
 - **N agentes Codex** — un agente por operador por sprint
 - **1 owner por lock** — Jean o Manuel, no ambos
@@ -147,7 +148,7 @@ tags:
 |---|--------|-----------|
 | 1 | **Preparar plan de despliegue CDA** (viernes 15 mayo 11AM) | 🔴 P0 |
 | 2 | **Verificar estado legal de la entidad** (S-ADM-01) | 🔴 P0 |
-| 3 | **S-UX-01:** UI/UX marketplace | 🟡 Proximo sprint |
+| 3 | **S-UX-01 y S-UX-02:** UI Inmersiva + Refac Global | ✅ CERRADO 2026-05-15 |
 | 4 | Ejecutar QA full regression post-merge Jean | 🟡 |
 
 ---
@@ -215,9 +216,11 @@ tags:
 
 ## 📋 PROTOCOLO DE RECONCILIACION
 
+> **Nota:** Preflight v3.0 (`node scripts/oreshnik/preflight.mjs --sprint SXX --operator Op --desc "desc"`) automatiza la creacion de ramas desde madre. Los pasos manuales de `git checkout -b` abajo quedan como referencia historica del protocolo de reconciliacion entre ramas.
+
 ### Paso 1 — Jean unifica las ramas
 ```bash
-git checkout integration/today-reservas-marketplace-stable-2026-05-07
+git checkout RAMA MADRE
 git checkout -b integration/unified-2026-05-14
 git merge Manuel/integration-s12-s14b-marketplace-closure-2026-05-13
 git merge integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13
@@ -230,9 +233,9 @@ git diff --check && npx tsc --noEmit && pnpm build
 
 ### Paso 3 — Merge a madre
 ```bash
-git checkout integration/today-reservas-marketplace-stable-2026-05-07
+git checkout RAMA MADRE
 git merge integration/unified-2026-05-14
-git push origin integration/today-reservas-marketplace-stable-2026-05-07
+git push origin RAMA MADRE
 ```
 
 ### Paso 4 — Smoke (Manuel)
@@ -241,7 +244,7 @@ git push origin integration/today-reservas-marketplace-stable-2026-05-07
 ### Paso 5 — Release a main (Jean, solo si smoke OK)
 ```bash
 git checkout main
-git merge integration/today-reservas-marketplace-stable-2026-05-07
+git merge RAMA MADRE
 git push origin main
 ```
 
@@ -290,8 +293,7 @@ git push origin main
 
 | Rama | Ultimo Preview | Fecha | Estado |
 |------|---------------|-------|--------|
-| **Madre** `integration/today-reservas-marketplace-stable-2026-05-07` | `de53170` | 2026-05-14 | 🔴 Sin preview |
-| **Madre** `integration/today-reservas-marketplace-stable-2026-05-07` | `dfca178` | 2026-05-14 16:29 | ● Ready |
+| **Madre** `RAMA MADRE` | `25fdca6` | 2026-05-15 12:30 | ✅ Actualizada con docs |
 | `Manuel/s-ds-01-dropsocial-referral` | — | 2026-05-14 16:18 | En deploy |
 | `Manuel/s-opt-01-loc-inv-src-lang` | `8dl39wqiw` | 2026-05-14 15:40 | ● Ready |
 | `Manuel/s-rev-01-reviews-ratings-full-e2e` | `2z0aoc1rc` | 2026-05-14 13:00 | ● Ready |
