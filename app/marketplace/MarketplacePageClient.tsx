@@ -409,13 +409,7 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
       if (activeTab === 'services' && l.type !== 'service') return false
     }
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase()
-      const haystack = [l.title, l.description, l.subcategory, ...l.tags].join(' ').toLowerCase()
-      if (!haystack.includes(q)) return false
-    }
-
-    // S-SRC: Fuse.js fuzzy search (typo-tolerant)
+    // S-SRC: Fuse.js fuzzy search (typo-tolerant) — unico filtro de texto
     if (searchQuery.trim()) {
       const q = searchQuery.trim()
       const fuse = new Fuse([{ title: l.title, description: l.description, tags: l.tags.join(' ') }], {
