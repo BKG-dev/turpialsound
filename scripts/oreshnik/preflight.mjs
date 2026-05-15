@@ -152,6 +152,24 @@ if (vaultFiles) {
       warnings++
     }
   }
+
+  // Auto-actualizar last_updated en 00_CENTRAL cuando hay cambios reales en el vault
+  const centralPath = resolve(__dirname, '..', '..', 'docs', 'obsidian-vault', '00_CENTRAL_TURPIAL.md')
+  if (existsSync(centralPath)) {
+    const nowLocal = new Date()
+    const dd = String(nowLocal.getDate()).padStart(2, '0')
+    const mm = String(nowLocal.getMonth() + 1).padStart(2, '0')
+    const yy = String(nowLocal.getFullYear()).slice(2)
+    const hh = String(nowLocal.getHours()).padStart(2, '0')
+    const min = String(nowLocal.getMinutes()).padStart(2, '0')
+    const timestamp = `${dd}/${mm}/${yy} ${hh}:${min}`
+    const content = readFileSync(centralPath, 'utf8')
+    const updated = content.replace(/last_updated:\s*"[^"]*"/, `last_updated: "${timestamp}"`)
+    if (updated !== content) {
+      writeFileSync(centralPath, updated, 'utf8')
+      info(`last_updated actualizado: ${timestamp}`)
+    }
+  }
 }
 
 const syncCode = sh('powershell -ExecutionPolicy Bypass -File scripts/oreshnik/sync-obsidian.ps1')
@@ -166,13 +184,18 @@ if (syncOk) {
     const committedContent = sh(`git show HEAD:docs/obsidian-vault/00_CENTRAL_TURPIAL.md`)
     const m = committedContent.match(/last_updated:\s*"([^"]+)"/)
     if (m) {
-      const docDate = new Date(m[1].replace(/-04:00$/, '-04:00'))
-      const hoursStale = (now - docDate) / 3600000
-      if (hoursStale > 4) {
-        warn(`00_CENTRAL sin actualizar hace ${hoursStale.toFixed(0)}h. Contenido puede estar desactualizado.`)
-        warnings++
-      } else if (hoursStale > 1) {
-        info(`00_CENTRAL actualizado hace ${hoursStale.toFixed(0)}h.`)
+      // Formato dd/mm/yy hh:mm (ej: 15/05/26 14:26)
+      const parts = m[1].split(/[\s\/:]/)
+      if (parts.length >= 5) {
+        const [d, mo, y, h, min] = parts.map(Number)
+        const docDate = new Date(2000 + y, mo - 1, d, h, min)
+        const hoursStale = (now - docDate) / 3600000
+        if (hoursStale > 4) {
+          warn(`00_CENTRAL sin actualizar hace ${hoursStale.toFixed(0)}h. Contenido puede estar desactualizado.`)
+          warnings++
+        } else if (hoursStale > 1) {
+          info(`00_CENTRAL actualizado hace ${hoursStale.toFixed(0)}h.`)
+        }
       }
     }
   }

@@ -3,7 +3,7 @@ type: master-dashboard
 project: "Turpial Sound"
 status: post-reconciliation
 phase: "Fase E: Sprints marketplace cerrados. Pre-release."
-last_updated: "2026-05-15T12:10-04:00"
+last_updated: "15/05/26 14:26"
 mother_branch: "RAMA MADRE"
 mother_head: "dfca178"
 production_branch: "prod/current-www-turpialsound-2026-05-08"
