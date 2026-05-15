@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const CACHE_DIR = join(__dirname, 'runs')
 const CACHE_FILE = join(CACHE_DIR, '.preflight-cache.json')
-const MOTHER = 'hotfix/aeo-article-polish-sitemap-current-prod-2026-05-14'
+const MOTHER = 'RAMA-MADRE'
 
 const sprintId = process.argv.includes('--sprint') 
   ? process.argv[process.argv.indexOf('--sprint') + 1] 

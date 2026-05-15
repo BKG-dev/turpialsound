@@ -8,7 +8,7 @@
 #>
 
 param(
-    [string]$MotherBranch = "hotfix/aeo-article-polish-sitemap-current-prod-2026-05-14"
+    [string]$MotherBranch = "RAMA-MADRE"
 )
 
 $ErrorActionPreference = "Continue"
