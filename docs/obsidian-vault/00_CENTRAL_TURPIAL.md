@@ -3,7 +3,7 @@ type: master-dashboard
 project: "Turpial Sound"
 status: post-reconciliation
 phase: "Fase E: Sprints marketplace cerrados. Pre-release."
-last_updated: "2026-05-14T20:43-04:00"
+last_updated: "2026-05-15T12:10-04:00"
 mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
 mother_head: "dfca178"
 production_branch: "prod/current-www-turpialsound-2026-05-08"
@@ -191,7 +191,14 @@ tags:
 | S-MK-06 | Plan marketing | 👤 Manuel | ✅ CERRADO 2026-05-14 |
 
 ### 🟪 TRACK 4: Admin-Legal — 🔴 todo pendiente (accion fisica Manuel)
-### 🟧 TRACK 5: UI/UX — 🔴 todo pendiente
+### 🟧 TRACK 5: UI/UX — ✅ COMPLETADO (S-UX-01, S-UX-02)
+
+| Sprint | Descripcion | Owner | Estado |
+|--------|-------------|-------|--------|
+| S-UX-01 | Plan tecnico UI Inmersiva | 👤 Manuel | ✅ CERRADO 2026-05-15 |
+| S-UX-02 | Implementacion UI Inmersiva + Refac Global | 👤 Manuel | ✅ CERRADO 2026-05-15 |
+
+**Entregables:** Particle Background, 3D Parallax Cards, Scroll Stacking, Cinematic Hero, WhatsApp Button, Core Design System (Deep Dark + Michroma), CinematicVideo, Mac3DGallery, refactor pagina por pagina, mobile degradation. Build limpio validado.
 
 ---
 

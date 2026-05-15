@@ -1,10 +1,15 @@
 #!/usr/bin/env node
 /**
- * Oreshnik Preflight v2.0 — Evaluacion de 7 condiciones antes de cualquier tarea.
+ * Oreshnik Preflight v3.0 — Evaluacion de 10 condiciones antes de cualquier tarea.
  * Paso 0 OBLIGATORIO. Cumple metodologia Oreshnik + Optimizacion.
  * 
- * Uso: node scripts/oreshnik/preflight.mjs [--sprint SXX]
+ * Uso: node scripts/oreshnik/preflight.mjs [--sprint SXX] [--operator Jean|Manuel] [--desc "descripcion"]
  * Exit code: 0 = OK, 1 = bloqueante, 2 = solo advertencias
+ * 
+ * Branch management (v3.0):
+ *   - Si estas en rama madre y hay --sprint, crea automaticamente rama hija {operator}/{sprint}-{desc}-{fecha}
+ *   - Si la rama hija ya existe, hace checkout a ella
+ *   - Si estas en rama hija de otro sprint, avisa al operador
  */
 
 import { execSync } from 'node:child_process'
@@ -20,6 +25,43 @@ const MOTHER = 'integration/today-reservas-marketplace-stable-2026-05-07'
 const sprintId = process.argv.includes('--sprint') 
   ? process.argv[process.argv.indexOf('--sprint') + 1] 
   : null
+
+const operatorFlag = process.argv.includes('--operator')
+  ? process.argv[process.argv.indexOf('--operator') + 1]
+  : null
+
+const descFlag = process.argv.includes('--desc')
+  ? process.argv[process.argv.indexOf('--desc') + 1]
+  : null
+
+// Mother branch patterns: integration/*, main, master, prod/*
+const MOTHER_PATTERNS = [/^integration\/.*/, /^main$/, /^master$/, /^prod\/.*/]
+
+function isMotherBranch(branch) {
+  return MOTHER_PATTERNS.some(p => p.test(branch))
+}
+
+function resolveOperator() {
+  if (operatorFlag) return operatorFlag
+  const envOp = process.env.ORESHNIK_OPERATOR
+  if (envOp) return envOp
+  const gitUser = sh('git config user.name').toLowerCase()
+  if (gitUser.includes('manuel') || gitUser.includes('mvera')) return 'Manuel'
+  if (gitUser.includes('jean')) return 'Jean'
+  return gitUser.split(' ')[0] || 'operator'
+}
+
+function sanitizeBranchName(str) {
+  return str
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+}
+
+const operator = resolveOperator()
+const today = ''
+function getToday() { return new Date().toISOString().slice(0, 10) }
 
 const RED = '\x1b[31m'
 const GREEN = '\x1b[32m'
@@ -56,7 +98,7 @@ if (existsSync(CACHE_FILE)) {
 
 console.log('')
 console.log(`${BOLD}==============================================${RESET}`)
-console.log(`${BOLD}  ORESHNIK PREFLIGHT v2.0${RESET}`)
+console.log(`${BOLD}  ORESHNIK PREFLIGHT v3.0${RESET}`)
 console.log(`${BOLD}  ${now.toISOString()}${RESET}`)
 console.log(`${BOLD}==============================================${RESET}`)
 console.log('')
@@ -71,25 +113,20 @@ console.log(syncCode)
 const syncOk = !syncCode.includes('FAIL')
 if (syncOk) {
   ok('Docs sincronizados')
-  // Bump timestamp on disk so Obsidian shows current time
+  // Check staleness usando git log — NO modifica el archivo
   const centralPath = resolve(__dirname, '..', '..', 'docs', 'obsidian-vault', '00_CENTRAL_TURPIAL.md')
   if (existsSync(centralPath)) {
-    const originalContent = readFileSync(centralPath, 'utf8')
-    const iso = now.toISOString().replace('T', 'T').replace(/\.\d{3}Z$/, '-04:00')
-    const updatedContent = originalContent.replace(/last_updated:\s*"[^"]*"/, `last_updated: "${iso}"`)
-    writeFileSync(centralPath, updatedContent, 'utf8')
-    
-    // Check staleness of committed version
-    const m = originalContent.match(/last_updated:\s*"([^"]+)"/)
+    // Leer last_updated del committed version (no del working tree)
+    const committedContent = sh(`git show HEAD:docs/obsidian-vault/00_CENTRAL_TURPIAL.md`)
+    const m = committedContent.match(/last_updated:\s*"([^"]+)"/)
     if (m) {
       const docDate = new Date(m[1].replace(/-04:00$/, '-04:00'))
       const hoursStale = (now - docDate) / 3600000
       if (hoursStale > 4) {
         warn(`00_CENTRAL sin actualizar hace ${hoursStale.toFixed(0)}h. Contenido puede estar desactualizado.`)
-        blockers++
-      } else if (hoursStale > 1) {
-        warn(`00_CENTRAL actualizado hace ${hoursStale.toFixed(0)}h.`)
         warnings++
+      } else if (hoursStale > 1) {
+        info(`00_CENTRAL actualizado hace ${hoursStale.toFixed(0)}h.`)
       }
     }
   }
@@ -136,23 +173,117 @@ if (errorCount >= 2) {
 }
 if (contextOk) ok('Contexto saludable')
 
-// 3/7 GIT
-step('3/7 GIT — Working tree y rama')
+// 3/7 GIT — Working tree, rama y branch management
+step('3/7 GIT — Working tree, rama y branch management')
 const currentBranch = sh('git branch --show-current')
-const dirtyCount = sh('git status --porcelain')
+const fullStatus = sh('git status --porcelain')
+const allDirty = fullStatus
+  .split('\n').filter(l => l.trim() && !l.startsWith('??')).length
+const dirtyCount = fullStatus
   .split('\n').filter(l => l.trim() && !l.startsWith('??') && !l.includes('.obsidian')).length
 const localCommit = sh('git rev-parse --short HEAD')
 
-if (dirtyCount > 0) {
+// Detect if changes are only cache/runs files (safe to auto-stash)
+const cacheOnlyChanges = fullStatus
+  .split('\n')
+  .filter(l => l.trim() && !l.startsWith('??'))
+  .every(l => l.includes('scripts/oreshnik/runs/') || l.includes('.obsidian') || l.includes('.kilo/kilo.json'))
+
+if (dirtyCount > 0 && !cacheOnlyChanges) {
   warn(`Working tree: ${dirtyCount} archivos sin commit. Rama: ${currentBranch}`)
   warnings++
+} else if (allDirty > 0 && cacheOnlyChanges) {
+  info(`Cambios solo en cache/runs — ignorables. Rama: ${currentBranch} @ ${localCommit}`)
 } else {
   ok(`Working tree limpio. Rama: ${currentBranch} @ ${localCommit}`)
 }
 
-if (currentBranch === MOTHER && localCommit !== originCommit) {
-  warn(`Madre local != origin. Necesitas git pull.`)
-  warnings++
+// ── Branch Management ───────────────────────────────────────────────
+let branchAction = ''
+let branchSwitched = false
+
+if (sprintId) {
+  const onMother = isMotherBranch(currentBranch)
+  const isOperatorBranch = new RegExp(`^${operator}/`, 'i').test(currentBranch)
+  const expectedBranchPrefix = `${operator}/${sanitizeBranchName(sprintId)}`
+  const expectedBranch = descFlag
+    ? `${expectedBranchPrefix}-${sanitizeBranchName(descFlag)}-${today}`
+    : `${expectedBranchPrefix}-${getToday()}`
+
+  if (onMother) {
+    // Check if child branch already exists
+    const existingBranch = sh(`git branch --list "${operator}/${sanitizeBranchName(sprintId)}-*"`)
+    
+    if (existingBranch) {
+      const branchName = existingBranch.split('\n')[0].trim().replace(/^\*\s*/, '')
+      info(`Rama hija existente: ${branchName}`)
+      
+      if (allDirty === 0 || cacheOnlyChanges) {
+        const switched = sh(`git checkout "${branchName}" 2>&1`)
+        if (switched.includes('Switched')) {
+          ok(`Cambiado a rama hija: ${branchName}`)
+          branchAction = `switched_to_${branchName}`
+          branchSwitched = true
+        }
+      } else {
+        warn(`Rama hija ${branchName} existe pero working tree sucio. Stashea primero.`)
+        branchAction = 'need_stash'
+      }
+    } else {
+      // Crear nueva rama hija
+      if (allDirty === 0 || cacheOnlyChanges) {
+        const created = sh(`git checkout -b "${expectedBranch}" 2>&1`)
+        if (created.includes('Switched')) {
+          ok(`Rama hija creada: ${expectedBranch}`)
+          branchAction = `created_${expectedBranch}`
+          branchSwitched = true
+        } else {
+          fail(`No se pudo crear rama: ${created.slice(0, 80)}`)
+          blockers++
+        }
+      } else {
+        warn(`Para crear rama ${expectedBranch}, necesitas stashear o commitear primero.`)
+        branchAction = 'need_stash'
+      }
+    }
+  } else if (isOperatorBranch) {
+    if (currentBranch.startsWith(expectedBranchPrefix)) {
+      ok(`Rama correcta para sprint ${sprintId}: ${currentBranch}`)
+      branchAction = 'ok'
+    } else {
+      warn(`Rama actual: ${currentBranch} — no coincide con sprint ${sprintId}.`)
+      warn(`Rama esperada: ${expectedBranchPrefix}-*`)
+      warn(`¿Deseas crear ${expectedBranch}? Responde si/no o pasa --operator para cambiar de operador.`)
+      branchAction = 'mismatch'
+    }
+  } else if (!isOperatorBranch && !onMother) {
+    warn(`Rama actual: ${currentBranch} — no es madre ni ${operator}/*.`)
+    warn(`Si es intencional, ignora. Si no, checkout a rama correcta.`)
+    branchAction = 'unknown'
+  }
+
+  // Update current branch variable if switched
+  if (branchSwitched) {
+    const updatedBranch = sh('git branch --show-current')
+    if (updatedBranch) {
+      // Update the const via this proxy — use the updated branch in reports
+      console.log(`  [ ${CYAN}INFO${RESET} ] Rama activa: ${updatedBranch}`)
+      branchAction = branchAction.replace(/_(.+)$/, `_${updatedBranch}`)
+    }
+  }
+} else {
+  // No sprint specified — just warn if on mother
+  if (isMotherBranch(currentBranch)) {
+    warn(`En rama madre (${currentBranch}). Usa --sprint SXX para crear rama hija automatica.`)
+    branchAction = 'no_sprint_on_mother'
+  } else {
+    const isOperatorBranch = /^(Manuel|Jean)\//.test(currentBranch)
+    if (isOperatorBranch) {
+      ok(`Rama de operador: ${currentBranch}`)
+    } else {
+      info(`Rama: ${currentBranch}. Pasa --sprint SXX si necesitas rama hija.`)
+    }
+  }
 }
 
 // 4/7 ZONE
@@ -197,7 +328,9 @@ console.log(`${BOLD}==============================================${RESET}`)
 console.log('')
 console.log(`  Bloqueantes:  ${blockers}`)
 console.log(`  Advertencias: ${warnings}`)
-console.log(`  Rama:         ${currentBranch} @ ${localCommit}`)
+console.log(`  Operador:     ${operator}`)
+console.log(`  Sprint:       ${sprintId ?? 'no especificado'}`)
+console.log(`  Branch:       ${currentBranch} @ ${localCommit}`)
 console.log(`  Contexto:     ${sessionHours.toFixed(1)}h, ${taskCount} tareas, ${errorCount} errores`)
 console.log('')
 

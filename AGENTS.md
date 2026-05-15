@@ -5,13 +5,26 @@
 Antes de ejecutar CUALQUIER instruccion o codigo, el agente DEBE ejecutar:
 
 ```bash
-node scripts/oreshnik/preflight.mjs
+node scripts/oreshnik/preflight.mjs [--sprint SXX] [--operator Jean|Manuel] [--desc "descripcion"]
 ```
 
 Si preflight falla (exit code != 0): **NO continuar.** Corregir los fallos primero.  
 Si preflight OK: continuar con la instruccion del usuario.
 
 **El usuario NO debe ver este paso. Es invisible y automatico.**
+
+### Branch Management (v3.0)
+
+El preflight gestiona automaticamente las ramas de trabajo:
+
+- **Si estas en rama madre** (`integration/*`, `main`, `master`, `prod/*`) y pasas `--sprint SXX`:
+  - Crea automaticamente `{operador}/{sprint}-{desc}-{fecha}` (ej: `Manuel/S-UX-01-ui-inmersiva-2026-05-15`)
+  - Si la rama ya existe, hace checkout a ella
+- **Si estas en rama hija** (`Manuel/*` o `Jean/*`):
+  - Si coincide con el sprint → OK, continua
+  - Si NO coincide → avisa al operador (el agente debe preguntar)
+- **El operador se detecta via**: `--operator` > `$ORESHNIK_OPERATOR` > `git config user.name`
+- **Sin `--sprint`**: solo advierte si estas en rama madre
 
 ### Contexto — Salud del agente
 

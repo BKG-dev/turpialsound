@@ -93,12 +93,21 @@ if ($currentBranch -eq $MotherBranch) {
 }
 
 # 7. Restaurar docs si Obsidian los sobreescribio
-$dirtyDocs = git diff --name-only -- "$docsDir/" 2>$null
-if ($dirtyDocs) {
-    Write-Sync "Obsidian modifico archivos. Restaurando desde git..." -T "WARN"
-    $dirtyDocs | ForEach-Object { Write-Host "  $_" }
-    git checkout HEAD -- $docsDir/ 2>&1 | Out-Null
-    Write-Sync "Docs restaurados desde git" -T "PASS"
+#    SOLO revierte cambios de config de Obsidian (.obsidian/workspace.json, etc.)
+#    NO revierte cambios en contenido (docs/obsidian-vault/*.md) — esos son intencionales del operador.
+$obsidianConfigDirty = git diff --name-only -- "docs/.obsidian/" 2>$null
+if ($obsidianConfigDirty) {
+    Write-Sync "Obsidian modifico archivos de config. Restaurando..." -T "WARN"
+    $obsidianConfigDirty | ForEach-Object { Write-Host "  $_" }
+    git checkout HEAD -- docs/.obsidian/ 2>&1 | Out-Null
+    Write-Sync "Config de Obsidian restaurada" -T "PASS"
+}
+
+$vaultDirty = git diff --name-only -- "docs/obsidian-vault/" 2>$null
+if ($vaultDirty) {
+    Write-Sync "Vault tiene cambios locales (posiblemente intencionales del operador). No se revierten." -T "WARN"
+    $vaultDirty | ForEach-Object { Write-Host "  $_" }
+    Write-Sync "Si NO son intencionales, ejecuta: git checkout HEAD -- docs/obsidian-vault/" -T "INFO"
 } else {
     Write-Sync "Docs limpios (sin sobreescritura de Obsidian)" -T "PASS"
 }
