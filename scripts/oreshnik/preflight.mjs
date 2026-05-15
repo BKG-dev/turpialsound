@@ -60,7 +60,7 @@ function sanitizeBranchName(str) {
 }
 
 const operator = resolveOperator()
-const today = ''
+const today = getToday()
 function getToday() { return new Date().toISOString().slice(0, 10) }
 
 const RED = '\x1b[31m'
