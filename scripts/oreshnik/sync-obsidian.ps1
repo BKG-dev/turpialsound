@@ -48,9 +48,9 @@ if (-not $motherRef) {
 # 4. Verificar docs canonicos
 $canonicalDocs = @(
     "$docsDir/00_CENTRAL_TURPIAL.md",
-    "$docsDir/INSTRUCCION_APERTURA_SESION.md",
-    "$docsDir/PLAN_MAESTRO_SPRINTS_2026-05-12.md",
-    "$docsDir/METODOLOGIA_ORESHNIK_ANEXO.md"
+    "$docsDir/METODOLOGIA/INSTRUCCION_APERTURA_SESION.md",
+    "$docsDir/SPRINTS/PLAN_MAESTRO_SPRINTS.md",
+    "$docsDir/METODOLOGIA/METODOLOGIA_ORESHNIK.md"
 )
 
 $dates = @{}
