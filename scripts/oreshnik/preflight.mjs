@@ -35,7 +35,7 @@ const descFlag = process.argv.includes('--desc')
   : null
 
 // Mother branch patterns: integration/*, main, master, prod/*
-const MOTHER_PATTERNS = [/^integration\/.*/, /^main$/, /^master$/, /^prod\/.*/]
+const MOTHER_PATTERNS = [/^integration\/.*/, /^hotfix\/.*/, /^main$/, /^master$/, /^prod\/.*/]
 
 function isMotherBranch(branch) {
   return MOTHER_PATTERNS.some(p => p.test(branch))
