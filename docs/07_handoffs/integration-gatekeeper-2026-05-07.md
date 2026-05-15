@@ -1,4 +1,4 @@
-# Integration Gatekeeper - 2026-05-07
+﻿# Integration Gatekeeper - 2026-05-07
 
 ## 1) Proposito de la compuerta
 
