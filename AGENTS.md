@@ -1,17 +1,27 @@
 # AGENTS
 
-## 🔴 PASO 0 — OBLIGATORIO (Sync Obsidian)
+## 🔴 PASO 0 — OBLIGATORIO (Preflight Check)
 
 Antes de ejecutar CUALQUIER instruccion o codigo, el agente DEBE ejecutar:
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/oreshnik/sync-obsidian.ps1
+```bash
+node scripts/oreshnik/preflight.mjs
 ```
 
-Si sync falla (exit code != 0): **NO continuar.** Corregir los fallos primero.  
-Si sync OK: continuar con la instruccion del usuario.
+Si preflight falla (exit code != 0): **NO continuar.** Corregir los fallos primero.  
+Si preflight OK: continuar con la instruccion del usuario.
 
 **El usuario NO debe ver este paso. Es invisible y automatico.**
+
+### Contexto — Salud del agente
+
+El preflight evalua la salud del contexto actual y sugiere acciones:
+- **>3h de sesion:** sugerir `/compact`
+- **>5 tareas:** sugerir `/clear`
+- **>=2 errores consecutivos:** forzar `/clear`
+- **<5 min desde el ultimo check sin cambios en madre:** usar resultado cacheado
+
+El agente debe seguir la sugerencia o informar al usuario si decide continuar con contexto degradado.
 
 ---
 
