@@ -69,8 +69,25 @@ step('1/7 SYNC — Sincronizacion docs')
 const syncCode = sh('powershell -ExecutionPolicy Bypass -File scripts/oreshnik/sync-obsidian.ps1')
 console.log(syncCode)
 const syncOk = !syncCode.includes('FAIL')
-if (syncOk) ok('Docs sincronizados')
-else { fail('Sync fallo'); blockers++ }
+if (syncOk) {
+  ok('Docs sincronizados')
+  // Check staleness
+  const centralPath = resolve(__dirname, '..', '..', 'docs', 'obsidian-vault', '00_CENTRAL_TURPIAL.md')
+  if (existsSync(centralPath)) {
+    const m = readFileSync(centralPath, 'utf8').match(/last_updated:\s*"([^"]+)"/)
+    if (m) {
+      const docDate = new Date(m[1].replace(/-04:00$/, '-04:00'))
+      const hoursStale = (now - docDate) / 3600000
+      if (hoursStale > 24) {
+        warn(`00_CENTRAL sin actualizar hace ${hoursStale.toFixed(0)}h. El contenido puede estar desactualizado.`)
+        warnings++
+      } else if (hoursStale > 4) {
+        warn(`00_CENTRAL actualizado hace ${hoursStale.toFixed(0)}h. Considera actualizar last_updated.`)
+        warnings++
+      }
+    }
+  }
+} else { fail('Sync fallo'); blockers++ }
 
 // 2/7 CONTEXT
 step('2/7 CONTEXT — Salud del contexto')
