@@ -108,6 +108,23 @@ let warnings = 0
 
 // 1/7 SYNC
 step('1/7 SYNC — Sincronizacion docs')
+
+// ── Obsidian guard ─────────────────────────────────────────────────
+const obsidianRunning = process.platform === 'win32'
+  ? (() => { try { execSync('tasklist /FI "IMAGENAME eq Obsidian.exe" 2>nul', { encoding: 'utf8' }); return true } catch { return false } })()
+  : (() => { try { execSync('pgrep -x Obsidian 2>/dev/null', { encoding: 'utf8' }); return true } catch { return false } })()
+
+if (obsidianRunning) {
+  const vaultDirty = sh('git diff --name-only -- docs/obsidian-vault/')
+  if (vaultDirty) {
+    fail('OBSIDIAN ABIERTO — cierra Obsidian antes de continuar. Archivos del vault estan modificados y Obsidian los sobreescribira al hacer checkout/pull/merge.')
+    blockers++
+  } else {
+    warn('Obsidian abierto. Si haces checkout/pull/merge, cierra Obsidian primero para evitar sobreescritura del vault.')
+    warnings++
+  }
+}
+
 const syncCode = sh('powershell -ExecutionPolicy Bypass -File scripts/oreshnik/sync-obsidian.ps1')
 console.log(syncCode)
 const syncOk = !syncCode.includes('FAIL')
