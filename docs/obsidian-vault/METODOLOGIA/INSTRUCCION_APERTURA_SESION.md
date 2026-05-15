@@ -1,82 +1,92 @@
----
+﻿---
 type: session-starter
 project: "Turpial Sound"
-fecha: 2026-05-14
-actualizado: "2026-05-14T13:46-04:00"
+fecha: 2026-05-15
+actualizado: "2026-05-15T12:40-04:00"
 para: "Jean Arteaga y Manuel Vera — proxima sesion Kilo"
-metodologia: "Oreshnik + Bus de Control Nivel 2.5"
-mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
-mother_head: "84e15d4"
+metodologia: "Oreshnik v3.0 + Preflight automatizado"
+mother_branch: "RAMA MADRE"
+mother_head: "25fdca6"
 ---
 
 # 🟢 INSTRUCCION DE APERTURA DE SESION — AMBOS OPERADORES
 
 > **LEER PRIMERO:** [[00_CENTRAL_TURPIAL]] — Fuente unica de verdad.
-> **Metodologia:** [[METODOLOGIA_ORESHNIK_ANEXO]]
+> **Metodologia:** [[METODOLOGIA_ORESHNIK]]
 > **Canvas:** [[FLUJO_PROTOCOLO_TRABAJO]]
 
 ---
 
-## 🚨 SITUACION ACTUAL (2026-05-14 13:46 VET)
+## 🚨 SITUACION ACTUAL (2026-05-15 12:40 VET)
 
-**RECONCILIACION COMPLETADA.** Madre y ramas hijas sincronizadas.
+**TRACK 5 UI/UX COMPLETADO.** S-UX-01 y S-UX-02 CERRADOS. Docs migrados a nueva rama madre.
 
 | Rama | HEAD | Estado |
 |------|------|--------|
-| **Madre** `integration/today-reservas-marketplace-stable-2026-05-07` | `84e15d4` | ✅ Actualizada |
-| `Manuel/s-rev-01-reviews-ratings-full-e2e` | `84e15d4` | ✅ Sincronizada con madre |
+| **Madre** `RAMA MADRE` | `25fdca6` | ✅ Actualizada con docs |
+| `Manuel/s-adm-01-legal-entity-2026-05-15` | — | 🟡 Siguiente sprint |
 
-### Sprints cerrados hoy por Manuel
+### Sprints cerrados — Manuel
 
-| Sprint | Descripcion | Rama |
-|--------|-------------|------|
-| S15 | Location filters + listing modal + inventory | `Manuel/s15-location-filters-2026-05-14` |
-| S16 | Notifications + chat + system messages | `Manuel/s16-notifications-chat-2026-05-14` |
-| S18 | Full regression browser (25 PASS, 0 FAIL) | `Manuel/s18-full-regression-browser-2026-05-14` |
-| S20 | SEO/AEO audit (10 paginas) | `Manuel/s20-seo-aeo-audit-2026-05-14` |
-| S-MK-02 | KPI dashboard (8 metricas) | `Manuel/s-mk-02-kpi-dashboard-2026-05-14` |
-| S-MK-04/05/06 | RRSS + Marketing (APIs + calendario + plan) | `Manuel/s-mk-04-05-06-rrss-marketing-2026-05-14` |
-| S-REV-01 | Ratings, reviews + Full E2E + payout export | `Manuel/s-rev-01-reviews-ratings-full-e2e-2026-05-14` |
+| Sprint | Descripcion | Fecha |
+|--------|-------------|-------|
+| S-UX-01 | Plan tecnico UI Inmersiva | 2026-05-15 |
+| S-UX-02 | Implementacion UI Inmersiva + Refac Global | 2026-05-15 |
+| S-MK-01 | Analisis de mercado y competencia | 2026-05-14 |
+| S-MK-02 | KPI dashboard inteligente | 2026-05-14 |
+| S-MK-04/05/06 | RRSS + Marketing | 2026-05-14 |
+| S-REV-01 | Ratings, reviews + Full E2E | 2026-05-14 |
+| S-DS-01 | DropSocial referral | 2026-05-14 |
+| S-OPT-01 | Optimizaciones (loc, inv, search, lang) | 2026-05-14 |
+| S12-S20 | Marketplace sprints (excepto S17, S19) | 2026-05-14/15 |
 
 ### Pendiente Jean
 
 | Sprint | Descripcion |
 |--------|-------------|
-| S-JB-01 | Booking fixes (multiple, cantidad, WhatsApp) |
-| S-JB-02 | Dashboard de reservas |
-| S-JB-03 | Tasas horarias, sitemap, Vercel docs |
+| S-JB-01 a 04 | Booking fixes + dashboard + tasas + Google reviews |
+| S17 | Seller dashboard browser |
+| S19 | Performance/load (parcial) |
 | S21 | Production release gate |
+| S-MK-03 | SEO/AEO full + Academia (parcial) |
+
+### Pendiente Manuel
+
+| Sprint | Descripcion |
+|--------|-------------|
+| S-ADM-01 | Verificar estado legal de la entidad |
+| S-ADM-03 | Modelos comerciales/juridicos |
+| S-ADM-04 | Deploy + capacitacion CDA |
 
 ---
 
 ## 👤 JEAN — TUS INSTRUCCIONES
 
 ```
-1. Sincronizate con la madre:
-   git fetch origin --prune
-   git checkout integration/today-reservas-marketplace-stable-2026-05-07
-   git pull origin integration/today-reservas-marketplace-stable-2026-05-07
+1. Sincronizate con la madre usando preflight:
+   node scripts/oreshnik/preflight.mjs --sprint SXX --operator Jean --desc "lo-que-vas-a-hacer"
 
-2. Verifica el estado:
-   Abri docs/obsidian-vault/00_CENTRAL_TURPIAL.md → last_updated: 2026-05-14T13:46
-   Abri docs/obsidian-vault/INSTRUCCION_APERTURA_SESION.md → este archivo
+   Ejemplo para S17:
+   node scripts/oreshnik/preflight.mjs --sprint S17 --operator Jean --desc "seller-dashboard"
 
-3. Crea tu rama para S-JB-01:
-   git checkout -b Jean/s-jb-01-booking-fixes-2026-05-14
+   ESTO CREA AUTOMATICAMENTE: Jean/S17-seller-dashboard-2026-05-15
 
-4. S-JB-01 tareas:
-   - Seleccion multiple de servicios en /reservas
-   - Campo cantidad de temas en produccion musical
-   - Eliminar cargos inaplicables (tecnico de sonido, backline)
-   - WhatsApp: fecha y hora en confirmacion
+2. El preflight v3.0 gestiona todo automaticamente:
+   - Si estas en madre → crea rama hija Jean/SXX-descripcion-fecha
+   - Si la rama ya existe → hace checkout
+   - Si estas en rama hija de otro sprint → te avisa
+   - No necesitas hacer git checkout -b manual
 
-5. Zona exclusiva tuya: /reservas, components/bookings/, lib/bookings/
+3. Docs: editalos en tu rama hija. Se mergean a madre junto con tu codigo al cerrar sprint.
+   El sync YA NO revierte cambios intencionales en el vault.
 
-6. ANTES DE CADA PUSH:
+4. Zona exclusiva tuya: /reservas, components/bookings/, lib/bookings/
+
+5. ANTES DE CADA PUSH:
    npx tsc --noEmit && pnpm run build
    SI FALLA → no pushear, corregir primero
 
-7. Al cerrar el sprint, avisame para hacer merge a madre.
+6. Al cerrar el sprint, actualiza los docs y mergea a madre.
 ```
 
 ---
@@ -84,51 +94,45 @@ mother_head: "84e15d4"
 ## 👤 MANUEL — TUS INSTRUCCIONES
 
 ```
-1. Estas en la rama correcta. Verifica:
-   git branch --show-current
-   # Debe mostrar: Manuel/s-rev-01-reviews-ratings-full-e2e-2026-05-14
-   # O: integration/today-reservas-marketplace-stable-2026-05-07
+1. Crear rama para S-ADM-01 con preflight v3.0:
+   node scripts/oreshnik/preflight.mjs --sprint S-ADM-01 --operator Manuel --desc "legal-entity"
 
-2. Estado actual: S-REV-01 cerrado. Madre actualizada.
-   Proximo sprint disponible: S-UX-01 (UI/UX) o esperar a Jean.
+2. Estado actual: Track 5 CERRADO. S-UX-01 y S-UX-02 completados.
+   Proximo sprint: S-ADM-01 (verificacion legal).
 
-3. ANTES DE CADA PUSH:
+3. Preflight v3.0 — usar SIEMPRE con --sprint y --desc.
+   El operador se detecta automaticamente via git config user.name.
+
+4. ANTES DE CADA PUSH:
    npx tsc --noEmit && pnpm run build
    git diff --check
-   git diff --name-only HEAD~1..HEAD | grep ".env" && echo "SECRETS!" && return
-
-4. Verificar Vercel preview despues de push:
-   npx vercel list | head -3
 
 5. Tareas fisicas pendientes:
    - S-ADM-01: Verificar estado legal
-   - S-ADM-04: Plan de despliegue CDA (viernes 15 mayo 11AM)
+   - S-ADM-04: Deploy + capacitacion CDA
 ```
 
 ---
 
 ## 🤝 SINCRONIZACION — REGLA DE ORO
 
-**Al abrir sesion, AMBOS ejecutan:**
+**Al abrir sesion, CORRER PREFLIGHT:**
 
 ```bash
-git fetch origin --prune
-git checkout integration/today-reservas-marketplace-stable-2026-05-07
-git pull origin integration/today-reservas-marketplace-stable-2026-05-07
+node scripts/oreshnik/preflight.mjs --sprint SXX --operator Jean|Manuel --desc "descripcion"
 ```
 
-**Verificar que ambos ven lo mismo:**
+**El preflight v3.0 ejecuta automaticamente:**
+1. Sync de docs con origin
+2. Verificacion de salud de contexto
+3. Gestion de ramas (crea hija desde madre si aplica)
+4. Zone check de colisiones
+5. Verificacion de .env.local
+6. Verificacion de Vercel deploy
+7. Bus de control (10 stop conditions)
+8. Resiliencia (reasignacion de carga)
 
-```bash
-git log origin/integration/today-reservas-marketplace-stable-2026-05-07 --oneline -3
-Select-String "last_updated" docs/obsidian-vault/00_CENTRAL_TURPIAL.md
-```
-
-**⚠️ OBSIDIAN: Cerrar con la X antes de git checkout/pull/push. Si no se cierra, Obsidian sobreescribe los archivos con su versión cacheada. Al reabrir, Ctrl+R para refrescar. El preflight restaura automáticamente si detecta sobreescritura.**
-
-```bash
-git checkout HEAD -- docs/obsidian-vault/
-```
+**⚠️ OBSIDIAN: El sync ahora SOLO revierte config de Obsidian (.obsidian/). Los cambios en docs/obsidian-vault/ se respetan.**
 
 ---
 
@@ -147,13 +151,9 @@ git checkout HEAD -- docs/obsidian-vault/
 
 ## 📅 PROXIMO HITO
 
-**Viernes 15 mayo 2026 — 11:00 AM VET** — Despliegue en La Casa del Artista:
-- Manuel: prepara guia de usuario y plan de despliegue
-- Capacitacion equipo CDA
-- Configurar dispositivos (Gmail, calendario, notificaciones)
-- Actualizar Instagram (@turpialsound, BIO de Fran)
-- WhatsApp Business: actualizar tienda/store
+**S-ADM-01** — Verificacion de estatus legal de Turpial Sound (Manuel).
+**S17** — Seller dashboard browser (Jean).
 
 ---
 
-> **Fuente de verdad:** [[00_CENTRAL_TURPIAL]] | **Metodologia:** [[METODOLOGIA_ORESHNIK_ANEXO]]
+> **Fuente de verdad:** [[00_CENTRAL_TURPIAL]] | **Metodologia:** [[METODOLOGIA_ORESHNIK]]

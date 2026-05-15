@@ -1,4 +1,4 @@
----
+﻿---
 tags: ["#central", "#methodology", "#optimization", "#status/live-source"]
 fecha: 2026-05-12
 metodologia: Oreshnik + Bus de Control Nivel 2.5
@@ -24,7 +24,7 @@ metodologia: Oreshnik + Bus de Control Nivel 2.5
 
 ### 1.2 Lo que genera fricción
 
-**Pre-flight manual es un cuello de botella humano.** El AGENT_CONTROL_BUS_RUNNER Paso 1 (Preflight) requiere que el agente lea 6 documentos extensos, verifique 4 categorías de guardrail, compruebe la existencia de la rama base y valide la limpieza del worktree — cada vez. Esto son ~5 minutos de carga de contexto antes de que comience cualquier trabajo productivo. El script `bootstrap-marketplace-qa.mjs --doctor` referenciado en PLAN_MAESTRO no existe en disco.
+**Pre-flight ahora automatizado (v3.0).** `scripts/oreshnik/preflight.mjs` ejecuta automaticamente: validacion de guardrails, comprobacion de rama base, limpieza de worktree, creacion de rama via `--sprint --operator --desc`, y evaluacion de salud del contexto. Lo que antes tomaba ~5 minutos de carga manual ahora es un solo comando. El preflight v3.0 gestiona branching automatico desde ramas madre y sugiere compaction/clear cuando el contexto se degrada.
 
 **Oreshnik orchestrator es solo diseño.** `ORESHNIK_ORCHESTRATOR_DESIGN.md` describe `scripts/oreshnik/` con subdirectorios prompts, logs, runs, y el runner `oreshnik.ps1` — nada de esto existe. El directorio `scripts/oreshnik/` está vacío. Toda la automatización init → validate → execute → log → checkpoint es vaporware.
 
@@ -32,7 +32,7 @@ metodologia: Oreshnik + Bus de Control Nivel 2.5
 
 **Scripts faltantes en el dispatcher canónico.** Tres task_ids en `qa-dispatcher.json` están anotados como `MISSING on disk — GAP OPERATIVO`: `admin_local_smoke`, `buyer_only_short`, `reconcile_read_only`. Son referenciados por los sprints pero los scripts no existen. Las notas del dispatcher dicen "reemplazar con QA-07, QA-05/06, QA-10" — pero los mapeos son inconsistentes entre las entradas legacy y sus reemplazos.
 
-**Duplicación y drift de documentación.** La misma información vive en al menos 5 lugares: `BUS_CONTROL_TURPIAL.md`, `AGENT_CONTROL_BUS_RUNNER.md`, `SPRINTS_CODEV_MARKETPLACE_2026-05-10.md`, `PLAN_MAESTRO_SPRINTS_2026-05-12.md` y `00_CENTRAL_TURPIAL.md`. Locks, roles, reglas de checkpoint y definiciones de sprints están repetidas en todos. Cuando uno se actualiza, los otros quedan atrasados. Ejemplo: `BUS_CONTROL_TURPIAL.md` referencia `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07` como rama madre, pero `00_CENTRAL_TURPIAL.md` referencia `integration/today-reservas-marketplace-stable-2026-05-07` — dos nombres de rama madre diferentes para el mismo código.
+**Duplicación y drift de documentación.** La misma información vive en al menos 5 lugares: `BUS_CONTROL_TURPIAL.md`, `AGENT_CONTROL_BUS_RUNNER.md`, `SPRINTS_CODEV_MARKETPLACE_2026-05-10.md`, `PLAN_MAESTRO_SPRINTS_2026-05-12.md` y `00_CENTRAL_TURPIAL.md`. Locks, roles, reglas de checkpoint y definiciones de sprints están repetidas en todos. Cuando uno se actualiza, los otros quedan atrasados. Ejemplo: `BUS_CONTROL_TURPIAL.md` referencia `integration-prep/m1-reconcile-protected-flow-on-79cb265-2026-05-07` como rama madre, pero `00_CENTRAL_TURPIAL.md` referencia `RAMA MADRE` — dos nombres de rama madre diferentes para el mismo código.
 
 **Sobrecarga de reportes de cierre.** Cada cierre de sprint requiere actualizar manualmente `session-summary-active.md`, `next-window-brief.md`, `ROADMAP_RESCATE.md`, opcionalmente `BUGS_CRITICOS.md`, y escribir un reporte estructurado. Esto es overhead puro — el git log ya contiene commits, archivos tocados y autor. La plantilla de reporte podría auto-generarse.
 
@@ -173,7 +173,7 @@ cada vez que inician un nuevo sprint. Estos scripts validan que DATABASE_URL, cr
 
 **Por qué:** Actualmente iniciar un sprint requiere:
 1. `git fetch origin`
-2. `git checkout -b Manuel/s12-... origin/integration/today-...` 
+2. `node scripts/oreshnik/preflight.mjs --sprint S12 --operator Manuel --desc "..."` (preflight v3.0 automatiza este paso) 
 3. Ejecutar `ensure-marketplace-qa-env.ps1` si faltan credenciales
 4. Ejecutar `doctor-marketplace-qa-env.mjs` para verificar
 5. Verificar manualmente las 4 categorías de guardrail del BUS runner
@@ -187,7 +187,7 @@ Son 6 pasos manuales que podrían ser un solo comando.
 param(
   [Parameter(Mandatory)] [string]$SprintId,   # ej. "S12"
   [Parameter(Mandatory)] [string]$Operator,    # "Jean" | "Manuel"
-  [string]$BaseBranch = "integration/today-reservas-marketplace-stable-2026-05-07",
+  [string]$BaseBranch = "RAMA MADRE",
   [string]$AppUrl = "https://turpialsound-5qwhe7is1-bkgs-projects-829c67c1.vercel.app"
 )
 # 1. Validar que el sprint existe en PLAN_MAESTRO
@@ -315,7 +315,7 @@ El deploy manual a preview compartido crea una condición de carrera — dos ope
    {
      "sprint": "S12", "track": "T1", "owner": "Manuel",
      "branch": "Manuel/s12-purchase-flow-browser-2026-05-12",
-     "base": "integration/today-reservas-marketplace-stable-2026-05-07",
+     "base": "RAMA MADRE",
      "depends_on": ["S11"],
      "zonas_autorizadas": ["scripts/qa/playwright/**", "scripts/qa/fixtures/**", "var/qa-results/s12-*/**", "docs/07_handoffs/**"],
      "zonas_prohibidas": ["app/", "components/", "actions/", "lib/", "prisma/", "app/(public)/reservas/**", "app/api/marketplace/payment-proofs/**"],
@@ -473,7 +473,7 @@ Basado en análisis de zonas del estado activo actual (2026-05-12):
 ## Apéndice: Instantánea del Estado Actual (2026-05-12)
 
 ```
-Rama madre:  integration/today-reservas-marketplace-stable-2026-05-07 @ 953c6af
+Rama madre:  RAMA MADRE @ 953c6af
 Sprints completados: S01-S11 ✅, S14B ✅, S-MK-01/02 ✅
 Ramas activas:  S12 (completado, por mergear), S13 (completado, por mergear), S14 (en progreso)
 Worktrees obsoletos: 6 (sprints cerrados S01/S03, nunca limpiados)

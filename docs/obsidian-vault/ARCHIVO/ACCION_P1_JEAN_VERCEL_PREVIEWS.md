@@ -1,4 +1,4 @@
----
+﻿---
 type: accion-inmediata
 prioridad: "🔴 P1 — BLOQUEA AVANCE"
 para: Jean Arteaga
@@ -31,7 +31,7 @@ En la sección **Git → Deploy Hooks & Branch Deploys**:
 
 | Campo | Valor actual (probable) | Cambiar a |
 |-------|------------------------|-----------|
-| **Production Branch** | `main` | `integration/today-reservas-marketplace-stable-2026-05-07` |
+| **Production Branch** | `main` | `RAMA MADRE` |
 | **Branch deploys** | desactivado o `main only` | **activar para todas las ramas** |
 
 Si Vercel pide un patrón regex, usar: `(Manuel|Jean)/.*`

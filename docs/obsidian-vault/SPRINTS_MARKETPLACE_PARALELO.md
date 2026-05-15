@@ -1,4 +1,4 @@
----
+﻿---
 tags: ["#marketplace", "#sprints", "#paralelo", "#status/live-source"]
 ---
 
@@ -6,7 +6,7 @@ tags: ["#marketplace", "#sprints", "#paralelo", "#status/live-source"]
 
 ## Base estable real (2026-05-07)
 
-- Rama madre estable: `integration/today-reservas-marketplace-stable-2026-05-07`.
+- Rama madre estable: `RAMA MADRE`.
 - Commit estable: `c01ec60`.
 - Regla: cero trabajo directo sobre rama madre.
 

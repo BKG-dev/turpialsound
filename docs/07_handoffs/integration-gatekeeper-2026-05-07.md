@@ -3,7 +3,7 @@
 ## 1) Proposito de la compuerta
 
 Esta compuerta existe para:
-- proteger la rama madre `integration/today-reservas-marketplace-stable-2026-05-07`;
+- proteger la rama madre `RAMA MADRE`;
 - evitar regresion de `/reservas` (zona sana congelada);
 - evitar confundir DB incorrecta con UI rota en `/marketplace`;
 - evitar liberacion prematura de fondos en flujo marketplace.

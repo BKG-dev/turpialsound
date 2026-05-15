@@ -1,8 +1,8 @@
-{
+﻿{
   "version": 1,
   "updated_at": "2026-05-14",
   "description": "Mapa de zonas archivo→sprint para deteccion de colisiones. Cada zona lista los sprints que pueden tocarla y el lock requerido.",
-  "mother_branch": "integration/today-reservas-marketplace-stable-2026-05-07",
+  "mother_branch": "RAMA MADRE",
   "zones": {
     "app/(public)/reservas/**": {
       "track": "T2", "sprints": ["S-JB-01","S-JB-02","S-JB-03","S-JB-04"], "criticality": "critical", "lock": "jean_exclusive", "owner": "Jean"

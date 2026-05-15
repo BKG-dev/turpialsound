@@ -1,8 +1,8 @@
-# QA Marketplace Integrado
+﻿# QA Marketplace Integrado
 
 ## Estado base 2026-05-07
 
-- Rama madre estable: `integration/today-reservas-marketplace-stable-2026-05-07`.
+- Rama madre estable: `RAMA MADRE`.
 - Commit estable: `c01ec60`.
 - `/reservas` congelado como zona sana.
 - `/marketplace` activo.

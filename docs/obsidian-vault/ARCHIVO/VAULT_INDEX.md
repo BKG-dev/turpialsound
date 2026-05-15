@@ -82,11 +82,11 @@ docs/obsidian-vault/
 ## 📋 ESTADO GENERAL DEL PROYECTO
 
 ```
-🟦 TRACK 1 — Marketplace ............... 🔴 S12 PENDIENTE (10 sprints por delante)
+🟦 TRACK 1 — Marketplace ............... ✅ S12 CERRADO (9 sprints por delante)
 🟩 TRACK 2 — Booking ................... 🔴 S-JB-01 PENDIENTE (4 sprints)
-🟨 TRACK 3 — Crecimiento ............... 🔴 S-MK-01 PENDIENTE (6 sprints)
+🟨 TRACK 3 — Crecimiento ............... ✅ S-MK-01 CERRADO (5 sprints)
 🟪 TRACK 4 — Admin-Legal ............... 🔴 S-ADM-01 PENDIENTE (4 sprints)
-🟧 TRACK 5 — UI/UX Premium ............. 🔴 S-UX-01 PENDIENTE (2 sprints)
+🟧 TRACK 5 — UI/UX Premium ............. ✅ S-UX-01/02 COMPLETADO (0 sprints)
 
 🏁 Meta: 100% sprints cerrados → Marketplace en producción + Booking optimizado +
          RRSS automatizadas + Legal operativo + UI premium

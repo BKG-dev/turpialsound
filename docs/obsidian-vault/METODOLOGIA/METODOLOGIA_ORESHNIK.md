@@ -1,4 +1,4 @@
----
+﻿---
 type: methodology-nexus
 project: "Turpial Sound"
 fecha: 2026-05-14
@@ -47,7 +47,7 @@ ABRIR SESIÓN → Leer docs → Crear rama → Codear → Validar (10 checks) �
 
 | # | Regla | Razón |
 |---|-------|-------|
-| 1 | **Una sola rama madre** | `integration/today-reservas-marketplace-stable-2026-05-07`. Sin esto, divergencia. |
+| 1 | **Una sola rama madre** | `RAMA MADRE`. Sin esto, divergencia. |
 | 2 | **Jean es el gatekeeper** | Solo Jean mergea a madre y main. Nadie despliega directo a prod. |
 | 3 | **Zonas exclusivas** | `/reservas` = Jean. `schema.prisma` = lock doble Jean+Manuel. |
 | 4 | **Cerrar antes de abrir** | Sprint no empieza hasta que el anterior en su track está ✅ CERRADO. |
@@ -119,8 +119,8 @@ Protocolo para que Jean y Manuel SIEMPRE vean la misma versión de docs.
 
 ```bash
 git fetch origin --prune
-git checkout integration/today-reservas-marketplace-stable-2026-05-07
-git pull origin integration/today-reservas-marketplace-stable-2026-05-07
+git checkout RAMA MADRE
+git pull origin RAMA MADRE
 # Verificar:
 Select-String "last_updated" docs/obsidian-vault/00_CENTRAL_TURPIAL.md
 ```
@@ -172,14 +172,17 @@ JEAN RELEASE → git merge a main → Vercel → turpialsound.com
 
 ## 🧠 Oreshnik: HOY vs FUTURO
 
-| Componente | HOY (manual) | FUTURO (Oreshnik) |
+| Componente | HOY (v3.0) | FUTURO (Oreshnik) |
 |-----------|-------------|-------------------|
-| Pre-flight | QA-00 manual | `.husky/pre-commit` |
-| Zone check | Leer 00_CENTRAL | `zone-map.json` + `zone-check.ps1` |
-| Crear rama | `git checkout -b` | `scaffold-sprint.ps1` |
+| Pre-flight | ✅ `preflight.mjs` v3.0 automatico | `.husky/pre-commit` |
+| Zone check | ✅ `zone-check.ps1` via preflight | Integrado en CI |
+| Crear rama | ✅ `preflight.mjs` automatico (`{op}/{sprint}-{desc}-{fecha}`) | `scaffold-sprint.ps1` |
+| Sync docs | ✅ `sync-obsidian.ps1` (respeta vault) | Integrado en pre-commit |
 | Pre-push | Manual 10 checks | `.husky/pre-push` |
 | Cerrar | Editar docs a mano | `generate-closure-report.ps1` |
 | Vercel preview | `npx vercel list` | Link en commit message |
+
+**Preflight v3.0** ya automatiza: sync docs, gestion de ramas, zone check, env check, bus de control (10 stop conditions), resiliencia.
 
 ---
 
@@ -189,8 +192,8 @@ JEAN RELEASE → git merge a main → Vercel → turpialsound.com
 |---|-----------|---------|
 | 1 | [[00_CENTRAL_TURPIAL]] | **Fuente única de verdad.** Manda sobre todos. |
 | 2 | [[INSTRUCCION_APERTURA_SESION]] | Qué hacer al abrir Kilo (Jean + Manuel). |
-| 3 | [[PLAN_MAESTRO_SPRINTS_2026-05-12]] | 27 sprints en 5 tracks. |
-| 4 | [[BUS_CONTROL_TURPIAL]] | Reglas del bus, locks, checklist. |
+| 3 | [[PLAN_MAESTRO_SPRINTS]] | 27 sprints en 5 tracks. |
+| 4 | [[BUS_CONTROL]] | Reglas del bus, locks, checklist. |
 | 5 | [[METODOLOGIA_OPTIMIZACION]] | Detalle de automatizaciones Oreshnik. |
 | 6 | `docs/07_handoffs/qa-dispatcher.json` | Despacho canónico QA. |
 
@@ -201,7 +204,7 @@ JEAN RELEASE → git merge a main → Vercel → turpialsound.com
 - 📊 **Canvas:** [[FLUJO_PROTOCOLO_TRABAJO]]
 - 🚀 **Apertura:** [[INSTRUCCION_APERTURA_SESION]]
 - 🏠 **Dashboard:** [[00_CENTRAL_TURPIAL]]
-- 📋 **Plan:** [[PLAN_MAESTRO_SPRINTS_2026-05-12]]
+- 📋 **Plan:** [[PLAN_MAESTRO_SPRINTS]]
 - 🐛 **Bugs:** [[BUGS_CRITICOS]]
 - 💱 **Tasas:** [[FLUJO_TASAS_BCV]]
 - 🧪 **QA:** [[QA_HARNESS_CANVAS_2026-05-10]]

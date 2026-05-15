@@ -1,11 +1,11 @@
----
+﻿---
 type: master-plan
 project: "Turpial Sound"
 status: active
 version: "1.0"
 last_updated: "2026-05-14T13:50-04:00"
 methodology: "Oreshnik + Bus de Control Nivel 2.5"
-mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
+mother_branch: "RAMA MADRE"
 tags:
   - "#central"
   - "#master-plan"
@@ -93,7 +93,7 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `integration/today-reservas-marketplace-stable-2026-05-07`
+- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
 - **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
@@ -123,14 +123,14 @@ TRACK 5 🟧 UI/UX:        S-UX-01 → S-UX-02
 
 ---
 
-### S12 — Purchase Flow Browser E2E 🔴 PENDIENTE
+### S12 — Purchase Flow Browser E2E ✅ CERRADO 2026-05-14
 
 | Campo | Valor |
 |-------|-------|
 | **Owner primary** | 👤 Manuel (reasignado 2026-05-12 — Jean en core web business) |
 | **Owner fallback** | 👤 Jean (si Manuel no puede, o al terminar core web business) |
 | **Branch** | `Manuel/s12-purchase-flow-browser-2026-05-12` |
-| **Base** | `integration/today-reservas-marketplace-stable-2026-05-07` |
+| **Base** | `RAMA MADRE` |
 | **Depende de** | S11 (Playwright instalado) |
 | **Tipo** | 🔧 TÉCNICO |
 | **Reasignación** | Jean ocupado en core web business. Manuel toma S12-S14. Jean retoma en S-JB-01. |
@@ -865,11 +865,9 @@ SEMANA 5 (9-13 JUN 2026)
 SEMANA 6-7 (16-27 JUN 2026)
 ├── Ambos: Cierre S21 (producción) 🚀
 ├── Manuel: S-MK-03 a S-MK-06 (RRSS + marketing) 🔧
-├── Manuel: S-UX-01 (plan UI inmersiva) 🔧
 └── Manuel (físico): S-ADM-03 cierre, S-ADM-04 cierre 📋
 
 SEMANA 8+ (JUL 2026)
-├── Manuel: S-UX-02 (UI inmersiva + refac global) 🔧
 └── Mantenimiento y mejora continua 🔄
 ```
 
@@ -882,7 +880,7 @@ SEMANA 8+ (JUL 2026)
 - [ ] `npx tsx scripts/qa/bootstrap-marketplace-qa.mjs --doctor` → PASS
 - [ ] Previa build: `npm run build` sin errores
 - [ ] TypeScript: `npx tsc --noEmit` limpio
-- [ ] Branch creada desde `integration/today-reservas-marketplace-stable-2026-05-07`
+- [ ] Branch creada desde `RAMA MADRE`
 - [ ] No hay cambios sin commitear en la rama
 - [ ] Owner confirmado, reviewer designado
 - [ ] Criterios de cierre definidos y documentados

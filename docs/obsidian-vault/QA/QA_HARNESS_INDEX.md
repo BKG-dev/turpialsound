@@ -1,4 +1,4 @@
----
+﻿---
 type: sprint-index
 project: "Turpial Sound Marketplace"
 area: "QA Harness"
@@ -6,7 +6,7 @@ sprint: S03
 status: closed
 result: "12/12 PASS"
 owner: Manuel
-mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
+mother_branch: "RAMA MADRE"
 final_branch: "Manuel/s03j-qa-final-regression-2026-05-11"
 final_commit: "dda740f"
 closed_at: "2026-05-11"
@@ -118,7 +118,7 @@ Alternativa: Continuar con sprints funcionales de marketplace si Layer B ya cubr
 
 - **Rama final S03:** `Manuel/s03j-qa-final-regression-2026-05-11` — contiene todos los módulos QA + docs consolidados.
 - **Rama docs-only:** `Manuel/docs-sync-s03-complete-obsidian-to-mother-2026-05-11` — contiene los docs consolidados para merge a madre.
-- **Jean debe revisar/mergear:** la rama docs-only hacia `integration/today-reservas-marketplace-stable-2026-05-07`.
+- **Jean debe revisar/mergear:** la rama docs-only hacia `RAMA MADRE`.
 - **Fuentes de verdad:** `qa-dispatcher.json`, `S03_QA_HARNESS_INDEX.md` (este archivo), `QA_E2E_ROADMAP_2026-05-10.md`.
 
 ## I. Regla permanente de cierre de sprint

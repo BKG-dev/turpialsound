@@ -1,4 +1,4 @@
----
+﻿---
 tags: ["#status/live-source", "#area/backend", "#area/ui", "#area/ops"]
 ---
 
@@ -6,7 +6,7 @@ tags: ["#status/live-source", "#area/backend", "#area/ui", "#area/ops"]
 
 ## Estado real 2026-05-11
 
-- Rama madre estable: `integration/today-reservas-marketplace-stable-2026-05-07`.
+- Rama madre estable: `RAMA MADRE`.
 - Commit estable: `f7f2d1e`.
 - `/reservas` congelado como zona sana.
 - `/marketplace` activo.

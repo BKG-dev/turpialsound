@@ -1,7 +1,7 @@
-# S11 Session Summary — Playwright Login UI Smoke
+﻿# S11 Session Summary — Playwright Login UI Smoke
 
 > Branch: `Manuel/s11-playwright-login-ui-2026-05-12`
-> Base: `integration/today-reservas-marketplace-stable-2026-05-07`
+> Base: `RAMA MADRE`
 > Date: 2026-05-11
 > Sprint: S11 — Playwright setup + Login UI smoke
 > Status: CLOSED — 3/3 PASS, MERGED TO MOTHER
@@ -25,7 +25,7 @@
 48e4479  merge(s11): playwright setup + login UI smoke 3/3 PASS — ready for S12  (on mother)
 ```
 
-Mother branch: `integration/today-reservas-marketplace-stable-2026-05-07` @ `48e4479`
+Mother branch: `RAMA MADRE` @ `48e4479`
 
 ## Next step
 
