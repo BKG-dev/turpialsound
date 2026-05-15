@@ -1,0 +1,41 @@
+{
+	"nodes":[
+		{"id":"nexus","x":0,"y":0,"width":260,"height":80,"type":"text","text":"# 🧠 NEXO METODOLOGIA\n[[METODOLOGIA_ORESHNIK_ANEXO]]\n\nLeer antes de cualquier sprint.\nFuente unica de la metodologia.","color":"#a855f7"},
+		{"id":"est1","x":0,"y":130,"width":240,"height":90,"type":"text","text":"# 📖 ESTACION 1\n## DOCS CANONICOS\nLeer al abrir sesion:\n1. [[INSTRUCCION_APERTURA_SESION]]\n2. [[00_CENTRAL_TURPIAL]]\n\n**OUTPUT:** Saber que hacer","color":"#6366f1"},
+		{"id":"est2","x":0,"y":270,"width":240,"height":90,"type":"text","text":"# 🌿 ESTACION 2\n## RAMA PROPIA\n`node scripts/oreshnik/preflight.mjs --sprint SXX --operator Op --desc \"desc\"`\n(preflight v3.0 automatiza)\n\n**Convencion:**\n`Manuel/s15-location-...`\n`Jean/s-jb-01-booking-...`","color":"#10b981"},
+		{"id":"est3","x":0,"y":410,"width":240,"height":90,"type":"text","text":"# 🔧 ESTACION 3\n## CODIGO + QA\n1. Implementar scope sprint\n2. `npx tsx scripts/qa/run-qa.mjs`\n3. Playwright specs\n4. Commits: `qa(sXX):`","color":"#f59e0b"},
+		{"id":"est4","x":0,"y":550,"width":240,"height":110,"type":"text","text":"# ✅ ESTACION 4\n## VALIDACION + GATE\n**Ambos validan:**\n- `npx tsc --noEmit`\n- `pnpm build`\n- QA modules PASS\n- Sin secrets en diff\n- Sin tocar /reservas\n\n**Jean mergea a madre**","color":"#ef4444"},
+		{"id":"est5","x":0,"y":710,"width":240,"height":90,"type":"text","text":"# 🚀 ESTACION 5\n## PRODUCCION\n**Manuel smoke:**\n/ /marketplace /reservas\n/api/bcv-rate /admin/login\n\n**Jean mergea a main**\nVercel → turpialsound.com","color":"#22c55e"},
+		{"id":"docs","x":320,"y":0,"width":230,"height":130,"type":"text","text":"# 📚 DOCS CANONICOS\n(en orden de autoridad)\n\n1. [[00_CENTRAL_TURPIAL]] ⬅ MANDA\n2. [[INSTRUCCION_APERTURA_SESION]]\n3. [[PLAN_MAESTRO_SPRINTS]]\n4. [[BUS_CONTROL_TURPIAL]]\n5. [[METODOLOGIA_OPTIMIZACION]]\n6. `qa-dispatcher.json`","color":"#6366f1"},
+		{"id":"roles","x":320,"y":170,"width":230,"height":120,"type":"text","text":"# 👥 ROLES\n\n**JEAN (BKG-dev)**\n- Gatekeeper main/produccion\n- Owner /reservas\n- Merge a madre\n- DB/schema (lock doble)\n- Vercel envs criticos\n- GitHub admin\n\n**MANUEL (mvera)**\n- QA marketplace\n- Playwright specs\n- Docs/vault\n- Smoke post-merge\n- SEO/AEO\n- S-ADM (fisico)","color":"#8b5cf6"},
+		{"id":"locks","x":320,"y":330,"width":230,"height":130,"type":"text","text":"# 🔒 4 REGLAS DE ORO\n\n1. **UNA rama madre**\n   `integration/today-reservas-...`\n\n2. **Jean es gatekeeper**\n   Solo el mergea a madre/main\n\n3. **Zonas exclusivas**\n   /reservas = Jean\n   schema = lock doble\n\n4. **Cerrar antes de abrir**\n   Sprint en track cerrado\n   antes de empezar el siguiente","color":"#f59e0b"},
+		{"id":"reconcile","x":320,"y":500,"width":230,"height":110,"type":"text","text":"# ⚠️ FASE AHORA\n## RECONCILIACION\n\nDos ramas divergentes → unificar\n\n**Jean debe:**\n1. Merge Manuel → su rama\n2. Validar (tsc+build)\n3. Merge a madre\n4. Push\n5. Manuel smoke → OK\n6. Jean merge a main","color":"#ef4444"},
+		{"id":"tracks","x":320,"y":650,"width":230,"height":150,"type":"text","text":"# 📊 ESTADO TRACKS\n\n🟦 Marketplace: S01-S14B ✅\n   S15-S20 ✅ (S17, S19 🟡)\n\n🟩 Booking:\n   S-JB-01/02/03 🟡 S-JB-04 🔴\n\n🟨 Crecimiento:\n   S-MK-01/02/04/05/06 ✅ (S-MK-03 🟡)\n\n🟪 Admin-Legal: todo 🔴\n🟧 UI/UX: ✅","color":"#14b8a6"},
+		{"id":"oreshnik","x":600,"y":0,"width":240,"height":140,"type":"text","text":"# 🔮 ORESHNIK\n## HOY vs FUTURO\n\n✅ Preflight v3.0 (`preflight.mjs`)\n✅ Zone check (leer 00_CENTRAL)\n✅ Branch management (auto via preflight)\n✅ Validacion manual (tsc+build)\n\n⬜ .husky/pre-commit auto\n⬜ zone-map.json\n⬜ scaffold-sprint.ps1\n⬜ oreshnik.ps1 runner\n⬜ closure-report.ps1\n⬜ update-dashboard.ps1\n⬜ Vercel preview por rama","color":"#6b7280"},
+		{"id":"ratefallback","x":600,"y":190,"width":240,"height":130,"type":"text","text":"# 💱 LOGICA DE TASAS\n## Sin cron (on-demand)\n\n`/api/bcv-rate` → resolveReferenceRate\n\nPATH 1: LIVE (consenso 2+ proveedores)\nPATH 2: STALE (ultimo bueno en DB)\nPATH 3: FALLBACK (BCV_FALLBACK_RATE || 50)\nPATH 4: UNAVAILABLE (rate=null)\n\nEl frontend dispara refresh\nal cargar /marketplace","color":"#ec4899"},
+		{"id":"vercel","x":600,"y":360,"width":240,"height":130,"type":"text","text":"# 🚀 VERCEL\n\n**Auto-deploy por push**\nRamas Manuel/* y Jean/* → Preview\n\n**Verificar estado:**\n`npx vercel list`\n`npx vercel inspect <url>`\n\n**GitHub 'failed' falso:**\nJean arregla en Dashboard →\nGit Settings → Branch pattern\nincluir Manuel/* y Jean/*\n\n**Notificaciones:**\nDashboard → Settings →\nNotifications → email","color":"#f97316"},
+		{"id":"cron","x":600,"y":530,"width":240,"height":90,"type":"text","text":"# ⏰ CRON BCV\n## ELIMINADO de vercel.json\n\nRazon: hacia ruido en prod\nsin CRON_SECRET ni Pro plan\n\nLa tasa refresca on-demand\ncuando usuario carga pagina\n\nRe-agregar cuando estable\nen main + Pro plan","color":"#6b7280"},
+		{"id":"checklist","x":600,"y":660,"width":240,"height":140,"type":"text","text":"# ✅ CHECKLIST PRE-MERGE\n## (antes de merge a madre)\n\n1. git diff --check → OK\n2. npx tsc --noEmit → OK\n3. pnpm build → OK\n4. QA modules → PASS\n5. No .env en diff\n6. No /reservas en diff\n7. No schema sin lock doble\n8. No P0 abiertos\n9. Commits con prefijo\n10. 00_CENTRAL actualizado","color":"#22c55e"}
+	],
+	"edges":[
+		{"id":"e-nexus-est1","fromNode":"nexus","fromSide":"bottom","toNode":"est1","toSide":"top","label":"inicio"},
+		{"id":"e-est1-est2","fromNode":"est1","fromSide":"bottom","toNode":"est2","toSide":"top"},
+		{"id":"e-est2-est3","fromNode":"est2","fromSide":"bottom","toNode":"est3","toSide":"top"},
+		{"id":"e-est3-est4","fromNode":"est3","fromSide":"bottom","toNode":"est4","toSide":"top"},
+		{"id":"e-est4-est5","fromNode":"est4","fromSide":"bottom","toNode":"est5","toSide":"top"},
+		{"id":"e-docs-est1","fromNode":"docs","fromSide":"left","toNode":"est1","toSide":"right"},
+		{"id":"e-docs-nexus","fromNode":"docs","fromSide":"top","toNode":"nexus","toSide":"right","label":"nexo"},
+		{"id":"e-roles-est2","fromNode":"roles","fromSide":"left","toNode":"est2","toSide":"right"},
+		{"id":"e-locks-est4","fromNode":"locks","fromSide":"left","toNode":"est4","toSide":"right","label":"aplica"},
+		{"id":"e-reconcile-est1","fromNode":"reconcile","fromSide":"left","toNode":"est1","toSide":"right","label":"PASO 0"},
+		{"id":"e-tracks-est3","fromNode":"tracks","fromSide":"left","toNode":"est3","toSide":"right"},
+		{"id":"e-oreshnik-est1","fromNode":"oreshnik","fromSide":"left","toNode":"est1","toSide":"right","label":"automatiza"},
+		{"id":"e-oreshnik-est2","fromNode":"oreshnik","fromSide":"left","toNode":"est2","toSide":"right","label":"automatiza"},
+		{"id":"e-rate-oreshnik","fromNode":"ratefallback","fromSide":"left","toNode":"oreshnik","toSide":"right"},
+		{"id":"e-vercel-est5","fromNode":"vercel","fromSide":"left","toNode":"est5","toSide":"right","label":"deploy"},
+		{"id":"e-cron-rate","fromNode":"cron","fromSide":"left","toNode":"ratefallback","toSide":"right","label":"huefano"},
+		{"id":"e-check-est4","fromNode":"checklist","fromSide":"left","toNode":"est4","toSide":"right","label":"aplica"},
+		{"id":"e-locks-check","fromNode":"locks","fromSide":"bottom","toNode":"checklist","toSide":"top"},
+		{"id":"e-tracks-reconcile","fromNode":"tracks","fromSide":"top","toNode":"reconcile","toSide":"bottom","label":"estado actual"}
+	]
+}

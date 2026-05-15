@@ -1,6 +1,6 @@
 # QA Canonical Runbook
 
-> Fecha de actualizacion: 2026-04-23
+> Fecha de actualizacion: 2026-05-09
 > Alcance: marketplace no-booking
 > Objetivo: dejar una golden path operativa para QA/CLI sin redescubrir scripts
 
@@ -35,11 +35,11 @@ Usar primero el dispatcher y luego la ruta canonica documentada. No buscar scrip
 2. Confirmar Chrome instalado en:
    - `C:\Program Files\Google\Chrome\Application\chrome.exe`
 3. Confirmar cuentas QA persistentes cuando haya drift de datos:
-   - `buyerIA / BuyerIA_QA_2026!`
-   - `sellerIA / SellerIA_QA_2026!`
+   - buyer: `QA_BUYER_IDENTIFIER` / `QA_BUYER_PASSWORD`
+   - seller: `QA_SELLER_IDENTIFIER` / `QA_SELLER_PASSWORD`
 4. Confirmar credenciales admin solo para smoke local:
-   - principal: `mvera / 13894619`
-   - alterno: `Igor / bugdanoff`
+   - principal: `QA_ADMIN_IDENTIFIER` / `QA_ADMIN_PASSWORD`
+   - alterno: `Igor` con password local fuera del repo
 5. Confirmar envs minimas segun frente:
    - normalizacion QA: `DATABASE_URL`
    - media publica no-booking: `TS_WEB_BLOB_READ_WRITE_TOKEN`
@@ -50,6 +50,7 @@ Usar primero el dispatcher y luego la ruta canonica documentada. No buscar scrip
 | Frente | Ruta oficial | Script canonico | Precondiciones minimas | Criterio de exito |
 | --- | --- | --- | --- | --- |
 | QA accounts normalization | Local | `npx tsx scripts/setup-marketplace-qa-accounts.ts` | `DATABASE_URL` valida; app no es necesaria | `buyerIA`, `sellerIA`, payout QA seller y listing `selleria-qa-e2e-persistente` quedan normalizados sin duplicados |
+| Marketplace login smoke | Local | `node scripts/qa-marketplace-login-smoke.mjs` | app viva en `APP_URL`; `QA_BUYER_*` y `QA_SELLER_*` disponibles; Chrome instalado | buyer y seller inician sesion por UI usando credenciales QA desde env, sin hardcodear passwords |
 | Buyer/seller/admin smoke reutilizable | Local | `node scripts/qa-marketplace-qa-accounts.mjs` | app viva en `APP_URL`; cuentas QA ya normalizadas | buyer reporta pago, seller ve ventas/mensajes/cobros y admin ve `Validaciones` para el listing QA persistente |
 | Buyer-only corto | Local | `node scripts/qa-marketplace-buyer.mjs` | app viva en `APP_URL`; listing QA accesible | buyer llega a `Pago procesado` sobre `qa-manual-temporal-user-20260420` |
 | Seller shell smoke | Local | `node scripts/qa-marketplace-seller-smoke.mjs` | app viva en `APP_URL`; credenciales seller locales validas | seller entra a dashboard y valida `Mis Ventas`, `Mensajes` y `Cobros` |
@@ -190,8 +191,8 @@ Preview validado:
 - `https://turpialsound-mpwpxahfc-cerberus77s-projects.vercel.app`
 
 Credenciales usadas:
-- buyerIA: `buyerIA / BuyerIA_QA_2026!`
-- SUPER: `mvera / 13894619`
+- buyer QA: `QA_BUYER_IDENTIFIER` / `QA_BUYER_PASSWORD`
+- SUPER QA: `QA_ADMIN_IDENTIFIER` / `QA_ADMIN_PASSWORD`
 
 Evidencia confirmada:
 - buyerIA subio un proof nuevo en preview.

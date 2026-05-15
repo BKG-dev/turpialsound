@@ -1,4 +1,4 @@
-# Marketplace E2E QA Runbook (2026-05-07)
+﻿# Marketplace E2E QA Runbook (2026-05-07)
 
 ## 1) Objetivo
 
@@ -12,7 +12,7 @@ Ejecutar QA E2E manual, repetible y trazable del flujo marketplace buyer/seller/
 - Usuario seller disponible.
 - Acceso admin disponible.
 - Validar que NO se esta probando en produccion.
-- Rama madre de referencia: `integration/today-reservas-marketplace-stable-2026-05-07`.
+- Rama madre de referencia: `RAMA MADRE`.
 - Commit estable de referencia: `c01ec60` (`fix(marketplace): render active listings on public page`).
 - Regla de entorno: `DATABASE_URL` pooled/pooler y `DIRECT_URL` direct/no-pooler al mismo proyecto Neon.
 - Principio central: Codigo correcto + DB incorrecta = UI vacia.

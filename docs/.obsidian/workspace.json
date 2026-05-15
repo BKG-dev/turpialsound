@@ -1,0 +1,235 @@
+{
+  "main": {
+    "id": "7c0e8a3fe8a884ba",
+    "type": "split",
+    "children": [
+      {
+        "id": "4ac125531ca531d6",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "84737404de5648e6",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "obsidian-vault/00_CENTRAL_TURPIAL.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "00_CENTRAL_TURPIAL"
+            }
+          },
+          {
+            "id": "9dbeff0aafd118bf",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "f698315f2ddd37b7",
+    "type": "split",
+    "children": [
+      {
+        "id": "e9c03e8d87a2a85b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c99224397bc6b420",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "7b72b2f8c667f533",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "f473ba49c181e7db",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "df46f9aad9d55374",
+    "type": "split",
+    "children": [
+      {
+        "id": "a9ab60b6c6da98a6",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "8ba86b269da4dd7d",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "obsidian-vault/00_CENTRAL_TURPIAL.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for 00_CENTRAL_TURPIAL"
+            }
+          },
+          {
+            "id": "c4b1f057d21a3e7c",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "obsidian-vault/00_CENTRAL_TURPIAL.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from 00_CENTRAL_TURPIAL"
+            }
+          },
+          {
+            "id": "d2a0c473c1820866",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "ae253dce6ea81368",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "b17046913f1aa355",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "obsidian-vault/00_CENTRAL_TURPIAL.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of 00_CENTRAL_TURPIAL"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "84737404de5648e6",
+  "lastOpenFiles": [
+    "obsidian-vault/SPRINTS/S-OPT-01_OPTIMIZACIONES.md",
+    "obsidian-vault/SPRINTS/S-DS-01_DROPSOCIAL.md",
+    "obsidian-vault/SPRINTS/PLAN_MAESTRO_SPRINTS.md",
+    "obsidian-vault/SPRINTS",
+    "obsidian-vault/QA/QA_MARKETPLACE_INTEGRADO.md",
+    "obsidian-vault/QA/QA_HARNESS_SCRIPTS_MAP.md",
+    "obsidian-vault/QA/QA_HARNESS_INDEX.md",
+    "obsidian-vault/QA/QA_HARNESS_CANVAS.canvas",
+    "obsidian-vault/QA/E2E_MANUAL_TEST_PROTOCOL.md",
+    "obsidian-vault/QA",
+    "obsidian-vault/NEXT_PHASE_PLAN_S11_S20.md",
+    "obsidian-vault/NEGOCIO/ESTADO_NEGOCIO.md",
+    "obsidian-vault/NEGOCIO",
+    "obsidian-vault/METODOLOGIA/METODOLOGIA_ORESHNIK.md",
+    "obsidian-vault/METODOLOGIA/METODOLOGIA_OPTIMIZACION.md",
+    "obsidian-vault/METODOLOGIA/INSTRUCCION_APERTURA_SESION.md",
+    "obsidian-vault/METODOLOGIA/BUS_CONTROL_EVOLUCION.md",
+    "obsidian-vault/METODOLOGIA/BUS_CONTROL.md",
+    "obsidian-vault/METODOLOGIA",
+    "obsidian-vault/FLUJO_PROTOCOLO_TRABAJO.canvas",
+    "obsidian-vault/ARQUITECTURA/ROADMAP_RESCATE.md",
+    "obsidian-vault/ARQUITECTURA/BUGS_CRITICOS.md",
+    "obsidian-vault/ARQUITECTURA/ARQUITECTURA_TASAS.md",
+    "obsidian-vault/ARQUITECTURA",
+    "obsidian-vault/ARCHIVO/VAULT_INDEX.md",
+    "obsidian-vault/ARCHIVO/SPRINTS_MARKETPLACE_PARALELO.md",
+    "obsidian-vault/ARCHIVO/SPRINTS_GENERADOS_DESDE_OBSIDIAN_2026-05-10.md",
+    "obsidian-vault/ARCHIVO/SPRINTS_CODEV_MARKETPLACE_2026-05-10.md",
+    "obsidian-vault/ARCHIVO/HITOS_MARKETPLACE_PRACTICOS.md",
+    "obsidian-vault/ARCHIVO/ACCION_P1_JEAN_VERCEL_PREVIEWS.md",
+    "obsidian-vault/ARCHIVO",
+    "obsidian-vault/00_VERCEL_PREVIEWS.md",
+    "obsidian-vault/00_INDICE_MAESTRO.md",
+    "marketplace/PLAN_RRSS_MARKETING_S-MK-04-05-06.md",
+    "marketing",
+    "07_handoffs/zone-map.json"
+  ]
+}

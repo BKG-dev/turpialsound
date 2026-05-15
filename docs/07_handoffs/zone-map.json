@@ -1,0 +1,112 @@
+﻿{
+  "version": 1,
+  "updated_at": "2026-05-14",
+  "description": "Mapa de zonas archivo→sprint para deteccion de colisiones. Cada zona lista los sprints que pueden tocarla y el lock requerido.",
+  "mother_branch": "RAMA MADRE",
+  "zones": {
+    "app/(public)/reservas/**": {
+      "track": "T2", "sprints": ["S-JB-01","S-JB-02","S-JB-03","S-JB-04"], "criticality": "critical", "lock": "jean_exclusive", "owner": "Jean"
+    },
+    "components/bookings/**": {
+      "track": "T2", "sprints": ["S-JB-01","S-JB-02","S-JB-03","S-JB-04"], "criticality": "critical", "lock": "jean_exclusive", "owner": "Jean"
+    },
+    "lib/bookings/**": {
+      "track": "T2", "sprints": ["S-JB-01","S-JB-02","S-JB-03","S-JB-04"], "criticality": "critical", "lock": "jean_exclusive", "owner": "Jean"
+    },
+    "app/(public)/marketplace/**": {
+      "track": "T1", "sprints": ["S09","S15","S20"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "app/api/marketplace/**": {
+      "track": "T1", "sprints": ["S04","S13","S15","S16"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "components/marketplace/**": {
+      "track": "T1", "sprints": ["S14B","S15","S16","S17","S-UX-01","S-UX-02"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "lib/marketplace/**": {
+      "track": "T1", "sprints": ["S02","S07","S14","S15","S16"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "actions/marketplace/**": {
+      "track": "T1", "sprints": ["S04","S06","S09","S12","S15","S16"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "app/marketplace/admin/**": {
+      "track": "T1", "sprints": ["S14","S17"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "app/marketplace/dashboard/**": {
+      "track": "T1", "sprints": ["S14","S17"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "prisma/schema.prisma": {
+      "track": "any", "sprints": ["S06","S07","S15"], "criticality": "critical", "lock": "double_jean_manuel"
+    },
+    "prisma/migrations/**": {
+      "track": "any", "sprints": ["S06","S07","S15"], "criticality": "critical", "lock": "double_jean_manuel"
+    },
+    "generated/prisma/**": {
+      "track": "any", "sprints": ["S06","S07","S15"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "docs/**": {
+      "track": "any", "sprints": ["*"], "criticality": "low", "lock": "light"
+    },
+    "docs/obsidian-vault/**": {
+      "track": "any", "sprints": ["*"], "criticality": "low", "lock": "light"
+    },
+    "scripts/qa/**": {
+      "track": "any", "sprints": ["S03","S11","S12","S13","S18"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "scripts/qa/playwright/**": {
+      "track": "T1", "sprints": ["S11","S12","S13","S14","S14B","S17","S18"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "app/api/cron/**": {
+      "track": "T1", "sprints": ["S14"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "app/admin/**": {
+      "track": "T1", "sprints": ["S14","S-JB-02"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "app/ops/**": {
+      "track": "any", "sprints": ["*"], "criticality": "critical", "lock": "double_jean_manuel"
+    },
+    "app/api/bcv-rate/**": {
+      "track": "T1", "sprints": ["S07","S14"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "app/page.tsx": {
+      "track": "T5", "sprints": ["S-UX-01","S-UX-02","S19"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "app/layout.tsx": {
+      "track": "T5", "sprints": ["S-UX-01","S-UX-02"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "components/layout/**": {
+      "track": "T5", "sprints": ["S-UX-01","S-UX-02"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "components/ui/**": {
+      "track": "T5", "sprints": ["S-UX-01","S-UX-02"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "styles/**": {
+      "track": "T5", "sprints": ["S-UX-01","S-UX-02"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "tailwind.config.ts": {
+      "track": "T5", "sprints": ["S-UX-01","S-UX-02"], "criticality": "normal", "lock": "owner_per_sprint"
+    },
+    "package.json": {
+      "track": "any", "sprints": ["*"], "criticality": "critical", "lock": "double_jean_manuel"
+    },
+    "pnpm-lock.yaml": {
+      "track": "any", "sprints": ["*"], "criticality": "critical", "lock": "double_jean_manuel"
+    },
+    "vercel.json": {
+      "track": "any", "sprints": ["*"], "criticality": "critical", "lock": "double_jean_manuel"
+    },
+    ".env*": {
+      "track": "any", "sprints": [], "criticality": "critical", "lock": "forbidden_forever"
+    },
+    "next.config.mjs": {
+      "track": "any", "sprints": ["*"], "criticality": "critical", "lock": "double_jean_manuel"
+    }
+  },
+  "lock_definitions": {
+    "jean_exclusive": "Solo Jean puede tocar esta zona. Manuel: prohibido.",
+    "manuel_exclusive": "Solo Manuel puede tocar esta zona. Jean: prohibido.",
+    "double_jean_manuel": "Ambos deben acordar antes de tocar. Requiere lock explicito.",
+    "owner_per_sprint": "El owner del sprint activo puede tocar. Verificar que no haya otro sprint activo en la misma zona.",
+    "light": "Sin restriccion. Ambos pueden tocar. Tener cuidado con conflictos de merge en docs.",
+    "forbidden_forever": "NUNCA commitear. .env, secretos, tokens."
+  }
+}
