@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server'
 import { trackReferralClick } from '@/actions/marketplace/referrals'
 import { redirect } from 'next/navigation'
 
