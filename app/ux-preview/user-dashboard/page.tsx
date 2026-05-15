@@ -1,11 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { getSession } from '@/lib/marketplace/auth'
 import { getMyProfile } from '@/actions/marketplace/users'
-import { getPayoutMethods } from '@/actions/marketplace/users'
 import { getMyTransactions } from '@/actions/marketplace/transactions'
 import { getMyThreads } from '@/actions/marketplace/chat'
 import { getUserListings } from '@/actions/marketplace/listings'
-import { getMyFavorites } from '@/actions/marketplace/favorites'
-import { getMyInteractedListings } from '@/actions/marketplace/questions'
 import UserDashboardPreviewClient from './UserDashboardPreviewClient'
 
 export const metadata = { title: 'UX Preview — User Dashboard' }
@@ -15,9 +13,9 @@ export default async function UserDashboardPreviewPage() {
   const session = await getSession()
   if (!session) return <LoginPrompt />
 
-  const [profileRes, purchasesRes, salesRes, threadsRes, myListingsRes, myFavoritesRes, myInteractedRes, payoutMethodsRes] = await Promise.all([
+  const [profileRes, purchasesRes, salesRes, threadsRes, myListingsRes] = await Promise.all([
     getMyProfile(), getMyTransactions('buyer'), getMyTransactions('seller'),
-    getMyThreads(), getUserListings(), getMyFavorites(), getMyInteractedListings(), getPayoutMethods(),
+    getMyThreads(), getUserListings(),
   ])
 
   const purchases = purchasesRes.success ? (purchasesRes.data as any[]) : []

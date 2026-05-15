@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect } from 'react'
 
@@ -6,9 +7,8 @@ const ACCENT = '#00aeef'; const BG = '#111111'; const CARD = 'rgba(255,255,255,0
 const BORDER = 'rgba(255,255,255,0.06)'; const TEXT = '#f2f2f2'; const MUTED = '#9a9a9a'
 const GREEN = '#10b981'; const YELLOW = '#f59e0b'; const RED = '#ef4444'; const BLUE = '#3b82f6'
 
-function Dot({ color }: { color: string }) {
-  return <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: color, marginRight: 8, flexShrink: 0 }} />
-}
+function _Dot({ color: _c }: { color: string }) { return null }
+
 function Badge({ label, color }: { label: string; color: string }) {
   return <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: color + '18', color, border: `1px solid ${color}30`, fontWeight: 600 }}>{label}</span>
 }
@@ -34,7 +34,7 @@ const STATUS_COLOR: Record<string, string> = {
 
 type Payout = { payoutId: string; amount: string | number; status: string; completedAt?: string; seller?: { name?: string; email?: string }; transactions?: any[] }
 
-export default function AdminDashboardPreviewClient({ userId }: { userId: string }) {
+export default function AdminDashboardPreviewClient({ userId: _u }: { userId: string }) {
   const [tab, setTab] = useState<TabKey>('payments')
   const [data, setData] = useState<Payout[]>([])
   const [loading, setLoading] = useState(false)
