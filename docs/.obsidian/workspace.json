@@ -20,6 +20,16 @@
               "icon": "lucide-file",
               "title": "00_CENTRAL_TURPIAL"
             }
+          },
+          {
+            "id": "9dbeff0aafd118bf",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
           }
         ]
       }
@@ -185,7 +195,14 @@
   },
   "active": "84737404de5648e6",
   "lastOpenFiles": [
-    "obsidian-vault/PLAN_MAESTRO_SPRINTS_2026-05-12.md",
-    "obsidian-vault/INSTRUCCION_APERTURA_SESION.md"
+    "obsidian-vault/BUS_CONTROL_EVOLUCION.md",
+    "obsidian-vault/HITOS_MARKETPLACE_PRACTICOS.md",
+    "obsidian-vault/INSTRUCCION_APERTURA_SESION.md",
+    "obsidian-vault/ACCION_P1_JEAN_VERCEL_PREVIEWS.md",
+    "obsidian-vault/ARQUITECTURA_TASAS.md",
+    "obsidian-vault/BUGS_CRITICOS.md",
+    "obsidian-vault/00_CENTRAL_TURPIAL.md",
+    "01_strategy/brand-core.md",
+    "obsidian-vault/PLAN_MAESTRO_SPRINTS_2026-05-12.md"
   ]
 }

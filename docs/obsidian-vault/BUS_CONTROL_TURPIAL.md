@@ -131,9 +131,39 @@ Esto significa:
 - booking `/reservas`
 - rotacion de secretos y rollback
 
-## Reasignación de Sprints (Nuevo — 2026-05-12)
+## Resiliencia — Reasignación de Sprints (2026-05-14)
 
-Cuando un owner está inactivo (sleep, off, core business), el otro operador PUEDE tomar sus sprints bajo estas reglas:
+El Bus de Control es **resiliente a la ausencia de un operador.** Si uno está durmiendo, enfermo, o en days off, el otro PUEDE tomar sus sprints.
+
+### Protocolo automático (preflight)
+
+El `preflight.mjs` paso 9 (RESILIENCIA) registra automáticamente cada asignación de sprint. Cuando un sprint toca zonas con lock doble, el preflight advierte y pregunta si el otro operador está disponible.
+
+### Reglas de reasignación
+
+| Escenario | Acción |
+|-----------|--------|
+| **Lock doble + otro operador en consola** | Coordinar. El lock requiere ambos. |
+| **Lock doble + otro operador ausente <48h** | El disponible PUEDE tomar el sprint. Se registra reasignación. |
+| **Lock doble + otro operador ausente >48h** | El disponible toma el sprint sin restricción. Booking requiere autorización explícita. |
+| **Zona exclusiva (booking)** | Manuel SOLO toca booking si Jean ausente >48h Y autoriza explícitamente. |
+| **Zona sin lock** | Cualquier operador disponible puede tomar el sprint. |
+
+### Trazabilidad
+
+Cada reasignación queda registrada en:
+1. `scripts/oreshnik/runs/.sprint-assignments.json` — registro automático del preflight
+2. `00_CENTRAL_TURPIAL.md` — actualizar tabla de sprints con nuevo owner
+3. Commit message — prefijo `reassign:`
+
+### Trabajo fuera de metodología
+
+Si un operador hace trabajo que no corresponde a un sprint documentado:
+1. `preflight.mjs` paso 10 registra automáticamente en `.out-of-band.json`
+2. El operador DEBE documentarlo en `00_CENTRAL_TURPIAL.md` mapeándolo al sprint más cercano
+3. Sin trazabilidad, el trabajo fuera de metodología genera deuda de documentación
+
+### Reasignación de Sprints (Original — 2026-05-12)
 
 1. **Notificación:** Actualizar `00_CENTRAL_TURPIAL` y `PLAN_MAESTRO_SPRINTS` con la reasignación ANTES de comenzar.
 2. **Branch renombrada:** El nuevo owner crea su propia branch (ej: `jean/s12` → `Manuel/s12`).

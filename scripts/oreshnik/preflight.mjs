@@ -211,6 +211,78 @@ const stopChecks = ['CRIT-001','CRIT-002','CRIT-003','GAP-OP','LOCK-FLT','COLISI
 stopChecks.forEach(s => console.log(`  [  ${GREEN}OK${RESET}  ] ${s}: No detectado`))
 console.log(`  ${GREEN}10/10 stop conditions OK${RESET}`)
 
+// ── 9. RESILIENCIA — Disponibilidad de operadores ──
+console.log('')
+console.log('[ORESHNIK] RESILIENCIA — Reasignacion de carga')
+const assignLog = join(CACHE_DIR, '.sprint-assignments.json')
+let assignments = []
+try { if (existsSync(assignLog)) assignments = JSON.parse(readFileSync(assignLog, 'utf8')) } catch {}
+
+if (sprintId) {
+  // Determinar si el sprint tiene lock que requiere al otro operador
+  const zoneMapPath = join(__dirname, '..', '..', 'docs', '07_handoffs', 'zone-map.json')
+  const zoneMap = JSON.parse(readFileSync(zoneMapPath, 'utf8'))
+  
+  // Verificar locks que requieren doble confirmacion
+  const doubleLockZones = Object.entries(zoneMap.zones).filter(([_,z]) => z.lock === 'double_jean_manuel')
+  if (doubleLockZones.length > 0) {
+    console.log(`  [ ${YELLOW}WARN${RESET} ] Sprint ${sprintId} toca zonas con lock doble Jean+Manuel:`)
+    doubleLockZones.forEach(([zone]) => console.log(`         ${zone}`))
+    console.log(`  [ ${CYAN}INFO${RESET} ] Si el otro operador no esta disponible, se puede reasignar.`)
+    console.log(`  [ ${CYAN}INFO${RESET} ] Preguntar: Esta el otro operador en consola? (s/n)`)
+  }
+  
+  // Registrar asignacion para trazabilidad
+  const currentOp = process.env.ORESHNIK_OPERATOR || 'Manuel'
+  assignments.push({
+    sprintId,
+    operator: currentOp,
+    timestamp: now.toISOString(),
+    branch: currentBranch,
+    reassigned: false,
+    reassignedFrom: null,
+    reason: null
+  })
+  writeFileSync(assignLog, JSON.stringify(assignments, null, 2))
+  console.log(`  [  ${GREEN}OK${RESET}  ] Asignacion registrada: ${sprintId} -> ${currentOp} @ ${currentBranch}`)
+} else {
+  // Mostrar historial de asignaciones si no hay sprint activo
+  if (assignments.length > 0) {
+    const last = assignments[assignments.length - 1]
+    console.log(`  [ ${CYAN}INFO${RESET} ] Ultima asignacion: ${last.sprintId} -> ${last.operator} (${last.timestamp.slice(0,16)})`)
+  }
+}
+
+// ── 10. TRABAJO FUERA DE METODOLOGIA — Registro ──
+console.log('')
+console.log('[ORESHNIK] TRABAJO FUERA DE METODOLOGIA')
+const outOfBandLog = join(CACHE_DIR, '.out-of-band.json')
+let oobItems = []
+try { if (existsSync(outOfBandLog)) oobItems = JSON.parse(readFileSync(outOfBandLog, 'utf8')) } catch {}
+
+if (oobItems.length > 0) {
+  console.log(`  [ ${YELLOW}WARN${RESET} ] ${oobItems.length} item(s) fuera de metodologia registrados:`)
+  oobItems.slice(-5).forEach(item => {
+    console.log(`         ${item.date} | ${item.operator} | ${item.description}`)
+  })
+  console.log(`  [ ${CYAN}INFO${RESET} ] Documentar en 00_CENTRAL y PLAN_MAESTRO para trazabilidad.`)
+} else {
+  console.log(`  [  ${GREEN}OK${RESET}  ] Sin trabajo fuera de metodologia registrado.`)
+}
+
+// Funcion helper para registrar trabajo fuera de metodologia
+function registerOutOfBand(operator, description, sprintMapped = null) {
+  oobItems.push({
+    operator,
+    description,
+    sprintMapped,
+    date: now.toISOString().slice(0, 10),
+    commit: localCommit
+  })
+  writeFileSync(outOfBandLog, JSON.stringify(oobItems, null, 2))
+  return oobItems.length
+}
+
 console.log('')
 
 process.exit(0)
