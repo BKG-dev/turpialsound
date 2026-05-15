@@ -3,7 +3,7 @@ type: master-dashboard
 project: "Turpial Sound"
 status: post-reconciliation
 phase: "Fase E: Sprints marketplace cerrados. Pre-release."
-last_updated: "2026-05-14T16:29-04:00"
+last_updated: "2026-05-14T20:43-04:00"
 mother_branch: "integration/today-reservas-marketplace-stable-2026-05-07"
 mother_head: "dfca178"
 production_branch: "prod/current-www-turpialsound-2026-05-08"
