@@ -150,3 +150,8 @@ Cuando un owner está inactivo (sleep, off, core business), el otro operador PUE
 ## Riesgo principal del modelo
 
 Permitir push de ambos a madre mejora velocidad, pero solo funciona si el lock por dominio y el checklist se respetan sin excepciones.
+
+---
+
+> **Análisis completo de evolución y roadmap:** [[BUS_CONTROL_EVOLUCION]]
+> **Versión actual:** 2.5.0 | **Automatización:** 48% | **Próximo hito:** 3.0 (Mayo 16)
