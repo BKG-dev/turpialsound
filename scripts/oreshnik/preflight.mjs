@@ -71,18 +71,24 @@ console.log(syncCode)
 const syncOk = !syncCode.includes('FAIL')
 if (syncOk) {
   ok('Docs sincronizados')
-  // Check staleness
+  // Bump timestamp on disk so Obsidian shows current time
   const centralPath = resolve(__dirname, '..', '..', 'docs', 'obsidian-vault', '00_CENTRAL_TURPIAL.md')
   if (existsSync(centralPath)) {
-    const m = readFileSync(centralPath, 'utf8').match(/last_updated:\s*"([^"]+)"/)
+    const originalContent = readFileSync(centralPath, 'utf8')
+    const iso = now.toISOString().replace('T', 'T').replace(/\.\d{3}Z$/, '-04:00')
+    const updatedContent = originalContent.replace(/last_updated:\s*"[^"]*"/, `last_updated: "${iso}"`)
+    writeFileSync(centralPath, updatedContent, 'utf8')
+    
+    // Check staleness of committed version
+    const m = originalContent.match(/last_updated:\s*"([^"]+)"/)
     if (m) {
       const docDate = new Date(m[1].replace(/-04:00$/, '-04:00'))
       const hoursStale = (now - docDate) / 3600000
-      if (hoursStale > 24) {
-        warn(`00_CENTRAL sin actualizar hace ${hoursStale.toFixed(0)}h. El contenido puede estar desactualizado.`)
-        warnings++
-      } else if (hoursStale > 4) {
-        warn(`00_CENTRAL actualizado hace ${hoursStale.toFixed(0)}h. Considera actualizar last_updated.`)
+      if (hoursStale > 4) {
+        warn(`00_CENTRAL sin actualizar hace ${hoursStale.toFixed(0)}h. Contenido puede estar desactualizado.`)
+        blockers++
+      } else if (hoursStale > 1) {
+        warn(`00_CENTRAL actualizado hace ${hoursStale.toFixed(0)}h.`)
         warnings++
       }
     }

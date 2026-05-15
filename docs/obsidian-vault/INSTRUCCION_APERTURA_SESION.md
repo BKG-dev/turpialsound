@@ -124,7 +124,7 @@ git log origin/integration/today-reservas-marketplace-stable-2026-05-07 --onelin
 Select-String "last_updated" docs/obsidian-vault/00_CENTRAL_TURPIAL.md
 ```
 
-**⚠️ CERRAR Obsidian antes de git checkout.** Si Obsidian estaba abierto:
+**⚠️ OBSIDIAN: Cerrar con la X antes de git checkout/pull/push. Si no se cierra, Obsidian sobreescribe los archivos con su versión cacheada. Al reabrir, Ctrl+R para refrescar. El preflight restaura automáticamente si detecta sobreescritura.**
 
 ```bash
 git checkout HEAD -- docs/obsidian-vault/
