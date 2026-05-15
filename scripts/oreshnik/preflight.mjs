@@ -116,12 +116,16 @@ const obsidianRunning = process.platform === 'win32'
 
 if (obsidianRunning) {
   info('Obsidian detectado. Cerrando para evitar corrupcion en operaciones git...')
-  if (process.platform === 'win32') {
-    execSync('taskkill /F /IM Obsidian.exe 2>nul', { encoding: 'utf8' })
-  } else {
-    execSync('pkill -9 Obsidian 2>/dev/null', { encoding: 'utf8' })
+  try {
+    if (process.platform === 'win32') {
+      execSync('taskkill /F /IM Obsidian.exe 2>nul', { encoding: 'utf8' })
+    } else {
+      execSync('pkill -9 Obsidian 2>/dev/null', { encoding: 'utf8' })
+    }
+    ok('Obsidian cerrado automaticamente.')
+  } catch {
+    ok('Obsidian ya estaba cerrado o no se pudo cerrar.')
   }
-  ok('Obsidian cerrado automaticamente.')
   
   // Revisar si Obsidian dejo el vault sucio
   const vaultDirty = sh('git diff --name-only -- docs/obsidian-vault/')
