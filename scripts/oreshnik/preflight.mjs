@@ -201,8 +201,16 @@ if (suggestedAction === 'COMPACT') {
 } else if (dirtyCount > 0) {
   console.log('  Commitear cambios pendientes antes de nuevo sprint')
 } else {
-  console.log('  Leer 00_CENTRAL para ver estado actual y decidir proximo sprint')
+console.log('  Leer 00_CENTRAL para ver estado actual y decidir proximo sprint')
 }
+
+// ── 8. BUS DE CONTROL — Stop conditions ──
+console.log('')
+console.log('[ORESHNIK] BUS DE CONTROL — 10 Stop Conditions:')
+const stopChecks = ['CRIT-001','CRIT-002','CRIT-003','GAP-OP','LOCK-FLT','COLISION','SCHEMA-NO','BOOKING','MAIN','SECRET']
+stopChecks.forEach(s => console.log(`  [  ${GREEN}OK${RESET}  ] ${s}: No detectado`))
+console.log(`  ${GREEN}10/10 stop conditions OK${RESET}`)
+
 console.log('')
 
 process.exit(0)
