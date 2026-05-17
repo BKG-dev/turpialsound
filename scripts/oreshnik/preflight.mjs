@@ -119,9 +119,9 @@ let obsidianExePath = ''
 
 function isObsidianRunning() {
   if (process.platform === 'win32') {
-    try { execSync('tasklist /FI "IMAGENAME eq Obsidian.exe" 2>nul', { encoding: 'utf8', stdio: 'pipe' }); return true } catch { return false }
+    try { execSync('tasklist /FI "IMAGENAME eq Obsidian.exe"', { encoding: 'utf8', stdio: 'pipe' }); return true } catch { return false }
   } else {
-    try { execSync('pgrep -x Obsidian 2>/dev/null', { encoding: 'utf8', stdio: 'pipe' }); return true } catch { return false }
+    try { execSync('pgrep -x Obsidian', { encoding: 'utf8', stdio: 'pipe' }); return true } catch { return false }
   }
 }
 
@@ -130,13 +130,17 @@ function closeObsidian() {
   info('Obsidian detectado. Cerrando para sincronizar...')
   if (process.platform === 'win32') {
     obsidianExePath = sh('powershell -Command "(Get-Process Obsidian | Select-Object -First 1).Path"')
-    try { execSync('powershell -Command "Get-Process Obsidian | ForEach-Object { $_.CloseMainWindow() }" 2>nul', { encoding: 'utf8' }) } catch {}
-    try { execSync('timeout /t 2 /nobreak >nul', { encoding: 'utf8' }) } catch {}
-    if (isObsidianRunning()) execSync('taskkill /F /IM Obsidian.exe 2>nul', { encoding: 'utf8' })
+    try { execSync('powershell -Command "Get-Process Obsidian | ForEach-Object { $_.CloseMainWindow() }"', { encoding: 'utf8', stdio: 'pipe' }) } catch {}
+    try { execSync('timeout /t 2 /nobreak', { encoding: 'utf8', stdio: 'pipe' }) } catch {}
+    if (isObsidianRunning()) {
+      try { execSync('taskkill /F /IM Obsidian.exe', { encoding: 'utf8', stdio: 'pipe' }) } catch {}
+    }
   } else {
-    try { execSync('pkill -TERM Obsidian 2>/dev/null', { encoding: 'utf8' }) } catch {}
-    try { execSync('sleep 2', { encoding: 'utf8' }) } catch {}
-    if (isObsidianRunning()) execSync('pkill -9 Obsidian 2>/dev/null', { encoding: 'utf8' })
+    try { execSync('pkill -TERM Obsidian', { encoding: 'utf8', stdio: 'pipe' }) } catch {}
+    try { execSync('sleep 2', { encoding: 'utf8', stdio: 'pipe' }) } catch {}
+    if (isObsidianRunning()) {
+      try { execSync('pkill -9 Obsidian', { encoding: 'utf8', stdio: 'pipe' }) } catch {}
+    }
   }
   ok('Obsidian cerrado')
   return true
@@ -254,6 +258,7 @@ if (motherRef) {
           }
         }
       }
+    }
     }
   } else {
     ok('Docs locales sincronizados con madre')
