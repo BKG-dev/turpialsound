@@ -37,6 +37,7 @@ import {
   sendBookingNotifications,
 } from '@/lib/bookings/notifications'
 import { buildAdminPaymentProofUrl } from '@/lib/bookings/operational-links'
+import { sendBookingConfirmedWhatsapp } from '@/lib/whatsapp/booking-notifications'
 import { buildDashboardRange, getAdminDashboardSnapshot } from '@/lib/bookings/dashboard-queries'
 import {
   CriticalAlertsPanel,
@@ -396,6 +397,19 @@ async function updateOperationalStatus(formData: FormData) {
       data: {
         calendarEventId: calendarSync.eventId,
       },
+    })
+  }
+
+  if (effectiveNextStatus === 'confirmed') {
+    await sendBookingConfirmedWhatsapp({
+      publicCode: current.publicCode,
+      requesterName: current.requesterName,
+      requesterPhone: current.requesterPhone,
+      serviceName: primaryItem?.serviceVariant.service.name ?? null,
+      variantName: primaryItem?.serviceVariant.name ?? null,
+      resourceName: primaryItem?.resource?.name ?? null,
+      eventDate: current.eventDate,
+      eventEndDate: current.eventEndDate,
     })
   }
 
