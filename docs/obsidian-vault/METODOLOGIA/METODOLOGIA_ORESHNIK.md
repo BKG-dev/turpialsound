@@ -1,8 +1,8 @@
 ﻿---
 type: methodology-nexus
 project: "Turpial Sound"
-fecha: 2026-05-14
-metodologia: "Oreshnik + Bus de Control Nivel 2.5"
+fecha: 2026-05-16
+metodologia: "Oreshnik v4.0 + Madre Dinamica + Cierre Automatizado"
 tags:
   - "#central"
   - "#methodology"
@@ -111,37 +111,53 @@ npx vercel inspect <url> --logs
 
 ---
 
-## 🤝 Sincronización Bidireccional
+## 🤝 Sincronizacion Bidireccional v4.0
 
-Protocolo para que Jean y Manuel SIEMPRE vean la misma versión de docs.
+Protocolo para que Jean y Manuel SIEMPRE vean la misma version de docs.
 
-### Al abrir sesión (AMBOS)
+### Al abrir sesion (AMBOS)
 
 ```bash
-git fetch origin --prune
-git checkout RAMA MADRE
-git pull origin RAMA MADRE
-# Verificar:
-Select-String "last_updated" docs/obsidian-vault/00_CENTRAL_TURPIAL.md
+node scripts/oreshnik/preflight.mjs --sprint SXX --operator Jean|Manuel --desc "descripcion"
 ```
 
-Si `last_updated` no coincide con la última fecha conocida → **ALERTA**.
+El preflight v4.0 ejecuta automaticamente:
+1. Fetch origin + sync forzado de docs desde la rama madre dinamica
+2. Deteccion de ramas del otro operador con docs mas nuevos
+3. Verificacion de cobertura de documentacion
+4. Gestion de ramas (crea hija desde madre dinamica)
+
+**La madre ya NO es un nombre fijo.** Cada cierre de sprint genera una nueva madre versionada: `MADRE/v{N}-{tags}-{fecha}`
 
 ### Al cerrar sprint
 
-1. Actualizar `00_CENTRAL_TURPIAL.md`
-2. `last_updated` = fecha/hora actual
-3. Commit + push a rama del sprint
-4. **Avisar al otro operador:** "SXX cerrado, rama lista"
-5. Jean mergea a madre + push
-6. Ambos: `git fetch && git pull madre` en próxima sesión
-
-### ⚠️ Obsidian
-
-**Cerrar Obsidian antes de `git checkout`.** Si estuvo abierto:
-
 ```bash
-git checkout HEAD -- docs/obsidian-vault/
+node scripts/oreshnik/close-sprint.mjs --sprint SXX --operator Jean|Manuel --desc "desc"
+```
+
+El cierre v2.0 ejecuta automaticamente:
+1. **Cobertura:** Verifica que TODOS los docs relacionados al codigo modificado esten actualizados
+2. **Mecanica:** Actualiza timestamps, estados, y docs canonicos
+3. **Git:** Commitea docs en rama hija, pushea hija, crea NUEVA rama madre con SOLO docs
+4. **Evento:** Registra cierre en `var/sprint-events/`
+
+### Flujo completo
+
+```
+ABRIR SESION → preflight v4.0 (jala docs de madre dinamica)
+  ↓
+CREAR RAMA HIJA → desde madre dinamica (hereda docs actualizados)
+  ↓
+EJECUTAR SPRINT → Codigo + docs
+  ↓
+CERRAR SPRINT → close-sprint v2.0 (verifica cobertura, actualiza docs, pushea)
+  ↓
+  ├─ Push COMPLETO a rama hija (codigo + docs)
+  └─ Push SOLO docs a NUEVA rama madre dinamica
+  ↓
+JEAN INTEGRA CODIGO → mergea ramas hijas a madre
+  ↓
+PRODUCCION → main → Vercel → turpialsound.com
 ```
 
 ---

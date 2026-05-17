@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "current": "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16",
+  "branches": [
+    {
+      "version": 1,
+      "name": "RAMA-MADRE",
+      "sprint": null,
+      "operator": null,
+      "date": "2026-05-15",
+      "fulldate": "15/05/26 14:26",
+      "description": "Madre original (pre-v4.0). Reemplazada por sistema dinamico.",
+      "previous": null
+    },
+    {
+      "version": 2,
+      "name": "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16",
+      "sprint": "integracion-docs",
+      "operator": "Manuel",
+      "date": "2026-05-16",
+      "fulldate": "16/05/26 21:04",
+      "description": "Integracion de documentacion: Jean/s12-reservas + Manuel/s-adm-01. Code merge pendiente.",
+      "previous": "RAMA-MADRE"
+    }
+  ]
+}

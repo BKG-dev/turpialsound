@@ -8,8 +8,18 @@
 #>
 
 param(
-    [string]$MotherBranch = "RAMA-MADRE"
+    [string]$MotherBranch = ""
 )
+
+# Si no se pasa MotherBranch, leer de .mother-version.json
+if (-not $MotherBranch) {
+    $versionFile = Join-Path $PSScriptRoot "runs" ".mother-version.json"
+    if (Test-Path $versionFile) {
+        $config = Get-Content $versionFile -Raw | ConvertFrom-Json
+        $MotherBranch = $config.current
+    }
+    if (-not $MotherBranch) { $MotherBranch = "RAMA-MADRE" }
+}
 
 $ErrorActionPreference = "Continue"
 
