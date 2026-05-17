@@ -1,11 +1,11 @@
 ﻿---
 type: master-dashboard
 project: "Turpial Sound"
-status: post-reconciliation
-phase: "Fase E: Sprints marketplace cerrados. Pre-release."
-last_updated: "15/05/26 14:26"
-mother_branch: "RAMA MADRE"
-mother_head: "dfca178"
+status: active-integration
+phase: "Fase F: Integracion de ramas hijas. Code merge pendiente."
+last_updated: "17/05/26 00:10"
+mother_branch: "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16"
+mother_head: "RAMAMADRE_BASE"
 production_branch: "prod/current-www-turpialsound-2026-05-08"
 production_head: "92fd6a3"
 tags:
@@ -21,17 +21,18 @@ tags:
 
 > **ESTE ES EL DOCUMENTO CANONICO. Si hay conflicto con cualquier otro archivo, este manda.**
 
-## ESTADO ACTUAL — RECONCILIACION COMPLETADA (2026-05-14 13:58 VET)
+## ESTADO ACTUAL — INTEGRACION DE RAMAS HIJAS (2026-05-16 21:04 VET)
 
-**Existen DOS ramas de integracion (UNIFICADAS en madre `01cdb73`):**
+**Ambas ramas hijas listas con documentacion actualizada. Code merge a madre PENDIENTE (Jean).**
 
 | Rama | Operador | Commits | Contenido |
 |------|----------|---------|-----------|
-| `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` | 👤 Manuel | 51 commits | S12, S13, S14, S14B, BCV, metodologia, QA harness, Playwright |
-| `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` | 👤 Jean | 20 commits | Booking fixes, WhatsApp lab, performance, a11y, AEO, admin dashboard, sitemap |
-| **Ancestro comun** | — | `20e88e1` (May 9) | — |
-| **Rama madre** | — | `RAMA MADRE` | ESTA es la unica rama madre valida |
+| `Jean/s12-reservas-v2-politica-paga-primero-2026-05-16` | 👤 Jean | 25 commits (vs base) | Booking fixes, WhatsApp notifications, performance, a11y, AEO, sitemap, admin dashboard |
+| `Manuel/s-adm-01-legal-entity-2026-05-15` | 👤 Manuel | 114 commits (vs base) | S12-S20 marketplace, S-UX-01/02 UI Inmersiva, S-REV-01 reviews, S-MK marketing, BCV, metodologia |
+| **NUEVA Rama madre** | — | `MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16` | DOCS INTEGRADOS. Codigo pendiente de merge. |
 | **Produccion** | — | `prod/current-www-turpialsound-2026-05-08` @ `92fd6a3` | Deploy `nahska58r` en `turpialsound.com` |
+
+> **PENDIENTE UNICO:** Jean integra el CODIGO de ambas ramas hijas en la rama madre. Los docs ya estan sincronizados.
 
 ---
 
@@ -81,75 +82,74 @@ tags:
 
 ## 👤 JEAN (BKG-dev) — ESTADO
 
-### Sprints cerrados
+### Rama activa: `Jean/s12-reservas-v2-politica-paga-primero-2026-05-16`
 
-| Sprint | Descripcion | Evidencia |
-|--------|-------------|-----------|
-| S02 | Discovery runtime estable | ✅ Mergeado a prod via Ola1 |
-| S04 | Payment proof protegido (9/9 PASS) | ✅ Mergeado a integracion |
-| S06 | Payout auditable | ✅ Mergeado a integracion |
-| S07 | Tasas y accounting (11/11 PASS) | ✅ Mergeado a integracion |
-| S10 | Release gate (10/10 🟢) | ✅ Implementado, pendiente merge |
+| Commit | Descripcion |
+|--------|-------------|
+| `e747e15` | fix(bookings): complete whatsapp reservation event notifications |
+| `5fc3e60` | merge: integrate marketplace cart dropsocial oreshnik s12-s20 |
+| `ae3904f` | fix(seo): polish AEO article and add to sitemap |
+| `2671ad6` | fix(admin): force Caracas timezone in dashboard date rendering |
+| `111e29b` | fix(bookings): allow qa hold bypass by phone env |
 
-### Trabajo fuera de metodologia (May 10-13) — YA INCORPORADO en su rama
+### Trabajo incorporado
 
-| Fecha | Commit | Mapeo a sprint |
-|-------|--------|----------------|
-| May 13 | feat(admin): booking dashboard command center | 🟡 S-JB-02 parcial |
-| May 13 | fix(bookings): QA hold bypass + sitemap | 🟡 S-JB-03 parcial |
-| May 13 | fix(performance): mobile animations, LCP, lighthouse | 🟡 S19 parcial |
-| May 12-13 | fix(accessibility): lighthouse a11y (3 commits) | 🟡 S19 parcial |
-| May 12 | feat(aeo): Caracas rehearsal room guide | 🟡 S-MK-03 parcial |
-| May 11 | fix(bookings): whatsapp, calendar, holds, idempotent | 🟡 S-JB-01 parcial |
-| May 10 | feat(lab): whatsapp webhook + meta signup | Fuera de plan |
+| Sprint | Descripcion | Estado |
+|--------|-------------|--------|
+| S-JB-01 | Booking fixes (WhatsApp, calendar, holds) | 🟡 En rama hija |
+| S-JB-02 | Admin booking dashboard command center | 🟡 En rama hija |
+| S-JB-03 | Sitemap public-only, Vercel docs | 🟡 En rama hija |
+| S19 | Performance LCP + mobile a11y | 🟡 En rama hija |
+| S-MK-03 | AEO Caracas rehearsal room guide | 🟡 En rama hija |
 
 ### 🔴 LO QUE JEAN DEBE HACER AHORA
 
 | # | Accion | Prioridad |
 |---|--------|-----------|
-| 1 | **Mergear `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` en su rama** | 🔴 P0 |
-| 2 | **Resolver conflictos** en `actions/marketplace/auth.ts`, `app/admin/page.tsx`, `.env.example` | 🔴 P0 |
-| 3 | **Validar pre-merge**: `git diff --check`, `npx tsc --noEmit`, `pnpm build` | 🔴 P0 |
-| 4 | **Mergear rama unificada a madre** | 🔴 P0 |
+| 1 | **Mergear codigo de `Manuel/s-adm-01-legal-entity-2026-05-15` en `MADRE/v2-...`** | 🔴 P0 |
+| 2 | **Mergear su propio codigo en `MADRE/v2-...`** | 🔴 P0 |
+| 3 | **Resolver conflictos** de codigo entre ambas ramas | 🔴 P0 |
+| 4 | **Validar pre-merge**: `npx tsc --noEmit`, `pnpm build` | 🔴 P0 |
 | 5 | **Smoke post-merge**: `/`, `/marketplace`, `/reservas`, `/api/bcv-rate`, `/admin/login` | 🔴 P0 |
-| 6 | Ejecutar S10 release gate: `npx tsx scripts/qa/modules/qa-s10-release-gate.mjs` | 🟡 |
+| 6 | NO desplegar a produccion hasta smoke OK | 🚫 |
 | 7 | Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel | 🟡 |
-| 8 | NO desplegar a produccion hasta que Manuel confirme smoke de marketplace | 🚫 |
-| 9 | Arreglar GitHub↔Vercel: Dashboard → Git Settings → Branch pattern incluir `Manuel/*` | 🟡 |
 
 ---
 
 ## 👤 MANUEL (Manuel Vera) — ESTADO
 
-### Sprints cerrados (sesion May 12-13)
+### Rama activa: `Manuel/s-adm-01-legal-entity-2026-05-15`
 
-| Sprint | Rama | Resultado |
-|--------|------|-----------|
-| S01 | Preview BKG autonomo | ✅ |
-| S03 | QA Harness 12 modulos | ✅ 12/12 PASS |
-| S05 | Delivery & receipt flow | ✅ 9/9 PASS |
-| S08 | Action center y UX | ✅ 11/11 PASS |
-| S09 | Discovery publico y SEO | ✅ 9/9 PASS |
-| S11 | Playwright + login UI smoke | ✅ 3/3 PASS |
-| **S12** | `Manuel/s12-purchase-flow-browser-2026-05-12` | ✅ 9/9 PASS |
-| **S13** | `Manuel/s13-proof-upload-browser-2026-05-12` | ✅ PASS |
-| **S14** | `Manuel/s14-admin-dashboard-payment-closure-2026-05-13` | ✅ BCV scheduler + metodologia |
-| **S14B** | `Manuel/s14b-shopping-cart-share` | ✅ Shopping cart + share + market analysis |
-| **S15** | `Manuel/s15-location-filters-2026-05-14` | ✅ Location filters + listing modal + inventory |
-| **S-MK-01** | (incluido en S14B) | ✅ Analisis de mercado |
-| — | Metodologia Oreshnik | ✅ Analisis de optimizacion |
-| — | BCV dual-frequency scheduler | ✅ Implementado |
+| Commit | Descripcion |
+|--------|-------------|
+| `93e4536` | fix(search): eliminar filtro estricto que bloqueaba busqueda difusa Fuse.js |
+| `be609b0` | fix(sync): date mismatch no bloquea push |
+| `c423d46` | merge: consolidar sprints marketplace + docs RAMA-MADRE + preflight v3.0 |
 
-**Rama de integracion:** `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13`
+### Sprints cerrados
+
+| Sprint | Descripcion | Fecha |
+|--------|-------------|-------|
+| S12-S14B | Purchase flow, proof upload, admin dashboard, shopping cart | ✅ May 13-14 |
+| S15 | Location filters + listing modal | ✅ May 14 |
+| S16 | Notificaciones y chat | ✅ May 14 |
+| S18 | Full regression (25 PASS) | ✅ May 14 |
+| S20 | SEO/AEO audit | ✅ May 14 |
+| S-REV-01 | Ratings, reviews + Full E2E | ✅ May 14 |
+| S-MK-01 a 06 | Mercado, KPIs, SEO, RRSS, Marketing | ✅ May 14 |
+| S-UX-01 | Plan tecnico UI Inmersiva | ✅ May 15 |
+| S-UX-02 | Implementacion UI Inmersiva + Refac Global | ✅ May 15 |
+| S-ADM-01 | Verificar estado legal de la entidad | ✅ En rama hija |
 
 ### 🔴 LO QUE MANUEL DEBE HACER AHORA
 
 | # | Accion | Prioridad |
 |---|--------|-----------|
-| 1 | **Preparar plan de despliegue CDA** (viernes 15 mayo 11AM) | 🔴 P0 |
-| 2 | **Verificar estado legal de la entidad** (S-ADM-01) | 🔴 P0 |
-| 3 | **S-UX-01 y S-UX-02:** UI Inmersiva + Refac Global | ✅ CERRADO 2026-05-15 |
-| 4 | Ejecutar QA full regression post-merge Jean | 🟡 |
+| 1 | **Esperar a que Jean integre el codigo en la rama madre** | 🔴 P0 |
+| 2 | **Ejecutar QA full regression post-merge** | 🟡 |
+| 3 | S-ADM-02: Cuenta bancaria juridica + Binance empresa | 📋 Pendiente fisico |
+| 4 | S-ADM-03: Modelos comerciales y juridicos | 📋 Pendiente fisico |
+| 5 | S-ADM-04: Deploy + capacitacion CDA | 📋 Pendiente fisico |
 
 ---
 
@@ -283,7 +283,7 @@ git push origin main
 
 ---
 
-> **Ultima actualizacion:** 2026-05-14T13:04-04:00 | **Estado:** S-REV-01 cerrado. Ratings + Full E2E + Export payouts. | **Tag:** `cp-manuel-s12-s14b-pre-merge-jean-2026-05-14`
+> **Ultima actualizacion:** 17/05/26 00:10 VET | **Estado:** Ambas ramas hijas listas con docs sincronizados. Code merge a madre pendiente (Jean). | **Tag:** `integracion-docs-v2-2026-05-17`
 
 ---
 
