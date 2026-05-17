@@ -3,7 +3,7 @@ type: master-dashboard
 project: "Turpial Sound"
 status: active-integration
 phase: "Fase G: Optimizacion marketplace post-cierre. 8 sprints nuevos (S-MP-01 a S-MP-08)."
-last_updated: "17/05/26 00:25"
+last_updated: "17/05/26 01:17"
 mother_branch: "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16"
 mother_head: "RAMAMADRE_BASE"
 production_branch: "prod/current-www-turpialsound-2026-05-08"
