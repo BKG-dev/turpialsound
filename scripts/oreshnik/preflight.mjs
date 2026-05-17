@@ -113,21 +113,19 @@ info('Fetch origin...')
 sh('git fetch origin --prune --quiet')
 ok('Fetch completado')
 
-// 1B: Obsidian guard
+// 1B: Obsidian guard — NUNCA matar sin confirmacion
 const obsidianRunning = process.platform === 'win32'
   ? (() => { try { execSync('tasklist /FI "IMAGENAME eq Obsidian.exe" 2>nul', { encoding: 'utf8' }); return true } catch { return false } })()
   : (() => { try { execSync('pgrep -x Obsidian 2>/dev/null', { encoding: 'utf8' }); return true } catch { return false } })()
 
 if (obsidianRunning) {
-  info('Obsidian detectado. Cerrando para evitar corrupcion...')
-  try {
-    if (process.platform === 'win32') execSync('taskkill /F /IM Obsidian.exe 2>nul', { encoding: 'utf8' })
-    else execSync('pkill -9 Obsidian 2>/dev/null', { encoding: 'utf8' })
-    ok('Obsidian cerrado')
-  } catch {}
+  warn('Obsidian esta abierto. CIERRALO MANUALMENTE antes de continuar para evitar corrupcion.')
+  warn('El preflight NO cierra Obsidian automaticamente. Si continuas con Obsidian abierto,')
+  warn('los cambios no guardados pueden perderse al hacer checkout o sync de docs.')
+  warnings++
 }
 
-// 1C: Sync docs desde madre — SIEMPRE, sin cache
+// 1C: Sync docs desde madre — SIEMPRE, sin cache, ANTI-REGRESION
 const currentBranchSync = sh('git branch --show-current')
 const motherRef = sh(`git rev-parse --verify origin/${MOTHER}`)
 
@@ -137,36 +135,74 @@ if (motherRef) {
   const motherDocHead = sh(`git rev-parse origin/${MOTHER}:docs 2>nul`)
 
   if (localDocHead !== motherDocHead && motherDocHead) {
-    info(`Docs desactualizados respecto a madre ${MOTHER}. Sincronizando...`)
-
-    // Stash local changes if any, but preserve them
-    const hasDocChanges = sh('git diff --name-only -- docs/')
-    let stashed = false
+    // ANTI-REGRESION: comparar timestamps — NUNCA volver a un estado anterior
+    const localLastUpdated = sh(`git show HEAD:docs/obsidian-vault/00_CENTRAL_TURPIAL.md 2>nul`)
+    const motherLastUpdated = sh(`git show origin/${MOTHER}:docs/obsidian-vault/00_CENTRAL_TURPIAL.md 2>nul`)
     
-    if (hasDocChanges) {
-      const onlyDocs = sh('git diff --name-only').split('\n').filter(Boolean).every(f => f.startsWith('docs/'))
-      if (onlyDocs) {
-        info('Cambios locales solo en docs. Se respaldaran y re-aplicaran.')
+    const localMatch = localLastUpdated.match(/last_updated:\s*"(\d{2}\/\d{2}\/\d{2}\s+\d{2}:\d{2})"/)
+    const motherMatch = motherLastUpdated.match(/last_updated:\s*"(\d{2}\/\d{2}\/\d{2}\s+\d{2}:\d{2})"/)
+    
+    let localDate = null, motherDate = null
+    if (localMatch) {
+      const [d, mo, y, h, min] = localMatch[1].split(/[\s\/:]/).map(Number)
+      localDate = new Date(2000 + y, mo - 1, d, h, min)
+    }
+    if (motherMatch) {
+      const [d, mo, y, h, min] = motherMatch[1].split(/[\s\/:]/).map(Number)
+      motherDate = new Date(2000 + y, mo - 1, d, h, min)
+    }
+    
+    if (localDate && motherDate && localDate > motherDate) {
+      // BLOQUEO: local es mas nuevo que madre — NO sincronizar hacia atras
+      ok(`Docs locales (${localMatch[1]}) mas recientes que madre (${motherMatch[1]}). No se sincroniza para evitar regresion.`)
+    } else if (localDate && motherDate && motherDate > localDate) {
+      // Madre es mas nueva → sincronizar (forward only)
+      info(`Docs desactualizados respecto a madre ${MOTHER}. Madre: ${motherMatch[1]} > Local: ${localMatch[1]}. Sincronizando...`)
+      
+      const hasDocChanges = sh('git diff --name-only -- docs/')
+      let stashed = false
+      
+      if (hasDocChanges) {
+        const onlyDocs = sh('git diff --name-only').split('\n').filter(Boolean).every(f => f.startsWith('docs/'))
+        if (onlyDocs) {
+          info('Cambios locales solo en docs. Se respaldaran y re-aplicaran.')
+          sh('git stash push -- docs/ 2>nul')
+          stashed = true
+        } else {
+          warn('Cambios locales fuera de docs/. Stashea manualmente antes del sync.')
+        }
+      }
+
+      const checkoutResult = sh(`git checkout origin/${MOTHER} -- docs/ 2>&1`)
+      if (checkoutResult.includes('error')) {
+        fail(`No se pudieron sincronizar docs desde ${MOTHER}`)
+        blockers++
+      } else {
+        ok(`Docs sincronizados desde ${MOTHER}`)
+        if (stashed) {
+          sh('git stash pop 2>nul')
+          info('Cambios locales en docs re-aplicados sobre la version de madre.')
+        }
+      }
+    } else {
+      // Sin fechas comparables — sincronizar con advertencia
+      info(`Docs desactualizados respecto a madre ${MOTHER}. Sincronizando...`)
+      
+      const hasDocChanges = sh('git diff --name-only -- docs/')
+      let stashed = false
+      if (hasDocChanges) {
         sh('git stash push -- docs/ 2>nul')
         stashed = true
+      }
+      const checkoutResult = sh(`git checkout origin/${MOTHER} -- docs/ 2>&1`)
+      if (checkoutResult.includes('error')) {
+        fail(`No se pudieron sincronizar docs desde ${MOTHER}`)
+        blockers++
       } else {
-        warn('Cambios locales fuera de docs/. Stashea manualmente antes del sync.')
+        ok(`Docs sincronizados desde ${MOTHER}`)
+        if (stashed) { sh('git stash pop 2>nul') }
       }
     }
-
-    // Obtener docs desde madre
-    const checkoutResult = sh(`git checkout origin/${MOTHER} -- docs/ 2>&1`)
-    if (checkoutResult.includes('error')) {
-      fail(`No se pudieron sincronizar docs desde ${MOTHER}`)
-      blockers++
-    } else {
-      ok(`Docs sincronizados desde ${MOTHER}`)
-
-      // Re-aplicar cambios locales si los habia
-      if (stashed) {
-        sh('git stash pop 2>nul')
-        info('Cambios locales en docs re-aplicados sobre la version de madre.')
-      }
 
       // Verificar last_updated
       const centralPath = join(ROOT, 'docs', 'obsidian-vault', '00_CENTRAL_TURPIAL.md')
