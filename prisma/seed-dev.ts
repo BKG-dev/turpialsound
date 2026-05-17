@@ -40,14 +40,22 @@ if (!process.env.DATABASE_URL) {
 
 const SEED_USERS = [
   // ── Superusers (developers) — full access, no commission ──────────────────
-  { displayName: 'mvera',  email: 'mvera@dev.local',  password: '13894619', role: 'SUPER', isSeller: true },
-  { displayName: 'Igor',   email: 'igor@dev.local',   password: 'bugdanoff', role: 'SUPER', isSeller: true },
+  { displayName: 'mvera',  email: 'mvera@dev.local',  passwordEnv: 'QA_ADMIN_PASSWORD', role: 'SUPER', isSeller: true },
+  { displayName: 'Igor',   email: 'igor@dev.local',   passwordEnv: 'DEV_IGOR_PASSWORD', role: 'SUPER', isSeller: true },
   // ── Socios (partners) — no commission ────────────────────────────────────
-  { displayName: 'frank',  email: 'frank@dev.local',  password: 'lemus',    role: 'SOCIO', isSeller: true },
-  { displayName: 'susej',  email: 'susej@dev.local',  password: '12960245', role: 'SOCIO', isSeller: true },
+  { displayName: 'frank',  email: 'frank@dev.local',  passwordEnv: 'DEV_FRANK_PASSWORD', role: 'SOCIO', isSeller: true },
+  { displayName: 'susej',  email: 'susej@dev.local',  passwordEnv: 'DEV_SUSEJ_PASSWORD', role: 'SOCIO', isSeller: true },
   // ── Regular test user ─────────────────────────────────────────────────────
-  { displayName: 'user',   email: 'user@dev.local',   password: 'password', role: 'USER',  isSeller: false },
+  { displayName: 'user',   email: 'user@dev.local',   passwordEnv: 'DEV_USER_PASSWORD', role: 'USER',  isSeller: false },
 ] as const
+
+function requireEnv(name: string) {
+  const value = process.env[name]?.trim()
+  if (!value) {
+    throw new Error(`${name} not found. Add it to .env.local before running seed:dev.`)
+  }
+  return value
+}
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
@@ -65,7 +73,7 @@ async function main() {
   console.log('\n🌱  Seeding dev users…\n')
 
   for (const u of SEED_USERS) {
-    const passwordHash = await bcrypt.hash(u.password, 12)
+    const passwordHash = await bcrypt.hash(requireEnv(u.passwordEnv), 12)
 
     const user = await prisma.mpUser.upsert({
       where:  { email: u.email },
@@ -84,11 +92,11 @@ async function main() {
 
   console.log('\n✅  Done.\n')
   console.log('  Login with username OR email:\n')
-  console.log('  Username   Password')
+  console.log('  Username   Password source')
   console.log('  ─────────────────────────────')
   for (const u of SEED_USERS) {
     const tag = u.role === 'SUPER' ? ' (Admin)' : u.role === 'SOCIO' ? ' (Socio)' : ''
-    console.log(`  ${u.displayName.padEnd(10)} ${u.password}${tag}`)
+    console.log(`  ${u.displayName.padEnd(10)} ${u.passwordEnv}${tag}`)
   }
   console.log('')
 }

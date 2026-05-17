@@ -26,7 +26,7 @@
   /* Text */
   --color-text-primary: #f2f2f2;
   --color-text-secondary: #c0c0c0;
-  --color-text-muted: #5a5a5a;
+  --color-text-muted: #6a6a6a;
 
   /* Typography — Michroma exclusiva en todo el sitio */
   --font-display: var(--font-michroma), system-ui, sans-serif;
@@ -776,6 +776,7 @@ video {
   overflow-x: clip;
   margin-top: 0;
   padding-top: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Marketplace owns its app shell: hide global SiteHeader only inside /marketplace routes. */

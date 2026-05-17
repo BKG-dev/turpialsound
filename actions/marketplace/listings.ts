@@ -123,7 +123,10 @@ function generateSlug(title: string): string {
 }
 
 // ─── GET ACTIVE LISTINGS (UI-compatible) ─────────────────────────────────────
-export async function getActiveListings(): Promise<Listing[]> {
+export async function getActiveListings(filters?: {
+  city?: string
+  state?: string
+}): Promise<Listing[]> {
   const db = await getDb()
   if (!db) {
     logDiscoveryDiagnostics('DB_MISSING', {
@@ -133,9 +136,13 @@ export async function getActiveListings(): Promise<Listing[]> {
   }
 
   try {
+    const where: Record<string, unknown> = { status: { in: [...DISCOVERY_LISTING_STATUSES] } }
+    if (filters?.state) where.state = filters.state
+    if (filters?.city) where.city = filters.city
+
     const [listings, snapshot] = await Promise.all([
       db.mpListing.findMany({
-        where: { status: { in: [...DISCOVERY_LISTING_STATUSES] } },
+        where: where as Record<string, unknown>,
         orderBy: { createdAt: 'desc' },
         include: { seller: true },
       }),
@@ -341,6 +348,9 @@ export async function createListing(
         mediaUrls: data.mediaUrls,
         hasInventory: data.hasInventory,
         inventory: data.inventory ?? null,
+        city: data.city ?? null,
+        state: data.state ?? null,
+        isLocationPublic: data.isLocationPublic ?? true,
         status: 'ACTIVE',
         publishedAt: new Date(),
         slug,

@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process'
 import { setTimeout as delay } from 'node:timers/promises'
+import { existsSync, readFileSync } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import os from 'node:os'
@@ -8,7 +9,38 @@ const APP_URL = process.env.APP_URL || 'http://localhost:3002'
 const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
 const DEBUG_PORT = Number(process.env.DEBUG_PORT || '9222')
 const REUSE_BROWSER = process.env.REUSE_BROWSER === '1'
-const SELLER = { identifier: 'mvera', password: '13894619' }
+
+function loadEnvFile(filePath) {
+  if (!existsSync(filePath)) return
+  const content = readFileSync(filePath, 'utf8')
+  for (const rawLine of content.split(/\r?\n/)) {
+    const line = rawLine.trim()
+    if (!line || line.startsWith('#')) continue
+    const eq = line.indexOf('=')
+    if (eq < 0) continue
+    const key = line.slice(0, eq).trim()
+    let value = line.slice(eq + 1).trim()
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1)
+    }
+    if (!process.env[key]) process.env[key] = value
+  }
+}
+
+function requireEnv(name) {
+  const value = process.env[name]?.trim()
+  if (!value) throw new Error(`${name} no disponible en .env.local/.env`)
+  return value
+}
+
+loadEnvFile(path.join(process.cwd(), '.env.local'))
+loadEnvFile(path.join(process.cwd(), '.env'))
+
+const SELLER = {
+  identifier: requireEnv('QA_SELLER_IDENTIFIER'),
+  password: requireEnv('QA_SELLER_PASSWORD'),
+}
+const SELLER_SIGNAL = SELLER.identifier.toLowerCase()
 
 let ws
 let msgId = 0
@@ -230,13 +262,16 @@ async function waitForLoginForm(timeoutMs = 5000) {
 }
 
 async function ensureLoginFormOpen() {
+  const loginTriggers = ['Iniciar sesión', 'Entrar', 'Iniciar']
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    await clickContainsText('Iniciar sesión')
-    try {
-      await waitForLoginForm(4000)
-      return true
-    } catch {}
-    await delay(700)
+    for (const triggerText of loginTriggers) {
+      try {
+        await clickContainsText(triggerText)
+        await waitForLoginForm(4000)
+        return true
+      } catch {}
+      await delay(400)
+    }
   }
 
   await clickContainsText('Iniciar', 'button, a, [role=\"button\"], [role=\"tab\"]')
@@ -263,11 +298,11 @@ async function getMarketplaceSessionState() {
         url: location.href,
         hasLogout: texts.some((text) => normalize(text).includes('salir')),
         hasSellerLabel: texts.some((text) => normalize(text).includes('vendedor')),
-        hasDisplayName: texts.some((text) => normalize(text).includes('mvera')),
+        hasDisplayName: texts.some((text) => normalize(text).includes(${JSON.stringify(SELLER_SIGNAL)})),
         hasAdminLabel: texts.some((text) => normalize(text).includes('admin')),
         visibleSignals: texts.filter((text) => {
           const value = normalize(text)
-          return value.includes('salir') || value.includes('mvera') || value.includes('vendedor') || value.includes('admin')
+          return value.includes('salir') || value.includes(${JSON.stringify(SELLER_SIGNAL)}) || value.includes('vendedor') || value.includes('admin')
         }).slice(0, 12),
       }
     })()
@@ -494,8 +529,14 @@ async function run() {
 
     await waitFor(`
       () => {
-        const text = document.body.innerText || ''
-        return text.includes('Salir') && (text.includes('mvera') || text.includes('Vendedor') || text.includes('Admin'))
+        const normalize = (v) => String(v || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/\\s+/g, ' ').trim().toLowerCase()
+        const body = normalize(document.body.innerText || '')
+        const buttons = Array.from(document.querySelectorAll('button, a, [role="button"], [role="tab"]'))
+          .map((el) => normalize(el.innerText || el.textContent || el.getAttribute('aria-label') || el.getAttribute('title') || ''))
+          .filter(Boolean)
+        return body.includes('salir')
+          || body.includes('mi panel')
+          || buttons.some((text) => text.includes('salir') || text.includes('mi panel'))
       }
     `, 15000)
 

@@ -266,7 +266,7 @@ export async function requestPasswordReset(
       <a href="${resetUrl}" style="display:inline-block;padding:14px 28px;background:rgba(0,174,239,0.9);color:#fff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:600;">Restablecer contraseña</a>
       <p style="color:#5a5a5a;font-size:12px;margin:28px 0 0;">Si no solicitaste este cambio, ignora este correo. Tu contraseña permanecerá igual.</p>
       <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:24px 0;">
-      <p style="color:#3a3a3a;font-size:11px;margin:0;">© 2026 Turpial Sound · <a href="${appUrl}/marketplace" style="color:#3a3a3a;">turpialsound.com</a></p>
+      <p style="color:#6a6a6a;font-size:11px;margin:0;">© 2026 Turpial Sound · <a href="${appUrl}/marketplace" style="color:#6a6a6a;">turpialsound.com</a></p>
     </td></tr>
   </table>
 </body>

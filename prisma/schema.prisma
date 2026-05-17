@@ -414,7 +414,8 @@ model MpUser {
 
   // Seller-specific fields
   isSeller     Boolean  @default(true)
-  sellerRating Decimal? @db.Decimal(3, 2) // 0.00 to 5.00
+  sellerRating Decimal? @db.Decimal(3, 2) // 0.00 to 5.00 — computed from reviews
+  reviewCount  Int      @default(0) // derived count
   totalSales   Int      @default(0)
 
   // Buyer-specific fields
@@ -425,6 +426,10 @@ model MpUser {
 
   // Role — SOCIO and SUPER are exempt from platform commission
   role MpUserRole @default(USER)
+
+  // Location (S15)
+  city  String?
+  state String?
 
   // Contact & Notifications
   phone             String? // e.g. "+58 414 123 4567"
@@ -454,6 +459,8 @@ model MpUser {
   chatThreadsAsSeller MpChatThread[]      @relation("MpChatSeller")
   disputes            MpDispute[]
   mpPayouts           MpPayout[]
+  writtenReviews      MpReview[]          @relation("MpReviewBuyer")
+  receivedReviews     MpReview[]          @relation("MpReviewSeller")
   askedQuestions      MpListingQuestion[] @relation("MpAskedQuestions")
   favoriteListings    MpListing[]         @relation("UserFavorites")
 
@@ -521,6 +528,11 @@ model MpListing {
 
   status MpListingStatus @default(DRAFT)
 
+  // Location (S15)
+  city            String?
+  state           String?
+  isLocationPublic Boolean @default(true)
+
   // SEO
   slug String @unique
 
@@ -535,11 +547,13 @@ model MpListing {
   transactions MpTransaction[]
   questions    MpListingQuestion[]
   favoritedBy  MpUser[]            @relation("UserFavorites")
+  reviews      MpReview[]
 
   @@index([sellerId])
   @@index([status])
   @@index([category])
   @@index([slug])
+  @@index([state, city])
   @@map("mp_listings")
 }
 
@@ -700,6 +714,7 @@ model MpTransaction {
   @@index([idempotencyKey])
   @@index([frozenRateSource])
   @@index([rateSnapshotId])
+  reviews      MpReview[]
   @@map("mp_transactions")
 }
 
@@ -776,6 +791,10 @@ model MpPayout {
 
   // External payout tracking
   externalPayoutId String? // External payment reference
+
+  // Audit trail
+  reference String? // Human-readable payout reference (e.g. PAYOUT-20260511-001)
+  auditHash String? // SHA-256 hash of payout details for tamper evidence
 
   // Completion
   completedAt   DateTime?
@@ -911,4 +930,51 @@ model MpWebhookLog {
   @@index([processed])
   @@index([createdAt])
   @@map("mp_webhook_logs")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// REVIEWS & RATINGS (S-REV-01)
+// ─────────────────────────────────────────────────────────────────
+
+model MpReview {
+  id            String   @id @default(cuid())
+  buyerId       String
+  buyer         MpUser   @relation("MpReviewBuyer", fields: [buyerId], references: [id])
+  sellerId      String
+  seller        MpUser   @relation("MpReviewSeller", fields: [sellerId], references: [id])
+  listingId     String?
+  listing       MpListing? @relation(fields: [listingId], references: [id])
+  transactionId String?
+  transaction   MpTransaction? @relation(fields: [transactionId], references: [id])
+  rating        Int      // 1-5
+  title         String?
+  comment       String?
+  createdAt     DateTime @default(now())
+
+  @@index([sellerId])
+  @@index([buyerId])
+  @@index([transactionId])
+  @@index([listingId])
+  @@map("mp_reviews")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// DROPSOCIAL REFERRAL LINKS (S-DS-01)
+// ─────────────────────────────────────────────────────────────────
+
+model MpReferralLink {
+  id          String   @id @default(cuid())
+  referrerId  String
+  listingId   String
+  code        String   @unique
+  clicks      Int      @default(0)
+  conversions Int      @default(0)
+  totalEarned Decimal  @default(0) @db.Decimal(10, 2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([referrerId])
+  @@index([listingId])
+  @@index([code])
+  @@map("mp_referral_links")
 }

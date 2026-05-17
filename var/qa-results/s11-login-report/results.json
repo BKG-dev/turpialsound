@@ -1,0 +1,80 @@
+{
+  "summary": {
+    "total": 3,
+    "passes": 3,
+    "fails": 0,
+    "passed": true,
+    "results": [
+      {
+        "label": "BUYER",
+        "identifier": "buyerIA",
+        "expectedName": "buyerIA",
+        "loggedIn": true,
+        "headerText": "buyerIA",
+        "screenshots": [
+          "D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\var\\qa-results\\s11-login-report\\buyer-01-before-login.png",
+          "D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\var\\qa-results\\s11-login-report\\buyer-02-after-login.png"
+        ]
+      },
+      {
+        "label": "SELLER",
+        "identifier": "sellerIA",
+        "expectedName": "sellerIA",
+        "loggedIn": true,
+        "headerText": "sellerIA",
+        "screenshots": [
+          "D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\var\\qa-results\\s11-login-report\\seller-01-before-login.png",
+          "D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\var\\qa-results\\s11-login-report\\seller-02-after-login.png"
+        ]
+      },
+      {
+        "label": "ADMIN",
+        "identifier": "mvera",
+        "expectedName": "mvera",
+        "loggedIn": true,
+        "headerText": "mvera",
+        "screenshots": [
+          "D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\var\\qa-results\\s11-login-report\\admin-01-before-login.png",
+          "D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\var\\qa-results\\s11-login-report\\admin-02-after-login.png"
+        ]
+      }
+    ]
+  },
+  "results": [
+    {
+      "label": "BUYER",
+      "identifier": "buyerIA",
+      "expectedName": "buyerIA",
+      "loggedIn": true,
+      "headerText": "buyerIA",
+      "screenshots": [
+        "D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\var\\qa-results\\s11-login-report\\buyer-01-before-login.png",
+        "D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\var\\qa-results\\s11-login-report\\buyer-02-after-login.png"
+      ]
+    },
+    {
+      "label": "SELLER",
+      "identifier": "sellerIA",
+      "expectedName": "sellerIA",
+      "loggedIn": true,
+      "headerText": "sellerIA",
+      "screenshots": [
+        "D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\var\\qa-results\\s11-login-report\\seller-01-before-login.png",
+        "D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\var\\qa-results\\s11-login-report\\seller-02-after-login.png"
+      ]
+    },
+    {
+      "label": "ADMIN",
+      "identifier": "mvera",
+      "expectedName": "mvera",
+      "loggedIn": true,
+      "headerText": "mvera",
+      "screenshots": [
+        "D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\var\\qa-results\\s11-login-report\\admin-01-before-login.png",
+        "D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\var\\qa-results\\s11-login-report\\admin-02-after-login.png"
+      ]
+    }
+  ],
+  "appUrl": "https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app",
+  "timestamp": "2026-05-11T10:15:05.417Z"
+}

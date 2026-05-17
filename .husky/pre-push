@@ -1,0 +1,33 @@
+#!/bin/sh
+# Oreshnik pre-push hook — validacion obligatoria antes de push
+# Verifica: docs sync, tsc, build, no secrets
+
+echo "[ORESHNIK] pre-push hook iniciado..."
+
+# 1. Docs sync check
+echo "[ORESHNIK] Verificando docs sync..."
+powershell -ExecutionPolicy Bypass -File scripts/oreshnik/sync-obsidian.ps1
+if [ $? -ne 0 ]; then
+    echo "[ORESHNIK] SYNC FALLIDO. Corrige los docs y reintenta el push."
+    echo "[ORESHNIK] Ejecuta: powershell -ExecutionPolicy Bypass -File scripts/oreshnik/sync-obsidian.ps1"
+    exit 1
+fi
+
+# 2. No secrets check
+echo "[ORESHNIK] Verificando secrets..."
+git diff --cached --name-only | grep "\.env" > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "[ORESHNIK] SECRETS EN COMMIT. Abortando push."
+    exit 1
+fi
+
+# 3. Whitespace check
+echo "[ORESHNIK] Verificando whitespace..."
+git diff --check --cached > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "[ORESHNIK] WHITESPACE CORRUPTO. Abortando push."
+    exit 1
+fi
+
+echo "[ORESHNIK] pre-push OK. Continuando push..."
+exit 0

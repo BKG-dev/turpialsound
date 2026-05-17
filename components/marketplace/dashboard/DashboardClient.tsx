@@ -259,11 +259,11 @@ function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
     },
     PAYMENT_RECEIVED: {
       buyer: 'Estamos validando tu pago. Te avisaremos cuando avance.',
-      seller: 'El comprador ya reporto el pago. La revision manual esta en curso y te notificaremos cuando la operacion avance.',
+      seller: 'El comprador ya reporto el pago. Estamos verificando y te notificaremos cuando la operacion avance.',
     },
     VALIDATING: {
       buyer: 'Estamos validando tu pago. Te avisaremos cuando avance.',
-      seller: 'La revision manual sigue en curso. Te notificaremos cuando el pago quede conciliado.',
+      seller: 'El pago esta siendo verificado. Te notificaremos cuando quede conciliado.',
     },
     IN_ESCROW: {
       buyer: 'Los fondos estan protegidos. Coordina la entrega con el vendedor.',
@@ -274,8 +274,8 @@ function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
       seller: 'El comprador confirmo recepcion. El pago al vendedor queda pendiente de liberacion admin.',
     },
     RELEASED: {
-      buyer: 'La operacion esta en cola de pago al vendedor. El equipo procesara el pago manual en breve.',
-      seller: 'El pago esta pendiente de ser enviado por el equipo. Asegurate de tener tus datos de cobro actualizados.',
+      buyer: 'La operacion esta completa. El vendedor recibira su pago.',
+      seller: 'El pago esta siendo procesado por el equipo. Asegurate de tener tus datos de cobro actualizados.',
     },
     DISPUTED: {
       buyer: 'La operacion esta en revision. No se liberaran fondos hasta resolverla.',
@@ -652,19 +652,27 @@ function deriveActionItems(
   return items.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
 }
 
-function statusLabelForTimeline(status: string | null, viewAs: 'buyer' | 'seller') {
-  if (!status) return 'Inicio'
-  return getStatusLabelForView(status, viewAs)
-}
+const SEMAFORO_MILESTONES = [
+  { status: 'INITIATED', label: 'Iniciado' },
+  { status: 'PENDING_PAYMENT', label: 'Pago pendiente' },
+  { status: 'PAYMENT_RECEIVED', label: 'Pago recibido' },
+  { status: 'VALIDATING', label: 'Validando' },
+  { status: 'IN_ESCROW', label: 'Fondos en custodia' },
+  { status: 'DELIVERY_CONFIRMED', label: 'Entrega confirmada' },
+  { status: 'RELEASED', label: 'Pago liberado' },
+]
 
-function timelineReasonLabel(reason: string) {
-  if (reason.includes('seller_delivered')) {
-    return 'Entrega registrada por vendedor. Fondos protegidos hasta confirmacion del comprador.'
-  }
-  if (reason.includes('buyer_confirmed_receipt')) {
-    return 'Comprador confirmo recepcion. Pendiente liberacion admin.'
-  }
-  return reason
+const TERMINAL_STATUSES = ['CANCELLED', 'PAYMENT_FAILED', 'REFUNDED']
+
+function getSemaphoreState(currentStatus: string, milestoneStatus: string): 'completed' | 'current' | 'pending' {
+  const currentIdx = SEMAFORO_MILESTONES.findIndex(m => m.status === currentStatus)
+  const milestoneIdx = SEMAFORO_MILESTONES.findIndex(m => m.status === milestoneStatus)
+
+  if (milestoneIdx === -1) return 'pending'
+  if (currentIdx === -1) return 'pending' // Unknown/error state
+  if (milestoneIdx < currentIdx) return 'completed'
+  if (milestoneIdx === currentIdx) return 'current'
+  return 'pending'
 }
 
 function hasSellerPaidAudit(tx: DashTransactionDetail) {
@@ -855,14 +863,14 @@ function DisputeModal({
           <div className="space-y-1.5">
             <label className="text-xs text-[#a0a0a0]">
               Descripción detallada{' '}
-              <span className="text-[#3a3a3a]">(mín. 20 caracteres)</span>
+              <span className="text-[#6a6a6a]">(mín. 20 caracteres)</span>
             </label>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="Describe con detalle qué ocurrió, cuándo y por qué solicitas una disputa..."
               rows={4}
-              className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#3a3a3a] outline-none resize-none"
+              className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#6a6a6a] outline-none resize-none"
               style={{
                 background: 'rgba(20,20,20,0.8)',
                 border: `1px solid ${description.trim().length > 0 && description.trim().length < 20 ? 'rgba(239,68,68,0.4)' : 'rgba(249,115,22,0.15)'}`,
@@ -873,7 +881,7 @@ function DisputeModal({
               {description.trim().length > 0 && description.trim().length < 20 && (
                 <p className="text-[11px] text-[#ef4444]">Mínimo 20 caracteres</p>
               )}
-              <p className="text-[10px] text-[#3a3a3a] ml-auto">{description.length}/1500</p>
+              <p className="text-[10px] text-[#6a6a6a] ml-auto">{description.length}/1500</p>
             </div>
           </div>
 
@@ -1346,7 +1354,7 @@ function ThreadCard({
             {lastMsg.senderId === currentUserId ? 'Tú: ' : ''}{lastMsg.content}
           </p>
         ) : (
-          <p className="text-xs text-[#3a3a3a] italic">Sin mensajes aún</p>
+          <p className="text-xs text-[#6a6a6a] italic">Sin mensajes aún</p>
         )}
       </div>
 
@@ -1473,7 +1481,7 @@ function ProfileHeader({
   const role = profile?.role ?? 'USER'
 
   const roleLabel: Record<string, string> = { USER: 'Miembro', SOCIO: 'Socio', SUPER: 'Admin' }
-  const roleColor: Record<string, string> = { USER: '#5a5a5a', SOCIO: '#ffc107', SUPER: '#ef4444' }
+  const roleColor: Record<string, string> = { USER: 'var(--mp-text-disabled)', SOCIO: '#ffc107', SUPER: '#ef4444' }
 
   return (
     <div
@@ -1836,7 +1844,7 @@ function TransactionDetailModal({
       style={{ background: 'var(--mp-overlay)', backdropFilter: 'blur(10px)' }}
     >
       <div
-        className="relative flex w-full flex-col h-[100dvh] sm:h-auto sm:max-h-[85vh] sm:max-w-2xl sm:rounded-2xl"
+        className="relative flex w-full flex-col h-[100dvh] sm:h-auto sm:max-h-[92vh] sm:max-w-2xl sm:rounded-2xl"
         style={{
           background: 'var(--mp-panel-solid)',
           border: '1px solid var(--mp-border)',
@@ -1934,28 +1942,115 @@ function TransactionDetailModal({
             </div>
           )}
 
-          {tx.statusHistory && tx.statusHistory.length > 0 && (
-            <div>
-              <SectionHeader title="Linea de Estado" count={tx.statusHistory.length} />
-              <div className="space-y-2">
-                {tx.statusHistory.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="rounded-xl p-3"
-                    style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-xs" style={{ color: 'var(--mp-text-strong)' }}>
-                        {statusLabelForTimeline(entry.fromStatus, viewAs)} <span style={{ color: 'var(--mp-text-faint)' }}>-&gt;</span> {statusLabelForTimeline(entry.toStatus, viewAs)}
-                      </p>
-                      <span className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>{fmtDate(entry.createdAt)}</span>
+          <div>
+            <SectionHeader title="Semaforo de Estados" />
+            <div className="space-y-0">
+              {SEMAFORO_MILESTONES.map((milestone, idx) => {
+                const state = TERMINAL_STATUSES.includes(tx.status)
+                  ? getSemaphoreState(
+                      tx.status === 'CANCELLED' ? 'PENDING_PAYMENT' :
+                        tx.status === 'PAYMENT_FAILED' ? 'PENDING_PAYMENT' :
+                          tx.status === 'REFUNDED' ? 'INITIATED' : tx.status,
+                      milestone.status,
+                    )
+                  : tx.status === 'DISPUTED'
+                    ? getSemaphoreState('IN_ESCROW', milestone.status)
+                    : getSemaphoreState(tx.status, milestone.status)
+
+                const dotColor =
+                  state === 'completed' ? '#4ade80' :
+                    state === 'current' ? '#f59e0b' :
+                      '#ef4444'
+
+                const dotGlow =
+                  state === 'completed' ? '0 0 12px rgba(74,222,128,0.5)' :
+                    state === 'current' ? '0 0 16px rgba(245,158,11,0.6)' :
+                      '0 0 6px rgba(239,68,68,0.3)'
+
+                const bgColor =
+                  state === 'completed' ? 'rgba(74,222,128,0.08)' :
+                    state === 'current' ? 'rgba(245,158,11,0.1)' :
+                      'rgba(239,68,68,0.04)'
+
+                const textColor =
+                  state === 'completed' ? 'var(--mp-text-strong)' :
+                    state === 'current' ? '#f59e0b' :
+                      'var(--mp-text-faint)'
+
+                const isLast = idx === SEMAFORO_MILESTONES.length - 1
+
+                return (
+                  <div key={milestone.status} className="flex items-stretch gap-3">
+                    <div className="flex flex-col items-center">
+                      <div
+                        className="w-3.5 h-3.5 rounded-full flex-shrink-0 mt-1"
+                        style={{ background: dotColor, boxShadow: dotGlow }}
+                      />
+                      {!isLast && (
+                        <div
+                          className="w-px flex-1 my-1"
+                          style={{ background: state === 'completed' ? 'rgba(74,222,128,0.3)' : 'rgba(255,255,255,0.06)' }}
+                        />
+                      )}
                     </div>
-                    {entry.reason && <p className="mt-1 text-[11px]" style={{ color: 'var(--mp-text-muted)' }}>{timelineReasonLabel(entry.reason)}</p>}
+                    <div
+                      className={`flex-1 rounded-xl px-3 py-2 ${!isLast ? 'mb-1' : ''}`}
+                      style={{ background: bgColor, border: state === 'current' ? `1px solid rgba(245,158,11,0.25)` : '1px solid transparent' }}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-medium" style={{ color: textColor }}>
+                          {milestone.label}
+                        </p>
+                        {state === 'completed' && (
+                          <span className="text-[10px] font-semibold" style={{ color: '#4ade80' }}>✓</span>
+                        )}
+                        {state === 'current' && (
+                          <span className="text-[10px] font-semibold animate-pulse" style={{ color: '#f59e0b' }}>●</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
+                )
+              })}
+              {TERMINAL_STATUSES.includes(tx.status) && (
+                <div className="flex items-stretch gap-3 mt-1">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className="w-3.5 h-3.5 rounded-full flex-shrink-0 mt-1"
+                      style={{ background: '#6b7280', boxShadow: '0 0 12px rgba(107,114,128,0.5)' }}
+                    />
+                  </div>
+                  <div
+                    className="flex-1 rounded-xl px-3 py-2"
+                    style={{ background: 'rgba(107,114,128,0.08)', border: '1px solid rgba(107,114,128,0.2)' }}
+                  >
+                    <p className="text-xs font-medium" style={{ color: 'var(--mp-text-faint)' }}>
+                      {STATUS_CONFIG[tx.status]?.label ?? tx.status}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {tx.status === 'DISPUTED' && (
+                <div className="flex items-stretch gap-3 mt-1">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className="w-3.5 h-3.5 rounded-full flex-shrink-0 mt-1"
+                      style={{ background: '#f97316', boxShadow: '0 0 14px rgba(249,115,22,0.6)' }}
+                    />
+                  </div>
+                  <div
+                    className="flex-1 rounded-xl px-3 py-2"
+                    style={{ background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.25)' }}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-medium" style={{ color: '#f97316' }}>En Disputa</p>
+                      <span className="text-[10px] font-semibold animate-pulse" style={{ color: '#f97316' }}>●</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           <div
             className="flex flex-wrap gap-2 rounded-2xl p-3"
@@ -3286,7 +3381,7 @@ export function DashboardClient({
                 />
               ) : (
                 <>
-                  <p className="text-[10px] text-[#3a3a3a] text-center pb-1">
+                  <p className="text-[10px] text-[#6a6a6a] text-center pb-1">
                     {favorites.length} listing{favorites.length !== 1 ? 's' : ''} guardado{favorites.length !== 1 ? 's' : ''}
                   </p>
                   {favorites.map((l: DashListing) => (

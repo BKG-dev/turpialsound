@@ -123,7 +123,7 @@ export function CartDrawer() {
               <div className="flex-1 overflow-y-auto">
                 {isEmpty ? (
                   <div className="flex flex-col items-center justify-center gap-3 py-20 px-5 text-center">
-                    <ShoppingBag size={32} className="text-[#3a3a3a]" />
+                    <ShoppingBag size={32} className="text-[#6a6a6a]" />
                     <div>
                       <p className="text-sm text-[#b8b8b8]">Tu carrito esta vacio</p>
                       <p className="mt-1 text-[11px] text-[#7a7a7a]">
@@ -164,7 +164,7 @@ export function CartDrawer() {
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center">
-                              <ShoppingBag size={16} className="text-[#3a3a3a]" />
+                              <ShoppingBag size={16} className="text-[#6a6a6a]" />
                             </div>
                           )}
                         </div>
@@ -213,7 +213,7 @@ export function CartDrawer() {
                         <button
                           onClick={() => removeItem(item.listingId)}
                           className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded transition-colors hover:bg-red-500/10"
-                          style={{ color: '#5a5a5a' }}
+                          style={{ color: 'var(--mp-text-disabled)' }}
                           title="Eliminar del carrito"
                         >
                           <Trash2 size={13} />

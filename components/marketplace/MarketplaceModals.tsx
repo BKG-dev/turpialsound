@@ -682,6 +682,84 @@ function SellFlow({
               </select>
             </div>
 
+            {/* S-LOC: Location dropdowns state→city cascade */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs text-[#a0a0a0]">Estado</label>
+                <select value={formValues.state ?? ''} onChange={e => { onFieldChange('state', e.target.value); onFieldChange('city', '') }}
+                  className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] outline-none"
+                  style={{ background: 'var(--mp-input)', border: '1px solid var(--mp-input-border)' }}>
+                  <option value="">Seleccionar estado</option>
+                  <option value="Distrito Capital">Distrito Capital</option>
+                  <option value="Miranda">Miranda</option>
+                  <option value="Zulia">Zulia</option>
+                  <option value="Carabobo">Carabobo</option>
+                  <option value="Lara">Lara</option>
+                  <option value="Aragua">Aragua</option>
+                  <option value="Anzoategui">Anzoategui</option>
+                  <option value="Bolivar">Bolivar</option>
+                  <option value="Tachira">Tachira</option>
+                  <option value="Merida">Merida</option>
+                  <option value="Falcon">Falcon</option>
+                  <option value="Monagas">Monagas</option>
+                  <option value="Sucre">Sucre</option>
+                  <option value="Nueva Esparta">Nueva Esparta</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs text-[#a0a0a0]">Ciudad</label>
+                <select value={formValues.city ?? ''} onChange={e => onFieldChange('city', e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] outline-none"
+                  style={{ background: 'var(--mp-input)', border: '1px solid var(--mp-input-border)' }}>
+                  <option value="">Seleccionar ciudad</option>
+                  {(formValues.state === 'Distrito Capital' || !formValues.state) && (
+                    <><option value="Caracas">Caracas</option><option value="El Hatillo">El Hatillo</option></>
+                  )}
+                  {formValues.state === 'Miranda' && (
+                    <><option value="Los Teques">Los Teques</option><option value="Guarenas">Guarenas</option><option value="Guatire">Guatire</option><option value="San Antonio">San Antonio</option><option value="Charallave">Charallave</option></>
+                  )}
+                  {formValues.state === 'Zulia' && (
+                    <><option value="Maracaibo">Maracaibo</option><option value="Cabimas">Cabimas</option><option value="Ciudad Ojeda">Ciudad Ojeda</option></>
+                  )}
+                  {formValues.state === 'Carabobo' && (
+                    <><option value="Valencia">Valencia</option><option value="Naguanagua">Naguanagua</option><option value="Puerto Cabello">Puerto Cabello</option></>
+                  )}
+                  {formValues.state === 'Lara' && (
+                    <><option value="Barquisimeto">Barquisimeto</option><option value="Cabudare">Cabudare</option></>
+                  )}
+                  {formValues.state === 'Aragua' && (
+                    <><option value="Maracay">Maracay</option><option value="Turmero">Turmero</option><option value="La Victoria">La Victoria</option></>
+                  )}
+                  {formValues.state === 'Anzoategui' && (
+                    <><option value="Barcelona">Barcelona</option><option value="Puerto La Cruz">Puerto La Cruz</option><option value="Lecheria">Lecheria</option></>
+                  )}
+                  {formValues.state === 'Bolivar' && (
+                    <><option value="Ciudad Guayana">Ciudad Guayana</option><option value="Ciudad Bolivar">Ciudad Bolivar</option></>
+                  )}
+                  {formValues.state === 'Tachira' && (
+                    <><option value="San Cristobal">San Cristobal</option><option value="San Antonio del Tachira">San Antonio del Tachira</option></>
+                  )}
+                  {formValues.state === 'Merida' && (
+                    <><option value="Merida">Merida</option><option value="El Vigia">El Vigia</option></>
+                  )}
+                  {formValues.state === 'Falcon' && (
+                    <><option value="Coro">Coro</option><option value="Punto Fijo">Punto Fijo</option></>
+                  )}
+                </select>
+              </div>
+            </div>
+
+            {/* S-INV: Inventory with stock tracking */}
+            <div className="space-y-1.5">
+              <label className="text-xs text-[#a0a0a0]">Cantidad disponible</label>
+              <input type="number" min="1" max="999" value={formValues.inventory ?? '1'} onChange={e => { onFieldChange('inventory', e.target.value); onFieldChange('hasInventory', 'true') }}
+                placeholder="1"
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[var(--mp-text-faint)] outline-none"
+                style={fieldInputStyle('inventory', fieldErrors)}
+                onFocus={onFocus('inventory')} onBlur={onBlur('inventory')} />
+              <p className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>Se descuenta automaticamente con cada venta hasta agotarse. Minimo 1.</p>
+            </div>
+
             {/* Image upload */}
             <div className="space-y-2">
               <label className="text-xs text-[#a0a0a0]">
@@ -1059,7 +1137,11 @@ export function MarketplaceModals({
         tags: [],
         price: parseFloat(rawPrice) || 0,
         currency: 'USD',
-        hasInventory: false,
+        hasInventory: formValues.hasInventory === 'true',
+        inventory: formValues.inventory ? parseInt(formValues.inventory) : undefined,
+        city: formValues.city || undefined,
+        state: formValues.state || undefined,
+        isLocationPublic: true,
         coverImageUrl: uploadedImageUrls[0],
         mediaUrls: uploadedImageUrls.slice(1),
       })

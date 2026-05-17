@@ -1,10 +1,10 @@
 /**
  * BCV Rate Refresh Scheduler
- *
+ * 
  * Política de actualización:
  * - Lun-Vie 4pm-7pm VET (20:00-23:00 UTC): cada 30 min (horario pico BCV)
  * - Resto de horas: cada 60 min
- *
+ * 
  * Formato VET (Venezuela Standard Time): UTC-4 todo el año (sin DST)
  */
 

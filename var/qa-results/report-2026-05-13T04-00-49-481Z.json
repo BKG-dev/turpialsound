@@ -1,0 +1,40 @@
+{
+  "runId": "2026-05-13T04-00-49-481Z",
+  "appUrl": "https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app",
+  "startedAt": "2026-05-13T04:00:49.482Z",
+  "finishedAt": "2026-05-13T04:00:49.492Z",
+  "modules": [
+    {
+      "module": "QA-02",
+      "status": "RUNNING",
+      "durationMs": null,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [],
+      "startedAt": "2026-05-13T04:00:49.490Z",
+      "finishedAt": null
+    },
+    {
+      "module": "QA-02",
+      "status": "FAIL",
+      "durationMs": null,
+      "failureCode": "DB_MISSING_TABLE",
+      "failureDetail": "Cannot find module 'D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\generated\\prisma\\client' imported from D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\scripts\\qa\\lib\\db-read.mjs",
+      "checks": [
+        {
+          "check": "dbConnection",
+          "status": "FAIL",
+          "detail": "Cannot find module 'D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\generated\\prisma\\client' imported from D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\scripts\\qa\\lib\\db-read.mjs"
+        }
+      ],
+      "startedAt": "2026-05-13T04:00:49.490Z",
+      "finishedAt": "2026-05-13T04:00:49.491Z"
+    }
+  ],
+  "summary": {
+    "total": 2,
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0
+  }
+}
