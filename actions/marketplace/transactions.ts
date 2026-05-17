@@ -96,7 +96,12 @@ export async function initiatePurchase(
 
     const listing = await db.mpListing.findUnique({
       where: { id: listingId },
-      include: {
+      select: {
+        id: true,
+        status: true,
+        sellerId: true,
+        price: true,
+        quantity: true,
         seller: {
           select: {
             payoutMethods: {
@@ -114,8 +119,8 @@ export async function initiatePurchase(
     if (listing.status !== 'ACTIVE') return { success: false, message: 'Este listing no esta disponible' }
     if (listing.sellerId === session.userId) return { success: false, message: 'No puedes comprar tu propio listing' }
 
-    // Guard: prevent double sale — RELEASED included because listing is unique (one sale = one listing)
-    const activeTx = await db.mpTransaction.findFirst({
+    // Guard: verificar inventario real — permitir multiples compras si quantity > 1
+    const activeTransactionsCount = await db.mpTransaction.count({
       where: {
         listingId,
         status: {
@@ -132,8 +137,9 @@ export async function initiatePurchase(
       },
     })
 
-    if (activeTx) {
-      return { success: false, message: 'Este articulo ya tiene una operacion en curso y no esta disponible para la compra' }
+    const availableQuantity = (listing.quantity ?? 1) - activeTransactionsCount
+    if (availableQuantity <= 0) {
+      return { success: false, message: 'Este articulo esta agotado' }
     }
 
     const sellerPayoutMethod = mapSellerPayoutMethod(listing.seller.payoutMethods[0]?.methodType)

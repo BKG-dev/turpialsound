@@ -31,7 +31,7 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
     : false
   const maxAvailable = listing.type === 'product' ? (listing.quantity ?? 1) : 99
   const isOutOfStock = maxAvailable < 1
-  const isUnavailable = listing.status !== 'active' || !!listing.activeTransactionStatus || isOutOfStock
+  const isUnavailable = listing.status !== 'active' || isOutOfStock
   const price = listing.type === 'product' ? listing.price : listing.priceFrom
   const sellerName = listing.type === 'product' ? listing.seller.name : listing.talent.name
   const sellerId = listing.type === 'product' ? listing.seller.id : listing.talent.id
