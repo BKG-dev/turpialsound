@@ -29,7 +29,7 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
   const isSeller = currentUserId
     ? (listing.type === 'product' ? listing.seller.id : listing.talent.id) === currentUserId
     : false
-  const maxAvailable = listing.type === 'product' ? (listing.quantity ?? 1) : 99
+  const maxAvailable = listing.type === 'product' ? ((listing.hasInventory && listing.inventory != null) ? listing.inventory : 99) : 99
   const isOutOfStock = maxAvailable < 1
   const isUnavailable = listing.status !== 'active' || isOutOfStock
   const price = listing.type === 'product' ? listing.price : listing.priceFrom
@@ -61,7 +61,7 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
       sellerName,
       sellerId,
       quantity: finalQty,
-      availableQuantity: maxAvailable,
+      maxAvailable,
     })
     setShowQty(false)
     setAdded(true)

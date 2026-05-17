@@ -101,7 +101,7 @@ export async function initiatePurchase(
         status: true,
         sellerId: true,
         price: true,
-        quantity: true,
+        inventory: true,
         seller: {
           select: {
             payoutMethods: {
@@ -137,8 +137,10 @@ export async function initiatePurchase(
       },
     })
 
-    const availableQuantity = (listing.quantity ?? 1) - activeTransactionsCount
-    if (availableQuantity <= 0) {
+    const availableInventory = listing.hasInventory && listing.inventory != null
+      ? listing.inventory - activeTransactionsCount
+      : 99
+    if (availableInventory <= 0) {
       return { success: false, message: 'Este articulo esta agotado' }
     }
 

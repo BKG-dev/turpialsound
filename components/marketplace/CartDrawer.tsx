@@ -213,7 +213,7 @@ export function CartDrawer() {
                               </span>
                               <button
                                 onClick={() => updateQuantity(item.listingId, item.quantity + 1)}
-                                disabled={item.quantity >= (item.availableQuantity ?? 99)}
+                                disabled={item.quantity >= (item.maxAvailable ?? 99)}
                                 className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-white/5 disabled:opacity-30"
                                 style={{ color: 'var(--mp-text-muted)', border: '1px solid var(--mp-border)' }}
                               >
@@ -224,9 +224,9 @@ export function CartDrawer() {
                               ${(item.price * item.quantity).toLocaleString()}
                             </span>
                           </div>
-                          {item.availableQuantity < 99 && (
+                          {item.maxAvailable < 99 && (
                             <p className="mt-0.5 text-[9px] text-[#6a6a6a]">
-                              {item.availableQuantity} disponibles
+                              {item.maxAvailable} disponibles
                             </p>
                           )}
                         </div>

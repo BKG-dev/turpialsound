@@ -7,7 +7,7 @@ const STORAGE_KEY = 'turpial-cart'
 
 type CartContextValue = {
   items: CartItem[]
-  addItem: (item: Omit<CartItem, 'quantity' | 'availableQuantity'> & { quantity?: number; availableQuantity?: number }) => void
+  addItem: (item: Omit<CartItem, 'quantity' | 'maxAvailable'> & { quantity?: number; maxAvailable?: number }) => void
   removeItem: (listingId: string) => void
   updateQuantity: (listingId: string, quantity: number) => void
   clearCart: () => void
@@ -41,8 +41,8 @@ function loadCart(): CartItem[] {
       const cartItem = item as CartItem
       return {
         ...cartItem,
-        availableQuantity: cartItem.availableQuantity ?? 99,
-        quantity: Math.min(cartItem.quantity, cartItem.availableQuantity ?? 99),
+        maxAvailable: cartItem.maxAvailable ?? 99,
+        quantity: Math.min(cartItem.quantity, cartItem.maxAvailable ?? 99),
       }
     })
   } catch {
@@ -75,14 +75,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, hydrated])
 
   const addItem = useCallback(
-    (item: Omit<CartItem, 'quantity' | 'availableQuantity'> & { quantity?: number; availableQuantity?: number }) => {
+    (item: Omit<CartItem, 'quantity' | 'maxAvailable'> & { quantity?: number; maxAvailable?: number }) => {
       setItems((prev) => {
         const existing = prev.find((i) => i.listingId === item.listingId)
         if (existing) return prev
-        const maxQty = item.availableQuantity ?? 99
+        const maxQty = item.maxAvailable ?? 99
         const qty = Math.min(item.quantity ?? 1, maxQty)
         if (qty < 1) return prev
-        return [...prev, { ...item, quantity: qty, availableQuantity: item.availableQuantity ?? 99 } as CartItem]
+        return [...prev, { ...item, quantity: qty, maxAvailable: item.maxAvailable ?? 99 } as CartItem]
       })
     },
     [],
@@ -97,7 +97,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((prev) =>
       prev.map((i) => {
         if (i.listingId !== listingId) return i
-        const capped = Math.min(quantity, i.availableQuantity ?? 99)
+        const capped = Math.min(quantity, i.maxAvailable ?? 99)
         return { ...i, quantity: capped }
       }),
     )
