@@ -3,7 +3,7 @@ type: master-dashboard
 project: "Turpial Sound"
 status: active-integration
 phase: "Fase F: Integracion de ramas hijas. Code merge pendiente."
-last_updated: "16/05/26 21:04"
+last_updated: "17/05/26 00:10"
 mother_branch: "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16"
 mother_head: "RAMAMADRE_BASE"
 production_branch: "prod/current-www-turpialsound-2026-05-08"
@@ -283,7 +283,7 @@ git push origin main
 
 ---
 
-> **Ultima actualizacion:** 16/05/26 21:04 VET | **Estado:** Ambas ramas hijas listas con docs sincronizados. Code merge a madre pendiente (Jean). | **Tag:** `integracion-docs-v2-2026-05-16`
+> **Ultima actualizacion:** 17/05/26 00:10 VET | **Estado:** Ambas ramas hijas listas con docs sincronizados. Code merge a madre pendiente (Jean). | **Tag:** `integracion-docs-v2-2026-05-17`
 
 ---
 
