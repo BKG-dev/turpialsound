@@ -13,7 +13,7 @@ param(
 
 # Si no se pasa MotherBranch, leer de .mother-version.json
 if (-not $MotherBranch) {
-    $versionFile = Join-Path $PSScriptRoot "runs" ".mother-version.json"
+    $versionFile = "$PSScriptRoot\runs\.mother-version.json"
     if (Test-Path $versionFile) {
         $config = Get-Content $versionFile -Raw | ConvertFrom-Json
         $MotherBranch = $config.current
@@ -66,9 +66,9 @@ $canonicalDocs = @(
 $dates = @{}
 foreach ($doc in $canonicalDocs) {
     if (Test-Path $doc) {
-        $match = Select-String -Path $doc -Pattern "last_updated|actualizado" | Select-Object -First 1
+        $match = Select-String -Path $doc -Pattern "^(actualizado|last_updated):\s*" | Select-Object -First 1
         if ($match) {
-            $date = $match.Line -replace '.*:\s*"?(.+?)"?\s*$', '$1'
+            $date = $match.Line -replace '^(actualizado|last_updated):\s*"?(.+?)"?\s*$', '$2'
             $dates[$doc] = $date
             Write-Sync "$doc = $date" -T "PASS"
         } else {
