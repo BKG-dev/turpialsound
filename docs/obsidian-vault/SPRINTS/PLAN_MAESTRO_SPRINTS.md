@@ -410,7 +410,8 @@ TRACK 5 🟧 UI/UX:        S-UX-01 → S-UX-02 ✅ CERRADO
 5. Completar lógica de compra multi-artículo ("Comprar todo"):
    - Cada item genera su propia `MpTransaction`
    - Consolidar en dashboard admin como compras separadas
-6. Test Playwright: agregar 3 items → modificar cantidades → verificar validación inventario → checkout
+6. **Mostrar imagen del listing en el carrito**: si `listing.images[0]` es null → placeholder. Si existe → mostrar.
+7. Test Playwright: agregar 3 items → modificar cantidades → verificar validación inventario → verificar imágenes en carrito → checkout
 
 **Script de prueba automatizada:** `scripts/qa/playwright/s-mp-01-cart.spec.mjs`
 > Integrado con `login.mjs` (loginViaMarketplaceModal), `env.mjs` (loadEnv), `screenshot.mjs`.
@@ -423,12 +424,13 @@ TRACK 5 🟧 UI/UX:        S-UX-01 → S-UX-02 ✅ CERRADO
 - [x] ~~S-MP-01-04~~ Editar cantidad en carrito → respeta `Math.min(nuevaCantidad, listing.quantity)` → `s-mp-01-cart.spec.mjs`
 - [x] ~~S-MP-01-05~~ "Comprar todo" genera N transacciones separadas (una por listing distinto) → `s-mp-01-cart.spec.mjs`
 - [x] ~~S-MP-01-06~~ Dashboard admin muestra compras multi-artículo como filas separadas → `s-mp-01-cart.spec.mjs`
-- [x] ~~S-MP-01-07~~ **👤 MANUAL:** Verificar en Vercel preview que el carrito no pierde items al recargar página
-- [x] ~~S-MP-01-08~~ `npx tsc --noEmit` limpio + `pnpm build` exitoso
-- [x] ~~S-MP-01-09~~ Documentación actualizada: `docs/obsidian-vault/00_CENTRAL_TURPIAL.md`, `docs/marketplace/01_ROADMAP_AND_STATUS.md`
-- [x] ~~S-MP-01-10~~ Cierre con `close-sprint.mjs`: cobertura holística OK, push completo a rama hija, push docs a madre dinámica
+- [x] ~~S-MP-01-07~~ **CadA ítem del carrito muestra su imagen** (`listing.images[0]`) o placeholder si es null → `s-mp-01-cart.spec.mjs`
+- [x] ~~S-MP-01-08~~ **👤 MANUAL:** Verificar en Vercel preview que el carrito no pierde items al recargar página
+- [x] ~~S-MP-01-09~~ `npx tsc --noEmit` limpio + `pnpm build` exitoso
+- [x] ~~S-MP-01-10~~ Documentación actualizada: `docs/obsidian-vault/00_CENTRAL_TURPIAL.md`, `docs/marketplace/01_ROADMAP_AND_STATUS.md`
+- [x] ~~S-MP-01-11~~ Cierre con `close-sprint.mjs`: cobertura holística OK, push completo a rama hija, push docs a madre dinámica
 
-**Cierre:** ✅ S-MP-01 CERRADO cuando 10/10 criterios = PASS. 6 automatizados + 1 manual + 3 metodológicos.
+**Cierre:** ✅ S-MP-01 CERRADO cuando 11/11 criterios = PASS. 7 automatizados + 1 manual + 3 metodológicos.
 
 ---
 
