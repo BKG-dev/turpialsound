@@ -1406,21 +1406,22 @@ function TabBar({
 
   return (
     <div
-      className="grid grid-cols-3 gap-1 rounded-xl p-1 lg:grid-cols-6"
-      style={{ background: 'var(--mp-panel)', border: '1px solid var(--mp-border)' }}
+      className="sticky top-[49px] z-30 grid grid-cols-2 gap-1.5 rounded-2xl p-1.5 backdrop-blur-xl sm:grid-cols-3 lg:grid-cols-6"
+      style={{ background: 'color-mix(in srgb, var(--mp-panel) 92%, transparent)', border: '1px solid var(--mp-border)', boxShadow: 'var(--mp-card-shadow)' }}
     >
       {tabs.map(t => {
         const isActive = active === t.id
         const Icon = t.icon
+        const count = counts[t.id]
         return (
           <button
             key={t.id}
             onClick={() => onChange(t.id)}
-            className="flex min-h-[48px] min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-all duration-200"
+            className="flex min-h-[64px] min-w-0 flex-col items-start justify-between rounded-xl px-3 py-2.5 text-left transition-all duration-200"
             style={
               isActive
                 ? {
-                    background: 'linear-gradient(135deg, rgba(0,174,239,0.18) 0%, rgba(0,80,200,0.14) 100%)',
+                    background: 'linear-gradient(135deg, rgba(0,174,239,0.2) 0%, rgba(0,80,200,0.14) 100%)',
                     border: '1px solid rgba(0,174,239,0.25)',
                     color: '#00aeef',
                     boxShadow: '0 0 16px rgba(0,174,239,0.15)',
@@ -1428,12 +1429,14 @@ function TabBar({
                 : { color: 'var(--mp-text-faint)', border: '1px solid transparent' }
             }
           >
-            <Icon size={13} className="shrink-0" />
-            <span className="min-w-0 truncate">{t.label}</span>
-            {counts[t.id] > 0 && (
+            <span className="flex w-full min-w-0 items-center gap-1.5">
+              <Icon size={13} className="shrink-0" />
+              <span className="min-w-0 truncate text-[11px] font-semibold">{t.label}</span>
+            </span>
+            {count > 0 ? (
               <span
                 className={cn(
-                  'ml-0.5 shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold tabular-nums',
+                  'rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums',
                   t.id === 'messages' && !isActive && 'animate-pulse',
                 )}
                 style={
@@ -1444,8 +1447,10 @@ function TabBar({
                       : { background: 'var(--mp-card-subtle)', color: 'var(--mp-text-faint)' }
                 }
               >
-                {counts[t.id] > 99 ? '99+' : counts[t.id]}
+                {count > 99 ? '99+' : count}
               </span>
+            ) : (
+              <span className="text-[10px]" style={{ color: 'var(--mp-text-disabled)' }}>0</span>
             )}
           </button>
         )
@@ -2183,10 +2188,59 @@ function ActionCenterSection({
   onAction: (item: ActionItem) => void
   busyKey: string | null
 }) {
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<ActionPriority, boolean>>({
+    required: false,
+    review: false,
+    pending: true,
+    closed: true,
+  })
   if (items.length === 0) return null
 
   const requiredCount = items.filter(item => item.priority === 'required').length
   const reviewCount = items.filter(item => item.priority === 'review').length
+  const groupConfigs: Array<{
+    id: ActionPriority
+    title: string
+    subtitle: string
+    icon: LucideIcon
+    accent: string
+  }> = [
+    {
+      id: 'required',
+      title: 'Requiere tu accion',
+      subtitle: 'Bloquea el avance de una compra, venta o cobro.',
+      icon: AlertTriangle,
+      accent: ACTION_ACCENT.required,
+    },
+    {
+      id: 'review',
+      title: 'En revision Turpial',
+      subtitle: 'Pagos o disputas que estan siendo validadas por el equipo.',
+      icon: Clock,
+      accent: ACTION_ACCENT.review,
+    },
+    {
+      id: 'pending',
+      title: 'Esperando a otra parte',
+      subtitle: 'Seguimiento sin accion inmediata de tu lado.',
+      icon: Shield,
+      accent: ACTION_ACCENT.pending,
+    },
+    {
+      id: 'closed',
+      title: 'Cerradas',
+      subtitle: 'Operaciones finalizadas o sin bloqueo actual.',
+      icon: CheckCircle2,
+      accent: ACTION_ACCENT.closed,
+    },
+  ]
+  const groups = groupConfigs
+    .map(group => ({ ...group, items: items.filter(item => item.priority === group.id) }))
+    .filter(group => group.items.length > 0)
+
+  function toggleGroup(groupId: ActionPriority) {
+    setCollapsedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }))
+  }
 
   return (
     <div
@@ -2217,9 +2271,9 @@ function ActionCenterSection({
             <Zap size={14} color={requiredCount > 0 ? '#f97316' : '#00aeef'} />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold" style={{ color: 'var(--mp-text-strong)' }}>Proximos pasos</p>
+            <p className="truncate text-sm font-semibold" style={{ color: 'var(--mp-text-strong)' }}>Bandeja prioritaria</p>
             <p className="truncate text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
-              {items.length} operacion{items.length !== 1 ? 'es' : ''}
+              {items.length} mensaje{items.length !== 1 ? 's' : ''} agrupado{items.length !== 1 ? 's' : ''}
               {requiredCount > 0 && <span className="ml-1" style={{ color: '#f97316' }}>- {requiredCount} requiere{requiredCount === 1 ? '' : 'n'} accion</span>}
               {reviewCount > 0 && <span className="ml-1" style={{ color: '#f59e0b' }}>- {reviewCount} en revision</span>}
             </p>
@@ -2227,73 +2281,133 @@ function ActionCenterSection({
         </div>
       </div>
 
-      <div className="divide-y" style={{ borderColor: 'var(--mp-border)' }}>
-        {items.map(item => {
-          const isBusy = busyKey === item.key
-          const hasCta = Boolean(item.ctaLabel && item.ctaType)
-          const listingTitle = item.tx.listing?.title ?? 'Listing eliminado'
-          const otherParty = item.viewAs === 'buyer' ? item.tx.seller : item.tx.buyer
+      <div className="space-y-2 p-2 sm:p-3">
+        {groups.map(group => {
+          const GroupIcon = group.icon
+          const isCollapsed = collapsedGroups[group.id]
+          const buyerCount = group.items.filter(item => item.viewAs === 'buyer').length
+          const sellerCount = group.items.length - buyerCount
 
           return (
             <div
-              key={item.key}
-              className="flex flex-col gap-3 px-4 py-3 transition-colors hover:bg-[rgba(255,255,255,0.01)] sm:flex-row sm:items-center sm:px-5"
+              key={group.id}
+              className="overflow-hidden rounded-xl"
+              style={{ background: 'var(--mp-card-subtle)', border: `1px solid ${CHIP_BORDER[group.id]}` }}
             >
-              <div className="flex min-w-0 flex-1 items-start gap-3">
-                <span
-                  className="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
-                  style={{
-                    background: CHIP_BG[item.priority],
-                    border: `1px solid ${CHIP_BORDER[item.priority]}`,
-                    color: item.accent,
-                  }}
-                >
-                  {item.priority === 'required' && <AlertTriangle size={9} />}
-                  {item.priority === 'review' && <Clock size={9} />}
-                  {item.priority === 'pending' && <Shield size={9} />}
-                  {item.priority === 'closed' && <CheckCircle2 size={9} />}
-                  {item.chipLabel}
-                </span>
-
-                <div className="min-w-0">
-                  <p className="text-[11px] leading-snug" style={{ color: 'var(--mp-text-muted)' }}>{item.description}</p>
-                  <p className="mt-0.5 truncate text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
-                    <span className="font-medium" style={{ color: 'var(--mp-text-soft)' }}>{listingTitle}</span>
-                    <span className="mx-1">-</span>
-                    {item.viewAs === 'buyer' ? 'Vendedor: ' : 'Comprador: '}
-                    {otherParty.displayName}
-                    <span className="mx-1">-</span>
-                    ${Number(item.tx.amount).toLocaleString('es-VE')}
-                  </p>
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.id)}
+                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-white/[0.02]"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span
+                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
+                    style={{ background: CHIP_BG[group.id], color: group.accent, border: `1px solid ${CHIP_BORDER[group.id]}` }}
+                  >
+                    <GroupIcon size={14} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-xs font-semibold" style={{ color: 'var(--mp-text-strong)' }}>
+                      {group.title}
+                    </span>
+                    <span className="mt-0.5 block truncate text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
+                      {group.subtitle}
+                    </span>
+                  </span>
                 </div>
-              </div>
+                <div className="flex flex-shrink-0 items-center gap-2">
+                  <span className="hidden text-[10px] sm:inline" style={{ color: 'var(--mp-text-faint)' }}>
+                    {buyerCount > 0 && `${buyerCount} compra${buyerCount === 1 ? '' : 's'}`}
+                    {buyerCount > 0 && sellerCount > 0 && ' - '}
+                    {sellerCount > 0 && `${sellerCount} venta${sellerCount === 1 ? '' : 's'}`}
+                  </span>
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums"
+                    style={{ background: CHIP_BG[group.id], color: group.accent }}
+                  >
+                    {group.items.length}
+                  </span>
+                  <ChevronRight
+                    size={14}
+                    className={cn('transition-transform duration-200', !isCollapsed && 'rotate-90')}
+                    style={{ color: 'var(--mp-text-faint)' }}
+                  />
+                </div>
+              </button>
 
-              {hasCta && (
-                <button
-                  onClick={() => onAction(item)}
-                  disabled={isBusy || item.disabled}
-                  className="inline-flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all disabled:opacity-50"
-                  style={{
-                    background: item.priority === 'required' ? 'rgba(249,115,22,0.12)' : 'rgba(0,174,239,0.08)',
-                    border: `1px solid ${item.priority === 'required' ? 'rgba(249,115,22,0.25)' : 'rgba(0,174,239,0.2)'}`,
-                    color: item.priority === 'required' ? '#f97316' : '#00aeef',
-                  }}
-                >
-                  {isBusy ? (
-                    <Loader2 size={11} className="animate-spin" />
-                  ) : item.ctaType === 'confirm-delivery' ? (
-                    <CheckCircle2 size={11} />
-                  ) : item.ctaType === 'seller-deliver' ? (
-                    <Send size={11} />
-                  ) : item.ctaType === 'payout-setup' ? (
-                    <Wallet size={11} />
-                  ) : item.ctaType === 'open-messages' ? (
-                    <MessageSquare size={11} />
-                  ) : (
-                    <ExternalLink size={11} />
-                  )}
-                  {item.ctaLabel}
-                </button>
+              {!isCollapsed && (
+                <div className="divide-y" style={{ borderColor: 'var(--mp-border)' }}>
+                  {group.items.map(item => {
+                    const isBusy = busyKey === item.key
+                    const hasCta = Boolean(item.ctaLabel && item.ctaType)
+                    const listingTitle = item.tx.listing?.title ?? 'Listing eliminado'
+                    const otherParty = item.viewAs === 'buyer' ? item.tx.seller : item.tx.buyer
+
+                    return (
+                      <div
+                        key={item.key}
+                        className="flex flex-col gap-3 px-4 py-3 transition-colors hover:bg-[rgba(255,255,255,0.01)] sm:flex-row sm:items-center"
+                      >
+                        <div className="flex min-w-0 flex-1 items-start gap-3">
+                          <span
+                            className="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
+                            style={{
+                              background: CHIP_BG[item.priority],
+                              border: `1px solid ${CHIP_BORDER[item.priority]}`,
+                              color: item.accent,
+                            }}
+                          >
+                            {item.priority === 'required' && <AlertTriangle size={9} />}
+                            {item.priority === 'review' && <Clock size={9} />}
+                            {item.priority === 'pending' && <Shield size={9} />}
+                            {item.priority === 'closed' && <CheckCircle2 size={9} />}
+                            {item.chipLabel}
+                          </span>
+
+                          <div className="min-w-0">
+                            <p className="text-[11px] leading-snug" style={{ color: 'var(--mp-text-muted)' }}>{item.description}</p>
+                            <p className="mt-0.5 truncate text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
+                              <span className="font-medium" style={{ color: 'var(--mp-text-soft)' }}>{listingTitle}</span>
+                              <span className="mx-1">-</span>
+                              {item.viewAs === 'buyer' ? 'Vendedor: ' : 'Comprador: '}
+                              {otherParty.displayName}
+                              <span className="mx-1">-</span>
+                              ${Number(item.tx.amount).toLocaleString('es-VE')}
+                            </p>
+                          </div>
+                        </div>
+
+                        {hasCta && (
+                          <button
+                            onClick={() => onAction(item)}
+                            disabled={isBusy || item.disabled}
+                            className="inline-flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all disabled:opacity-50"
+                            style={{
+                              background: item.priority === 'required' ? 'rgba(249,115,22,0.12)' : 'rgba(0,174,239,0.08)',
+                              border: `1px solid ${item.priority === 'required' ? 'rgba(249,115,22,0.25)' : 'rgba(0,174,239,0.2)'}`,
+                              color: item.priority === 'required' ? '#f97316' : '#00aeef',
+                            }}
+                          >
+                            {isBusy ? (
+                              <Loader2 size={11} className="animate-spin" />
+                            ) : item.ctaType === 'confirm-delivery' ? (
+                              <CheckCircle2 size={11} />
+                            ) : item.ctaType === 'seller-deliver' ? (
+                              <Send size={11} />
+                            ) : item.ctaType === 'payout-setup' ? (
+                              <Wallet size={11} />
+                            ) : item.ctaType === 'open-messages' ? (
+                              <MessageSquare size={11} />
+                            ) : (
+                              <ExternalLink size={11} />
+                            )}
+                            {item.ctaLabel}
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               )}
             </div>
           )
@@ -2370,6 +2484,10 @@ export function DashboardClient({
 
   const initialUnread = initialThreads.reduce((sum, thread) => sum + getTxUnreadCount(thread, session.userId), 0)
   const [unreadCount, setUnreadCount] = useState(initialUnread)
+
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab)
+  }, [initialTab])
 
   async function refreshThreadsAndUnread() {
     const [unreadResult, threadsResult] = await Promise.allSettled([
@@ -2712,14 +2830,14 @@ export function DashboardClient({
           onTabClick={handleTabChange}
         />
 
+        {/* Tab Navigation */}
+        <TabBar active={activeTab} onChange={handleTabChange} counts={counts} />
+
         <ActionCenterSection
           items={actionItems}
           onAction={handleActionCenterCta}
           busyKey={actionBusyKey}
         />
-
-        {/* Tab Navigation */}
-        <TabBar active={activeTab} onChange={handleTabChange} counts={counts} />
 
         {dashboardMessage && (
           <div

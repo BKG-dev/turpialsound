@@ -400,6 +400,7 @@ export const ModelName = {
   MpListingQuestion: 'MpListingQuestion',
   MpChatThread: 'MpChatThread',
   MpMessage: 'MpMessage',
+  MpOrder: 'MpOrder',
   MpTransaction: 'MpTransaction',
   MpTransactionStatusHistory: 'MpTransactionStatusHistory',
   MpDispute: 'MpDispute',
@@ -426,7 +427,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "siteCounter" | "service" | "serviceVariant" | "resource" | "user" | "bookingRequest" | "bookingRequestItem" | "paymentProof" | "approval" | "auditLog" | "mpUser" | "mpPayoutMethod" | "mpListing" | "mpListingQuestion" | "mpChatThread" | "mpMessage" | "mpTransaction" | "mpTransactionStatusHistory" | "mpDispute" | "mpPayout" | "mpAnalyticsEvent" | "mpBlobObjectMetadata" | "mpBinanceRateSnapshot" | "mpReferenceRateSnapshot" | "mpWebhookLog" | "mpReview" | "mpReferralLink"
+    modelProps: "siteCounter" | "service" | "serviceVariant" | "resource" | "user" | "bookingRequest" | "bookingRequestItem" | "paymentProof" | "approval" | "auditLog" | "mpUser" | "mpPayoutMethod" | "mpListing" | "mpListingQuestion" | "mpChatThread" | "mpMessage" | "mpOrder" | "mpTransaction" | "mpTransactionStatusHistory" | "mpDispute" | "mpPayout" | "mpAnalyticsEvent" | "mpBlobObjectMetadata" | "mpBinanceRateSnapshot" | "mpReferenceRateSnapshot" | "mpWebhookLog" | "mpReview" | "mpReferralLink"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1614,6 +1615,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    MpOrder: {
+      payload: Prisma.$MpOrderPayload<ExtArgs>
+      fields: Prisma.MpOrderFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MpOrderFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MpOrderFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>
+        }
+        findFirst: {
+          args: Prisma.MpOrderFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MpOrderFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>
+        }
+        findMany: {
+          args: Prisma.MpOrderFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>[]
+        }
+        create: {
+          args: Prisma.MpOrderCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>
+        }
+        createMany: {
+          args: Prisma.MpOrderCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MpOrderCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>[]
+        }
+        delete: {
+          args: Prisma.MpOrderDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>
+        }
+        update: {
+          args: Prisma.MpOrderUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>
+        }
+        deleteMany: {
+          args: Prisma.MpOrderDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MpOrderUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MpOrderUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>[]
+        }
+        upsert: {
+          args: Prisma.MpOrderUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>
+        }
+        aggregate: {
+          args: Prisma.MpOrderAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMpOrder>
+        }
+        groupBy: {
+          args: Prisma.MpOrderGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpOrderGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MpOrderCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpOrderCountAggregateOutputType> | number
+        }
+      }
+    }
     MpTransaction: {
       payload: Prisma.$MpTransactionPayload<ExtArgs>
       fields: Prisma.MpTransactionFieldRefs
@@ -2736,16 +2811,37 @@ export const MpMessageScalarFieldEnum = {
 export type MpMessageScalarFieldEnum = (typeof MpMessageScalarFieldEnum)[keyof typeof MpMessageScalarFieldEnum]
 
 
+export const MpOrderScalarFieldEnum = {
+  id: 'id',
+  buyerId: 'buyerId',
+  paymentMethod: 'paymentMethod',
+  status: 'status',
+  amount: 'amount',
+  currency: 'currency',
+  paymentReference: 'paymentReference',
+  paymentSenderBank: 'paymentSenderBank',
+  paymentPaidAt: 'paymentPaidAt',
+  paymentProofUrl: 'paymentProofUrl',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MpOrderScalarFieldEnum = (typeof MpOrderScalarFieldEnum)[keyof typeof MpOrderScalarFieldEnum]
+
+
 export const MpTransactionScalarFieldEnum = {
   id: 'id',
   idempotencyKey: 'idempotencyKey',
   buyerId: 'buyerId',
   sellerId: 'sellerId',
   listingId: 'listingId',
+  orderId: 'orderId',
   paymentMethod: 'paymentMethod',
   status: 'status',
   amount: 'amount',
   currency: 'currency',
+  quantity: 'quantity',
+  unitPrice: 'unitPrice',
   platformFeePercent: 'platformFeePercent',
   platformFeeAmount: 'platformFeeAmount',
   sellerNetAmount: 'sellerNetAmount',
@@ -3368,6 +3464,7 @@ export type GlobalOmitConfig = {
   mpListingQuestion?: Prisma.MpListingQuestionOmit
   mpChatThread?: Prisma.MpChatThreadOmit
   mpMessage?: Prisma.MpMessageOmit
+  mpOrder?: Prisma.MpOrderOmit
   mpTransaction?: Prisma.MpTransactionOmit
   mpTransactionStatusHistory?: Prisma.MpTransactionStatusHistoryOmit
   mpDispute?: Prisma.MpDisputeOmit

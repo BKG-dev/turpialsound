@@ -200,12 +200,13 @@ function getTodayDate() {
 export interface CheckoutModalProps {
   listing: Listing
   sellerId: string
+  quantity?: number
   onClose: () => void
   onOpenChat: (listing: Listing) => void
   onSuccess?: (status: MpTransactionStatus) => void
 }
 
-export function CheckoutModal({ listing, onClose, onSuccess }: CheckoutModalProps) {
+export function CheckoutModal({ listing, quantity = 1, onClose, onSuccess }: CheckoutModalProps) {
   const router = useRouter()
   const { rate: bcvRate, loading: rateLoading } = useBcvRate()
   const [selectedMethodId, setSelectedMethodId] = useState<ManualMethodId>('PAGO_MOVIL')
@@ -221,7 +222,8 @@ export function CheckoutModal({ listing, onClose, onSuccess }: CheckoutModalProp
     detail: string
   } | null>(null)
 
-  const price = listing.type === 'product' ? listing.price : listing.priceFrom
+  const unitPrice = listing.type === 'product' ? listing.price : listing.priceFrom
+  const price = unitPrice * quantity
   const currency = listing.currency ?? 'USD'
   const selectedMethod =
     MANUAL_METHODS.find((method) => method.id === selectedMethodId) ?? MANUAL_METHODS[0]
@@ -309,7 +311,7 @@ export function CheckoutModal({ listing, onClose, onSuccess }: CheckoutModalProp
     setError(null)
 
     try {
-      const purchase = await initiatePurchase(listing.id, selectedMethod.actionMethod)
+      const purchase = await initiatePurchase(listing.id, selectedMethod.actionMethod, quantity)
       if (!purchase.success || !purchase.data) {
         setError(purchase.message)
         return
@@ -474,6 +476,11 @@ export function CheckoutModal({ listing, onClose, onSuccess }: CheckoutModalProp
               style={{ background: 'rgba(0,174,239,0.04)', border: '1px solid rgba(0,174,239,0.12)' }}
             >
               <p className="mb-2 text-[10px] uppercase tracking-widest text-[#9a9a9a]">Total a pagar</p>
+              {quantity > 1 && (
+                <p className="mb-2 text-[11px] text-[#b8b8b8]">
+                  {quantity} unidades x ${unitPrice.toLocaleString('es-VE')} {currency}
+                </p>
+              )}
               <div className="flex flex-wrap items-baseline gap-3">
                 <span className="text-2xl font-bold text-[#f2f2f2]">
                   ${price?.toLocaleString('es-VE') ?? '-'}{' '}

@@ -20,6 +20,7 @@ export {
   initiatePurchase,
   checkoutCart,
   submitPaymentProof,
+  submitOrderPaymentProof,
   validatePayment,
   sellerDeliver,
   confirmDelivery,

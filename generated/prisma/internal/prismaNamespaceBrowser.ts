@@ -67,6 +67,7 @@ export const ModelName = {
   MpListingQuestion: 'MpListingQuestion',
   MpChatThread: 'MpChatThread',
   MpMessage: 'MpMessage',
+  MpOrder: 'MpOrder',
   MpTransaction: 'MpTransaction',
   MpTransactionStatusHistory: 'MpTransactionStatusHistory',
   MpDispute: 'MpDispute',
@@ -365,16 +366,37 @@ export const MpMessageScalarFieldEnum = {
 export type MpMessageScalarFieldEnum = (typeof MpMessageScalarFieldEnum)[keyof typeof MpMessageScalarFieldEnum]
 
 
+export const MpOrderScalarFieldEnum = {
+  id: 'id',
+  buyerId: 'buyerId',
+  paymentMethod: 'paymentMethod',
+  status: 'status',
+  amount: 'amount',
+  currency: 'currency',
+  paymentReference: 'paymentReference',
+  paymentSenderBank: 'paymentSenderBank',
+  paymentPaidAt: 'paymentPaidAt',
+  paymentProofUrl: 'paymentProofUrl',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MpOrderScalarFieldEnum = (typeof MpOrderScalarFieldEnum)[keyof typeof MpOrderScalarFieldEnum]
+
+
 export const MpTransactionScalarFieldEnum = {
   id: 'id',
   idempotencyKey: 'idempotencyKey',
   buyerId: 'buyerId',
   sellerId: 'sellerId',
   listingId: 'listingId',
+  orderId: 'orderId',
   paymentMethod: 'paymentMethod',
   status: 'status',
   amount: 'amount',
   currency: 'currency',
+  quantity: 'quantity',
+  unitPrice: 'unitPrice',
   platformFeePercent: 'platformFeePercent',
   platformFeeAmount: 'platformFeeAmount',
   sellerNetAmount: 'sellerNetAmount',

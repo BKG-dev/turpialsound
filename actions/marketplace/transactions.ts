@@ -23,6 +23,58 @@ type CheckoutPaymentMethod =
   | 'BINANCE_PAY'
 type TxPaymentMethod = 'MERCANTIL_PAGO_MOVIL' | 'ZELLE' | 'CRYPTO_WALLET_MANUAL'
 const SELLER_DELIVERED_EVENT = 'seller_delivered'
+type PurchaseRateContext = {
+  bcvRate: number
+  binanceRate: number
+  frozenRate: string | null
+  frozenRateSource: string | null
+  frozenRateFechaValor: Date | null
+  rateSnapshotId: string | null
+  adminNotes: string
+}
+type CheckoutListingRow = {
+  id: string
+  status: string
+  sellerId: string
+  price: unknown
+  currency: string
+  hasInventory: boolean
+  inventory: number | null
+  seller: { payoutMethods: Array<{ methodType: string | null }> }
+}
+const INVENTORY_CONSUMING_TRANSACTION_STATUSES = [
+  'INITIATED',
+  'PENDING_PAYMENT',
+  'PAYMENT_RECEIVED',
+  'VALIDATING',
+  'IN_ESCROW',
+  'DELIVERY_CONFIRMED',
+  'DISPUTED',
+  'RELEASED',
+] as const
+
+function getAvailableInventory(
+  listing: { hasInventory: boolean; inventory: number | null },
+  consumedUnits: number,
+) {
+  if (!listing.hasInventory || listing.inventory == null) return null
+  return listing.inventory - consumedUnits
+}
+
+async function getConsumedInventoryUnits(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
+  listingId: string,
+) {
+  const result = await db.mpTransaction.aggregate({
+    where: {
+      listingId,
+      status: { in: [...INVENTORY_CONSUMING_TRANSACTION_STATUSES] },
+    },
+    _sum: { quantity: true },
+  })
+  return Number(result._sum.quantity ?? 0)
+}
 
 function hasSellerDelivered(
   statusHistory: Array<{ reason: string | null; toStatus: string; changedBy: string | null }>,
@@ -78,9 +130,76 @@ function mapCheckoutPaymentMethod(method: string): TxPaymentMethod | null {
   return null
 }
 
+async function resolvePurchaseRateContext(
+  mappedPaymentMethod: TxPaymentMethod,
+  sellerPayoutMethod: SellerPayoutMethod,
+): Promise<ActionResult<PurchaseRateContext>> {
+  const buyerMethod = mapBuyerPaymentMethod(mappedPaymentMethod)
+  const isBinanceBuyer = buyerMethod === 'BINANCE'
+  const isBinanceSeller = sellerPayoutMethod === 'BINANCE'
+  const isUSDTDirect = isBinanceBuyer && isBinanceSeller
+
+  if (isUSDTDirect) {
+    return {
+      success: true,
+      data: {
+        bcvRate: 0,
+        binanceRate: 0,
+        frozenRate: null,
+        frozenRateSource: null,
+        frozenRateFechaValor: null,
+        rateSnapshotId: null,
+        adminNotes: 'USDT directo - sin conversion de tasa',
+      },
+      message: 'OK',
+    }
+  }
+
+  if (!isBinanceBuyer) {
+    const bcvResult = await resolveReferenceRate()
+    if (bcvResult.rate === null || bcvResult.rate <= 0) {
+      return { success: false, message: 'No pudimos obtener la tasa de pago (BCV). Intenta nuevamente en unos minutos o contacta soporte.' }
+    }
+
+    return {
+      success: true,
+      data: {
+        bcvRate: bcvResult.rate,
+        binanceRate: 0,
+        frozenRate: String(bcvResult.rate),
+        frozenRateSource: 'BCV',
+        frozenRateFechaValor: bcvResult.fechaValor ? new Date(bcvResult.fechaValor) : null,
+        rateSnapshotId: bcvResult.snapshotId,
+        adminNotes: `Tasa BCV: ${bcvResult.rate} Bs/USD | fuente: ${bcvResult.source} | modo: ${bcvResult.mode}`,
+      },
+      message: 'OK',
+    }
+  }
+
+  try {
+    const binanceResult = await resolveBinanceRate()
+    return {
+      success: true,
+      data: {
+        bcvRate: 0,
+        binanceRate: binanceResult.rate,
+        frozenRate: String(binanceResult.rate),
+        frozenRateSource: 'BINANCE',
+        frozenRateFechaValor: binanceResult.fechaValor ? new Date(binanceResult.fechaValor) : null,
+        rateSnapshotId: binanceResult.snapshotId,
+        adminNotes: `Tasa Binance: ${binanceResult.rate} Bs/USD | snapshotId: ${binanceResult.snapshotId ?? 'N/D'} | modo: ${binanceResult.mode}`,
+      },
+      message: 'OK',
+    }
+  } catch {
+    return { success: false, message: 'No pudimos obtener la tasa de pago (Binance). Intenta nuevamente en unos minutos o contacta soporte.' }
+  }
+}
+
 export async function initiatePurchase(
   listingId: string,
   paymentMethod: string,
+  quantity = 1,
 ): Promise<ActionResult<{ transactionId: string; idempotencyKey: string }>> {
   const session = await getSession()
   if (!session) return { success: false, message: 'Debes iniciar sesion para comprar' }
@@ -93,6 +212,7 @@ export async function initiatePurchase(
     if (!mappedPaymentMethod) {
       return { success: false, message: 'Metodo de pago no soportado por el checkout actual' }
     }
+    const requestedQuantity = Math.max(1, Math.floor(quantity))
 
     const listing = await db.mpListing.findUnique({
       where: { id: listingId },
@@ -101,6 +221,8 @@ export async function initiatePurchase(
         status: true,
         sellerId: true,
         price: true,
+        currency: true,
+        hasInventory: true,
         inventory: true,
         seller: {
           select: {
@@ -119,29 +241,16 @@ export async function initiatePurchase(
     if (listing.status !== 'ACTIVE') return { success: false, message: 'Este listing no esta disponible' }
     if (listing.sellerId === session.userId) return { success: false, message: 'No puedes comprar tu propio listing' }
 
-    // Guard: verificar inventario real — permitir multiples compras si quantity > 1
-    const activeTransactionsCount = await db.mpTransaction.count({
-      where: {
-        listingId,
-        status: {
-          in: [
-            'PENDING_PAYMENT',
-            'PAYMENT_RECEIVED',
-            'VALIDATING',
-            'IN_ESCROW',
-            'DELIVERY_CONFIRMED',
-            'DISPUTED',
-            'RELEASED',
-          ],
-        },
-      },
-    })
+    const consumedUnits = await getConsumedInventoryUnits(db, listingId)
 
-    const availableInventory = listing.hasInventory && listing.inventory != null
-      ? listing.inventory - activeTransactionsCount
-      : 99
-    if (availableInventory <= 0) {
-      return { success: false, message: 'Este articulo esta agotado' }
+    const availableInventory = getAvailableInventory(listing, consumedUnits)
+    if (availableInventory != null && availableInventory < requestedQuantity) {
+      return {
+        success: false,
+        message: availableInventory <= 0
+          ? 'Este articulo esta agotado'
+          : `Solo quedan ${availableInventory} disponibles`,
+      }
     }
 
     const sellerPayoutMethod = mapSellerPayoutMethod(listing.seller.payoutMethods[0]?.methodType)
@@ -150,8 +259,9 @@ export async function initiatePurchase(
     const isBinanceSeller = sellerPayoutMethod === 'BINANCE'
     const isUSDTDirect = isBinanceBuyer && isBinanceSeller
 
-    const amount = Number(listing.price)
-    const idempotencyKey = `${session.userId}_${listingId}_${Date.now()}`
+    const unitPrice = Number(listing.price)
+    const amount = unitPrice * requestedQuantity
+    const idempotencyKey = `${session.userId}_${listingId}_${requestedQuantity}_${Date.now()}`
 
     // ─── Rate resolution & frozen-column persistence ───
     // Three mutually exclusive paths; each sets frozenRate columns or blocks with a clear error.
@@ -200,6 +310,18 @@ export async function initiatePurchase(
     const fee = calcFee(amount, mappedPaymentMethod, sellerPayoutMethod, bcvRate, binanceRate)
 
     const tx = await db.$transaction(async (prisma: any) => {
+      const latestListing = await prisma.mpListing.findUnique({
+        where: { id: listingId },
+        select: { hasInventory: true, inventory: true },
+      })
+      if (!latestListing) throw new Error('Listing no encontrado')
+
+      const latestConsumedUnits = await getConsumedInventoryUnits(prisma, listingId)
+      const latestAvailableInventory = getAvailableInventory(latestListing, latestConsumedUnits)
+      if (latestAvailableInventory != null && latestAvailableInventory < requestedQuantity) {
+        throw new Error(latestAvailableInventory <= 0 ? 'Este articulo esta agotado' : `Solo quedan ${latestAvailableInventory} disponibles`)
+      }
+
       const record = await prisma.mpTransaction.create({
         data: {
           idempotencyKey,
@@ -210,6 +332,8 @@ export async function initiatePurchase(
           status: 'PENDING_PAYMENT',
           amount: String(amount),
           currency: listing.currency,
+          quantity: requestedQuantity,
+          unitPrice: String(unitPrice),
           platformFeePercent: String(fee.platformFeePercent),
           platformFeeAmount: String(fee.platformFeeAmount),
           sellerNetAmount: String(fee.sellerNetAmount),
@@ -347,10 +471,20 @@ export async function validatePayment(
     })
 
     if (approved) {
-      await db.mpListing.update({
+      const listing = await db.mpListing.findUnique({
         where: { id: tx.listingId },
-        data: { status: 'SOLD_OUT' },
+        select: { hasInventory: true, inventory: true },
       })
+      if (listing?.hasInventory && listing.inventory != null) {
+        const consumedUnits = await getConsumedInventoryUnits(db, tx.listingId)
+        const availableInventory = getAvailableInventory(listing, consumedUnits)
+        if (availableInventory != null && availableInventory <= 0) {
+          await db.mpListing.update({
+            where: { id: tx.listingId },
+            data: { status: 'SOLD_OUT' },
+          })
+        }
+      }
     }
 
     await db.mpTransactionStatusHistory.create({
@@ -786,29 +920,278 @@ export async function getMyTransactions(
 }
 
 export async function checkoutCart(
-  items: Array<{ listingId: string; paymentMethod: string }>,
-): Promise<ActionResult<{ transactions: Array<{ transactionId: string; listingId: string; idempotencyKey: string }> }>> {
+  items: Array<{ listingId: string; paymentMethod: string; quantity?: number }>,
+): Promise<ActionResult<{ orderId: string; transactions: Array<{ transactionId: string; listingId: string; idempotencyKey: string }>; totalAmount: number }>> {
+  const session = await getSession()
+  if (!session) return { success: false, message: 'Debes iniciar sesion para comprar' }
+
+  const db = await getDb()
+  if (!db) return { success: false, message: 'Base de datos no disponible' }
+
   const transactions: Array<{ transactionId: string; listingId: string; idempotencyKey: string }> = []
   const errorMessages: string[] = []
+  const totalRequested = items.reduce(
+    (sum, item) => sum + Math.max(1, Math.floor(item.quantity ?? 1)),
+    0,
+  )
 
-  for (const item of items) {
-    const result = await initiatePurchase(item.listingId, item.paymentMethod)
-    if (result.success && result.data) {
-      transactions.push({ ...result.data, listingId: item.listingId })
-    } else {
-      errorMessages.push(result.message || `Error en ${item.listingId}`)
+  try {
+    if (items.length === 0) {
+      return { success: false, message: 'El carrito esta vacio' }
     }
-  }
 
-  if (transactions.length === 0) {
-    return { success: false, message: errorMessages.join('; ') || 'No se pudo iniciar ninguna compra' }
-  }
+    const mappedPaymentMethod = mapCheckoutPaymentMethod(items[0]?.paymentMethod ?? '')
+    if (!mappedPaymentMethod) {
+      return { success: false, message: 'Metodo de pago no soportado por el checkout actual' }
+    }
 
-  return {
-    success: true,
-    data: { transactions },
-    message: errorMessages.length > 0
-      ? `${transactions.length} de ${items.length} compras iniciadas (${errorMessages.length} errores)`
-      : `${transactions.length} compras iniciadas`,
+    const normalizedItems = items.map(item => ({
+      listingId: item.listingId,
+      quantity: Math.max(1, Math.floor(item.quantity ?? 1)),
+    }))
+    const listingIds = [...new Set(normalizedItems.map(item => item.listingId))]
+    const listings = await db.mpListing.findMany({
+      where: { id: { in: listingIds } },
+      select: {
+        id: true,
+        status: true,
+        sellerId: true,
+        price: true,
+        currency: true,
+        hasInventory: true,
+        inventory: true,
+        seller: {
+          select: {
+            payoutMethods: {
+              where: { isActive: true },
+              orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+              take: 1,
+              select: { methodType: true },
+            },
+          },
+        },
+      },
+    }) as CheckoutListingRow[]
+    const byId = new Map<string, CheckoutListingRow>(listings.map((listing) => [listing.id, listing]))
+    const currency = listings[0]?.currency ?? 'USD'
+
+    for (const item of normalizedItems) {
+      const listing = byId.get(item.listingId)
+      if (!listing) {
+        errorMessages.push(`Listing no encontrado: ${item.listingId}`)
+        continue
+      }
+      if (listing.status !== 'ACTIVE') {
+        errorMessages.push(`${item.listingId}: listing no disponible`)
+        continue
+      }
+      if (listing.sellerId === session.userId) {
+        errorMessages.push(`${item.listingId}: no puedes comprar tu propio listing`)
+        continue
+      }
+      if (listing.currency !== currency) {
+        errorMessages.push(`${item.listingId}: moneda distinta no soportada en una orden consolidada`)
+        continue
+      }
+
+      const consumedUnits = await getConsumedInventoryUnits(db, item.listingId)
+      const availableInventory = getAvailableInventory(listing, consumedUnits)
+      if (availableInventory != null && availableInventory < item.quantity) {
+        errorMessages.push(availableInventory <= 0 ? `${item.listingId}: agotado` : `${item.listingId}: solo quedan ${availableInventory} disponibles`)
+      }
+    }
+
+    if (errorMessages.length > 0) {
+      return { success: false, message: errorMessages.join('; ') }
+    }
+
+    const prepared = await Promise.all(normalizedItems.map(async item => {
+      const listing = byId.get(item.listingId)!
+      const sellerPayoutMethod = mapSellerPayoutMethod(listing.seller.payoutMethods[0]?.methodType)
+      const rateContext = await resolvePurchaseRateContext(mappedPaymentMethod, sellerPayoutMethod)
+      if (!rateContext.success || !rateContext.data) {
+        throw new Error(rateContext.message)
+      }
+      const unitPrice = Number(listing.price)
+      const amount = unitPrice * item.quantity
+      const fee = calcFee(amount, mappedPaymentMethod, sellerPayoutMethod, rateContext.data.bcvRate, rateContext.data.binanceRate)
+      return { item, listing, unitPrice, amount, fee, rateContext: rateContext.data }
+    }))
+    const totalAmount = prepared.reduce((sum, row) => sum + row.amount, 0)
+
+    const result = await db.$transaction(async (prisma: any) => {
+      for (const row of prepared) {
+        const latestListing = await prisma.mpListing.findUnique({
+          where: { id: row.item.listingId },
+          select: { hasInventory: true, inventory: true },
+        })
+        if (!latestListing) throw new Error(`Listing no encontrado: ${row.item.listingId}`)
+        const latestConsumedUnits = await getConsumedInventoryUnits(prisma, row.item.listingId)
+        const latestAvailableInventory = getAvailableInventory(latestListing, latestConsumedUnits)
+        if (latestAvailableInventory != null && latestAvailableInventory < row.item.quantity) {
+          throw new Error(latestAvailableInventory <= 0 ? `${row.item.listingId}: agotado` : `${row.item.listingId}: solo quedan ${latestAvailableInventory} disponibles`)
+        }
+      }
+
+      const order = await prisma.mpOrder.create({
+        data: {
+          buyerId: session.userId,
+          paymentMethod: mappedPaymentMethod,
+          status: 'PENDING_PAYMENT',
+          amount: String(totalAmount),
+          currency,
+        },
+        select: { id: true },
+      })
+
+      for (const row of prepared) {
+        const idempotencyKey = `${session.userId}_${row.item.listingId}_${row.item.quantity}_${Date.now()}`
+        const record = await prisma.mpTransaction.create({
+          data: {
+            idempotencyKey,
+            orderId: order.id,
+            buyerId: session.userId,
+            sellerId: row.listing.sellerId,
+            listingId: row.item.listingId,
+            paymentMethod: mappedPaymentMethod,
+            status: 'PENDING_PAYMENT',
+            amount: String(row.amount),
+            currency,
+            quantity: row.item.quantity,
+            unitPrice: String(row.unitPrice),
+            platformFeePercent: String(row.fee.platformFeePercent),
+            platformFeeAmount: String(row.fee.platformFeeAmount),
+            sellerNetAmount: String(row.fee.sellerNetAmount),
+            frozenRate: row.rateContext.frozenRate,
+            frozenRateSource: row.rateContext.frozenRateSource,
+            frozenRateFechaValor: row.rateContext.frozenRateFechaValor,
+            rateSnapshotId: row.rateContext.rateSnapshotId,
+            adminNotes: row.rateContext.adminNotes,
+          },
+          select: { id: true },
+        })
+
+        await prisma.mpTransactionStatusHistory.create({
+          data: {
+            transactionId: record.id,
+            toStatus: 'PENDING_PAYMENT',
+            changedBy: session.userId,
+            reason: `Orden consolidada ${order.id}. Cantidad: ${row.item.quantity}. Esperando comprobante de pago.`,
+          },
+        })
+
+        transactions.push({ transactionId: record.id, listingId: row.item.listingId, idempotencyKey })
+      }
+
+      return { orderId: order.id }
+    })
+
+    await db.$disconnect()
+    return {
+      success: true,
+      data: { orderId: result.orderId, transactions, totalAmount },
+      message: `${transactions.length} de ${normalizedItems.length} lineas preparadas (${totalRequested} articulos)`,
+    }
+  } catch (err) {
+    await db.$disconnect().catch(() => {})
+    return { success: false, message: err instanceof Error ? err.message : 'No se pudo iniciar la orden consolidada' }
+  }
+}
+
+export async function submitOrderPaymentProof(
+  orderId: string,
+  reference: string,
+  details: {
+    senderBank?: string | null
+    paymentDate: string
+  },
+  proofUrl?: string,
+): Promise<ActionResult<{ orderId: string }>> {
+  const session = await getSession()
+  if (!session) return { success: false, message: 'No autenticado' }
+
+  const db = await getDb()
+  if (!db) return { success: false, message: 'Base de datos no disponible' }
+
+  try {
+    const order = await db.mpOrder.findUnique({
+      where: { id: orderId },
+      include: {
+        transactions: {
+          select: { id: true, status: true, paymentMethod: true },
+        },
+      },
+    })
+
+    if (!order) return { success: false, message: 'Orden no encontrada' }
+    if (order.buyerId !== session.userId) return { success: false, message: 'Sin permiso' }
+    if (order.transactions.length === 0) return { success: false, message: 'La orden no tiene transacciones' }
+
+    const invalidTx = order.transactions.find((tx: { status: string }) => tx.status !== 'INITIATED' && tx.status !== 'PENDING_PAYMENT')
+    if (invalidTx) {
+      return { success: false, message: `Estado invalido para reportar pago: ${invalidTx.status}` }
+    }
+
+    const cleanReference = reference.trim()
+    if (!cleanReference) return { success: false, message: 'La referencia de pago es obligatoria' }
+
+    const isBinancePayment = order.paymentMethod === 'CRYPTO_WALLET_MANUAL'
+    const cleanSenderBank = details.senderBank?.trim() ?? ''
+    if (!isBinancePayment && !cleanSenderBank) return { success: false, message: 'El banco emisor es obligatorio' }
+    if (!proofUrl?.trim()) return { success: false, message: 'El comprobante de pago es obligatorio' }
+    if (!details.paymentDate.trim()) return { success: false, message: 'La fecha de pago es obligatoria' }
+
+    const paidAt = new Date(`${details.paymentDate}T12:00:00-04:00`)
+    if (Number.isNaN(paidAt.getTime())) {
+      return { success: false, message: 'La fecha de pago no es valida' }
+    }
+
+    await db.$transaction(async (prisma: any) => {
+      await prisma.mpOrder.update({
+        where: { id: orderId },
+        data: {
+          status: 'PAYMENT_RECEIVED',
+          paymentReference: cleanReference,
+          paymentSenderBank: isBinancePayment ? null : cleanSenderBank,
+          paymentPaidAt: paidAt,
+          paymentProofUrl: proofUrl ?? null,
+        },
+      })
+
+      for (const tx of order.transactions) {
+        await prisma.mpTransaction.update({
+          where: { id: tx.id },
+          data: {
+            status: 'PAYMENT_RECEIVED',
+            paymentReference: cleanReference,
+            paymentSenderBank: isBinancePayment ? null : cleanSenderBank,
+            paymentPaidAt: paidAt,
+            paymentProofUrl: proofUrl ?? null,
+          },
+        })
+
+        await prisma.mpTransactionStatusHistory.create({
+          data: {
+            transactionId: tx.id,
+            fromStatus: tx.status,
+            toStatus: 'PAYMENT_RECEIVED',
+            changedBy: session.userId,
+            reason: isBinancePayment
+              ? `Comprobante Binance enviado para orden ${orderId}. Operacion: ${cleanReference}. Fecha: ${details.paymentDate}`
+              : `Comprobante enviado para orden ${orderId}. Banco: ${cleanSenderBank}. Operacion: ${cleanReference}. Fecha: ${details.paymentDate}`,
+          },
+        })
+      }
+    })
+
+    await db.$disconnect()
+    return {
+      success: true,
+      data: { orderId },
+      message: 'Pago de orden reportado. Cada vendedor avanzara por su entrega independiente.',
+    }
+  } catch (err) {
+    await db.$disconnect().catch(() => {})
+    return { success: false, message: err instanceof Error ? err.message : 'No se pudo reportar el pago de la orden' }
   }
 }

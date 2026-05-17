@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, type MouseEvent } from 'react'
 import { ShoppingCart, Plus, Minus, Check } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '@/lib/marketplace/cart-store'
 import type { Listing } from '@/types/marketplace'
+
+const UNLIMITED_MAX_QTY = 99
 
 type AddToCartButtonProps = {
   listing: Listing
@@ -29,7 +31,10 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
   const isSeller = currentUserId
     ? (listing.type === 'product' ? listing.seller.id : listing.talent.id) === currentUserId
     : false
-  const maxAvailable = listing.type === 'product' ? ((listing.hasInventory && listing.inventory != null) ? listing.inventory : 99) : 99
+  const stockCount = listing.type === 'product' && listing.hasInventory && listing.inventory != null
+    ? listing.inventory
+    : null
+  const maxAvailable = stockCount ?? UNLIMITED_MAX_QTY
   const isOutOfStock = maxAvailable < 1
   const isUnavailable = listing.status !== 'active' || isOutOfStock
   const price = listing.type === 'product' ? listing.price : listing.priceFrom
@@ -37,14 +42,14 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
   const sellerId = listing.type === 'product' ? listing.seller.id : listing.talent.id
   const cover = getListingCover(listing)
 
-  const handleToggleQty = useCallback((e: React.MouseEvent) => {
+  const handleToggleQty = useCallback((e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation()
     if (isSeller || isUnavailable || alreadyInCart) return
+    if (!showQty) setQty(1)
     setShowQty((p) => !p)
-    setQty(1)
-  }, [isSeller, isUnavailable, alreadyInCart])
+  }, [isSeller, isUnavailable, alreadyInCart, showQty])
 
-  const handleAdd = useCallback((e: React.MouseEvent) => {
+  const handleAdd = useCallback((e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation()
     if (alreadyInCart) {
       removeItem(listing.id)
@@ -69,6 +74,16 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
       setAdded(false)
     }, 1200)
   }, [listing, price, cover, sellerName, sellerId, qty, maxAvailable, alreadyInCart, addItem, removeItem])
+
+  const handleDecrement = useCallback((e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
+    setQty((p) => Math.max(1, p - 1))
+  }, [])
+
+  const handleIncrement = useCallback((e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
+    setQty((p) => Math.min(maxAvailable, p + 1))
+  }, [maxAvailable])
 
   const isDetail = variant === 'detail'
 
@@ -122,9 +137,9 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
         {isOutOfStock ? 'Sin stock' : isUnavailable ? 'No disponible' : 'Agregar al carrito'}
       </button>
 
-      {!isOutOfStock && !isUnavailable && maxAvailable > 0 && maxAvailable < 99 && (
+      {stockCount != null && (
         <span className="text-[9px] text-[#7a7a7a] text-center">
-          {maxAvailable} disponibles
+          {stockCount} disponibles
         </span>
       )}
 
@@ -135,7 +150,7 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.15 }}
-            className="absolute bottom-full left-0 mb-1 z-20 flex items-center gap-1 rounded-lg px-2 py-1.5"
+            className="relative z-20 flex w-max items-center gap-1 rounded-lg px-2 py-1.5"
             style={{
               background: 'var(--mp-panel-solid)',
               border: '1px solid var(--mp-border)',
@@ -143,10 +158,11 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
             }}
           >
             <button
-              onClick={() => setQty((p) => Math.max(1, p - 1))}
+              onClick={handleDecrement}
               disabled={qty <= 1}
               className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-white/5 disabled:opacity-30"
               style={{ color: 'var(--mp-text-muted)' }}
+              aria-label="Reducir cantidad"
             >
               <Minus size={10} />
             </button>
@@ -154,9 +170,11 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
               {qty}
             </span>
             <button
-              onClick={() => setQty((p) => Math.min(maxAvailable, p + 1))}
-              className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-white/5"
+              onClick={handleIncrement}
+              disabled={qty >= maxAvailable}
+              className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-white/5 disabled:opacity-30"
               style={{ color: 'var(--mp-text-muted)' }}
+              aria-label="Aumentar cantidad"
             >
               <Plus size={10} />
             </button>

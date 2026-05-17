@@ -22,6 +22,15 @@ const CACHE_DIR = join(__dirname, 'runs')
 const CACHE_FILE = join(CACHE_DIR, '.preflight-cache.json')
 const VERSION_FILE = join(CACHE_DIR, '.mother-version.json')
 
+function readJsonFile(path, fallback = null) {
+  try {
+    if (!existsSync(path)) return fallback
+    return JSON.parse(readFileSync(path, 'utf8').replace(/^\uFEFF/, ''))
+  } catch {
+    return fallback
+  }
+}
+
 const sprintId = process.argv.includes('--sprint')
   ? process.argv[process.argv.indexOf('--sprint') + 1]
   : null
@@ -41,8 +50,7 @@ const RESET = '\x1b[0m'
 
 // ─── Madre dinámica ──────────────────────────────────────────────────
 function readMotherVersion() {
-  try { if (existsSync(VERSION_FILE)) return JSON.parse(readFileSync(VERSION_FILE, 'utf8')) } catch {}
-  return { version: 1, branches: [], current: 'RAMA-MADRE' }
+  return readJsonFile(VERSION_FILE, { version: 1, branches: [], current: 'RAMA-MADRE' })
 }
 const motherData = readMotherVersion()
 const MOTHER = motherData.current
@@ -85,7 +93,8 @@ const originCommit = sh(`git rev-parse --short origin/${MOTHER}`)
 let skipNonDocChecks = false
 if (existsSync(CACHE_FILE)) {
   try {
-    const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf8'))
+    const cache = readJsonFile(CACHE_FILE)
+    if (!cache) throw new Error('Invalid preflight cache')
     const last = new Date(cache.lastRun)
     const mins = Math.round((now - last) / 60000)
     if (mins < 5 && cache.originCommit === originCommit) {
@@ -254,6 +263,7 @@ if (motherRef) {
           }
         }
       }
+    }
     }
   } else {
     ok('Docs locales sincronizados con madre')
@@ -436,12 +446,12 @@ console.log('')
 console.log('[ORESHNIK] RESILIENCIA — Reasignacion de carga')
 const assignLog = join(CACHE_DIR, '.sprint-assignments.json')
 let assignments = []
-try { if (existsSync(assignLog)) assignments = JSON.parse(readFileSync(assignLog, 'utf8')) } catch {}
+assignments = readJsonFile(assignLog, [])
 
 if (sprintId) {
   const zoneMapPath = join(ROOT, 'docs', '07_handoffs', 'zone-map.json')
   if (existsSync(zoneMapPath)) {
-    const zoneMap = JSON.parse(readFileSync(zoneMapPath, 'utf8'))
+    const zoneMap = readJsonFile(zoneMapPath, {})
     const doubleLockZones = Object.entries(zoneMap.zones || {}).filter(([_,z]) => z.lock === 'double_jean_manuel')
     if (doubleLockZones.length > 0) {
       console.log(`  [ ${YELLOW}WARN${RESET} ] Sprint ${sprintId} toca zonas con lock doble:`)
@@ -461,7 +471,7 @@ console.log('')
 console.log('[ORESHNIK] TRABAJO FUERA DE METODOLOGIA')
 const outOfBandLog = join(CACHE_DIR, '.out-of-band.json')
 let oobItems = []
-try { if (existsSync(outOfBandLog)) oobItems = JSON.parse(readFileSync(outOfBandLog, 'utf8')) } catch {}
+oobItems = readJsonFile(outOfBandLog, [])
 if (oobItems.length > 0) {
   warn(`${oobItems.length} item(s) fuera de metodologia`)
   oobItems.slice(-5).forEach(item => console.log(`         ${item.date} | ${item.operator} | ${item.description}`))

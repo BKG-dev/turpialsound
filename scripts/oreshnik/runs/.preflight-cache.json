@@ -1,7 +1,8 @@
 {
-  "lastRun": "2026-05-15T00:34:46.722Z",
-  "originCommit": "a0a0a32",
-  "branch": "integration/today-reservas-marketplace-stable-2026-05-07",
+  "lastRun": "2026-05-17T21:36:55.522Z",
+  "originCommit": "9badb3e",
+  "branch": "Manuel/s-mp-01-carrito-2026-05-17",
   "blockers": 0,
-  "warnings": 1
+  "warnings": 2,
+  "mother": "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16"
 }

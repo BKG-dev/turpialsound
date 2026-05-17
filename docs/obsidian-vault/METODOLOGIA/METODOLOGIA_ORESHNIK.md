@@ -2,7 +2,7 @@
 type: methodology-nexus
 project: "Turpial Sound"
 fecha: 2026-05-17
-actualizado: "2026-05-17T01:17-04:00"
+actualizado: "2026-05-17T17:35-04:00"
 metodologia: "Oreshnik v4.0 + Madre Dinamica + Cierre Automatizado"
 tags:
   - "#central"
@@ -129,6 +129,23 @@ El preflight v4.0 ejecuta automaticamente:
 4. Gestion de ramas (crea hija desde madre dinamica)
 
 **La madre ya NO es un nombre fijo.** Cada cierre de sprint genera una nueva madre versionada: `MADRE/v{N}-{tags}-{fecha}`
+
+### Actualizacion tecnica 2026-05-17 — Preflight v4.0 reparado
+
+Durante S-MP-01 se corrigieron dos fallos del preflight:
+
+- Se cerro correctamente el bloque de sync de docs desde madre en `scripts/oreshnik/preflight.mjs`. Antes el script podia abortar por error de sintaxis antes de validar rama/env/locks.
+- Se agrego `readJsonFile(path, fallback)` para leer JSON operativos con tolerancia a BOM (`^\uFEFF`) y fallback seguro. Antes un cache o assignment JSON con BOM podia bloquear la apertura de sesion.
+
+Archivos cubiertos:
+- `.preflight-cache.json`
+- `.mother-version.json`
+- `.sprint-assignments.json`
+- `.out-of-band.json`
+- `docs/07_handoffs/zone-map.json`
+
+Resultado:
+- El Paso 0 vuelve a ser ejecutable end-to-end y mantiene sync de docs, branch management, bus de control y resiliencia sin quedar bloqueado por cache JSON invalida.
 
 ### Al cerrar sprint
 

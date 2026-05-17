@@ -19,6 +19,7 @@ const MODULES = [
   { id: 'S07', name: 'Rates & Accounting', path: './modules/qa-s07-tasas-accounting.mjs', layer: 'B', aliases: ['s07', 'rates', 'qa_s07_rates_accounting'] },
   { id: 'S08', name: 'Action Center & UX', path: './modules/qa-s08-action-center-ux.mjs', layer: 'B', aliases: ['s08', 'action-center', 'qa_s08_action_center'] },
   { id: 'S09', name: 'Discovery Publico', path: './modules/qa-s09-discovery-publico.mjs', layer: 'C', aliases: ['s09', 'discovery-publico', 'qa_s09_discovery'] },
+  { id: 'S-MP-01', name: 'Cart Consolidated Checkout', path: './modules/qa-smp01-cart-consolidated.mjs', layer: 'B/D', aliases: ['smp01', 's-mp-01', 'cart', 'cart-checkout', 'qa_cart_consolidated'] },
 ]
 
 function resolveModuleId(input) {

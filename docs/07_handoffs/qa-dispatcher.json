@@ -1,6 +1,6 @@
 {
-  "version": 5,
-  "updated_at": "2026-05-11T06:00:00",
+  "version": 6,
+  "updated_at": "2026-05-17T21:30:00",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
     "layers": {
@@ -491,6 +491,24 @@
       "sprint_target": "S09",
       "implemented_at": "2026-05-11",
       "last_validated_at": "2026-05-11"
+    },
+    "smp01_cart_consolidated_checkout": {
+      "task_id": "smp01_cart_consolidated_checkout",
+      "mode": "script",
+      "module": "S-MP-01",
+      "layer": "B/D",
+      "canonical_script": "npx tsx scripts/qa/run-marketplace-qa.mjs --module=S-MP-01",
+      "preconditions": [
+        "NODE_ENV=development",
+        "DATABASE_URL valida disponible",
+        "Prisma client generado con MpOrder, MpTransaction.quantity, MpTransaction.unitPrice",
+        "No requiere browser; no usa CDP ni reverse engineering de server actions"
+      ],
+      "notes": "Carrito consolidado S-MP-01: valida schema inventory/hasInventory, ausencia de MpListing.quantity, maximo disponible descontando cantidades vendidas, bloqueo de sobrecompra, orden MpOrder con transacciones hijas multivendedor, comprobante obligatorio propagado, visibilidad buyer/seller, avance independiente por vendedor y payout por transaccion hija.",
+      "status": "IMPLEMENTED — 17/17 PASS",
+      "sprint_target": "S-MP-01",
+      "implemented_at": "2026-05-17",
+      "last_validated_at": "2026-05-17T21:24:48Z"
     },
     "s16_notifications_chat": {
       "task_id": "s16_notifications_chat",

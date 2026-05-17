@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Minus, Plus, Trash2, ShoppingBag, Loader2 } from 'lucide-react'
+import { X, Minus, Plus, Trash2, ShoppingBag } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useCart } from '@/lib/marketplace/cart-store'
 import { useMarketplaceSession } from '@/components/marketplace/MarketplaceAuthBar'
 import { MarketplaceAuthModal } from '@/components/marketplace/MarketplaceAuthModal'
-import { checkoutCart } from '@/actions/marketplace'
+import { CartCheckoutModal } from '@/components/marketplace/CartCheckoutModal'
 import { trackMarketplaceClientEvent } from '@/lib/marketplace/analytics-client'
 import type { MpSessionPayload } from '@/lib/marketplace/auth'
 
@@ -20,7 +20,7 @@ export function CartDrawer() {
   const { session } = useMarketplaceSession()
   const [open, setOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
-  const [checkingOut, setCheckingOut] = useState(false)
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
 
   useEffect(() => {
     const handler = () => setOpen(true)
@@ -47,33 +47,20 @@ export function CartDrawer() {
     return () => document.removeEventListener('keydown', handler)
   }, [open])
 
-  const handleCheckout = useCallback(async () => {
+  const handleCheckout = useCallback(() => {
     if (!session) {
       setAuthOpen(true)
       return
     }
-    setCheckingOut(true)
-    trackMarketplaceClientEvent({ eventType: 'cart_checkout', metadataJson: { count: items.length, total: getCartTotal() } })
-
-    const checkoutItems = items.map(item => ({
-      listingId: item.listingId,
-      paymentMethod: 'PAGO_MOVIL',
-    }))
-
-    const result = await checkoutCart(checkoutItems)
-    setCheckingOut(false)
-
-    if (result.success) {
-      clearCart()
-      router.push('/marketplace/dashboard?tab=purchases')
-    } else {
-      alert(result.message || 'Error al iniciar la compra')
-    }
-  }, [session, items, router, getCartTotal, clearCart])
+    const unitCount = items.reduce((sum, item) => sum + item.quantity, 0)
+    trackMarketplaceClientEvent({ eventType: 'cart_checkout', metadataJson: { count: unitCount, total: getCartTotal() } })
+    setCheckoutOpen(true)
+  }, [session, items, getCartTotal])
 
   const handleAuthSuccess = useCallback((_s: MpSessionPayload) => {
     setAuthOpen(false)
-  }, [])
+    if (items.length > 0) setCheckoutOpen(true)
+  }, [items.length])
 
   const total = getCartTotal()
   const isEmpty = items.length === 0
@@ -86,6 +73,23 @@ export function CartDrawer() {
         onClose={() => setAuthOpen(false)}
         onSuccess={handleAuthSuccess}
       />
+
+      <AnimatePresence>
+        {checkoutOpen && (
+          <CartCheckoutModal
+            items={items}
+            onClose={() => setCheckoutOpen(false)}
+            onSuccess={() => {
+              clearCart()
+            }}
+            onViewPurchases={() => {
+              setCheckoutOpen(false)
+              setOpen(false)
+              router.push('/marketplace/dashboard?tab=purchases')
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {open && (
@@ -259,7 +263,7 @@ export function CartDrawer() {
 
                   <button
                     onClick={handleCheckout}
-                    disabled={checkingOut}
+                    disabled={checkoutOpen}
                     className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all disabled:opacity-50"
                     style={{
                       background: 'linear-gradient(135deg, rgba(255,193,7,0.9) 0%, rgba(245,158,11,0.85) 100%)',
@@ -268,7 +272,7 @@ export function CartDrawer() {
                       boxShadow: '0 0 28px rgba(255,193,7,0.15)',
                     }}
                     onMouseEnter={(e) => {
-                      if (!checkingOut) {
+                      if (!checkoutOpen) {
                         ;(e.currentTarget as HTMLElement).style.boxShadow = '0 0 40px rgba(255,193,7,0.3)'
                       }
                     }}
@@ -276,15 +280,7 @@ export function CartDrawer() {
                       ;(e.currentTarget as HTMLElement).style.boxShadow = '0 0 28px rgba(255,193,7,0.15)'
                     }}
                   >
-                    {checkingOut ? (
-                      <>
-                        <Loader2 size={14} className="animate-spin" /> Procesando...
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingBag size={14} /> Comprar todo
-                      </>
-                    )}
+                    <ShoppingBag size={14} /> Comprar todo
                   </button>
 
                   <button
