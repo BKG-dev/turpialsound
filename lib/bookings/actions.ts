@@ -4,13 +4,12 @@ import { Prisma } from '@/generated/prisma/client'
 import { prisma } from '@/lib/db'
 import { buildPublicCode } from '@/lib/bookings'
 import { CATALOG_SERVICES } from '@/lib/bookings/catalog'
-import { assignResourceForRequestedSlot } from '@/lib/bookings/availability'
+import { assignResourceForRequestedSlot, resourceHasCollision } from '@/lib/bookings/availability'
 import { buildBookingEstimate } from '@/lib/bookings/estimate'
 import { syncBookingToGoogleCalendar } from '@/lib/bookings/google-calendar'
 import {
   getOperationalStatus,
   getPaymentDeadline,
-  PAYMENT_WINDOW_MINUTES,
   mapOperationalStatusToBookingStatus,
   setOperationalStatusInInternalNotes,
 } from '@/lib/bookings/operations'
@@ -24,6 +23,7 @@ import {
 import { sendBookingNotifications } from '@/lib/bookings/notifications'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
 import { isLabPhoneVerifiedRecently } from '@/lib/whatsapp/lab-token-store'
+import { sendBookingWhatsapp } from '@/lib/whatsapp/booking-notifications'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const WHATSAPP_REGEX = /^\+58(412|414|416|424|426)\d{7}$/
@@ -34,6 +34,13 @@ const BOOKING_SUBMIT_MAX_ATTEMPTS = 3
 const RETRYABLE_BOOKING_SUBMIT_ERROR_CODES = new Set(['P2034', 'P2002', '40001', '40P01'])
 const ACTIVE_HOLD_BLOCKING_ERROR =
   'Ya tienes una solicitud pendiente de pago o revision. Completa esa solicitud antes de crear una nueva.'
+
+class PaymentReportSlotTakenError extends Error {
+  constructor() {
+    super('El bloque ya fue tomado por otro cliente que reporto pago primero.')
+    this.name = 'PaymentReportSlotTakenError'
+  }
+}
 
 function getUnknownErrorCode(error: unknown): string | null {
   if (typeof error !== 'object' || error === null) {
@@ -359,8 +366,6 @@ export async function submitBookingRequest(
       try {
         submitResult = await prisma.$transaction(
           async (tx) => {
-            const activeHoldCutoff = new Date(Date.now() - PAYMENT_WINDOW_MINUTES * 60 * 1000)
-
             if (!shouldBypassActiveHoldGuard) {
               const existingActiveHolds = await tx.bookingRequest.count({
                 where: {
@@ -370,15 +375,7 @@ export async function submitBookingRequest(
                       OR: [{ requesterEmail }, { requesterPhone }],
                     },
                     {
-                      OR: [
-                        { internalNotes: { contains: '[ops_status:payment_reported]' } },
-                        {
-                          AND: [
-                            { internalNotes: { contains: '[ops_status:pending_payment]' } },
-                            { createdAt: { gte: activeHoldCutoff } },
-                          ],
-                        },
-                      ],
+                      internalNotes: { contains: '[ops_status:payment_reported]' },
                     },
                   ],
                 },
@@ -539,6 +536,26 @@ export async function submitBookingRequest(
       status: 'pending_payment',
     })
 
+    sendBookingWhatsapp(
+      'pending_payment',
+      { phone: requesterPhone, name: requesterName },
+      {
+        publicCode: submitResult.publicCode,
+        serviceName,
+        variantName: serviceVariant.name,
+        resourceName: submitResult.resourceName,
+      },
+    ).catch((error) => {
+      console.error('[whatsapp.pending_payment]', {
+        event: 'pending_payment',
+        publicCode: submitResult.publicCode,
+        hasPhone: Boolean(requesterPhone?.trim()),
+        reason: 'unexpected_error',
+        messageId: null,
+        errorType: error instanceof Error ? error.name : typeof error,
+      })
+    })
+
     return {
       success: true,
       publicCode: submitResult.publicCode,
@@ -629,6 +646,7 @@ export async function reportBookingPayment(
             },
             resource: {
               select: {
+                id: true,
                 name: true,
               },
             },
@@ -721,6 +739,22 @@ export async function reportBookingPayment(
           paymentProofId = paymentProof.id
         }
 
+        const resourceId = booking.items[0]?.resource?.id ?? null
+
+        if (resourceId && booking.eventDate && booking.eventEndDate) {
+          const slotTaken = await resourceHasCollision(
+            tx,
+            resourceId,
+            booking.eventDate,
+            booking.eventEndDate,
+            { excludeBookingId: booking.id },
+          )
+
+          if (slotTaken) {
+            throw new PaymentReportSlotTakenError()
+          }
+        }
+
         await tx.bookingRequest.update({
           where: { id: booking.id },
           data: {
@@ -758,7 +792,52 @@ export async function reportBookingPayment(
         })
       })
     } catch (error) {
-      console.error('[reportBookingPayment.persistence]', error)
+      if (error instanceof PaymentReportSlotTakenError) {
+        await prisma.bookingRequest.update({
+          where: { id: booking.id },
+          data: { incidenceReason: 'slot_taken_by_other_payment' },
+        })
+
+        await prisma.auditLog.create({
+          data: {
+            bookingRequestId: booking.id,
+            action: 'payment_report_slot_taken',
+            nextState: {
+              operationalStatus: currentOperationalStatus,
+              reason: 'slot_taken_by_other_payment',
+            },
+          },
+        })
+
+        if (booking.requesterPhone) {
+          sendBookingWhatsapp(
+            'incidence',
+            { phone: booking.requesterPhone, name: booking.requesterName },
+            {
+              publicCode: booking.publicCode,
+              incidenceReason: 'slot_taken_by_other_payment',
+            },
+          ).catch(() => {})
+        }
+
+        return {
+          success: false,
+          error:
+            'El bloque ya fue tomado por otro cliente que reporto pago primero. Lamentamos el inconveniente. El equipo te contactara para ayudarte a reprogramar.',
+        }
+      }
+
+      if (booking.requesterPhone) {
+        sendBookingWhatsapp(
+          'incidence',
+          { phone: booking.requesterPhone, name: booking.requesterName },
+          {
+            publicCode: booking.publicCode,
+            incidenceReason: 'slot_taken_by_other_payment',
+          },
+        ).catch(() => {})
+      }
+
       return {
         success: false,
         error: 'No pudimos persistir el reporte de pago. Intenta de nuevo.',
@@ -799,6 +878,19 @@ export async function reportBookingPayment(
           calendarEventId: calendarSync.eventId,
         },
       })
+    }
+
+    if (booking.requesterPhone) {
+      sendBookingWhatsapp(
+        'payment_reported',
+        { phone: booking.requesterPhone, name: booking.requesterName },
+        {
+          publicCode: booking.publicCode,
+          serviceName: primaryItem?.serviceVariant.service.name ?? null,
+          variantName: primaryItem?.serviceVariant.name ?? null,
+          resourceName: primaryItem?.resource?.name ?? null,
+        },
+      ).catch(() => {})
     }
 
     await sendBookingNotifications('booking.payment_reported', {
