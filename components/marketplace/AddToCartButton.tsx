@@ -122,6 +122,12 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
         {isOutOfStock ? 'Sin stock' : isUnavailable ? 'No disponible' : 'Agregar al carrito'}
       </button>
 
+      {!isOutOfStock && !isUnavailable && maxAvailable > 0 && maxAvailable < 99 && (
+        <span className="text-[9px] text-[#7a7a7a] text-center">
+          {maxAvailable} disponibles
+        </span>
+      )}
+
       <AnimatePresence>
         {showQty && (
           <motion.div

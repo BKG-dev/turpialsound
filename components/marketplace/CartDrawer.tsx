@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Minus, Plus, Trash2, ShoppingBag, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useCart } from '@/lib/marketplace/cart-store'
 import { useMarketplaceSession } from '@/components/marketplace/MarketplaceAuthBar'
 import { MarketplaceAuthModal } from '@/components/marketplace/MarketplaceAuthModal'
@@ -54,17 +55,9 @@ export function CartDrawer() {
     setCheckingOut(true)
     trackMarketplaceClientEvent({ eventType: 'cart_checkout', metadataJson: { count: items.length, total: getCartTotal() } })
 
-    if (items.length === 1) {
-      // Single item: redirect to checkout page
-      setCheckingOut(false)
-      router.push(`/marketplace/dashboard?tab=checkout&source=cart&listing=${items[0].listingId}`)
-      return
-    }
-
-    // Multi-item: create transactions for each
     const checkoutItems = items.map(item => ({
       listingId: item.listingId,
-      paymentMethod: 'pago-movil',
+      paymentMethod: 'PAGO_MOVIL',
     }))
 
     const result = await checkoutCart(checkoutItems)
@@ -172,8 +165,10 @@ export function CartDrawer() {
                         key={item.listingId}
                         className="flex gap-3 px-5 py-4"
                       >
-                        <div
-                          className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg"
+                        <Link
+                          href={`/marketplace/${item.slug}`}
+                          onClick={() => setOpen(false)}
+                          className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg block"
                           style={{ background: 'var(--mp-media-bg)', border: '1px solid var(--mp-border)' }}
                         >
                           {item.image ? (
@@ -187,7 +182,7 @@ export function CartDrawer() {
                               <ShoppingBag size={16} className="text-[#6a6a6a]" />
                             </div>
                           )}
-                        </div>
+                        </Link>
 
                         <div className="flex min-w-0 flex-1 flex-col justify-between">
                           <div>
