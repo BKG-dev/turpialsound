@@ -2,8 +2,8 @@
 type: master-dashboard
 project: "Turpial Sound"
 status: active-integration
-phase: "Fase F: Integracion de ramas hijas. Code merge pendiente."
-last_updated: "17/05/26 00:10"
+phase: "Fase G: Optimizacion marketplace post-cierre. 8 sprints nuevos (S-MP-01 a S-MP-08)."
+last_updated: "17/05/26 00:25"
 mother_branch: "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16"
 mother_head: "RAMAMADRE_BASE"
 production_branch: "prod/current-www-turpialsound-2026-05-08"
@@ -106,13 +106,11 @@ tags:
 
 | # | Accion | Prioridad |
 |---|--------|-----------|
-| 1 | **Mergear codigo de `Manuel/s-adm-01-legal-entity-2026-05-15` en `MADRE/v2-...`** | 🔴 P0 |
-| 2 | **Mergear su propio codigo en `MADRE/v2-...`** | 🔴 P0 |
-| 3 | **Resolver conflictos** de codigo entre ambas ramas | 🔴 P0 |
-| 4 | **Validar pre-merge**: `npx tsc --noEmit`, `pnpm build` | 🔴 P0 |
-| 5 | **Smoke post-merge**: `/`, `/marketplace`, `/reservas`, `/api/bcv-rate`, `/admin/login` | 🔴 P0 |
-| 6 | NO desplegar a produccion hasta smoke OK | 🚫 |
-| 7 | Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel | 🟡 |
+| 1 | **S-MP-03: Formulario de pago y tasas** (P1) | 🟡 |
+| 2 | **S-MP-05: Modal de compra desktop + semaforo** (P1) | 🟡 |
+| 3 | **S-MP-07: Home — seccion marketplace + navegacion** (P2) | 🟢 |
+| 4 | NO desplegar a produccion sin aprobacion explicita de ambos | 🚫 |
+| 5 | Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel | 🟡 |
 
 ---
 
@@ -145,11 +143,15 @@ tags:
 
 | # | Accion | Prioridad |
 |---|--------|-----------|
-| 1 | **Esperar a que Jean integre el codigo en la rama madre** | 🔴 P0 |
-| 2 | **Ejecutar QA full regression post-merge** | 🟡 |
-| 3 | S-ADM-02: Cuenta bancaria juridica + Binance empresa | 📋 Pendiente fisico |
-| 4 | S-ADM-03: Modelos comerciales y juridicos | 📋 Pendiente fisico |
-| 5 | S-ADM-04: Deploy + capacitacion CDA | 📋 Pendiente fisico |
+| 1 | **S-MP-01: Carrito de compras** (P0) | 🔴 Prioridad máxima |
+| 2 | **S-MP-02: Búsqueda y filtros** (P0) | 🔴 Prioridad máxima |
+| 3 | **S-MP-06: Drop Social** (P1) | 🟡 |
+| 4 | **S-MP-04: Publicación de productos** (P2) | 🟢 |
+| 5 | **S-MP-07: Dashboard** (P2) — modo oscuro, cards cliqueables | 🟢 |
+| 6 | **S-MP-08: Notificaciones** (P2) | 🟢 |
+| 7 | S-ADM-02: Cuenta bancaria juridica + Binance empresa | 📋 Pendiente fisico |
+| 8 | S-ADM-03: Modelos comerciales y juridicos | 📋 Pendiente fisico |
+| 9 | S-ADM-04: Deploy + capacitacion CDA | 📋 Pendiente fisico |
 
 ---
 

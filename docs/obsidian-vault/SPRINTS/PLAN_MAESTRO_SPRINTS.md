@@ -106,11 +106,12 @@ tags:
 El plan se organiza en **5 tracks paralelos** con dependencias internas. Cada track avanza independientemente, pero comparte recursos (Jean y Manuel).
 
 ```
-TRACK 1 🟦 MARKETPLACE: S12 → S13 → S14+S14B → S15 → S16 → S17 → S18 → S19 → S20
+TRACK 1 🟦 MARKETPLACE: S12 → S13 → S14+S14B → S15 → S16 → S17 → S18 → S19 → S20 → S21 ✅ CERRADO
+TRACK 1B 🟦 MARKETPLACE OPT: S-MP-01 → S-MP-02 → S-MP-03/05/06 → S-MP-04 → S-MP-07 → S-MP-08
 TRACK 2 🟩 BOOKING:      S-JB-01 → S-JB-02 → S-JB-03 → S-JB-04
-TRACK 3 🟨 CRECIMIENTO:  S-MK-01 → S-MK-02 → S-MK-03 → S-MK-04 → S-MK-05 → S-MK-06
+TRACK 3 🟨 CRECIMIENTO:  S-MK-01 → S-MK-02 → S-MK-03 → S-MK-04 → S-MK-05 → S-MK-06 ✅ CERRADO
 TRACK 4 🟪 ADMIN:        S-ADM-01 → S-ADM-02 → S-ADM-03 → S-ADM-04
-TRACK 5 🟧 UI/UX:        S-UX-01 → S-UX-02
+TRACK 5 🟧 UI/UX:        S-UX-01 → S-UX-02 ✅ CERRADO
 ```
 
 ---
@@ -383,6 +384,201 @@ TRACK 5 🟧 UI/UX:        S-UX-01 → S-UX-02
 6. Monitoreo 48h post-deploy
 
 **Cierre:** ✅ Marketplace en producción con smoke test limpio
+
+---
+
+## 🟦 TRACK 1B: MARKETPLACE — OPTIMIZACIÓN POST-CIERRE (Reunión 15 May 2026)
+
+> **Origen:** 37 pendientes identificados en reunión del 15 May 2026.
+> **Prioridad:** P0 > P1 > P2. Cada sprint cierra un área funcional completa.
+
+---
+
+### S-MP-01 — Carrito de Compras (P0 🔴)
+
+| Campo | Valor |
+|-------|-------|
+| **Owner** | 👤 Manuel |
+| **Tipo** | 🔧 TÉCNICO |
+| **Zona** | `components/marketplace/CartDrawer.tsx`, `actions/marketplace/listings.ts` |
+
+**Tareas:**
+1. Cantidad por defecto = 1 al agregar producto desde home o discovery
+2. Validar inventario real (`MpListing.quantity`) antes de permitir agregar al carrito
+3. Restringir: no permitir agregar más unidades de las disponibles en `quantity`
+4. Edición de cantidad en carrito respetando `Math.min(requested, available)`
+5. Completar lógica de compra multi-artículo ("Comprar todo"):
+   - Cada item genera su propia `MpTransaction`
+   - Consolidar en dashboard admin como compras separadas
+6. Test Playwright: agregar 3 items → modificar cantidades → verificar validación inventario → checkout
+
+**Cierre:** ✅ Carrito funcional con validación de inventario + compra multi-artículo + test E2E
+
+---
+
+### S-MP-02 — Búsqueda y Filtros (P0 🔴)
+
+| Campo | Valor |
+|-------|-------|
+| **Owner** | 👤 Manuel |
+| **Tipo** | 🔧 TÉCNICO |
+| **Zona** | `app/marketplace/MarketplacePageClient.tsx`, `lib/search/` |
+| **Depende de** | S-MP-01 (el carrito debe estar estable) |
+
+**Tareas:**
+1. Mover campo de búsqueda fuera de los filtros, al lado de ellos (más visibilidad)
+2. Corregir lógica difusa (Fuse.js): investigar por qué no ejecuta búsqueda por aproximación
+   - Verificar que `threshold` y `distance` estén configurados correctamente
+   - Arreglar el filtro estricto que bloquea búsquedas parciales
+3. Añadir campo ubicación (ciudad/estado) en formularios de publicación con dropdowns dependientes
+4. Todos los formularios deben incluir filtros de ubicación requeridos
+5. Test Playwright: buscar "guitara" (sin u) → verificar resultados fuzzy → filtrar por ciudad
+
+**Cierre:** ✅ Búsqueda difusa funcional + filtros de ubicación en formularios + test E2E
+
+---
+
+### S-MP-03 — Formulario de Pago y Tasas (P1 🟡)
+
+| Campo | Valor |
+|-------|-------|
+| **Owner** | 👤 Jean |
+| **Tipo** | 🔧 TÉCNICO |
+| **Zona** | `components/marketplace/MarketplaceModals.tsx`, `lib/marketplace/bcv-scheduler.ts` |
+
+**Tareas:**
+1. Revisar y reparar actualización de tasa BCV: verificar que el scheduler consulta la API correctamente
+   - Si la API falla, usar último valor DB. Si no hay, alertar al admin.
+2. Jerarquía visual del formulario de solicitud: monto a pagar primero y en negrita
+3. Priorizar tasa de cambio como segundo elemento visual relevante
+4. Jerarquía de métodos: Pago Móvil → Transferencia → Binance → Efectivo
+5. Flujo de pago resiliente: si el usuario abandona y retoma, poder continuar sin bloqueo
+6. Resaltar monto total en bolívares para evitar confusión
+
+**Cierre:** ✅ Tasa BCV actualizando correctamente + formulario con jerarquía visual + flujo resiliente
+
+---
+
+### S-MP-04 — Publicación de Productos (P2 🟢)
+
+| Campo | Valor |
+|-------|-------|
+| **Owner** | 👤 Manuel |
+| **Tipo** | 🔧 TÉCNICO |
+| **Zona** | `app/marketplace/publish/`, componentes de formulario |
+
+**Tareas:**
+1. Habilitar campo de carga de imágenes en formularios de productos y servicios
+2. Eliminar uso de imágenes genéricas como respaldo — requerir al menos 1 imagen real
+3. Validación: máximo 5 imágenes por listing, mínimo 1
+4. Preview de imágenes antes de publicar
+5. Test Playwright: publicar listing con 3 imágenes → verificar que se muestran en discovery
+
+**Cierre:** ✅ Formularios con carga de imágenes + sin placeholders genéricos + test E2E
+
+---
+
+### S-MP-05 — Modal de Compra (Desktop) (P1 🟡)
+
+| Campo | Valor |
+|-------|-------|
+| **Owner** | 👤 Jean |
+| **Tipo** | 🔧 TÉCNICO |
+| **Zona** | `components/marketplace/MarketplaceModals.tsx`, `components/marketplace/TransactionDetailModal.tsx` |
+
+**Tareas:**
+1. Rediseñar modal de completar compra para escritorio: layout horizontal, sin scroll vertical
+2. Semáforo (TransactionDetailModal): verificar por qué no aparece en producción
+   - Revisar que el componente esté importado y registrado correctamente
+   - Traer la funcionalidad desde la rama hija a la madre si hace falta
+3. Restaurar botones de "marcar recibido" y "completar entrega" en el modal
+4. Implementar botones de confirmación de entrega con notificaciones asociadas
+5. Optimizar viewport desktop: evitar scroll excesivo, aprovechar espacio horizontal
+
+**Cierre:** ✅ Modal horizontal en desktop + semáforo visible + botones de entrega funcionales
+
+---
+
+### S-MP-06 — Drop Social (Programa de Referidos) (P1 🟡)
+
+| Campo | Valor |
+|-------|-------|
+| **Owner** | 👤 Manuel |
+| **Tipo** | 🔧 TÉCNICO |
+| **Zona** | `actions/marketplace/referrals.ts`, `components/marketplace/`, `app/marketplace/r/[code]/` |
+| **Depende de** | S-MP-01 (carrito estable) |
+
+**Tareas:**
+1. Separar Drop Social del botón de compartir estándar: crear opción independiente con incentivos claros
+2. Asignar identificador automático al usuario (`MpReferralLink.code`) para trackear ventas
+3. Completar trazabilidad del token social: al realizar compra vía enlace de referido, registrar `referredBy`
+4. Notificar comisiones al usuario referidor cuando su enlace genera una venta
+5. Dashboard para el usuario: "Mis Referidos" → ventas generadas, comisiones acumuladas
+6. Test Playwright: crear referral link → comprar como otro usuario vía ese link → verificar comisión registrada
+
+**Cierre:** ✅ Drop Social funcional con tracking de referidos + notificaciones + dashboard + test E2E
+
+---
+
+### S-MP-07 — Home, Navegación y Dashboard (P2 🟢)
+
+| Campo | Valor |
+|-------|-------|
+| **Owner** | 👤 Jean (home) + 👤 Manuel (dashboard) |
+| **Tipo** | 🔧 TÉCNICO |
+| **Zona** | `app/page.tsx`, `components/marketplace/dashboard/DashboardClient.tsx` |
+
+**Tareas (Jean):**
+1. Crear sección marketplace en homepage: componente visual antes del footer invitando a navegar
+2. Reordenar navegación: barra de pestañas por encima de mensajes de prioridad
+
+**Tareas (Manuel):**
+3. Modo oscuro en panel de administración: reutilizar lógica del tema oscuro de marketplace
+4. Cards del dashboard cliqueables: cada card dirige a su sección de interés
+5. Promover a Igor Mugdanov (`imugdanov52@gmail.com`) a rol `ADMIN`
+6. Verificar que cualquier admin pueda promover a un socio a admin
+
+**Cierre:** ✅ Sección marketplace en home + navegación corregida + modo oscuro + dashboard interactivo
+
+---
+
+### S-MP-08 — Notificaciones (P2 🟢)
+
+| Campo | Valor |
+|-------|-------|
+| **Owner** | 👤 Manuel |
+| **Tipo** | 🔧 TÉCNICO |
+| **Zona** | `lib/marketplace/notifications.ts`, `lib/whatsapp/` |
+| **Depende de** | S-MP-05 (flujo de entrega), S-MP-06 (Drop Social) |
+
+**Tareas:**
+1. Notificaciones jerarquizadas para compras, ventas, cambios de estado de flujo
+2. Alertas WhatsApp para estados críticos: disputas, nueva venta, pago recibido, liberación de fondos
+3. Enlaces directos a acciones requeridas en cada notificación (ej: "Revisar pago" → link al dashboard)
+4. Notificaciones de Drop Social: "Alguien compró con tu enlace" → monto de comisión generada
+5. Test Playwright: simular flujo completo → verificar notificaciones en cada cambio de estado
+
+**Cierre:** ✅ Sistema de notificaciones multicanal (in-app + WhatsApp) con enlaces accionables
+
+---
+
+### 📊 PRIORIZACIÓN Y ORDEN DE EJECUCIÓN
+
+| Sprint | Prioridad | Owner | Depende de |
+|--------|-----------|-------|------------|
+| **S-MP-01** Carrito | 🔴 P0 | Manuel | — |
+| **S-MP-02** Búsqueda y filtros | 🔴 P0 | Manuel | S-MP-01 |
+| **S-MP-03** Pagos y tasas | 🟡 P1 | Jean | — |
+| **S-MP-04** Publicación productos | 🟢 P2 | Manuel | S-MP-02 |
+| **S-MP-05** Modal escritorio | 🟡 P1 | Jean | — |
+| **S-MP-06** Drop Social | 🟡 P1 | Manuel | S-MP-01 |
+| **S-MP-07** Home y dashboard | 🟢 P2 | Jean+Manuel | S-MP-05 |
+| **S-MP-08** Notificaciones | 🟢 P2 | Manuel | S-MP-05, S-MP-06 |
+
+```
+Manuel: S-MP-01 → S-MP-02 → S-MP-06 → S-MP-04 → S-MP-07(dashboard) → S-MP-08
+Jean:   S-MP-03 → S-MP-05 → S-MP-07(home)
+```
 
 ---
 
