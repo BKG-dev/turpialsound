@@ -3,7 +3,7 @@ type: master-dashboard
 project: "Turpial Sound"
 status: active-integration
 phase: "Fase G: Optimizacion marketplace post-cierre. 8 sprints nuevos (S-MP-01 a S-MP-08)."
-last_updated: "17/05/26 01:17"
+last_updated: "17/05/26 01:23"
 mother_branch: "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16"
 mother_head: "RAMAMADRE_BASE"
 production_branch: "prod/current-www-turpialsound-2026-05-08"
@@ -285,7 +285,7 @@ git push origin main
 
 ---
 
-> **Ultima actualizacion:** 17/05/26 00:10 VET | **Estado:** Ambas ramas hijas listas con docs sincronizados. Code merge a madre pendiente (Jean). | **Tag:** `integracion-docs-v2-2026-05-17`
+> **Ultima actualizacion:** 17/05/26 01:23 VET | **Estado:** 8 sprints S-MP planificados. Listo para arrancar S-MP-01. | **Tag:** `sync-final-2026-05-17`
 
 ---
 

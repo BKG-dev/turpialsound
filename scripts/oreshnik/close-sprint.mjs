@@ -417,115 +417,35 @@ if (pushChild.includes('error') || pushChild.includes('fatal')) {
 }
 ok(`Push rama hija: ${currentBranch}`)
 
-// C3: Pull latest from origin/mother then merge docs (Google Docs style)
+// C3: Crear nueva rama madre dinámica
 const newVersion = motherData.version + 1
 const sprintTag = sanitize(sprintId)
 const descTag = descFlag ? `-${sanitize(descFlag)}` : ''
 const newMotherName = `MADRE/v${newVersion}-${sprintTag}${descTag}-${vet.date}`
-const oldMother = motherData.current
 
 info(`Creando rama madre: ${newMotherName}`)
 
-// Checkout old mother first
+const oldMother = motherData.current
 const oldMotherExists = sh(`git rev-parse --verify ${oldMother} 2>nul`)
+
 if (oldMotherExists) {
   sh(`git checkout ${oldMother}`, { fatal: true })
+  sh(`git checkout -b ${newMotherName}`, { fatal: true })
 } else {
+  // Si la madre local no existe, intentar desde origin
   sh(`git fetch origin ${oldMother}`, { fatal: true })
-  sh(`git checkout -b ${oldMother} origin/${oldMother}`, { fatal: true })
+  sh(`git checkout -b ${newMotherName} origin/${oldMother}`, { fatal: true })
 }
 
-info(`Actualizando madre desde origin/${oldMother}...`)
-const pullMother = sh(`git pull origin ${oldMother} 2>&1`)
-if (pullMother.includes('Already up to date')) {
-  info(`Madre ${oldMother} ya al dia`)
-} else if (pullMother.includes('error') || pullMother.includes('fatal') || pullMother.includes('CONFLICT')) {
-  fail(`No se pudo actualizar madre: ${pullMother.slice(0, 200)}`)
-  sh(`git checkout ${currentBranch}`, { fatal: true })
-  process.exit(1)
-} else {
-  ok(`Madre actualizada con cambios de origin/${oldMother}`)
-}
+info(`Nueva madre creada desde: ${oldMother}`)
 
-// Crear nueva rama madre desde la actualizada
-sh(`git checkout -b ${newMotherName}`, { fatal: true })
-info(`Nueva madre creada desde ${oldMother} (ya actualizada): ${newMotherName}`)
+// C4: Copiar SOLO docs desde la rama hija
+sh(`git checkout ${currentBranch} -- docs/`, { fatal: true })
+sh('git add docs/', { fatal: true })
 
-// C4: MERGE solo docs desde rama hija (NO sobrescribir — fusionar como Google Docs)
-step('C4/6 MERGE — Fusionar docs sin perder cambios del otro operador')
-info(`Mergeando docs desde rama hija ${currentBranch}...`)
-
-// Estrategia subtree: trata docs/ como raiz del merge → solo mergea docs
-const mergeResult = sh(`git merge ${currentBranch} --no-commit --no-ff --strategy=recursive -X subtree=docs/ -X patience 2>&1`)
-
-// Detectar conflictos
-const conflictFiles = sh('git diff --name-only --diff-filter=U 2>nul')
-
-if (conflictFiles) {
-  // ¡Conflicto real! Ambos operadores editaron las mismas secciones de docs.
-  sh('git merge --abort 2>nul')
-  
-  console.log('')
-  console.log(`${RED}${BOLD}  ⚠️  CONFLICTO DE DOCUMENTACION${RESET}`)
-  console.log('')
-  console.log(`  Archivos en conflicto:`)
-  for (const f of conflictFiles.split('\n').filter(Boolean)) {
-    console.log(`    ${f}`)
-  }
-  console.log('')
-  console.log(`  Causa: Ambos operadores editaron las mismas secciones de docs.`)
-  console.log(`  Git no puede auto-resolverlo (como Google Docs con misma linea).`)
-  console.log('')
-  console.log(`${BOLD}  ACCION REQUERIDA:${RESET}`)
-  console.log(`  1. Resuelve los conflictos manualmente:`)
-  console.log(`     git checkout ${newMotherName}`)
-  console.log(`     git merge ${currentBranch}`)
-  console.log(`     # Edita los archivos con conflictos`)
-  console.log(`  2. Luego continua:`)
-  console.log(`     git add docs/`)
-  console.log(`     git commit -m "docs(mother): merge ${sprintId} resuelto"`)
-  console.log(`     git push origin ${newMotherName}`)
-  console.log('')
-  
-  sh(`git checkout ${currentBranch}`, { fatal: true })
-  process.exit(3) // Exit code 3 = merge conflict
-}
-
-// Merge exitoso sin conflictos → solo commitear docs
-info('Merge limpio. Solo se commitean cambios en docs/.')
-
-// Unstage archivos NO-docs que el merge haya traido (codigo del otro operador)
-const nonDocChanges = sh('git diff --cached --name-only').split('\n').filter(f => f && !f.startsWith('docs/'))
-if (nonDocChanges.length > 0) {
-  info(`Descartando ${nonDocChanges.length} archivos de codigo del merge (solo docs van a madre)...`)
-  for (const f of nonDocChanges) {
-    sh(`git reset HEAD -- "${f}" 2>nul`)
-    sh(`git checkout -- "${f}" 2>nul`)
-  }
-}
-
-// Verificar que solo hay cambios en docs
-const stagedFiles = sh('git diff --cached --name-only')
-const onlyDocs = stagedFiles.split('\n').filter(Boolean).every(f => f.startsWith('docs/'))
-
-if (!onlyDocs && stagedFiles) {
-  warn('Hay archivos no-docs en el merge. Revisando...')
-  // Resetear cualquier no-doc que haya quedado
-  sh('git reset HEAD -- . 2>nul')
-  sh('git add docs/')
-}
-
-// Solo commitear si hay cambios en docs
-const finalDocChanges = sh('git diff --cached --name-only -- docs/')
-if (finalDocChanges) {
-  sh('git add docs/', { fatal: true })
-  const motherCommitMsg = `docs(mother): merge ${sprintId} — ${operator} [${vet.fulldate} VET] → ${newMotherName}`
-  sh(`git commit -m "${motherCommitMsg}"`, { fatal: true })
-  ok(`Commit madre: ${motherCommitMsg}`)
-} else {
-  info('Sin cambios netos en docs respecto a madre — no se crea nuevo commit')
-  // Si no hay cambios netos, la rama madre no debe ser diferente. Pero la version igual avanza.
-}
+const motherCommitMsg = `docs(mother): sync ${sprintId} — ${operator} [${vet.fulldate} VET] → ${newMotherName}`
+sh(`git commit -m "${motherCommitMsg}"`, { fatal: true })
+ok(`Commit madre: ${motherCommitMsg}`)
 
 // C5: Push madre
 const pushMother = sh(`git push origin ${newMotherName} 2>&1`)
