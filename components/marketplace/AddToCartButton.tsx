@@ -29,7 +29,9 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
   const isSeller = currentUserId
     ? (listing.type === 'product' ? listing.seller.id : listing.talent.id) === currentUserId
     : false
-  const isUnavailable = listing.status !== 'active' || !!listing.activeTransactionStatus
+  const maxAvailable = listing.type === 'product' ? (listing.quantity ?? 1) : 99
+  const isOutOfStock = maxAvailable < 1
+  const isUnavailable = listing.status !== 'active' || !!listing.activeTransactionStatus || isOutOfStock
   const price = listing.type === 'product' ? listing.price : listing.priceFrom
   const sellerName = listing.type === 'product' ? listing.seller.name : listing.talent.name
   const sellerId = listing.type === 'product' ? listing.seller.id : listing.talent.id
@@ -48,6 +50,8 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
       removeItem(listing.id)
       return
     }
+    if (maxAvailable < 1) return
+    const finalQty = Math.min(qty, maxAvailable)
     addItem({
       listingId: listing.id,
       slug: listing.slug,
@@ -56,14 +60,15 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
       image: cover,
       sellerName,
       sellerId,
-      quantity: qty,
+      quantity: finalQty,
+      availableQuantity: maxAvailable,
     })
     setShowQty(false)
     setAdded(true)
     setTimeout(() => {
       setAdded(false)
     }, 1200)
-  }, [listing, price, cover, sellerName, sellerId, qty, alreadyInCart, addItem, removeItem])
+  }, [listing, price, cover, sellerName, sellerId, qty, maxAvailable, alreadyInCart, addItem, removeItem])
 
   const isDetail = variant === 'detail'
 
@@ -114,7 +119,7 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
         }}
       >
         <ShoppingCart size={isDetail ? 16 : 13} />
-        {isUnavailable ? 'No disponible' : 'Agregar al carrito'}
+        {isOutOfStock ? 'Sin stock' : isUnavailable ? 'No disponible' : 'Agregar al carrito'}
       </button>
 
       <AnimatePresence>
@@ -143,7 +148,7 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
               {qty}
             </span>
             <button
-              onClick={() => setQty((p) => Math.min(99, p + 1))}
+              onClick={() => setQty((p) => Math.min(maxAvailable, p + 1))}
               className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-white/5"
               style={{ color: 'var(--mp-text-muted)' }}
             >

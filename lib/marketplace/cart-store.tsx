@@ -7,7 +7,7 @@ const STORAGE_KEY = 'turpial-cart'
 
 type CartContextValue = {
   items: CartItem[]
-  addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void
+  addItem: (item: Omit<CartItem, 'quantity' | 'availableQuantity'> & { quantity?: number; availableQuantity?: number }) => void
   removeItem: (listingId: string) => void
   updateQuantity: (listingId: string, quantity: number) => void
   clearCart: () => void
@@ -37,7 +37,14 @@ function loadCart(): CartItem[] {
         typeof (item as CartItem).sellerId === 'string' &&
         typeof (item as CartItem).quantity === 'number' &&
         (item as CartItem).quantity > 0,
-    )
+    ).map((item) => {
+      const cartItem = item as CartItem
+      return {
+        ...cartItem,
+        availableQuantity: cartItem.availableQuantity ?? 99,
+        quantity: Math.min(cartItem.quantity, cartItem.availableQuantity ?? 99),
+      }
+    })
   } catch {
     return []
   }
@@ -68,11 +75,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, hydrated])
 
   const addItem = useCallback(
-    (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
+    (item: Omit<CartItem, 'quantity' | 'availableQuantity'> & { quantity?: number; availableQuantity?: number }) => {
       setItems((prev) => {
         const existing = prev.find((i) => i.listingId === item.listingId)
         if (existing) return prev
-        return [...prev, { ...item, quantity: item.quantity ?? 1 }]
+        const maxQty = item.availableQuantity ?? 99
+        const qty = Math.min(item.quantity ?? 1, maxQty)
+        if (qty < 1) return prev
+        return [...prev, { ...item, quantity: qty, availableQuantity: item.availableQuantity ?? 99 } as CartItem]
       })
     },
     [],
@@ -85,7 +95,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const updateQuantity = useCallback((listingId: string, quantity: number) => {
     if (quantity < 1) return
     setItems((prev) =>
-      prev.map((i) => (i.listingId === listingId ? { ...i, quantity } : i)),
+      prev.map((i) => {
+        if (i.listingId !== listingId) return i
+        const capped = Math.min(quantity, i.availableQuantity ?? 99)
+        return { ...i, quantity: capped }
+      }),
     )
   }, [])
 
