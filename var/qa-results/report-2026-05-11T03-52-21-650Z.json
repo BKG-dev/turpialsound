@@ -1,0 +1,134 @@
+{
+  "runId": "2026-05-11T03-52-21-650Z",
+  "appUrl": "https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app",
+  "startedAt": "2026-05-11T03:52:21.651Z",
+  "finishedAt": "2026-05-11T03:52:25.673Z",
+  "modules": [
+    {
+      "module": "QA-00",
+      "status": "RUNNING",
+      "durationMs": null,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [],
+      "startedAt": "2026-05-11T03:52:21.664Z",
+      "finishedAt": null
+    },
+    {
+      "module": "QA-00",
+      "status": "FAIL",
+      "durationMs": null,
+      "failureCode": "ENV_MISSING",
+      "failureDetail": "ENV_MISSING: QA_BUYER_EMAIL, QA_BUYER_IDENTIFIER, QA_BUYER_PASSWORD, QA_SELLER_EMAIL, QA_SELLER_IDENTIFIER, QA_SELLER_PASSWORD",
+      "checks": [
+        {
+          "check": "env",
+          "status": "FAIL",
+          "detail": "ENV_MISSING: QA_BUYER_EMAIL, QA_BUYER_IDENTIFIER, QA_BUYER_PASSWORD, QA_SELLER_EMAIL, QA_SELLER_IDENTIFIER, QA_SELLER_PASSWORD"
+        }
+      ],
+      "startedAt": "2026-05-11T03:52:21.664Z",
+      "finishedAt": "2026-05-11T03:52:21.664Z"
+    },
+    {
+      "module": "QA-01",
+      "status": "RUNNING",
+      "durationMs": null,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [],
+      "startedAt": "2026-05-11T03:52:21.684Z",
+      "finishedAt": null
+    },
+    {
+      "module": "QA-01",
+      "status": "FAIL",
+      "durationMs": null,
+      "failureCode": "ENV_MISSING",
+      "failureDetail": "QA_BUYER_IDENTIFIER or QA_BUYER_PASSWORD missing",
+      "checks": [
+        {
+          "check": "buyer",
+          "status": "FAIL",
+          "detail": "QA_BUYER_IDENTIFIER or QA_BUYER_PASSWORD missing"
+        }
+      ],
+      "startedAt": "2026-05-11T03:52:21.684Z",
+      "finishedAt": "2026-05-11T03:52:21.685Z"
+    },
+    {
+      "module": "QA-02",
+      "status": "RUNNING",
+      "durationMs": null,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [],
+      "startedAt": "2026-05-11T03:52:21.689Z",
+      "finishedAt": null
+    },
+    {
+      "module": "QA-02",
+      "status": "FAIL",
+      "durationMs": null,
+      "failureCode": "ENV_MISSING",
+      "failureDetail": "QA_SELLER_IDENTIFIER missing",
+      "checks": [
+        {
+          "check": "env",
+          "status": "FAIL",
+          "detail": "QA_SELLER_IDENTIFIER missing"
+        }
+      ],
+      "startedAt": "2026-05-11T03:52:21.689Z",
+      "finishedAt": "2026-05-11T03:52:21.689Z"
+    },
+    {
+      "module": "QA-03",
+      "status": "RUNNING",
+      "durationMs": null,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [],
+      "startedAt": "2026-05-11T03:52:21.691Z",
+      "finishedAt": null
+    },
+    {
+      "module": "QA-03",
+      "status": "FAIL",
+      "durationMs": 3981,
+      "failureCode": "LISTING_NOT_VISIBLE_HOME",
+      "failureDetail": "Cannot find module 'D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\generated\\prisma\\client.js' imported from D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\scripts\\qa\\lib\\db-read.mjs",
+      "checks": [
+        {
+          "check": "dbDiscovery",
+          "status": "FAIL",
+          "detail": "Cannot find module 'D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\generated\\prisma\\client.js' imported from D:\\PROYECTOS\\PROYECTOS VISUAL STUDIO\\Turpialsound\\turpialsound\\scripts\\qa\\lib\\db-read.mjs"
+        },
+        {
+          "check": "http_https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app/marketplace",
+          "status": "FAIL",
+          "detail": "Listing not found in server-rendered HTML (may be client-rendered)",
+          "htmlLength": 264239
+        },
+        {
+          "check": "http_https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app/marketplace/qa-e2e-s03f-selleria-discovery",
+          "status": "FAIL",
+          "detail": "HTTP 404"
+        },
+        {
+          "check": "classification",
+          "status": "PARTIAL",
+          "detail": "BROWSER_REQUIRED — listing exists in DB (DATA_PASS) but not in server-rendered HTML. UI validation needs browser (Playwright/CDP)."
+        }
+      ],
+      "startedAt": "2026-05-11T03:52:21.691Z",
+      "finishedAt": "2026-05-11T03:52:25.672Z"
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "passed": 0,
+    "failed": 4,
+    "skipped": 0
+  }
+}

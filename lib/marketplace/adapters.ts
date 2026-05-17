@@ -26,7 +26,10 @@ function buildMarketplaceUser(
   sellerRating: number | null,
   createdAt: string,
   isService: boolean,
+  city?: string | null,
+  state?: string | null,
 ): MarketplaceUser {
+  const location = city && state ? `${city}, ${state}` : 'Venezuela'
   return {
     id,
     name: displayName,
@@ -36,7 +39,7 @@ function buildMarketplaceUser(
     rating: sellerRating ?? 0,
     reviewCount: 0,
     joinedAt: createdAt,
-    location: 'Venezuela',
+    location,
   }
 }
 
@@ -58,6 +61,8 @@ export function adaptDbListing(l: any): Listing {
     l.seller.sellerRating ? Number(l.seller.sellerRating) : null,
     sellerCreatedAtStr,
     isService,
+    l.city ?? l.seller?.city,
+    l.state ?? l.seller?.state,
   )
 
   const images: string[] = l.coverImageUrl

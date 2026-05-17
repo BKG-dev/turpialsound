@@ -2,6 +2,7 @@ import type { BookingStatus } from '@/generated/prisma/client'
 import { syncBookingToGoogleCalendar } from '@/lib/bookings/google-calendar'
 import { sendBookingNotifications } from '@/lib/bookings/notifications'
 import { getPaymentWindowMinutes } from '@/lib/bookings/payment-settings'
+import { sendBookingWhatsapp } from '@/lib/whatsapp/booking-notifications'
 import { prisma } from '@/lib/db'
 
 export type OperationalBookingStatus =
@@ -253,6 +254,103 @@ export async function expireOverduePendingPayments(options?: {
     calendarFailed: 0,
   }
 
+  const now = referenceDate
+  const halfWindowCutoff = new Date(now.getTime() - (PAYMENT_WINDOW_MINUTES / 2) * 60 * 1000)
+
+  const pendingReminders = await prisma.bookingRequest.findMany({
+    where: {
+      status: 'under_review',
+      createdAt: {
+        gte: new Date(now.getTime() - PAYMENT_WINDOW_MINUTES * 60 * 1000),
+      },
+      OR: [
+        { internalNotes: null },
+        { internalNotes: { not: { contains: '[ops_status:payment_reported]' } } },
+      ],
+      paymentProofs: { none: { isActive: true } },
+    },
+    select: {
+      id: true,
+      publicCode: true,
+      requesterName: true,
+      requesterPhone: true,
+      createdAt: true,
+      auditLogs: {
+        where: {
+          action: {
+            in: ['whatsapp_reminder_1_sent', 'whatsapp_reminder_2_sent'],
+          },
+        },
+        select: {
+          action: true,
+        },
+        take: 50,
+      },
+    },
+    take: 100,
+  })
+
+  for (const pending of pendingReminders) {
+    const deadline = getPaymentDeadline(pending.createdAt)
+    const reminder2Threshold = new Date(deadline.getTime() - 10 * 60 * 1000)
+    const isWithinReminder2Window =
+      now.getTime() >= reminder2Threshold.getTime() && now.getTime() < deadline.getTime()
+    const reminder1AlreadySent = pending.auditLogs.some(
+      (entry) => entry.action === 'whatsapp_reminder_1_sent',
+    )
+    const reminder2AlreadySent = pending.auditLogs.some(
+      (entry) => entry.action === 'whatsapp_reminder_2_sent',
+    )
+
+    if (!reminder1AlreadySent && pending.createdAt.getTime() <= halfWindowCutoff.getTime()) {
+      if (pending.requesterPhone) {
+        const reminderResult = await sendBookingWhatsapp(
+          'reminder_1_half_window',
+          { phone: pending.requesterPhone, name: pending.requesterName },
+          { publicCode: pending.publicCode },
+        )
+
+        await prisma.auditLog.create({
+          data: {
+            bookingRequestId: pending.id,
+            action: 'whatsapp_reminder_1_sent',
+            nextState: {
+              event: 'reminder_1_half_window',
+              sent: reminderResult.sent,
+              provider: reminderResult.provider,
+              reason: reminderResult.reason ?? null,
+              messageId: reminderResult.messageId ?? null,
+            },
+          },
+        })
+      }
+    }
+
+    if (!reminder2AlreadySent && isWithinReminder2Window) {
+      if (pending.requesterPhone) {
+        const reminderResult = await sendBookingWhatsapp(
+          'reminder_2_10min',
+          { phone: pending.requesterPhone, name: pending.requesterName },
+          { publicCode: pending.publicCode },
+        )
+
+        await prisma.auditLog.create({
+          data: {
+            bookingRequestId: pending.id,
+            action: 'whatsapp_reminder_2_sent',
+            nextState: {
+              event: 'reminder_2_10min',
+              sent: reminderResult.sent,
+              provider: reminderResult.provider,
+              reason: reminderResult.reason ?? null,
+              messageId: reminderResult.messageId ?? null,
+            },
+          },
+        })
+      }
+    }
+  }
+
   for (const booking of overdueBookings) {
     const taggedStatus = getOperationalStatusFromInternalNotes(booking.internalNotes)
     const hasActivePaymentProof = booking.paymentProofs.length > 0
@@ -332,6 +430,18 @@ export async function expireOverduePendingPayments(options?: {
       status: 'expired',
       notes: booking.notes,
     })
+
+    if (booking.requesterPhone) {
+      sendBookingWhatsapp(
+        'booking_expired',
+        { phone: booking.requesterPhone, name: booking.requesterName },
+        {
+          publicCode: booking.publicCode,
+          serviceName: primaryItem?.serviceVariant.service.name ?? null,
+          variantName: primaryItem?.serviceVariant.name ?? null,
+        },
+      ).catch(() => {})
+    }
 
     const calendarSync = await syncBookingToGoogleCalendar({
       publicCode: booking.publicCode,

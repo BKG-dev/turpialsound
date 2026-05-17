@@ -65,8 +65,16 @@ const marketplaceJsonLd = {
   ],
 }
 
-export default async function MarketplacePage() {
-  const initialListings = await getActiveListings()
+export default async function MarketplacePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ city?: string; state?: string }>
+}) {
+  const params = await searchParams
+  const initialListings = await getActiveListings({
+    city: params.city,
+    state: params.state,
+  })
 
   return (
     <>

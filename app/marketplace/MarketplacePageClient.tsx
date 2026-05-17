@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import Fuse from 'fuse.js'
 import {
   ShoppingBag,
   Tag,
@@ -234,6 +235,10 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
   const [priceMax, setPriceMax] = useState('')
   const [hideUnavailable, setHideUnavailable] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [filterCity, setFilterCity] = useState('')
+  const [filterState, setFilterState] = useState('')
+  const [priceRange, setPriceRange] = useState('')
+  const [sortBy, setSortBy] = useState('')
 
   // Auth & Session from global context
   const {
@@ -404,10 +409,16 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
       if (activeTab === 'services' && l.type !== 'service') return false
     }
 
+    // S-SRC: Fuse.js fuzzy search (typo-tolerant) — unico filtro de texto
     if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase()
-      const haystack = [l.title, l.description, l.subcategory, ...l.tags].join(' ').toLowerCase()
-      if (!haystack.includes(q)) return false
+      const q = searchQuery.trim()
+      const fuse = new Fuse([{ title: l.title, description: l.description, tags: l.tags.join(' ') }], {
+        keys: ['title', 'description', 'tags'],
+        threshold: 0.4,
+        ignoreLocation: true,
+        minMatchCharLength: 2,
+      })
+      if (fuse.search(q).length === 0) return false
     }
 
     if (filterCategory !== 'all' && l.category !== filterCategory) return false
@@ -421,8 +432,20 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
       if (!isAvailable) return false
     }
 
+    // S15: Location filters
+    if (filterState.trim()) {
+      const state = filterState.trim().toLowerCase()
+      const listingState = String(((l as unknown) as Record<string, unknown>).state ?? '').toLowerCase()
+      if (!listingState.includes(state)) return false
+    }
+    if (filterCity.trim()) {
+      const city = filterCity.trim().toLowerCase()
+      const listingCity = String(((l as unknown) as Record<string, unknown>).city ?? '').toLowerCase()
+      if (!listingCity.includes(city)) return false
+    }
+
     return true
-  }, [activeTab, searchQuery, filterCategory, priceMin, priceMax, hideUnavailable])
+  }, [activeTab, searchQuery, filterCategory, priceMin, priceMax, hideUnavailable, filterCity, filterState])
 
   const filteredExtra = extraListings.filter(applyFilters)
   const filteredDb    = dbListings.filter(applyFilters)
@@ -854,7 +877,7 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
               >
                 {/* Search */}
                 <div className="relative">
-                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#5a5a5a' }} />
+                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--mp-text-disabled)' }} />
                   <input
                     type="text"
                     value={searchQuery}
@@ -871,7 +894,7 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
                     <button
                       onClick={() => setSearchQuery('')}
                       className="absolute right-2 top-1/2 -translate-y-1/2"
-                      style={{ color: '#5a5a5a' }}
+                      style={{ color: 'var(--mp-text-disabled)' }}
                     >
                       <X size={12} />
                     </button>
@@ -910,6 +933,64 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
                     className="px-3 py-2 rounded-lg text-xs outline-none"
                     style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f2f2f2' }}
                   />
+
+                  {/* State filter dropdown */}
+                  <select value={filterState} onChange={e => { setFilterState(e.target.value); setFilterCity('') }}
+                    className="px-3 py-2 rounded-lg text-xs outline-none"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f2f2f2' }}>
+                    <option value="" style={{ background: '#111', color: '#f2f2f2' }}>Todos los estados</option>
+                    <option value="Distrito Capital" style={{ background: '#111', color: '#f2f2f2' }}>Distrito Capital</option>
+                    <option value="Miranda" style={{ background: '#111', color: '#f2f2f2' }}>Miranda</option>
+                    <option value="Zulia" style={{ background: '#111', color: '#f2f2f2' }}>Zulia</option>
+                    <option value="Carabobo" style={{ background: '#111', color: '#f2f2f2' }}>Carabobo</option>
+                    <option value="Lara" style={{ background: '#111', color: '#f2f2f2' }}>Lara</option>
+                    <option value="Aragua" style={{ background: '#111', color: '#f2f2f2' }}>Aragua</option>
+                    <option value="Anzoategui" style={{ background: '#111', color: '#f2f2f2' }}>Anzoategui</option>
+                    <option value="Bolivar" style={{ background: '#111', color: '#f2f2f2' }}>Bolivar</option>
+                    <option value="Tachira" style={{ background: '#111', color: '#f2f2f2' }}>Tachira</option>
+                    <option value="Merida" style={{ background: '#111', color: '#f2f2f2' }}>Merida</option>
+                    <option value="Falcon" style={{ background: '#111', color: '#f2f2f2' }}>Falcon</option>
+                    <option value="Monagas" style={{ background: '#111', color: '#f2f2f2' }}>Monagas</option>
+                    <option value="Sucre" style={{ background: '#111', color: '#f2f2f2' }}>Sucre</option>
+                    <option value="Nueva Esparta" style={{ background: '#111', color: '#f2f2f2' }}>Nueva Esparta</option>
+                  </select>
+
+                  {/* City filter dropdown */}
+                  <select value={filterCity} onChange={e => setFilterCity(e.target.value)}
+                    className="px-3 py-2 rounded-lg text-xs outline-none"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f2f2f2' }}>
+                    <option value="" style={{ background: '#111', color: '#f2f2f2' }}>Todas las ciudades</option>
+                    {(!filterState || filterState === 'Distrito Capital') && <><option style={{ background: '#111', color: '#f2f2f2' }} value="Caracas">Caracas</option><option style={{ background: '#111', color: '#f2f2f2' }} value="El Hatillo">El Hatillo</option></>}
+                    {filterState === 'Miranda' && <><option style={{ background: '#111', color: '#f2f2f2' }} value="Los Teques">Los Teques</option><option style={{ background: '#111', color: '#f2f2f2' }} value="Guarenas">Guarenas</option></>}
+                    {filterState === 'Zulia' && <option style={{ background: '#111', color: '#f2f2f2' }} value="Maracaibo">Maracaibo</option>}
+                    {filterState === 'Carabobo' && <option style={{ background: '#111', color: '#f2f2f2' }} value="Valencia">Valencia</option>}
+                    {filterState === 'Lara' && <option style={{ background: '#111', color: '#f2f2f2' }} value="Barquisimeto">Barquisimeto</option>}
+                    {filterState === 'Aragua' && <option style={{ background: '#111', color: '#f2f2f2' }} value="Maracay">Maracay</option>}
+                    {filterState === 'Anzoategui' && <option style={{ background: '#111', color: '#f2f2f2' }} value="Barcelona">Barcelona</option>}
+                    {filterState === 'Bolivar' && <option style={{ background: '#111', color: '#f2f2f2' }} value="Ciudad Guayana">Ciudad Guayana</option>}
+                  </select>
+
+                  {/* Price range presets */}
+                  <select value={priceRange} onChange={e => { const v = e.target.value; setPriceRange(v); if (v) { const [min, max] = v === '1000+' ? ['1000',''] : v.split('-'); setPriceMin(min); setPriceMax(max || '') } else { setPriceMin(''); setPriceMax('') } }}
+                    className="px-3 py-2 rounded-lg text-xs outline-none"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f2f2f2' }}>
+                    <option value="" style={{ background: '#111', color: '#f2f2f2' }}>Cualquier precio</option>
+                    <option value="0-50" style={{ background: '#111', color: '#f2f2f2' }}>$0 - $50</option>
+                    <option value="50-100" style={{ background: '#111', color: '#f2f2f2' }}>$50 - $100</option>
+                    <option value="100-500" style={{ background: '#111', color: '#f2f2f2' }}>$100 - $500</option>
+                    <option value="500-1000" style={{ background: '#111', color: '#f2f2f2' }}>$500 - $1000</option>
+                    <option value="1000+" style={{ background: '#111', color: '#f2f2f2' }}>$1000 o mas</option>
+                  </select>
+
+                  {/* Sort */}
+                  <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                    className="px-3 py-2 rounded-lg text-xs outline-none"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f2f2f2' }}>
+                    <option value="" style={{ background: '#111', color: '#f2f2f2' }}>Ordenar por</option>
+                    <option value="price-asc" style={{ background: '#111', color: '#f2f2f2' }}>Menor precio</option>
+                    <option value="price-desc" style={{ background: '#111', color: '#f2f2f2' }}>Mayor precio</option>
+                    <option value="newest" style={{ background: '#111', color: '#f2f2f2' }}>Mas reciente</option>
+                  </select>
 
                   {/* Availability toggle */}
                   <button

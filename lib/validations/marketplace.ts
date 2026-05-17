@@ -64,6 +64,11 @@ export const createListingSchema = z
     hasInventory: z.boolean().default(false),
 
     inventory: z.number().int('Debe ser un numero entero').positive('Debe ser mayor a 0').optional(),
+
+    // S15 Location
+    city: z.string().max(100, 'Maximo 100 caracteres').optional(),
+    state: z.string().max(100, 'Maximo 100 caracteres').optional(),
+    isLocationPublic: z.boolean().default(true),
   })
   .refine((data) => !data.hasInventory || data.inventory !== undefined, {
     message: 'Debes indicar el inventario cuando hasInventory es true',

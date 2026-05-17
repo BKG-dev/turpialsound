@@ -1,0 +1,89 @@
+{
+  "sprint": "S-REV-01",
+  "test": "Full Marketplace E2E + Reviews",
+  "appUrl": "https://turpialsound-ifasrypg0-bkgs-projects-829c67c1.vercel.app",
+  "timestamp": "2026-05-14T19:23:06.791Z",
+  "steps": [
+    {
+      "step": "01-browse",
+      "status": "PASS",
+      "detail": "marketplace cargado"
+    },
+    {
+      "step": "02-filters",
+      "status": "PASS",
+      "detail": "filtro busqueda aplicado"
+    },
+    {
+      "step": "03-listing-detail",
+      "status": "PASS",
+      "detail": "detalle listing visible"
+    },
+    {
+      "step": "04-login-buyer",
+      "status": "PASS",
+      "detail": "buyerIA autenticado"
+    },
+    {
+      "step": "05-open-chat",
+      "status": "PASS",
+      "detail": "chat abierto"
+    },
+    {
+      "step": "06-send-message",
+      "status": "WARN",
+      "detail": "input mensaje no visible — puede ser diseno de chat diferente"
+    },
+    {
+      "step": "07-logout-buyer",
+      "status": "PASS",
+      "detail": "cookies limpiadas (force logout)"
+    },
+    {
+      "step": "07-verify-logout",
+      "status": "WARN",
+      "detail": "forzando recarga"
+    },
+    {
+      "step": "08-login-seller",
+      "status": "PASS",
+      "detail": "sellerIA autenticado"
+    },
+    {
+      "step": "09-verify-message",
+      "status": "WARN",
+      "detail": "no visible"
+    },
+    {
+      "step": "10-unread-badge",
+      "status": "PASS",
+      "detail": "badge visible"
+    },
+    {
+      "step": "11-checkout",
+      "status": "WARN",
+      "detail": "boton comprar no visible"
+    },
+    {
+      "step": "12-kpi-dashboard",
+      "status": "WARN",
+      "detail": "no visible"
+    },
+    {
+      "step": "13-seo-location",
+      "status": "PASS",
+      "detail": "pagina SEO cargada"
+    },
+    {
+      "step": "14-cart",
+      "status": "PASS",
+      "detail": "cart drawer abierto"
+    }
+  ],
+  "summary": {
+    "pass": 10,
+    "fail": 0,
+    "warn": 5,
+    "total": 15
+  }
+}

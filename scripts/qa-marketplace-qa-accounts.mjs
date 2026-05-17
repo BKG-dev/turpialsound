@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process'
 import { setTimeout as delay } from 'node:timers/promises'
+import { existsSync, readFileSync } from 'node:fs'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -10,21 +11,47 @@ const DEBUG_PORT = Number(process.env.DEBUG_PORT || '9222')
 const REUSE_BROWSER = process.env.REUSE_BROWSER === '1'
 const QA_OUTPUT = process.env.QA_OUTPUT || ''
 
+function loadEnvFile(filePath) {
+  if (!existsSync(filePath)) return
+  const content = readFileSync(filePath, 'utf8')
+  for (const rawLine of content.split(/\r?\n/)) {
+    const line = rawLine.trim()
+    if (!line || line.startsWith('#')) continue
+    const eq = line.indexOf('=')
+    if (eq < 0) continue
+    const key = line.slice(0, eq).trim()
+    let value = line.slice(eq + 1).trim()
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1)
+    }
+    if (!process.env[key]) process.env[key] = value
+  }
+}
+
+function requireEnv(name) {
+  const value = process.env[name]?.trim()
+  if (!value) throw new Error(`${name} no disponible en .env.local/.env`)
+  return value
+}
+
+loadEnvFile(path.join(process.cwd(), '.env.local'))
+loadEnvFile(path.join(process.cwd(), '.env'))
+
 const BUYER = {
-  identifier: 'buyerIA',
-  password: 'BuyerIA_QA_2026!',
-  email: 'buyerIA@local.test',
+  identifier: requireEnv('QA_BUYER_IDENTIFIER'),
+  password: requireEnv('QA_BUYER_PASSWORD'),
+  email: requireEnv('QA_BUYER_EMAIL'),
 }
 
 const SELLER = {
-  identifier: 'sellerIA',
-  password: 'SellerIA_QA_2026!',
-  email: 'sellerIA@local.test',
+  identifier: requireEnv('QA_SELLER_IDENTIFIER'),
+  password: requireEnv('QA_SELLER_PASSWORD'),
+  email: requireEnv('QA_SELLER_EMAIL'),
 }
 
 const ADMIN = {
-  identifier: 'mvera',
-  password: '13894619',
+  identifier: requireEnv('QA_ADMIN_IDENTIFIER'),
+  password: requireEnv('QA_ADMIN_PASSWORD'),
 }
 
 const LISTING = {
@@ -235,13 +262,25 @@ async function getSessionSignals() {
 async function ensureLogin(identifier, password) {
   const state = await getSessionSignals()
   if (state.hasLogout) return state
-  await clickContainsText('Iniciar sesión')
-  await waitFor(`
-    () => {
-      const text = document.body.innerText || ''
-      return text.includes('Email o usuario') || text.includes('Email') || text.includes('Usuario')
-    }
-  `, 15000)
+
+  const loginTriggers = ['Iniciar sesión', 'Entrar', 'Iniciar']
+  let loginFormOpen = false
+  for (const triggerText of loginTriggers) {
+    try {
+      await clickContainsText(triggerText)
+      await waitFor(`
+        () => {
+          const text = document.body.innerText || ''
+          return text.includes('Email o usuario') || text.includes('Email') || text.includes('Usuario')
+        }
+      `, 5000)
+      loginFormOpen = true
+      break
+    } catch {}
+  }
+
+  if (!loginFormOpen) throw new Error('Could not open marketplace login form')
+
   await setInputByHints(['Email o usuario', 'Email', 'Correo', 'Usuario'], identifier)
   await setInputByHints(['Contraseña', 'Contrasena', 'Password'], password, 'password')
   const submitted = await evalExpr(`
@@ -268,8 +307,12 @@ async function ensureLogin(identifier, password) {
   await delay(1200)
   await waitFor(`
     () => {
-      const text = document.body.innerText || ''
-      return text.includes('Salir')
+      const normalize = (v) => String(v || '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/\\s+/g, ' ').trim().toLowerCase()
+      const body = normalize(document.body.innerText || '')
+      const buttons = Array.from(document.querySelectorAll('button, a, [role="button"], [role="tab"]'))
+        .map((el) => normalize(el.innerText || el.textContent || el.getAttribute('aria-label') || el.getAttribute('title') || ''))
+        .filter(Boolean)
+      return body.includes('salir') || buttons.some((text) => text.includes('salir'))
     }
   `, 15000)
   return getSessionSignals()
