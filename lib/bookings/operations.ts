@@ -2,6 +2,7 @@ import type { BookingStatus } from '@/generated/prisma/client'
 import { syncBookingToGoogleCalendar } from '@/lib/bookings/google-calendar'
 import { sendBookingNotifications } from '@/lib/bookings/notifications'
 import { getPaymentWindowMinutes } from '@/lib/bookings/payment-settings'
+import { sendBookingWhatsapp } from '@/lib/whatsapp/booking-notifications'
 import { prisma } from '@/lib/db'
 
 export type OperationalBookingStatus =
@@ -253,6 +254,88 @@ export async function expireOverduePendingPayments(options?: {
     calendarFailed: 0,
   }
 
+  const now = referenceDate
+  const halfWindowCutoff = new Date(now.getTime() - (PAYMENT_WINDOW_MINUTES / 2) * 60 * 1000)
+
+  const pendingReminders = await prisma.bookingRequest.findMany({
+    where: {
+      status: 'under_review',
+      createdAt: {
+        gte: new Date(now.getTime() - PAYMENT_WINDOW_MINUTES * 60 * 1000),
+      },
+      OR: [
+        { internalNotes: null },
+        { internalNotes: { not: { contains: '[ops_status:payment_reported]' } } },
+      ],
+      paymentProofs: { none: { isActive: true } },
+    },
+    select: {
+      id: true,
+      publicCode: true,
+      requesterName: true,
+      requesterPhone: true,
+      createdAt: true,
+      reminder1SentAt: true,
+      reminder2SentAt: true,
+    },
+    take: 100,
+  })
+
+  for (const pending of pendingReminders) {
+    const deadline = getPaymentDeadline(pending.createdAt)
+    const reminder2Threshold = new Date(deadline.getTime() - 10 * 60 * 1000)
+    const isWithinReminder2Window =
+      now.getTime() >= reminder2Threshold.getTime() && now.getTime() < deadline.getTime()
+
+    if (!pending.reminder1SentAt && pending.createdAt.getTime() <= halfWindowCutoff.getTime()) {
+      const reminder1Update = await prisma.bookingRequest.updateMany({
+        where: {
+          id: pending.id,
+          reminder1SentAt: null,
+          status: 'under_review',
+          paymentProofs: { none: { isActive: true } },
+          OR: [
+            { internalNotes: null },
+            { internalNotes: { not: { contains: '[ops_status:payment_reported]' } } },
+          ],
+        },
+        data: { reminder1SentAt: now },
+      })
+
+      if (reminder1Update.count === 1 && pending.requesterPhone) {
+        sendBookingWhatsapp(
+          'reminder_1_half_window',
+          { phone: pending.requesterPhone, name: pending.requesterName },
+          { publicCode: pending.publicCode },
+        ).catch(() => {})
+      }
+    }
+
+    if (!pending.reminder2SentAt && isWithinReminder2Window) {
+      const reminder2Update = await prisma.bookingRequest.updateMany({
+        where: {
+          id: pending.id,
+          reminder2SentAt: null,
+          status: 'under_review',
+          paymentProofs: { none: { isActive: true } },
+          OR: [
+            { internalNotes: null },
+            { internalNotes: { not: { contains: '[ops_status:payment_reported]' } } },
+          ],
+        },
+        data: { reminder2SentAt: now },
+      })
+
+      if (reminder2Update.count === 1 && pending.requesterPhone) {
+        sendBookingWhatsapp(
+          'reminder_2_10min',
+          { phone: pending.requesterPhone, name: pending.requesterName },
+          { publicCode: pending.publicCode },
+        ).catch(() => {})
+      }
+    }
+  }
+
   for (const booking of overdueBookings) {
     const taggedStatus = getOperationalStatusFromInternalNotes(booking.internalNotes)
     const hasActivePaymentProof = booking.paymentProofs.length > 0
@@ -332,6 +415,18 @@ export async function expireOverduePendingPayments(options?: {
       status: 'expired',
       notes: booking.notes,
     })
+
+    if (booking.requesterPhone) {
+      sendBookingWhatsapp(
+        'booking_expired',
+        { phone: booking.requesterPhone, name: booking.requesterName },
+        {
+          publicCode: booking.publicCode,
+          serviceName: primaryItem?.serviceVariant.service.name ?? null,
+          variantName: primaryItem?.serviceVariant.name ?? null,
+        },
+      ).catch(() => {})
+    }
 
     const calendarSync = await syncBookingToGoogleCalendar({
       publicCode: booking.publicCode,
