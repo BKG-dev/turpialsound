@@ -275,8 +275,17 @@ export async function expireOverduePendingPayments(options?: {
       requesterName: true,
       requesterPhone: true,
       createdAt: true,
-      reminder1SentAt: true,
-      reminder2SentAt: true,
+      auditLogs: {
+        where: {
+          action: {
+            in: ['whatsapp_reminder_1_sent', 'whatsapp_reminder_2_sent'],
+          },
+        },
+        select: {
+          action: true,
+        },
+        take: 50,
+      },
     },
     take: 100,
   })
@@ -286,52 +295,58 @@ export async function expireOverduePendingPayments(options?: {
     const reminder2Threshold = new Date(deadline.getTime() - 10 * 60 * 1000)
     const isWithinReminder2Window =
       now.getTime() >= reminder2Threshold.getTime() && now.getTime() < deadline.getTime()
+    const reminder1AlreadySent = pending.auditLogs.some(
+      (entry) => entry.action === 'whatsapp_reminder_1_sent',
+    )
+    const reminder2AlreadySent = pending.auditLogs.some(
+      (entry) => entry.action === 'whatsapp_reminder_2_sent',
+    )
 
-    if (!pending.reminder1SentAt && pending.createdAt.getTime() <= halfWindowCutoff.getTime()) {
-      const reminder1Update = await prisma.bookingRequest.updateMany({
-        where: {
-          id: pending.id,
-          reminder1SentAt: null,
-          status: 'under_review',
-          paymentProofs: { none: { isActive: true } },
-          OR: [
-            { internalNotes: null },
-            { internalNotes: { not: { contains: '[ops_status:payment_reported]' } } },
-          ],
-        },
-        data: { reminder1SentAt: now },
-      })
-
-      if (reminder1Update.count === 1 && pending.requesterPhone) {
-        sendBookingWhatsapp(
+    if (!reminder1AlreadySent && pending.createdAt.getTime() <= halfWindowCutoff.getTime()) {
+      if (pending.requesterPhone) {
+        const reminderResult = await sendBookingWhatsapp(
           'reminder_1_half_window',
           { phone: pending.requesterPhone, name: pending.requesterName },
           { publicCode: pending.publicCode },
-        ).catch(() => {})
+        )
+
+        await prisma.auditLog.create({
+          data: {
+            bookingRequestId: pending.id,
+            action: 'whatsapp_reminder_1_sent',
+            nextState: {
+              event: 'reminder_1_half_window',
+              sent: reminderResult.sent,
+              provider: reminderResult.provider,
+              reason: reminderResult.reason ?? null,
+              messageId: reminderResult.messageId ?? null,
+            },
+          },
+        })
       }
     }
 
-    if (!pending.reminder2SentAt && isWithinReminder2Window) {
-      const reminder2Update = await prisma.bookingRequest.updateMany({
-        where: {
-          id: pending.id,
-          reminder2SentAt: null,
-          status: 'under_review',
-          paymentProofs: { none: { isActive: true } },
-          OR: [
-            { internalNotes: null },
-            { internalNotes: { not: { contains: '[ops_status:payment_reported]' } } },
-          ],
-        },
-        data: { reminder2SentAt: now },
-      })
-
-      if (reminder2Update.count === 1 && pending.requesterPhone) {
-        sendBookingWhatsapp(
+    if (!reminder2AlreadySent && isWithinReminder2Window) {
+      if (pending.requesterPhone) {
+        const reminderResult = await sendBookingWhatsapp(
           'reminder_2_10min',
           { phone: pending.requesterPhone, name: pending.requesterName },
           { publicCode: pending.publicCode },
-        ).catch(() => {})
+        )
+
+        await prisma.auditLog.create({
+          data: {
+            bookingRequestId: pending.id,
+            action: 'whatsapp_reminder_2_sent',
+            nextState: {
+              event: 'reminder_2_10min',
+              sent: reminderResult.sent,
+              provider: reminderResult.provider,
+              reason: reminderResult.reason ?? null,
+              messageId: reminderResult.messageId ?? null,
+            },
+          },
+        })
       }
     }
   }

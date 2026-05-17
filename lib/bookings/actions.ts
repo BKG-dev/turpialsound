@@ -793,11 +793,6 @@ export async function reportBookingPayment(
       })
     } catch (error) {
       if (error instanceof PaymentReportSlotTakenError) {
-        await prisma.bookingRequest.update({
-          where: { id: booking.id },
-          data: { incidenceReason: 'slot_taken_by_other_payment' },
-        })
-
         await prisma.auditLog.create({
           data: {
             bookingRequestId: booking.id,
