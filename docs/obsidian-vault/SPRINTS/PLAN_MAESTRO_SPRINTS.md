@@ -1,11 +1,11 @@
 ﻿---
 type: master-plan
 project: "Turpial Sound"
-status: active
-version: "1.0"
-last_updated: "2026-05-14T13:50-04:00"
-methodology: "Oreshnik + Bus de Control Nivel 2.5"
-mother_branch: "RAMA MADRE"
+status: active-integration
+version: "2.0"
+last_updated: "2026-05-16T21:04-04:00"
+methodology: "Oreshnik v4.0 + Madre Dinamica"
+mother_branch: "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16"
 tags:
   - "#central"
   - "#master-plan"

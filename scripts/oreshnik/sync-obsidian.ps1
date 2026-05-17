@@ -8,8 +8,18 @@
 #>
 
 param(
-    [string]$MotherBranch = "RAMA-MADRE"
+    [string]$MotherBranch = ""
 )
+
+# Si no se pasa MotherBranch, leer de .mother-version.json
+if (-not $MotherBranch) {
+    $versionFile = "$PSScriptRoot\runs\.mother-version.json"
+    if (Test-Path $versionFile) {
+        $config = Get-Content $versionFile -Raw | ConvertFrom-Json
+        $MotherBranch = $config.current
+    }
+    if (-not $MotherBranch) { $MotherBranch = "RAMA-MADRE" }
+}
 
 $ErrorActionPreference = "Continue"
 
@@ -56,9 +66,9 @@ $canonicalDocs = @(
 $dates = @{}
 foreach ($doc in $canonicalDocs) {
     if (Test-Path $doc) {
-        $match = Select-String -Path $doc -Pattern "last_updated|actualizado" | Select-Object -First 1
+        $match = Select-String -Path $doc -Pattern "^(actualizado|last_updated):\s*" | Select-Object -First 1
         if ($match) {
-            $date = $match.Line -replace '.*:\s*"?(.+?)"?\s*$', '$1'
+            $date = $match.Line -replace '^(actualizado|last_updated):\s*"?(.+?)"?\s*$', '$2'
             $dates[$doc] = $date
             Write-Sync "$doc = $date" -T "PASS"
         } else {
@@ -71,11 +81,12 @@ foreach ($doc in $canonicalDocs) {
     }
 }
 
-# 5. Verificar consistencia de fechas (WARN, no bloquea)
+# 5. Verificar consistencia de fechas
 $uniqueDates = $dates.Values | Sort-Object -Unique
 if ($uniqueDates.Count -gt 2) {
     $dateList = $uniqueDates -join " | "
-    Write-Sync "Fechas inconsistentes (formatos pueden diferir): $dateList" -T "WARN"
+    Write-Sync "Fechas inconsistentes: $dateList" -T "FAIL"
+    $allOk = $false
 } else {
     Write-Sync "Fechas consistentes entre documentos" -T "PASS"
 }

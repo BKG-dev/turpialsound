@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "obsidian-vault/00_INDICE_MAESTRO.md",
+                "file": "obsidian-vault/00_CENTRAL_TURPIAL.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "00_INDICE_MAESTRO"
+              "title": "00_CENTRAL_TURPIAL"
             }
           },
           {
@@ -195,13 +195,6 @@
   },
   "active": "84737404de5648e6",
   "lastOpenFiles": [
-    "obsidian-vault/SPRINTS_MARKETPLACE_PARALELO.md",
-    "obsidian-vault/ROADMAP_RESCATE.md",
-    "obsidian-vault/QA_MARKETPLACE_INTEGRADO.md",
-    "obsidian-vault/HITOS_MARKETPLACE_PRACTICOS.md",
-    "obsidian-vault/BUGS_CRITICOS.md",
-    "obsidian-vault/ARQUITECTURA_TASAS.md",
-    "obsidian-vault/00_CENTRAL_TURPIAL.md",
     "obsidian-vault/SPRINTS/S-OPT-01_OPTIMIZACIONES.md",
     "obsidian-vault/SPRINTS/S-DS-01_DROPSOCIAL.md",
     "obsidian-vault/SPRINTS/PLAN_MAESTRO_SPRINTS.md",
@@ -228,7 +221,14 @@
     "obsidian-vault/ARQUITECTURA",
     "obsidian-vault/ARCHIVO/VAULT_INDEX.md",
     "obsidian-vault/ARCHIVO/SPRINTS_MARKETPLACE_PARALELO.md",
+    "obsidian-vault/ARCHIVO/SPRINTS_GENERADOS_DESDE_OBSIDIAN_2026-05-10.md",
+    "obsidian-vault/ARCHIVO/SPRINTS_CODEV_MARKETPLACE_2026-05-10.md",
+    "obsidian-vault/ARCHIVO/HITOS_MARKETPLACE_PRACTICOS.md",
+    "obsidian-vault/ARCHIVO/ACCION_P1_JEAN_VERCEL_PREVIEWS.md",
     "obsidian-vault/ARCHIVO",
+    "obsidian-vault/00_VERCEL_PREVIEWS.md",
+    "obsidian-vault/00_INDICE_MAESTRO.md",
+    "marketplace/PLAN_RRSS_MARKETING_S-MK-04-05-06.md",
     "marketing",
     "07_handoffs/zone-map.json"
   ]
