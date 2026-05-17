@@ -38,7 +38,7 @@ export function MapEmbed() {
                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan/60"
           >
             <MapPin size={20} className="text-accent-cyan" aria-hidden="true" />
-            <span className="font-display text-[0.65rem] tracking-[0.2em] text-text-muted uppercase">
+            <span className="font-display text-[0.65rem] tracking-[0.2em] text-text-secondary uppercase">
               Toca para explorar
             </span>
           </button>
@@ -50,7 +50,7 @@ export function MapEmbed() {
         href={MAPS_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-2 inline-flex items-center gap-1.5 text-xs text-text-muted
+        className="mt-2 inline-flex items-center gap-1.5 text-xs text-text-secondary
                    transition-colors duration-250 hover:text-accent-cyan"
       >
         <Navigation2 size={12} aria-hidden="true" />

@@ -21,10 +21,13 @@ import {
   expireOverduePendingPayments,
   getPaymentDeadline,
   getOperationalStatus,
+  isPaymentReportedWithinWindow,
   isOperationalBookingStatus,
   mapOperationalStatusToBookingStatus,
   OPERATIONAL_BOOKING_STATUSES,
   OPERATIONAL_STATUS_LABELS,
+  PAYMENT_WINDOW_MINUTES,
+  resolvePaymentReportedAt,
   setOperationalStatusInInternalNotes,
   type OperationalBookingStatus,
 } from '@/lib/bookings/operations'
@@ -34,6 +37,16 @@ import {
   sendBookingNotifications,
 } from '@/lib/bookings/notifications'
 import { buildAdminPaymentProofUrl } from '@/lib/bookings/operational-links'
+import { buildDashboardRange, getAdminDashboardSnapshot } from '@/lib/bookings/dashboard-queries'
+import {
+  CriticalAlertsPanel,
+  OccupancyByRoomPanel,
+  PaymentReviewQueuePanel,
+  QuickRevenueHistoryPanel,
+  RevenueCardPanel,
+  StatusBreakdownPanel,
+  TodayOperationsPanel,
+} from '@/components/admin/dashboard'
 
 type SearchParamValue = string | string[] | undefined
 
@@ -44,12 +57,16 @@ interface AdminPageProps {
         status?: SearchParamValue
         resource?: SearchParamValue
         calendarSync?: SearchParamValue
+        guard?: SearchParamValue
+        range?: SearchParamValue
       }>
     | {
         date?: SearchParamValue
         status?: SearchParamValue
         resource?: SearchParamValue
         calendarSync?: SearchParamValue
+        guard?: SearchParamValue
+        range?: SearchParamValue
       }
 }
 
@@ -84,6 +101,7 @@ function formatDateTime(value: Date): string {
   return new Intl.DateTimeFormat('es-VE', {
     dateStyle: 'medium',
     timeStyle: 'short',
+    timeZone: 'America/Caracas',
   }).format(value)
 }
 
@@ -95,6 +113,7 @@ function formatSchedule(eventDate: Date, eventEndDate: Date | null): string {
 
   const end = new Intl.DateTimeFormat('es-VE', {
     timeStyle: 'short',
+    timeZone: 'America/Caracas',
   }).format(eventEndDate)
   return `${start} - ${end}`
 }
@@ -117,6 +136,10 @@ function withQueryParam(path: string, key: string, value: string): string {
   params.set(key, value)
   const serialized = params.toString()
   return serialized ? `${basePath}?${serialized}` : basePath
+}
+
+function buildConfirmGuardRedirect(path: string, guardReason: string): never {
+  redirect(withQueryParam(path, 'guard', guardReason))
 }
 
 async function updateOperationalStatus(formData: FormData) {
@@ -152,6 +175,7 @@ async function updateOperationalStatus(formData: FormData) {
         take: 1,
         orderBy: { createdAt: 'asc' },
         select: {
+          id: true,
           serviceVariant: {
             select: {
               name: true,
@@ -164,10 +188,25 @@ async function updateOperationalStatus(formData: FormData) {
           },
           resource: {
             select: {
+              id: true,
               name: true,
             },
           },
         },
+      },
+      paymentProofs: {
+        where: { isActive: true },
+        take: 1,
+        orderBy: { uploadedAt: 'desc' },
+        select: {
+          uploadedAt: true,
+        },
+      },
+      auditLogs: {
+        where: { action: 'payment_reported_by_customer' },
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+        select: { nextState: true },
       },
     },
   })
@@ -177,6 +216,74 @@ async function updateOperationalStatus(formData: FormData) {
   }
 
   const currentOperationalStatus = getOperationalStatus(current)
+  const primaryItem = current.items[0]
+
+  if (effectiveNextStatus === 'confirmed' && currentOperationalStatus === 'confirmed') {
+    revalidatePath('/admin')
+    redirect(returnPath)
+  }
+
+  if (effectiveNextStatus === 'confirmed') {
+    if (currentOperationalStatus === 'expired' || currentOperationalStatus === 'cancelled') {
+      buildConfirmGuardRedirect(returnPath, 'expired_or_cancelled')
+    }
+
+    if (current.status === 'rejected') {
+      buildConfirmGuardRedirect(returnPath, 'rejected')
+    }
+
+    if (!primaryItem?.id || !primaryItem.resource?.id || !current.eventDate || !current.eventEndDate) {
+      buildConfirmGuardRedirect(returnPath, 'missing_data')
+    }
+
+    if (currentOperationalStatus !== 'payment_reported' && currentOperationalStatus !== 'confirmed') {
+      buildConfirmGuardRedirect(returnPath, 'not_payment_reported')
+    }
+
+    const paymentReportedAt = resolvePaymentReportedAt({
+      paymentReportAuditState: current.auditLogs[0]?.nextState,
+      paymentProofUploadedAt: current.paymentProofs[0]?.uploadedAt ?? null,
+    })
+
+    if (
+      currentOperationalStatus === 'payment_reported' &&
+      !isPaymentReportedWithinWindow({
+        createdAt: current.createdAt,
+        paymentReportedAt,
+      })
+    ) {
+      buildConfirmGuardRedirect(returnPath, 'payment_reported_late')
+    }
+
+    const overlapCutoff = new Date(Date.now() - PAYMENT_WINDOW_MINUTES * 60 * 1000)
+    const conflictingCount = await prisma.bookingRequest.count({
+      where: {
+        id: { not: bookingRequestId },
+        eventDate: { lt: current.eventEndDate },
+        AND: [{ eventEndDate: { gt: current.eventDate } }],
+        items: {
+          some: {
+            resourceId: primaryItem.resource.id,
+          },
+        },
+        OR: [
+          { status: { in: ['approved', 'confirmed'] } },
+          {
+            status: 'under_review',
+            OR: [
+              { createdAt: { gte: overlapCutoff } },
+              { internalNotes: { contains: '[ops_status:payment_reported]' } },
+            ],
+          },
+        ],
+      },
+    })
+
+    if (conflictingCount > 0) {
+      buildConfirmGuardRedirect(returnPath, 'resource_conflict')
+    }
+  }
+
   const hasOperationalStatusChanged = currentOperationalStatus !== effectiveNextStatus
 
   if (!hasOperationalStatusChanged) {
@@ -233,8 +340,6 @@ async function updateOperationalStatus(formData: FormData) {
     effectiveNextStatus === 'pending_payment'
       ? null
       : getBookingNotificationEventForOperationalStatus(effectiveNextStatus)
-  const primaryItem = current.items[0]
-
   if (notificationEvent) {
     await sendBookingNotifications(notificationEvent, {
       publicCode: current.publicCode,
@@ -323,10 +428,14 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const requestedStatus = getSingleValue(params.status)
   const resourceFilter = getSingleValue(params.resource)
   const calendarSyncState = getSingleValue(params.calendarSync)
+  const guardState = getSingleValue(params.guard)
+  const rangeInput = getSingleValue(params.range)
+  const dashboardRange = buildDashboardRange(rangeInput)
   const statusFilter: OperationalBookingStatus | 'all' =
     requestedStatus && isOperationalBookingStatus(requestedStatus) ? requestedStatus : 'all'
 
   await expireOverduePendingPayments()
+  const dashboardSnapshot = await getAdminDashboardSnapshot(dashboardRange)
 
   const resources = await prisma.resource.findMany({
     where: { isActive: true },
@@ -463,6 +572,76 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             interno.
           </section>
         ) : null}
+
+        {guardState === 'expired_or_cancelled' || guardState === 'rejected' ? (
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            La reserva ya vencio o fue cancelada/rechazada y no puede confirmarse automaticamente.
+          </section>
+        ) : null}
+
+        {guardState === 'missing_data' ? (
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            La reserva no tiene informacion suficiente para confirmarse.
+          </section>
+        ) : null}
+
+        {guardState === 'not_payment_reported' ? (
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Solo se puede confirmar cuando la reserva esta en pago reportado.
+          </section>
+        ) : null}
+
+        {guardState === 'payment_reported_late' ? (
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            El pago fue reportado fuera de la ventana. Requiere revision manual.
+          </section>
+        ) : null}
+
+        {guardState === 'resource_conflict' ? (
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            El recurso o sala ya no esta disponible para ese horario.
+          </section>
+        ) : null}
+
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+          <form className="mb-4 grid gap-3 md:grid-cols-[180px_auto] md:items-end">
+            <label className="space-y-1.5 text-sm text-slate-700">
+              <span className="font-medium">Rango dashboard</span>
+              <select
+                name="range"
+                defaultValue={dashboardRange.key}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+              >
+                <option value="7d">Ultimos 7 dias</option>
+                <option value="30d">Ultimos 30 dias</option>
+              </select>
+            </label>
+            <button
+              type="submit"
+              className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
+              Actualizar metricas
+            </button>
+          </form>
+
+          <div className="space-y-4">
+            <RevenueCardPanel snapshot={dashboardSnapshot} />
+
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <PaymentReviewQueuePanel snapshot={dashboardSnapshot} />
+              <TodayOperationsPanel snapshot={dashboardSnapshot} />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <div className="space-y-4 lg:col-span-2">
+                <StatusBreakdownPanel snapshot={dashboardSnapshot} />
+                <OccupancyByRoomPanel snapshot={dashboardSnapshot} />
+                <QuickRevenueHistoryPanel snapshot={dashboardSnapshot} />
+              </div>
+              <CriticalAlertsPanel snapshot={dashboardSnapshot} />
+            </div>
+          </div>
+        </section>
 
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
           <form className="grid gap-4 md:grid-cols-[200px_180px_180px_auto_auto] md:items-end">

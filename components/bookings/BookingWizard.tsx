@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { ServiceSelectStep } from '@/components/bookings/steps/ServiceSelectStep'
@@ -74,6 +74,49 @@ const INITIAL_DATA: WizardData = {
 const PAYMENT_PROOF_MAX_SIZE_BYTES = Math.floor(4.5 * 1024 * 1024)
 
 type PostSubmitOperationalStatus = 'pending_payment' | 'payment_reported'
+type WhatsappVerificationStatus =
+  | 'idle'
+  | 'loading'
+  | 'pending'
+  | 'verified'
+  | 'failed'
+  | 'expired'
+  | 'not_found'
+
+interface WhatsappVerificationState {
+  status: WhatsappVerificationStatus
+  challengeId: string | null
+  code: string | null
+  expiresAt: string | null
+  verifiedAt: string | null
+  phone: string | null
+  error: string | null
+}
+
+interface BookingDraftV1 {
+  savedAt: string
+  expiresAt: string
+  currentStep: number
+  furthestStep: number
+  data: WizardData
+  whatsappVerification: WhatsappVerificationState
+}
+
+const BOOKING_DRAFT_STORAGE_KEY = 'turpial_booking_draft_v1'
+const BOOKING_DRAFT_TTL_MS = 2 * 60 * 60 * 1000
+const WHATSAPP_VERIFICATION_TTL_MS = 30 * 60 * 1000
+const WHATSAPP_STATUS_POLL_MS = 2500
+const TURPIAL_WHATSAPP_BOOKING_NUMBER = '584246707078'
+
+const INITIAL_WHATSAPP_VERIFICATION_STATE: WhatsappVerificationState = {
+  status: 'idle',
+  challengeId: null,
+  code: null,
+  expiresAt: null,
+  verifiedAt: null,
+  phone: null,
+  error: null,
+}
 
 function formatBookingDate(dateStr: string): string {
   const d = new Date(`${dateStr}T12:00:00`)
@@ -230,6 +273,11 @@ export function BookingWizard({
   const [contactConsentError, setContactConsentError] = useState<string | null>(null)
   const [copyStatusKey, setCopyStatusKey] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [whatsappVerification, setWhatsappVerification] = useState<WhatsappVerificationState>(
+    INITIAL_WHATSAPP_VERIFICATION_STATE,
+  )
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(false)
+  const pollTimerRef = useRef<number | null>(null)
 
   const totalSteps = WIZARD_STEPS.length
   const step = WIZARD_STEPS[currentStep]
@@ -299,6 +347,14 @@ export function BookingWizard({
       : formatBsVisibleFromLabel(activeAmountLabel)
   const usdtAmountValue = formatUsdtAmount(bookingEstimate.estimatedTotalUsd)
   const normalizedPaymentReference = publicCode ? normalizePaymentReference(publicCode) : ''
+  const normalizedRequesterPhone = normalizeWhatsappVe(data.requesterPhone)
+  const whatsappVerifiedAtMs = whatsappVerification.verifiedAt
+    ? new Date(whatsappVerification.verifiedAt).getTime()
+    : Number.NaN
+  const isWhatsappVerificationFresh =
+    whatsappVerification.status === 'verified' &&
+    Number.isFinite(whatsappVerifiedAtMs) &&
+    Date.now() - whatsappVerifiedAtMs <= WHATSAPP_VERIFICATION_TTL_MS
   const paymentMethodNameForButton =
     selectedPaymentMethod.slug === 'efectivo' ? 'Notificar pago en efectivo' : 'Reportar pago'
 
@@ -376,6 +432,236 @@ export function BookingWizard({
     onSubmissionStateChange?.(submissionState)
   }, [onSubmissionStateChange, submissionState])
 
+  function clearWhatsappPollTimer() {
+    if (pollTimerRef.current !== null) {
+      window.clearInterval(pollTimerRef.current)
+      pollTimerRef.current = null
+    }
+  }
+
+  async function pollWhatsappVerificationStatus(challengeId: string) {
+    try {
+      const response = await fetch(
+        `/api/whatsapp/lab/reservas/status?challengeId=${encodeURIComponent(challengeId)}`,
+        { method: 'GET', cache: 'no-store' },
+      )
+
+      if (!response.ok) {
+        setWhatsappVerification((current) => ({
+          ...current,
+          error: 'No pudimos validar el estado de WhatsApp. Intenta de nuevo.',
+        }))
+        return
+      }
+
+      const payload = (await response.json()) as {
+        status: WhatsappVerificationStatus
+        challengeId: string
+        expiresAt: string | null
+        verifiedAt: string | null
+      }
+
+      setWhatsappVerification((current) => ({
+        ...current,
+        challengeId: payload.challengeId,
+        status: payload.status,
+        expiresAt: payload.expiresAt,
+        verifiedAt: payload.verifiedAt,
+        phone: current.phone ?? normalizedRequesterPhone,
+        error: null,
+      }))
+
+      if (payload.status === 'verified' || payload.status === 'expired' || payload.status === 'failed') {
+        clearWhatsappPollTimer()
+      }
+    } catch {
+      setWhatsappVerification((current) => ({
+        ...current,
+        error: 'No pudimos validar el estado de WhatsApp. Intenta de nuevo.',
+      }))
+    }
+  }
+
+  async function handleStartWhatsappVerification() {
+    const phone = normalizedRequesterPhone
+    if (!isValidWhatsappVe(phone)) {
+      setWhatsappVerification((current) => ({
+        ...current,
+        status: 'failed',
+        error: 'Introduce un WhatsApp valido antes de verificar.',
+      }))
+      return
+    }
+
+    setWhatsappVerification({
+      status: 'loading',
+      challengeId: null,
+      code: null,
+      expiresAt: null,
+      verifiedAt: null,
+      phone,
+      error: null,
+    })
+
+    try {
+      const response = await fetch('/api/whatsapp/lab/reservas/challenge', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      })
+
+      if (!response.ok) {
+        setWhatsappVerification({
+          status: 'failed',
+          challengeId: null,
+          code: null,
+          expiresAt: null,
+          verifiedAt: null,
+          phone,
+          error: 'No pudimos iniciar la verificacion. Intenta de nuevo.',
+        })
+        return
+      }
+
+      const payload = (await response.json()) as {
+        challengeId: string
+        code: string
+        expiresAt: string
+      }
+
+      const whatsappText = encodeURIComponent(payload.code)
+      const whatsappUrl = `https://wa.me/${TURPIAL_WHATSAPP_BOOKING_NUMBER}?text=${whatsappText}`
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
+
+      setWhatsappVerification({
+        status: 'pending',
+        challengeId: payload.challengeId,
+        code: payload.code,
+        expiresAt: payload.expiresAt,
+        verifiedAt: null,
+        phone,
+        error: null,
+      })
+
+      clearWhatsappPollTimer()
+      pollTimerRef.current = window.setInterval(() => {
+        void pollWhatsappVerificationStatus(payload.challengeId)
+      }, WHATSAPP_STATUS_POLL_MS)
+      await pollWhatsappVerificationStatus(payload.challengeId)
+    } catch {
+      setWhatsappVerification({
+        status: 'failed',
+        challengeId: null,
+        code: null,
+        expiresAt: null,
+        verifiedAt: null,
+        phone,
+        error: 'No pudimos iniciar la verificacion. Intenta de nuevo.',
+      })
+    }
+  }
+
+  async function handleManualWhatsappStatusCheck() {
+    if (!whatsappVerification.challengeId) return
+    await pollWhatsappVerificationStatus(whatsappVerification.challengeId)
+  }
+
+  function handleRetryOpenWhatsapp() {
+    if (!whatsappVerification.code) return
+    const whatsappText = encodeURIComponent(whatsappVerification.code)
+    const whatsappUrl = `https://wa.me/${TURPIAL_WHATSAPP_BOOKING_NUMBER}?text=${whatsappText}`
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  async function handleCopyWhatsappCode() {
+    if (!whatsappVerification.code) return
+    await handleCopy('wa-verify-code', whatsappVerification.code)
+  }
+
+  useEffect(() => {
+    return () => {
+      clearWhatsappPollTimer()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!hasRestoredDraft) return
+    if (!normalizedRequesterPhone) return
+
+    if (
+      whatsappVerification.phone &&
+      normalizeWhatsappVe(whatsappVerification.phone) !== normalizedRequesterPhone &&
+      whatsappVerification.status !== 'idle'
+    ) {
+      clearWhatsappPollTimer()
+      setWhatsappVerification(INITIAL_WHATSAPP_VERIFICATION_STATE)
+    }
+  }, [hasRestoredDraft, normalizedRequesterPhone, whatsappVerification])
+
+  useEffect(() => {
+    if (hasRestoredDraft) return
+    try {
+      const raw = window.localStorage.getItem(BOOKING_DRAFT_STORAGE_KEY)
+      if (!raw) {
+        setHasRestoredDraft(true)
+        return
+      }
+
+      const parsed = JSON.parse(raw) as BookingDraftV1
+      if (!parsed?.expiresAt || new Date(parsed.expiresAt).getTime() < Date.now()) {
+        window.localStorage.removeItem(BOOKING_DRAFT_STORAGE_KEY)
+        setHasRestoredDraft(true)
+        return
+      }
+
+      setData(parsed.data ?? INITIAL_DATA)
+      setCurrentStep(
+        typeof parsed.currentStep === 'number'
+          ? Math.max(0, Math.min(parsed.currentStep, totalSteps - 1))
+          : 0,
+      )
+      setFurthestStep(
+        typeof parsed.furthestStep === 'number'
+          ? Math.max(0, Math.min(parsed.furthestStep, totalSteps - 1))
+          : 0,
+      )
+      if (parsed.whatsappVerification) {
+        setWhatsappVerification(parsed.whatsappVerification)
+      }
+    } catch {
+      window.localStorage.removeItem(BOOKING_DRAFT_STORAGE_KEY)
+    } finally {
+      setHasRestoredDraft(true)
+    }
+  }, [hasRestoredDraft, totalSteps])
+
+  useEffect(() => {
+    if (!hasRestoredDraft) return
+
+    const draft: BookingDraftV1 = {
+      savedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + BOOKING_DRAFT_TTL_MS).toISOString(),
+      currentStep,
+      furthestStep,
+      data,
+      whatsappVerification,
+    }
+
+    window.localStorage.setItem(BOOKING_DRAFT_STORAGE_KEY, JSON.stringify(draft))
+  }, [hasRestoredDraft, currentStep, furthestStep, data, whatsappVerification])
+
+  useEffect(() => {
+    if (currentStep !== 4) return
+    if (!isWhatsappVerificationFresh) return
+
+    const timer = window.setTimeout(() => {
+      setCurrentStep((value) => (value === 4 ? 5 : value))
+      setFurthestStep((value) => Math.max(value, 5))
+    }, 450)
+
+    return () => window.clearTimeout(timer)
+  }, [currentStep, isWhatsappVerificationFresh])
+
   const canProceed =
     currentStep === 0
       ? selectedServiceSlug !== null
@@ -385,13 +671,28 @@ export function BookingWizard({
           ? data.eventDate !== null && data.startTime !== null && data.durationMinutes !== null
           : currentStep === 3
             ? true
-            : currentStep === 4
+          : currentStep === 4
               ? data.requesterName.trim() !== '' &&
                 isValidEmail(data.requesterEmail) &&
-                isValidWhatsappVe(data.requesterPhone)
+                isValidWhatsappVe(data.requesterPhone) &&
+                data.whatsappConsentAccepted &&
+                isWhatsappVerificationFresh
               : currentStep === 5
                 ? true
                 : false
+  const contactDataIsComplete =
+    data.requesterName.trim() !== '' &&
+    isValidEmail(data.requesterEmail) &&
+    isValidWhatsappVe(data.requesterPhone) &&
+    data.whatsappConsentAccepted
+  const isContactVerificationRunning =
+    whatsappVerification.status === 'loading' || whatsappVerification.status === 'pending'
+
+  const contactPrimaryCtaLabel = isWhatsappVerificationFresh
+    ? 'Continuar al resumen'
+    : isContactVerificationRunning
+      ? 'Esperando verificacion...'
+      : 'Verificar WhatsApp y continuar'
 
   function focusWhatsappConsentBlock() {
     const consentBlock = document.getElementById('requester-whatsapp-consent-block')
@@ -423,6 +724,11 @@ export function BookingWizard({
       return
     }
 
+    if (currentStep === 4 && whatsappVerification.status !== 'verified') {
+      setSubmitError('Debes verificar tu WhatsApp antes de continuar al resumen.')
+      return
+    }
+
     if (currentStep < totalSteps - 1) {
       const nextStep = currentStep + 1
       setCurrentStep(nextStep)
@@ -437,6 +743,7 @@ export function BookingWizard({
   }
 
   function resetWizard() {
+    clearWhatsappPollTimer()
     setCurrentStep(0)
     setFurthestStep(0)
     setData(INITIAL_DATA)
@@ -457,6 +764,28 @@ export function BookingWizard({
     setContactConsentError(null)
     setCopyStatusKey(null)
     setSubmitError(null)
+    setWhatsappVerification(INITIAL_WHATSAPP_VERIFICATION_STATE)
+    window.localStorage.removeItem(BOOKING_DRAFT_STORAGE_KEY)
+  }
+
+  async function handleContactPrimaryAction() {
+    if (!contactDataIsComplete) {
+      if (!data.whatsappConsentAccepted) {
+        setContactConsentError('Debes autorizar el seguimiento por WhatsApp para continuar.')
+        focusWhatsappConsentBlock()
+      }
+      return
+    }
+
+    if (isWhatsappVerificationFresh) {
+      handleNext()
+      return
+    }
+
+    if (!isContactVerificationRunning) {
+      setSubmitError(null)
+      await handleStartWhatsappVerification()
+    }
   }
 
   function markCopied(key: string) {
@@ -496,6 +825,12 @@ export function BookingWizard({
       !data.durationMinutes
     ) {
       setSubmitError('La solicitud requiere ajustes antes de enviarse.')
+      setSubmissionState('error')
+      return
+    }
+
+    if (!isWhatsappVerificationFresh) {
+      setSubmitError('Debes verificar tu WhatsApp antes de crear la solicitud de reserva.')
       setSubmissionState('error')
       return
     }
@@ -1287,9 +1622,45 @@ export function BookingWizard({
             phone={data.requesterPhone}
             whatsappConsentAccepted={data.whatsappConsentAccepted}
             whatsappConsentError={contactConsentError}
+            whatsappVerificationStatus={whatsappVerification.status}
+            whatsappVerificationCode={whatsappVerification.code}
+            whatsappVerificationError={whatsappVerification.error}
+            whatsappVerificationChallengeId={whatsappVerification.challengeId}
+            whatsappVerificationExpiresAt={whatsappVerification.expiresAt}
+            whatsappVerificationVerifiedAt={whatsappVerification.verifiedAt}
+            whatsappVerificationPhone={whatsappVerification.phone}
+            onStartWhatsappVerification={() => {
+              setSubmitError(null)
+              void handleStartWhatsappVerification()
+            }}
+            onRetryOpenWhatsapp={handleRetryOpenWhatsapp}
+            onCopyWhatsappCode={() => {
+              void handleCopyWhatsappCode()
+            }}
+            onManualWhatsappStatusCheck={() => {
+              void handleManualWhatsappStatusCheck()
+            }}
             onNameChange={(value) => setData((d) => ({ ...d, requesterName: value }))}
             onEmailChange={(value) => setData((d) => ({ ...d, requesterEmail: value }))}
-            onPhoneChange={(value) => setData((d) => ({ ...d, requesterPhone: value }))}
+            onPhoneChange={(value) =>
+              setData((d) => {
+                const normalizedNextPhone = normalizeWhatsappVe(value)
+                const normalizedVerifiedPhone = whatsappVerification.phone
+                  ? normalizeWhatsappVe(whatsappVerification.phone)
+                  : null
+
+                if (
+                  normalizedVerifiedPhone &&
+                  normalizedNextPhone !== normalizedVerifiedPhone &&
+                  whatsappVerification.status !== 'idle'
+                ) {
+                  clearWhatsappPollTimer()
+                  setWhatsappVerification(INITIAL_WHATSAPP_VERIFICATION_STATE)
+                }
+
+                return { ...d, requesterPhone: value }
+              })
+            }
             onWhatsappConsentChange={(value) => {
               setData((d) => ({ ...d, whatsappConsentAccepted: value }))
               if (value) {
@@ -1354,9 +1725,22 @@ export function BookingWizard({
         </span>
 
         {currentStep < totalSteps - 1 ? (
-          <Button variant="primary" size="sm" onClick={handleNext} disabled={!canProceed}>
-            Continuar
-          </Button>
+          currentStep === 4 ? (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                void handleContactPrimaryAction()
+              }}
+              disabled={!contactDataIsComplete || isContactVerificationRunning}
+            >
+              {contactPrimaryCtaLabel}
+            </Button>
+          ) : (
+            <Button variant="primary" size="sm" onClick={handleNext} disabled={!canProceed}>
+              Continuar
+            </Button>
+          )
         ) : (
           <Button
             variant="primary"

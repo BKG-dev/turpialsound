@@ -958,6 +958,22 @@ body:has(.mp-route-shell) main.pt-16 {
   }
 }
 
+@media (max-width: 1024px) {
+  .home-perf .text-gradient-animated,
+  .home-perf .accent-line-animated,
+  .home-perf .card-premium-wrapper::before {
+    animation: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-perf .text-gradient-animated,
+  .home-perf .accent-line-animated,
+  .home-perf .card-premium-wrapper::before {
+    animation: none !important;
+  }
+}
+
 .mp-theme-root .mp-themed-panel {
   background: var(--mp-panel);
   border-color: var(--mp-border);
@@ -1437,4 +1453,57 @@ body:has(.mp-route-shell) main.pt-16 {
 
 .mp-market-authbar .mp-bcv-ticker__track span {
   padding-inline: 0.85rem !important;
+}
+
+/* Home performance pass 2: keep premium look, remove costly motion on mobile/reduced-motion */
+@media (max-width: 1024px), (prefers-reduced-motion: reduce) {
+  .home-perf .text-gradient-animated,
+  .home-perf .accent-line-animated,
+  .home-perf .navbar-gradient,
+  .home-perf .btn-gradient-outline,
+  .home-perf .btn-gradient-outline::before,
+  .home-perf .btn-silky-primary,
+  .home-perf .btn-silky-primary::before,
+  .home-perf .card-premium-wrapper::before {
+    animation: none !important;
+    transition: none !important;
+    background-position: 50% 50% !important;
+  }
+
+  .home-perf .btn-silky-primary,
+  .home-perf .btn-gradient-outline,
+  .home-perf .card-premium-wrapper {
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.42) !important;
+  }
+}
+
+.home-belowfold-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 1000px;
+}
+
+/* PageSpeed mobile hardening: keep premium look with static gradients, no costly motion */
+@media (max-width: 768px), (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .text-gradient-animated,
+  .accent-line-animated,
+  .navbar-gradient,
+  .navbar-gradient::before,
+  .navbar-gradient::after,
+  .btn-silky-primary,
+  .btn-silky-primary::before,
+  .btn-gradient-outline,
+  .btn-gradient-outline::before,
+  .card-premium-wrapper::before,
+  .animate-pulse-glow {
+    animation: none !important;
+    transition-property: color, background-color, border-color, opacity, transform !important;
+    transition-duration: 120ms !important;
+    background-position: 50% 50% !important;
+    box-shadow: none !important;
+  }
 }

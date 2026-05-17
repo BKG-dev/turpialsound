@@ -11,8 +11,11 @@ export const metadata: Metadata = {
 import { prisma } from '@/lib/db'
 import {
   getOperationalStatus,
+  isPaymentReportedWithinWindow,
   getPaymentDeadline,
   mapOperationalStatusToBookingStatus,
+  PAYMENT_WINDOW_MINUTES,
+  resolvePaymentReportedAt,
   setOperationalStatusInInternalNotes,
   type OperationalBookingStatus,
 } from '@/lib/bookings/operations'
@@ -161,6 +164,14 @@ function buildResultLabel(result: string | null): string | null {
   if (result === 'invalid_action') return 'Accion invalida.'
   if (result === 'invalid_token') return 'Token invalido.'
   if (result === 'expired_token') return 'El enlace ya expiro.'
+  if (result === 'expired_or_cancelled')
+    return 'La reserva ya vencio o fue cancelada/rechazada y no puede confirmarse automaticamente.'
+  if (result === 'missing_data')
+    return 'La reserva no tiene informacion suficiente para confirmarse.'
+  if (result === 'payment_reported_late')
+    return 'El pago fue reportado fuera de la ventana. Requiere revision manual.'
+  if (result === 'resource_conflict')
+    return 'El recurso o sala ya no esta disponible para ese horario.'
   if (result === 'error') return 'No pudimos completar la accion.'
   return null
 }
@@ -207,30 +218,36 @@ async function handlePaymentReviewAction(formData: FormData) {
       paymentProofs: {
         where: { id: tokenValidation.payload.paymentProofId },
         take: 1,
-        select: { id: true, isActive: true },
+        select: { id: true, isActive: true, uploadedAt: true },
       },
       items: {
         take: 1,
         orderBy: { createdAt: 'asc' },
         select: {
+          id: true,
           serviceVariant: {
             select: {
               name: true,
               service: { select: { name: true } },
             },
           },
-          resource: { select: { name: true } },
+          resource: { select: { id: true, name: true } },
         },
       },
       auditLogs: {
         where: {
           action: {
-            in: ['ops_payment_review_confirmed', 'ops_payment_review_incidence_marked'],
+            in: [
+              'ops_payment_review_confirmed',
+              'ops_payment_review_incidence_marked',
+              'payment_reported_by_customer',
+            ],
           },
         },
         orderBy: { createdAt: 'desc' },
         take: 200,
         select: {
+          action: true,
           nextState: true,
         },
       },
@@ -268,6 +285,10 @@ async function handlePaymentReviewAction(formData: FormData) {
 
   if (reviewAction === 'confirm') {
     if (currentOperationalStatus !== 'payment_reported') {
+      const blockedResult =
+        currentOperationalStatus === 'expired' || currentOperationalStatus === 'cancelled'
+          ? 'expired_or_cancelled'
+          : 'already_resolved'
       await prisma.auditLog.create({
         data: {
           bookingRequestId: booking.id,
@@ -281,11 +302,59 @@ async function handlePaymentReviewAction(formData: FormData) {
             bookingStatus: booking.status,
             reviewAction,
             reviewTokenJti: tokenValidation.payload.jti,
-            reason: 'already_resolved_or_not_reported',
+            reason: blockedResult === 'expired_or_cancelled' ? 'expired_or_cancelled' : 'already_resolved_or_not_reported',
           },
         },
       })
-      redirect(`/ops/payment-review?token=${encodeURIComponent(token)}&result=already_resolved`)
+      redirect(`/ops/payment-review?token=${encodeURIComponent(token)}&result=${blockedResult}`)
+    }
+
+    if (!primaryItem?.id || !primaryItem.resource?.id || !booking.eventDate || !booking.eventEndDate) {
+      redirect(`/ops/payment-review?token=${encodeURIComponent(token)}&result=missing_data`)
+    }
+
+    const paymentReportAudit = booking.auditLogs.find(
+      (entry) => entry.action === 'payment_reported_by_customer',
+    )
+    const paymentReportedAt = resolvePaymentReportedAt({
+      paymentReportAuditState: paymentReportAudit?.nextState,
+      paymentProofUploadedAt: booking.paymentProofs[0]?.uploadedAt ?? null,
+    })
+    if (
+      !isPaymentReportedWithinWindow({
+        createdAt: booking.createdAt,
+        paymentReportedAt,
+      })
+    ) {
+      redirect(`/ops/payment-review?token=${encodeURIComponent(token)}&result=payment_reported_late`)
+    }
+
+    const overlapCutoff = new Date(Date.now() - PAYMENT_WINDOW_MINUTES * 60 * 1000)
+    const conflictingCount = await prisma.bookingRequest.count({
+      where: {
+        id: { not: booking.id },
+        eventDate: { lt: booking.eventEndDate },
+        AND: [{ eventEndDate: { gt: booking.eventDate } }],
+        items: {
+          some: {
+            resourceId: primaryItem.resource.id,
+          },
+        },
+        OR: [
+          { status: { in: ['approved', 'confirmed'] } },
+          {
+            status: 'under_review',
+            OR: [
+              { createdAt: { gte: overlapCutoff } },
+              { internalNotes: { contains: '[ops_status:payment_reported]' } },
+            ],
+          },
+        ],
+      },
+    })
+
+    if (conflictingCount > 0) {
+      redirect(`/ops/payment-review?token=${encodeURIComponent(token)}&result=resource_conflict`)
     }
 
     const nextOperationalStatus: OperationalBookingStatus = 'confirmed'
