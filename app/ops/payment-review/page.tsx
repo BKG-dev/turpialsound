@@ -14,7 +14,6 @@ import {
   isPaymentReportedWithinWindow,
   getPaymentDeadline,
   mapOperationalStatusToBookingStatus,
-  PAYMENT_WINDOW_MINUTES,
   resolvePaymentReportedAt,
   setOperationalStatusInInternalNotes,
   type OperationalBookingStatus,
@@ -330,7 +329,6 @@ async function handlePaymentReviewAction(formData: FormData) {
       redirect(`/ops/payment-review?token=${encodeURIComponent(token)}&result=payment_reported_late`)
     }
 
-    const overlapCutoff = new Date(Date.now() - PAYMENT_WINDOW_MINUTES * 60 * 1000)
     const conflictingCount = await prisma.bookingRequest.count({
       where: {
         id: { not: booking.id },
@@ -346,8 +344,14 @@ async function handlePaymentReviewAction(formData: FormData) {
           {
             status: 'under_review',
             OR: [
-              { createdAt: { gte: overlapCutoff } },
               { internalNotes: { contains: '[ops_status:payment_reported]' } },
+              {
+                paymentProofs: {
+                  some: {
+                    isActive: true,
+                  },
+                },
+              },
             ],
           },
         ],

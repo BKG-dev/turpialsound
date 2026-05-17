@@ -1,5 +1,4 @@
 import { Prisma } from '@/generated/prisma/client'
-import { PAYMENT_WINDOW_MINUTES } from '@/lib/bookings/operations'
 
 type ManagedServiceSlug = 'grabacion' | 'podcast-locucion' | 'sala-ensayo'
 type ResourceSlug =
@@ -74,7 +73,11 @@ async function resourceHasCollision(
   start: Date,
   end: Date,
 ): Promise<boolean> {
+<<<<<<< HEAD
   const pendingPaymentCutoff = new Date(Date.now() - PAYMENT_WINDOW_MINUTES * 60 * 1000)
+=======
+  const excludeBookingId = options?.excludeBookingId ?? null
+>>>>>>> 5c12485 (fix(bookings): enforce pay-first slot collision policy)
 
   const count = await tx.bookingRequest.count({
     where: {
@@ -82,7 +85,16 @@ async function resourceHasCollision(
         { status: { in: ['approved', 'confirmed'] } },
         {
           status: 'under_review',
-          createdAt: { gte: pendingPaymentCutoff },
+          OR: [
+            { internalNotes: { contains: '[ops_status:payment_reported]' } },
+            {
+              paymentProofs: {
+                some: {
+                  isActive: true,
+                },
+              },
+            },
+          ],
         },
       ],
       eventDate: { lt: end },
