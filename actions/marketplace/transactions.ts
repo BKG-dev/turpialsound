@@ -776,3 +776,31 @@ export async function getMyTransactions(
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
   }
 }
+
+export async function checkoutCart(
+  items: Array<{ listingId: string; paymentMethod: string }>,
+): Promise<ActionResult<{ transactions: Array<{ transactionId: string; listingId: string; idempotencyKey: string }> }>> {
+  const transactions: Array<{ transactionId: string; listingId: string; idempotencyKey: string }> = []
+  const errorMessages: string[] = []
+
+  for (const item of items) {
+    const result = await initiatePurchase(item.listingId, item.paymentMethod)
+    if (result.success && result.data) {
+      transactions.push({ ...result.data, listingId: item.listingId })
+    } else {
+      errorMessages.push(result.message || `Error en ${item.listingId}`)
+    }
+  }
+
+  if (transactions.length === 0) {
+    return { success: false, message: errorMessages.join('; ') || 'No se pudo iniciar ninguna compra' }
+  }
+
+  return {
+    success: true,
+    data: { transactions },
+    message: errorMessages.length > 0
+      ? `${transactions.length} de ${items.length} compras iniciadas (${errorMessages.length} errores)`
+      : `${transactions.length} compras iniciadas`,
+  }
+}

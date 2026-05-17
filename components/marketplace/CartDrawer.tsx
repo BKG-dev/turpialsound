@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/marketplace/cart-store'
 import { useMarketplaceSession } from '@/components/marketplace/MarketplaceAuthBar'
 import { MarketplaceAuthModal } from '@/components/marketplace/MarketplaceAuthModal'
+import { checkoutCart } from '@/actions/marketplace'
 import { trackMarketplaceClientEvent } from '@/lib/marketplace/analytics-client'
 import type { MpSessionPayload } from '@/lib/marketplace/auth'
 
@@ -45,18 +46,37 @@ export function CartDrawer() {
     return () => document.removeEventListener('keydown', handler)
   }, [open])
 
-  const handleCheckout = useCallback(() => {
+  const handleCheckout = useCallback(async () => {
     if (!session) {
       setAuthOpen(true)
       return
     }
     setCheckingOut(true)
     trackMarketplaceClientEvent({ eventType: 'cart_checkout', metadataJson: { count: items.length, total: getCartTotal() } })
-    setTimeout(() => {
+
+    if (items.length === 1) {
+      // Single item: redirect to checkout page
       setCheckingOut(false)
-      router.push('/marketplace/dashboard?tab=checkout&source=cart')
-    }, 600)
-  }, [session, items, router, getCartTotal])
+      router.push(`/marketplace/dashboard?tab=checkout&source=cart&listing=${items[0].listingId}`)
+      return
+    }
+
+    // Multi-item: create transactions for each
+    const checkoutItems = items.map(item => ({
+      listingId: item.listingId,
+      paymentMethod: 'pago-movil',
+    }))
+
+    const result = await checkoutCart(checkoutItems)
+    setCheckingOut(false)
+
+    if (result.success) {
+      clearCart()
+      router.push('/marketplace/dashboard?tab=purchases')
+    } else {
+      alert(result.message || 'Error al iniciar la compra')
+    }
+  }, [session, items, router, getCartTotal, clearCart])
 
   const handleAuthSuccess = useCallback((_s: MpSessionPayload) => {
     setAuthOpen(false)
