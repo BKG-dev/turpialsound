@@ -137,6 +137,46 @@ function sh(cmd, { fatal = false } = {}) {
 }
 function ok(msg)  { console.log(`  [  ${GREEN}OK${RESET}  ] ${msg}`) }
 function fail(msg){ console.log(`  [ ${RED}FAIL${RESET} ] ${msg}`) }
+
+// ─── Obsidian auto-close/reopen ─────────────────────────────────────
+let obsidianWasRunning = false
+let obsidianExePath = ''
+
+function isObsidianRunning() {
+  if (process.platform === 'win32') {
+    try { execSync('tasklist /FI "IMAGENAME eq Obsidian.exe" 2>nul', { encoding: 'utf8', stdio: 'pipe' }); return true } catch { return false }
+  } else {
+    try { execSync('pgrep -x Obsidian 2>/dev/null', { encoding: 'utf8', stdio: 'pipe' }); return true } catch { return false }
+  }
+}
+
+function closeObsidian() {
+  if (!isObsidianRunning()) return false
+  info('Obsidian detectado. Cerrando para sincronizar...')
+  if (process.platform === 'win32') {
+    obsidianExePath = sh('powershell -Command "(Get-Process Obsidian | Select-Object -First 1).Path"')
+    try { execSync('powershell -Command "Get-Process Obsidian | ForEach-Object { $_.CloseMainWindow() }" 2>nul', { encoding: 'utf8' }) } catch {}
+    try { execSync('timeout /t 2 /nobreak >nul', { encoding: 'utf8' }) } catch {}
+    if (isObsidianRunning()) execSync('taskkill /F /IM Obsidian.exe 2>nul', { encoding: 'utf8' })
+  } else {
+    try { execSync('pkill -TERM Obsidian 2>/dev/null', { encoding: 'utf8' }) } catch {}
+    try { execSync('sleep 2', { encoding: 'utf8' }) } catch {}
+    if (isObsidianRunning()) execSync('pkill -9 Obsidian 2>/dev/null', { encoding: 'utf8' })
+  }
+  ok('Obsidian cerrado')
+  return true
+}
+
+function reopenObsidian() {
+  if (!obsidianWasRunning || !obsidianExePath) return
+  info('Reabriendo Obsidian...')
+  try {
+    if (process.platform === 'win32') {
+      const vaultPath = resolve(ROOT, 'docs', 'obsidian-vault')
+      execSync(`start "" "${obsidianExePath}" "obsidian://open?vault=${encodeURIComponent(vaultPath)}"`, { encoding: 'utf8', stdio: 'ignore' })
+    }
+  } catch {}
+}
 function warn(msg){ console.log(`  [ ${YELLOW}WARN${RESET} ] ${msg}`) }
 function step(msg){ console.log(`  [ ${CYAN}STEP${RESET} ] ${msg}`) }
 function info(msg){ console.log(`  [ ${CYAN}INFO${RESET} ] ${msg}`) }
@@ -395,6 +435,8 @@ if (existsSync(indicePath)) {
 
 console.log('')
 
+obsidianWasRunning = closeObsidian()
+
 // ─── C. GIT — Commit, push hija, crear madre ────────────────────────
 step('C/4 GIT — Commits y push')
 
@@ -413,6 +455,7 @@ if (docChanges) {
 const pushChild = sh(`git push origin ${currentBranch} 2>&1`)
 if (pushChild.includes('error') || pushChild.includes('fatal')) {
   fail(`Push falló: ${pushChild.slice(0, 200)}`)
+  reopenObsidian()
   process.exit(1)
 }
 ok(`Push rama hija: ${currentBranch}`)
@@ -452,6 +495,7 @@ const pushMother = sh(`git push origin ${newMotherName} 2>&1`)
 if (pushMother.includes('error') || pushMother.includes('fatal')) {
   fail(`Push madre falló: ${pushMother.slice(0, 200)}`)
   sh(`git checkout ${currentBranch}`, { fatal: true })
+  reopenObsidian()
   process.exit(1)
 }
 ok(`Push madre: origin/${newMotherName}`)
@@ -521,4 +565,5 @@ console.log('')
 info('Documentacion sincronizada a rama madre. El otro operador la recibira al iniciar sesion.')
 console.log('')
 
+reopenObsidian()
 process.exit(0)

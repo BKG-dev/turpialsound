@@ -113,19 +113,47 @@ info('Fetch origin...')
 sh('git fetch origin --prune --quiet')
 ok('Fetch completado')
 
-// 1B: Obsidian guard
-const obsidianRunning = process.platform === 'win32'
-  ? (() => { try { execSync('tasklist /FI "IMAGENAME eq Obsidian.exe" 2>nul', { encoding: 'utf8' }); return true } catch { return false } })()
-  : (() => { try { execSync('pgrep -x Obsidian 2>/dev/null', { encoding: 'utf8' }); return true } catch { return false } })()
+// 1B: Obsidian guard — cerrar automaticamente, reabrir al final
+let obsidianWasRunning = false
+let obsidianExePath = ''
 
-if (obsidianRunning) {
-  info('Obsidian detectado. Cerrando para evitar corrupcion...')
+function isObsidianRunning() {
+  if (process.platform === 'win32') {
+    try { execSync('tasklist /FI "IMAGENAME eq Obsidian.exe" 2>nul', { encoding: 'utf8', stdio: 'pipe' }); return true } catch { return false }
+  } else {
+    try { execSync('pgrep -x Obsidian 2>/dev/null', { encoding: 'utf8', stdio: 'pipe' }); return true } catch { return false }
+  }
+}
+
+function closeObsidian() {
+  if (!isObsidianRunning()) return false
+  info('Obsidian detectado. Cerrando para sincronizar...')
+  if (process.platform === 'win32') {
+    obsidianExePath = sh('powershell -Command "(Get-Process Obsidian | Select-Object -First 1).Path"')
+    try { execSync('powershell -Command "Get-Process Obsidian | ForEach-Object { $_.CloseMainWindow() }" 2>nul', { encoding: 'utf8' }) } catch {}
+    try { execSync('timeout /t 2 /nobreak >nul', { encoding: 'utf8' }) } catch {}
+    if (isObsidianRunning()) execSync('taskkill /F /IM Obsidian.exe 2>nul', { encoding: 'utf8' })
+  } else {
+    try { execSync('pkill -TERM Obsidian 2>/dev/null', { encoding: 'utf8' }) } catch {}
+    try { execSync('sleep 2', { encoding: 'utf8' }) } catch {}
+    if (isObsidianRunning()) execSync('pkill -9 Obsidian 2>/dev/null', { encoding: 'utf8' })
+  }
+  ok('Obsidian cerrado')
+  return true
+}
+
+function reopenObsidian() {
+  if (!obsidianWasRunning || !obsidianExePath) return
+  info('Reabriendo Obsidian...')
+  const vaultPath = resolve(ROOT, 'docs', 'obsidian-vault')
   try {
-    if (process.platform === 'win32') execSync('taskkill /F /IM Obsidian.exe 2>nul', { encoding: 'utf8' })
-    else execSync('pkill -9 Obsidian 2>/dev/null', { encoding: 'utf8' })
-    ok('Obsidian cerrado')
+    if (process.platform === 'win32') {
+      execSync(`start "" "${obsidianExePath}" "obsidian://open?vault=${encodeURIComponent(vaultPath)}"`, { encoding: 'utf8', stdio: 'ignore' })
+    }
   } catch {}
 }
+
+obsidianWasRunning = closeObsidian()
 
 // 1C: Sync docs desde madre — SIEMPRE, sin cache
 const currentBranchSync = sh('git branch --show-current')
@@ -137,7 +165,19 @@ if (motherRef) {
   const motherDocHead = sh(`git rev-parse origin/${MOTHER}:docs 2>nul`)
 
   if (localDocHead !== motherDocHead && motherDocHead) {
-    info(`Docs desactualizados respecto a madre ${MOTHER}. Sincronizando...`)
+    // ANTI-REGRESION: comparar timestamps
+    const localLastUpdated = sh(`git show HEAD:docs/obsidian-vault/00_CENTRAL_TURPIAL.md 2>nul`)
+    const motherLastUpdated = sh(`git show origin/${MOTHER}:docs/obsidian-vault/00_CENTRAL_TURPIAL.md 2>nul`)
+    const localMatch = localLastUpdated.match(/last_updated:\s*"(\d{2}\/\d{2}\/\d{2}\s+\d{2}:\d{2})"/)
+    const motherMatch = motherLastUpdated.match(/last_updated:\s*"(\d{2}\/\d{2}\/\d{2}\s+\d{2}:\d{2})"/)
+    let localDate = null, motherDate = null
+    if (localMatch) { const [d, mo, y, h, min] = localMatch[1].split(/[\s\/:]/).map(Number); localDate = new Date(2000+y, mo-1, d, h, min) }
+    if (motherMatch) { const [d, mo, y, h, min] = motherMatch[1].split(/[\s\/:]/).map(Number); motherDate = new Date(2000+y, mo-1, d, h, min) }
+    
+    if (localDate && motherDate && localDate > motherDate) {
+      ok(`Docs locales (${localMatch[1]}) mas recientes que madre (${motherMatch[1]}). No se sincroniza.`)
+    } else {
+      info(`Docs desactualizados. Madre: ${motherMatch?.[1] || '?'} > Local: ${localMatch?.[1] || '?'}. Sincronizando...`)
 
     // Stash local changes if any, but preserve them
     const hasDocChanges = sh('git diff --name-only -- docs/')
@@ -447,6 +487,7 @@ if (blockers === 0 && warnings === 0) {
   console.log(`${YELLOW}${BOLD}[ORESHNIK] PRE-FLIGHT OK — ${warnings} advertencia(s).${RESET}`)
 } else {
   console.log(`${RED}${BOLD}[ORESHNIK] PRE-FLIGHT BLOQUEADO — ${blockers} bloqueante(s).${RESET}`)
+  reopenObsidian()
   process.exit(1)
 }
 
@@ -459,4 +500,5 @@ if (sprintId) {
   console.log(`  node scripts/oreshnik/preflight.mjs --sprint SXX --operator ${operator} --desc "descripcion"`)
 }
 
+reopenObsidian()
 process.exit(0)
