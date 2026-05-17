@@ -21,6 +21,7 @@ import {
 } from '@/lib/bookings/operations'
 import { sendBookingNotifications } from '@/lib/bookings/notifications'
 import { syncBookingToGoogleCalendar } from '@/lib/bookings/google-calendar'
+import { sendBookingConfirmedWhatsapp } from '@/lib/whatsapp/booking-notifications'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
 import { validatePaymentReviewAccessToken } from '@/lib/bookings/payment-review-access'
 import {
@@ -453,6 +454,17 @@ async function handlePaymentReviewAction(formData: FormData) {
         data: { calendarEventId: calendarSync.eventId },
       })
     }
+
+    await sendBookingConfirmedWhatsapp({
+      publicCode: booking.publicCode,
+      requesterName: booking.requesterName,
+      requesterPhone: booking.requesterPhone,
+      serviceName: primaryItem?.serviceVariant.service.name ?? null,
+      variantName: primaryItem?.serviceVariant.name ?? null,
+      resourceName: primaryItem?.resource?.name ?? null,
+      eventDate: booking.eventDate,
+      eventEndDate: booking.eventEndDate,
+    })
 
     redirect(`/ops/payment-review?token=${encodeURIComponent(token)}&result=confirmed`)
   }
