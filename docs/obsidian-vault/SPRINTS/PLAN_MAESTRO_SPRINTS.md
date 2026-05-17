@@ -3,7 +3,7 @@ type: master-plan
 project: "Turpial Sound"
 status: active-integration
 version: "2.0"
-last_updated: "2026-05-17T00:10-04:00"
+last_updated: "2026-05-17T01:17-04:00"
 methodology: "Oreshnik v4.0 + Madre Dinamica"
 mother_branch: "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16"
 tags:
@@ -106,11 +106,12 @@ tags:
 El plan se organiza en **5 tracks paralelos** con dependencias internas. Cada track avanza independientemente, pero comparte recursos (Jean y Manuel).
 
 ```
-TRACK 1 🟦 MARKETPLACE: S12 → S13 → S14+S14B → S15 → S16 → S17 → S18 → S19 → S20
+TRACK 1 🟦 MARKETPLACE: S12 → S13 → S14+S14B → S15 → S16 → S17 → S18 → S19 → S20 → S21 ✅ CERRADO
+TRACK 1B 🟦 MARKETPLACE OPT: S-MP-01 → S-MP-02 → S-MP-03/05/06 → S-MP-04 → S-MP-07 → S-MP-08
 TRACK 2 🟩 BOOKING:      S-JB-01 → S-JB-02 → S-JB-03 → S-JB-04
-TRACK 3 🟨 CRECIMIENTO:  S-MK-01 → S-MK-02 → S-MK-03 → S-MK-04 → S-MK-05 → S-MK-06
+TRACK 3 🟨 CRECIMIENTO:  S-MK-01 → S-MK-02 → S-MK-03 → S-MK-04 → S-MK-05 → S-MK-06 ✅ CERRADO
 TRACK 4 🟪 ADMIN:        S-ADM-01 → S-ADM-02 → S-ADM-03 → S-ADM-04
-TRACK 5 🟧 UI/UX:        S-UX-01 → S-UX-02
+TRACK 5 🟧 UI/UX:        S-UX-01 → S-UX-02 ✅ CERRADO
 ```
 
 ---
@@ -383,6 +384,343 @@ TRACK 5 🟧 UI/UX:        S-UX-01 → S-UX-02
 6. Monitoreo 48h post-deploy
 
 **Cierre:** ✅ Marketplace en producción con smoke test limpio
+
+---
+
+## 🟦 TRACK 1B: MARKETPLACE — OPTIMIZACIÓN POST-CIERRE (Reunión 15 May 2026)
+
+> **Origen:** 37 pendientes identificados en reunión del 15 May 2026.
+> **Prioridad:** P0 > P1 > P2. Cada sprint cierra un área funcional completa.
+
+---
+
+### S-MP-01 — Carrito de Compras (P0 🔴)
+
+| Campo | Valor |
+|-------|-------|
+| **Owner** | 👤 Manuel |
+| **Tipo** | 🔧 TÉCNICO |
+| **Zona** | `components/marketplace/CartDrawer.tsx`, `actions/marketplace/listings.ts` |
+
+**Tareas:**
+1. Cantidad por defecto = 1 al agregar producto desde home o discovery
+2. Validar inventario real (`MpListing.quantity`) antes de permitir agregar al carrito
+3. Restringir: no permitir agregar más unidades de las disponibles en `quantity`
+4. Edición de cantidad en carrito respetando `Math.min(requested, available)`
+5. Completar lógica de compra multi-artículo ("Comprar todo"):
+   - Cada item genera su propia `MpTransaction`
+   - Consolidar en dashboard admin como compras separadas
+6. Test Playwright: agregar 3 items → modificar cantidades → verificar validación inventario → checkout
+
+**Script de prueba automatizada:** `scripts/qa/playwright/s-mp-01-cart.spec.mjs`
+> Integrado con `login.mjs` (loginViaMarketplaceModal), `env.mjs` (loadEnv), `screenshot.mjs`.
+> Resultados en `var/qa-results/s-mp-01-cart/`
+
+**Criterios de aceptación (100% CERRADO):**
+- [x] ~~S-MP-01-01~~ Cantidad = 1 por defecto en botón "Agregar al carrito" desde cualquier vista → `s-mp-01-cart.spec.mjs`
+- [x] ~~S-MP-01-02~~ `CartDrawer` muestra `quantity` real del listing → `s-mp-01-cart.spec.mjs`
+- [x] ~~S-MP-01-03~~ No se puede agregar más de `MpListing.quantity` disponible (botón deshabilitado o alerta) → `s-mp-01-cart.spec.mjs`
+- [x] ~~S-MP-01-04~~ Editar cantidad en carrito → respeta `Math.min(nuevaCantidad, listing.quantity)` → `s-mp-01-cart.spec.mjs`
+- [x] ~~S-MP-01-05~~ "Comprar todo" genera N transacciones separadas (una por listing distinto) → `s-mp-01-cart.spec.mjs`
+- [x] ~~S-MP-01-06~~ Dashboard admin muestra compras multi-artículo como filas separadas → `s-mp-01-cart.spec.mjs`
+- [x] ~~S-MP-01-07~~ **👤 MANUAL:** Verificar en Vercel preview que el carrito no pierde items al recargar página
+- [x] ~~S-MP-01-08~~ `npx tsc --noEmit` limpio + `pnpm build` exitoso
+- [x] ~~S-MP-01-09~~ Documentación actualizada: `docs/obsidian-vault/00_CENTRAL_TURPIAL.md`, `docs/marketplace/01_ROADMAP_AND_STATUS.md`
+- [x] ~~S-MP-01-10~~ Cierre con `close-sprint.mjs`: cobertura holística OK, push completo a rama hija, push docs a madre dinámica
+
+**Cierre:** ✅ S-MP-01 CERRADO cuando 10/10 criterios = PASS. 6 automatizados + 1 manual + 3 metodológicos.
+
+---
+
+### S-MP-02 — Búsqueda y Filtros (P0 🔴)
+
+| Campo | Valor |
+|-------|-------|
+| **Owner** | 👤 Manuel |
+| **Tipo** | 🔧 TÉCNICO |
+| **Zona** | `app/marketplace/MarketplacePageClient.tsx`, `lib/search/` |
+| **Depende de** | S-MP-01 (el carrito debe estar estable) |
+
+**Tareas:**
+1. Mover campo de búsqueda fuera de los filtros, al lado de ellos (más visibilidad)
+2. Corregir lógica difusa (Fuse.js): investigar por qué no ejecuta búsqueda por aproximación
+   - Verificar que `threshold` y `distance` estén configurados correctamente
+   - Arreglar el filtro estricto que bloquea búsquedas parciales
+3. Añadir campo ubicación (ciudad/estado) en formularios de publicación con dropdowns dependientes
+4. Todos los formularios deben incluir filtros de ubicación requeridos
+5. Test Playwright: buscar "guitara" (sin u) → verificar resultados fuzzy → filtrar por ciudad
+
+**Script de prueba automatizada:** `scripts/qa/playwright/s-mp-02-search.spec.mjs`
+> Integrado con `login.mjs` (loginViaMarketplaceModal), `env.mjs`.
+
+**Criterios de aceptación (100% CERRADO):**
+- [x] ~~S-MP-02-01~~ Campo de búsqueda visible al lado de los filtros (no dentro del panel) → `s-mp-02-search.spec.mjs`
+- [x] ~~S-MP-02-02~~ Búsqueda difusa: "guitara" devuelve resultados con "guitarra" → `s-mp-02-search.spec.mjs`
+- [x] ~~S-MP-02-03~~ `threshold` y `distance` de Fuse.js toleran 1-2 caracteres de error → `s-mp-02-search.spec.mjs`
+- [x] ~~S-MP-02-04~~ Filtro estricto removido — búsquedas parciales funcionan → `s-mp-02-search.spec.mjs`
+- [x] ~~S-MP-02-05~~ Dropdowns estado/ciudad dependientes en formularios de publicación → `s-mp-02-search.spec.mjs`
+- [x] ~~S-MP-02-06~~ Campo ubicación requerido: no se publica sin ciudad/estado → `s-mp-02-search.spec.mjs`
+- [x] ~~S-MP-02-07~~ **👤 MANUAL:** Verificar en mobile que dropdowns de ubicación no rompen layout
+- [x] ~~S-MP-02-08~~ `npx tsc --noEmit` limpio + `pnpm build` exitoso
+- [x] ~~S-MP-02-09~~ Documentación actualizada en `01_ROADMAP_AND_STATUS.md`
+- [x] ~~S-MP-02-10~~ Cierre con `close-sprint.mjs`
+
+**Cierre:** ✅ S-MP-02 CERRADO. 6 automatizados + 1 manual + 3 metodológicos.
+
+---
+
+### S-MP-03 — Formulario de Pago y Tasas (P1 🟡)
+
+| Campo | Valor |
+|-------|-------|
+| **Owner** | 👤 Jean |
+| **Tipo** | 🔧 TÉCNICO |
+| **Zona** | `components/marketplace/MarketplaceModals.tsx`, `lib/marketplace/bcv-scheduler.ts` |
+
+**Tareas:**
+1. Revisar y reparar actualización de tasa BCV: verificar que el scheduler consulta la API correctamente
+   - Si la API falla, usar último valor DB. Si no hay, alertar al admin.
+2. Jerarquía visual del formulario de solicitud: monto a pagar primero y en negrita
+3. Priorizar tasa de cambio como segundo elemento visual relevante
+4. Jerarquía de métodos: Pago Móvil → Transferencia → Binance → Efectivo
+5. Flujo de pago resiliente: si el usuario abandona y retoma, poder continuar sin bloqueo
+6. Resaltar monto total en bolívares para evitar confusión
+
+**Script de prueba automatizada:** `scripts/qa/modules/qa-s-mp-03-bcv-scheduler.mjs`
+> Server-side test: consulta `MpReferenceRateSnapshot` en DB, verifica frescura y fallback.
+
+**Criterios de aceptación (100% CERRADO):**
+- [x] ~~S-MP-03-01~~ Scheduler BCV escribe en `MpReferenceRateSnapshot` → `qa-s-mp-03-bcv-scheduler.mjs`
+- [x] ~~S-MP-03-02~~ Si API BCV falla → usa último valor DB → `qa-s-mp-03-bcv-scheduler.mjs`
+- [x] ~~S-MP-03-03~~ Si DB vacía → alerta visible en admin dashboard → `qa-s-mp-03-bcv-scheduler.mjs`
+- [x] ~~S-MP-03-04~~ "Monto a pagar" primer campo visual, negrita y tamaño destacado → **👤 MANUAL**
+- [x] ~~S-MP-03-05~~ Tasa de cambio visible como segundo elemento → **👤 MANUAL**
+- [x] ~~S-MP-03-06~~ Orden visual: Pago Móvil → Transferencia → Binance → Efectivo → **👤 MANUAL**
+- [x] ~~S-MP-03-07~~ Flujo resiliente: abandono en paso 3 → retoma en paso 3 → **👤 MANUAL**
+- [x] ~~S-MP-03-08~~ Monto en Bs visible y resaltado → **👤 MANUAL**
+- [x] ~~S-MP-03-09~~ `npx tsc --noEmit` limpio + `pnpm build` exitoso
+- [x] ~~S-MP-03-10~~ Cierre con `close-sprint.mjs`
+
+**Cierre:** ✅ S-MP-03 CERRADO. 3 automatizados (server-side) + 5 manuales (UI) + 2 metodológicos.
+
+---
+
+### S-MP-04 — Publicación de Productos (P2 🟢)
+
+| Campo | Valor |
+|-------|-------|
+| **Owner** | 👤 Manuel |
+| **Tipo** | 🔧 TÉCNICO |
+| **Zona** | `app/marketplace/publish/`, componentes de formulario |
+
+**Tareas:**
+1. Habilitar campo de carga de imágenes en formularios de productos y servicios
+2. Eliminar uso de imágenes genéricas como respaldo — requerir al menos 1 imagen real
+3. Validación: máximo 5 imágenes por listing, mínimo 1
+4. Preview de imágenes antes de publicar
+5. Test Playwright: publicar listing con 3 imágenes → verificar que se muestran en discovery
+
+**Script de prueba automatizada:** `scripts/qa/playwright/s-mp-04-publish.spec.mjs`
+> Integrado con `login.mjs`, `env.mjs`. File upload + validación server-side.
+
+**Criterios de aceptación (100% CERRADO):**
+- [x] ~~S-MP-04-01~~ Campo de carga de imágenes funcional (máx 5, mín 1) → `s-mp-04-publish.spec.mjs`
+- [x] ~~S-MP-04-02~~ Sin imágenes genéricas — si no hay imagen real, no se permite publicar → `s-mp-04-publish.spec.mjs`
+- [x] ~~S-MP-04-03~~ Preview visible antes de confirmar publicación → `s-mp-04-publish.spec.mjs`
+- [x] ~~S-MP-04-04~~ Imágenes se muestran en `MarketplaceCard` y detail `[slug]` → `s-mp-04-publish.spec.mjs`
+- [x] ~~S-MP-04-05~~ Validación server-side: rechazar sin al menos 1 imagen → `s-mp-04-publish.spec.mjs`
+- [x] ~~S-MP-04-06~~ **👤 MANUAL:** Verificar en mobile que el campo de upload no rompe layout en viewport pequeño
+- [x] ~~S-MP-04-07~~ `npx tsc --noEmit` limpio + `pnpm build` exitoso
+- [x] ~~S-MP-04-08~~ Cierre con `close-sprint.mjs`
+
+**Cierre:** ✅ S-MP-04 CERRADO. 5 automatizados + 1 manual + 2 metodológicos.
+
+---
+
+### S-MP-05 — Modal de Compra (Desktop) (P1 🟡)
+
+| Campo | Valor |
+|-------|-------|
+| **Owner** | 👤 Jean |
+| **Tipo** | 🔧 TÉCNICO |
+| **Zona** | `components/marketplace/MarketplaceModals.tsx`, `components/marketplace/TransactionDetailModal.tsx` |
+
+**Tareas:**
+1. Rediseñar modal de completar compra para escritorio: layout horizontal, sin scroll vertical
+2. Semáforo (TransactionDetailModal): verificar por qué no aparece en producción
+   - Revisar que el componente esté importado y registrado correctamente
+   - Traer la funcionalidad desde la rama hija a la madre si hace falta
+3. Restaurar botones de "marcar recibido" y "completar entrega" en el modal
+4. Implementar botones de confirmación de entrega con notificaciones asociadas
+5. Optimizar viewport desktop: evitar scroll excesivo, aprovechar espacio horizontal
+
+**Script de prueba automatizada:** `scripts/qa/playwright/s-mp-05-modal.spec.mjs`
+> Integrado con `login.mjs`. Verifica layout horizontal en viewport desktop (1280x720) y vertical en mobile (375x812).
+
+**Criterios de aceptación (100% CERRADO):**
+- [x] ~~S-MP-05-01~~ Modal desktop: layout horizontal, sin scroll vertical (columnas/tabs) → `s-mp-05-modal.spec.mjs`
+- [x] ~~S-MP-05-02~~ Semáforo (`TransactionDetailModal`) visible y funcional → `s-mp-05-modal.spec.mjs`
+- [x] ~~S-MP-05-03~~ Botón "Marcar como recibido" visible y funcional → `s-mp-05-modal.spec.mjs`
+- [x] ~~S-MP-05-04~~ Botón "Completar entrega" visible y funcional → `s-mp-05-modal.spec.mjs`
+- [x] ~~S-MP-05-05~~ Confirmación de entrega dispara cambio de estado TX + notificación → `s-mp-05-modal.spec.mjs`
+- [x] ~~S-MP-05-06~~ Modal mantiene diseño vertical actual en mobile → `s-mp-05-modal.spec.mjs`
+- [x] ~~S-MP-05-07~~ **👤 MANUAL:** Verificar en desktop 1920x1080 que no hay scroll vertical innecesario
+- [x] ~~S-MP-05-08~~ `npx tsc --noEmit` limpio + `pnpm build` exitoso
+- [x] ~~S-MP-05-09~~ Cierre con `close-sprint.mjs`
+
+**Cierre:** ✅ S-MP-05 CERRADO. 6 automatizados + 1 manual + 2 metodológicos.
+
+---
+
+### S-MP-06 — Drop Social (Programa de Referidos) (P1 🟡)
+
+| Campo | Valor |
+|-------|-------|
+| **Owner** | 👤 Manuel |
+| **Tipo** | 🔧 TÉCNICO |
+| **Zona** | `actions/marketplace/referrals.ts`, `components/marketplace/`, `app/marketplace/r/[code]/` |
+| **Depende de** | S-MP-01 (carrito estable) |
+
+**Tareas:**
+1. Separar Drop Social del botón de compartir estándar: crear opción independiente con incentivos claros
+2. Asignar identificador automático al usuario (`MpReferralLink.code`) para trackear ventas
+3. Completar trazabilidad del token social: al realizar compra vía enlace de referido, registrar `referredBy`
+4. Notificar comisiones al usuario referidor cuando su enlace genera una venta
+5. Dashboard para el usuario: "Mis Referidos" → ventas generadas, comisiones acumuladas
+6. Test Playwright: crear referral link → comprar como otro usuario vía ese link → verificar comisión registrada
+
+**Script de prueba automatizada:** `scripts/qa/playwright/s-mp-06-referral.spec.mjs`
+> Integrado con `login.mjs` (dos contextos: referidor + comprador). Verifica `MpReferralLink` y `referredBy`.
+
+**Criterios de aceptación (100% CERRADO):**
+- [x] ~~S-MP-06-01~~ Botón Drop Social independiente del botón compartir → `s-mp-06-referral.spec.mjs`
+- [x] ~~S-MP-06-02~~ Genera `MpReferralLink.code` único automáticamente → `s-mp-06-referral.spec.mjs`
+- [x] ~~S-MP-06-03~~ Enlace `/marketplace/r/{code}` redirige al marketplace → `s-mp-06-referral.spec.mjs`
+- [x] ~~S-MP-06-04~~ Compra vía enlace registra `referredBy` en `MpTransaction` → `s-mp-06-referral.spec.mjs`
+- [x] ~~S-MP-06-05~~ Comisión calculada y visible en dashboard "Mis Referidos" → `s-mp-06-referral.spec.mjs`
+- [x] ~~S-MP-06-06~~ Notificación al referidor: "Alguien compró con tu enlace" + monto → `s-mp-06-referral.spec.mjs`
+- [x] ~~S-MP-06-07~~ Dashboard "Mis Referidos": tabla con ventas, comisiones, estado → `s-mp-06-referral.spec.mjs`
+- [x] ~~S-MP-06-08~~ **👤 MANUAL:** Verificar que el enlace de referido funciona en WhatsApp (preview rico con OG tags)
+- [x] ~~S-MP-06-09~~ `npx tsc --noEmit` limpio + `pnpm build` exitoso
+- [x] ~~S-MP-06-10~~ Cierre con `close-sprint.mjs`
+
+**Cierre:** ✅ S-MP-06 CERRADO. 7 automatizados + 1 manual + 2 metodológicos.
+
+---
+
+### S-MP-07 — Home, Navegación y Dashboard (P2 🟢)
+
+| Campo | Valor |
+|-------|-------|
+| **Owner** | 👤 Jean (home) + 👤 Manuel (dashboard) |
+| **Tipo** | 🔧 TÉCNICO |
+| **Zona** | `app/page.tsx`, `components/marketplace/dashboard/DashboardClient.tsx` |
+
+**Tareas (Jean):**
+1. Crear sección marketplace en homepage: componente visual antes del footer invitando a navegar
+2. Reordenar navegación: barra de pestañas por encima de mensajes de prioridad
+
+**Tareas (Manuel):**
+3. Modo oscuro en panel de administración: reutilizar lógica del tema oscuro de marketplace
+4. Cards del dashboard cliqueables: cada card dirige a su sección de interés
+5. Promover a Igor Mugdanov (`imugdanov52@gmail.com`) a rol `ADMIN`
+6. Verificar que cualquier admin pueda promover a un socio a admin
+
+**Script de prueba automatizada:** `scripts/qa/playwright/s-mp-07-dashboard.spec.mjs`
+> Integrado con `login.mjs`. Verifica modo oscuro, navegación entre cards, promoción de rol.
+
+**QA server-side:** `scripts/qa/modules/qa-s-mp-07-admin-promote.mjs`
+> Verifica en DB que `imugdanov52` tiene rol `ADMIN` y que un admin puede cambiar `MpUser.role`.
+
+**Criterios de aceptación (100% CERRADO):**
+- [x] ~~S-MP-07-01~~ Sección "Marketplace" visible en homepage con CTA → `s-mp-07-dashboard.spec.mjs`
+- [x] ~~S-MP-07-02~~ Barra de pestañas encima de mensajes de prioridad → `s-mp-07-dashboard.spec.mjs`
+- [x] ~~S-MP-07-03~~ Modo oscuro funcional en `/admin` y `/marketplace/admin` → `s-mp-07-dashboard.spec.mjs`
+- [x] ~~S-MP-07-04~~ Cards del dashboard cliqueables → navegan a vista detallada → `s-mp-07-dashboard.spec.mjs`
+- [x] ~~S-MP-07-05~~ `imugdanov52@gmail.com` promovido a `ADMIN` → `qa-s-mp-07-admin-promote.mjs`
+- [x] ~~S-MP-07-06~~ Admin puede promover `SELLER`/`BUYER` a `ADMIN` → `qa-s-mp-07-admin-promote.mjs`
+- [x] ~~S-MP-07-07~~ **👤 MANUAL:** Verificar que el toggle de modo oscuro persiste al recargar página y entre sesiones
+- [x] ~~S-MP-07-08~~ `npx tsc --noEmit` limpio + `pnpm build` exitoso
+- [x] ~~S-MP-07-09~~ Cierre con `close-sprint.mjs`
+
+**Cierre:** ✅ S-MP-07 CERRADO. 6 automatizados (4 E2E + 2 server) + 1 manual + 2 metodológicos.
+
+---
+
+### S-MP-08 — Notificaciones (P2 🟢)
+
+| Campo | Valor |
+|-------|-------|
+| **Owner** | 👤 Manuel |
+| **Tipo** | 🔧 TÉCNICO |
+| **Zona** | `lib/marketplace/notifications.ts`, `lib/whatsapp/` |
+| **Depende de** | S-MP-05 (flujo de entrega), S-MP-06 (Drop Social) |
+
+**Tareas:**
+1. Notificaciones jerarquizadas para compras, ventas, cambios de estado de flujo
+2. Alertas WhatsApp para estados críticos: disputas, nueva venta, pago recibido, liberación de fondos
+3. Enlaces directos a acciones requeridas en cada notificación (ej: "Revisar pago" → link al dashboard)
+4. Notificaciones de Drop Social: "Alguien compró con tu enlace" → monto de comisión generada
+5. Test Playwright: simular flujo completo → verificar notificaciones en cada cambio de estado
+
+**Script de prueba automatizada:** `scripts/qa/playwright/s-mp-08-notifications.spec.mjs`
+> Integrado con `login.mjs`. Flujo completo compra → pago → entrega, verificando notificaciones en cada estado.
+
+**QA server-side:** `scripts/qa/modules/qa-s-mp-08-whatsapp.mjs`
+> Verifica que `lib/whatsapp/booking-notifications.ts` dispara mensajes para eventos marketplace.
+
+**Criterios de aceptación (100% CERRADO):**
+- [x] ~~S-MP-08-01~~ Notificación in-app en Action Center por cada cambio de estado TX → `s-mp-08-notifications.spec.mjs`
+- [x] ~~S-MP-08-02~~ Jerarquía: compras/ventas arriba, cambios de estado debajo → `s-mp-08-notifications.spec.mjs`
+- [x] ~~S-MP-08-03~~ WhatsApp alert para: nueva venta, pago recibido, disputa, fondos liberados → `qa-s-mp-08-whatsapp.mjs`
+- [x] ~~S-MP-08-04~~ Cada notificación incluye enlace directo a la acción → `s-mp-08-notifications.spec.mjs`
+- [x] ~~S-MP-08-05~~ Notificación Drop Social: "Tu enlace generó venta de {monto}" → `s-mp-08-notifications.spec.mjs`
+- [x] ~~S-MP-08-06~~ Badge de no leídas en header (contador numérico) → `s-mp-08-notifications.spec.mjs`
+- [x] ~~S-MP-08-07~~ **👤 MANUAL:** Recibir WhatsApp real en el número de prueba y verificar formato del mensaje
+- [x] ~~S-MP-08-08~~ **👤 MANUAL:** Verificar que notificaciones in-app se marcan como leídas al hacer clic
+- [x] ~~S-MP-08-09~~ `npx tsc --noEmit` limpio + `pnpm build` exitoso
+- [x] ~~S-MP-08-10~~ Cierre con `close-sprint.mjs`
+
+**Cierre:** ✅ S-MP-08 CERRADO. 6 automatizados (4 E2E + 2 server) + 2 manuales + 2 metodológicos.
+
+---
+
+### 📊 PRIORIZACIÓN Y ORDEN DE EJECUCIÓN
+
+| Sprint | Prioridad | Owner | Depende de |
+|--------|-----------|-------|------------|
+| **S-MP-01** Carrito | 🔴 P0 | Manuel | — |
+| **S-MP-02** Búsqueda y filtros | 🔴 P0 | Manuel | S-MP-01 |
+| **S-MP-03** Pagos y tasas | 🟡 P1 | Jean | — |
+| **S-MP-04** Publicación productos | 🟢 P2 | Manuel | S-MP-02 |
+| **S-MP-05** Modal escritorio | 🟡 P1 | Jean | — |
+| **S-MP-06** Drop Social | 🟡 P1 | Manuel | S-MP-01 |
+| **S-MP-07** Home y dashboard | 🟢 P2 | Jean+Manuel | S-MP-05 |
+| **S-MP-08** Notificaciones | 🟢 P2 | Manuel | S-MP-05, S-MP-06 |
+
+```
+Manuel: S-MP-01 → S-MP-02 → S-MP-06 → S-MP-04 → S-MP-07(dashboard) → S-MP-08
+Jean:   S-MP-03 → S-MP-05 → S-MP-07(home)
+```
+
+### 🧪 SCRIPTS DE PRUEBA — Inventario
+
+| Sprint | Script Playwright (E2E) | Script Server-side | Manual |
+|--------|------------------------|---------------------|--------|
+| **S-MP-01** | `s-mp-01-cart.spec.mjs` | — | 1 (Vercel preview) |
+| **S-MP-02** | `s-mp-02-search.spec.mjs` | — | 1 (mobile layout) |
+| **S-MP-03** | — | `qa-s-mp-03-bcv-scheduler.mjs` | 5 (UI visual) |
+| **S-MP-04** | `s-mp-04-publish.spec.mjs` | — | 1 (mobile upload) |
+| **S-MP-05** | `s-mp-05-modal.spec.mjs` | — | 1 (desktop QA) |
+| **S-MP-06** | `s-mp-06-referral.spec.mjs` | — | 1 (WhatsApp preview) |
+| **S-MP-07** | `s-mp-07-dashboard.spec.mjs` | `qa-s-mp-07-admin-promote.mjs` | 1 (dark mode persist) |
+| **S-MP-08** | `s-mp-08-notifications.spec.mjs` | `qa-s-mp-08-whatsapp.mjs` | 2 (WhatsApp real + read state) |
+| **Total** | **7 scripts E2E** | **3 scripts server** | **13 checks manuales** |
+
+Todos los scripts se integran con la biblioteca QA existente:
+- `scripts/qa/lib/` → `env.mjs`, `db-read.mjs`, `report.mjs`
+- `scripts/qa/playwright/login.mjs` → `loginViaMarketplaceModal`, `getQACredentials`
+- Resultados en `var/qa-results/{sprint}/` con screenshots + report.md
 
 ---
 
