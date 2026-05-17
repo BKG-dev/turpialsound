@@ -1595,10 +1595,14 @@ export function BookingWizard({
 
         {currentStep === 2 && (
           <DateTimeStep
+            serviceSlug={selectedServiceSlug}
+            variantSlug={selectedVariantSlug}
             eventDate={data.eventDate}
             startTime={data.startTime}
             durationMinutes={data.durationMinutes}
-            onDateChange={(value) => setData((d) => ({ ...d, eventDate: value }))}
+            onDateChange={(value) =>
+              setData((d) => ({ ...d, eventDate: value, startTime: null, durationMinutes: null }))
+            }
             onStartTimeChange={(value) => setData((d) => ({ ...d, startTime: value, durationMinutes: null }))}
             onDurationChange={(value) => setData((d) => ({ ...d, durationMinutes: value }))}
           />

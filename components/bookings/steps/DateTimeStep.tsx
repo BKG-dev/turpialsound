@@ -1,20 +1,56 @@
 'use client'
 
-import { useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 const START_TIMES: string[] = [
-  '08:00', '09:00', '10:00', '11:00', '12:00',
-  '13:00', '14:00', '15:00', '16:00', '17:00',
-  '18:00', '19:00', '20:00',
+  '08:00',
+  '09:00',
+  '10:00',
+  '11:00',
+  '12:00',
+  '13:00',
+  '14:00',
+  '15:00',
+  '16:00',
+  '17:00',
+  '18:00',
+  '19:00',
+  '20:00',
 ]
 
-export const DURATION_OPTIONS: { value: number; label: string }[] = [
-  { value: 60, label: '1 hora' },
-  { value: 90, label: '1 hora 30 min' },
-  { value: 120, label: '2 horas' },
-  { value: 180, label: '3 horas' },
-]
+const SLOT_STATE_LABELS: Record<SlotState, string> = {
+  available: 'Libre',
+  pending_payment: 'Solicitado',
+  payment_reported: 'Pago reportado',
+  confirmed: 'Confirmado',
+  expired: 'Expirado',
+  cancelled: 'Cancelado',
+  past: 'Pasado',
+}
+
+type SlotState =
+  | 'available'
+  | 'pending_payment'
+  | 'payment_reported'
+  | 'confirmed'
+  | 'expired'
+  | 'cancelled'
+  | 'past'
+
+interface SlotAvailability {
+  time: string
+  state: SlotState
+  isSelectable: boolean
+  isStrongBlocked: boolean
+  observedOperationalStatuses: string[]
+}
+
+interface SlotResponsePayload {
+  ok: boolean
+  slots?: SlotAvailability[]
+  error?: string
+}
 
 export function deriveEndTime(startTime: string, durationMinutes: number): string {
   const [h, m] = startTime.split(':').map(Number)
@@ -22,19 +58,6 @@ export function deriveEndTime(startTime: string, durationMinutes: number): strin
   const endH = Math.floor(totalMinutes / 60) % 24
   const endM = totalMinutes % 60
   return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`
-}
-
-function getAvailableEndTimes(startTime: string | null): string[] {
-  if (!startTime) return []
-
-  const [startHour] = startTime.split(':').map(Number)
-  const options: string[] = []
-
-  for (let hour = startHour + 1; hour <= 20; hour += 1) {
-    options.push(`${String(hour).padStart(2, '0')}:00`)
-  }
-
-  return options
 }
 
 function getDurationFromRange(startTime: string, endTime: string): number | null {
@@ -50,12 +73,14 @@ function getDurationLabel(durationMinutes: number): string {
   return hours === 1 ? '1 hora' : `${hours} horas`
 }
 
-function getTodayISO(): string {
-  const d = new Date()
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+function getTodayISOInCaracas(): string {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Caracas',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+  return formatter.format(new Date())
 }
 
 function formatDateForBlock(date: string): string {
@@ -63,7 +88,77 @@ function formatDateForBlock(date: string): string {
   return `${day}/${month}/${year}`
 }
 
+function addOneHour(time: string): string {
+  const [hour, minute] = time.split(':').map(Number)
+  const totalMinutes = hour * 60 + minute + 60
+  const nextHour = Math.floor(totalMinutes / 60) % 24
+  const nextMinute = totalMinutes % 60
+  return `${String(nextHour).padStart(2, '0')}:${String(nextMinute).padStart(2, '0')}`
+}
+
+function getStatusBadgeClass(state: SlotState): string {
+  if (state === 'available') return 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200'
+  if (state === 'pending_payment') return 'border-amber-400/40 bg-amber-500/10 text-amber-200'
+  if (state === 'payment_reported') return 'border-orange-400/40 bg-orange-500/10 text-orange-200'
+  if (state === 'confirmed') return 'border-red-400/45 bg-red-500/10 text-red-200'
+  if (state === 'past') return 'border-white/10 bg-white/5 text-text-muted'
+  return 'border-white/10 bg-white/5 text-text-muted'
+}
+
+function getSlotButtonClass(slot: SlotAvailability, isSelected: boolean): string {
+  if (!slot.isSelectable) {
+    return cn(
+      'border-white/10 bg-brand-bg/50 text-text-muted',
+      slot.state === 'payment_reported' && 'border-orange-500/35 bg-orange-500/10 text-orange-200/80',
+      slot.state === 'confirmed' && 'border-red-500/35 bg-red-500/10 text-red-200/80',
+      slot.state === 'past' && 'opacity-75',
+    )
+  }
+
+  if (isSelected) {
+    return 'border-accent-gold bg-accent-gold/15 text-accent-gold'
+  }
+
+  if (slot.state === 'pending_payment') {
+    return 'border-amber-400/40 bg-amber-500/10 text-amber-100 hover:border-amber-300/70'
+  }
+
+  return 'border-emerald-400/35 bg-emerald-500/10 text-emerald-100 hover:border-emerald-300/70'
+}
+
+function getAvailableEndTimes(
+  startTime: string | null,
+  slots: SlotAvailability[],
+): string[] {
+  if (!startTime) return []
+
+  const startIndex = START_TIMES.indexOf(startTime)
+  if (startIndex === -1) return []
+
+  const slotByTime = new Map(slots.map((slot) => [slot.time, slot]))
+  const options: string[] = []
+
+  for (let index = startIndex + 1; index <= START_TIMES.length; index += 1) {
+    if (index === START_TIMES.length) {
+      options.push(addOneHour(START_TIMES[START_TIMES.length - 1]))
+      break
+    }
+
+    const boundary = START_TIMES[index]
+    options.push(boundary)
+
+    const slotAtBoundary = slotByTime.get(boundary)
+    if (slotAtBoundary?.isStrongBlocked) {
+      break
+    }
+  }
+
+  return options
+}
+
 interface DateTimeStepProps {
+  serviceSlug: string | null
+  variantSlug: string | null
   eventDate: string | null
   startTime: string | null
   durationMinutes: number | null
@@ -73,6 +168,8 @@ interface DateTimeStepProps {
 }
 
 export function DateTimeStep({
+  serviceSlug,
+  variantSlug,
   eventDate,
   startTime,
   durationMinutes,
@@ -80,12 +177,84 @@ export function DateTimeStep({
   onStartTimeChange,
   onDurationChange,
 }: DateTimeStepProps) {
+  const [slots, setSlots] = useState<SlotAvailability[]>([])
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false)
+  const [slotsError, setSlotsError] = useState<string | null>(null)
   const endTime =
     startTime && durationMinutes !== null
       ? deriveEndTime(startTime, durationMinutes)
       : null
   const dateInputRef = useRef<HTMLInputElement>(null)
-  const availableEndTimes = getAvailableEndTimes(startTime)
+
+  useEffect(() => {
+    if (!eventDate || !variantSlug) {
+      setSlots([])
+      setSlotsError(null)
+      setIsLoadingSlots(false)
+      return
+    }
+
+    const abortController = new AbortController()
+    setIsLoadingSlots(true)
+    setSlotsError(null)
+
+    const query = new URLSearchParams({
+      date: eventDate,
+      variantSlug,
+    })
+    if (serviceSlug) {
+      query.set('serviceSlug', serviceSlug)
+    }
+
+    void fetch(`/api/bookings/slots?${query.toString()}`, {
+      method: 'GET',
+      cache: 'no-store',
+      signal: abortController.signal,
+    })
+      .then(async (response) => {
+        const payload = (await response.json()) as SlotResponsePayload
+        if (!response.ok || !payload.ok || !Array.isArray(payload.slots)) {
+          throw new Error(payload.error || 'slots_unavailable')
+        }
+        setSlots(payload.slots)
+      })
+      .catch((error) => {
+        if (abortController.signal.aborted) return
+        console.error('[bookings.slots]', error)
+        setSlots([])
+        setSlotsError('No pudimos cargar la disponibilidad en este momento. Intenta de nuevo.')
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setIsLoadingSlots(false)
+        }
+      })
+
+    return () => abortController.abort()
+  }, [eventDate, serviceSlug, variantSlug])
+
+  const slotByTime = useMemo(() => new Map(slots.map((slot) => [slot.time, slot])), [slots])
+  const availableEndTimes = useMemo(
+    () => getAvailableEndTimes(startTime, slots),
+    [startTime, slots],
+  )
+
+  useEffect(() => {
+    if (!startTime) return
+    const selectedSlot = slotByTime.get(startTime)
+    if (selectedSlot && !selectedSlot.isSelectable) {
+      onStartTimeChange(null)
+      onDurationChange(null)
+    }
+  }, [slotByTime, startTime, onDurationChange, onStartTimeChange])
+
+  useEffect(() => {
+    if (!startTime || durationMinutes === null) return
+    const selectedEndTime = deriveEndTime(startTime, durationMinutes)
+    if (!availableEndTimes.includes(selectedEndTime)) {
+      onDurationChange(null)
+    }
+  }, [availableEndTimes, durationMinutes, onDurationChange, startTime])
 
   function openNativeDatePicker() {
     const input = dateInputRef.current
@@ -101,11 +270,20 @@ export function DateTimeStep({
     input.click()
   }
 
+  function handleStartSlotSelection(slot: SlotAvailability) {
+    if (!slot.isSelectable) {
+      return
+    }
+
+    onStartTimeChange(slot.time)
+    onDurationChange(null)
+  }
+
   return (
     <div className="space-y-4 md:space-y-3">
       <p className="text-sm text-text-secondary md:text-[11px]">
-        Selecciona la fecha y el bloque horario que necesitas. La disponibilidad se confirma durante
-        la revision interna; no es reserva inmediata.
+        Los horarios en revision o confirmados no estan disponibles. Las solicitudes pendientes de
+        pago pueden liberarse si no reportan pago a tiempo.
       </p>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-2">
@@ -129,7 +307,7 @@ export function DateTimeStep({
               ref={dateInputRef}
               id="event-date"
               type="date"
-              min={getTodayISO()}
+              min={getTodayISOInCaracas()}
               value={eventDate ?? ''}
               onChange={(e) => onDateChange(e.target.value || null)}
               className="w-full cursor-pointer rounded-lg border-0 bg-transparent px-3.5 py-2.5 pr-11 text-sm text-text-primary outline-none md:text-[13px]"
@@ -150,69 +328,128 @@ export function DateTimeStep({
             </span>
           </button>
           <p className="mt-1 text-[11px] text-text-muted">
-            Abre el calendario nativo de tu navegador para elegir la fecha.
+            Horario operativo en America/Caracas.
           </p>
         </div>
 
-        <div>
-          <label
-            htmlFor="start-time"
-            className="mb-1.5 block text-sm font-medium text-text-primary md:text-[11px]"
-          >
-            Hora de inicio
-          </label>
-          <select
-            id="start-time"
-            value={startTime ?? ''}
-            onChange={(e) => onStartTimeChange(e.target.value || null)}
-            className={cn(
-              'w-full rounded-lg border bg-brand-surface px-3.5 py-2.5 text-sm text-text-primary outline-none transition-colors md:text-[13px]',
-              'focus:border-accent-gold',
-              startTime ? 'border-accent-gold/50' : 'border-brand-border',
-            )}
-          >
-            <option value="">- Elige una hora -</option>
-            {START_TIMES.map((time) => (
-              <option key={time} value={time}>
-                {time}
-              </option>
-            ))}
-          </select>
-        </div>
+        <div className="md:col-span-2">
+          <div className="mb-1.5 flex flex-wrap gap-1.5">
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px]',
+                getStatusBadgeClass('available'),
+              )}
+            >
+              Libre
+            </span>
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px]',
+                getStatusBadgeClass('pending_payment'),
+              )}
+            >
+              Solicitado (tentativo)
+            </span>
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px]',
+                getStatusBadgeClass('payment_reported'),
+              )}
+            >
+              Pago reportado
+            </span>
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px]',
+                getStatusBadgeClass('confirmed'),
+              )}
+            >
+              Confirmado
+            </span>
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px]',
+                getStatusBadgeClass('past'),
+              )}
+            >
+              Pasado
+            </span>
+          </div>
+          {isLoadingSlots ? (
+            <div className="rounded-lg border border-brand-border bg-brand-bg/35 px-3 py-2 text-[12px] text-text-muted">
+              Cargando disponibilidad real...
+            </div>
+          ) : slotsError ? (
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-[12px] text-red-200">
+              {slotsError}
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+              {START_TIMES.map((time) => {
+                const slot = slotByTime.get(time) ?? {
+                  time,
+                  state: 'available' as SlotState,
+                  isSelectable: false,
+                  isStrongBlocked: false,
+                  observedOperationalStatuses: [],
+                }
+                const isSelected = startTime === slot.time
 
-        <div>
-          <label
-            htmlFor="end-time"
-            className="mb-1.5 block text-sm font-medium text-text-primary md:text-[11px]"
-          >
-            Hora de finalizacion
-          </label>
-          <select
-            id="end-time"
-            value={endTime ?? ''}
-            onChange={(e) =>
-              onDurationChange(
-                startTime && e.target.value ? getDurationFromRange(startTime, e.target.value) : null,
-              )
-            }
-            disabled={!startTime}
-            className={cn(
-              'w-full rounded-lg border bg-brand-surface px-3.5 py-2.5 text-sm text-text-primary outline-none transition-colors md:text-[13px]',
-              'focus:border-accent-gold',
-              endTime ? 'border-accent-gold/50' : 'border-brand-border',
-            )}
-          >
-            <option value="">- Elige una hora de finalizacion -</option>
-            {availableEndTimes.map((time) => (
-              <option key={time} value={time}>
-                {time}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-[11px] text-text-muted">
-            Primero elige la hora de inicio para ver opciones de cierre.
-          </p>
+                return (
+                  <button
+                    key={slot.time}
+                    type="button"
+                    disabled={!slot.isSelectable}
+                    onClick={() => handleStartSlotSelection(slot)}
+                    className={cn(
+                      'rounded-lg border px-2 py-2 text-center text-[12px] font-medium transition-colors',
+                      getSlotButtonClass(slot, isSelected),
+                    )}
+                  >
+                    <span className="block leading-none">{slot.time}</span>
+                    <span className="mt-1 block text-[10px] opacity-90">
+                      {SLOT_STATE_LABELS[slot.state]}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
+      </div>
+
+      <div>
+        <label
+          htmlFor="end-time"
+          className="mb-1.5 block text-sm font-medium text-text-primary md:text-[11px]"
+        >
+          Hora de finalizacion
+        </label>
+        <select
+          id="end-time"
+          value={endTime ?? ''}
+          onChange={(e) =>
+            onDurationChange(
+              startTime && e.target.value ? getDurationFromRange(startTime, e.target.value) : null,
+            )
+          }
+          disabled={!startTime || isLoadingSlots}
+          className={cn(
+            'w-full rounded-lg border bg-brand-surface px-3.5 py-2.5 text-sm text-text-primary outline-none transition-colors md:text-[13px]',
+            'focus:border-accent-gold',
+            endTime ? 'border-accent-gold/50' : 'border-brand-border',
+          )}
+        >
+          <option value="">- Elige una hora de finalizacion -</option>
+          {availableEndTimes.map((time) => (
+            <option key={time} value={time}>
+              {time}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-[11px] text-text-muted">
+          El bloque de cierre se limita automaticamente hasta el siguiente horario bloqueado.
+        </p>
       </div>
 
       {eventDate && startTime && endTime && durationMinutes !== null && (
