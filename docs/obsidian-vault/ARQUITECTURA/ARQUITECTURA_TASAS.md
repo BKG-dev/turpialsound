@@ -1,9 +1,27 @@
 ---
 tags: ["#area/backend", "#architecture", "#marketplace", "#rates"]
-last_updated: "2026-05-13"
+last_updated: "2026-05-17"
 ---
 
 # Arquitectura del Motor de Tasas
+
+## S-MP-01 - Carrito consolidado e impacto schema (2026-05-17)
+
+Aunque este documento se centra en tasas, el cierre S-MP-01 toca schema marketplace y payout:
+
+- Se agrego `MpOrder` como orden consolidada para carrito.
+- `MpTransaction` ahora tiene `orderId`, `quantity` y `unitPrice`.
+- `MpListing` mantiene el contrato correcto: `hasInventory` + `inventory`; no existe `quantity` en listing.
+- La liquidacion sigue por `MpTransaction`, no por `MpOrder`, para permitir liberar/pagar a un seller mientras otro sigue pendiente.
+- `MpPayout.transactionIds` sigue siendo la fuente para registrar pago por transaccion hija.
+
+QA canonico:
+
+```powershell
+npx tsx scripts/qa/run-marketplace-qa.mjs --module=S-MP-01
+```
+
+Resultado validado: 2026-05-17T21:24:48Z - 17/17 PASS.
 
 ## Scheduler BCV — Actualización Automática (Nuevo 2026-05-13)
 

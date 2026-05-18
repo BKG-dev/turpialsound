@@ -57,6 +57,7 @@ Usar primero el dispatcher y luego la ruta canonica documentada. No buscar scrip
 | Admin smoke | Local | `node scripts/qa-marketplace-admin-smoke.mjs` | app viva en `APP_URL`; credenciales admin validas | admin entra al shell, tabs principales visibles y sin bloqueo basico |
 | Reconcile / payout lectura puntual | Local | `node scripts/qa-marketplace-reconcile.mjs` | app viva en `APP_URL`; seller/admin accesibles | lectura puntual de `Cobros` y superficies de conciliacion sin rerun completo |
 | Blob/media verification | Preview manual | `N/A - validacion manual obligatoria por ahora` | preview viva; `TS_WEB_BLOB_READ_WRITE_TOKEN` configurado; login sellerIA posible | listing nuevo publicado con imagen nueva y URL final `https://*.public.blob.vercel-storage.com/...` |
+| Carrito consolidado S-MP-01 | Local/DB QA | `npx tsx scripts/qa/run-marketplace-qa.mjs --module=S-MP-01` | `DATABASE_URL` valida; Prisma generado; `NODE_ENV=development` | Valida inventario real por cantidad, bloqueo de sobrecompra, `MpOrder` consolidada, transacciones hijas multivendedor, comprobante obligatorio, propagacion de proof, avance independiente por seller y payout parcial |
 
 ## Regla de despacho
 
@@ -171,6 +172,38 @@ Regla adicional para este frente:
 - Si un script o metodo queda validado para un `task_id`, registrarlo primero en `docs/07_handoffs/qa-dispatcher.json`.
 - Despues reflejar la narrativa humana en este runbook.
 - Si el objetivo no tiene entrada exacta, el primer resultado correcto es clasificarlo como `manual_preview`, `manual_local`, `blocked` o `gap`, no improvisar ejecucion.
+
+## Actualizacion 2026-05-17 - S-MP-01 carrito consolidado
+
+Task:
+- `smp01_cart_consolidated_checkout`
+
+Ruta canonica:
+- `npx tsx scripts/qa/run-marketplace-qa.mjs --module=S-MP-01`
+
+Modulo:
+- `scripts/qa/modules/qa-smp01-cart-consolidated.mjs`
+
+Alcance cubierto:
+- Schema contract: `mp_listings.inventory`, `mp_listings.hasInventory`, ausencia de `mp_listings.quantity`, `mp_transactions.quantity`, `mp_transactions.unitPrice`, `mp_transactions.orderId`.
+- Inventario disponible real: disponibilidad = `inventory - SUM(mp_transactions.quantity)` para estados consumidores.
+- Bloqueo de sobrecompra: no se permite pedir mas unidades que el disponible descontando ventas/operaciones previas.
+- Orden consolidada: una `MpOrder` padre con multiples `MpTransaction` hijas, una por listing/seller.
+- Comprobante obligatorio: el reporte de pago consolidado requiere `paymentProofUrl` y lo propaga a orden e hijas.
+- Flujo independiente: una transaccion hija puede llegar a `RELEASED` mientras otra permanece en `PAYMENT_RECEIVED` o espera otro seller.
+- Visibilidad dashboard: buyer ve todas las hijas de su orden; cada seller ve solo su transaccion.
+- Payout parcial: el pago al vendedor se registra por `transactionId`, no por orden completa.
+
+Razon de diseno:
+- El flujo de UI de carrito completo aun requiere browser para validar clicks/modales; esta ruta canonica cubre el contrato funcional server-side sin CDP ni protocolo HTTP ad hoc.
+- La prueba crea datos QA propios con prefijo `qa-smp01-cart-*` y no depende de listings manuales.
+- El modulo queda integrado al runner principal y a `QA-12`, por lo que el carrito ya no queda fuera de la regresion marketplace.
+
+Validacion:
+- Fecha: 2026-05-17T21:24:48Z.
+- Resultado: 17/17 checks PASS.
+- Reporte JSON: `var/qa-results/report-2026-05-17T21-24-44-148Z.json`.
+- Reporte MD: `var/qa-results/report-2026-05-17T21-24-44-148Z.md`.
 
 Siguiente paso minimo al retomar:
 1. reusar preview `mpwpxahfc` o el ultimo `Ready` mas reciente si cambia el deploy

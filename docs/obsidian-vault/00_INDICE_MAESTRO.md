@@ -2,13 +2,19 @@
 type: index
 proyecto: "Turpial Sound"
 fecha: 2026-05-14
-last_updated: "2026-05-17T01:17-04:00"
+last_updated: "2026-05-18T00:22:28.467Z"
 tags: ["#central", "#index", "#navegacion"]
 ---
 
 # Índice Maestro — Turpial Sound
 
 > **Navegación central del proyecto.** Cada documento está enlazado con su ubicación y tags.
+
+---
+
+## Actualizacion 2026-05-17 - S-MP-01
+
+S-MP-01 queda enlazado al indice maestro con cierre de carrito consolidado, QA canonico `smp01_cart_consolidated_checkout` y documentacion de sprint en `docs/07_handoffs/S_MP_01_CART_SESSION_CLOSURE_2026-05-17.md`.
 
 ---
 
@@ -53,6 +59,7 @@ tags: ["#central", "#index", "#navegacion"]
 | [[QA_HARNESS_CANVAS]] | `QA/QA_HARNESS_CANVAS.canvas` | `#qa` `#canvas` |
 | [[E2E_MANUAL_TEST_PROTOCOL]] | `QA/E2E_MANUAL_TEST_PROTOCOL.md` | `#qa` `#e2e` |
 | [[QA_MARKETPLACE_INTEGRADO]] | `QA/QA_MARKETPLACE_INTEGRADO.md` | `#qa` `#integracion` |
+| [[CART_CONSOLIDATED_QA_MATRIX]] | `../marketplace/CART_CONSOLIDATED_QA_MATRIX.md` | `#qa` `#marketplace` `#sprint/s-mp-01` |
 
 ---
 
@@ -102,6 +109,8 @@ tags: ["#central", "#index", "#navegacion"]
 |-----------|------|
 | QA Dispatcher | `docs/07_handoffs/qa-dispatcher.json` |
 | QA Canonical Runbook | `docs/07_handoffs/qa-canonical-runbook.md` |
+| Cierre S-MP-01 carrito | `docs/07_handoffs/S_MP_01_CART_SESSION_CLOSURE_2026-05-17.md` |
+| Matriz QA carrito consolidado | `docs/marketplace/CART_CONSOLIDATED_QA_MATRIX.md` |
 | Gateway de integración | `docs/07_handoffs/integration-gatekeeper-2026-05-07.md` |
 | Zone Map | `docs/07_handoffs/zone-map.json` |
 | Oreshnik Runner | `scripts/oreshnik/oreshnik.ps1` |

@@ -38,3 +38,34 @@ tags: ["#marketplace", "#sprints", "#paralelo", "#status/live-source"]
 
 - `/reservas` congelado como zona sana.
 - `/marketplace` activo en la rama integrada.
+
+## Actualizacion 2026-05-17 — S-MP-01 Carrito de Compras
+
+### Estado
+
+- S-MP-01 queda implementado en rama `Manuel/s-mp-01-carrito-2026-05-17`.
+- Preview vigente de la sesion: `https://turpialsound-egsoseogk-bkgs-projects-829c67c1.vercel.app`.
+- QA server-side canonico agregado: `smp01_cart_consolidated_checkout`.
+- Validacion QA: 2026-05-17T21:24:48Z — 17/17 PASS.
+
+### Entregables
+
+- Carrito con selector de cantidad y tope por disponible real.
+- Detalle de listing con cantidad disponible y compra por cantidad.
+- Checkout de carrito con `MpOrder` consolidada.
+- Transacciones hijas por seller/listing.
+- Comprobante obligatorio en modal de carrito.
+- Flujo de entrega/liberacion/payout independiente por seller.
+- Dashboard usuario con tabs arriba y bandeja prioritaria colapsable.
+- Documentacion de cierre: `docs/07_handoffs/S_MP_01_CART_SESSION_CLOSURE_2026-05-17.md`.
+- Matriz QA: `docs/marketplace/CART_CONSOLIDATED_QA_MATRIX.md`.
+
+### Comando QA
+
+```powershell
+npx tsx scripts/qa/run-marketplace-qa.mjs --module=S-MP-01
+```
+
+### Pendiente separado
+
+- Crear ruta Playwright/browser para validar clicks reales de carrito en preview. No usar CDP improvisado.

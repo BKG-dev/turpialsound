@@ -2,7 +2,7 @@
 type: session-starter
 project: "Turpial Sound"
 fecha: 2026-05-16
-actualizado: "2026-05-17T01:17-04:00"
+actualizado: "2026-05-18T00:22:28.467Z"
 para: "Jean Arteaga y Manuel Vera — proxima sesion Kilo"
 metodologia: "Oreshnik v4.0 + Madre Dinamica + Cierre Automatizado"
 mother_branch: "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16"
@@ -117,6 +117,11 @@ mother_head: "PENDIENTE_PUSH"
 ## 🤝 SINCRONIZACION — REGLA DE ORO
 
 **Al abrir sesion, CORRER PREFLIGHT:**
+
+Actualizacion S-MP-01 2026-05-17:
+- `scripts/oreshnik/preflight.mjs` fue reparado para cerrar correctamente el bloque de sync de docs.
+- El preflight ahora lee JSON operativos con `readJsonFile()` y tolera BOM/cache invalida con fallback seguro.
+- Si vuelve a fallar preflight por JSON operativo, revisar primero cache en `scripts/oreshnik/runs/` antes de tocar codigo de producto.
 
 ```bash
 node scripts/oreshnik/preflight.mjs --sprint SXX --operator Jean|Manuel --desc "descripcion"

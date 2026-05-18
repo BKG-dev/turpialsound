@@ -69,6 +69,7 @@ Layer D — E2E MODULAR (browser + server + assets)
 | QA-10 | Admin payout/closure | B/D | Opt | Server actions: `adminMarkSellerPaid`, `releaseEscrow` |
 | QA-11 | Notifications + dashboards | C/D | Yes | Dashboard UI, action center |
 | QA-12 | Final regression | A-D | Both | All modules combined |
+| S-MP-01 | Cart consolidated checkout | B/D | No | Prisma direct; validates consolidated order, inventory quantity, proof propagation, independent seller flow |
 
 ---
 
@@ -98,6 +99,7 @@ Layer D — E2E MODULAR (browser + server + assets)
 | **Notifications** | `/marketplace/dashboard` | `DashboardClient` (ActionCenterSection) | `getMyThreads()`, `getUnreadCount()` | `MpMessage`, `MpChatThread` | buyerIA/sellerIA | post-delivery | mensaje de sistema recibido | BAJO | `modules/qa-11-dashboards.mjs` |
 | **Protected proof** | `/marketplace/admin?tab=validations` | `AdminDashboard` → proxy | `GET /api/marketplace/payment-proofs/*` | `MpTransaction` | SUPER | proof cargado | proof visible solo a SUPER/buyer | ALTO | `modules/qa-07-admin.mjs` |
 | **Admin payout** | `/marketplace/admin` | `AdminDashboard` (Escrow/Payouts tabs) | `adminMarkSellerPaid()`, `releaseEscrow()` | `MpTransaction`, `MpPayout` | SUPER | TX DELIVERY_CONFIRMED | payout creado, TX `RELEASED` | ALTO | `modules/qa-10-payout.mjs` |
+| **Cart consolidated checkout** | `/marketplace` carrito | `CartDrawer`, `CartCheckoutModal` | `checkoutCart()`, `submitOrderPaymentProof()` | `MpOrder`, `MpTransaction`, `MpListing` | buyerIA | carrito con 1+ sellers | una orden consolidada, hijas por seller/listing, proof obligatorio, inventario descontado por cantidad | ALTO | `modules/qa-smp01-cart-consolidated.mjs` |
 
 ---
 

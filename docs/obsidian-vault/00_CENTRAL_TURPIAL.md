@@ -3,7 +3,7 @@ type: master-dashboard
 project: "Turpial Sound"
 status: active-integration
 phase: "Fase G: Optimizacion marketplace post-cierre. 8 sprints nuevos (S-MP-01 a S-MP-08)."
-last_updated: "17/05/26 01:17"
+last_updated: "17/05/26 20:22"
 mother_branch: "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16"
 mother_head: "RAMAMADRE_BASE"
 production_branch: "prod/current-www-turpialsound-2026-05-08"
@@ -143,7 +143,7 @@ tags:
 
 | # | Accion | Prioridad |
 |---|--------|-----------|
-| 1 | **S-MP-01: Carrito de compras** (P0) | 🔴 Prioridad máxima |
+| 1 | **S-MP-01: Carrito de compras** (P0) | ✅ Implementado en rama hija |
 | 2 | **S-MP-02: Búsqueda y filtros** (P0) | 🔴 Prioridad máxima |
 | 3 | **S-MP-06: Drop Social** (P1) | 🟡 |
 | 4 | **S-MP-04: Publicación de productos** (P2) | 🟢 |
@@ -152,6 +152,41 @@ tags:
 | 7 | S-ADM-02: Cuenta bancaria juridica + Binance empresa | 📋 Pendiente fisico |
 | 8 | S-ADM-03: Modelos comerciales y juridicos | 📋 Pendiente fisico |
 | 9 | S-ADM-04: Deploy + capacitacion CDA | 📋 Pendiente fisico |
+
+---
+
+## Actualizacion Manuel — S-MP-01 Carrito consolidado (2026-05-17 17:30 VET)
+
+| Campo | Valor |
+|-------|-------|
+| Rama | `Manuel/s-mp-01-carrito-2026-05-17` |
+| Estado | Implementado y documentado |
+| QA canonico | `smp01_cart_consolidated_checkout` |
+| Script | `npx tsx scripts/qa/run-marketplace-qa.mjs --module=S-MP-01` |
+| Validacion | 2026-05-17T21:24:48Z — 17/17 PASS |
+| Preview | `https://turpialsound-egsoseogk-bkgs-projects-829c67c1.vercel.app` |
+
+### Entregado
+
+- Carrito con cantidad maxima limitada por inventario real descontando ventas/operaciones previas.
+- Listing detail con cantidad disponible y compra por cantidad.
+- Orden consolidada `MpOrder` para carrito.
+- `MpTransaction.quantity`, `unitPrice`, `orderId` para hijas por seller/listing.
+- Comprobante obligatorio para reportar pago desde carrito.
+- Entrega, confirmacion, liberacion y payout independientes por transaccion hija.
+- Dashboard usuario reorganizado: tabs arriba y bandeja prioritaria colapsable.
+- Preflight Oreshnik reparado para sintaxis de sync docs y JSON con BOM/cache invalida.
+
+### Documentacion
+
+- `docs/07_handoffs/S_MP_01_CART_SESSION_CLOSURE_2026-05-17.md`
+- `docs/marketplace/CART_CONSOLIDATED_QA_MATRIX.md`
+- `docs/07_handoffs/qa-dispatcher.json`
+- `docs/07_handoffs/qa-canonical-runbook.md`
+
+### Pendiente separado
+
+- Browser E2E Playwright de clicks reales del carrito en preview. No usar CDP ni HTTP ad hoc.
 
 ---
 
@@ -285,7 +320,7 @@ git push origin main
 
 ---
 
-> **Ultima actualizacion:** 17/05/26 00:10 VET | **Estado:** Ambas ramas hijas listas con docs sincronizados. Code merge a madre pendiente (Jean). | **Tag:** `integracion-docs-v2-2026-05-17`
+> **Ultima actualizacion:** 17/05/26 20:22 VET | **Estado:** S-MP-01 CERRADO | **Tag:** `close-manuel-s-mp-01-2026-05-18`
 
 ---
 

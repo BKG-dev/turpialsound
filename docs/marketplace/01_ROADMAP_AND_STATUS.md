@@ -1,8 +1,8 @@
 # MARKETPLACE ROADMAP & STATUS
 
-**Actualizado:** 2026-05-14 13:50 VET
-**Estado:** Marketplace completo S12-S-REV-01. 14 sprints cerrados. Ratings, reviews, KPI, SEO, export pagos implementados.
-**Preview Vercel:** `turpialsound-2z0aoc1rc-bkgs-projects-829c67c1.vercel.app`
+**Actualizado:** 2026-05-17 17:35 VET
+**Estado:** Marketplace completo S12-S-REV-01 + S-MP-01 carrito consolidado. Ratings, reviews, KPI, SEO, export pagos, carrito multivendedor e inventario por cantidad implementados.
+**Preview Vercel:** `turpialsound-egsoseogk-bkgs-projects-829c67c1.vercel.app`
 **Scope:** Marketplace separado del booking
 **Fuente viva de seguimiento:** `docs/obsidian-vault/*`
 
@@ -22,6 +22,7 @@
 | Favoritos | Completo |
 | Q&A publica | Completo |
 | Checkout | Completo en modo manual temporal (transicion a confirmacion de entrega implementada) |
+| Carrito consolidado | Completo S-MP-01: `MpOrder` padre, hijas por seller/listing, cantidad e inventario real |
 | Pasarelas automaticas | Diferidas |
 | Cron T+7 | Pendiente |
 | Upload de imagenes productivo | Implementado con Vercel Blob publico no-booking; QA viva completada |
@@ -49,6 +50,8 @@ El proyecto entra en una etapa de estabilizacion del marketplace antes de integr
 - `CheckoutModal.tsx` carga metodos reales del seller.
 - `getSellerPayoutMethodsForCheckout()` entrega metodos activos compatibles.
 - `initiatePurchase()` crea transaccion coherente con el flujo actual.
+- `checkoutCart()` crea orden consolidada con transacciones hijas por listing/seller.
+- `submitOrderPaymentProof()` exige comprobante y propaga proof a orden e hijas.
 - `submitPaymentProof()` registra referencia y comprobante.
 - `validatePayment()` define entrada real a escrow.
 
@@ -69,6 +72,8 @@ El proyecto entra en una etapa de estabilizacion del marketplace antes de integr
 - TS limpio
 - Checkout sin mocks de pago
 - Listing no se agota antes de validacion real
+- Carrito consolidado multivendedor con inventario por cantidad
+- QA canonico `S-MP-01` 17/17 PASS
 - Documentacion base sincronizada
 - QA harness server-side 12/12 PASS
 - Playwright login UI smoke 3/3 PASS
@@ -104,6 +109,8 @@ El proyecto entra en una etapa de estabilizacion del marketplace antes de integr
 - referencia + comprobante
 - validacion manual por admin
 - escrow coherente
+- carrito consolidado con `MpOrder`
+- unidades por transaccion en `MpTransaction.quantity`
 
 ### Fase C - Infraestructura pendiente
 **Estado:** En curso
