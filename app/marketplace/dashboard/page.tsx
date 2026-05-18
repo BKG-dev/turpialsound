@@ -7,7 +7,7 @@ import { getMyThreads } from '@/actions/marketplace/chat'
 import { getUserListings } from '@/actions/marketplace/listings'
 import { getMyFavorites } from '@/actions/marketplace/favorites'
 import { getMyInteractedListings } from '@/actions/marketplace/questions'
-import { getMyReferralEarnings, getMyReferredTransactions } from '@/actions/marketplace/referrals'
+import { getMyReferralEarnings, getMyReferredTransactions, getMyListingsReferralStats } from '@/actions/marketplace/referrals'
 import { DashboardClient } from '@/components/marketplace/dashboard/DashboardClient'
 
 export const metadata = {
@@ -27,7 +27,7 @@ export default async function DashboardPage({
   const session = await getSession()
   if (!session) redirect('/marketplace')
 
-  const [profileRes, purchasesRes, salesRes, threadsRes, myListingsRes, myFavoritesRes, myInteractedRes, payoutMethodsRes, referralsRes, referredTxsRes] =
+  const [profileRes, purchasesRes, salesRes, threadsRes, myListingsRes, myFavoritesRes, myInteractedRes, payoutMethodsRes, referralsRes, referredTxsRes, listingReferralStats] =
     await Promise.all([
       getMyProfile(),
       getMyTransactions('buyer'),
@@ -39,6 +39,7 @@ export default async function DashboardPage({
       getPayoutMethods(),
       getMyReferralEarnings(),
       getMyReferredTransactions(),
+      getMyListingsReferralStats(),
     ])
 
   const validTabs = ['my_store', 'sales', 'purchases', 'messages', 'favorites', 'payouts', 'referrals'] as const
@@ -61,6 +62,7 @@ export default async function DashboardPage({
       referralEarnings={referralsRes.totalEarned ?? 0}
       referralLinks={(referralsRes.links as object[]) ?? []}
       referralPendingPayouts={(referralsRes.pendingPayouts as object[]) ?? []}
+      listingReferralStats={(listingReferralStats.listings as object[]) ?? []}
       referredTransactions={(referredTxsRes.success ? (referredTxsRes.data as object[]) : []) ?? []}
       initialTab={initialTab}
     />

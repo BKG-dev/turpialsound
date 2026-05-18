@@ -177,3 +177,107 @@ export async function getMyReferredTransactions(): Promise<{ success: boolean; d
     return { success: false, data: [] }
   }
 }
+
+// ─── Dashboard: estadisticas de referral sobre MIS listings ─────────────
+export async function getMyListingsReferralStats(): Promise<{
+  listings: Array<{
+    listingId: string
+    title: string
+    slug: string
+    linksCreated: number
+    totalClicks: number
+    totalConversions: number
+    totalEarnedForReferrers: number
+  }>
+}> {
+  const session = await getSession()
+  if (!session) return { listings: [] }
+
+  const db = await getDb()
+  if (!db) return { listings: [] }
+
+  try {
+    const myListings = await db.mpListing.findMany({
+      where: { sellerId: session.userId },
+      select: { id: true, title: true, slug: true },
+    })
+
+    const listingIds = myListings.map((l: { id: string }) => l.id)
+
+    const links = await db.mpReferralLink.findMany({
+      where: { listingId: { in: listingIds } },
+      select: { listingId: true, clicks: true, conversions: true, totalEarned: true },
+    })
+
+    const byListing: Record<string, { links: number; clicks: number; conversions: number; earned: number }> = {}
+    for (const l of links) {
+      if (!byListing[l.listingId]) byListing[l.listingId] = { links: 0, clicks: 0, conversions: 0, earned: 0 }
+      byListing[l.listingId].links++
+      byListing[l.listingId].clicks += l.clicks
+      byListing[l.listingId].conversions += l.conversions
+      byListing[l.listingId].earned += Number(l.totalEarned || 0)
+    }
+
+    const listings = myListings.map((l: { id: string; title: string; slug: string }) => ({
+      listingId: l.id,
+      title: l.title,
+      slug: l.slug,
+      linksCreated: byListing[l.id]?.links ?? 0,
+      totalClicks: byListing[l.id]?.clicks ?? 0,
+      totalConversions: byListing[l.id]?.conversions ?? 0,
+      totalEarnedForReferrers: byListing[l.id]?.earned ?? 0,
+    }))
+
+    await db.$disconnect()
+    return { listings }
+  } catch {
+    await db.$disconnect().catch(() => {})
+    return { listings: [] }
+  }
+}
+
+// ─── Admin: completar payout de referido ────────────────────────────────
+export async function completeReferralPayout(payoutId: string): Promise<{ success: boolean; message: string }> {
+  const session = await getSession()
+  if (!session) return { success: false, message: 'No autenticado' }
+
+  const db = await getDb()
+  if (!db) return { success: false, message: 'DB no disponible' }
+
+  try {
+    const payout = await db.mpPayout.findUnique({ where: { id: payoutId } })
+    if (!payout) return { success: false, message: 'Payout no encontrado' }
+    if (payout.status !== 'PENDING') return { success: false, message: `Estado invalido: ${payout.status}` }
+    if (!payout.reference?.startsWith('REF-')) return { success: false, message: 'No es un payout de referido' }
+
+    await db.mpPayout.update({
+      where: { id: payoutId },
+      data: { status: 'COMPLETED' },
+    })
+
+    // WhatsApp al referrer
+    void (async () => {
+      try {
+        const { sendWhatsAppNotification } = await import('@/lib/marketplace/notifications')
+        const seller = await db.mpUser.findUnique({
+          where: { id: payout.sellerId },
+          select: { phone: true },
+        })
+        if (seller?.phone) {
+          await sendWhatsAppNotification(seller.phone, 'payout', {
+            senderName: 'Turpial Market',
+            amount: `$${Number(payout.amount).toFixed(2)}`,
+            txId: payoutId,
+          })
+        }
+      } catch {}
+    })()
+
+    await db.$disconnect()
+    revalidatePath('/marketplace/dashboard')
+    return { success: true, message: 'Payout de referido pagado' }
+  } catch (err) {
+    await db.$disconnect().catch(() => {})
+    return { success: false, message: err instanceof Error ? err.message : 'Error al completar payout' }
+  }
+}

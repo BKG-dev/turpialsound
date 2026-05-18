@@ -2558,6 +2558,7 @@ interface DashboardClientProps {
   referralEarnings: number
   referralLinks: object[]
   referralPendingPayouts: object[]
+  listingReferralStats: object[]
   referredTransactions: object[]
   initialTab?: Tab
 }
@@ -2574,6 +2575,8 @@ export function DashboardClient({
   payoutMethods: rawPayoutMethods,
   referralEarnings,
   referralLinks: rawReferralLinks,
+  referralPendingPayouts: rawReferralPendingPayouts,
+  listingReferralStats: rawListingReferralStats,
   referredTransactions: rawReferredTransactions,
   initialTab,
 }: DashboardClientProps) {
@@ -2597,6 +2600,13 @@ export function DashboardClient({
   const myInteracted = rawMyInteracted as DashInteracted[]
   const referralLinks = rawReferralLinks as Array<{
     id: string; code: string; listingId: string; clicks: number; conversions: number; totalEarned: unknown; createdAt: string | Date
+  }>
+  const referralPendingPayouts = rawReferralPendingPayouts as Array<{
+    id: string; amount: string; currency: string; status: string; reference: string; createdAt: string | Date
+  }>
+  const listingReferralStats = rawListingReferralStats as Array<{
+    listingId: string; title: string; slug: string
+    linksCreated: number; totalClicks: number; totalConversions: number; totalEarnedForReferrers: number
   }>
   const referredTransactions = rawReferredTransactions as Array<{
     id: string; amount: string; currency: string; status: string; platformFeeAmount?: string; createdAt: string | Date
@@ -3712,6 +3722,75 @@ export function DashboardClient({
                   <SectionHeader title="Compras Referidas" count={referredTransactions.length} />
                   {referredTransactions.map((tx) => (
                     <ReferredTransactionCard key={tx.id} tx={tx} />
+                  ))}
+                </div>
+              )}
+
+              {/* ── Mis Listings: referidos generados por otros ── */}
+              {listingReferralStats.filter((l: any) => l.linksCreated > 0).length > 0 && (
+                <div className="space-y-3">
+                  <SectionHeader
+                    title="Tus Listings — Referidos por otros"
+                    count={listingReferralStats.filter((l: any) => l.linksCreated > 0).length}
+                  />
+                  {listingReferralStats.filter((l: any) => l.linksCreated > 0).map((stat: any) => (
+                    <div
+                      key={stat.listingId}
+                      className="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-white/5 transition-colors"
+                      style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
+                      onClick={() => router.push(`/marketplace/${stat.slug}`)}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate" style={{ color: 'var(--mp-text)' }}>{stat.title}</p>
+                        <div className="flex gap-4 mt-1">
+                          <span className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
+                            {stat.linksCreated} link{stat.linksCreated !== 1 ? 's' : ''}
+                          </span>
+                          <span className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
+                            {stat.totalClicks} click{stat.totalClicks !== 1 ? 's' : ''}
+                          </span>
+                          {stat.totalConversions > 0 && (
+                            <span className="text-[10px]" style={{ color: '#4ade80' }}>
+                              {stat.totalConversions} venta{stat.totalConversions !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {stat.totalEarnedForReferrers > 0 && (
+                        <span className="text-[11px] font-semibold whitespace-nowrap" style={{ color: '#ffc107' }}>
+                          ${stat.totalEarnedForReferrers.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* ── Comisiones pendientes de pago ── */}
+              {referralPendingPayouts.length > 0 && (
+                <div className="space-y-3">
+                  <SectionHeader
+                    title="Comisiones pendientes"
+                    count={referralPendingPayouts.filter(p => p.status === 'PENDING').length}
+                  />
+                  {referralPendingPayouts.map((payout) => (
+                    <div
+                      key={payout.id}
+                      className="flex items-center gap-3 p-3 rounded-xl"
+                      style={{
+                        background: payout.status === 'COMPLETED' ? 'rgba(74,222,128,0.05)' : 'rgba(255,193,7,0.05)',
+                        border: payout.status === 'COMPLETED' ? '1px solid rgba(74,222,128,0.18)' : '1px solid rgba(255,193,7,0.18)',
+                      }}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium" style={{ color: 'var(--mp-text)' }}>
+                          ${Number(payout.amount).toFixed(2)} USD
+                        </p>
+                        <p className="text-[9px] mt-0.5" style={{ color: 'var(--mp-text-faint)' }}>
+                          {payout.status === 'COMPLETED' ? '✅ Pagado' : payout.status === 'PENDING' ? '⏳ Pendiente' : payout.status}
+                        </p>
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
