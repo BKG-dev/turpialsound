@@ -7,6 +7,7 @@ import { getMyThreads } from '@/actions/marketplace/chat'
 import { getUserListings } from '@/actions/marketplace/listings'
 import { getMyFavorites } from '@/actions/marketplace/favorites'
 import { getMyInteractedListings } from '@/actions/marketplace/questions'
+import { getMyReferralEarnings, getMyReferredTransactions } from '@/actions/marketplace/referrals'
 import { DashboardClient } from '@/components/marketplace/dashboard/DashboardClient'
 
 export const metadata = {
@@ -26,7 +27,7 @@ export default async function DashboardPage({
   const session = await getSession()
   if (!session) redirect('/marketplace')
 
-  const [profileRes, purchasesRes, salesRes, threadsRes, myListingsRes, myFavoritesRes, myInteractedRes, payoutMethodsRes] =
+  const [profileRes, purchasesRes, salesRes, threadsRes, myListingsRes, myFavoritesRes, myInteractedRes, payoutMethodsRes, referralsRes, referredTxsRes] =
     await Promise.all([
       getMyProfile(),
       getMyTransactions('buyer'),
@@ -36,9 +37,11 @@ export default async function DashboardPage({
       getMyFavorites(),
       getMyInteractedListings(),
       getPayoutMethods(),
+      getMyReferralEarnings(),
+      getMyReferredTransactions(),
     ])
 
-  const validTabs = ['my_store', 'sales', 'purchases', 'messages', 'favorites', 'payouts'] as const
+  const validTabs = ['my_store', 'sales', 'purchases', 'messages', 'favorites', 'payouts', 'referrals'] as const
   type Tab = typeof validTabs[number]
   const initialTab = validTabs.includes(searchParams.tab as Tab)
     ? (searchParams.tab as Tab)
@@ -55,6 +58,9 @@ export default async function DashboardPage({
       myFavorites={(myFavoritesRes.success ? (myFavoritesRes.data as object[]) : []) ?? []}
       myInteracted={(myInteractedRes.success ? (myInteractedRes.data as object[]) : []) ?? []}
       payoutMethods={(payoutMethodsRes.success ? (payoutMethodsRes.data as object[]) : []) ?? []}
+      referralEarnings={referralsRes.totalEarned ?? 0}
+      referralLinks={(referralsRes.links as object[]) ?? []}
+      referredTransactions={(referredTxsRes.success ? (referredTxsRes.data as object[]) : []) ?? []}
       initialTab={initialTab}
     />
   )

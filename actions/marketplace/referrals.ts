@@ -102,3 +102,34 @@ export async function getMyReferralEarnings(): Promise<{ totalEarned: number; li
     return { totalEarned: 0, links: [] }
   }
 }
+
+export async function getMyReferredTransactions(): Promise<{ success: boolean; data: unknown[] }> {
+  const session = await getSession()
+  if (!session) return { success: false, data: [] }
+
+  const db = await getDb()
+  if (!db) return { success: false, data: [] }
+
+  try {
+    const transactions = await db.mpTransaction.findMany({
+      where: { referredBy: session.userId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        amount: true,
+        currency: true,
+        status: true,
+        platformFeeAmount: true,
+        createdAt: true,
+        buyer: { select: { id: true, displayName: true, email: true } },
+        listing: { select: { id: true, title: true, slug: true } },
+      },
+      take: 50,
+    })
+    await db.$disconnect()
+    return { success: true, data: transactions }
+  } catch {
+    await db.$disconnect().catch(() => {})
+    return { success: false, data: [] }
+  }
+}

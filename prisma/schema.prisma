@@ -463,6 +463,7 @@ model MpUser {
   receivedReviews     MpReview[]          @relation("MpReviewSeller")
   askedQuestions      MpListingQuestion[] @relation("MpAskedQuestions")
   favoriteListings    MpListing[]         @relation("UserFavorites")
+  referralsAsReferrer MpTransaction[]     @relation("MpReferredBy")
 
   @@index([email])
   @@index([isSeller])
@@ -689,6 +690,10 @@ model MpTransaction {
 
   // Buyer Confirmation (CRITICAL for T+7 flow)
   buyerConfirmedAt DateTime? // When buyer clicked "I received it"
+
+  // Referral Tracking
+  referredBy   String?
+  referrer     MpUser?    @relation("MpReferredBy", fields: [referredBy], references: [id])
 
   // Dispute & Notes
   disputeReason   String?

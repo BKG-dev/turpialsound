@@ -415,8 +415,10 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
       const fuse = new Fuse([{ title: l.title, description: l.description, tags: l.tags.join(' ') }], {
         keys: ['title', 'description', 'tags'],
         threshold: 0.4,
+        distance: 100,
         ignoreLocation: true,
-        minMatchCharLength: 2,
+        minMatchCharLength: 1,
+        includeScore: false,
       })
       if (fuse.search(q).length === 0) return false
     }
@@ -817,7 +819,7 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
               sub="Productos y talentos verificados disponibles ahora mismo."
             />
 
-            {/* Tab filter */}
+            {/* Tab filter + Search bar (visible outside filter panel) */}
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="flex gap-1 p-1 rounded-xl w-fit"
                 style={{ background: 'var(--mp-panel)', border: '1px solid var(--mp-border)' }}>
@@ -843,6 +845,33 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
                   </button>
                 ))}
               </div>
+
+              {/* Search — always visible next to filters */}
+              <div className="relative flex-1 min-w-[220px] max-w-[340px]">
+                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--mp-text-disabled)' }} />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Buscar por titulo, descripcion o etiquetas..."
+                  className="w-full pl-8 pr-8 py-2 rounded-lg text-xs outline-none"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: '#f2f2f2',
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                    style={{ color: 'var(--mp-text-disabled)' }}
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+
               <button
                 onClick={() => setShowFilters(p => !p)}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs transition-all"
@@ -875,32 +904,6 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
                 className="rounded-xl p-4 mb-4 space-y-3"
                 style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
               >
-                {/* Search */}
-                <div className="relative">
-                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--mp-text-disabled)' }} />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Buscar por titulo, descripcion o etiquetas..."
-                    className="w-full pl-8 pr-8 py-2 rounded-lg text-xs outline-none"
-                    style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      color: '#f2f2f2',
-                    }}
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2"
-                      style={{ color: 'var(--mp-text-disabled)' }}
-                    >
-                      <X size={12} />
-                    </button>
-                  )}
-                </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                   {/* Category */}
                   <select
