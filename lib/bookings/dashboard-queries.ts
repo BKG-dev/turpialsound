@@ -85,6 +85,7 @@ export interface CriticalAlertItem {
 
 export interface RevenueHistoryPoint {
   dayLabel: string
+  isoDate: string
   confirmedUsd: number
   pendingUsd: number
 }
@@ -341,6 +342,7 @@ function getRevenueHistory(bookings: BookingLite[], days: number): RevenueHistor
     const key = day.toISOString().slice(0, 10)
     map.set(key, {
       dayLabel: key.slice(5),
+      isoDate: key,
       confirmedUsd: 0,
       pendingUsd: 0,
     })

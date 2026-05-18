@@ -763,7 +763,7 @@ function SellFlow({
             {/* Image upload */}
             <div className="space-y-2">
               <label className="text-xs text-[#a0a0a0]">
-                Fotos del equipo <span className="text-[#9a9a9a]">({imageFiles.length}/8)</span>
+                Fotos del equipo <span className="text-[#9a9a9a]">({imageFiles.length}/5)</span>
               </label>
               {imageFiles.length > 0 ? (
                 <div className="grid grid-cols-4 gap-2">
@@ -777,7 +777,7 @@ function SellFlow({
                       </button>
                     </div>
                   ))}
-                  {imageFiles.length < 8 && (
+                  {imageFiles.length < 5 && (
                     <label className="relative aspect-square rounded-lg flex items-center justify-center cursor-pointer overflow-hidden"
                       style={{ border: '1px dashed var(--mp-input-border)' }}
                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,193,7,0.3)' }}
@@ -803,7 +803,7 @@ function SellFlow({
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,193,7,0.3)' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--mp-input-border)' }}>
                   <Upload size={20} className="text-[var(--mp-text-faint)]" />
-                  <p className="text-xs text-[#b8b8b8]">Subir fotos del equipo (máx. 8)</p>
+                  <p className="text-xs text-[#b8b8b8]">Subir fotos del equipo (máx. 5)</p>
                   <p className="text-[10px] text-[var(--mp-text-faint)]">JPG, PNG, WEBP o HEIC</p>
                   <input
                     type="file"
@@ -1093,13 +1093,13 @@ export function MarketplaceModals({
   }, [])
 
   const handleAddImages = useCallback(async (files: FileList) => {
-    const fileArray = Array.from(files).slice(0, 8) // cap to 8 total
+    const fileArray = Array.from(files).slice(0, 5) // cap to 5 total
     try {
       const prepared = await Promise.all(
         fileArray.map(file => prepareMarketplaceUpload(file, 'listing-image')),
       )
       setImageFiles(prev => {
-        const slots = 8 - prev.length
+        const slots = 5 - prev.length
         return [...prev, ...prepared.slice(0, slots)]
       })
     } catch (error) {
@@ -1120,6 +1120,10 @@ export function MarketplaceModals({
   const handlePublish = useCallback(async () => {
     if (!state.selectedCategory) {
       setSubmitError('Selecciona una categoría primero')
+      return
+    }
+    if (flow === 'sell' && imageFiles.length === 0) {
+      setSubmitError('Debes subir al menos 1 imagen del producto')
       return
     }
     setIsSubmitting(true)

@@ -322,6 +322,10 @@ export async function createListing(
 
   const data = parsed.data
 
+  if (!data.coverImageUrl && data.mediaUrls.length === 0) {
+    return { success: false, message: 'Debes subir al menos 1 imagen del producto' }
+  }
+
   const session = await getSession()
   if (!session) {
     return { success: false, message: 'Debes iniciar sesión para publicar un listing' }
