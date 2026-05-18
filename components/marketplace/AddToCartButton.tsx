@@ -51,6 +51,7 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
 
   const handleAdd = useCallback((e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation()
+    if (isSeller) return
     if (alreadyInCart) {
       removeItem(listing.id)
       return

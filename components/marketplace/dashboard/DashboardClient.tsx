@@ -702,6 +702,39 @@ function SectionHeader({ title, count }: { title: string; count?: number }) {
   )
 }
 
+// ─── Collapsible Section ─────────────────────────────────────────────────────
+function CollapsibleSection({ title, count, defaultCollapsed, children }: {
+  title: string
+  count?: number
+  defaultCollapsed?: boolean
+  children: React.ReactNode
+}) {
+  const [collapsed, setCollapsed] = useState(defaultCollapsed ?? false)
+  return (
+    <div>
+      <button
+        onClick={() => setCollapsed(p => !p)}
+        className="w-full flex items-center gap-2 mb-3 group"
+      >
+        <div className="h-px flex-1" style={{ background: 'var(--mp-border)' }} />
+        <ChevronRight
+          size={12}
+          className="transition-transform duration-200"
+          style={{ color: 'var(--mp-text-disabled)', transform: collapsed ? 'rotate(0deg)' : 'rotate(90deg)' }}
+        />
+        <span className="text-[10px] font-semibold uppercase tracking-widest whitespace-nowrap" style={{ color: 'var(--mp-text-faint)' }}>
+          {title}
+          {count !== undefined && count > 0 && (
+            <span className="ml-1.5" style={{ color: 'var(--mp-text-muted)' }}>({count})</span>
+          )}
+        </span>
+        <div className="h-px flex-1" style={{ background: 'var(--mp-border)' }} />
+      </button>
+      {!collapsed && children}
+    </div>
+  )
+}
+
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
 
 function KpiCard({
@@ -3020,24 +3053,25 @@ export function DashboardClient({
               })()}
 
               <div className="space-y-2">
-                <SectionHeader title="Mis Publicaciones" count={myListings.length} />
-                {myListings.length === 0 ? (
-                  <EmptyState
-                    icon={Package}
-                    title="Sin publicaciones"
-                    sub="Publica tu primer listing desde el Marketplace para comenzar a vender."
-                  />
-                ) : (
-                  <>
-                    {myListings.map((l: DashListing) => (
-                      <MyListingRow
-                        key={l.id}
-                        listing={l}
-                        onClick={() => router.push(`/marketplace/${l.slug}`)}
-                      />
-                    ))}
-                  </>
-                )}
+                <CollapsibleSection title="Mis Publicaciones" count={myListings.length} defaultCollapsed={true}>
+                  {myListings.length === 0 ? (
+                    <EmptyState
+                      icon={Package}
+                      title="Sin publicaciones"
+                      sub="Publica tu primer listing desde el Marketplace para comenzar a vender."
+                    />
+                  ) : (
+                    <>
+                      {myListings.map((l: DashListing) => (
+                        <MyListingRow
+                          key={l.id}
+                          listing={l}
+                          onClick={() => router.push(`/marketplace/${l.slug}`)}
+                        />
+                      ))}
+                    </>
+                  )}
+                </CollapsibleSection>
               </div>
             </div>
           )}
