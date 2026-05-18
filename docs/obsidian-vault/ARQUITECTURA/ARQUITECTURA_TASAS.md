@@ -1,6 +1,6 @@
 ---
 tags: ["#area/backend", "#architecture", "#marketplace", "#rates"]
-last_updated: "2026-05-17"
+last_updated: "2026-05-18"
 ---
 
 # Arquitectura del Motor de Tasas
@@ -22,6 +22,13 @@ npx tsx scripts/qa/run-marketplace-qa.mjs --module=S-MP-01
 ```
 
 Resultado validado: 2026-05-17T21:24:48Z - 17/17 PASS.
+
+### S-MP-06 — Referral Tracking en MpTransaction (2026-05-18)
+
+Cierre S-MP-06 (Drop Social) agrega trazabilidad de referidos:
+- `MpTransaction` ahora tiene campo `referredBy` (referencia al userId del referidor).
+- El código de referido se persiste vía cookie `turpial_ref` y se asigna automáticamente al crear la transacción.
+- No impacta el motor de tasas ni la liquidación; es metadata transaccional para analítica de referidos.
 
 ## Scheduler BCV — Actualización Automática (Nuevo 2026-05-13)
 

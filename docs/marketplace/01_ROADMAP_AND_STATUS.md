@@ -1,7 +1,7 @@
 # MARKETPLACE ROADMAP & STATUS
 
-**Actualizado:** 2026-05-17 17:35 VET
-**Estado:** Marketplace completo S12-S-REV-01 + S-MP-01 carrito consolidado. Ratings, reviews, KPI, SEO, export pagos, carrito multivendedor e inventario por cantidad implementados.
+**Actualizado:** 2026-05-18 11:24 VET
+**Estado:** Marketplace completo S12-S-REV-01 + S-MP-01, S-MP-02, S-MP-04, S-MP-06, S-MP-07 cerrados. Ratings, reviews, KPI, SEO, export pagos, carrito multivendedor, búsqueda fuzzy, publicación validada, referidos, y dashboard avanzado implementados.
 **Preview Vercel:** `turpialsound-egsoseogk-bkgs-projects-829c67c1.vercel.app`
 **Scope:** Marketplace separado del booking
 **Fuente viva de seguimiento:** `docs/obsidian-vault/*`
@@ -23,6 +23,10 @@
 | Q&A publica | Completo |
 | Checkout | Completo en modo manual temporal (transicion a confirmacion de entrega implementada) |
 | Carrito consolidado | Completo S-MP-01: `MpOrder` padre, hijas por seller/listing, cantidad e inventario real |
+| Búsqueda y filtros | Completo S-MP-02: fuzzy search con Fuse.js, dropdowns de ubicación, búsqueda fuera de filtros |
+| Publicación de productos | Completo S-MP-04: imagen requerida en upload, sin placeholders genéricos, validación server-side |
+| Drop Social | Completo S-MP-06: botón de referido, auto-código, cookie tracking, referredBy en TX, pestaña Mis Referidos |
+| Dashboard avanzado | Completo S-MP-07: dark mode toggle, tarjetas clickeables, Igor promovido a ADMIN |
 | Pasarelas automaticas | Diferidas |
 | Cron T+7 | Pendiente |
 | Upload de imagenes productivo | Implementado con Vercel Blob publico no-booking; QA viva completada |
@@ -74,6 +78,10 @@ El proyecto entra en una etapa de estabilizacion del marketplace antes de integr
 - Listing no se agota antes de validacion real
 - Carrito consolidado multivendedor con inventario por cantidad
 - QA canonico `S-MP-01` 17/17 PASS
+- Búsqueda y filtros S-MP-02 con Fuse.js y dropdowns de ubicación
+- Publicación de productos S-MP-04 con imagen obligatoria y validación server
+- Drop Social S-MP-06 con referidos, cookie tracking y referredBy en TX
+- Dashboard S-MP-07 con dark mode, tarjetas clickeables e Igor ADMIN
 - Documentacion base sincronizada
 - QA harness server-side 12/12 PASS
 - Playwright login UI smoke 3/3 PASS
@@ -140,6 +148,25 @@ El proyecto entra en una etapa de estabilizacion del marketplace antes de integr
 | Decision Binance | Producto/negocio | Diferida |
 | Cron T+7 | Infraestructura | Pendiente |
 | QA manual completa | Operacion | Pendiente |
+
+---
+
+## Sprints Marketplace CERRADOS
+
+### ✅ S-MP-01 Carrito de Compras — CERRADO 2026-05-17
+Inventory validation real (`hasInventory` + `inventory`), `Math.min` para máximo disponible descontando cantidades vendidas, `checkoutCart()` multivendedor con `MpOrder` padre e `MpTransaction` hijas, imágenes visibles en carrito. QA 17/17 PASS.
+
+### ✅ S-MP-02 Búsqueda y Filtros — CERRADO 2026-05-18
+Búsqueda fuzzy con Fuse.js en títulos y descripciones, dropdowns de ubicación (estado/municipio), búsqueda funciona fuera de los filtros activos.
+
+### ✅ S-MP-04 Publicación de Productos — CERRADO 2026-05-18
+Imagen requerida para publicar listing (sin placeholders genéricos), validación server-side del upload, preview de imagen antes de publicar.
+
+### ✅ S-MP-06 Drop Social — CERRADO 2026-05-18
+Botón de referido en dashboard, generación automática de código de referido, cookie de tracking (`turpial_ref`), campo `referredBy` en `MpTransaction`, pestaña "Mis Referidos" en dashboard.
+
+### ✅ S-MP-07 Dashboard — CERRADO 2026-05-18
+Dark mode toggle persistente, tarjetas de dashboard clickeables (navegación completa), Igor promovido a ADMIN vía seed.
 
 ---
 

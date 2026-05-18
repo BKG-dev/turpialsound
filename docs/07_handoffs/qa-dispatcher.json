@@ -1,6 +1,6 @@
 {
   "version": 6,
-  "updated_at": "2026-05-17T21:30:00",
+  "updated_at": "2026-05-18T15:24:00",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
     "layers": {
@@ -535,6 +535,71 @@
       "sprint_target": "S03J",
       "implemented_at": "2026-05-11",
       "last_validated_at": "2026-05-11"
+    },
+    "smp01_cart_playwright": {
+      "task_id": "smp01_cart_playwright",
+      "mode": "script",
+      "module": "S-MP-01",
+      "layer": "D",
+      "canonical_script": "npx tsx scripts/qa/playwright/s-mp-01-cart.spec.mjs",
+      "preconditions": ["APP_URL activa", "Playwright instalado", "QA_BUYER_IDENTIFIER/QA_SELLER_IDENTIFIER configurados"],
+      "notes": "S-MP-01 Carrito de Compras — Playwright E2E: inventory validation, Math.min, multi-item checkoutCart, images in cart.",
+      "status": "canonical",
+      "sprint_target": "S-MP-01",
+      "implemented_at": "2026-05-17",
+      "last_validated_at": "2026-05-17"
+    },
+    "smp02_search_playwright": {
+      "task_id": "smp02_search_playwright",
+      "mode": "script",
+      "module": "S-MP-02",
+      "layer": "D",
+      "canonical_script": "npx tsx scripts/qa/playwright/s-mp-02-search.spec.mjs",
+      "preconditions": ["APP_URL activa", "Playwright instalado", "QA_BUYER_IDENTIFIER configurado"],
+      "notes": "S-MP-02 Búsqueda y Filtros — Playwright E2E: fuzzy search Fuse.js, location dropdowns, search outside filters.",
+      "status": "canonical",
+      "sprint_target": "S-MP-02",
+      "implemented_at": "2026-05-18",
+      "last_validated_at": "2026-05-18"
+    },
+    "smp04_publish_playwright": {
+      "task_id": "smp04_publish_playwright",
+      "mode": "script",
+      "module": "S-MP-04",
+      "layer": "D",
+      "canonical_script": "npx tsx scripts/qa/playwright/s-mp-04-publish.spec.mjs",
+      "preconditions": ["APP_URL activa", "Playwright instalado", "QA_SELLER_IDENTIFIER/QA_SELLER_PASSWORD configurados"],
+      "notes": "S-MP-04 Publicación de Productos — Playwright E2E: required image upload, removed generic placeholders, server validation.",
+      "status": "canonical",
+      "sprint_target": "S-MP-04",
+      "implemented_at": "2026-05-18",
+      "last_validated_at": "2026-05-18"
+    },
+    "smp06_referral_playwright": {
+      "task_id": "smp06_referral_playwright",
+      "mode": "script",
+      "module": "S-MP-06",
+      "layer": "D",
+      "canonical_script": "npx tsx scripts/qa/playwright/s-mp-06-referral.spec.mjs",
+      "preconditions": ["APP_URL activa", "Playwright instalado", "QA_BUYER_IDENTIFIER configurado"],
+      "notes": "S-MP-06 Drop Social — Playwright E2E: referral button, auto-code, cookie tracking, referredBy in TX, Mis Referidos tab.",
+      "status": "canonical",
+      "sprint_target": "S-MP-06",
+      "implemented_at": "2026-05-18",
+      "last_validated_at": "2026-05-18"
+    },
+    "smp07_dashboard_playwright": {
+      "task_id": "smp07_dashboard_playwright",
+      "mode": "script",
+      "module": "S-MP-07",
+      "layer": "D",
+      "canonical_script": "npx tsx scripts/qa/playwright/s-mp-07-dashboard.spec.mjs",
+      "preconditions": ["APP_URL activa", "Playwright instalado", "QA_BUYER_IDENTIFIER/QA_SELLER_IDENTIFIER configurados"],
+      "notes": "S-MP-07 Dashboard — Playwright E2E: dark mode toggle, clickable cards, Igor promoted to ADMIN.",
+      "status": "canonical",
+      "sprint_target": "S-MP-07",
+      "implemented_at": "2026-05-18",
+      "last_validated_at": "2026-05-18"
     }
   }
 }
