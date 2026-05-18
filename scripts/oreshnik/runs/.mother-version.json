@@ -1,6 +1,6 @@
 {
-  "version": 5,
-  "current": "MADRE/v5-s-mp-02-busqueda-fuzzy-filtros-ubicacion-2026-05-18",
+  "version": 6,
+  "current": "MADRE/v6-s-mp-06-drop-social-referidos-dashboard-2026-05-18",
   "branches": [
     {
       "version": 1,
@@ -51,6 +51,16 @@
       "fulldate": "18/05/26 09:09",
       "description": "busqueda-fuzzy-filtros-ubicacion",
       "previous": "MADRE/v4-oreshnik-docs-sync-2026-05-18"
+    },
+    {
+      "version": 6,
+      "name": "MADRE/v6-s-mp-06-drop-social-referidos-dashboard-2026-05-18",
+      "sprint": "S-MP-06",
+      "operator": "Manuel",
+      "date": "2026-05-18",
+      "fulldate": "18/05/26 09:10",
+      "description": "drop-social-referidos-dashboard",
+      "previous": "MADRE/v5-s-mp-02-busqueda-fuzzy-filtros-ubicacion-2026-05-18"
     }
   ]
 }
