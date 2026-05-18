@@ -1,0 +1,28 @@
+{
+  "sprint": "S-MP-02",
+  "operator": "Manuel",
+  "status": "CERRADO",
+  "date": "2026-05-18",
+  "fulldate": "18/05/26 09:09",
+  "iso": "2026-05-18T13:09:54.458Z",
+  "childBranch": "Manuel/s-mp-02-busqueda-filtros-2026-05-17",
+  "motherBranch": "MADRE/v5-s-mp-02-busqueda-fuzzy-filtros-ubicacion-2026-05-18",
+  "description": "busqueda-fuzzy-filtros-ubicacion",
+  "previousMother": "MADRE/v4-oreshnik-docs-sync-2026-05-18",
+  "changedZones": [
+    "Server Actions Marketplace",
+    "Componentes Marketplace",
+    "Documentacion",
+    "DB Schema"
+  ],
+  "docsUpdated": [
+    "docs/marketplace/01_ROADMAP_AND_STATUS.md",
+    "docs/07_handoffs/qa-dispatcher.json",
+    "docs/obsidian-vault/00_CENTRAL_TURPIAL.md",
+    "docs/obsidian-vault/00_INDICE_MAESTRO.md",
+    "docs/obsidian-vault/ARQUITECTURA/ARQUITECTURA_TASAS.md",
+    "docs/obsidian-vault/SPRINTS/PLAN_MAESTRO_SPRINTS.md"
+  ],
+  "coverageGaps": 4,
+  "forceClose": true
+}

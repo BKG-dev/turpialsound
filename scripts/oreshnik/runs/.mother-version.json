@@ -1,6 +1,6 @@
 {
-  "version": 4,
-  "current": "MADRE/v4-oreshnik-docs-sync-2026-05-18",
+  "version": 5,
+  "current": "MADRE/v5-s-mp-02-busqueda-fuzzy-filtros-ubicacion-2026-05-18",
   "branches": [
     {
       "version": 1,
@@ -41,6 +41,16 @@
       "fulldate": "17/05/26 20:45",
       "description": "Blindaje sync docs Google Docs style",
       "previous": "MADRE/v3-s-mp-01-2026-05-18"
+    },
+    {
+      "version": 5,
+      "name": "MADRE/v5-s-mp-02-busqueda-fuzzy-filtros-ubicacion-2026-05-18",
+      "sprint": "S-MP-02",
+      "operator": "Manuel",
+      "date": "2026-05-18",
+      "fulldate": "18/05/26 09:09",
+      "description": "busqueda-fuzzy-filtros-ubicacion",
+      "previous": "MADRE/v4-oreshnik-docs-sync-2026-05-18"
     }
   ]
 }
