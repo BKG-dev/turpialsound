@@ -3,8 +3,8 @@ type: master-dashboard
 project: "Turpial Sound"
 status: active-integration
 phase: "Fase G: Optimizacion marketplace post-cierre. 8 sprints nuevos (S-MP-01 a S-MP-08)."
-last_updated: "18/05/26 09:09"
-mother_branch: "MADRE/v5-s-mp-02-busqueda-fuzzy-filtros-ubicacion-2026-05-18"
+last_updated: "18/05/26 09:10"
+mother_branch: "MADRE/v6-s-mp-06-drop-social-referidos-dashboard-2026-05-18"
 mother_head: "RAMAMADRE_BASE"
 production_branch: "prod/current-www-turpialsound-2026-05-08"
 production_head: "92fd6a3"
@@ -320,7 +320,7 @@ git push origin main
 
 ---
 
-> **Ultima actualizacion:** 18/05/26 09:09 VET | **Estado:** S-MP-02 CERRADO | **Tag:** `close-manuel-s-mp-02-2026-05-18`
+> **Ultima actualizacion:** 18/05/26 09:10 VET | **Estado:** S-MP-06 CERRADO | **Tag:** `close-manuel-s-mp-06-2026-05-18`
 
 ---
 
