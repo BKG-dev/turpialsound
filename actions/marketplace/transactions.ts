@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import { getDb } from '@/lib/marketplace/db'
 import { getSession } from '@/lib/marketplace/auth'
 import { processReferralConversion } from '@/actions/marketplace/referrals'
+import { sendWhatsAppNotification } from '@/lib/marketplace/notifications'
 import {
   BANK_FEE,
   calculateSellerPayout,
@@ -380,6 +381,23 @@ export async function initiatePurchase(
     if (referredBy && referralCode) {
       void processReferralConversion(tx.id, referralCode, amount).catch(() => {})
     }
+
+    // WhatsApp notification: new sale (fire-and-forget)
+    void (async () => {
+      try {
+        const seller = await db.mpUser.findUnique({
+          where: { id: listing.sellerId },
+          select: { phone: true, displayName: true },
+        })
+        if (seller?.phone) {
+          await sendWhatsAppNotification(seller.phone, 'payment_sent', {
+            senderName: 'Turpial Market',
+            amount: `${amount} ${listing.currency}`,
+            txId: tx.id,
+          })
+        }
+      } catch {}
+    })()
 
     return { success: true, data: { transactionId: tx.id, idempotencyKey }, message: 'Transaccion iniciada' }
   } catch (err) {

@@ -73,6 +73,25 @@ export async function processReferralConversion(
       where: { id: link.id },
       data: { conversions: { increment: 1 }, totalEarned: { increment: commission } },
     })
+
+    // WhatsApp notification to referrer (S-MP-08-05, fire-and-forget)
+    void (async () => {
+      try {
+        const { sendWhatsAppNotification } = await import('@/lib/marketplace/notifications')
+        const referrer = await db.mpUser.findUnique({
+          where: { id: link.referrerId },
+          select: { phone: true },
+        })
+        if (referrer?.phone) {
+          await sendWhatsAppNotification(referrer.phone, 'payout', {
+            senderName: 'Turpial Market',
+            amount: `$${commission.toFixed(2)}`,
+            txId: transactionId,
+          })
+        }
+      } catch {}
+    })()
+
     // TODO: create MpPayout or credit to referrer balance
     await db.$disconnect()
   } catch {

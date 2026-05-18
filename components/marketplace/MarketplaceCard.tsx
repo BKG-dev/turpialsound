@@ -7,6 +7,7 @@ import type { Listing, ProductListing, ServiceListing } from '@/types/marketplac
 import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
 import { AddToCartButton } from '@/components/marketplace/AddToCartButton'
 import { ShareListingButton } from '@/components/marketplace/ShareListingButton'
+import { DropSocialButton } from '@/components/marketplace/DropSocialButton'
 
 function getCoverImage(_category: string, images?: string[]): string | null {
   return images?.find(Boolean) ?? null
@@ -300,6 +301,7 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite, 
         <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: 'var(--mp-border)' }}>
           <AddToCartButton listing={listing} currentUserId={currentUserId} variant="card" />
           <ShareListingButton listing={listing} variant="card" />
+          <DropSocialButton listing={listing} variant="card" />
         </div>
       </div>
     </div>
@@ -464,6 +466,7 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite, 
         <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: 'var(--mp-border)' }}>
           <AddToCartButton listing={listing} currentUserId={currentUserId} variant="card" />
           <ShareListingButton listing={listing} variant="card" />
+          <DropSocialButton listing={listing} variant="card" />
         </div>
       </div>
     </div>
