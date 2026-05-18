@@ -1,0 +1,24 @@
+{
+  "sprint": "S-MP-04",
+  "operator": "Manuel",
+  "status": "CERRADO",
+  "date": "2026-05-18",
+  "fulldate": "18/05/26 09:38",
+  "iso": "2026-05-18T13:38:17.856Z",
+  "childBranch": "Manuel/s-mp-07-dashboard-2026-05-18",
+  "motherBranch": "MADRE/v7-s-mp-04-carga-imagenes-obligatoria-2026-05-18",
+  "description": "carga-imagenes-obligatoria",
+  "previousMother": "MADRE/v6-s-mp-06-drop-social-referidos-dashboard-2026-05-18",
+  "changedZones": [
+    "Admin Panel",
+    "Componentes Marketplace",
+    "Libreria Booking"
+  ],
+  "docsUpdated": [
+    "docs/obsidian-vault/00_CENTRAL_TURPIAL.md",
+    "docs/marketplace/01_ROADMAP_AND_STATUS.md",
+    "docs/obsidian-vault/SPRINTS/PLAN_MAESTRO_SPRINTS.md"
+  ],
+  "coverageGaps": 3,
+  "forceClose": true
+}
