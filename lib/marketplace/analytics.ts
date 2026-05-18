@@ -9,6 +9,9 @@ export const MARKETPLACE_ANALYTICS_EVENT_TYPES = [
   'assistant_admin_db_status_view',
   'cart_checkout',
   'share_click',
+  'referral_link_created',
+  'referral_copy',
+  'referral_whatsapp',
 ] as const
 
 export type MarketplaceAnalyticsEventType = (typeof MARKETPLACE_ANALYTICS_EVENT_TYPES)[number]

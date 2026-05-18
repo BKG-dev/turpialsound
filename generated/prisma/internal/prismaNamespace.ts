@@ -2858,6 +2858,7 @@ export const MpTransactionScalarFieldEnum = {
   escrowReleaseAt: 'escrowReleaseAt',
   releasedAt: 'releasedAt',
   buyerConfirmedAt: 'buyerConfirmedAt',
+  referredBy: 'referredBy',
   disputeReason: 'disputeReason',
   disputeOpenedAt: 'disputeOpenedAt',
   adminNotes: 'adminNotes',

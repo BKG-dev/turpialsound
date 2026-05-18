@@ -29,6 +29,10 @@ import {
   CheckCircle2,
   Send,
   ExternalLink,
+  Gift,
+  Users,
+  Copy,
+  Check,
 } from 'lucide-react'
 import type { MpSessionPayload } from '@/lib/marketplace/auth'
 import { TransactionChat } from '@/components/marketplace/TransactionChat'
@@ -155,7 +159,7 @@ interface ActionItem {
 
 // ─── Tab Type ─────────────────────────────────────────────────────────────────
 
-type Tab = 'my_store' | 'sales' | 'purchases' | 'messages' | 'favorites' | 'payouts'
+type Tab = 'my_store' | 'sales' | 'purchases' | 'messages' | 'favorites' | 'payouts' | 'referrals'
 type ChatSyncReason = 'message_sent' | 'messages_read' | 'send_error' | 'refresh_error'
 
 // ─── Status Config ────────────────────────────────────────────────────────────
@@ -1363,6 +1367,96 @@ function ThreadCard({
   )
 }
 
+// ─── Referral Components ────────────────────────────────────────────────────────
+
+function ReferralLinkCard({
+  link,
+  onCopy,
+}: {
+  link: { id: string; code: string; listingId: string; clicks: number; conversions: number; totalEarned: unknown; createdAt: string | Date }
+  onCopy: () => void
+}) {
+  const [copied, setCopied] = useState(false)
+
+  function handleCopy() {
+    onCopy()
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div
+      className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl"
+      style={{ background: 'var(--mp-card)', border: '1px solid var(--mp-border)', boxShadow: 'var(--mp-card-shadow)' }}
+    >
+      <div className="flex-1 min-w-0 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold font-mono" style={{ background: 'rgba(255,193,7,0.1)', border: '1px solid rgba(255,193,7,0.2)', color: '#ffc107' }}>
+            {link.code}
+          </span>
+          <span className="text-[11px]" style={{ color: 'var(--mp-text-faint)' }}>
+            {link.clicks} clicks · {link.conversions} conversiones
+          </span>
+        </div>
+        <p className="text-xs" style={{ color: 'var(--mp-text-strong)' }}>
+          Comision: <span style={{ color: '#ffc107' }}>${Number(link.totalEarned ?? 0).toFixed(2)}</span>
+        </p>
+        <p className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>Creado: {fmtDate(link.createdAt)}</p>
+      </div>
+      <button
+        onClick={handleCopy}
+        className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all"
+        style={copied
+          ? { background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }
+          : { background: 'rgba(255,193,7,0.08)', color: '#ffc107', border: '1px solid rgba(255,193,7,0.2)' }
+        }
+      >
+        {copied ? <Check size={12} /> : <Copy size={12} />}
+        {copied ? 'Copiado' : 'Copiar link'}
+      </button>
+    </div>
+  )
+}
+
+function ReferredTransactionCard({
+  tx,
+}: {
+  tx: { id: string; amount: string; currency: string; status: string; platformFeeAmount?: string; createdAt: string | Date
+    buyer: { id: string; displayName: string; email: string }
+    listing: { id: string; title: string; slug: string } | null
+  }
+}) {
+  const commission = Number(tx.amount ?? 0) * 0.005
+
+  return (
+    <div
+      className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl"
+      style={{ background: 'var(--mp-card)', border: '1px solid var(--mp-border)', boxShadow: 'var(--mp-card-shadow)' }}
+    >
+      <div className="flex-1 min-w-0 space-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm font-medium truncate" style={{ color: 'var(--mp-text-strong)' }}>
+            {tx.listing?.title ?? 'Listing eliminado'}
+          </p>
+          <StatusBadge status={tx.status} />
+        </div>
+        <p className="text-xs" style={{ color: 'var(--mp-text-faint)' }}>
+          Comprador: <span style={{ color: 'var(--mp-text-muted)' }}>{tx.buyer.displayName}</span>
+        </p>
+        <p className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>{fmtDate(tx.createdAt)}</p>
+      </div>
+      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+        <span className="text-sm font-semibold" style={{ color: 'var(--mp-text-strong)' }}>
+          ${Number(tx.amount).toLocaleString('es-VE')}
+        </span>
+        <span className="text-[10px] font-medium" style={{ color: '#ffc107' }}>
+          +${commission.toFixed(2)} comision
+        </span>
+      </div>
+    </div>
+  )
+}
+
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
 function EmptyState({ icon: Icon, title, sub }: {
@@ -1402,6 +1496,7 @@ function TabBar({
     { id: 'messages',  label: 'Mensajes',     icon: MessageSquare },
     { id: 'favorites', label: 'Favoritos',    icon: Heart         },
     { id: 'payouts',   label: 'Cobros',       icon: Wallet        },
+    { id: 'referrals', label: 'Mis Referidos',icon: Users         },
   ]
 
   return (
@@ -2427,6 +2522,9 @@ interface DashboardClientProps {
   myFavorites: object[]
   myInteracted: object[]
   payoutMethods: object[]
+  referralEarnings: number
+  referralLinks: object[]
+  referredTransactions: object[]
   initialTab?: Tab
 }
 
@@ -2440,6 +2538,9 @@ export function DashboardClient({
   myFavorites: rawMyFavorites,
   myInteracted: rawMyInteracted,
   payoutMethods: rawPayoutMethods,
+  referralEarnings,
+  referralLinks: rawReferralLinks,
+  referredTransactions: rawReferredTransactions,
   initialTab,
 }: DashboardClientProps) {
   const router = useRouter()
@@ -2460,6 +2561,14 @@ export function DashboardClient({
   const [disputedTxIds, setDisputedTxIds] = useState<Set<string>>(new Set())
   const [favorites, setFavorites] = useState<DashListing[]>(rawMyFavorites as DashListing[])
   const myInteracted = rawMyInteracted as DashInteracted[]
+  const referralLinks = rawReferralLinks as Array<{
+    id: string; code: string; listingId: string; clicks: number; conversions: number; totalEarned: unknown; createdAt: string | Date
+  }>
+  const referredTransactions = rawReferredTransactions as Array<{
+    id: string; amount: string; currency: string; status: string; platformFeeAmount?: string; createdAt: string | Date
+    buyer: { id: string; displayName: string; email: string }
+    listing: { id: string; title: string; slug: string } | null
+  }>
   const [threads, setThreads] = useState<DashThread[]>(initialThreads)
   const [payoutMethods, setPayoutMethods] = useState<DashPayoutMethod[]>(initialPayoutMethods)
   const [payoutBusyId, setPayoutBusyId] = useState<string | null>(null)
@@ -2551,6 +2660,7 @@ export function DashboardClient({
     messages:  unreadCount,
     favorites: favorites.length,
     payouts:   payoutRelevantSales.length,
+    referrals: referredTransactions.length,
   }
 
   function handleTabChange(tab: Tab) {
@@ -3486,6 +3596,98 @@ export function DashboardClient({
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ─ Mis Referidos ─ */}
+          {activeTab === 'referrals' && (
+            <div className="space-y-6">
+              <div
+                className="rounded-2xl p-5 sm:p-6"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,193,7,0.08) 0%, var(--mp-card) 58%, rgba(249,115,22,0.04) 100%)',
+                  border: '1px solid var(--mp-border)',
+                  boxShadow: 'var(--mp-card-shadow)',
+                }}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-normal text-[#ffc107]">Programa de Referidos</p>
+                    <h2 className="mt-2 text-2xl font-semibold leading-tight" style={{ color: 'var(--mp-text-strong)' }}>Drop Social</h2>
+                    <p className="mt-2 max-w-2xl text-sm leading-relaxed" style={{ color: 'var(--mp-text-muted)' }}>
+                      Comparte tus listings y gana <span style={{ color: '#ffc107' }}>0.5%</span> de cada compra que venga de tus links.
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--mp-text-faint)' }}>Comisiones acumuladas</span>
+                    <span className="text-3xl font-bold tabular-nums" style={{ color: '#ffc107' }}>
+                      ${referralEarnings.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-3">
+                <KpiCard
+                  icon={Users}
+                  label="Referidos"
+                  value={referredTransactions.length.toString()}
+                  sub="Personas que compraron con tu link"
+                  accent="#ffc107"
+                  tone="compact"
+                />
+                <KpiCard
+                  icon={Gift}
+                  label="Comisiones"
+                  value={`$${referralEarnings.toFixed(2)}`}
+                  sub="0.5% por compra referida"
+                  accent="#4ade80"
+                  tone="compact"
+                />
+                <KpiCard
+                  icon={Copy}
+                  label="Links activos"
+                  value={referralLinks.filter((l: { code: string }) => l.code).length.toString()}
+                  sub="Comparte para generar mas"
+                  accent="#00aeef"
+                  tone="compact"
+                />
+              </div>
+
+              {referralLinks.length > 0 && (
+                <div className="space-y-3">
+                  <SectionHeader title="Tus Links de Referido" count={referralLinks.length} />
+                  {referralLinks.map((link) => (
+                    <ReferralLinkCard
+                      key={link.id}
+                      link={link}
+                      onCopy={() => {
+                        const url = `${window.location.origin}/marketplace/r/${link.code}`
+                        navigator.clipboard.writeText(url).catch(() => {})
+                        setDashboardMessageTone('success')
+                        setDashboardMessage('Link copiado al portapapeles.')
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {referredTransactions.length > 0 && (
+                <div className="space-y-3">
+                  <SectionHeader title="Compras Referidas" count={referredTransactions.length} />
+                  {referredTransactions.map((tx) => (
+                    <ReferredTransactionCard key={tx.id} tx={tx} />
+                  ))}
+                </div>
+              )}
+
+              {referralLinks.length === 0 && referredTransactions.length === 0 && (
+                <EmptyState
+                  icon={Users}
+                  title="Sin referidos aun"
+                  sub="Ve a un listing y usa el boton Drop Social para generar tu primer link de referido."
+                />
+              )}
             </div>
           )}
 

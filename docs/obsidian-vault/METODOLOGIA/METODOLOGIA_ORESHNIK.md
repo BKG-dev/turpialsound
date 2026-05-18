@@ -2,7 +2,7 @@
 type: methodology-nexus
 project: "Turpial Sound"
 fecha: 2026-05-17
-actualizado: "2026-05-18T00:22:28.467Z"
+actualizado: "2026-05-18T13:10:47.520Z"
 metodologia: "Oreshnik v4.0 + Madre Dinamica + Cierre Automatizado"
 tags:
   - "#central"
@@ -243,6 +243,52 @@ JEAN RELEASE → git merge a main → Vercel → turpialsound.com
 | 4 | [[BUS_CONTROL]] | Reglas del bus, locks, checklist. |
 | 5 | [[METODOLOGIA_OPTIMIZACION]] | Detalle de automatizaciones Oreshnik. |
 | 6 | `docs/07_handoffs/qa-dispatcher.json` | Despacho canónico QA. |
+
+---
+
+## 🚀 Ejecución Paralela Multi-Agente (v4.0+)
+
+**Regla permanente:** El agente DEBE paralelizar sprints independientes siempre que sea posible.
+
+### Condiciones para paralelizar
+
+| Condición | Requisito |
+|-----------|-----------|
+| Zonas de código | Los sprints NO comparten archivos (sin riesgo de conflicto) |
+| Dependencias | Ningún sprint depende del otro |
+| Ramas | Cada sprint en su propia rama hija desde la misma madre |
+| Agentes | Un agente Task por sprint, ejecutando en paralelo |
+
+### Flujo de orquestación
+
+```
+1. Identificar sprints sin dependencias entre sí
+2. Crear ramas hijas paralelas desde madre
+3. Lanzar agentes Task en paralelo (uno por sprint)
+4. Cada agente implementa, verifica (tsc + build), pero NO commitea
+5. El orquestador commitea, pushea y cierra cada sprint con close-sprint.mjs
+6. Merge a madre con --strategy=subtree para docs
+```
+
+### Ejemplo
+
+```
+Manuel pendientes: S-MP-02, S-MP-04, S-MP-06, S-MP-07, S-MP-08
+Dependencias: S-MP-04 depende de S-MP-02, S-MP-07 depende de S-MP-05, S-MP-08 depende de S-MP-05+S-MP-06
+
+Fase 1 (paralelo): S-MP-02 || S-MP-06  ← zonas distintas, sin dependencias
+Fase 2 (paralelo): S-MP-04 || S-MP-07(dashboard)  ← S-MP-02 ya cerrado
+Fase 3 (secuencial): S-MP-08 ← depende de S-MP-06
+```
+
+### Verificación post-agente
+
+Cada agente devuelve:
+- Archivos modificados
+- Resultado de `tsc --noEmit`
+- Resultado de `pnpm run build`
+
+El orquestador verifica que no hay conflictos entre agentes antes de commitear.
 
 ---
 

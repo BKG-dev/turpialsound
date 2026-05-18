@@ -435,6 +435,7 @@ export type MpUserWhereInput = {
   receivedReviews?: Prisma.MpReviewListRelationFilter
   askedQuestions?: Prisma.MpListingQuestionListRelationFilter
   favoriteListings?: Prisma.MpListingListRelationFilter
+  referralsAsReferrer?: Prisma.MpTransactionListRelationFilter
 }
 
 export type MpUserOrderByWithRelationInput = {
@@ -482,6 +483,7 @@ export type MpUserOrderByWithRelationInput = {
   receivedReviews?: Prisma.MpReviewOrderByRelationAggregateInput
   askedQuestions?: Prisma.MpListingQuestionOrderByRelationAggregateInput
   favoriteListings?: Prisma.MpListingOrderByRelationAggregateInput
+  referralsAsReferrer?: Prisma.MpTransactionOrderByRelationAggregateInput
 }
 
 export type MpUserWhereUniqueInput = Prisma.AtLeast<{
@@ -532,6 +534,7 @@ export type MpUserWhereUniqueInput = Prisma.AtLeast<{
   receivedReviews?: Prisma.MpReviewListRelationFilter
   askedQuestions?: Prisma.MpListingQuestionListRelationFilter
   favoriteListings?: Prisma.MpListingListRelationFilter
+  referralsAsReferrer?: Prisma.MpTransactionListRelationFilter
 }, "id" | "email" | "passwordResetToken">
 
 export type MpUserOrderByWithAggregationInput = {
@@ -651,6 +654,7 @@ export type MpUserCreateInput = {
   receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateInput = {
@@ -698,6 +702,7 @@ export type MpUserUncheckedCreateInput = {
   receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUpdateInput = {
@@ -745,6 +750,7 @@ export type MpUserUpdateInput = {
   receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateInput = {
@@ -792,6 +798,7 @@ export type MpUserUncheckedUpdateInput = {
   receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserCreateManyInput = {
@@ -1015,6 +1022,11 @@ export type MpUserOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
+export type MpUserNullableScalarRelationFilter = {
+  is?: Prisma.MpUserWhereInput | null
+  isNot?: Prisma.MpUserWhereInput | null
+}
+
 export type EnumMpUserRoleFieldUpdateOperationsInput = {
   set?: $Enums.MpUserRole
 }
@@ -1181,6 +1193,12 @@ export type MpUserCreateNestedOneWithoutSellerTransactionsInput = {
   connect?: Prisma.MpUserWhereUniqueInput
 }
 
+export type MpUserCreateNestedOneWithoutReferralsAsReferrerInput = {
+  create?: Prisma.XOR<Prisma.MpUserCreateWithoutReferralsAsReferrerInput, Prisma.MpUserUncheckedCreateWithoutReferralsAsReferrerInput>
+  connectOrCreate?: Prisma.MpUserCreateOrConnectWithoutReferralsAsReferrerInput
+  connect?: Prisma.MpUserWhereUniqueInput
+}
+
 export type MpUserUpdateOneRequiredWithoutBuyerTransactionsNestedInput = {
   create?: Prisma.XOR<Prisma.MpUserCreateWithoutBuyerTransactionsInput, Prisma.MpUserUncheckedCreateWithoutBuyerTransactionsInput>
   connectOrCreate?: Prisma.MpUserCreateOrConnectWithoutBuyerTransactionsInput
@@ -1195,6 +1213,16 @@ export type MpUserUpdateOneRequiredWithoutSellerTransactionsNestedInput = {
   upsert?: Prisma.MpUserUpsertWithoutSellerTransactionsInput
   connect?: Prisma.MpUserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.MpUserUpdateToOneWithWhereWithoutSellerTransactionsInput, Prisma.MpUserUpdateWithoutSellerTransactionsInput>, Prisma.MpUserUncheckedUpdateWithoutSellerTransactionsInput>
+}
+
+export type MpUserUpdateOneWithoutReferralsAsReferrerNestedInput = {
+  create?: Prisma.XOR<Prisma.MpUserCreateWithoutReferralsAsReferrerInput, Prisma.MpUserUncheckedCreateWithoutReferralsAsReferrerInput>
+  connectOrCreate?: Prisma.MpUserCreateOrConnectWithoutReferralsAsReferrerInput
+  upsert?: Prisma.MpUserUpsertWithoutReferralsAsReferrerInput
+  disconnect?: Prisma.MpUserWhereInput | boolean
+  delete?: Prisma.MpUserWhereInput | boolean
+  connect?: Prisma.MpUserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.MpUserUpdateToOneWithWhereWithoutReferralsAsReferrerInput, Prisma.MpUserUpdateWithoutReferralsAsReferrerInput>, Prisma.MpUserUncheckedUpdateWithoutReferralsAsReferrerInput>
 }
 
 export type MpUserCreateNestedOneWithoutDisputesInput = {
@@ -1297,6 +1325,7 @@ export type MpUserCreateWithoutPayoutMethodsInput = {
   receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutPayoutMethodsInput = {
@@ -1343,6 +1372,7 @@ export type MpUserUncheckedCreateWithoutPayoutMethodsInput = {
   receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutPayoutMethodsInput = {
@@ -1405,6 +1435,7 @@ export type MpUserUpdateWithoutPayoutMethodsInput = {
   receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutPayoutMethodsInput = {
@@ -1451,6 +1482,7 @@ export type MpUserUncheckedUpdateWithoutPayoutMethodsInput = {
   receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserCreateWithoutListingsInput = {
@@ -1497,6 +1529,7 @@ export type MpUserCreateWithoutListingsInput = {
   receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutListingsInput = {
@@ -1543,6 +1576,7 @@ export type MpUserUncheckedCreateWithoutListingsInput = {
   receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutListingsInput = {
@@ -1594,6 +1628,7 @@ export type MpUserCreateWithoutFavoriteListingsInput = {
   writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
   receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutFavoriteListingsInput = {
@@ -1640,6 +1675,7 @@ export type MpUserUncheckedCreateWithoutFavoriteListingsInput = {
   writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
   receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutFavoriteListingsInput = {
@@ -1702,6 +1738,7 @@ export type MpUserUpdateWithoutListingsInput = {
   receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutListingsInput = {
@@ -1748,6 +1785,7 @@ export type MpUserUncheckedUpdateWithoutListingsInput = {
   receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUpsertWithWhereUniqueWithoutFavoriteListingsInput = {
@@ -1845,6 +1883,7 @@ export type MpUserCreateWithoutAskedQuestionsInput = {
   writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
   receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutAskedQuestionsInput = {
@@ -1891,6 +1930,7 @@ export type MpUserUncheckedCreateWithoutAskedQuestionsInput = {
   writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
   receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutAskedQuestionsInput = {
@@ -1953,6 +1993,7 @@ export type MpUserUpdateWithoutAskedQuestionsInput = {
   writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
   receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutAskedQuestionsInput = {
@@ -1999,6 +2040,7 @@ export type MpUserUncheckedUpdateWithoutAskedQuestionsInput = {
   writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
   receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserCreateWithoutChatThreadsAsBuyerInput = {
@@ -2045,6 +2087,7 @@ export type MpUserCreateWithoutChatThreadsAsBuyerInput = {
   receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutChatThreadsAsBuyerInput = {
@@ -2091,6 +2134,7 @@ export type MpUserUncheckedCreateWithoutChatThreadsAsBuyerInput = {
   receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutChatThreadsAsBuyerInput = {
@@ -2142,6 +2186,7 @@ export type MpUserCreateWithoutChatThreadsAsSellerInput = {
   receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutChatThreadsAsSellerInput = {
@@ -2188,6 +2233,7 @@ export type MpUserUncheckedCreateWithoutChatThreadsAsSellerInput = {
   receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutChatThreadsAsSellerInput = {
@@ -2250,6 +2296,7 @@ export type MpUserUpdateWithoutChatThreadsAsBuyerInput = {
   receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutChatThreadsAsBuyerInput = {
@@ -2296,6 +2343,7 @@ export type MpUserUncheckedUpdateWithoutChatThreadsAsBuyerInput = {
   receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUpsertWithoutChatThreadsAsSellerInput = {
@@ -2353,6 +2401,7 @@ export type MpUserUpdateWithoutChatThreadsAsSellerInput = {
   receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutChatThreadsAsSellerInput = {
@@ -2399,6 +2448,7 @@ export type MpUserUncheckedUpdateWithoutChatThreadsAsSellerInput = {
   receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserCreateWithoutSentMessagesInput = {
@@ -2445,6 +2495,7 @@ export type MpUserCreateWithoutSentMessagesInput = {
   receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutSentMessagesInput = {
@@ -2491,6 +2542,7 @@ export type MpUserUncheckedCreateWithoutSentMessagesInput = {
   receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutSentMessagesInput = {
@@ -2542,6 +2594,7 @@ export type MpUserCreateWithoutReceivedMessagesInput = {
   receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutReceivedMessagesInput = {
@@ -2588,6 +2641,7 @@ export type MpUserUncheckedCreateWithoutReceivedMessagesInput = {
   receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutReceivedMessagesInput = {
@@ -2650,6 +2704,7 @@ export type MpUserUpdateWithoutSentMessagesInput = {
   receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutSentMessagesInput = {
@@ -2696,6 +2751,7 @@ export type MpUserUncheckedUpdateWithoutSentMessagesInput = {
   receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUpsertWithoutReceivedMessagesInput = {
@@ -2753,6 +2809,7 @@ export type MpUserUpdateWithoutReceivedMessagesInput = {
   receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutReceivedMessagesInput = {
@@ -2799,6 +2856,7 @@ export type MpUserUncheckedUpdateWithoutReceivedMessagesInput = {
   receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserCreateWithoutBuyerOrdersInput = {
@@ -3045,6 +3103,7 @@ export type MpUserCreateWithoutBuyerTransactionsInput = {
   receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutBuyerTransactionsInput = {
@@ -3091,6 +3150,7 @@ export type MpUserUncheckedCreateWithoutBuyerTransactionsInput = {
   receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutBuyerTransactionsInput = {
@@ -3142,6 +3202,7 @@ export type MpUserCreateWithoutSellerTransactionsInput = {
   receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutSellerTransactionsInput = {
@@ -3188,11 +3249,109 @@ export type MpUserUncheckedCreateWithoutSellerTransactionsInput = {
   receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutSellerTransactionsInput = {
   where: Prisma.MpUserWhereUniqueInput
   create: Prisma.XOR<Prisma.MpUserCreateWithoutSellerTransactionsInput, Prisma.MpUserUncheckedCreateWithoutSellerTransactionsInput>
+}
+
+export type MpUserCreateWithoutReferralsAsReferrerInput = {
+  id?: string
+  email: string
+  emailVerified?: boolean
+  emailVerifiedAt?: Date | string | null
+  displayName: string
+  bio?: string | null
+  avatarUrl?: string | null
+  isVerified?: boolean
+  verifiedAt?: Date | string | null
+  verificationLevel?: string
+  isSeller?: boolean
+  sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
+  totalSales?: number
+  totalPurchases?: number
+  passwordHash?: string | null
+  role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
+  phone?: string | null
+  whatsappConsent?: boolean
+  whatsappConsentAt?: Date | string | null
+  passwordResetToken?: string | null
+  passwordResetTokenExpiresAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
+  payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
+  sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
+  sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MpMessageCreateNestedManyWithoutReceiverInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadCreateNestedManyWithoutBuyerInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadCreateNestedManyWithoutSellerInput
+  disputes?: Prisma.MpDisputeCreateNestedManyWithoutOpenedByInput
+  mpPayouts?: Prisma.MpPayoutCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
+  askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
+  favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+}
+
+export type MpUserUncheckedCreateWithoutReferralsAsReferrerInput = {
+  id?: string
+  email: string
+  emailVerified?: boolean
+  emailVerifiedAt?: Date | string | null
+  displayName: string
+  bio?: string | null
+  avatarUrl?: string | null
+  isVerified?: boolean
+  verifiedAt?: Date | string | null
+  verificationLevel?: string
+  isSeller?: boolean
+  sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
+  totalSales?: number
+  totalPurchases?: number
+  passwordHash?: string | null
+  role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
+  phone?: string | null
+  whatsappConsent?: boolean
+  whatsappConsentAt?: Date | string | null
+  passwordResetToken?: string | null
+  passwordResetTokenExpiresAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
+  payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
+  sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
+  sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutReceiverInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutBuyerInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutSellerInput
+  disputes?: Prisma.MpDisputeUncheckedCreateNestedManyWithoutOpenedByInput
+  mpPayouts?: Prisma.MpPayoutUncheckedCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
+  askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
+  favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+}
+
+export type MpUserCreateOrConnectWithoutReferralsAsReferrerInput = {
+  where: Prisma.MpUserWhereUniqueInput
+  create: Prisma.XOR<Prisma.MpUserCreateWithoutReferralsAsReferrerInput, Prisma.MpUserUncheckedCreateWithoutReferralsAsReferrerInput>
 }
 
 export type MpUserUpsertWithoutBuyerTransactionsInput = {
@@ -3250,6 +3409,7 @@ export type MpUserUpdateWithoutBuyerTransactionsInput = {
   receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutBuyerTransactionsInput = {
@@ -3296,6 +3456,7 @@ export type MpUserUncheckedUpdateWithoutBuyerTransactionsInput = {
   receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUpsertWithoutSellerTransactionsInput = {
@@ -3353,6 +3514,7 @@ export type MpUserUpdateWithoutSellerTransactionsInput = {
   receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutSellerTransactionsInput = {
@@ -3389,6 +3551,110 @@ export type MpUserUncheckedUpdateWithoutSellerTransactionsInput = {
   payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
   buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
+  sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutReceiverNestedInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadUncheckedUpdateManyWithoutBuyerNestedInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedUpdateManyWithoutSellerNestedInput
+  disputes?: Prisma.MpDisputeUncheckedUpdateManyWithoutOpenedByNestedInput
+  mpPayouts?: Prisma.MpPayoutUncheckedUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
+  askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
+  favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
+}
+
+export type MpUserUpsertWithoutReferralsAsReferrerInput = {
+  update: Prisma.XOR<Prisma.MpUserUpdateWithoutReferralsAsReferrerInput, Prisma.MpUserUncheckedUpdateWithoutReferralsAsReferrerInput>
+  create: Prisma.XOR<Prisma.MpUserCreateWithoutReferralsAsReferrerInput, Prisma.MpUserUncheckedCreateWithoutReferralsAsReferrerInput>
+  where?: Prisma.MpUserWhereInput
+}
+
+export type MpUserUpdateToOneWithWhereWithoutReferralsAsReferrerInput = {
+  where?: Prisma.MpUserWhereInput
+  data: Prisma.XOR<Prisma.MpUserUpdateWithoutReferralsAsReferrerInput, Prisma.MpUserUncheckedUpdateWithoutReferralsAsReferrerInput>
+}
+
+export type MpUserUpdateWithoutReferralsAsReferrerInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  verifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
+  isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSales?: Prisma.IntFieldUpdateOperationsInput | number
+  totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  listings?: Prisma.MpListingUpdateManyWithoutSellerNestedInput
+  payoutMethods?: Prisma.MpPayoutMethodUpdateManyWithoutUserNestedInput
+  buyerTransactions?: Prisma.MpTransactionUpdateManyWithoutBuyerNestedInput
+  sellerTransactions?: Prisma.MpTransactionUpdateManyWithoutSellerNestedInput
+  sentMessages?: Prisma.MpMessageUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MpMessageUpdateManyWithoutReceiverNestedInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadUpdateManyWithoutBuyerNestedInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadUpdateManyWithoutSellerNestedInput
+  disputes?: Prisma.MpDisputeUpdateManyWithoutOpenedByNestedInput
+  mpPayouts?: Prisma.MpPayoutUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
+  askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
+  favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+}
+
+export type MpUserUncheckedUpdateWithoutReferralsAsReferrerInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  verifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
+  isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSales?: Prisma.IntFieldUpdateOperationsInput | number
+  totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  listings?: Prisma.MpListingUncheckedUpdateManyWithoutSellerNestedInput
+  payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
+  buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
+  sellerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput
   receivedMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutReceiverNestedInput
   chatThreadsAsBuyer?: Prisma.MpChatThreadUncheckedUpdateManyWithoutBuyerNestedInput
@@ -3445,6 +3711,7 @@ export type MpUserCreateWithoutDisputesInput = {
   receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutDisputesInput = {
@@ -3491,6 +3758,7 @@ export type MpUserUncheckedCreateWithoutDisputesInput = {
   receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutDisputesInput = {
@@ -3553,6 +3821,7 @@ export type MpUserUpdateWithoutDisputesInput = {
   receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutDisputesInput = {
@@ -3599,6 +3868,7 @@ export type MpUserUncheckedUpdateWithoutDisputesInput = {
   receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserCreateWithoutMpPayoutsInput = {
@@ -3645,6 +3915,7 @@ export type MpUserCreateWithoutMpPayoutsInput = {
   receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutMpPayoutsInput = {
@@ -3691,6 +3962,7 @@ export type MpUserUncheckedCreateWithoutMpPayoutsInput = {
   receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutMpPayoutsInput = {
@@ -3753,6 +4025,7 @@ export type MpUserUpdateWithoutMpPayoutsInput = {
   receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutMpPayoutsInput = {
@@ -3799,6 +4072,7 @@ export type MpUserUncheckedUpdateWithoutMpPayoutsInput = {
   receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserCreateWithoutWrittenReviewsInput = {
@@ -3845,6 +4119,7 @@ export type MpUserCreateWithoutWrittenReviewsInput = {
   receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutWrittenReviewsInput = {
@@ -3891,6 +4166,7 @@ export type MpUserUncheckedCreateWithoutWrittenReviewsInput = {
   receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutWrittenReviewsInput = {
@@ -3942,6 +4218,7 @@ export type MpUserCreateWithoutReceivedReviewsInput = {
   writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutReceivedReviewsInput = {
@@ -3988,6 +4265,7 @@ export type MpUserUncheckedCreateWithoutReceivedReviewsInput = {
   writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutReceivedReviewsInput = {
@@ -4050,6 +4328,7 @@ export type MpUserUpdateWithoutWrittenReviewsInput = {
   receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutWrittenReviewsInput = {
@@ -4096,6 +4375,7 @@ export type MpUserUncheckedUpdateWithoutWrittenReviewsInput = {
   receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUpsertWithoutReceivedReviewsInput = {
@@ -4153,6 +4433,7 @@ export type MpUserUpdateWithoutReceivedReviewsInput = {
   writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutReceivedReviewsInput = {
@@ -4199,6 +4480,7 @@ export type MpUserUncheckedUpdateWithoutReceivedReviewsInput = {
   writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUpdateWithoutFavoriteListingsInput = {
@@ -4245,6 +4527,7 @@ export type MpUserUpdateWithoutFavoriteListingsInput = {
   writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
   receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutFavoriteListingsInput = {
@@ -4291,6 +4574,7 @@ export type MpUserUncheckedUpdateWithoutFavoriteListingsInput = {
   writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
   receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateManyWithoutFavoriteListingsInput = {
@@ -4346,6 +4630,7 @@ export type MpUserCountOutputType = {
   receivedReviews: number
   askedQuestions: number
   favoriteListings: number
+  referralsAsReferrer: number
 }
 
 export type MpUserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -4364,6 +4649,7 @@ export type MpUserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions
   receivedReviews?: boolean | MpUserCountOutputTypeCountReceivedReviewsArgs
   askedQuestions?: boolean | MpUserCountOutputTypeCountAskedQuestionsArgs
   favoriteListings?: boolean | MpUserCountOutputTypeCountFavoriteListingsArgs
+  referralsAsReferrer?: boolean | MpUserCountOutputTypeCountReferralsAsReferrerArgs
 }
 
 /**
@@ -4481,6 +4767,13 @@ export type MpUserCountOutputTypeCountFavoriteListingsArgs<ExtArgs extends runti
   where?: Prisma.MpListingWhereInput
 }
 
+/**
+ * MpUserCountOutputType without action
+ */
+export type MpUserCountOutputTypeCountReferralsAsReferrerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MpTransactionWhereInput
+}
+
 
 export type MpUserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -4527,6 +4820,7 @@ export type MpUserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   receivedReviews?: boolean | Prisma.MpUser$receivedReviewsArgs<ExtArgs>
   askedQuestions?: boolean | Prisma.MpUser$askedQuestionsArgs<ExtArgs>
   favoriteListings?: boolean | Prisma.MpUser$favoriteListingsArgs<ExtArgs>
+  referralsAsReferrer?: boolean | Prisma.MpUser$referralsAsReferrerArgs<ExtArgs>
   _count?: boolean | Prisma.MpUserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["mpUser"]>
 
@@ -4643,6 +4937,7 @@ export type MpUserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   receivedReviews?: boolean | Prisma.MpUser$receivedReviewsArgs<ExtArgs>
   askedQuestions?: boolean | Prisma.MpUser$askedQuestionsArgs<ExtArgs>
   favoriteListings?: boolean | Prisma.MpUser$favoriteListingsArgs<ExtArgs>
+  referralsAsReferrer?: boolean | Prisma.MpUser$referralsAsReferrerArgs<ExtArgs>
   _count?: boolean | Prisma.MpUserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type MpUserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -4666,6 +4961,7 @@ export type $MpUserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     receivedReviews: Prisma.$MpReviewPayload<ExtArgs>[]
     askedQuestions: Prisma.$MpListingQuestionPayload<ExtArgs>[]
     favoriteListings: Prisma.$MpListingPayload<ExtArgs>[]
+    referralsAsReferrer: Prisma.$MpTransactionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -5106,6 +5402,7 @@ export interface Prisma__MpUserClient<T, Null = never, ExtArgs extends runtime.T
   receivedReviews<T extends Prisma.MpUser$receivedReviewsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$receivedReviewsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpReviewPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   askedQuestions<T extends Prisma.MpUser$askedQuestionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$askedQuestionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpListingQuestionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   favoriteListings<T extends Prisma.MpUser$favoriteListingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$favoriteListingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpListingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  referralsAsReferrer<T extends Prisma.MpUser$referralsAsReferrerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$referralsAsReferrerArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpTransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -5914,6 +6211,30 @@ export type MpUser$favoriteListingsArgs<ExtArgs extends runtime.Types.Extensions
   take?: number
   skip?: number
   distinct?: Prisma.MpListingScalarFieldEnum | Prisma.MpListingScalarFieldEnum[]
+}
+
+/**
+ * MpUser.referralsAsReferrer
+ */
+export type MpUser$referralsAsReferrerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MpTransaction
+   */
+  select?: Prisma.MpTransactionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the MpTransaction
+   */
+  omit?: Prisma.MpTransactionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MpTransactionInclude<ExtArgs> | null
+  where?: Prisma.MpTransactionWhereInput
+  orderBy?: Prisma.MpTransactionOrderByWithRelationInput | Prisma.MpTransactionOrderByWithRelationInput[]
+  cursor?: Prisma.MpTransactionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MpTransactionScalarFieldEnum | Prisma.MpTransactionScalarFieldEnum[]
 }
 
 /**

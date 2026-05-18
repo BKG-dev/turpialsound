@@ -1,7 +1,9 @@
 'use server'
 
+import { cookies } from 'next/headers'
 import { getDb } from '@/lib/marketplace/db'
 import { getSession } from '@/lib/marketplace/auth'
+import { processReferralConversion } from '@/actions/marketplace/referrals'
 import {
   BANK_FEE,
   calculateSellerPayout,
@@ -263,6 +265,25 @@ export async function initiatePurchase(
     const amount = unitPrice * requestedQuantity
     const idempotencyKey = `${session.userId}_${listingId}_${requestedQuantity}_${Date.now()}`
 
+    // ─── Referral tracking ───
+    let referredBy: string | null = null
+    let referralCode: string | null = null
+    try {
+      const cookieStore = cookies()
+      referralCode = cookieStore.get('mp_ref')?.value ?? null
+      if (referralCode) {
+        const refLink = await db.mpReferralLink.findUnique({
+          where: { code: referralCode },
+          select: { referrerId: true, isActive: true },
+        })
+        if (refLink?.isActive && refLink.referrerId !== session.userId) {
+          referredBy = refLink.referrerId
+        }
+      }
+    } catch {
+      // cookie read failed — continue without referral
+    }
+
     // ─── Rate resolution & frozen-column persistence ───
     // Three mutually exclusive paths; each sets frozenRate columns or blocks with a clear error.
     // No silent fallback to USD_REFERENCE_RATE=1.
@@ -342,6 +363,7 @@ export async function initiatePurchase(
           frozenRateFechaValor,
           rateSnapshotId,
           adminNotes,
+          referredBy,
         },
         select: { id: true },
       })
@@ -359,6 +381,12 @@ export async function initiatePurchase(
     })
 
     await db.$disconnect()
+
+    // Process referral conversion if applicable (fire-and-forget)
+    if (referredBy && referralCode) {
+      void processReferralConversion(tx.id, referralCode, amount).catch(() => {})
+    }
+
     return { success: true, data: { transactionId: tx.id, idempotencyKey }, message: 'Transaccion iniciada' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
