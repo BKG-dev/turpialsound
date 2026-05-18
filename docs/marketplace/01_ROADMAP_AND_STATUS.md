@@ -1,7 +1,7 @@
 # MARKETPLACE ROADMAP & STATUS
 
 **Actualizado:** 2026-05-18 11:24 VET
-**Estado:** Marketplace completo S12-S-REV-01 + S-MP-01, S-MP-02, S-MP-04, S-MP-06, S-MP-07 cerrados. Ratings, reviews, KPI, SEO, export pagos, carrito multivendedor, búsqueda fuzzy, publicación validada, referidos, y dashboard avanzado implementados.
+**Estado:** Marketplace completo S12-S-REV-01 + S-MP-01..S-MP-08 cerrados. Ratings, reviews, KPI, SEO, export pagos, carrito multivendedor, búsqueda fuzzy, publicación validada, referidos, dashboard avanzado y notificaciones implementados.
 **Preview Vercel:** `turpialsound-egsoseogk-bkgs-projects-829c67c1.vercel.app`
 **Scope:** Marketplace separado del booking
 **Fuente viva de seguimiento:** `docs/obsidian-vault/*`
@@ -89,11 +89,8 @@ El proyecto entra en una etapa de estabilizacion del marketplace antes de integr
 ### Aun no cumplido
 
 - QA manual integral buyer -> admin -> escrow -> release
-- Configurar y validar Vercel Blob no-booking con `TS_WEB_BLOB_READ_WRITE_TOKEN`
-- Implementar cron T+7
-- Definir roadmap real de pasarelas
-- Purchase flow browser E2E (S12)
-- Full regression browser (S17)
+- Implementar/validar cron T+7
+- Definir roadmap de pasarelas automáticas (Mercantil/Binance) manteniéndolas diferidas hasta decisión de producto
 
 ---
 

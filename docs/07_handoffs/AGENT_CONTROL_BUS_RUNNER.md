@@ -64,6 +64,7 @@ El agente determina su rol a partir de OPERATOR:
 - Produccion sin release gate explicito
 - Envs de Vercel sin documentar
 - Schema/migrations sin lock Jean + Manuel
+- Zonas activas de Manuel en marketplace: `components/marketplace/dashboard/*`, `lib/marketplace/notifications.ts`, `actions/marketplace/transactions.ts`
 
 **Gate keeper de:**
 - Push a `main`
