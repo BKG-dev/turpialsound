@@ -2903,6 +2903,7 @@ export type MpUserCreateWithoutBuyerOrdersInput = {
   receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutBuyerOrdersInput = {
@@ -2949,6 +2950,7 @@ export type MpUserUncheckedCreateWithoutBuyerOrdersInput = {
   receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutBuyerOrdersInput = {
@@ -3011,6 +3013,7 @@ export type MpUserUpdateWithoutBuyerOrdersInput = {
   receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutBuyerOrdersInput = {
@@ -3057,6 +3060,7 @@ export type MpUserUncheckedUpdateWithoutBuyerOrdersInput = {
   receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserCreateWithoutBuyerTransactionsInput = {
@@ -3289,6 +3293,7 @@ export type MpUserCreateWithoutReferralsAsReferrerInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
@@ -3335,6 +3340,7 @@ export type MpUserUncheckedCreateWithoutReferralsAsReferrerInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderUncheckedCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -3607,6 +3613,7 @@ export type MpUserUpdateWithoutReferralsAsReferrerInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUpdateManyWithoutSenderNestedInput
@@ -3653,6 +3660,7 @@ export type MpUserUncheckedUpdateWithoutReferralsAsReferrerInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUncheckedUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput

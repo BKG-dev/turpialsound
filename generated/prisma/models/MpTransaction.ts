@@ -476,6 +476,7 @@ export type MpTransactionWhereInput = {
   seller?: Prisma.XOR<Prisma.MpUserScalarRelationFilter, Prisma.MpUserWhereInput>
   listing?: Prisma.XOR<Prisma.MpListingScalarRelationFilter, Prisma.MpListingWhereInput>
   order?: Prisma.XOR<Prisma.MpOrderNullableScalarRelationFilter, Prisma.MpOrderWhereInput> | null
+  referrer?: Prisma.XOR<Prisma.MpUserNullableScalarRelationFilter, Prisma.MpUserWhereInput> | null
   statusHistory?: Prisma.MpTransactionStatusHistoryListRelationFilter
   disputes?: Prisma.MpDisputeListRelationFilter
   reviews?: Prisma.MpReviewListRelationFilter
@@ -520,6 +521,7 @@ export type MpTransactionOrderByWithRelationInput = {
   seller?: Prisma.MpUserOrderByWithRelationInput
   listing?: Prisma.MpListingOrderByWithRelationInput
   order?: Prisma.MpOrderOrderByWithRelationInput
+  referrer?: Prisma.MpUserOrderByWithRelationInput
   statusHistory?: Prisma.MpTransactionStatusHistoryOrderByRelationAggregateInput
   disputes?: Prisma.MpDisputeOrderByRelationAggregateInput
   reviews?: Prisma.MpReviewOrderByRelationAggregateInput
@@ -567,6 +569,7 @@ export type MpTransactionWhereUniqueInput = Prisma.AtLeast<{
   seller?: Prisma.XOR<Prisma.MpUserScalarRelationFilter, Prisma.MpUserWhereInput>
   listing?: Prisma.XOR<Prisma.MpListingScalarRelationFilter, Prisma.MpListingWhereInput>
   order?: Prisma.XOR<Prisma.MpOrderNullableScalarRelationFilter, Prisma.MpOrderWhereInput> | null
+  referrer?: Prisma.XOR<Prisma.MpUserNullableScalarRelationFilter, Prisma.MpUserWhereInput> | null
   statusHistory?: Prisma.MpTransactionStatusHistoryListRelationFilter
   disputes?: Prisma.MpDisputeListRelationFilter
   reviews?: Prisma.MpReviewListRelationFilter
@@ -688,6 +691,7 @@ export type MpTransactionCreateInput = {
   seller: Prisma.MpUserCreateNestedOneWithoutSellerTransactionsInput
   listing: Prisma.MpListingCreateNestedOneWithoutTransactionsInput
   order?: Prisma.MpOrderCreateNestedOneWithoutTransactionsInput
+  referrer?: Prisma.MpUserCreateNestedOneWithoutReferralsAsReferrerInput
   statusHistory?: Prisma.MpTransactionStatusHistoryCreateNestedManyWithoutTransactionInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutTransactionInput
   reviews?: Prisma.MpReviewCreateNestedManyWithoutTransactionInput
@@ -767,6 +771,7 @@ export type MpTransactionUpdateInput = {
   seller?: Prisma.MpUserUpdateOneRequiredWithoutSellerTransactionsNestedInput
   listing?: Prisma.MpListingUpdateOneRequiredWithoutTransactionsNestedInput
   order?: Prisma.MpOrderUpdateOneWithoutTransactionsNestedInput
+  referrer?: Prisma.MpUserUpdateOneWithoutReferralsAsReferrerNestedInput
   statusHistory?: Prisma.MpTransactionStatusHistoryUpdateManyWithoutTransactionNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutTransactionNestedInput
   reviews?: Prisma.MpReviewUpdateManyWithoutTransactionNestedInput
@@ -1356,6 +1361,7 @@ export type MpTransactionCreateWithoutBuyerInput = {
   seller: Prisma.MpUserCreateNestedOneWithoutSellerTransactionsInput
   listing: Prisma.MpListingCreateNestedOneWithoutTransactionsInput
   order?: Prisma.MpOrderCreateNestedOneWithoutTransactionsInput
+  referrer?: Prisma.MpUserCreateNestedOneWithoutReferralsAsReferrerInput
   statusHistory?: Prisma.MpTransactionStatusHistoryCreateNestedManyWithoutTransactionInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutTransactionInput
   reviews?: Prisma.MpReviewCreateNestedManyWithoutTransactionInput
@@ -1443,6 +1449,7 @@ export type MpTransactionCreateWithoutSellerInput = {
   buyer: Prisma.MpUserCreateNestedOneWithoutBuyerTransactionsInput
   listing: Prisma.MpListingCreateNestedOneWithoutTransactionsInput
   order?: Prisma.MpOrderCreateNestedOneWithoutTransactionsInput
+  referrer?: Prisma.MpUserCreateNestedOneWithoutReferralsAsReferrerInput
   statusHistory?: Prisma.MpTransactionStatusHistoryCreateNestedManyWithoutTransactionInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutTransactionInput
   reviews?: Prisma.MpReviewCreateNestedManyWithoutTransactionInput
@@ -1504,6 +1511,8 @@ export type MpTransactionCreateWithoutReferrerInput = {
   status?: $Enums.MpTransactionStatus
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
+  quantity?: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   platformFeePercent: runtime.Decimal | runtime.DecimalJsLike | number | string
   platformFeeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1528,6 +1537,7 @@ export type MpTransactionCreateWithoutReferrerInput = {
   buyer: Prisma.MpUserCreateNestedOneWithoutBuyerTransactionsInput
   seller: Prisma.MpUserCreateNestedOneWithoutSellerTransactionsInput
   listing: Prisma.MpListingCreateNestedOneWithoutTransactionsInput
+  order?: Prisma.MpOrderCreateNestedOneWithoutTransactionsInput
   statusHistory?: Prisma.MpTransactionStatusHistoryCreateNestedManyWithoutTransactionInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutTransactionInput
   reviews?: Prisma.MpReviewCreateNestedManyWithoutTransactionInput
@@ -1539,10 +1549,13 @@ export type MpTransactionUncheckedCreateWithoutReferrerInput = {
   buyerId: string
   sellerId: string
   listingId: string
+  orderId?: string | null
   paymentMethod: $Enums.MpPaymentMethodType
   status?: $Enums.MpTransactionStatus
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
+  quantity?: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   platformFeePercent: runtime.Decimal | runtime.DecimalJsLike | number | string
   platformFeeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -1700,6 +1713,7 @@ export type MpTransactionCreateWithoutListingInput = {
   buyer: Prisma.MpUserCreateNestedOneWithoutBuyerTransactionsInput
   seller: Prisma.MpUserCreateNestedOneWithoutSellerTransactionsInput
   order?: Prisma.MpOrderCreateNestedOneWithoutTransactionsInput
+  referrer?: Prisma.MpUserCreateNestedOneWithoutReferralsAsReferrerInput
   statusHistory?: Prisma.MpTransactionStatusHistoryCreateNestedManyWithoutTransactionInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutTransactionInput
   reviews?: Prisma.MpReviewCreateNestedManyWithoutTransactionInput
@@ -1803,6 +1817,7 @@ export type MpTransactionCreateWithoutOrderInput = {
   buyer: Prisma.MpUserCreateNestedOneWithoutBuyerTransactionsInput
   seller: Prisma.MpUserCreateNestedOneWithoutSellerTransactionsInput
   listing: Prisma.MpListingCreateNestedOneWithoutTransactionsInput
+  referrer?: Prisma.MpUserCreateNestedOneWithoutReferralsAsReferrerInput
   statusHistory?: Prisma.MpTransactionStatusHistoryCreateNestedManyWithoutTransactionInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutTransactionInput
   reviews?: Prisma.MpReviewCreateNestedManyWithoutTransactionInput
@@ -1836,6 +1851,7 @@ export type MpTransactionUncheckedCreateWithoutOrderInput = {
   escrowReleaseAt?: Date | string | null
   releasedAt?: Date | string | null
   buyerConfirmedAt?: Date | string | null
+  referredBy?: string | null
   disputeReason?: string | null
   disputeOpenedAt?: Date | string | null
   adminNotes?: string | null
@@ -1906,6 +1922,7 @@ export type MpTransactionCreateWithoutStatusHistoryInput = {
   seller: Prisma.MpUserCreateNestedOneWithoutSellerTransactionsInput
   listing: Prisma.MpListingCreateNestedOneWithoutTransactionsInput
   order?: Prisma.MpOrderCreateNestedOneWithoutTransactionsInput
+  referrer?: Prisma.MpUserCreateNestedOneWithoutReferralsAsReferrerInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutTransactionInput
   reviews?: Prisma.MpReviewCreateNestedManyWithoutTransactionInput
 }
@@ -1999,6 +2016,7 @@ export type MpTransactionUpdateWithoutStatusHistoryInput = {
   seller?: Prisma.MpUserUpdateOneRequiredWithoutSellerTransactionsNestedInput
   listing?: Prisma.MpListingUpdateOneRequiredWithoutTransactionsNestedInput
   order?: Prisma.MpOrderUpdateOneWithoutTransactionsNestedInput
+  referrer?: Prisma.MpUserUpdateOneWithoutReferralsAsReferrerNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutTransactionNestedInput
   reviews?: Prisma.MpReviewUpdateManyWithoutTransactionNestedInput
 }
@@ -2076,6 +2094,7 @@ export type MpTransactionCreateWithoutDisputesInput = {
   seller: Prisma.MpUserCreateNestedOneWithoutSellerTransactionsInput
   listing: Prisma.MpListingCreateNestedOneWithoutTransactionsInput
   order?: Prisma.MpOrderCreateNestedOneWithoutTransactionsInput
+  referrer?: Prisma.MpUserCreateNestedOneWithoutReferralsAsReferrerInput
   statusHistory?: Prisma.MpTransactionStatusHistoryCreateNestedManyWithoutTransactionInput
   reviews?: Prisma.MpReviewCreateNestedManyWithoutTransactionInput
 }
@@ -2169,6 +2188,7 @@ export type MpTransactionUpdateWithoutDisputesInput = {
   seller?: Prisma.MpUserUpdateOneRequiredWithoutSellerTransactionsNestedInput
   listing?: Prisma.MpListingUpdateOneRequiredWithoutTransactionsNestedInput
   order?: Prisma.MpOrderUpdateOneWithoutTransactionsNestedInput
+  referrer?: Prisma.MpUserUpdateOneWithoutReferralsAsReferrerNestedInput
   statusHistory?: Prisma.MpTransactionStatusHistoryUpdateManyWithoutTransactionNestedInput
   reviews?: Prisma.MpReviewUpdateManyWithoutTransactionNestedInput
 }
@@ -2246,6 +2266,7 @@ export type MpTransactionCreateWithoutReviewsInput = {
   seller: Prisma.MpUserCreateNestedOneWithoutSellerTransactionsInput
   listing: Prisma.MpListingCreateNestedOneWithoutTransactionsInput
   order?: Prisma.MpOrderCreateNestedOneWithoutTransactionsInput
+  referrer?: Prisma.MpUserCreateNestedOneWithoutReferralsAsReferrerInput
   statusHistory?: Prisma.MpTransactionStatusHistoryCreateNestedManyWithoutTransactionInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutTransactionInput
 }
@@ -2339,6 +2360,7 @@ export type MpTransactionUpdateWithoutReviewsInput = {
   seller?: Prisma.MpUserUpdateOneRequiredWithoutSellerTransactionsNestedInput
   listing?: Prisma.MpListingUpdateOneRequiredWithoutTransactionsNestedInput
   order?: Prisma.MpOrderUpdateOneWithoutTransactionsNestedInput
+  referrer?: Prisma.MpUserUpdateOneWithoutReferralsAsReferrerNestedInput
   statusHistory?: Prisma.MpTransactionStatusHistoryUpdateManyWithoutTransactionNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutTransactionNestedInput
 }
@@ -2460,10 +2482,13 @@ export type MpTransactionCreateManyReferrerInput = {
   buyerId: string
   sellerId: string
   listingId: string
+  orderId?: string | null
   paymentMethod: $Enums.MpPaymentMethodType
   status?: $Enums.MpTransactionStatus
   amount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
+  quantity?: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   platformFeePercent: runtime.Decimal | runtime.DecimalJsLike | number | string
   platformFeeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   sellerNetAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2520,6 +2545,7 @@ export type MpTransactionUpdateWithoutBuyerInput = {
   seller?: Prisma.MpUserUpdateOneRequiredWithoutSellerTransactionsNestedInput
   listing?: Prisma.MpListingUpdateOneRequiredWithoutTransactionsNestedInput
   order?: Prisma.MpOrderUpdateOneWithoutTransactionsNestedInput
+  referrer?: Prisma.MpUserUpdateOneWithoutReferralsAsReferrerNestedInput
   statusHistory?: Prisma.MpTransactionStatusHistoryUpdateManyWithoutTransactionNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutTransactionNestedInput
   reviews?: Prisma.MpReviewUpdateManyWithoutTransactionNestedInput
@@ -2633,6 +2659,7 @@ export type MpTransactionUpdateWithoutSellerInput = {
   buyer?: Prisma.MpUserUpdateOneRequiredWithoutBuyerTransactionsNestedInput
   listing?: Prisma.MpListingUpdateOneRequiredWithoutTransactionsNestedInput
   order?: Prisma.MpOrderUpdateOneWithoutTransactionsNestedInput
+  referrer?: Prisma.MpUserUpdateOneWithoutReferralsAsReferrerNestedInput
   statusHistory?: Prisma.MpTransactionStatusHistoryUpdateManyWithoutTransactionNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutTransactionNestedInput
   reviews?: Prisma.MpReviewUpdateManyWithoutTransactionNestedInput
@@ -2682,10 +2709,13 @@ export type MpTransactionUncheckedUpdateManyWithoutSellerInput = {
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
   buyerId?: Prisma.StringFieldUpdateOperationsInput | string
   listingId?: Prisma.StringFieldUpdateOperationsInput | string
+  orderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethod?: Prisma.EnumMpPaymentMethodTypeFieldUpdateOperationsInput | $Enums.MpPaymentMethodType
   status?: Prisma.EnumMpTransactionStatusFieldUpdateOperationsInput | $Enums.MpTransactionStatus
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   platformFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   platformFeeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2717,6 +2747,8 @@ export type MpTransactionUpdateWithoutReferrerInput = {
   status?: Prisma.EnumMpTransactionStatusFieldUpdateOperationsInput | $Enums.MpTransactionStatus
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   platformFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   platformFeeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2741,6 +2773,7 @@ export type MpTransactionUpdateWithoutReferrerInput = {
   buyer?: Prisma.MpUserUpdateOneRequiredWithoutBuyerTransactionsNestedInput
   seller?: Prisma.MpUserUpdateOneRequiredWithoutSellerTransactionsNestedInput
   listing?: Prisma.MpListingUpdateOneRequiredWithoutTransactionsNestedInput
+  order?: Prisma.MpOrderUpdateOneWithoutTransactionsNestedInput
   statusHistory?: Prisma.MpTransactionStatusHistoryUpdateManyWithoutTransactionNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutTransactionNestedInput
   reviews?: Prisma.MpReviewUpdateManyWithoutTransactionNestedInput
@@ -2752,10 +2785,13 @@ export type MpTransactionUncheckedUpdateWithoutReferrerInput = {
   buyerId?: Prisma.StringFieldUpdateOperationsInput | string
   sellerId?: Prisma.StringFieldUpdateOperationsInput | string
   listingId?: Prisma.StringFieldUpdateOperationsInput | string
+  orderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentMethod?: Prisma.EnumMpPaymentMethodTypeFieldUpdateOperationsInput | $Enums.MpPaymentMethodType
   status?: Prisma.EnumMpTransactionStatusFieldUpdateOperationsInput | $Enums.MpTransactionStatus
   amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   platformFeePercent?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   platformFeeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   sellerNetAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -2887,6 +2923,7 @@ export type MpTransactionUpdateWithoutListingInput = {
   buyer?: Prisma.MpUserUpdateOneRequiredWithoutBuyerTransactionsNestedInput
   seller?: Prisma.MpUserUpdateOneRequiredWithoutSellerTransactionsNestedInput
   order?: Prisma.MpOrderUpdateOneWithoutTransactionsNestedInput
+  referrer?: Prisma.MpUserUpdateOneWithoutReferralsAsReferrerNestedInput
   statusHistory?: Prisma.MpTransactionStatusHistoryUpdateManyWithoutTransactionNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutTransactionNestedInput
   reviews?: Prisma.MpReviewUpdateManyWithoutTransactionNestedInput
@@ -2959,6 +2996,7 @@ export type MpTransactionUncheckedUpdateManyWithoutListingInput = {
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   releasedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   buyerConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  referredBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   disputeReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   disputeOpenedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   adminNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2994,6 +3032,7 @@ export type MpTransactionCreateManyOrderInput = {
   escrowReleaseAt?: Date | string | null
   releasedAt?: Date | string | null
   buyerConfirmedAt?: Date | string | null
+  referredBy?: string | null
   disputeReason?: string | null
   disputeOpenedAt?: Date | string | null
   adminNotes?: string | null
@@ -3034,6 +3073,7 @@ export type MpTransactionUpdateWithoutOrderInput = {
   buyer?: Prisma.MpUserUpdateOneRequiredWithoutBuyerTransactionsNestedInput
   seller?: Prisma.MpUserUpdateOneRequiredWithoutSellerTransactionsNestedInput
   listing?: Prisma.MpListingUpdateOneRequiredWithoutTransactionsNestedInput
+  referrer?: Prisma.MpUserUpdateOneWithoutReferralsAsReferrerNestedInput
   statusHistory?: Prisma.MpTransactionStatusHistoryUpdateManyWithoutTransactionNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutTransactionNestedInput
   reviews?: Prisma.MpReviewUpdateManyWithoutTransactionNestedInput
@@ -3067,6 +3107,7 @@ export type MpTransactionUncheckedUpdateWithoutOrderInput = {
   escrowReleaseAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   releasedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   buyerConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  referredBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   disputeReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   disputeOpenedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   adminNotes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3201,6 +3242,7 @@ export type MpTransactionSelect<ExtArgs extends runtime.Types.Extensions.Interna
   seller?: boolean | Prisma.MpUserDefaultArgs<ExtArgs>
   listing?: boolean | Prisma.MpListingDefaultArgs<ExtArgs>
   order?: boolean | Prisma.MpTransaction$orderArgs<ExtArgs>
+  referrer?: boolean | Prisma.MpTransaction$referrerArgs<ExtArgs>
   statusHistory?: boolean | Prisma.MpTransaction$statusHistoryArgs<ExtArgs>
   disputes?: boolean | Prisma.MpTransaction$disputesArgs<ExtArgs>
   reviews?: boolean | Prisma.MpTransaction$reviewsArgs<ExtArgs>
@@ -3246,6 +3288,7 @@ export type MpTransactionSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   seller?: boolean | Prisma.MpUserDefaultArgs<ExtArgs>
   listing?: boolean | Prisma.MpListingDefaultArgs<ExtArgs>
   order?: boolean | Prisma.MpTransaction$orderArgs<ExtArgs>
+  referrer?: boolean | Prisma.MpTransaction$referrerArgs<ExtArgs>
 }, ExtArgs["result"]["mpTransaction"]>
 
 export type MpTransactionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -3287,6 +3330,7 @@ export type MpTransactionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   seller?: boolean | Prisma.MpUserDefaultArgs<ExtArgs>
   listing?: boolean | Prisma.MpListingDefaultArgs<ExtArgs>
   order?: boolean | Prisma.MpTransaction$orderArgs<ExtArgs>
+  referrer?: boolean | Prisma.MpTransaction$referrerArgs<ExtArgs>
 }, ExtArgs["result"]["mpTransaction"]>
 
 export type MpTransactionSelectScalar = {
@@ -3326,12 +3370,13 @@ export type MpTransactionSelectScalar = {
   updatedAt?: boolean
 }
 
-export type MpTransactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "idempotencyKey" | "buyerId" | "sellerId" | "listingId" | "orderId" | "paymentMethod" | "status" | "amount" | "currency" | "quantity" | "unitPrice" | "platformFeePercent" | "platformFeeAmount" | "sellerNetAmount" | "frozenRate" | "frozenRateSource" | "frozenRateFechaValor" | "rateSnapshotId" | "externalTxId" | "paymentReference" | "paymentSenderBank" | "paymentPaidAt" | "paymentProofUrl" | "escrowHeldAt" | "escrowReleaseAt" | "releasedAt" | "buyerConfirmedAt" | "disputeReason" | "disputeOpenedAt" | "adminNotes" | "createdAt" | "updatedAt", ExtArgs["result"]["mpTransaction"]>
+export type MpTransactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "idempotencyKey" | "buyerId" | "sellerId" | "listingId" | "orderId" | "paymentMethod" | "status" | "amount" | "currency" | "quantity" | "unitPrice" | "platformFeePercent" | "platformFeeAmount" | "sellerNetAmount" | "frozenRate" | "frozenRateSource" | "frozenRateFechaValor" | "rateSnapshotId" | "externalTxId" | "paymentReference" | "paymentSenderBank" | "paymentPaidAt" | "paymentProofUrl" | "escrowHeldAt" | "escrowReleaseAt" | "releasedAt" | "buyerConfirmedAt" | "referredBy" | "disputeReason" | "disputeOpenedAt" | "adminNotes" | "createdAt" | "updatedAt", ExtArgs["result"]["mpTransaction"]>
 export type MpTransactionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   buyer?: boolean | Prisma.MpUserDefaultArgs<ExtArgs>
   seller?: boolean | Prisma.MpUserDefaultArgs<ExtArgs>
   listing?: boolean | Prisma.MpListingDefaultArgs<ExtArgs>
   order?: boolean | Prisma.MpTransaction$orderArgs<ExtArgs>
+  referrer?: boolean | Prisma.MpTransaction$referrerArgs<ExtArgs>
   statusHistory?: boolean | Prisma.MpTransaction$statusHistoryArgs<ExtArgs>
   disputes?: boolean | Prisma.MpTransaction$disputesArgs<ExtArgs>
   reviews?: boolean | Prisma.MpTransaction$reviewsArgs<ExtArgs>
@@ -3342,12 +3387,14 @@ export type MpTransactionIncludeCreateManyAndReturn<ExtArgs extends runtime.Type
   seller?: boolean | Prisma.MpUserDefaultArgs<ExtArgs>
   listing?: boolean | Prisma.MpListingDefaultArgs<ExtArgs>
   order?: boolean | Prisma.MpTransaction$orderArgs<ExtArgs>
+  referrer?: boolean | Prisma.MpTransaction$referrerArgs<ExtArgs>
 }
 export type MpTransactionIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   buyer?: boolean | Prisma.MpUserDefaultArgs<ExtArgs>
   seller?: boolean | Prisma.MpUserDefaultArgs<ExtArgs>
   listing?: boolean | Prisma.MpListingDefaultArgs<ExtArgs>
   order?: boolean | Prisma.MpTransaction$orderArgs<ExtArgs>
+  referrer?: boolean | Prisma.MpTransaction$referrerArgs<ExtArgs>
 }
 
 export type $MpTransactionPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3357,6 +3404,7 @@ export type $MpTransactionPayload<ExtArgs extends runtime.Types.Extensions.Inter
     seller: Prisma.$MpUserPayload<ExtArgs>
     listing: Prisma.$MpListingPayload<ExtArgs>
     order: Prisma.$MpOrderPayload<ExtArgs> | null
+    referrer: Prisma.$MpUserPayload<ExtArgs> | null
     statusHistory: Prisma.$MpTransactionStatusHistoryPayload<ExtArgs>[]
     disputes: Prisma.$MpDisputePayload<ExtArgs>[]
     reviews: Prisma.$MpReviewPayload<ExtArgs>[]
@@ -3794,6 +3842,7 @@ export interface Prisma__MpTransactionClient<T, Null = never, ExtArgs extends ru
   seller<T extends Prisma.MpUserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUserDefaultArgs<ExtArgs>>): Prisma.Prisma__MpUserClient<runtime.Types.Result.GetResult<Prisma.$MpUserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   listing<T extends Prisma.MpListingDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpListingDefaultArgs<ExtArgs>>): Prisma.Prisma__MpListingClient<runtime.Types.Result.GetResult<Prisma.$MpListingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   order<T extends Prisma.MpTransaction$orderArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpTransaction$orderArgs<ExtArgs>>): Prisma.Prisma__MpOrderClient<runtime.Types.Result.GetResult<Prisma.$MpOrderPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  referrer<T extends Prisma.MpTransaction$referrerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpTransaction$referrerArgs<ExtArgs>>): Prisma.Prisma__MpUserClient<runtime.Types.Result.GetResult<Prisma.$MpUserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   statusHistory<T extends Prisma.MpTransaction$statusHistoryArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpTransaction$statusHistoryArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpTransactionStatusHistoryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   disputes<T extends Prisma.MpTransaction$disputesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpTransaction$disputesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpDisputePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   reviews<T extends Prisma.MpTransaction$reviewsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpTransaction$reviewsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpReviewPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -4277,6 +4326,25 @@ export type MpTransaction$orderArgs<ExtArgs extends runtime.Types.Extensions.Int
    */
   include?: Prisma.MpOrderInclude<ExtArgs> | null
   where?: Prisma.MpOrderWhereInput
+}
+
+/**
+ * MpTransaction.referrer
+ */
+export type MpTransaction$referrerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MpUser
+   */
+  select?: Prisma.MpUserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the MpUser
+   */
+  omit?: Prisma.MpUserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MpUserInclude<ExtArgs> | null
+  where?: Prisma.MpUserWhereInput
 }
 
 /**

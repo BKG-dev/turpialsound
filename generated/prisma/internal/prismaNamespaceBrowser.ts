@@ -572,6 +572,7 @@ export const MpReferralLinkScalarFieldEnum = {
   id: 'id',
   referrerId: 'referrerId',
   listingId: 'listingId',
+  slug: 'slug',
   code: 'code',
   clicks: 'clicks',
   conversions: 'conversions',

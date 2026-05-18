@@ -1008,6 +1008,7 @@ model MpReferralLink {
   id          String   @id @default(cuid())
   referrerId  String
   listingId   String
+  slug        String   @default("")
   code        String   @unique
   clicks      Int      @default(0)
   conversions Int      @default(0)

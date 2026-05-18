@@ -8,7 +8,7 @@ function generateCode(): string {
   return `ds-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-export async function getOrCreateReferralLink(listingId: string): Promise<{ success: boolean; code?: string; url?: string; message?: string }> {
+export async function getOrCreateReferralLink(listingId: string, listingSlug?: string): Promise<{ success: boolean; code?: string; url?: string; message?: string }> {
   const session = await getSession()
   if (!session) return { success: false, message: 'Inicia sesion para compartir y ganar' }
 
@@ -25,8 +25,10 @@ export async function getOrCreateReferralLink(listingId: string): Promise<{ succ
     }
 
     const code = generateCode()
+    // Guardar slug en el referral link para evitar query extra en trackReferralClick
+    const slug = listingSlug || listingId
     await db.mpReferralLink.create({
-      data: { referrerId: session.userId, listingId, code },
+      data: { referrerId: session.userId, listingId, code, slug },
     })
     await db.$disconnect()
     revalidatePath('/marketplace')
@@ -44,23 +46,12 @@ export async function trackReferralClick(code: string): Promise<{ listingId?: st
   try {
     const link = await db.mpReferralLink.findUnique({
       where: { code },
-      select: { id: true, listingId: true, isActive: true },
+      select: { id: true, listingId: true, slug: true, isActive: true },
     })
     if (link?.isActive) {
       await db.mpReferralLink.update({ where: { id: link.id }, data: { clicks: { increment: 1 } } })
-      
-      // Obtener slug del listing (no hay FK en schema, query separada)
-      let slug: string | undefined
-      try {
-        const listing = await db.mpListing.findUnique({
-          where: { id: link.listingId },
-          select: { slug: true },
-        })
-        slug = listing?.slug ?? undefined
-      } catch {}
-
       await db.$disconnect()
-      return { listingId: link.listingId, slug }
+      return { listingId: link.listingId, slug: link.slug || link.listingId }
     }
     await db.$disconnect()
     return {}

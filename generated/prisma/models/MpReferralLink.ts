@@ -42,6 +42,7 @@ export type MpReferralLinkMinAggregateOutputType = {
   id: string | null
   referrerId: string | null
   listingId: string | null
+  slug: string | null
   code: string | null
   clicks: number | null
   conversions: number | null
@@ -54,6 +55,7 @@ export type MpReferralLinkMaxAggregateOutputType = {
   id: string | null
   referrerId: string | null
   listingId: string | null
+  slug: string | null
   code: string | null
   clicks: number | null
   conversions: number | null
@@ -66,6 +68,7 @@ export type MpReferralLinkCountAggregateOutputType = {
   id: number
   referrerId: number
   listingId: number
+  slug: number
   code: number
   clicks: number
   conversions: number
@@ -92,6 +95,7 @@ export type MpReferralLinkMinAggregateInputType = {
   id?: true
   referrerId?: true
   listingId?: true
+  slug?: true
   code?: true
   clicks?: true
   conversions?: true
@@ -104,6 +108,7 @@ export type MpReferralLinkMaxAggregateInputType = {
   id?: true
   referrerId?: true
   listingId?: true
+  slug?: true
   code?: true
   clicks?: true
   conversions?: true
@@ -116,6 +121,7 @@ export type MpReferralLinkCountAggregateInputType = {
   id?: true
   referrerId?: true
   listingId?: true
+  slug?: true
   code?: true
   clicks?: true
   conversions?: true
@@ -215,6 +221,7 @@ export type MpReferralLinkGroupByOutputType = {
   id: string
   referrerId: string
   listingId: string
+  slug: string
   code: string
   clicks: number
   conversions: number
@@ -250,6 +257,7 @@ export type MpReferralLinkWhereInput = {
   id?: Prisma.StringFilter<"MpReferralLink"> | string
   referrerId?: Prisma.StringFilter<"MpReferralLink"> | string
   listingId?: Prisma.StringFilter<"MpReferralLink"> | string
+  slug?: Prisma.StringFilter<"MpReferralLink"> | string
   code?: Prisma.StringFilter<"MpReferralLink"> | string
   clicks?: Prisma.IntFilter<"MpReferralLink"> | number
   conversions?: Prisma.IntFilter<"MpReferralLink"> | number
@@ -262,6 +270,7 @@ export type MpReferralLinkOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   referrerId?: Prisma.SortOrder
   listingId?: Prisma.SortOrder
+  slug?: Prisma.SortOrder
   code?: Prisma.SortOrder
   clicks?: Prisma.SortOrder
   conversions?: Prisma.SortOrder
@@ -278,6 +287,7 @@ export type MpReferralLinkWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.MpReferralLinkWhereInput | Prisma.MpReferralLinkWhereInput[]
   referrerId?: Prisma.StringFilter<"MpReferralLink"> | string
   listingId?: Prisma.StringFilter<"MpReferralLink"> | string
+  slug?: Prisma.StringFilter<"MpReferralLink"> | string
   clicks?: Prisma.IntFilter<"MpReferralLink"> | number
   conversions?: Prisma.IntFilter<"MpReferralLink"> | number
   totalEarned?: Prisma.DecimalFilter<"MpReferralLink"> | runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -289,6 +299,7 @@ export type MpReferralLinkOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   referrerId?: Prisma.SortOrder
   listingId?: Prisma.SortOrder
+  slug?: Prisma.SortOrder
   code?: Prisma.SortOrder
   clicks?: Prisma.SortOrder
   conversions?: Prisma.SortOrder
@@ -309,6 +320,7 @@ export type MpReferralLinkScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"MpReferralLink"> | string
   referrerId?: Prisma.StringWithAggregatesFilter<"MpReferralLink"> | string
   listingId?: Prisma.StringWithAggregatesFilter<"MpReferralLink"> | string
+  slug?: Prisma.StringWithAggregatesFilter<"MpReferralLink"> | string
   code?: Prisma.StringWithAggregatesFilter<"MpReferralLink"> | string
   clicks?: Prisma.IntWithAggregatesFilter<"MpReferralLink"> | number
   conversions?: Prisma.IntWithAggregatesFilter<"MpReferralLink"> | number
@@ -321,6 +333,7 @@ export type MpReferralLinkCreateInput = {
   id?: string
   referrerId: string
   listingId: string
+  slug?: string
   code: string
   clicks?: number
   conversions?: number
@@ -333,6 +346,7 @@ export type MpReferralLinkUncheckedCreateInput = {
   id?: string
   referrerId: string
   listingId: string
+  slug?: string
   code: string
   clicks?: number
   conversions?: number
@@ -345,6 +359,7 @@ export type MpReferralLinkUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   referrerId?: Prisma.StringFieldUpdateOperationsInput | string
   listingId?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   clicks?: Prisma.IntFieldUpdateOperationsInput | number
   conversions?: Prisma.IntFieldUpdateOperationsInput | number
@@ -357,6 +372,7 @@ export type MpReferralLinkUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   referrerId?: Prisma.StringFieldUpdateOperationsInput | string
   listingId?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   clicks?: Prisma.IntFieldUpdateOperationsInput | number
   conversions?: Prisma.IntFieldUpdateOperationsInput | number
@@ -369,6 +385,7 @@ export type MpReferralLinkCreateManyInput = {
   id?: string
   referrerId: string
   listingId: string
+  slug?: string
   code: string
   clicks?: number
   conversions?: number
@@ -381,6 +398,7 @@ export type MpReferralLinkUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   referrerId?: Prisma.StringFieldUpdateOperationsInput | string
   listingId?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   clicks?: Prisma.IntFieldUpdateOperationsInput | number
   conversions?: Prisma.IntFieldUpdateOperationsInput | number
@@ -393,6 +411,7 @@ export type MpReferralLinkUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   referrerId?: Prisma.StringFieldUpdateOperationsInput | string
   listingId?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   clicks?: Prisma.IntFieldUpdateOperationsInput | number
   conversions?: Prisma.IntFieldUpdateOperationsInput | number
@@ -405,6 +424,7 @@ export type MpReferralLinkCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   referrerId?: Prisma.SortOrder
   listingId?: Prisma.SortOrder
+  slug?: Prisma.SortOrder
   code?: Prisma.SortOrder
   clicks?: Prisma.SortOrder
   conversions?: Prisma.SortOrder
@@ -423,6 +443,7 @@ export type MpReferralLinkMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   referrerId?: Prisma.SortOrder
   listingId?: Prisma.SortOrder
+  slug?: Prisma.SortOrder
   code?: Prisma.SortOrder
   clicks?: Prisma.SortOrder
   conversions?: Prisma.SortOrder
@@ -435,6 +456,7 @@ export type MpReferralLinkMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   referrerId?: Prisma.SortOrder
   listingId?: Prisma.SortOrder
+  slug?: Prisma.SortOrder
   code?: Prisma.SortOrder
   clicks?: Prisma.SortOrder
   conversions?: Prisma.SortOrder
@@ -455,6 +477,7 @@ export type MpReferralLinkSelect<ExtArgs extends runtime.Types.Extensions.Intern
   id?: boolean
   referrerId?: boolean
   listingId?: boolean
+  slug?: boolean
   code?: boolean
   clicks?: boolean
   conversions?: boolean
@@ -467,6 +490,7 @@ export type MpReferralLinkSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   id?: boolean
   referrerId?: boolean
   listingId?: boolean
+  slug?: boolean
   code?: boolean
   clicks?: boolean
   conversions?: boolean
@@ -479,6 +503,7 @@ export type MpReferralLinkSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   id?: boolean
   referrerId?: boolean
   listingId?: boolean
+  slug?: boolean
   code?: boolean
   clicks?: boolean
   conversions?: boolean
@@ -491,6 +516,7 @@ export type MpReferralLinkSelectScalar = {
   id?: boolean
   referrerId?: boolean
   listingId?: boolean
+  slug?: boolean
   code?: boolean
   clicks?: boolean
   conversions?: boolean
@@ -499,7 +525,7 @@ export type MpReferralLinkSelectScalar = {
   createdAt?: boolean
 }
 
-export type MpReferralLinkOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "referrerId" | "listingId" | "code" | "clicks" | "conversions" | "totalEarned" | "isActive" | "createdAt", ExtArgs["result"]["mpReferralLink"]>
+export type MpReferralLinkOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "referrerId" | "listingId" | "slug" | "code" | "clicks" | "conversions" | "totalEarned" | "isActive" | "createdAt", ExtArgs["result"]["mpReferralLink"]>
 
 export type $MpReferralLinkPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "MpReferralLink"
@@ -508,6 +534,7 @@ export type $MpReferralLinkPayload<ExtArgs extends runtime.Types.Extensions.Inte
     id: string
     referrerId: string
     listingId: string
+    slug: string
     code: string
     clicks: number
     conversions: number
@@ -940,6 +967,7 @@ export interface MpReferralLinkFieldRefs {
   readonly id: Prisma.FieldRef<"MpReferralLink", 'String'>
   readonly referrerId: Prisma.FieldRef<"MpReferralLink", 'String'>
   readonly listingId: Prisma.FieldRef<"MpReferralLink", 'String'>
+  readonly slug: Prisma.FieldRef<"MpReferralLink", 'String'>
   readonly code: Prisma.FieldRef<"MpReferralLink", 'String'>
   readonly clicks: Prisma.FieldRef<"MpReferralLink", 'Int'>
   readonly conversions: Prisma.FieldRef<"MpReferralLink", 'Int'>
