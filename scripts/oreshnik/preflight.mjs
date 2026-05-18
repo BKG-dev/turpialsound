@@ -273,8 +273,8 @@ if (motherRef) {
                           warn('Sugerido: cerrar esa rama o fusionar docs a madre antes de continuar.')
                         }
                       }
-                    } catch {}
-                  }
+                    }
+                  } catch {}
                 }
               }
             }
@@ -383,9 +383,25 @@ if (sprintId) {
     } else {
       if (allDirty === 0 || cacheOnlyChanges) {
         // Buscar ULTIMA rama hija del operador para heredar codigo (no solo docs de madre)
-        const lastChildBranch = sh(`git branch --list "${operator}/*" --sort=-committerdate | Select-Object -First 1`).trim().replace(/^\*\s*/, '')
-        const baseBranch = lastChildBranch || MOTHER
-        info(`Creando rama desde: ${baseBranch} (hereda codigo + docs)`)
+        const rawList = sh(`git branch --list "${operator}/*"`)
+        const branches = rawList.split('\n').map(b => b.trim().replace(/^\*\s*/, '')).filter(Boolean)
+        let baseBranch = MOTHER
+        
+        // Validar que la ultima rama hija fue CERRADA correctamente (no heredar basura)
+        for (const branch of branches) {
+          const lastCommits = sh(`git log --oneline -5 ${branch} 2>nul`)
+          const isClosed = /docs\(sprint\):\s*cerrar|chore\(oreshnik\):\s*record/.test(lastCommits)
+          if (isClosed) {
+            baseBranch = branch
+            break
+          }
+        }
+        
+        if (baseBranch === MOTHER) {
+          info('No se encontro rama hija cerrada. Creando desde madre.')
+        } else {
+          info(`Rama hija validada como cerrada: ${baseBranch}. Heredando codigo.`)
+        }
         
         // Actualizar la base si es remota
         if (baseBranch !== MOTHER) {
