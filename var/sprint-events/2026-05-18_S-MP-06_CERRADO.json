@@ -1,0 +1,31 @@
+{
+  "sprint": "S-MP-06",
+  "operator": "Manuel",
+  "status": "CERRADO",
+  "date": "2026-05-18",
+  "fulldate": "18/05/26 09:10",
+  "iso": "2026-05-18T13:10:47.520Z",
+  "childBranch": "Manuel/s-mp-02-busqueda-filtros-2026-05-17",
+  "motherBranch": "MADRE/v6-s-mp-06-drop-social-referidos-dashboard-2026-05-18",
+  "description": "drop-social-referidos-dashboard",
+  "previousMother": "MADRE/v5-s-mp-02-busqueda-fuzzy-filtros-ubicacion-2026-05-18",
+  "changedZones": [
+    "Server Actions Marketplace",
+    "Componentes Marketplace",
+    "Documentacion",
+    "DB Schema",
+    "Scripts Oreshnik"
+  ],
+  "docsUpdated": [
+    "docs/marketplace/01_ROADMAP_AND_STATUS.md",
+    "docs/07_handoffs/qa-dispatcher.json",
+    "docs/obsidian-vault/00_CENTRAL_TURPIAL.md",
+    "docs/obsidian-vault/00_INDICE_MAESTRO.md",
+    "docs/obsidian-vault/ARQUITECTURA/ARQUITECTURA_TASAS.md",
+    "docs/obsidian-vault/METODOLOGIA/METODOLOGIA_ORESHNIK.md",
+    "docs/obsidian-vault/METODOLOGIA/INSTRUCCION_APERTURA_SESION.md",
+    "docs/obsidian-vault/SPRINTS/PLAN_MAESTRO_SPRINTS.md"
+  ],
+  "coverageGaps": 3,
+  "forceClose": true
+}
