@@ -425,8 +425,12 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
       result = await adminUnbanUser(userId)
     } else if (action === 'verify') {
       result = await adminVerifyUser(userId)
+    } else if (action === 'role-super') {
+      const pass = window.prompt('Contrasena de elevacion requerida:') ?? ''
+      if (pass === null) return
+      result = await adminSetUserRole(userId, 'SUPER', pass)
     } else {
-      const roleMap = { 'role-user': 'USER', 'role-socio': 'SOCIO', 'role-super': 'SUPER' } as const
+      const roleMap = { 'role-user': 'USER', 'role-socio': 'SOCIO' } as const
       result = await adminSetUserRole(userId, roleMap[action as keyof typeof roleMap])
     }
     setUserMsg(result.message)
@@ -1118,6 +1122,9 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                 )}
                 {u.role !== 'SOCIO' && (
                   <ActionBtn label="Hacer SOCIO" color="#a855f7" icon={Shield} onClick={() => doUserAction(u.id, 'role-socio')} />
+                )}
+                {u.role !== 'SUPER' && (
+                  <ActionBtn label="Hacer ADMIN" color="#ef4444" icon={ShieldCheck} onClick={() => doUserAction(u.id, 'role-super')} />
                 )}
                 {u.role !== 'USER' && (
                   <ActionBtn label="Hacer USER" color="#6b7280" onClick={() => doUserAction(u.id, 'role-user')} />

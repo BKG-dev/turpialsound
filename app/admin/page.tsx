@@ -47,6 +47,7 @@ import {
   StatusBreakdownPanel,
   TodayOperationsPanel,
 } from '@/components/admin/dashboard'
+import { AdminThemeToggle } from '@/components/admin/AdminThemeProvider'
 
 type SearchParamValue = string | string[] | undefined
 
@@ -442,6 +443,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     orderBy: { name: 'asc' },
   })
 
+  const resourceIdToSlug = new Map(resources.map((r) => [r.id, r.slug]))
+
   const eventDateRange = getDateRangeFromInput(dateFilter)
   const rows = await prisma.bookingRequest.findMany({
     where: {
@@ -537,80 +540,83 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   })()
 
   return (
-    <main className="min-h-screen bg-slate-100 p-4 md:p-8">
+    <main className="min-h-screen bg-slate-100 p-4 md:p-8 dark:bg-gray-950">
       <section className="mx-auto max-w-7xl space-y-6">
-        <header className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+        <header className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6 dark:border-gray-700 dark:bg-gray-900">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-semibold text-slate-900">Booking Command Center</h1>
-              <p className="mt-2 text-sm text-slate-600">
+              <h1 className="text-2xl font-semibold text-slate-900 dark:text-gray-100">Booking Command Center</h1>
+              <p className="mt-2 text-sm text-slate-600 dark:text-gray-400">
                 Vista interna minima para revisar solicitudes y verificar pago manualmente.
               </p>
             </div>
 
-            <form action={logoutAdminSession}>
-              <button
-                type="submit"
-                className="inline-flex h-9 items-center rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                Cerrar sesion
-              </button>
-            </form>
+            <div className="flex items-center gap-3">
+              <AdminThemeToggle compact />
+              <form action={logoutAdminSession}>
+                <button
+                  type="submit"
+                  className="inline-flex h-9 items-center rounded-md border border-slate-300 px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                >
+                  Cerrar sesion
+                </button>
+              </form>
+            </div>
           </div>
         </header>
 
         {calendarSyncState === 'error' ? (
-          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-600/30 dark:bg-amber-950/30 dark:text-amber-300">
             El estado se guardo, pero falló la sincronizacion con Google Calendar. Revisa la
             configuracion o intenta de nuevo.
           </section>
         ) : null}
 
         {calendarSyncState === 'missing_config' ? (
-          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-600/30 dark:bg-amber-950/30 dark:text-amber-300">
             El estado se guardo, pero falta configurar variables de Google Calendar en el entorno
             interno.
           </section>
         ) : null}
 
         {guardState === 'expired_or_cancelled' || guardState === 'rejected' ? (
-          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-600/30 dark:bg-amber-950/30 dark:text-amber-300">
             La reserva ya vencio o fue cancelada/rechazada y no puede confirmarse automaticamente.
           </section>
         ) : null}
 
         {guardState === 'missing_data' ? (
-          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-600/30 dark:bg-amber-950/30 dark:text-amber-300">
             La reserva no tiene informacion suficiente para confirmarse.
           </section>
         ) : null}
 
         {guardState === 'not_payment_reported' ? (
-          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-600/30 dark:bg-amber-950/30 dark:text-amber-300">
             Solo se puede confirmar cuando la reserva esta en pago reportado.
           </section>
         ) : null}
 
         {guardState === 'payment_reported_late' ? (
-          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-600/30 dark:bg-amber-950/30 dark:text-amber-300">
             El pago fue reportado fuera de la ventana. Requiere revision manual.
           </section>
         ) : null}
 
         {guardState === 'resource_conflict' ? (
-          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <section className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-600/30 dark:bg-amber-950/30 dark:text-amber-300">
             El recurso o sala ya no esta disponible para ese horario.
           </section>
         ) : null}
 
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6 dark:border-gray-700 dark:bg-gray-900">
           <form className="mb-4 grid gap-3 md:grid-cols-[180px_auto] md:items-end">
-            <label className="space-y-1.5 text-sm text-slate-700">
+            <label className="space-y-1.5 text-sm text-slate-700 dark:text-gray-300">
               <span className="font-medium">Rango dashboard</span>
               <select
                 name="range"
                 defaultValue={dashboardRange.key}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
               >
                 <option value="7d">Ultimos 7 dias</option>
                 <option value="30d">Ultimos 30 dias</option>
@@ -618,49 +624,87 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             </label>
             <button
               type="submit"
-              className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
             >
               Actualizar metricas
             </button>
           </form>
 
           <div className="space-y-4">
-            <RevenueCardPanel snapshot={dashboardSnapshot} />
+            <RevenueCardPanel
+              snapshot={dashboardSnapshot}
+              cardLinks={{
+                confirmed: withQueryParam(returnPath, 'status', 'confirmed'),
+                pending: withQueryParam(returnPath, 'status', 'pending_payment'),
+                hold: withQueryParam(returnPath, 'status', 'payment_reported'),
+                review: withQueryParam(returnPath, 'status', 'payment_reported'),
+              }}
+            />
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <PaymentReviewQueuePanel snapshot={dashboardSnapshot} />
-              <TodayOperationsPanel snapshot={dashboardSnapshot} />
+              <PaymentReviewQueuePanel
+                snapshot={dashboardSnapshot}
+                reviewLink={withQueryParam(returnPath, 'status', 'payment_reported')}
+              />
+              <TodayOperationsPanel
+                snapshot={dashboardSnapshot}
+                todayLink={withQueryParam('/admin', 'date', new Date().toISOString().split('T')[0])}
+              />
             </div>
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               <div className="space-y-4 lg:col-span-2">
-                <StatusBreakdownPanel snapshot={dashboardSnapshot} />
-                <OccupancyByRoomPanel snapshot={dashboardSnapshot} />
-                <QuickRevenueHistoryPanel snapshot={dashboardSnapshot} />
+                <StatusBreakdownPanel
+                  snapshot={dashboardSnapshot}
+                  getStatusLink={(status) => withQueryParam(returnPath, 'status', status)}
+                />
+                <OccupancyByRoomPanel
+                  snapshot={dashboardSnapshot}
+                  getResourceLink={(resourceId) => {
+                    const slug = resourceIdToSlug.get(resourceId)
+                    return slug ? withQueryParam(returnPath, 'resource', slug) : undefined
+                  }}
+                />
+                <QuickRevenueHistoryPanel
+                  snapshot={dashboardSnapshot}
+                  getDayLink={(date) => withQueryParam('/admin', 'date', date)}
+                />
               </div>
-              <CriticalAlertsPanel snapshot={dashboardSnapshot} />
+              <CriticalAlertsPanel
+                snapshot={dashboardSnapshot}
+                getAlertLink={(alertId) => {
+                  const statusMap: Record<string, string> = {
+                    payments_review: 'payment_reported',
+                    overdue_holds: 'pending_payment',
+                    duplicate_proofs: 'payment_reported',
+                    upcoming_unconfirmed: 'pending_payment',
+                  }
+                  const status = statusMap[alertId]
+                  return status ? withQueryParam(returnPath, 'status', status) : undefined
+                }}
+              />
             </div>
           </div>
         </section>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6 dark:border-gray-700 dark:bg-gray-900">
           <form className="grid gap-4 md:grid-cols-[200px_180px_180px_auto_auto] md:items-end">
-            <label className="space-y-1.5 text-sm text-slate-700">
+            <label className="space-y-1.5 text-sm text-slate-700 dark:text-gray-300">
               <span className="font-medium">Fecha solicitada</span>
               <input
                 type="date"
                 name="date"
                 defaultValue={dateFilter ?? ''}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
               />
             </label>
 
-            <label className="space-y-1.5 text-sm text-slate-700">
+            <label className="space-y-1.5 text-sm text-slate-700 dark:text-gray-300">
               <span className="font-medium">Estado</span>
               <select
                 name="status"
                 defaultValue={statusFilter}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
               >
                 <option value="all">Todos</option>
                 {OPERATIONAL_BOOKING_STATUSES.map((status) => (
@@ -671,12 +715,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               </select>
             </label>
 
-            <label className="space-y-1.5 text-sm text-slate-700">
+            <label className="space-y-1.5 text-sm text-slate-700 dark:text-gray-300">
               <span className="font-medium">Sala / Recurso</span>
               <select
                 name="resource"
                 defaultValue={resourceFilter ?? ''}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
               >
                 <option value="">Todas</option>
                 {resources.map((res) => (
@@ -689,24 +733,24 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
             <button
               type="submit"
-              className="inline-flex h-10 items-center justify-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white transition hover:bg-slate-800"
+              className="inline-flex h-10 items-center justify-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white transition hover:bg-slate-800 dark:bg-gray-700 dark:hover:bg-gray-600"
             >
               Filtrar
             </button>
 
             <a
               href={withQueryParam(returnPath, 'date', new Date().toISOString().split('T')[0])}
-              className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
             >
               Hoy
             </a>
           </form>
         </section>
 
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-600">
+            <table className="min-w-full divide-y divide-slate-200 text-sm dark:divide-gray-700">
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-600 dark:bg-gray-800 dark:text-gray-400">
                 <tr>
                   <th className="px-3 py-2.5">Solicitud</th>
                   <th className="px-3 py-2.5">Operacion</th>
@@ -714,10 +758,10 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   <th className="px-3 py-2.5">Accion</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 bg-white text-slate-800">
+              <tbody className="divide-y divide-slate-100 bg-white text-slate-800 dark:divide-gray-800 dark:bg-gray-900 dark:text-gray-200">
                 {bookings.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-slate-500">
+                    <td colSpan={4} className="px-4 py-8 text-center text-slate-500 dark:text-gray-500">
                       No hay solicitudes para los filtros seleccionados.
                     </td>
                   </tr>
@@ -725,27 +769,27 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   bookings.map((booking) => (
                     <tr key={booking.id} className="align-top">
                       <td className="px-3 py-2.5">
-                        <p className="font-semibold text-slate-900">{booking.publicCode}</p>
-                        <p className="mt-0.5 text-xs text-slate-500">{formatDateTime(booking.createdAt)}</p>
-                        <p className="mt-1 text-sm text-slate-800">{booking.requesterName}</p>
-                        <p className="text-xs text-slate-500">{booking.requesterPhone ?? '-'}</p>
+                        <p className="font-semibold text-slate-900 dark:text-gray-100">{booking.publicCode}</p>
+                        <p className="mt-0.5 text-xs text-slate-500 dark:text-gray-500">{formatDateTime(booking.createdAt)}</p>
+                        <p className="mt-1 text-sm text-slate-800 dark:text-gray-200">{booking.requesterName}</p>
+                        <p className="text-xs text-slate-500 dark:text-gray-500">{booking.requesterPhone ?? '-'}</p>
                       </td>
                       <td className="px-3 py-2.5">
-                        <p className="text-sm font-medium text-slate-900">{booking.serviceName}</p>
-                        <p className="text-xs text-slate-600">{booking.variantName}</p>
-                        <p className="mt-1 text-xs text-slate-600">
-                          Sala: <span className="font-medium text-slate-700">{booking.resourceName ?? '-'}</span>
+                        <p className="text-sm font-medium text-slate-900 dark:text-gray-100">{booking.serviceName}</p>
+                        <p className="text-xs text-slate-600 dark:text-gray-400">{booking.variantName}</p>
+                        <p className="mt-1 text-xs text-slate-600 dark:text-gray-400">
+                          Sala: <span className="font-medium text-slate-700 dark:text-gray-300">{booking.resourceName ?? '-'}</span>
                         </p>
-                        <p className="mt-1 text-xs text-slate-600">
+                        <p className="mt-1 text-xs text-slate-600 dark:text-gray-400">
                           {formatSchedule(booking.eventDate, booking.eventEndDate)}
                         </p>
                       </td>
                       <td className="px-3 py-2.5">
-                        <p className="text-xs text-slate-500">
-                          Limite: <span className="font-medium text-slate-700">{formatPaymentDeadline(booking.createdAt)}</span>
+                        <p className="text-xs text-slate-500 dark:text-gray-500">
+                          Limite: <span className="font-medium text-slate-700 dark:text-gray-300">{formatPaymentDeadline(booking.createdAt)}</span>
                         </p>
                         <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                          <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                          <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-gray-800 dark:text-gray-300">
                             {booking.operationalStatusLabel}
                           </span>
 
@@ -754,7 +798,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                               href={booking.paymentProofUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                              className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
                             >
                               <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -772,7 +816,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                           <select
                             name="nextStatus"
                             defaultValue={booking.operationalStatus}
-                            className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs text-slate-900"
+                            className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs text-slate-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                           >
                             <option value="pending_payment">
                               {OPERATIONAL_STATUS_LABELS.pending_payment}
@@ -788,7 +832,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                           </select>
                           <button
                             type="submit"
-                            className="inline-flex w-full items-center justify-center rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                            className="inline-flex w-full items-center justify-center rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
                           >
                             Guardar
                           </button>

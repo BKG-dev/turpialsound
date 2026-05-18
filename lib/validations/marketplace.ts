@@ -58,7 +58,7 @@ export const createListingSchema = z
 
     mediaUrls: z
       .array(z.string().refine(isMarketplaceStoredUrl, 'URL de imagen invalida'))
-      .max(7, 'Maximo 7 imagenes adicionales')
+      .max(4, 'Maximo 4 imagenes adicionales')
       .default([]),
 
     hasInventory: z.boolean().default(false),
@@ -74,6 +74,20 @@ export const createListingSchema = z
     message: 'Debes indicar el inventario cuando hasInventory es true',
     path: ['inventory'],
   })
+  .refine(
+    (data) => {
+      const isProduct = [
+        'instrumentos-nuevos',
+        'instrumentos-usados',
+        'audio-pro-estudio',
+        'consumibles',
+        'alquiler-equipos',
+      ].includes(data.category)
+      if (!isProduct) return true
+      return !!data.coverImageUrl || data.mediaUrls.length > 0
+    },
+    { message: 'Debes subir al menos 1 imagen del producto', path: ['coverImageUrl'] },
+  )
 
 export type CreateListingInput = z.infer<typeof createListingSchema>
 
