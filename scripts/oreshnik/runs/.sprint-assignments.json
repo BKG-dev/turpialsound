@@ -1,0 +1,16 @@
+[
+  {
+    "sprintId": "S-MP-04",
+    "operator": "Manuel",
+    "timestamp": "2026-05-18T13:14:04.907Z",
+    "branch": "Manuel/s-mp-04-publicacion-productos-2026-05-18",
+    "reassigned": false
+  },
+  {
+    "sprintId": "S-MP-07",
+    "operator": "Manuel",
+    "timestamp": "2026-05-18T13:14:18.133Z",
+    "branch": "Manuel/s-mp-04-publicacion-productos-2026-05-18",
+    "reassigned": false
+  }
+]

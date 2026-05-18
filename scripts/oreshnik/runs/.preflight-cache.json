@@ -1,7 +1,8 @@
 {
-  "lastRun": "2026-05-15T00:34:46.722Z",
-  "originCommit": "a0a0a32",
-  "branch": "integration/today-reservas-marketplace-stable-2026-05-07",
+  "lastRun": "2026-05-18T13:14:18.133Z",
+  "originCommit": "8295823",
+  "branch": "Manuel/s-mp-04-publicacion-productos-2026-05-18",
   "blockers": 0,
-  "warnings": 1
+  "warnings": 0,
+  "mother": "MADRE/v6-s-mp-06-drop-social-referidos-dashboard-2026-05-18"
 }
