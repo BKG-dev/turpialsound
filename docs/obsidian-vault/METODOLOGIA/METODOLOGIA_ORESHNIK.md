@@ -2,7 +2,7 @@
 type: methodology-nexus
 project: "Turpial Sound"
 fecha: 2026-05-17
-actualizado: "2026-05-17T17:35-04:00"
+actualizado: "2026-05-18T00:22:28.467Z"
 metodologia: "Oreshnik v4.0 + Madre Dinamica + Cierre Automatizado"
 tags:
   - "#central"

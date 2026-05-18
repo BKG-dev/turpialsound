@@ -425,6 +425,7 @@ const metodologiaPath = join(ROOT, 'docs', 'obsidian-vault', 'METODOLOGIA', 'MET
 if (existsSync(metodologiaPath)) {
   let met = readFileSync(metodologiaPath, 'utf8')
   met = met.replace(/fecha:\s*"[^"]*"/, `fecha: "${vet.date}"`)
+  met = met.replace(/actualizado:\s*"[^"]*"/, `actualizado: "${vet.iso}"`)
   writeFileSync(metodologiaPath, met, 'utf8')
   ok('METODOLOGIA_ORESHNIK.md actualizado')
 }
@@ -457,12 +458,7 @@ if (docChanges) {
 }
 
 // C2: Push rama hija completa
-const pushChild = sh(`git push origin ${currentBranch} 2>&1`)
-if (pushChild.includes('error') || pushChild.includes('fatal')) {
-  fail(`Push falló: ${pushChild.slice(0, 200)}`)
-  reopenObsidian()
-  process.exit(1)
-}
+sh(`git push origin ${currentBranch}`, { fatal: true })
 ok(`Push rama hija: ${currentBranch}`)
 
 // C3: Crear nueva rama madre dinámica
@@ -496,13 +492,7 @@ sh(`git commit -m "${motherCommitMsg}"`, { fatal: true })
 ok(`Commit madre: ${motherCommitMsg}`)
 
 // C5: Push madre
-const pushMother = sh(`git push origin ${newMotherName} 2>&1`)
-if (pushMother.includes('error') || pushMother.includes('fatal')) {
-  fail(`Push madre falló: ${pushMother.slice(0, 200)}`)
-  sh(`git checkout ${currentBranch}`, { fatal: true })
-  reopenObsidian()
-  process.exit(1)
-}
+sh(`git push origin ${newMotherName}`, { fatal: true })
 ok(`Push madre: origin/${newMotherName}`)
 
 // C6: Guardar versionado

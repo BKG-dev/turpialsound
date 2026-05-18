@@ -48,8 +48,13 @@ Write-Sync "Rama actual: $currentBranch" -T "INFO"
 # 3. Verificar madre existe
 $motherRef = git rev-parse --verify "origin/$MotherBranch" 2>$null
 if (-not $motherRef) {
-    Write-Sync "Rama madre no encontrada en origin" -T "FAIL"
-    $allOk = $false
+    $localMotherRef = git rev-parse --verify "$MotherBranch" 2>$null
+    if ($localMotherRef) {
+        Write-Sync "Rama madre no encontrada en origin; existe local y puede estar pendiente de primer push" -T "WARN"
+    } else {
+        Write-Sync "Rama madre no encontrada en origin" -T "FAIL"
+        $allOk = $false
+    }
 } else {
     $mc = git rev-parse --short "origin/$MotherBranch"
     Write-Sync "Madre: $MotherBranch @ $mc" -T "PASS"

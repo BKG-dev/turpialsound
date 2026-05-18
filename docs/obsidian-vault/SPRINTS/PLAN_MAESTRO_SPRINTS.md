@@ -5,7 +5,7 @@ status: active-integration
 version: "2.0"
 last_updated: "2026-05-18T00:22:28.467Z"
 methodology: "Oreshnik v4.0 + Madre Dinamica"
-mother_branch: "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16"
+mother_branch: "MADRE/v3-s-mp-01-2026-05-18"
 tags:
   - "#central"
   - "#master-plan"
