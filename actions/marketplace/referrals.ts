@@ -92,19 +92,33 @@ export async function processReferralConversion(
       } catch {}
     })()
 
-    // TODO: create MpPayout or credit to referrer balance
+    // Crear MpPayout real para la comision del referido
+    try {
+      await db.mpPayout.create({
+        data: {
+          sellerId: link.referrerId,
+          amount: String(commission),
+          currency: 'USD',
+          method: 'PAGO_MOVIL',
+          status: 'PENDING',
+          transactionIds: [transactionId],
+          reference: `REF-${referralCode}-${transactionId.slice(0, 8)}`,
+        },
+      })
+    } catch {} // No bloquear la conversion si el payout falla
+
     await db.$disconnect()
   } catch {
     await db.$disconnect().catch(() => {})
   }
 }
 
-export async function getMyReferralEarnings(): Promise<{ totalEarned: number; links: unknown[] }> {
+export async function getMyReferralEarnings(): Promise<{ totalEarned: number; links: unknown[]; pendingPayouts: unknown[] }> {
   const session = await getSession()
-  if (!session) return { totalEarned: 0, links: [] }
+  if (!session) return { totalEarned: 0, links: [], pendingPayouts: [] }
 
   const db = await getDb()
-  if (!db) return { totalEarned: 0, links: [] }
+  if (!db) return { totalEarned: 0, links: [], pendingPayouts: [] }
 
   try {
     const links = await db.mpReferralLink.findMany({
@@ -114,11 +128,19 @@ export async function getMyReferralEarnings(): Promise<{ totalEarned: number; li
       take: 20,
     })
     const totalEarned = links.reduce((sum: number, l: { totalEarned: unknown }) => sum + Number(l.totalEarned || 0), 0)
+
+    const pendingPayouts = await db.mpPayout.findMany({
+      where: { sellerId: session.userId, reference: { startsWith: 'REF-' } },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, amount: true, currency: true, status: true, reference: true, createdAt: true },
+      take: 20,
+    })
+
     await db.$disconnect()
-    return { totalEarned, links }
+    return { totalEarned, links, pendingPayouts }
   } catch {
     await db.$disconnect().catch(() => {})
-    return { totalEarned: 0, links: [] }
+    return { totalEarned: 0, links: [], pendingPayouts: [] }
   }
 }
 

@@ -2557,6 +2557,7 @@ interface DashboardClientProps {
   payoutMethods: object[]
   referralEarnings: number
   referralLinks: object[]
+  referralPendingPayouts: object[]
   referredTransactions: object[]
   initialTab?: Tab
 }

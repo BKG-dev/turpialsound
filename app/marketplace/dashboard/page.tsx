@@ -60,6 +60,7 @@ export default async function DashboardPage({
       payoutMethods={(payoutMethodsRes.success ? (payoutMethodsRes.data as object[]) : []) ?? []}
       referralEarnings={referralsRes.totalEarned ?? 0}
       referralLinks={(referralsRes.links as object[]) ?? []}
+      referralPendingPayouts={(referralsRes.pendingPayouts as object[]) ?? []}
       referredTransactions={(referredTxsRes.success ? (referredTxsRes.data as object[]) : []) ?? []}
       initialTab={initialTab}
     />
