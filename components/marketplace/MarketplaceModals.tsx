@@ -286,7 +286,7 @@ function ListingQASection({
   sellerId?: string
   currentUserId?: string
 }) {
-  const [expanded, setExpanded] = useState(true)
+  const [expanded, setExpanded] = useState(false)
   const [questions, setQuestions] = useState<QuestionItem[]>([])
   const [loading, setLoading] = useState(false)
   const [newQ, setNewQ] = useState('')

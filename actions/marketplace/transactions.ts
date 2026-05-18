@@ -68,14 +68,13 @@ async function getConsumedInventoryUnits(
   db: any,
   listingId: string,
 ) {
-  const result = await db.mpTransaction.aggregate({
+  const result = await db.mpTransaction.count({
     where: {
       listingId,
       status: { in: [...INVENTORY_CONSUMING_TRANSACTION_STATUSES] },
     },
-    _sum: { quantity: true },
   })
-  return Number(result._sum.quantity ?? 0)
+  return result
 }
 
 function hasSellerDelivered(
