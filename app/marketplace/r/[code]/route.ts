@@ -29,8 +29,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ code
     })
 
     const result = await trackReferralClick(code)
-    if (result.slug) {
-      return redirect(`/marketplace/${result.slug}?ref=${code}`)
+    const target = result.slug || result.listingId
+    if (target) {
+      return redirect(`/marketplace/${target}?ref=${code}`)
     }
     return redirect('/marketplace')
   } catch {
