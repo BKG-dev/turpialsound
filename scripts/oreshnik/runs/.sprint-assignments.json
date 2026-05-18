@@ -1,0 +1,16 @@
+[
+  {
+    "sprintId": "S-MP-02",
+    "operator": "Manuel",
+    "timestamp": "2026-05-18T01:37:22.529Z",
+    "branch": "Manuel/s-mp-02-busqueda-filtros-2026-05-17",
+    "reassigned": false
+  },
+  {
+    "sprintId": "S-MP-06",
+    "operator": "Manuel",
+    "timestamp": "2026-05-18T01:37:45.369Z",
+    "branch": "Manuel/s-mp-02-busqueda-filtros-2026-05-17",
+    "reassigned": false
+  }
+]
