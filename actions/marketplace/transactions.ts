@@ -242,17 +242,7 @@ export async function initiatePurchase(
     if (listing.status !== 'ACTIVE') return { success: false, message: 'Este listing no esta disponible' }
     if (listing.sellerId === session.userId) return { success: false, message: 'No puedes comprar tu propio listing' }
 
-    const consumedUnits = await getConsumedInventoryUnits(db, listingId)
-
-    const availableInventory = getAvailableInventory(listing, consumedUnits)
-    if (availableInventory != null && availableInventory < requestedQuantity) {
-      return {
-        success: false,
-        message: availableInventory <= 0
-          ? 'Este articulo esta agotado'
-          : `Solo quedan ${availableInventory} disponibles`,
-      }
-    }
+    // Double-check inside transaction — uses atomic decrement (not unreliable count())
 
     const sellerPayoutMethod = mapSellerPayoutMethod(listing.seller.payoutMethods[0]?.methodType)
     const buyerMethod = mapBuyerPaymentMethod(mappedPaymentMethod)
@@ -336,10 +326,15 @@ export async function initiatePurchase(
       })
       if (!latestListing) throw new Error('Listing no encontrado')
 
-      const latestConsumedUnits = await getConsumedInventoryUnits(prisma, listingId)
-      const latestAvailableInventory = getAvailableInventory(latestListing, latestConsumedUnits)
-      if (latestAvailableInventory != null && latestAvailableInventory < requestedQuantity) {
-        throw new Error(latestAvailableInventory <= 0 ? 'Este articulo esta agotado' : `Solo quedan ${latestAvailableInventory} disponibles`)
+      // Decremento directo del inventory (mas fiable que count() con pg-adapter)
+      if (latestListing.hasInventory && latestListing.inventory != null) {
+        if (latestListing.inventory < requestedQuantity) {
+          throw new Error(latestListing.inventory <= 0 ? 'Este articulo esta agotado' : `Solo quedan ${latestListing.inventory} disponibles`)
+        }
+        await prisma.mpListing.update({
+          where: { id: listingId },
+          data: { inventory: { decrement: requestedQuantity } },
+        })
       }
 
       const record = await prisma.mpTransaction.create({
@@ -1023,8 +1018,9 @@ export async function checkoutCart(
 
       const consumedUnits = await getConsumedInventoryUnits(db, item.listingId)
       const availableInventory = getAvailableInventory(listing, consumedUnits)
-      if (availableInventory != null && availableInventory < item.quantity) {
-        errorMessages.push(availableInventory <= 0 ? `${item.listingId}: agotado` : `${item.listingId}: solo quedan ${availableInventory} disponibles`)
+      // Pre-check: si listing tiene inventory, al menos debe haber 1 disponible (el in-transaction es definitive)
+      if (listing.hasInventory && listing.inventory != null && listing.inventory < 1) {
+        errorMessages.push(`${item.listingId}: agotado`)
       }
     }
 
@@ -1053,10 +1049,15 @@ export async function checkoutCart(
           select: { hasInventory: true, inventory: true },
         })
         if (!latestListing) throw new Error(`Listing no encontrado: ${row.item.listingId}`)
-        const latestConsumedUnits = await getConsumedInventoryUnits(prisma, row.item.listingId)
-        const latestAvailableInventory = getAvailableInventory(latestListing, latestConsumedUnits)
-        if (latestAvailableInventory != null && latestAvailableInventory < row.item.quantity) {
-          throw new Error(latestAvailableInventory <= 0 ? `${row.item.listingId}: agotado` : `${row.item.listingId}: solo quedan ${latestAvailableInventory} disponibles`)
+        // Atomic decrement — mas fiable que count() con pg-adapter
+        if (latestListing.hasInventory && latestListing.inventory != null) {
+          if (latestListing.inventory < row.item.quantity) {
+            throw new Error(latestListing.inventory <= 0 ? `${row.item.listingId}: agotado` : `${row.item.listingId}: solo quedan ${latestListing.inventory} disponibles`)
+          }
+          await prisma.mpListing.update({
+            where: { id: row.item.listingId },
+            data: { inventory: { decrement: row.item.quantity } },
+          })
         }
       }
 
