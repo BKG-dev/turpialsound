@@ -1,0 +1,26 @@
+{
+  "sprint": "S-MP-07",
+  "operator": "Manuel",
+  "status": "CERRADO",
+  "date": "2026-05-18",
+  "fulldate": "18/05/26 09:39",
+  "iso": "2026-05-18T13:39:32.728Z",
+  "childBranch": "Manuel/s-mp-04-publicacion-productos-2026-05-18",
+  "motherBranch": "MADRE/v7-s-mp-07-dark-mode-cards-admin-igor-2026-05-18",
+  "description": "dark-mode-cards-admin-igor",
+  "previousMother": "MADRE/v6-s-mp-06-drop-social-referidos-dashboard-2026-05-18",
+  "changedZones": [
+    "Server Actions Marketplace",
+    "Admin Panel",
+    "Componentes Marketplace",
+    "Libreria Booking"
+  ],
+  "docsUpdated": [
+    "docs/marketplace/01_ROADMAP_AND_STATUS.md",
+    "docs/07_handoffs/qa-dispatcher.json",
+    "docs/obsidian-vault/00_CENTRAL_TURPIAL.md",
+    "docs/obsidian-vault/SPRINTS/PLAN_MAESTRO_SPRINTS.md"
+  ],
+  "coverageGaps": 4,
+  "forceClose": true
+}
