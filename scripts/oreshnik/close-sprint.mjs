@@ -135,6 +135,17 @@ function sh(cmd, { fatal = false } = {}) {
     return ''
   }
 }
+function run(cmd) {
+  try {
+    return { ok: true, output: execSync(cmd, { encoding: 'utf8', stdio: 'pipe' }).trim() }
+  } catch (e) {
+    return {
+      ok: false,
+      output: `${e.stdout || ''}${e.stderr || e.message}`.trim(),
+      status: e.status
+    }
+  }
+}
 function ok(msg)  { console.log(`  [  ${GREEN}OK${RESET}  ] ${msg}`) }
 function fail(msg){ console.log(`  [ ${RED}FAIL${RESET} ] ${msg}`) }
 

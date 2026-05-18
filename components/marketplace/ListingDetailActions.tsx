@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { ShoppingCart, MessageSquare, Heart } from 'lucide-react'
+import { ShoppingCart, MessageSquare, Heart, Minus, Plus } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CheckoutModal } from '@/components/marketplace/CheckoutModal'
 import { TransactionChat } from '@/components/marketplace/TransactionChat'
@@ -31,11 +31,16 @@ export function ListingDetailActions({
 
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [localTxStatus, setLocalTxStatus] = useState<MpTransactionStatus | undefined>(listing.activeTransactionStatus)
+  const [selectedQuantity, setSelectedQuantity] = useState(1)
   const [chatOpen, setChatOpen] = useState(false)
   const [chatThreadId, setChatThreadId] = useState<string | null>(null)
   
   const [isFavorite, setIsFavorite] = useState(false)
   const [favoriteLoading, setFavoriteLoading] = useState(false)
+  const maxAvailable = listing.type === 'product' && listing.hasInventory && listing.inventory != null
+    ? listing.inventory
+    : 99
+  const hasStockCount = listing.type === 'product' && listing.hasInventory && listing.inventory != null
   
   // Check if listing is in user's favorites
   useEffect(() => {
@@ -62,6 +67,10 @@ export function ListingDetailActions({
   useEffect(() => {
     setLocalTxStatus(listing.activeTransactionStatus)
   }, [listing.activeTransactionStatus])
+
+  useEffect(() => {
+    setSelectedQuantity((current) => Math.min(Math.max(1, current), Math.max(1, maxAvailable)))
+  }, [maxAvailable])
 
   function requireAuth(action: 'checkout' | 'chat' | 'favorite') {
     setPendingAction(action)
@@ -124,6 +133,7 @@ export function ListingDetailActions({
   const isSeller = userId === sellerId
   const isSold = listing.status === 'sold'
   const txStatus = localTxStatus
+  const hasRemainingInventory = selectedQuantity < maxAvailable
 
   const getStatusLabel = () => {
     switch (txStatus) {
@@ -155,8 +165,11 @@ export function ListingDetailActions({
           <CheckoutModal
             listing={listing}
             sellerId={sellerId}
+            quantity={selectedQuantity}
             onClose={() => setCheckoutOpen(false)}
-            onSuccess={(status) => setLocalTxStatus(status)}
+            onSuccess={(status) => {
+              if (!hasRemainingInventory) setLocalTxStatus(status)
+            }}
             onOpenChat={() => {
               setCheckoutOpen(false)
               openChat()
@@ -202,6 +215,38 @@ export function ListingDetailActions({
       {/* CTA Buttons */}
       {!isSeller && (
         <div className="flex flex-col gap-3 pt-2">
+          {listing.type === 'product' && (
+            <div
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3"
+              style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
+            >
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-[#9a9a9a]">Cantidad</p>
+                {hasStockCount && (
+                  <p className="mt-0.5 text-[11px] text-[#b8b8b8]">{maxAvailable} disponibles</p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setSelectedQuantity((current) => Math.max(1, current - 1))}
+                  disabled={selectedQuantity <= 1 || isUnavailable}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-white/5 disabled:opacity-30"
+                  style={{ color: 'var(--mp-text-muted)', border: '1px solid var(--mp-border)' }}
+                >
+                  <Minus size={12} />
+                </button>
+                <span className="w-9 text-center font-mono text-sm tabular-nums text-[#f2f2f2]">{selectedQuantity}</span>
+                <button
+                  onClick={() => setSelectedQuantity((current) => Math.min(maxAvailable, current + 1))}
+                  disabled={selectedQuantity >= maxAvailable || isUnavailable}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-white/5 disabled:opacity-30"
+                  style={{ color: 'var(--mp-text-muted)', border: '1px solid var(--mp-border)' }}
+                >
+                  <Plus size={12} />
+                </button>
+              </div>
+            </div>
+          )}
           <div className="flex gap-3">
             <button
               onClick={isUnavailable ? undefined : handleComprar}

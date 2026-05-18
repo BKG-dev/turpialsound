@@ -1,0 +1,120 @@
+{
+  "runId": "2026-05-17T21-24-44-148Z",
+  "appUrl": "https://turpialsound-qc6k39eh1-bkgs-projects-829c67c1.vercel.app",
+  "startedAt": "2026-05-17T21:24:44.149Z",
+  "finishedAt": "2026-05-17T21:24:48.988Z",
+  "modules": [
+    {
+      "module": "S-MP-01",
+      "status": "RUNNING",
+      "durationMs": null,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [],
+      "startedAt": "2026-05-17T21:24:44.174Z",
+      "finishedAt": null
+    },
+    {
+      "module": "S-MP-01",
+      "status": "PASS",
+      "durationMs": null,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [
+        {
+          "check": "schema.listingInventory",
+          "status": "PASS",
+          "detail": "mp_listings.inventory exists"
+        },
+        {
+          "check": "schema.listingHasInventory",
+          "status": "PASS",
+          "detail": "mp_listings.hasInventory exists"
+        },
+        {
+          "check": "schema.noListingQuantity",
+          "status": "PASS",
+          "detail": "mp_listings.quantity absent as expected"
+        },
+        {
+          "check": "schema.txQuantity",
+          "status": "PASS",
+          "detail": "mp_transactions.quantity exists"
+        },
+        {
+          "check": "schema.txUnitPrice",
+          "status": "PASS",
+          "detail": "mp_transactions.unitPrice exists"
+        },
+        {
+          "check": "schema.txOrderId",
+          "status": "PASS",
+          "detail": "mp_transactions.orderId exists"
+        },
+        {
+          "check": "qaUsers",
+          "status": "PASS",
+          "detail": "buyer=qaCartBuyer, sellerA=qaCartSellerA, sellerB=qaCartSellerB"
+        },
+        {
+          "check": "qaListings",
+          "status": "PASS",
+          "detail": "qa-smp01-cart-a-20260517212444 inventory=5; qa-smp01-cart-b-20260517212444 inventory=4"
+        },
+        {
+          "check": "inventory.availableMinusPriorSales",
+          "status": "PASS",
+          "detail": "inventory=5 - consumedQuantity=2 => available=3"
+        },
+        {
+          "check": "inventory.overbuyBlocked",
+          "status": "PASS",
+          "detail": "request=4 blocked because available=3"
+        },
+        {
+          "check": "cart.consolidatedOrder",
+          "status": "PASS",
+          "detail": "order=cmpaa9uz*** lines=2 sellers=2 total=160"
+        },
+        {
+          "check": "proof.required",
+          "status": "PASS",
+          "detail": "paymentProofUrl is mandatory before PAYMENT_RECEIVED propagation"
+        },
+        {
+          "check": "proof.propagatedToChildren",
+          "status": "PASS",
+          "detail": "proof URL and payment reference propagated to all child transactions"
+        },
+        {
+          "check": "fulfillment.independentChildren",
+          "status": "PASS",
+          "detail": "seller A child RELEASED while seller B child remains PAYMENT_RECEIVED"
+        },
+        {
+          "check": "payout.independentPerChild",
+          "status": "PASS",
+          "detail": "payout created only for released seller A transaction"
+        },
+        {
+          "check": "dashboard.visibilityModel",
+          "status": "PASS",
+          "detail": "buyer sees 2 child TX; each seller sees exactly their own child TX"
+        },
+        {
+          "check": "inventory.afterCartQuantities",
+          "status": "PASS",
+          "detail": "listingA available=1, listingB available=2"
+        }
+      ],
+      "startedAt": "2026-05-17T21:24:44.174Z",
+      "finishedAt": "2026-05-17T21:24:48.983Z"
+    }
+  ],
+  "summary": {
+    "total": 2,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0
+  }
+}

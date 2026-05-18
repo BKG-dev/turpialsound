@@ -451,6 +451,7 @@ model MpUser {
   // Relations
   listings            MpListing[]
   payoutMethods       MpPayoutMethod[]
+  buyerOrders         MpOrder[]          @relation("MpBuyerOrders")
   buyerTransactions   MpTransaction[]     @relation("MpBuyerTransactions")
   sellerTransactions  MpTransaction[]     @relation("MpSellerTransactions")
   sentMessages        MpMessage[]         @relation("MpMessageSender")
@@ -641,6 +642,36 @@ model MpMessage {
 // TRANSACTIONS (PAYMENT & ESCROW)
 // ─────────────────────────────────────────────────────────────────
 
+model MpOrder {
+  id String @id @default(cuid())
+
+  buyerId String
+  buyer   MpUser @relation("MpBuyerOrders", fields: [buyerId], references: [id])
+
+  paymentMethod MpPaymentMethodType
+  status        MpTransactionStatus @default(PENDING_PAYMENT)
+  amount        Decimal             @db.Decimal(10, 2)
+  currency      String              @default("USD")
+
+  paymentReference  String?
+  paymentSenderBank String?
+  paymentPaidAt     DateTime?
+  paymentProofUrl   String?
+
+  transactions MpTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([buyerId])
+  @@index([status])
+  @@index([paymentMethod])
+  @@index([paymentReference])
+  @@index([paymentSenderBank])
+  @@index([paymentPaidAt])
+  @@map("mp_orders")
+}
+
 model MpTransaction {
   id String @id @default(cuid())
 
@@ -658,11 +689,16 @@ model MpTransaction {
   listingId String
   listing   MpListing @relation(fields: [listingId], references: [id])
 
+  orderId String?
+  order   MpOrder? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
   // Payment Details
   paymentMethod MpPaymentMethodType
   status        MpTransactionStatus @default(INITIATED)
   amount        Decimal             @db.Decimal(10, 2)
   currency      String              @default("USD")
+  quantity      Int                 @default(1)
+  unitPrice     Decimal?            @db.Decimal(10, 2)
 
   // Platform Fee (calculated at creation)
   platformFeePercent Decimal @db.Decimal(5, 2) // e.g., 10.00 for 10%
@@ -705,6 +741,7 @@ model MpTransaction {
   @@index([buyerId])
   @@index([sellerId])
   @@index([listingId])
+  @@index([orderId])
   @@index([status])
   @@index([paymentMethod])
   @@index([externalTxId])

@@ -14,12 +14,23 @@ import { attachMarketplaceBlobMetadataToEntity } from '@/lib/marketplace/blob-me
 
 const DISCOVERY_LISTING_STATUSES = ['ACTIVE'] as const
 const LISTING_DETAIL_VISIBLE_STATUSES = ['ACTIVE', 'SOLD_OUT'] as const
-const ACTIVE_TRANSACTION_EXCLUDED_STATUSES = [
-  'RELEASED',
+const INVENTORY_TRANSACTION_EXCLUDED_STATUSES = [
   'REFUNDED',
   'PAYMENT_FAILED',
   'CANCELLED',
 ] as const
+
+function buildDiscoveryWhere(filters?: { city?: string; state?: string }) {
+  const where: Record<string, unknown> = {
+    OR: [
+      { status: { in: [...DISCOVERY_LISTING_STATUSES] } },
+      { status: 'SOLD_OUT', hasInventory: true, inventory: { gt: 0 } },
+    ],
+  }
+  if (filters?.state) where.state = filters.state
+  if (filters?.city) where.city = filters.city
+  return where
+}
 const MARKETPLACE_DISCOVERY_DIAGNOSTICS_PREFIX = '[marketplace.discovery]'
 
 type DiscoveryDiagnosticsCode =
@@ -37,7 +48,7 @@ type ListingStatusSnapshot = {
 
 type DbListingWithTransactions = {
   id: string
-  transactions?: Array<{ status: string }>
+  transactions?: Array<{ status: string; quantity: number }>
 }
 
 async function withActiveTransactions<T extends DbListingWithTransactions>(
@@ -51,15 +62,15 @@ async function withActiveTransactions<T extends DbListingWithTransactions>(
     const transactions = await db.mpTransaction.findMany({
       where: {
         listingId: { in: listings.map(listing => listing.id) },
-        status: { notIn: [...ACTIVE_TRANSACTION_EXCLUDED_STATUSES] },
+        status: { notIn: [...INVENTORY_TRANSACTION_EXCLUDED_STATUSES] },
       },
-      select: { listingId: true, status: true },
+      select: { listingId: true, status: true, quantity: true },
     })
 
-    const byListingId = new Map<string, Array<{ status: string }>>()
+    const byListingId = new Map<string, Array<{ status: string; quantity: number }>>()
     for (const tx of transactions) {
       const current = byListingId.get(tx.listingId) ?? []
-      current.push({ status: tx.status })
+      current.push({ status: tx.status, quantity: tx.quantity ?? 1 })
       byListingId.set(tx.listingId, current)
     }
 
@@ -136,9 +147,7 @@ export async function getActiveListings(filters?: {
   }
 
   try {
-    const where: Record<string, unknown> = { status: { in: [...DISCOVERY_LISTING_STATUSES] } }
-    if (filters?.state) where.state = filters.state
-    if (filters?.city) where.city = filters.city
+    const where = buildDiscoveryWhere(filters)
 
     const [listings, snapshot] = await Promise.all([
       db.mpListing.findMany({
@@ -161,7 +170,8 @@ export async function getActiveListings(filters?: {
     const adaptedListings: Listing[] = []
     for (const listing of listingsWithTransactions) {
       try {
-        adaptedListings.push(adaptDbListing(listing))
+        const adapted = adaptDbListing(listing)
+        if (adapted.status === 'active') adaptedListings.push(adapted)
       } catch (error) {
         logDiscoveryDiagnostics('QUERY_ERROR', {
           stage: 'ADAPT_LISTING',
@@ -228,14 +238,14 @@ export async function getListingsByCategory(
   if (!db) return []
   try {
     const listings = await db.mpListing.findMany({
-      where: { category, status: { in: [...DISCOVERY_LISTING_STATUSES] } },
+      where: { category, ...buildDiscoveryWhere() },
       orderBy: { createdAt: 'desc' },
       take: limit,
       include: { seller: true },
     })
     const listingsWithTransactions = await withActiveTransactions(db, listings)
     await db.$disconnect()
-    return listingsWithTransactions.map(adaptDbListing)
+    return listingsWithTransactions.map(adaptDbListing).filter(listing => listing.status === 'active')
   } catch {
     await db.$disconnect().catch(() => {})
     return []

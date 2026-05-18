@@ -83,6 +83,8 @@ export interface ProductListing {
   currency: 'USD' | 'VES'
   condition: ProductCondition
   images: string[]          // URLs o placeholders
+  inventory?: number        // disponible (null = ilimitado)
+  hasInventory?: boolean    // si tiene control de inventario
   seller: MarketplaceUser
   status: ListingStatus
   activeTransactionStatus?: MpTransactionStatus
@@ -220,6 +222,7 @@ export interface CartItem {
   sellerName: string
   sellerId: string
   quantity: number
+  maxAvailable: number
 }
 
 export const MARKETPLACE_CONFIG = {

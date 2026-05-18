@@ -19,6 +19,16 @@ const SERVICE_CATEGORY_IDS = new Set([
   'podcast',
 ])
 
+const ACTIVE_UNAVAILABLE_STATUSES = new Set([
+  'INITIATED',
+  'PENDING_PAYMENT',
+  'PAYMENT_RECEIVED',
+  'VALIDATING',
+  'IN_ESCROW',
+  'DELIVERY_CONFIRMED',
+  'DISPUTED',
+])
+
 function buildMarketplaceUser(
   id: string,
   displayName: string,
@@ -69,18 +79,19 @@ export function adaptDbListing(l: any): Listing {
     ? [l.coverImageUrl, ...l.mediaUrls]
     : l.mediaUrls
 
-  // Derive active transaction status
-  // We expect l.transactions to be included in the query if we want this to work.
-  const activeTx = (l.transactions as Array<{ status: string }> | undefined)?.find((tx) =>
-    ![
-      'RELEASED',
-      'REFUNDED',
-      'PAYMENT_FAILED',
-      'CANCELLED',
-    ].includes(tx.status),
-  )
-
-  const activeTransactionStatus = activeTx?.status
+  const inventoryTransactions = l.transactions as Array<{ status: string; quantity?: number }> | undefined
+  const activeTx = inventoryTransactions?.find((tx) => ACTIVE_UNAVAILABLE_STATUSES.has(tx.status))
+  const hasInventory = Boolean(l.hasInventory && typeof l.inventory === 'number')
+  const consumedInventory = inventoryTransactions?.reduce((sum, tx) => sum + Math.max(1, Number(tx.quantity ?? 1)), 0) ?? 0
+  const remainingInventory = hasInventory
+    ? Math.max(0, Number(l.inventory) - consumedInventory)
+    : null
+  const isSoldOut = hasInventory
+    ? remainingInventory === 0
+    : l.status === 'SOLD_OUT'
+  const activeTransactionStatus = hasInventory && remainingInventory !== null && remainingInventory > 0
+    ? undefined
+    : activeTx?.status
 
   if (isService) {
     return {
@@ -98,7 +109,7 @@ export function adaptDbListing(l: any): Listing {
       currency: (l.currency as 'USD' | 'VES') ?? 'USD',
       badge: 'NUEVO',
       talent: user,
-      status: l.status === 'SOLD_OUT' ? 'sold' : 'active',
+      status: isSoldOut ? 'sold' : 'active',
       activeTransactionStatus,
       createdAt: createdAtStr,
       tags: l.tags ?? [],
@@ -118,9 +129,11 @@ export function adaptDbListing(l: any): Listing {
     currency: (l.currency as 'USD' | 'VES') ?? 'USD',
     condition: 'used-good',
     images,
+    hasInventory,
+    inventory: remainingInventory ?? undefined,
     badge: 'NUEVO',
     seller: user,
-    status: l.status === 'SOLD_OUT' ? 'sold' : 'active',
+    status: isSoldOut ? 'sold' : 'active',
     activeTransactionStatus,
     createdAt: createdAtStr,
     location: 'Venezuela',

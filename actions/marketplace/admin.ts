@@ -5,6 +5,40 @@ import { getSession } from '@/lib/marketplace/auth'
 import type { ActionResult } from '@/lib/validations/marketplace'
 import { sendSystemMessage } from '@/actions/marketplace/chat'
 
+const INVENTORY_CONSUMING_TRANSACTION_STATUSES = [
+  'INITIATED',
+  'PENDING_PAYMENT',
+  'PAYMENT_RECEIVED',
+  'VALIDATING',
+  'IN_ESCROW',
+  'DELIVERY_CONFIRMED',
+  'DISPUTED',
+  'RELEASED',
+] as const
+
+function getAvailableInventory(
+  listing: { hasInventory: boolean; inventory: number | null },
+  consumedUnits: number,
+) {
+  if (!listing.hasInventory || listing.inventory == null) return null
+  return listing.inventory - consumedUnits
+}
+
+async function getConsumedInventoryUnits(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
+  listingId: string,
+) {
+  const result = await db.mpTransaction.aggregate({
+    where: {
+      listingId,
+      status: { in: [...INVENTORY_CONSUMING_TRANSACTION_STATUSES] },
+    },
+    _sum: { quantity: true },
+  })
+  return Number(result._sum.quantity ?? 0)
+}
+
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
 export interface AdminStats {
@@ -439,10 +473,20 @@ export async function adminValidatePayment(
         })
 
         if (approved) {
-          await txDb.mpListing.update({
+          const listing = await txDb.mpListing.findUnique({
             where: { id: tx.listingId },
-            data: { status: 'SOLD_OUT' },
+            select: { hasInventory: true, inventory: true },
           })
+          if (listing?.hasInventory && listing.inventory != null) {
+            const consumedUnits = await getConsumedInventoryUnits(txDb, tx.listingId)
+            const availableInventory = getAvailableInventory(listing, consumedUnits)
+            if (availableInventory != null && availableInventory <= 0) {
+              await txDb.mpListing.update({
+                where: { id: tx.listingId },
+                data: { status: 'SOLD_OUT' },
+              })
+            }
+          }
         }
 
         await txDb.mpTransactionStatusHistory.create({

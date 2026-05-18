@@ -10,6 +10,7 @@ const ALL_MODULES = [
   'qa-04-purchase', 'qa-05-payment', 'qa-06-proof',
   'qa-07-admin', 'qa-08-delivery', 'qa-09-receipt',
   'qa-10-payout', 'qa-11-dashboards',
+  'qa-smp01-cart-consolidated',
 ]
 
 export async function run(report) {

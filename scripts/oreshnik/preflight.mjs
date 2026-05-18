@@ -235,23 +235,23 @@ if (motherRef) {
         }
       }
 
-      // Verificar last_updated
-      const centralPath = join(ROOT, 'docs', 'obsidian-vault', '00_CENTRAL_TURPIAL.md')
-      if (existsSync(centralPath)) {
-        const central = readFileSync(centralPath, 'utf8')
-        const m = central.match(/last_updated:\s*"([^"]+)"/)
-        if (m) {
-          info(`Docs al dia. last_updated: ${m[1]}`)
+        // Verificar last_updated
+        const centralPath = join(ROOT, 'docs', 'obsidian-vault', '00_CENTRAL_TURPIAL.md')
+        if (existsSync(centralPath)) {
+          const central = readFileSync(centralPath, 'utf8')
+          const m = central.match(/last_updated:\s*"([^"]+)"/)
+          if (m) {
+            info(`Docs al dia. last_updated: ${m[1]}`)
 
-          // Staleness check
-          const parts = m[1].split(/[\s\/:]/)
-          if (parts.length >= 5) {
-            const [d, mo, y, h, min] = parts.map(Number)
-            const docDate = new Date(2000 + y, mo - 1, d, h, min)
-            const hoursStale = (now - docDate) / 3600000
-            if (hoursStale > 8) {
-              warn(`00_CENTRAL sin actualizar hace ${hoursStale.toFixed(0)}h. Verifica que el otro operador no tenga docs mas nuevos.`)
-              warnings++
+            // Staleness check
+            const parts = m[1].split(/[\s\/:]/)
+            if (parts.length >= 5) {
+              const [d, mo, y, h, min] = parts.map(Number)
+              const docDate = new Date(2000 + y, mo - 1, d, h, min)
+              const hoursStale = (now - docDate) / 3600000
+              if (hoursStale > 8) {
+                warn(`00_CENTRAL sin actualizar hace ${hoursStale.toFixed(0)}h. Verifica que el otro operador no tenga docs mas nuevos.`)
+                warnings++
 
               // Buscar ramas del otro operador con docs mas nuevos
               const otherOp = operator === 'Manuel' ? 'Jean' : 'Manuel'
@@ -273,8 +273,8 @@ if (motherRef) {
                           warn('Sugerido: cerrar esa rama o fusionar docs a madre antes de continuar.')
                         }
                       }
-                    }
-                  } catch {}
+                    } catch {}
+                  }
                 }
               }
             }

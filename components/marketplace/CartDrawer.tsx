@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Minus, Plus, Trash2, ShoppingBag, Loader2 } from 'lucide-react'
+import { X, Minus, Plus, Trash2, ShoppingBag } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useCart } from '@/lib/marketplace/cart-store'
 import { useMarketplaceSession } from '@/components/marketplace/MarketplaceAuthBar'
 import { MarketplaceAuthModal } from '@/components/marketplace/MarketplaceAuthModal'
+import { CartCheckoutModal } from '@/components/marketplace/CartCheckoutModal'
 import { trackMarketplaceClientEvent } from '@/lib/marketplace/analytics-client'
 import type { MpSessionPayload } from '@/lib/marketplace/auth'
 
@@ -18,7 +20,7 @@ export function CartDrawer() {
   const { session } = useMarketplaceSession()
   const [open, setOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
-  const [checkingOut, setCheckingOut] = useState(false)
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
 
   useEffect(() => {
     const handler = () => setOpen(true)
@@ -50,17 +52,15 @@ export function CartDrawer() {
       setAuthOpen(true)
       return
     }
-    setCheckingOut(true)
-    trackMarketplaceClientEvent({ eventType: 'cart_checkout', metadataJson: { count: items.length, total: getCartTotal() } })
-    setTimeout(() => {
-      setCheckingOut(false)
-      router.push('/marketplace/dashboard?tab=checkout&source=cart')
-    }, 600)
-  }, [session, items, router, getCartTotal])
+    const unitCount = items.reduce((sum, item) => sum + item.quantity, 0)
+    trackMarketplaceClientEvent({ eventType: 'cart_checkout', metadataJson: { count: unitCount, total: getCartTotal() } })
+    setCheckoutOpen(true)
+  }, [session, items, getCartTotal])
 
   const handleAuthSuccess = useCallback((_s: MpSessionPayload) => {
     setAuthOpen(false)
-  }, [])
+    if (items.length > 0) setCheckoutOpen(true)
+  }, [items.length])
 
   const total = getCartTotal()
   const isEmpty = items.length === 0
@@ -73,6 +73,23 @@ export function CartDrawer() {
         onClose={() => setAuthOpen(false)}
         onSuccess={handleAuthSuccess}
       />
+
+      <AnimatePresence>
+        {checkoutOpen && (
+          <CartCheckoutModal
+            items={items}
+            onClose={() => setCheckoutOpen(false)}
+            onSuccess={() => {
+              clearCart()
+            }}
+            onViewPurchases={() => {
+              setCheckoutOpen(false)
+              setOpen(false)
+              router.push('/marketplace/dashboard?tab=purchases')
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {open && (
@@ -152,8 +169,10 @@ export function CartDrawer() {
                         key={item.listingId}
                         className="flex gap-3 px-5 py-4"
                       >
-                        <div
-                          className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg"
+                        <Link
+                          href={`/marketplace/${item.slug}`}
+                          onClick={() => setOpen(false)}
+                          className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg block"
                           style={{ background: 'var(--mp-media-bg)', border: '1px solid var(--mp-border)' }}
                         >
                           {item.image ? (
@@ -167,7 +186,7 @@ export function CartDrawer() {
                               <ShoppingBag size={16} className="text-[#6a6a6a]" />
                             </div>
                           )}
-                        </div>
+                        </Link>
 
                         <div className="flex min-w-0 flex-1 flex-col justify-between">
                           <div>
@@ -198,7 +217,8 @@ export function CartDrawer() {
                               </span>
                               <button
                                 onClick={() => updateQuantity(item.listingId, item.quantity + 1)}
-                                className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-white/5"
+                                disabled={item.quantity >= (item.maxAvailable ?? 99)}
+                                className="flex h-6 w-6 items-center justify-center rounded transition-colors hover:bg-white/5 disabled:opacity-30"
                                 style={{ color: 'var(--mp-text-muted)', border: '1px solid var(--mp-border)' }}
                               >
                                 <Plus size={10} />
@@ -208,6 +228,11 @@ export function CartDrawer() {
                               ${(item.price * item.quantity).toLocaleString()}
                             </span>
                           </div>
+                          {item.maxAvailable < 99 && (
+                            <p className="mt-0.5 text-[9px] text-[#6a6a6a]">
+                              {item.maxAvailable} disponibles
+                            </p>
+                          )}
                         </div>
 
                         <button
@@ -238,7 +263,7 @@ export function CartDrawer() {
 
                   <button
                     onClick={handleCheckout}
-                    disabled={checkingOut}
+                    disabled={checkoutOpen}
                     className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all disabled:opacity-50"
                     style={{
                       background: 'linear-gradient(135deg, rgba(255,193,7,0.9) 0%, rgba(245,158,11,0.85) 100%)',
@@ -247,7 +272,7 @@ export function CartDrawer() {
                       boxShadow: '0 0 28px rgba(255,193,7,0.15)',
                     }}
                     onMouseEnter={(e) => {
-                      if (!checkingOut) {
+                      if (!checkoutOpen) {
                         ;(e.currentTarget as HTMLElement).style.boxShadow = '0 0 40px rgba(255,193,7,0.3)'
                       }
                     }}
@@ -255,15 +280,7 @@ export function CartDrawer() {
                       ;(e.currentTarget as HTMLElement).style.boxShadow = '0 0 28px rgba(255,193,7,0.15)'
                     }}
                   >
-                    {checkingOut ? (
-                      <>
-                        <Loader2 size={14} className="animate-spin" /> Procesando...
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingBag size={14} /> Comprar todo
-                      </>
-                    )}
+                    <ShoppingBag size={14} /> Comprar todo
                   </button>
 
                   <button
