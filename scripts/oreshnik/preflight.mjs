@@ -382,12 +382,23 @@ if (sprintId) {
       } else { warn(`Rama ${branchName} existe pero working tree sucio.`) }
     } else {
       if (allDirty === 0 || cacheOnlyChanges) {
-        // Verificar que la madre local esta actualizada
-        sh(`git checkout ${MOTHER} 2>nul`)
-        sh(`git pull origin ${MOTHER} 2>nul`)
-        const created = sh(`git checkout -b "${expectedBranch}" 2>&1`)
+        // Buscar ULTIMA rama hija del operador para heredar codigo (no solo docs de madre)
+        const lastChildBranch = sh(`git branch --list "${operator}/*" --sort=-committerdate | Select-Object -First 1`).trim().replace(/^\*\s*/, '')
+        const baseBranch = lastChildBranch || MOTHER
+        info(`Creando rama desde: ${baseBranch} (hereda codigo + docs)`)
+        
+        // Actualizar la base si es remota
+        if (baseBranch !== MOTHER) {
+          sh(`git fetch origin ${baseBranch} 2>nul`)
+        }
+        
+        const created = sh(`git checkout -b "${expectedBranch}" ${baseBranch} 2>&1`)
         if (created.includes('Switched')) {
-          ok(`Rama hija creada desde ${MOTHER}: ${expectedBranch}`)
+          ok(`Rama hija creada desde ${baseBranch}: ${expectedBranch}`)
+          // Sync docs desde madre (los docs de madre son la fuente de verdad)
+          sh(`git fetch origin ${MOTHER} --quiet 2>nul`)
+          sh(`git checkout origin/${MOTHER} -- docs/ 2>nul`)
+          ok('Docs sincronizados desde madre sobre el codigo heredado')
           branchSwitched = true
         } else { fail(`No se pudo crear rama: ${created.slice(0, 80)}`); blockers++ }
       } else { warn(`Stashea antes de crear rama ${expectedBranch}`) }
