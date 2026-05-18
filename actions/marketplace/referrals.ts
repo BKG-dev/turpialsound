@@ -44,12 +44,23 @@ export async function trackReferralClick(code: string): Promise<{ listingId?: st
   try {
     const link = await db.mpReferralLink.findUnique({
       where: { code },
-      select: { id: true, listingId: true, isActive: true, listing: { select: { slug: true } } },
+      select: { id: true, listingId: true, isActive: true },
     })
     if (link?.isActive) {
       await db.mpReferralLink.update({ where: { id: link.id }, data: { clicks: { increment: 1 } } })
+      
+      // Obtener slug del listing (no hay FK en schema, query separada)
+      let slug: string | undefined
+      try {
+        const listing = await db.mpListing.findUnique({
+          where: { id: link.listingId },
+          select: { slug: true },
+        })
+        slug = listing?.slug ?? undefined
+      } catch {}
+
       await db.$disconnect()
-      return { listingId: link.listingId, slug: link.listing?.slug ?? undefined }
+      return { listingId: link.listingId, slug }
     }
     await db.$disconnect()
     return {}
