@@ -79,6 +79,17 @@ const today = getToday()
 function sh(cmd) {
   try { return execSync(cmd, { encoding: 'utf8', stdio: 'pipe' }).trim() } catch { return '' }
 }
+function run(cmd) {
+  try {
+    return { ok: true, output: execSync(cmd, { encoding: 'utf8', stdio: 'pipe' }).trim() }
+  } catch (e) {
+    return {
+      ok: false,
+      output: `${e.stdout || ''}${e.stderr || e.message}`.trim(),
+      status: e.status
+    }
+  }
+}
 function ok(msg)  { console.log(`  [  ${GREEN}OK${RESET}  ] ${msg}`) }
 function fail(msg){ console.log(`  [ ${RED}FAIL${RESET} ] ${msg}`) }
 function warn(msg){ console.log(`  [ ${YELLOW}WARN${RESET} ] ${msg}`) }
@@ -128,7 +139,10 @@ let obsidianExePath = ''
 
 function isObsidianRunning() {
   if (process.platform === 'win32') {
-    try { execSync('tasklist /FI "IMAGENAME eq Obsidian.exe" 2>nul', { encoding: 'utf8', stdio: 'pipe' }); return true } catch { return false }
+    try {
+      const output = execSync('powershell -NoProfile -Command "(Get-Process Obsidian -ErrorAction SilentlyContinue | Select-Object -First 1).Id"', { encoding: 'utf8', stdio: 'pipe' })
+      return output.trim().length > 0
+    } catch { return false }
   } else {
     try { execSync('pgrep -x Obsidian 2>/dev/null', { encoding: 'utf8', stdio: 'pipe' }); return true } catch { return false }
   }
@@ -139,9 +153,11 @@ function closeObsidian() {
   info('Obsidian detectado. Cerrando para sincronizar...')
   if (process.platform === 'win32') {
     obsidianExePath = sh('powershell -Command "(Get-Process Obsidian | Select-Object -First 1).Path"')
-    try { execSync('powershell -Command "Get-Process Obsidian | ForEach-Object { $_.CloseMainWindow() }" 2>nul', { encoding: 'utf8' }) } catch {}
-    try { execSync('timeout /t 2 /nobreak >nul', { encoding: 'utf8' }) } catch {}
-    if (isObsidianRunning()) execSync('taskkill /F /IM Obsidian.exe 2>nul', { encoding: 'utf8' })
+    try { execSync('powershell -NoProfile -Command "Get-Process Obsidian -ErrorAction SilentlyContinue | ForEach-Object { [void]$_.CloseMainWindow() }"', { encoding: 'utf8', stdio: 'ignore' }) } catch {}
+    try { execSync('powershell -NoProfile -Command "Start-Sleep -Seconds 2"', { encoding: 'utf8', stdio: 'ignore' }) } catch {}
+    if (isObsidianRunning()) {
+      try { execSync('powershell -NoProfile -Command "Get-Process Obsidian -ErrorAction SilentlyContinue | Stop-Process -Force"', { encoding: 'utf8', stdio: 'ignore' }) } catch {}
+    }
   } else {
     try { execSync('pkill -TERM Obsidian 2>/dev/null', { encoding: 'utf8' }) } catch {}
     try { execSync('sleep 2', { encoding: 'utf8' }) } catch {}
@@ -174,19 +190,11 @@ if (motherRef) {
   const motherDocHead = sh(`git rev-parse origin/${MOTHER}:docs 2>nul`)
 
   if (localDocHead !== motherDocHead && motherDocHead) {
-    // ANTI-REGRESION: comparar timestamps
     const localLastUpdated = sh(`git show HEAD:docs/obsidian-vault/00_CENTRAL_TURPIAL.md 2>nul`)
     const motherLastUpdated = sh(`git show origin/${MOTHER}:docs/obsidian-vault/00_CENTRAL_TURPIAL.md 2>nul`)
     const localMatch = localLastUpdated.match(/last_updated:\s*"(\d{2}\/\d{2}\/\d{2}\s+\d{2}:\d{2})"/)
     const motherMatch = motherLastUpdated.match(/last_updated:\s*"(\d{2}\/\d{2}\/\d{2}\s+\d{2}:\d{2})"/)
-    let localDate = null, motherDate = null
-    if (localMatch) { const [d, mo, y, h, min] = localMatch[1].split(/[\s\/:]/).map(Number); localDate = new Date(2000+y, mo-1, d, h, min) }
-    if (motherMatch) { const [d, mo, y, h, min] = motherMatch[1].split(/[\s\/:]/).map(Number); motherDate = new Date(2000+y, mo-1, d, h, min) }
-    
-    if (localDate && motherDate && localDate > motherDate) {
-      ok(`Docs locales (${localMatch[1]}) mas recientes que madre (${motherMatch[1]}). No se sincroniza.`)
-    } else {
-      info(`Docs desactualizados. Madre: ${motherMatch?.[1] || '?'} > Local: ${localMatch?.[1] || '?'}. Sincronizando...`)
+    info(`Docs difieren. Local: ${localMatch?.[1] || '?'} | Madre: ${motherMatch?.[1] || '?'}. Fusionando...`)
 
     // Stash local changes if any, but preserve them
     const hasDocChanges = sh('git diff --name-only -- docs/')
@@ -203,67 +211,82 @@ if (motherRef) {
       }
     }
 
-    // Obtener docs desde madre
-    const checkoutResult = sh(`git checkout origin/${MOTHER} -- docs/ 2>&1`)
-    if (checkoutResult.includes('error')) {
-      fail(`No se pudieron sincronizar docs desde ${MOTHER}`)
+    const mergeTreeResult = run(`git merge-tree --write-tree --messages HEAD origin/${MOTHER}`)
+    if (!mergeTreeResult.ok) {
+      fail(`Conflicto fusionando docs con ${MOTHER}. No se pisan cambios.`)
+      if (mergeTreeResult.output) {
+        console.log(mergeTreeResult.output.split(/\r?\n/).slice(0, 40).map(line => `  ${line}`).join('\n'))
+      }
+      if (stashed) sh('git stash pop 2>nul')
       blockers++
     } else {
-      ok(`Docs sincronizados desde ${MOTHER}`)
+      const mergedTree = mergeTreeResult.output.split(/\r?\n/).find(line => /^[0-9a-f]{40}$/.test(line.trim()))?.trim()
+      if (!mergedTree) {
+        fail(`git merge-tree no produjo un tree valido para docs: ${mergeTreeResult.output.slice(0, 200)}`)
+        if (stashed) sh('git stash pop 2>nul')
+        blockers++
+      } else {
+        sh(`git checkout ${mergedTree} -- docs/ 2>nul`)
+        ok(`Docs fusionados desde ${MOTHER} sin pisar cambios locales`)
 
-      // Re-aplicar cambios locales si los habia
-      if (stashed) {
-        sh('git stash pop 2>nul')
-        info('Cambios locales en docs re-aplicados sobre la version de madre.')
-      }
+        // Re-aplicar cambios locales si los habia
+        if (stashed) {
+          const popResult = sh('git stash pop 2>&1')
+          if (popResult.includes('CONFLICT')) {
+            fail('Conflicto al re-aplicar cambios locales de docs despues del merge.')
+            blockers++
+          } else {
+            info('Cambios locales en docs re-aplicados sobre la version fusionada.')
+          }
+        }
 
-      // Verificar last_updated
-      const centralPath = join(ROOT, 'docs', 'obsidian-vault', '00_CENTRAL_TURPIAL.md')
-      if (existsSync(centralPath)) {
-        const central = readFileSync(centralPath, 'utf8')
-        const m = central.match(/last_updated:\s*"([^"]+)"/)
-        if (m) {
-          info(`Docs al dia. last_updated: ${m[1]}`)
+        // Verificar last_updated
+        const centralPath = join(ROOT, 'docs', 'obsidian-vault', '00_CENTRAL_TURPIAL.md')
+        if (existsSync(centralPath)) {
+          const central = readFileSync(centralPath, 'utf8')
+          const m = central.match(/last_updated:\s*"([^"]+)"/)
+          if (m) {
+            info(`Docs al dia. last_updated: ${m[1]}`)
 
-          // Staleness check
-          const parts = m[1].split(/[\s\/:]/)
-          if (parts.length >= 5) {
-            const [d, mo, y, h, min] = parts.map(Number)
-            const docDate = new Date(2000 + y, mo - 1, d, h, min)
-            const hoursStale = (now - docDate) / 3600000
-            if (hoursStale > 8) {
-              warn(`00_CENTRAL sin actualizar hace ${hoursStale.toFixed(0)}h. Verifica que el otro operador no tenga docs mas nuevos.`)
-              warnings++
+            // Staleness check
+            const parts = m[1].split(/[\s\/:]/)
+            if (parts.length >= 5) {
+              const [d, mo, y, h, min] = parts.map(Number)
+              const docDate = new Date(2000 + y, mo - 1, d, h, min)
+              const hoursStale = (now - docDate) / 3600000
+              if (hoursStale > 8) {
+                warn(`00_CENTRAL sin actualizar hace ${hoursStale.toFixed(0)}h. Verifica que el otro operador no tenga docs mas nuevos.`)
+                warnings++
 
-              // Buscar ramas del otro operador con docs mas nuevos
-              const otherOp = operator === 'Manuel' ? 'Jean' : 'Manuel'
-              const otherBranches = sh(`git branch -r --list "origin/${otherOp}/*"`)
-              if (otherBranches) {
-                info(`Detectando ramas de ${otherOp} con docs mas recientes...`)
-                for (const branch of otherBranches.split('\n').filter(Boolean)) {
-                  const branchName = branch.trim()
-                  try {
-                    const theirLastUpdated = sh(`git show ${branchName}:docs/obsidian-vault/00_CENTRAL_TURPIAL.md 2>nul`)
-                    const theirMatch = theirLastUpdated.match(/last_updated:\s*"([^"]+)"/)
-                    if (theirMatch) {
-                      const theirParts = theirMatch[1].split(/[\s\/:]/)
-                      if (theirParts.length >= 5) {
-                        const [td, tm, ty, th, tmin] = theirParts.map(Number)
-                        const theirDate = new Date(2000 + ty, tm - 1, td, th, tmin)
-                        if (theirDate > docDate) {
-                          warn(`${otherOp} tiene docs mas recientes en ${branchName} (${theirMatch[1]})`)
-                          warn(`Sugerido: actualizar madre desde esa rama o hacer pull manual.`)
+                // Buscar ramas del otro operador con docs mas nuevos
+                const otherOp = operator === 'Manuel' ? 'Jean' : 'Manuel'
+                const otherBranches = sh(`git branch -r --list "origin/${otherOp}/*"`)
+                if (otherBranches) {
+                  info(`Detectando ramas de ${otherOp} con docs mas recientes...`)
+                  for (const branch of otherBranches.split('\n').filter(Boolean)) {
+                    const branchName = branch.trim()
+                    try {
+                      const theirLastUpdated = sh(`git show ${branchName}:docs/obsidian-vault/00_CENTRAL_TURPIAL.md 2>nul`)
+                      const theirMatch = theirLastUpdated.match(/last_updated:\s*"([^"]+)"/)
+                      if (theirMatch) {
+                        const theirParts = theirMatch[1].split(/[\s\/:]/)
+                        if (theirParts.length >= 5) {
+                          const [td, tm, ty, th, tmin] = theirParts.map(Number)
+                          const theirDate = new Date(2000 + ty, tm - 1, td, th, tmin)
+                          if (theirDate > docDate) {
+                            warn(`${otherOp} tiene docs mas recientes en ${branchName} (${theirMatch[1]})`)
+                            warn('Sugerido: cerrar esa rama o fusionar docs a madre antes de continuar.')
+                          }
                         }
                       }
-                    }
-                  } catch {}
+                    } catch {}
+                  }
                 }
               }
             }
           }
         }
       }
-    }
     }
   } else {
     ok('Docs locales sincronizados con madre')

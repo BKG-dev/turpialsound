@@ -8,7 +8,8 @@
 #>
 
 param(
-    [string]$MotherBranch = ""
+    [string]$MotherBranch = "",
+    [switch]$AllowLocalMother
 )
 
 # Si no se pasa MotherBranch, leer de .mother-version.json
@@ -49,7 +50,7 @@ Write-Sync "Rama actual: $currentBranch" -T "INFO"
 $motherRef = git rev-parse --verify "origin/$MotherBranch" 2>$null
 if (-not $motherRef) {
     $localMotherRef = git rev-parse --verify "$MotherBranch" 2>$null
-    if ($localMotherRef) {
+    if ($AllowLocalMother -and $localMotherRef) {
         Write-Sync "Rama madre no encontrada en origin; existe local y puede estar pendiente de primer push" -T "WARN"
     } else {
         Write-Sync "Rama madre no encontrada en origin" -T "FAIL"
