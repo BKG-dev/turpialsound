@@ -67,20 +67,18 @@ function normalizeText(value: string): string {
     .trim()
 }
 
-async function resourceHasCollision(
+export async function resourceHasCollision(
   tx: Prisma.TransactionClient,
   resourceId: string,
   start: Date,
   end: Date,
+  options?: { excludeBookingId?: string | null },
 ): Promise<boolean> {
-<<<<<<< HEAD
-  const pendingPaymentCutoff = new Date(Date.now() - PAYMENT_WINDOW_MINUTES * 60 * 1000)
-=======
   const excludeBookingId = options?.excludeBookingId ?? null
->>>>>>> 5c12485 (fix(bookings): enforce pay-first slot collision policy)
 
   const count = await tx.bookingRequest.count({
     where: {
+      ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
       OR: [
         { status: { in: ['approved', 'confirmed'] } },
         {
