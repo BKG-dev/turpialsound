@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "current": "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16",
+  "version": 3,
+  "current": "MADRE/v3-s-mp-01-2026-05-18",
   "branches": [
     {
       "version": 1,
@@ -21,6 +21,16 @@
       "fulldate": "17/05/26 00:10",
       "description": "Integracion de documentacion: Jean/s12-reservas + Manuel/s-adm-01. Code merge pendiente.",
       "previous": "RAMA-MADRE"
+    },
+    {
+      "version": 3,
+      "name": "MADRE/v3-s-mp-01-2026-05-18",
+      "sprint": "S-MP-01",
+      "operator": "Manuel",
+      "date": "2026-05-18",
+      "fulldate": "17/05/26 20:22",
+      "description": "CERRADO",
+      "previous": "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16"
     }
   ]
 }
