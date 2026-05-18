@@ -1,6 +1,6 @@
 {
-  "version": 6,
-  "current": "MADRE/v6-s-mp-06-drop-social-referidos-dashboard-2026-05-18",
+  "version": 7,
+  "current": "MADRE/v7-s-mp-07-dark-mode-cards-admin-igor-2026-05-18",
   "branches": [
     {
       "version": 1,
@@ -61,6 +61,16 @@
       "fulldate": "18/05/26 09:10",
       "description": "drop-social-referidos-dashboard",
       "previous": "MADRE/v5-s-mp-02-busqueda-fuzzy-filtros-ubicacion-2026-05-18"
+    },
+    {
+      "version": 7,
+      "name": "MADRE/v7-s-mp-07-dark-mode-cards-admin-igor-2026-05-18",
+      "sprint": "S-MP-07",
+      "operator": "Manuel",
+      "date": "2026-05-18",
+      "fulldate": "18/05/26 09:39",
+      "description": "dark-mode-cards-admin-igor",
+      "previous": "MADRE/v6-s-mp-06-drop-social-referidos-dashboard-2026-05-18"
     }
   ]
 }
