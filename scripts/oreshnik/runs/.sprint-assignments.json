@@ -54,5 +54,12 @@
     "timestamp": "2026-05-17T21:36:55.522Z",
     "branch": "Manuel/s-mp-01-carrito-2026-05-17",
     "reassigned": false
+  },
+  {
+    "sprintId": "S-MP-01",
+    "operator": "Manuel",
+    "timestamp": "2026-05-18T00:22:06.036Z",
+    "branch": "Manuel/s-mp-01-carrito-2026-05-17",
+    "reassigned": false
   }
 ]

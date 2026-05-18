@@ -10,11 +10,13 @@ mother_branch: "RAMA MADRE"
 final_branch: "Manuel/s03j-qa-final-regression-2026-05-11"
 final_commit: "dda740f"
 closed_at: "2026-05-11"
+last_updated: "2026-05-17T20:05-04:00"
 tags:
   - turpial
   - marketplace
   - qa-harness
   - sprint/s03
+  - sprint/s-mp-01
   - status/closed
   - result/pass
   - layer/server-side
@@ -39,6 +41,17 @@ Sprint 3 del Marketplace QA Harness está **CERRADO**.
 - **Sin secrets commiteados.** `.env.local` no versionado.
 - **Credenciales QA:** `buyerIA`, `sellerIA`, `mvera` normalizadas. Bootstrap `ensure-marketplace-qa-env.ps1` + doctor `doctor-marketplace-qa-env.mjs` resuelven el problema recurrente de credenciales.
 
+## A1. Actualizacion 2026-05-17 - S-MP-01
+
+S-MP-01 incorpora el QA canonico de carrito consolidado al harness marketplace.
+
+- **Task ID dispatcher:** `smp01_cart_consolidated_checkout`
+- **Modulo:** `scripts/qa/modules/qa-smp01-cart-consolidated.mjs`
+- **Runner:** `npx tsx scripts/qa/run-marketplace-qa.mjs --module=S-MP-01`
+- **Resultado:** 17/17 PASS
+- **Evidencia:** `var/qa-results/report-2026-05-17T21-24-44-148Z.json` y `var/qa-results/report-2026-05-17T21-24-44-148Z.md`
+- **Cobertura:** inventario disponible menos ventas previas, bloqueo de overbuy, orden consolidada, comprobante obligatorio, transacciones hijas por vendedor, entrega/pago independiente y visibilidad dashboard.
+
 ## B. Tabla de módulos QA-00 → QA-12
 
 | QA | Nombre | Sprint | Estado | Método | Branch | Commit |
@@ -56,6 +69,7 @@ Sprint 3 del Marketplace QA Harness está **CERRADO**.
 | QA-10 | Admin payout | S03I | PASS | Prisma write (RELEASED + MpPayout) | `Manuel/s03i-qa-admin-payout-2026-05-11` | `522c00c` |
 | QA-11 | Dashboards | S03I | PASS | Prisma read (stats + visibility) | misma | `522c00c` |
 | QA-12 | Full regression | S03J | PASS (12/12) | Importa y ejecuta QA-00→QA-11 en secuencia | `Manuel/s03j-qa-final-regression-2026-05-11` | `dda740f` |
+| S-MP-01 | Cart consolidated checkout | S-MP-01 | PASS (17/17) | Prisma write/read + orden consolidada + proof + flujo hijo por vendedor | `Manuel/s-mp-01-carrito-2026-05-17` | `f224441` |
 
 ## C. Mapa de ramas y commits
 
@@ -78,6 +92,7 @@ Sprint 3 del Marketplace QA Harness está **CERRADO**.
 - [[QA_E2E_ROADMAP_2026-05-10]] — Roadmap detallado S03E→S03J
 - [[S03F_IMPLEMENTATION_REPORT_2026-05-10]] — Reporte canónico S03F (539 líneas)
 - [[S03_FINAL_QA_HARNESS_CLOSURE_2026-05-11]] — Cierre consolidado S03
+- [[CART_CONSOLIDATED_QA_MATRIX]] — Matriz QA S-MP-01 carrito consolidado
 - [[session-summary-active]] — Último resumen de sesión
 - [[next-window-brief]] — Brief para próximo agente
 
