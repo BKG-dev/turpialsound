@@ -74,7 +74,7 @@ export function AddToCartButton({ listing, currentUserId, variant = 'card' }: Ad
     setTimeout(() => {
       setAdded(false)
     }, 1200)
-  }, [listing, price, cover, sellerName, sellerId, qty, maxAvailable, alreadyInCart, addItem, removeItem])
+  }, [listing, price, cover, sellerName, sellerId, qty, maxAvailable, alreadyInCart, addItem, removeItem, isSeller])
 
   const handleDecrement = useCallback((e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation()

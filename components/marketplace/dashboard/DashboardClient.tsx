@@ -3727,13 +3727,13 @@ export function DashboardClient({
               )}
 
               {/* ── Mis Listings: referidos generados por otros ── */}
-              {listingReferralStats.filter((l: any) => l.linksCreated > 0).length > 0 && (
+              {listingReferralStats.filter(l => l.linksCreated > 0).length > 0 && (
                 <div className="space-y-3">
                   <SectionHeader
                     title="Tus Listings — Referidos por otros"
-                    count={listingReferralStats.filter((l: any) => l.linksCreated > 0).length}
+                    count={listingReferralStats.filter(l => l.linksCreated > 0).length}
                   />
-                  {listingReferralStats.filter((l: any) => l.linksCreated > 0).map((stat: any) => (
+                  {listingReferralStats.filter(l => l.linksCreated > 0).map(stat => (
                     <div
                       key={stat.listingId}
                       className="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-white/5 transition-colors"
