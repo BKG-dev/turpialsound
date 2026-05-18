@@ -4,9 +4,17 @@
 
 echo "[ORESHNIK] pre-push hook iniciado..."
 
+push_refs="$(cat)"
+sync_args=""
+case "$push_refs" in
+    *refs/heads/MADRE/*)
+        sync_args="-AllowLocalMother"
+        ;;
+esac
+
 # 1. Docs sync check
 echo "[ORESHNIK] Verificando docs sync..."
-powershell -ExecutionPolicy Bypass -File scripts/oreshnik/sync-obsidian.ps1
+powershell -ExecutionPolicy Bypass -File scripts/oreshnik/sync-obsidian.ps1 $sync_args
 if [ $? -ne 0 ]; then
     echo "[ORESHNIK] SYNC FALLIDO. Corrige los docs y reintenta el push."
     echo "[ORESHNIK] Ejecuta: powershell -ExecutionPolicy Bypass -File scripts/oreshnik/sync-obsidian.ps1"

@@ -2,7 +2,7 @@
 type: methodology-nexus
 project: "Turpial Sound"
 fecha: 2026-05-17
-actualizado: "2026-05-17T17:35-04:00"
+actualizado: "2026-05-18T00:22:28.467Z"
 metodologia: "Oreshnik v4.0 + Madre Dinamica + Cierre Automatizado"
 tags:
   - "#central"
@@ -116,6 +116,17 @@ npx vercel inspect <url> --logs
 
 Protocolo para que Jean y Manuel SIEMPRE vean la misma version de docs.
 
+### Contrato anti-pisada
+
+El resultado esperado de Obsidian/docs es:
+
+1. La documentacion final es la fusion de lo ultimo de Manuel + lo ultimo de Jean.
+2. Obsidian no es fuente de verdad; Git + madre dinamica + merge de tres vias son la fuente de verdad.
+3. El cierre/reapertura automatica de Obsidian solo evita cache/escrituras tardias del vault.
+4. Si ambos editan secciones distintas, `close-sprint.mjs` debe fusionarlas automaticamente.
+5. Si ambos editan la misma seccion y Git no puede resolver, el cierre se bloquea con conflicto explicito. Nunca se elige silenciosamente a un operador.
+6. Prohibido reemplazar `docs/` con `git checkout <rama> -- docs/` durante el cierre de madre. Eso es "ultimo writer wins" y rompe este contrato.
+
 ### Al abrir sesion (AMBOS)
 
 ```bash
@@ -156,8 +167,10 @@ node scripts/oreshnik/close-sprint.mjs --sprint SXX --operator Jean|Manuel --des
 El cierre v2.0 ejecuta automaticamente:
 1. **Cobertura:** Verifica que TODOS los docs relacionados al codigo modificado esten actualizados
 2. **Mecanica:** Actualiza timestamps, estados, y docs canonicos
-3. **Git:** Commitea docs en rama hija, pushea hija, crea NUEVA rama madre con SOLO docs
+3. **Git:** Commitea docs en rama hija, pushea hija, crea NUEVA rama madre con merge real de `docs/`
 4. **Evento:** Registra cierre en `var/sprint-events/`
+
+Desde 2026-05-18, el cierre usa `git merge-tree --write-tree` para calcular una fusion de tres vias entre la madre vigente y la rama hija. Luego extrae solo `docs/` del arbol fusionado y valida que la madre no incluya codigo. Si el merge no es automatico, aborta con exit code `3` y exige resolucion manual.
 
 ### Flujo completo
 

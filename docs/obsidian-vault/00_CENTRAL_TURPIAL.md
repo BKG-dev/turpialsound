@@ -4,7 +4,7 @@ project: "Turpial Sound"
 status: active-integration
 phase: "Fase G: Optimizacion marketplace post-cierre. 8 sprints nuevos (S-MP-01 a S-MP-08)."
 last_updated: "17/05/26 20:22"
-mother_branch: "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16"
+mother_branch: "MADRE/v4-oreshnik-docs-sync-2026-05-18"
 mother_head: "RAMAMADRE_BASE"
 production_branch: "prod/current-www-turpialsound-2026-05-08"
 production_head: "92fd6a3"

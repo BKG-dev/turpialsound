@@ -1,0 +1,34 @@
+{
+  "sprint": "S-MP-01",
+  "operator": "Manuel",
+  "status": "CERRADO",
+  "date": "2026-05-18",
+  "fulldate": "17/05/26 20:22",
+  "iso": "2026-05-18T00:22:28.467Z",
+  "childBranch": "Manuel/s-mp-01-carrito-2026-05-17",
+  "motherBranch": "MADRE/v3-s-mp-01-2026-05-18",
+  "description": null,
+  "previousMother": "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16",
+  "changedZones": [
+    "Server Actions Marketplace",
+    "Componentes Marketplace",
+    "Documentacion",
+    "Migraciones DB",
+    "DB Schema",
+    "Scripts Oreshnik",
+    "QA Modules"
+  ],
+  "docsUpdated": [
+    "docs/marketplace/01_ROADMAP_AND_STATUS.md",
+    "docs/07_handoffs/qa-dispatcher.json",
+    "docs/obsidian-vault/00_CENTRAL_TURPIAL.md",
+    "docs/obsidian-vault/00_INDICE_MAESTRO.md",
+    "docs/obsidian-vault/ARQUITECTURA/ARQUITECTURA_TASAS.md",
+    "docs/obsidian-vault/METODOLOGIA/METODOLOGIA_ORESHNIK.md",
+    "docs/obsidian-vault/METODOLOGIA/INSTRUCCION_APERTURA_SESION.md",
+    "docs/obsidian-vault/QA/QA_HARNESS_INDEX.md",
+    "docs/obsidian-vault/SPRINTS/PLAN_MAESTRO_SPRINTS.md"
+  ],
+  "coverageGaps": 0,
+  "forceClose": false
+}

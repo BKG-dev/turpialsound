@@ -55,6 +55,7 @@ El Bus de Control es la **capa de gobernanza automatizada** que coordina el trab
 | **2.3** | May 14 | `zone-map.json` + `zone-check.ps1`. 32 zonas con locks. Detección de colisiones. | Manuel |
 | **2.4** | May 14 | `preflight.mjs`. 8 checks automáticos. Contexto, sync, git, zone, env, vercel, bus stop conditions. | Manuel |
 | **2.5** | May 14 | `.husky/pre-push` hook. AGENTS.md PASO 0. `sync-obsidian.ps1`. Sistema integrado. | Manuel |
+| **2.6** | May 18 | `close-sprint.mjs` con merge real de docs tipo Google Docs, hook pre-push con primer push de madre controlado, Obsidian guard seguro en PowerShell. | Manuel |
 | **3.0** | — | **PRÓXIMO** — Lock enforcement programático, notificaciones cross-agente, auto-reportes de cierre. | — |
 | **4.0** | — | **OBJETIVO** — Bus completamente autónomo. Cero intervención manual en gobernanza. | — |
 
@@ -68,14 +69,14 @@ El Bus de Control es la **capa de gobernanza automatizada** que coordina el trab
 |-----------|---------------|------|
 | Pre-flight | 85% — 7 pasos automáticos, prompt sugerido | 🟢 |
 | Zone check | 60% — Detecta colisiones, no bloquea automáticamente | 🟡 |
-| Doc sync | 90% — Restaura automático, cache inteligente | 🟢 |
+| Doc sync | 95% — Merge real de docs, cache Obsidian controlado, conflicto explicito si no es auto-fusionable | 🟢 |
 | Git hooks | 70% — Pre-push funcional, pre-commit no implementado | 🟡 |
 | Lock enforcement | 20% — Documentado, no programático | 🔴 |
 | Context health | 50% — Básico (horas/tareas/errores), sin métricas de precisión | 🟡 |
 | Stop conditions | 40% — Listadas y reportadas, no verificadas contra diff real | 🔴 |
 | Sprint lifecycle | 60% — Scaffold y close documentados, execute manual | 🟡 |
 | Cross-agent | 0% — Sin notificaciones ni coordinación automática | 🔴 |
-| Reporting | 10% — Manual, sin generación automática de cierre | 🔴 |
+| Reporting | 25% — Evento de cierre y metadata versionada; reporte funcional sigue parcialmente manual | 🟡 |
 
 ### Promedio general: **48% automatizado**
 

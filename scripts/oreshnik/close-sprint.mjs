@@ -135,6 +135,17 @@ function sh(cmd, { fatal = false } = {}) {
     return ''
   }
 }
+function run(cmd) {
+  try {
+    return { ok: true, output: execSync(cmd, { encoding: 'utf8', stdio: 'pipe' }).trim() }
+  } catch (e) {
+    return {
+      ok: false,
+      output: `${e.stdout || ''}${e.stderr || e.message}`.trim(),
+      status: e.status
+    }
+  }
+}
 function ok(msg)  { console.log(`  [  ${GREEN}OK${RESET}  ] ${msg}`) }
 function fail(msg){ console.log(`  [ ${RED}FAIL${RESET} ] ${msg}`) }
 
@@ -144,7 +155,10 @@ let obsidianExePath = ''
 
 function isObsidianRunning() {
   if (process.platform === 'win32') {
-    try { execSync('tasklist /FI "IMAGENAME eq Obsidian.exe" 2>nul', { encoding: 'utf8', stdio: 'pipe' }); return true } catch { return false }
+    try {
+      const output = execSync('powershell -NoProfile -Command "(Get-Process Obsidian -ErrorAction SilentlyContinue | Select-Object -First 1).Id"', { encoding: 'utf8', stdio: 'pipe' })
+      return output.trim().length > 0
+    } catch { return false }
   } else {
     try { execSync('pgrep -x Obsidian 2>/dev/null', { encoding: 'utf8', stdio: 'pipe' }); return true } catch { return false }
   }
@@ -155,9 +169,11 @@ function closeObsidian() {
   info('Obsidian detectado. Cerrando para sincronizar...')
   if (process.platform === 'win32') {
     obsidianExePath = sh('powershell -Command "(Get-Process Obsidian | Select-Object -First 1).Path"')
-    try { execSync('powershell -Command "Get-Process Obsidian | ForEach-Object { $_.CloseMainWindow() }" 2>nul', { encoding: 'utf8' }) } catch {}
-    try { execSync('timeout /t 2 /nobreak >nul', { encoding: 'utf8' }) } catch {}
-    if (isObsidianRunning()) execSync('taskkill /F /IM Obsidian.exe 2>nul', { encoding: 'utf8' })
+    try { execSync('powershell -NoProfile -Command "Get-Process Obsidian -ErrorAction SilentlyContinue | ForEach-Object { [void]$_.CloseMainWindow() }"', { encoding: 'utf8', stdio: 'ignore' }) } catch {}
+    try { execSync('powershell -NoProfile -Command "Start-Sleep -Seconds 2"', { encoding: 'utf8', stdio: 'ignore' }) } catch {}
+    if (isObsidianRunning()) {
+      try { execSync('powershell -NoProfile -Command "Get-Process Obsidian -ErrorAction SilentlyContinue | Stop-Process -Force"', { encoding: 'utf8', stdio: 'ignore' }) } catch {}
+    }
   } else {
     try { execSync('pkill -TERM Obsidian 2>/dev/null', { encoding: 'utf8' }) } catch {}
     try { execSync('sleep 2', { encoding: 'utf8' }) } catch {}
@@ -216,6 +232,11 @@ function writeMotherVersion(data) {
 const operator = resolveOperator()
 const vet = getNowVET()
 const motherData = readMotherVersion()
+const oldMother = motherData.current
+const newVersion = motherData.version + 1
+const sprintTag = sanitize(sprintId)
+const descTag = descFlag ? `-${sanitize(descFlag)}` : ''
+const newMotherName = `MADRE/v${newVersion}-${sprintTag}${descTag}-${vet.date}`
 
 console.log('')
 title('═══════════════════════════════════════════')
@@ -226,7 +247,7 @@ console.log('')
 info(`Sprint:    ${sprintId}`)
 info(`Operador:  ${operator}`)
 info(`Fecha:     ${vet.fulldate} VET`)
-info(`Madre:     ${motherData.current}`)
+info(`Madre:     ${oldMother}`)
 console.log('')
 
 // ─── A. COBERTURA — Verificación holística de documentación ─────────
@@ -362,7 +383,7 @@ const centralPath = join(ROOT, 'docs', 'obsidian-vault', '00_CENTRAL_TURPIAL.md'
 if (existsSync(centralPath)) {
   let central = readFileSync(centralPath, 'utf8')
   central = central.replace(/last_updated:\s*"[^"]*"/, `last_updated: "${vet.fulldate}"`)
-  central = central.replace(/mother_branch:\s*"[^"]*"/, `mother_branch: "${motherData.current}"`)
+  central = central.replace(/mother_branch:\s*"[^"]*"/, `mother_branch: "${newMotherName}"`)
 
   // Actualizar estado del sprint
   const sprintEscaped = sprintId.replace(/[-/\\]/g, '[-\\\\/]')
@@ -386,7 +407,7 @@ const planPath = join(ROOT, 'docs', 'obsidian-vault', 'SPRINTS', 'PLAN_MAESTRO_S
 if (existsSync(planPath)) {
   let plan = readFileSync(planPath, 'utf8')
   plan = plan.replace(/last_updated:\s*"[^"]*"/, `last_updated: "${vet.iso}"`)
-  plan = plan.replace(/mother_branch:\s*"[^"]*"/, `mother_branch: "${motherData.current}"`)
+  plan = plan.replace(/mother_branch:\s*"[^"]*"/, `mother_branch: "${newMotherName}"`)
 
   // Marcar sprint como CERRADO en su sección
   const sprintEscaped = sprintId.replace(/[-/\\]/g, '[-\\\\/]')
@@ -410,7 +431,7 @@ const aperturaPath = join(ROOT, 'docs', 'obsidian-vault', 'METODOLOGIA', 'INSTRU
 if (existsSync(aperturaPath)) {
   let apertura = readFileSync(aperturaPath, 'utf8')
   apertura = apertura.replace(/actualizado:\s*"[^"]*"/, `actualizado: "${vet.iso}"`)
-  apertura = apertura.replace(/mother_branch:\s*"[^"]*"/, `mother_branch: "${motherData.current}"`)
+  apertura = apertura.replace(/mother_branch:\s*"[^"]*"/, `mother_branch: "${newMotherName}"`)
   writeFileSync(aperturaPath, apertura, 'utf8')
   ok('INSTRUCCION_APERTURA_SESION.md actualizado')
 }
@@ -420,6 +441,7 @@ const metodologiaPath = join(ROOT, 'docs', 'obsidian-vault', 'METODOLOGIA', 'MET
 if (existsSync(metodologiaPath)) {
   let met = readFileSync(metodologiaPath, 'utf8')
   met = met.replace(/fecha:\s*"[^"]*"/, `fecha: "${vet.date}"`)
+  met = met.replace(/actualizado:\s*"[^"]*"/, `actualizado: "${vet.iso}"`)
   writeFileSync(metodologiaPath, met, 'utf8')
   ok('METODOLOGIA_ORESHNIK.md actualizado')
 }
@@ -452,55 +474,72 @@ if (docChanges) {
 }
 
 // C2: Push rama hija completa
-const pushChild = sh(`git push origin ${currentBranch} 2>&1`)
-if (pushChild.includes('error') || pushChild.includes('fatal')) {
-  fail(`Push falló: ${pushChild.slice(0, 200)}`)
-  reopenObsidian()
-  process.exit(1)
-}
+sh(`git push origin ${currentBranch}`, { fatal: true })
 ok(`Push rama hija: ${currentBranch}`)
 
-// C3: Crear nueva rama madre dinámica
-const newVersion = motherData.version + 1
-const sprintTag = sanitize(sprintId)
-const descTag = descFlag ? `-${sanitize(descFlag)}` : ''
-const newMotherName = `MADRE/v${newVersion}-${sprintTag}${descTag}-${vet.date}`
-
+// C3: Crear nueva rama madre dinamica desde la ultima madre publicada
 info(`Creando rama madre: ${newMotherName}`)
 
-const oldMother = motherData.current
 const oldMotherExists = sh(`git rev-parse --verify ${oldMother} 2>nul`)
 
 if (oldMotherExists) {
   sh(`git checkout ${oldMother}`, { fatal: true })
-  sh(`git checkout -b ${newMotherName}`, { fatal: true })
 } else {
-  // Si la madre local no existe, intentar desde origin
   sh(`git fetch origin ${oldMother}`, { fatal: true })
-  sh(`git checkout -b ${newMotherName} origin/${oldMother}`, { fatal: true })
+  sh(`git checkout -b ${oldMother} origin/${oldMother}`, { fatal: true })
 }
 
-info(`Nueva madre creada desde: ${oldMother}`)
+info(`Actualizando madre desde origin/${oldMother}...`)
+sh(`git pull --ff-only origin ${oldMother}`, { fatal: true })
 
-// C4: Copiar SOLO docs desde la rama hija
-sh(`git checkout ${currentBranch} -- docs/`, { fatal: true })
-sh('git add docs/', { fatal: true })
-
-const motherCommitMsg = `docs(mother): sync ${sprintId} — ${operator} [${vet.fulldate} VET] → ${newMotherName}`
-sh(`git commit -m "${motherCommitMsg}"`, { fatal: true })
-ok(`Commit madre: ${motherCommitMsg}`)
-
-// C5: Push madre
-const pushMother = sh(`git push origin ${newMotherName} 2>&1`)
-if (pushMother.includes('error') || pushMother.includes('fatal')) {
-  fail(`Push madre falló: ${pushMother.slice(0, 200)}`)
+const existingNewMother = sh(`git rev-parse --verify ${newMotherName} 2>nul`)
+const existingRemoteNewMother = sh(`git rev-parse --verify origin/${newMotherName} 2>nul`)
+if (existingNewMother || existingRemoteNewMother) {
+  fail(`La rama madre destino ya existe: ${newMotherName}`)
   sh(`git checkout ${currentBranch}`, { fatal: true })
+  process.exit(1)
+}
+
+sh(`git checkout -b ${newMotherName}`, { fatal: true })
+info(`Nueva madre creada desde ${oldMother}: ${newMotherName}`)
+
+// C4: Merge real de docs (Google Docs style), sin checkout destructivo.
+step('C4/6 MERGE — Fusionar docs sin pisar cambios del otro operador')
+info(`Calculando merge de tres vias entre ${newMotherName} y ${currentBranch}...`)
+
+const mergeTreeResult = run(`git merge-tree --write-tree --messages HEAD ${currentBranch}`)
+if (!mergeTreeResult.ok) {
+  console.log('')
+  console.log(`${RED}${BOLD}  CONFLICTO DE DOCUMENTACION${RESET}`)
+  console.log('')
+  console.log('  No se puede fusionar automaticamente la documentacion.')
+  console.log('  Esto equivale al caso Google Docs donde ambos editaron la misma seccion.')
+  if (mergeTreeResult.output) {
+    console.log('')
+    console.log(mergeTreeResult.output.split(/\r?\n/).slice(0, 40).map(line => `  ${line}`).join('\n'))
+  }
+  console.log('')
+  console.log(`${BOLD}  ACCION REQUERIDA:${RESET}`)
+  console.log(`  1. Resolver manualmente el merge de docs entre ${oldMother} y ${currentBranch}.`)
+  console.log(`  2. Reintentar: node scripts/oreshnik/close-sprint.mjs --sprint ${sprintId} --operator ${operator}`)
+  console.log('')
+  sh(`git checkout ${currentBranch}`, { fatal: true })
+  sh(`git branch -D ${newMotherName} 2>nul`)
+  reopenObsidian()
+  process.exit(3)
+}
+
+const mergedTree = mergeTreeResult.output.split(/\r?\n/).find(line => /^[0-9a-f]{40}$/.test(line.trim()))?.trim()
+if (!mergedTree) {
+  fail(`git merge-tree no produjo un tree valido: ${mergeTreeResult.output.slice(0, 200)}`)
+  sh(`git checkout ${currentBranch}`, { fatal: true })
+  sh(`git branch -D ${newMotherName} 2>nul`)
   reopenObsidian()
   process.exit(1)
 }
-ok(`Push madre: origin/${newMotherName}`)
 
-// C6: Guardar versionado
+sh(`git checkout ${mergedTree} -- docs/`, { fatal: true })
+
 motherData.version = newVersion
 motherData.current = newMotherName
 motherData.branches.push({
@@ -514,12 +553,6 @@ motherData.branches.push({
   previous: oldMother
 })
 writeMotherVersion(motherData)
-
-// C7: Volver a rama hija
-sh(`git checkout ${currentBranch}`, { fatal: true })
-
-// ─── D. EVENTO — Registro de cierre ─────────────────────────────────
-step('D/4 EVENTO — Registro de cierre')
 
 mkdirSync(SPRINT_EVENTS_DIR, { recursive: true })
 const eventFile = join(SPRINT_EVENTS_DIR, `${vet.date}_${sprintId}_CERRADO.json`)
@@ -540,12 +573,60 @@ const eventData = {
   forceClose: forceFlag
 }
 writeFileSync(eventFile, JSON.stringify(eventData, null, 2))
+
+sh('git add docs/ scripts/oreshnik/runs/.mother-version.json var/sprint-events/', { fatal: true })
+
+const stagedForMother = sh('git diff --cached --name-only')
+const invalidMotherFiles = stagedForMother
+  .split('\n')
+  .filter(Boolean)
+  .filter(file => !file.startsWith('docs/') && file !== 'scripts/oreshnik/runs/.mother-version.json' && !file.startsWith('var/sprint-events/'))
+
+if (invalidMotherFiles.length > 0) {
+  fail('El merge intento incluir archivos fuera de docs/metadata/eventos:')
+  for (const file of invalidMotherFiles) console.log(`  ${file}`)
+  sh('git reset HEAD -- . 2>nul')
+  sh(`git checkout ${currentBranch}`, { fatal: true })
+  sh(`git branch -D ${newMotherName} 2>nul`)
+  reopenObsidian()
+  process.exit(1)
+}
+
+if (stagedForMother) {
+  const motherCommitMsg = `docs(mother): merge ${sprintId} — ${operator} [${vet.fulldate} VET] → ${newMotherName}`
+  sh(`git commit -m "${motherCommitMsg}"`, { fatal: true })
+  ok(`Commit madre: ${motherCommitMsg}`)
+} else {
+  info('Sin cambios netos en docs/metadata respecto a madre')
+}
+
+// C5: Push madre
+sh(`git push origin ${newMotherName}`, { fatal: true })
+ok(`Push madre: origin/${newMotherName}`)
+
+// C6: Volver a rama hija y registrar metadata/evento tambien ahi
+sh(`git checkout ${currentBranch}`, { fatal: true })
+writeFileSync(eventFile, JSON.stringify(eventData, null, 2))
+writeMotherVersion(motherData)
+
+// ─── D. EVENTO — Registro de cierre ─────────────────────────────────
+step('D/4 EVENTO — Registro de cierre')
+
+const childClosureChanges = sh('git diff --name-only -- scripts/oreshnik/runs/.mother-version.json var/sprint-events/')
+if (childClosureChanges) {
+  sh('git add scripts/oreshnik/runs/.mother-version.json var/sprint-events/', { fatal: true })
+  const closureCommitMsg = `chore(oreshnik): record ${sprintId} sprint closure`
+  sh(`git commit -m "${closureCommitMsg}"`, { fatal: true })
+  ok(`Commit metadata hija: ${closureCommitMsg}`)
+  sh(`git push origin ${currentBranch}`, { fatal: true })
+  ok(`Push metadata hija: ${currentBranch}`)
+}
 ok(`Evento: var/sprint-events/${vet.date}_${sprintId}_CERRADO.json`)
 
 // ─── REPORTE FINAL ──────────────────────────────────────────────────
 console.log('')
 title('═══════════════════════════════════════════')
-title('  SPRINT CERRADO — ${sprintId}')
+title(`  SPRINT CERRADO — ${sprintId}`)
 title('═══════════════════════════════════════════')
 console.log('')
 console.log(`  Sprint:        ${sprintId}`)

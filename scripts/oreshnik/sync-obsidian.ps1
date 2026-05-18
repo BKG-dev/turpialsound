@@ -8,7 +8,8 @@
 #>
 
 param(
-    [string]$MotherBranch = ""
+    [string]$MotherBranch = "",
+    [switch]$AllowLocalMother
 )
 
 # Si no se pasa MotherBranch, leer de .mother-version.json
@@ -48,8 +49,13 @@ Write-Sync "Rama actual: $currentBranch" -T "INFO"
 # 3. Verificar madre existe
 $motherRef = git rev-parse --verify "origin/$MotherBranch" 2>$null
 if (-not $motherRef) {
-    Write-Sync "Rama madre no encontrada en origin" -T "FAIL"
-    $allOk = $false
+    $localMotherRef = git rev-parse --verify "$MotherBranch" 2>$null
+    if ($AllowLocalMother -and $localMotherRef) {
+        Write-Sync "Rama madre no encontrada en origin; existe local y puede estar pendiente de primer push" -T "WARN"
+    } else {
+        Write-Sync "Rama madre no encontrada en origin" -T "FAIL"
+        $allOk = $false
+    }
 } else {
     $mc = git rev-parse --short "origin/$MotherBranch"
     Write-Sync "Madre: $MotherBranch @ $mc" -T "PASS"
@@ -92,7 +98,7 @@ if ($uniqueDates.Count -gt 2) {
 }
 
 # 6. Verificar madre esta sincronizada con local
-if ($currentBranch -eq $MotherBranch) {
+if ($currentBranch -eq $MotherBranch -and $motherRef) {
     $localCommit = git rev-parse --short HEAD
     $remoteCommit = git rev-parse --short "origin/$MotherBranch"
     if ($localCommit -ne $remoteCommit) {
@@ -100,6 +106,8 @@ if ($currentBranch -eq $MotherBranch) {
     } else {
         Write-Sync "Local sincronizado con origin" -T "PASS"
     }
+} elseif ($currentBranch -eq $MotherBranch) {
+    Write-Sync "Madre local pendiente de primer push; se omite comparacion local/origin" -T "WARN"
 }
 
 # 7. Restaurar docs si Obsidian los sobreescribio
