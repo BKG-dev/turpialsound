@@ -37,16 +37,19 @@ export async function getOrCreateReferralLink(listingId: string): Promise<{ succ
   }
 }
 
-export async function trackReferralClick(code: string): Promise<{ listingId?: string }> {
+export async function trackReferralClick(code: string): Promise<{ listingId?: string; slug?: string }> {
   const db = await getDb()
   if (!db) return {}
 
   try {
-    const link = await db.mpReferralLink.findUnique({ where: { code }, select: { id: true, listingId: true, isActive: true } })
+    const link = await db.mpReferralLink.findUnique({
+      where: { code },
+      select: { id: true, listingId: true, isActive: true, listing: { select: { slug: true } } },
+    })
     if (link?.isActive) {
       await db.mpReferralLink.update({ where: { id: link.id }, data: { clicks: { increment: 1 } } })
       await db.$disconnect()
-      return { listingId: link.listingId }
+      return { listingId: link.listingId, slug: link.listing?.slug ?? undefined }
     }
     await db.$disconnect()
     return {}
