@@ -2,7 +2,7 @@
 type: index
 proyecto: "Turpial Sound"
 fecha: 2026-05-14
-last_updated: "2026-05-18T00:22:28.467Z"
+last_updated: "2026-05-18T13:39:32.728Z"
 tags: ["#central", "#index", "#navegacion"]
 ---
 

@@ -3,9 +3,9 @@ type: master-plan
 project: "Turpial Sound"
 status: active-integration
 version: "2.0"
-last_updated: "2026-05-18T00:22:28.467Z"
+last_updated: "2026-05-18T13:39:32.728Z"
 methodology: "Oreshnik v4.0 + Madre Dinamica"
-mother_branch: "MADRE/v4-oreshnik-docs-sync-2026-05-18"
+mother_branch: "MADRE/v7-s-mp-07-dark-mode-cards-admin-igor-2026-05-18"
 tags:
   - "#central"
   - "#master-plan"
