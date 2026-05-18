@@ -1452,7 +1452,7 @@ export function BookingWizard({
 
   return (
     <div
-      className="rounded-2xl border border-brand-border bg-brand-surface"
+      className="overflow-x-hidden rounded-2xl border border-brand-border bg-brand-surface"
       aria-busy={submissionState === 'loading'}
     >
       <div className="border-b border-brand-border px-5 py-3 md:px-6 md:py-3">
@@ -1472,74 +1472,74 @@ export function BookingWizard({
         </div>
 
         <ol
-          className="hidden gap-2 overflow-x-auto pb-1 md:flex lg:grid lg:grid-cols-6 lg:gap-2 xl:gap-3 lg:overflow-visible lg:pb-0"
+          className="hidden gap-2 pb-1 md:grid md:grid-cols-3 lg:grid-cols-6 lg:gap-2 xl:gap-3 lg:pb-0"
           aria-label="Pasos del formulario"
         >
-          {WIZARD_STEPS.map((s, index) => {
-            const isCompleted = index < currentStep
-            const isCurrent = index === currentStep
-            const isVisited = index <= furthestStep
-            const isClickable = isVisited && !isCurrent && submissionState !== 'loading'
-            return (
-              <li key={s.id} className="min-w-[8.5rem] flex-1 lg:min-w-0">
-                <button
-                  type="button"
-                  onClick={() => handleStepClick(index)}
-                  disabled={!isClickable}
-                  className={cn(
-                    'flex w-full items-center gap-2 rounded-xl border px-2.5 py-3 text-left transition-colors',
-                    isCurrent
-                      ? 'border-accent-gold bg-accent-gold/5'
-                      : isCompleted
-                        ? 'border-accent-gold/30 bg-accent-gold/5'
-                        : 'border-brand-border bg-transparent',
-                    isClickable
-                      ? 'cursor-pointer hover:border-accent-gold/50 hover:bg-accent-gold/5'
-                      : 'cursor-default',
-                  )}
-                  aria-current={isCurrent ? 'step' : undefined}
-                >
-                  <span
+            {WIZARD_STEPS.map((s, index) => {
+              const isCompleted = index < currentStep
+              const isCurrent = index === currentStep
+              const isVisited = index <= furthestStep
+              const isClickable = isVisited && !isCurrent && submissionState !== 'loading'
+              return (
+                <li key={s.id} className="min-w-[8.5rem] flex-1 lg:min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => handleStepClick(index)}
+                    disabled={!isClickable}
                     className={cn(
-                      'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                      isCompleted
-                        ? 'bg-accent-gold text-brand-bg'
-                        : isCurrent
-                          ? 'border-2 border-accent-gold text-accent-gold'
-                          : isVisited
-                            ? 'border border-brand-border text-text-secondary'
-                            : 'border border-brand-border text-text-muted',
+                      'flex w-full items-center gap-2 rounded-xl border px-2.5 py-3 text-left transition-colors',
+                      isCurrent
+                        ? 'border-accent-gold bg-accent-gold/5'
+                        : isCompleted
+                          ? 'border-accent-gold/30 bg-accent-gold/5'
+                          : 'border-brand-border bg-transparent',
+                      isClickable
+                        ? 'cursor-pointer hover:border-accent-gold/50 hover:bg-accent-gold/5'
+                        : 'cursor-default',
                     )}
+                    aria-current={isCurrent ? 'step' : undefined}
                   >
-                    {isCompleted ? (
-                      <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                        <path
-                          d="M2 6l3 3 5-5"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    ) : (
-                      index + 1
-                    )}
-                  </span>
-                  <span className="min-w-0">
                     <span
                       className={cn(
-                        'block text-[11px] font-medium leading-tight xl:text-xs',
-                        isCurrent || isCompleted ? 'text-text-primary' : 'text-text-secondary',
+                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold',
+                        isCompleted
+                          ? 'bg-accent-gold text-brand-bg'
+                          : isCurrent
+                            ? 'border-2 border-accent-gold text-accent-gold'
+                            : isVisited
+                              ? 'border border-brand-border text-text-secondary'
+                              : 'border border-brand-border text-text-muted',
                       )}
                     >
-                      {s.label}
+                      {isCompleted ? (
+                        <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                          <path
+                            d="M2 6l3 3 5-5"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      ) : (
+                        index + 1
+                      )}
                     </span>
-                  </span>
-                </button>
-              </li>
-            )
-          })}
-        </ol>
+                    <span className="min-w-0">
+                      <span
+                        className={cn(
+                          'block text-[11px] font-medium leading-tight xl:text-xs',
+                          isCurrent || isCompleted ? 'text-text-primary' : 'text-text-secondary',
+                        )}
+                      >
+                        {s.label}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ol>
       </div>
 
       <div
@@ -1595,10 +1595,14 @@ export function BookingWizard({
 
         {currentStep === 2 && (
           <DateTimeStep
+            serviceSlug={selectedServiceSlug}
+            variantSlug={selectedVariantSlug}
             eventDate={data.eventDate}
             startTime={data.startTime}
             durationMinutes={data.durationMinutes}
-            onDateChange={(value) => setData((d) => ({ ...d, eventDate: value }))}
+            onDateChange={(value) =>
+              setData((d) => ({ ...d, eventDate: value, startTime: null, durationMinutes: null }))
+            }
             onStartTimeChange={(value) => setData((d) => ({ ...d, startTime: value, durationMinutes: null }))}
             onDurationChange={(value) => setData((d) => ({ ...d, durationMinutes: value }))}
           />
