@@ -170,7 +170,7 @@ El cierre v2.0 ejecuta automaticamente:
 3. **Git:** Commitea docs en rama hija, pushea hija, crea NUEVA rama madre con merge real de `docs/`
 4. **Evento:** Registra cierre en `var/sprint-events/`
 
-Desde 2026-05-18, el cierre usa `git merge-tree --write-tree` para calcular una fusion de tres vias entre la madre vigente y la rama hija. Luego extrae solo `docs/` del arbol fusionado y valida que la madre no incluya codigo. Si el merge no es automatico, aborta con exit code `3` y exige resolucion manual.
+Desde 2026-05-18, el cierre usa `scripts/oreshnik/merge-docs-union.mjs` para fusionar exclusivamente `docs/` entre la madre vigente y la rama hija. El codigo de producto permanece en la rama hija. Para Markdown/texto usa merge automatico tipo union; para JSON aplica merge semantico basico. El objetivo operativo es no requerir intervencion humana en conflictos normales de documentacion.
 
 ### Flujo completo
 

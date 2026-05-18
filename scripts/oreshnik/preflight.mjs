@@ -211,76 +211,70 @@ if (motherRef) {
       }
     }
 
-    const mergeTreeResult = run(`git merge-tree --write-tree --messages HEAD origin/${MOTHER}`)
-    if (!mergeTreeResult.ok) {
-      fail(`Conflicto fusionando docs con ${MOTHER}. No se pisan cambios.`)
-      if (mergeTreeResult.output) {
-        console.log(mergeTreeResult.output.split(/\r?\n/).slice(0, 40).map(line => `  ${line}`).join('\n'))
+    const docMergeBase = sh(`git merge-base HEAD origin/${MOTHER} 2>nul`) || `origin/${MOTHER}`
+    const mergeDocsResult = run(`node scripts/oreshnik/merge-docs-union.mjs --base ${docMergeBase} --source origin/${MOTHER}`)
+    if (!mergeDocsResult.ok) {
+      fail(`No se pudieron fusionar docs con ${MOTHER}. No se pisan cambios.`)
+      if (mergeDocsResult.output) {
+        console.log(mergeDocsResult.output.split(/\r?\n/).slice(0, 40).map(line => `  ${line}`).join('\n'))
       }
       if (stashed) sh('git stash pop 2>nul')
       blockers++
     } else {
-      const mergedTree = mergeTreeResult.output.split(/\r?\n/).find(line => /^[0-9a-f]{40}$/.test(line.trim()))?.trim()
-      if (!mergedTree) {
-        fail(`git merge-tree no produjo un tree valido para docs: ${mergeTreeResult.output.slice(0, 200)}`)
-        if (stashed) sh('git stash pop 2>nul')
-        blockers++
-      } else {
-        sh(`git checkout ${mergedTree} -- docs/ 2>nul`)
-        ok(`Docs fusionados desde ${MOTHER} sin pisar cambios locales`)
+      if (mergeDocsResult.output) info(mergeDocsResult.output)
+      ok(`Docs fusionados desde ${MOTHER} sin pisar cambios locales`)
 
-        // Re-aplicar cambios locales si los habia
-        if (stashed) {
-          const popResult = sh('git stash pop 2>&1')
-          if (popResult.includes('CONFLICT')) {
-            fail('Conflicto al re-aplicar cambios locales de docs despues del merge.')
-            blockers++
-          } else {
-            info('Cambios locales en docs re-aplicados sobre la version fusionada.')
-          }
+      // Re-aplicar cambios locales si los habia
+      if (stashed) {
+        const popResult = sh('git stash pop 2>&1')
+        if (popResult.includes('CONFLICT')) {
+          fail('Conflicto al re-aplicar cambios locales de docs despues del merge.')
+          blockers++
+        } else {
+          info('Cambios locales en docs re-aplicados sobre la version fusionada.')
         }
+      }
 
-        // Verificar last_updated
-        const centralPath = join(ROOT, 'docs', 'obsidian-vault', '00_CENTRAL_TURPIAL.md')
-        if (existsSync(centralPath)) {
-          const central = readFileSync(centralPath, 'utf8')
-          const m = central.match(/last_updated:\s*"([^"]+)"/)
-          if (m) {
-            info(`Docs al dia. last_updated: ${m[1]}`)
+      // Verificar last_updated
+      const centralPath = join(ROOT, 'docs', 'obsidian-vault', '00_CENTRAL_TURPIAL.md')
+      if (existsSync(centralPath)) {
+        const central = readFileSync(centralPath, 'utf8')
+        const m = central.match(/last_updated:\s*"([^"]+)"/)
+        if (m) {
+          info(`Docs al dia. last_updated: ${m[1]}`)
 
-            // Staleness check
-            const parts = m[1].split(/[\s\/:]/)
-            if (parts.length >= 5) {
-              const [d, mo, y, h, min] = parts.map(Number)
-              const docDate = new Date(2000 + y, mo - 1, d, h, min)
-              const hoursStale = (now - docDate) / 3600000
-              if (hoursStale > 8) {
-                warn(`00_CENTRAL sin actualizar hace ${hoursStale.toFixed(0)}h. Verifica que el otro operador no tenga docs mas nuevos.`)
-                warnings++
+          // Staleness check
+          const parts = m[1].split(/[\s\/:]/)
+          if (parts.length >= 5) {
+            const [d, mo, y, h, min] = parts.map(Number)
+            const docDate = new Date(2000 + y, mo - 1, d, h, min)
+            const hoursStale = (now - docDate) / 3600000
+            if (hoursStale > 8) {
+              warn(`00_CENTRAL sin actualizar hace ${hoursStale.toFixed(0)}h. Verifica que el otro operador no tenga docs mas nuevos.`)
+              warnings++
 
-                // Buscar ramas del otro operador con docs mas nuevos
-                const otherOp = operator === 'Manuel' ? 'Jean' : 'Manuel'
-                const otherBranches = sh(`git branch -r --list "origin/${otherOp}/*"`)
-                if (otherBranches) {
-                  info(`Detectando ramas de ${otherOp} con docs mas recientes...`)
-                  for (const branch of otherBranches.split('\n').filter(Boolean)) {
-                    const branchName = branch.trim()
-                    try {
-                      const theirLastUpdated = sh(`git show ${branchName}:docs/obsidian-vault/00_CENTRAL_TURPIAL.md 2>nul`)
-                      const theirMatch = theirLastUpdated.match(/last_updated:\s*"([^"]+)"/)
-                      if (theirMatch) {
-                        const theirParts = theirMatch[1].split(/[\s\/:]/)
-                        if (theirParts.length >= 5) {
-                          const [td, tm, ty, th, tmin] = theirParts.map(Number)
-                          const theirDate = new Date(2000 + ty, tm - 1, td, th, tmin)
-                          if (theirDate > docDate) {
-                            warn(`${otherOp} tiene docs mas recientes en ${branchName} (${theirMatch[1]})`)
-                            warn('Sugerido: cerrar esa rama o fusionar docs a madre antes de continuar.')
-                          }
+              // Buscar ramas del otro operador con docs mas nuevos
+              const otherOp = operator === 'Manuel' ? 'Jean' : 'Manuel'
+              const otherBranches = sh(`git branch -r --list "origin/${otherOp}/*"`)
+              if (otherBranches) {
+                info(`Detectando ramas de ${otherOp} con docs mas recientes...`)
+                for (const branch of otherBranches.split('\n').filter(Boolean)) {
+                  const branchName = branch.trim()
+                  try {
+                    const theirLastUpdated = sh(`git show ${branchName}:docs/obsidian-vault/00_CENTRAL_TURPIAL.md 2>nul`)
+                    const theirMatch = theirLastUpdated.match(/last_updated:\s*"([^"]+)"/)
+                    if (theirMatch) {
+                      const theirParts = theirMatch[1].split(/[\s\/:]/)
+                      if (theirParts.length >= 5) {
+                        const [td, tm, ty, th, tmin] = theirParts.map(Number)
+                        const theirDate = new Date(2000 + ty, tm - 1, td, th, tmin)
+                        if (theirDate > docDate) {
+                          warn(`${otherOp} tiene docs mas recientes en ${branchName} (${theirMatch[1]})`)
+                          warn('Sugerido: cerrar esa rama o fusionar docs a madre antes de continuar.')
                         }
                       }
-                    } catch {}
-                  }
+                    }
+                  } catch {}
                 }
               }
             }

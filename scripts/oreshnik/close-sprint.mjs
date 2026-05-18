@@ -135,17 +135,6 @@ function sh(cmd, { fatal = false } = {}) {
     return ''
   }
 }
-function run(cmd) {
-  try {
-    return { ok: true, output: execSync(cmd, { encoding: 'utf8', stdio: 'pipe' }).trim() }
-  } catch (e) {
-    return {
-      ok: false,
-      output: `${e.stdout || ''}${e.stderr || e.message}`.trim(),
-      status: e.status
-    }
-  }
-}
 function ok(msg)  { console.log(`  [  ${GREEN}OK${RESET}  ] ${msg}`) }
 function fail(msg){ console.log(`  [ ${RED}FAIL${RESET} ] ${msg}`) }
 
@@ -505,40 +494,9 @@ info(`Nueva madre creada desde ${oldMother}: ${newMotherName}`)
 
 // C4: Merge real de docs (Google Docs style), sin checkout destructivo.
 step('C4/6 MERGE — Fusionar docs sin pisar cambios del otro operador')
-info(`Calculando merge de tres vias entre ${newMotherName} y ${currentBranch}...`)
-
-const mergeTreeResult = run(`git merge-tree --write-tree --messages HEAD ${currentBranch}`)
-if (!mergeTreeResult.ok) {
-  console.log('')
-  console.log(`${RED}${BOLD}  CONFLICTO DE DOCUMENTACION${RESET}`)
-  console.log('')
-  console.log('  No se puede fusionar automaticamente la documentacion.')
-  console.log('  Esto equivale al caso Google Docs donde ambos editaron la misma seccion.')
-  if (mergeTreeResult.output) {
-    console.log('')
-    console.log(mergeTreeResult.output.split(/\r?\n/).slice(0, 40).map(line => `  ${line}`).join('\n'))
-  }
-  console.log('')
-  console.log(`${BOLD}  ACCION REQUERIDA:${RESET}`)
-  console.log(`  1. Resolver manualmente el merge de docs entre ${oldMother} y ${currentBranch}.`)
-  console.log(`  2. Reintentar: node scripts/oreshnik/close-sprint.mjs --sprint ${sprintId} --operator ${operator}`)
-  console.log('')
-  sh(`git checkout ${currentBranch}`, { fatal: true })
-  sh(`git branch -D ${newMotherName} 2>nul`)
-  reopenObsidian()
-  process.exit(3)
-}
-
-const mergedTree = mergeTreeResult.output.split(/\r?\n/).find(line => /^[0-9a-f]{40}$/.test(line.trim()))?.trim()
-if (!mergedTree) {
-  fail(`git merge-tree no produjo un tree valido: ${mergeTreeResult.output.slice(0, 200)}`)
-  sh(`git checkout ${currentBranch}`, { fatal: true })
-  sh(`git branch -D ${newMotherName} 2>nul`)
-  reopenObsidian()
-  process.exit(1)
-}
-
-sh(`git checkout ${mergedTree} -- docs/`, { fatal: true })
+info(`Fusionando docs desde ${currentBranch} sobre ${newMotherName}...`)
+const docsMerge = sh(`node scripts/oreshnik/merge-docs-union.mjs --base ${oldMother} --source ${currentBranch} --stage`, { fatal: true })
+if (docsMerge) info(docsMerge)
 
 motherData.version = newVersion
 motherData.current = newMotherName
