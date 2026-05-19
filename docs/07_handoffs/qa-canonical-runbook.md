@@ -1,6 +1,6 @@
 # QA Canonical Runbook
 
-> Fecha de actualizacion: 2026-05-09
+> Fecha de actualizacion: 2026-05-19 (S-MP-08 — CSV tasas BCV/Binance + neto export)
 > Alcance: marketplace no-booking
 > Objetivo: dejar una golden path operativa para QA/CLI sin redescubrir scripts
 

@@ -2,8 +2,8 @@
 type: index
 proyecto: "Turpial Sound"
 fecha: 2026-05-14
-last_updated: "2026-05-18T13:10:47.520Z"
-tags: ["#central", "#index", "#navegacion"]
+last_updated: "2026-05-19T23:27:00Z"
+tags: ["#central", "#index", "#navegacion", "#s-mp-08"]
 ---
 
 # Índice Maestro — Turpial Sound
@@ -236,8 +236,8 @@ S-MP-01 queda enlazado al indice maestro con cierre de carrito consolidado, QA c
 type: index
 proyecto: "Turpial Sound"
 fecha: 2026-05-14
-last_updated: "2026-05-18T13:10:47.520Z"
-tags: ["#central", "#index", "#navegacion"]
+last_updated: "2026-05-19T23:27:00Z"
+tags: ["#central", "#index", "#navegacion", "#s-mp-08"]
 ---
 
 # Índice Maestro — Turpial Sound
@@ -587,8 +587,8 @@ S-MP-01 queda enlazado al indice maestro con cierre de carrito consolidado, QA c
 type: index
 proyecto: "Turpial Sound"
 fecha: 2026-05-14
-last_updated: "2026-05-18T13:10:47.520Z"
-tags: ["#central", "#index", "#navegacion"]
+last_updated: "2026-05-19T23:27:00Z"
+tags: ["#central", "#index", "#navegacion", "#s-mp-08"]
 ---
 
 # Índice Maestro — Turpial Sound

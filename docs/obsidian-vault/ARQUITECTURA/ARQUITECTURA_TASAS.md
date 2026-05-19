@@ -1,6 +1,6 @@
 ---
 tags: ["#area/backend", "#architecture", "#marketplace", "#rates"]
-last_updated: "2026-05-18"
+last_updated: "2026-05-19"
 ---
 
 # Arquitectura del Motor de Tasas
