@@ -7,6 +7,7 @@ import type {
   BookingPaymentMethodConfig,
   BookingPaymentMethodSlug,
 } from '@/lib/bookings/payment-settings.types'
+import type { WhatsappVerificationConfig } from '@/lib/bookings/whatsapp-verify-config'
 
 type SubmissionState = 'idle' | 'loading' | 'success' | 'error'
 
@@ -14,12 +15,14 @@ interface BookingRequestModuleProps {
   paymentMethods: BookingPaymentMethodConfig[]
   primaryPaymentMethodSlug: BookingPaymentMethodSlug
   paymentWindowMinutes: number
+  whatsappVerificationConfig: WhatsappVerificationConfig
 }
 
 export function BookingRequestModule({
   paymentMethods,
   primaryPaymentMethodSlug,
   paymentWindowMinutes,
+  whatsappVerificationConfig,
 }: BookingRequestModuleProps) {
   const [submissionState, setSubmissionState] = useState<SubmissionState>('idle')
   const isSuccess = submissionState === 'success'
@@ -41,6 +44,7 @@ export function BookingRequestModule({
         paymentMethods={paymentMethods}
         primaryPaymentMethodSlug={primaryPaymentMethodSlug}
         paymentWindowMinutes={paymentWindowMinutes}
+        whatsappVerificationConfig={whatsappVerificationConfig}
         onSubmissionStateChange={setSubmissionState}
       />
     </>

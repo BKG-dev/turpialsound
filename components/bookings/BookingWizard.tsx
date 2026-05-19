@@ -22,6 +22,7 @@ import {
   formatUsdByCurrency,
   useBcvRate,
 } from '@/lib/bookings/currency-display'
+import type { WhatsappVerificationConfig } from '@/lib/bookings/whatsapp-verify-config'
 import type {
   BookingPaymentMethodConfig,
   BookingPaymentMethodSlug,
@@ -100,7 +101,15 @@ interface BookingDraftV1 {
   furthestStep: number
   data: WizardData
   whatsappVerification: WhatsappVerificationState
+  contactVerificationFlowMode?: ContactVerificationFlowMode
+  secureLinkRequestState?: SecureLinkRequestState
+  secureLinkRequestError?: string | null
+  secureLinkRequestExpiresAt?: string | null
 }
+
+type ContactVerificationFlowMode = 'manual_code' | 'secure_link'
+
+type SecureLinkRequestState = 'idle' | 'loading' | 'sent' | 'failed'
 
 const BOOKING_DRAFT_STORAGE_KEY = 'turpial_booking_draft_v1'
 const BOOKING_DRAFT_TTL_MS = 2 * 60 * 60 * 1000
@@ -231,6 +240,7 @@ interface BookingWizardProps {
   paymentMethods: BookingPaymentMethodConfig[]
   primaryPaymentMethodSlug: BookingPaymentMethodSlug
   paymentWindowMinutes: number
+  whatsappVerificationConfig: WhatsappVerificationConfig
   onSubmissionStateChange?: (state: 'idle' | 'loading' | 'success' | 'error') => void
 }
 
@@ -238,6 +248,7 @@ export function BookingWizard({
   paymentMethods,
   primaryPaymentMethodSlug,
   paymentWindowMinutes,
+  whatsappVerificationConfig,
   onSubmissionStateChange,
 }: BookingWizardProps) {
   const primaryPaymentMethod =
@@ -276,6 +287,16 @@ export function BookingWizard({
   const [whatsappVerification, setWhatsappVerification] = useState<WhatsappVerificationState>(
     INITIAL_WHATSAPP_VERIFICATION_STATE,
   )
+  const [contactVerificationFlowMode, setContactVerificationFlowMode] =
+    useState<ContactVerificationFlowMode>(
+      whatsappVerificationConfig.mode === 'secure_link' && whatsappVerificationConfig.secureLinkEnabled
+        ? 'secure_link'
+        : 'manual_code',
+    )
+  const [secureLinkRequestState, setSecureLinkRequestState] =
+    useState<SecureLinkRequestState>('idle')
+  const [secureLinkRequestError, setSecureLinkRequestError] = useState<string | null>(null)
+  const [secureLinkRequestExpiresAt, setSecureLinkRequestExpiresAt] = useState<string | null>(null)
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false)
   const pollTimerRef = useRef<number | null>(null)
 
@@ -348,6 +369,8 @@ export function BookingWizard({
   const usdtAmountValue = formatUsdtAmount(bookingEstimate.estimatedTotalUsd)
   const normalizedPaymentReference = publicCode ? normalizePaymentReference(publicCode) : ''
   const normalizedRequesterPhone = normalizeWhatsappVe(data.requesterPhone)
+  const isSecureLinkEnabledByConfig = whatsappVerificationConfig.secureLinkEnabled
+  const isSecureLinkFlowActive = contactVerificationFlowMode === 'secure_link'
   const whatsappVerifiedAtMs = whatsappVerification.verifiedAt
     ? new Date(whatsappVerification.verifiedAt).getTime()
     : Number.NaN
@@ -431,6 +454,16 @@ export function BookingWizard({
   useEffect(() => {
     onSubmissionStateChange?.(submissionState)
   }, [onSubmissionStateChange, submissionState])
+
+  useEffect(() => {
+    if (!isSecureLinkEnabledByConfig) return
+    if (typeof window === 'undefined') return
+
+    const requestedFlow = new URLSearchParams(window.location.search).get('waFlow')
+    if (requestedFlow === 'secure-link') {
+      setContactVerificationFlowMode('secure_link')
+    }
+  }, [isSecureLinkEnabledByConfig])
 
   function clearWhatsappPollTimer() {
     if (pollTimerRef.current !== null) {
@@ -561,6 +594,78 @@ export function BookingWizard({
     }
   }
 
+  async function handleSendSecureLink() {
+    if (!isSecureLinkEnabledByConfig) {
+      setSecureLinkRequestError('El enlace seguro no esta disponible en este entorno.')
+      setSecureLinkRequestState('failed')
+      return
+    }
+
+    const phone = normalizedRequesterPhone
+    if (!isValidWhatsappVe(phone)) {
+      setSecureLinkRequestError('Introduce un WhatsApp valido antes de solicitar el enlace.')
+      setSecureLinkRequestState('failed')
+      return
+    }
+
+    const bookingEndTime =
+      data.startTime && data.durationMinutes !== null
+        ? deriveEndTime(data.startTime, data.durationMinutes)
+        : null
+
+    if (!data.eventDate || !data.startTime || data.durationMinutes === null || !bookingEndTime) {
+      setSecureLinkRequestError('Debes completar fecha, inicio y finalizacion antes de continuar.')
+      setSecureLinkRequestState('failed')
+      return
+    }
+
+    setSecureLinkRequestState('loading')
+    setSecureLinkRequestError(null)
+
+    try {
+      const response = await fetch('/api/bookings/whatsapp-secure-link?waFlow=secure-link', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          requesterName: data.requesterName,
+          requesterEmail: data.requesterEmail,
+          requesterPhone: phone,
+          whatsappConsentAccepted: data.whatsappConsentAccepted,
+          endTime: bookingEndTime,
+          draft: {
+            currentStep,
+            furthestStep,
+            data,
+          },
+        }),
+      })
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as
+          | { error?: string; fallback?: string }
+          | null
+        if (payload?.fallback === 'manual_code') {
+          setContactVerificationFlowMode('manual_code')
+          setSecureLinkRequestError(
+            'No pudimos enviar el enlace seguro. Puedes verificar con codigo manual.',
+          )
+        } else {
+          setSecureLinkRequestError('No pudimos enviar el enlace seguro. Intenta nuevamente.')
+        }
+        setSecureLinkRequestState('failed')
+        return
+      }
+
+      const payload = (await response.json()) as { expiresAt?: string }
+      setSecureLinkRequestExpiresAt(payload.expiresAt ?? null)
+      setSecureLinkRequestState('sent')
+      setSecureLinkRequestError(null)
+    } catch {
+      setSecureLinkRequestError('No pudimos enviar el enlace seguro. Intenta nuevamente.')
+      setSecureLinkRequestState('failed')
+    }
+  }
+
   async function handleManualWhatsappStatusCheck() {
     if (!whatsappVerification.challengeId) return
     await pollWhatsappVerificationStatus(whatsappVerification.challengeId)
@@ -595,6 +700,9 @@ export function BookingWizard({
     ) {
       clearWhatsappPollTimer()
       setWhatsappVerification(INITIAL_WHATSAPP_VERIFICATION_STATE)
+      setSecureLinkRequestState('idle')
+      setSecureLinkRequestError(null)
+      setSecureLinkRequestExpiresAt(null)
     }
   }, [hasRestoredDraft, normalizedRequesterPhone, whatsappVerification])
 
@@ -628,6 +736,14 @@ export function BookingWizard({
       if (parsed.whatsappVerification) {
         setWhatsappVerification(parsed.whatsappVerification)
       }
+      if (parsed.contactVerificationFlowMode === 'manual_code' || parsed.contactVerificationFlowMode === 'secure_link') {
+        setContactVerificationFlowMode(parsed.contactVerificationFlowMode)
+      }
+      if (parsed.secureLinkRequestState) {
+        setSecureLinkRequestState(parsed.secureLinkRequestState)
+      }
+      setSecureLinkRequestError(parsed.secureLinkRequestError ?? null)
+      setSecureLinkRequestExpiresAt(parsed.secureLinkRequestExpiresAt ?? null)
     } catch {
       window.localStorage.removeItem(BOOKING_DRAFT_STORAGE_KEY)
     } finally {
@@ -645,10 +761,24 @@ export function BookingWizard({
       furthestStep,
       data,
       whatsappVerification,
+      contactVerificationFlowMode,
+      secureLinkRequestState,
+      secureLinkRequestError,
+      secureLinkRequestExpiresAt,
     }
 
     window.localStorage.setItem(BOOKING_DRAFT_STORAGE_KEY, JSON.stringify(draft))
-  }, [hasRestoredDraft, currentStep, furthestStep, data, whatsappVerification])
+  }, [
+    hasRestoredDraft,
+    currentStep,
+    furthestStep,
+    data,
+    whatsappVerification,
+    contactVerificationFlowMode,
+    secureLinkRequestState,
+    secureLinkRequestError,
+    secureLinkRequestExpiresAt,
+  ])
 
   useEffect(() => {
     if (currentStep !== 4) return
@@ -686,13 +816,21 @@ export function BookingWizard({
     isValidWhatsappVe(data.requesterPhone) &&
     data.whatsappConsentAccepted
   const isContactVerificationRunning =
-    whatsappVerification.status === 'loading' || whatsappVerification.status === 'pending'
+    whatsappVerification.status === 'loading' ||
+    whatsappVerification.status === 'pending' ||
+    secureLinkRequestState === 'loading'
 
   const contactPrimaryCtaLabel = isWhatsappVerificationFresh
     ? 'Continuar al resumen'
-    : isContactVerificationRunning
-      ? 'Esperando verificacion...'
-      : 'Verificar WhatsApp y continuar'
+    : isSecureLinkFlowActive
+      ? secureLinkRequestState === 'loading'
+        ? 'Enviando enlace...'
+        : secureLinkRequestState === 'sent'
+          ? 'Enlace enviado. Revisa WhatsApp'
+          : 'Enviar enlace seguro a mi WhatsApp'
+      : isContactVerificationRunning
+        ? 'Esperando verificacion...'
+        : 'Verificar WhatsApp y continuar'
 
   function focusWhatsappConsentBlock() {
     const consentBlock = document.getElementById('requester-whatsapp-consent-block')
@@ -725,7 +863,11 @@ export function BookingWizard({
     }
 
     if (currentStep === 4 && whatsappVerification.status !== 'verified') {
-      setSubmitError('Debes verificar tu WhatsApp antes de continuar al resumen.')
+      setSubmitError(
+        isSecureLinkFlowActive
+          ? 'Debes abrir el enlace seguro de WhatsApp antes de continuar al resumen.'
+          : 'Debes verificar tu WhatsApp antes de continuar al resumen.',
+      )
       return
     }
 
@@ -765,6 +907,14 @@ export function BookingWizard({
     setCopyStatusKey(null)
     setSubmitError(null)
     setWhatsappVerification(INITIAL_WHATSAPP_VERIFICATION_STATE)
+    setContactVerificationFlowMode(
+      whatsappVerificationConfig.mode === 'secure_link' && whatsappVerificationConfig.secureLinkEnabled
+        ? 'secure_link'
+        : 'manual_code',
+    )
+    setSecureLinkRequestState('idle')
+    setSecureLinkRequestError(null)
+    setSecureLinkRequestExpiresAt(null)
     window.localStorage.removeItem(BOOKING_DRAFT_STORAGE_KEY)
   }
 
@@ -782,7 +932,16 @@ export function BookingWizard({
       return
     }
 
+    if (isSecureLinkFlowActive) {
+      if (secureLinkRequestState !== 'loading') {
+        setSubmitError(null)
+        await handleSendSecureLink()
+      }
+      return
+    }
+
     if (!isContactVerificationRunning) {
+      console.info('[fallback_manual_code_used]', { event: 'fallback_manual_code_used' })
       setSubmitError(null)
       await handleStartWhatsappVerification()
     }
@@ -1633,9 +1792,26 @@ export function BookingWizard({
             whatsappVerificationExpiresAt={whatsappVerification.expiresAt}
             whatsappVerificationVerifiedAt={whatsappVerification.verifiedAt}
             whatsappVerificationPhone={whatsappVerification.phone}
+            whatsappFlowMode={contactVerificationFlowMode}
+            secureLinkRequestState={secureLinkRequestState}
+            secureLinkExpiresAt={secureLinkRequestExpiresAt}
+            secureLinkError={secureLinkRequestError}
             onStartWhatsappVerification={() => {
               setSubmitError(null)
+              setContactVerificationFlowMode('manual_code')
+              setSecureLinkRequestState('idle')
+              setSecureLinkRequestError(null)
               void handleStartWhatsappVerification()
+            }}
+            onSendSecureLink={() => {
+              setSubmitError(null)
+              void handleSendSecureLink()
+            }}
+            onUseManualCodeFallback={() => {
+              console.info('[fallback_manual_code_used]', { event: 'fallback_manual_code_used' })
+              setContactVerificationFlowMode('manual_code')
+              setSecureLinkRequestState('idle')
+              setSecureLinkRequestError(null)
             }}
             onRetryOpenWhatsapp={handleRetryOpenWhatsapp}
             onCopyWhatsappCode={() => {
@@ -1660,6 +1836,12 @@ export function BookingWizard({
                 ) {
                   clearWhatsappPollTimer()
                   setWhatsappVerification(INITIAL_WHATSAPP_VERIFICATION_STATE)
+                }
+
+                if (secureLinkRequestState !== 'idle') {
+                  setSecureLinkRequestState('idle')
+                  setSecureLinkRequestError(null)
+                  setSecureLinkRequestExpiresAt(null)
                 }
 
                 return { ...d, requesterPhone: value }

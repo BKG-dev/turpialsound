@@ -43,7 +43,13 @@ interface ContactStepProps {
   whatsappVerificationExpiresAt?: string | null
   whatsappVerificationVerifiedAt?: string | null
   whatsappVerificationPhone?: string | null
+  whatsappFlowMode: 'manual_code' | 'secure_link'
+  secureLinkRequestState?: 'idle' | 'loading' | 'sent' | 'failed'
+  secureLinkExpiresAt?: string | null
+  secureLinkError?: string | null
   onStartWhatsappVerification: () => void
+  onSendSecureLink: () => void
+  onUseManualCodeFallback: () => void
   onRetryOpenWhatsapp: () => void
   onCopyWhatsappCode: () => void
   onManualWhatsappStatusCheck: () => void
@@ -66,7 +72,13 @@ export function ContactStep({
   whatsappVerificationExpiresAt,
   whatsappVerificationVerifiedAt,
   whatsappVerificationPhone,
+  whatsappFlowMode,
+  secureLinkRequestState = 'idle',
+  secureLinkExpiresAt,
+  secureLinkError,
   onStartWhatsappVerification,
+  onSendSecureLink,
+  onUseManualCodeFallback,
   onRetryOpenWhatsapp,
   onCopyWhatsappCode,
   onManualWhatsappStatusCheck,
@@ -80,6 +92,7 @@ export function ContactStep({
   const phoneHasContent = phone.trim().length > 0
   const phoneInvalid = phoneHasContent && !isValidWhatsappVe(phone)
   const canStartVerification = !phoneInvalid && phoneHasContent && whatsappConsentAccepted
+  const isSecureLinkMode = whatsappFlowMode === 'secure_link'
   return (
     <div className="space-y-3 md:space-y-2.5">
       <p className="text-[12px] text-text-secondary md:text-[11px]">
@@ -200,8 +213,9 @@ export function ContactStep({
               />
               <span className="space-y-1 text-[11px] leading-snug">
                 <span className="block text-text-primary">
-                  Autorizo a Turpial Sound a contactarme por WhatsApp al numero indicado para el
-                  seguimiento operativo de esta reserva.
+                  Acepto recibir por WhatsApp mensajes de Turpial Sound relacionados con esta
+                  solicitud de reserva: enlace para continuar, instrucciones de pago, revision del
+                  comprobante, confirmacion, recordatorios e incidencias.
                 </span>
                 <span className="block text-text-muted">
                   Sin esta autorizacion no podremos dar seguimiento operativo a tu reserva por
@@ -225,6 +239,47 @@ export function ContactStep({
             <p className="text-[10px] text-text-secondary">
               Confirmamos tu WhatsApp para proteger la disponibilidad de las salas.
             </p>
+
+            {isSecureLinkMode ? (
+              <div className="mt-2 space-y-2">
+                <div className="rounded-md border border-brand-border/70 bg-brand-bg/30 px-2.5 py-1.5">
+                  <p className="text-[11px] font-medium text-text-primary">
+                    Te enviaremos un enlace seguro para continuar tu solicitud desde este numero.
+                  </p>
+                  {secureLinkRequestState === 'sent' && (
+                    <p className="mt-0.5 text-[10px] text-emerald-300">
+                      Enlace enviado. Abre WhatsApp y toca el enlace para volver al resumen.
+                    </p>
+                  )}
+                  {secureLinkRequestState === 'loading' && (
+                    <p className="mt-0.5 text-[10px] text-text-muted">Enviando enlace seguro...</p>
+                  )}
+                  {secureLinkExpiresAt && secureLinkRequestState === 'sent' && (
+                    <p className="mt-0.5 text-[10px] text-text-muted">
+                      Vence: {new Date(secureLinkExpiresAt).toLocaleString('es-VE')}
+                    </p>
+                  )}
+                  {secureLinkError && (
+                    <p className="mt-0.5 text-[10px] text-red-300">{secureLinkError}</p>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={onSendSecureLink}
+                    disabled={!canStartVerification || secureLinkRequestState === 'loading'}
+                  >
+                    {secureLinkRequestState === 'sent' ? 'Reenviar enlace' : 'Enviar enlace'}
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={onUseManualCodeFallback}>
+                    Prefiero verificar con codigo
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
 
             {whatsappVerificationStatus === 'verified' ? (
               <div className="mt-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1.5">
@@ -299,6 +354,8 @@ export function ContactStep({
                   <p className="text-[10px] text-red-300">{whatsappVerificationError}</p>
                 )}
               </div>
+            )}
+              </>
             )}
           </div>
         </div>

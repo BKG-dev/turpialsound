@@ -7,6 +7,7 @@ import {
   getPaymentWindowMinutes,
   getPrimaryPaymentMethod,
 } from '@/lib/bookings/payment-settings'
+import { getWhatsappVerificationConfigFromEnv } from '@/lib/bookings/whatsapp-verify-config'
 
 export const metadata: Metadata = generatePageMetadata({
   title: 'Solicitar reserva',
@@ -21,6 +22,7 @@ export default function ReservasPage() {
   const paymentMethods = getEnabledPaymentMethods()
   const primaryPaymentMethodSlug = getPrimaryPaymentMethod().slug
   const paymentWindowMinutes = getPaymentWindowMinutes()
+  const whatsappVerificationConfig = getWhatsappVerificationConfigFromEnv()
 
   return (
     <SectionShell background="surface" size="sm" className="pt-6 pb-4 md:py-5 lg:py-6">
@@ -29,6 +31,7 @@ export default function ReservasPage() {
           paymentMethods={paymentMethods}
           primaryPaymentMethodSlug={primaryPaymentMethodSlug}
           paymentWindowMinutes={paymentWindowMinutes}
+          whatsappVerificationConfig={whatsappVerificationConfig}
         />
       </div>
     </SectionShell>
