@@ -3,8 +3,9 @@ import { prisma } from '@/lib/db'
 import { phonesMatchVe } from '@/lib/whatsapp/normalize'
 import { Prisma } from '@/generated/prisma/client'
 import {
-  getBookingsPublicBaseUrl,
+  resolveBookingsPublicBaseUrl,
   getWhatsappSecureLinkTtlMinutesFromEnv,
+  type BookingsBaseUrlSource,
 } from '@/lib/bookings/whatsapp-verify-config'
 
 const ACTION_SECURE_LINK_CREATED = 'whatsapp_secure_link.requested'
@@ -235,6 +236,8 @@ export async function createSecureLinkRequest(input: {
   token: string
   expiresAt: string
   url: string
+  baseUrlSource: BookingsBaseUrlSource
+  baseHost: string
 }> {
   const ttlMinutes = input.ttlMinutes ?? getWhatsappSecureLinkTtlMinutesFromEnv()
   const secureLinkId = crypto.randomUUID()
@@ -261,12 +264,15 @@ export async function createSecureLinkRequest(input: {
     },
   })
 
-  const url = `${getBookingsPublicBaseUrl()}/reservas/continuar?token=${encodeURIComponent(token)}`
+  const baseUrlResolution = resolveBookingsPublicBaseUrl()
+  const url = `${baseUrlResolution.baseUrl}/reservas/continuar?token=${encodeURIComponent(token)}`
   return {
     secureLinkId,
     token,
     expiresAt: expiresAt.toISOString(),
     url,
+    baseUrlSource: baseUrlResolution.source,
+    baseHost: baseUrlResolution.host,
   }
 }
 

@@ -1,9 +1,22 @@
 export type WhatsappVerifyMode = 'manual_code' | 'secure_link'
+export type BookingsBaseUrlSource =
+  | 'BOOKINGS_PUBLIC_BASE_URL'
+  | 'BOOKINGS_APP_BASE_URL'
+  | 'NEXT_PUBLIC_APP_URL'
+  | 'VERCEL_URL'
+  | 'LOCALHOST_DEV'
+  | 'DEFAULT_FALLBACK'
 
 export interface WhatsappVerificationConfig {
   mode: WhatsappVerifyMode
   secureLinkEnabled: boolean
   secureLinkTtlMinutes: number
+}
+
+export interface BookingsPublicBaseUrlResolution {
+  baseUrl: string
+  source: BookingsBaseUrlSource
+  host: string
 }
 
 const DEFAULT_SECURE_LINK_TTL_MINUTES = 30
@@ -21,6 +34,28 @@ function clampTtlMinutes(value: number): number {
   if (value < MIN_SECURE_LINK_TTL_MINUTES) return MIN_SECURE_LINK_TTL_MINUTES
   if (value > MAX_SECURE_LINK_TTL_MINUTES) return MAX_SECURE_LINK_TTL_MINUTES
   return Math.floor(value)
+}
+
+function normalizeBaseUrl(rawValue: string | null | undefined): string | null {
+  const raw = rawValue?.trim()
+  if (!raw) return null
+
+  const normalizedRaw = raw.replace(/^[A-Z0-9_]+=/i, '').trim()
+  if (!normalizedRaw) return null
+
+  if (normalizedRaw.startsWith('http://') || normalizedRaw.startsWith('https://')) {
+    return normalizedRaw.replace(/\/+$/, '')
+  }
+
+  return `https://${normalizedRaw.replace(/\/+$/, '')}`
+}
+
+function safeHostFromUrl(value: string): string {
+  try {
+    return new URL(value).host
+  } catch {
+    return 'invalid-host'
+  }
 }
 
 export function normalizeWhatsappVeForPolicy(value: string): string {
@@ -78,13 +113,60 @@ export function isSecureLinkPhoneAllowedByEnv(phone: string): boolean {
   return allowedPhones.has(normalizeWhatsappVeForPolicy(phone))
 }
 
-export function getBookingsPublicBaseUrl(): string {
-  const candidate =
-    process.env.BOOKINGS_PUBLIC_BASE_URL?.trim() ||
-    process.env.BOOKINGS_APP_BASE_URL?.trim() ||
-    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-    process.env.APP_URL?.trim() ||
-    'https://www.turpialsound.com'
+export function resolveBookingsPublicBaseUrl(): BookingsPublicBaseUrlResolution {
+  const fromPublic = normalizeBaseUrl(process.env.BOOKINGS_PUBLIC_BASE_URL)
+  if (fromPublic) {
+    return {
+      baseUrl: fromPublic,
+      source: 'BOOKINGS_PUBLIC_BASE_URL',
+      host: safeHostFromUrl(fromPublic),
+    }
+  }
 
-  return candidate.replace(/\/+$/, '')
+  const fromApp = normalizeBaseUrl(process.env.BOOKINGS_APP_BASE_URL)
+  if (fromApp) {
+    return {
+      baseUrl: fromApp,
+      source: 'BOOKINGS_APP_BASE_URL',
+      host: safeHostFromUrl(fromApp),
+    }
+  }
+
+  const fromNextPublic = normalizeBaseUrl(process.env.NEXT_PUBLIC_APP_URL)
+  if (fromNextPublic) {
+    return {
+      baseUrl: fromNextPublic,
+      source: 'NEXT_PUBLIC_APP_URL',
+      host: safeHostFromUrl(fromNextPublic),
+    }
+  }
+
+  const fromVercel = normalizeBaseUrl(process.env.VERCEL_URL)
+  if (fromVercel) {
+    return {
+      baseUrl: fromVercel,
+      source: 'VERCEL_URL',
+      host: safeHostFromUrl(fromVercel),
+    }
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+    const localhost = 'http://localhost:3000'
+    return {
+      baseUrl: localhost,
+      source: 'LOCALHOST_DEV',
+      host: safeHostFromUrl(localhost),
+    }
+  }
+
+  const fallback = 'https://www.turpialsound.com'
+  return {
+    baseUrl: fallback,
+    source: 'DEFAULT_FALLBACK',
+    host: safeHostFromUrl(fallback),
+  }
+}
+
+export function getBookingsPublicBaseUrl(): string {
+  return resolveBookingsPublicBaseUrl().baseUrl
 }

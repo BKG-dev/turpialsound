@@ -105,6 +105,16 @@ export async function POST(request: NextRequest) {
     draft,
     ttlMinutes: config.secureLinkTtlMinutes,
   })
+  const tokenSuffix = requestRecord.token.slice(-4)
+  const secureLinkPath = '/reservas/continuar'
+
+  console.info('[whatsapp_secure_link]', {
+    event: 'whatsapp_secure_link',
+    base_url_source: requestRecord.baseUrlSource,
+    host: requestRecord.baseHost,
+    path: secureLinkPath,
+    tokenSuffix,
+  })
 
   const result = await sendBookingWhatsapp(
     'whatsapp_secure_link',
