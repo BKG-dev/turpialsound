@@ -228,6 +228,33 @@ function createLegacyTransactionId() {
   return `tx_${Date.now().toString(36)}_${randomUUID().replace(/-/g, '').slice(0, 16)}`
 }
 
+async function safeUpdateTransaction(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  prisma: any,
+  schemaCapabilities: MarketplaceSchemaCapabilities,
+  where: { id: string },
+  data: Record<string, any>,
+) {
+  if (!schemaCapabilities.hasTransactionOrderId) {
+    const setClauses: string[] = []
+    const values: any[] = []
+    let paramIndex = 1
+    for (const [key, value] of Object.entries(data)) {
+      if (value === undefined) continue
+      setClauses.push(`"${key}" = $${paramIndex++}`)
+      values.push(value === null ? null : String(value))
+    }
+    if (setClauses.length === 0) return
+    values.push(where.id)
+    await prisma.$executeRawUnsafe(
+      `UPDATE "mp_transactions" SET ${setClauses.join(', ')} WHERE "id" = $${paramIndex}`,
+      ...values,
+    )
+    return
+  }
+  await prisma.mpTransaction.update({ where, data })
+}
+
 async function createMarketplaceTransaction(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   prisma: any,

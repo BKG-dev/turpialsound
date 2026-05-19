@@ -9,9 +9,9 @@ export async function getDb(): Promise<any | null> {
   try {
     const { PrismaClient } = await import('../../generated/prisma/client')
     const { PrismaPg } = await import('@prisma/adapter-pg')
-    // Force unpooled: remove pgbouncer param and use direct connection for Prisma operations
-    const directUrl = url.replace(/\?pgbouncer=true(&?)/, '?').replace(/\?$/, '')
-    const adapter = new PrismaPg({ connectionString: directUrl })
+    // Remove channel_binding param which can interfere with Prisma metadata queries
+    const cleanUrl = url.replace(/&channel_binding=[^&\s]+/g, '')
+    const adapter = new PrismaPg({ connectionString: cleanUrl })
     return new PrismaClient({ adapter })
   } catch {
     return null
