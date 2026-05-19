@@ -2,10 +2,10 @@
 type: session-starter
 project: "Turpial Sound"
 fecha: 2026-05-19
-actualizado: "2026-05-19T23:27:00Z"
+actualizado: "2026-05-19T23:31:05.412Z"
 para: "Jean Arteaga y Manuel Vera — proxima sesion Kilo"
 metodologia: "Oreshnik v4.0 + Madre Dinamica + Cierre Automatizado"
-mother_branch: "MADRE/v6-s-mp-06-drop-social-referidos-dashboard-2026-05-18"
+mother_branch: "MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19"
 mother_head: "PENDIENTE_PUSH"
 ---
 

@@ -61,5 +61,61 @@
     "timestamp": "2026-05-18T00:22:06.036Z",
     "branch": "Manuel/s-mp-01-carrito-2026-05-17",
     "reassigned": false
+  },
+  {
+    "sprintId": "S-MP-02",
+    "operator": "Manuel",
+    "timestamp": "2026-05-18T15:23:56.177Z",
+    "branch": "Manuel/s-mp-08-notificaciones-2026-05-18",
+    "reassigned": false
+  },
+  {
+    "sprintId": "S-MP-06",
+    "operator": "Manuel",
+    "timestamp": "2026-05-18T15:24:03.676Z",
+    "branch": "Manuel/s-mp-08-notificaciones-2026-05-18",
+    "reassigned": false
+  },
+  {
+    "sprintId": "S-MP-01",
+    "operator": "Manuel",
+    "timestamp": "2026-05-18T15:24:25.618Z",
+    "branch": "Manuel/s-mp-08-notificaciones-2026-05-18",
+    "reassigned": false
+  },
+  {
+    "sprintId": "S-MP-04",
+    "operator": "Manuel",
+    "timestamp": "2026-05-18T15:35:39.391Z",
+    "branch": "Manuel/s-mp-08-notificaciones-2026-05-18",
+    "reassigned": false
+  },
+  {
+    "sprintId": "S-MP-07",
+    "operator": "Manuel",
+    "timestamp": "2026-05-18T15:35:48.757Z",
+    "branch": "Manuel/s-mp-08-notificaciones-2026-05-18",
+    "reassigned": false
+  },
+  {
+    "sprintId": "s-mp-08",
+    "operator": "Manuel",
+    "timestamp": "2026-05-19T02:17:49.722Z",
+    "branch": "Manuel/s-mp-08-notificaciones-2026-05-18",
+    "reassigned": false
+  },
+  {
+    "sprintId": "s-mp-08",
+    "operator": "Manuel",
+    "timestamp": "2026-05-19T02:36:34.612Z",
+    "branch": "Manuel/s-mp-08-notificaciones-2026-05-18",
+    "reassigned": false
+  },
+  {
+    "sprintId": "S-MP-08",
+    "operator": "Manuel",
+    "timestamp": "2026-05-19T22:58:04.533Z",
+    "branch": "Manuel/s-mp-08-notificaciones-2026-05-18",
+    "reassigned": false
   }
 ]
