@@ -28,10 +28,12 @@ import type {
   AdminUserRow,
   EscrowFilter,
 } from '@/actions/marketplace/admin'
+import { INTERBANK_FEE_VES_RATE, USDT_FLAT_FEE, IVA_RATE } from '@/lib/marketplace/fees'
 import {
   getAdminStats,
   getEscrowList,
   getPayoutReport,
+  getConsolidatedPayoutReport,
   adminGetUsers,
   adminValidatePayment,
   adminReleaseEscrow,
@@ -162,22 +164,45 @@ function roleBadge(role: string) {
 }
 
 function exportCSV(rows: PayoutReportRow[]) {
-  const headers = ['Estado', 'Miembro', 'Metodo de cobro', 'Cuenta/Direccion', 'Detalles de cobro', 'Bruto (USD)', 'Comision plataforma', 'Monto a pagar', 'Moneda', 'Num. TX', 'IDs Transacciones']
+  const headers = [
+    'Fuente', 'Miembro', 'Metodo de cobro', 'Cuenta/Direccion',
+    'Titular', 'Cedula', 'Telefono', 'N° Cuenta', 'Banco', 'Pay ID', 'Email',
+    'Moneda de pago', 'Bruto (USD)', 'Comision plataforma', 'Comision interbancaria', 'IVA', 'Neto a pagar',
+    'Fecha valor', 'Tasa de cambio', 'Num. TX', 'IDs Transacciones', 'Referencia'
+  ]
   const csv = [
     headers.join(','),
-    ...rows.map(r => [
-      `"${r.hasPayoutMethod ? 'Pago al vendedor pendiente' : 'Falta metodo de cobro'}"`,
-      `"${r.sellerName}"`,
-      `"${payoutMethodLabel(r.payoutMethodType)}"`,
-      `"${r.payoutAccount}"`,
-      `"${r.payoutDetails.map(d => `${payoutDetailLabel(d.label)}: ${d.value}`).join(' | ')}"`,
-      r.grossAmount.toFixed(2),
-      r.feeAmount.toFixed(2),
-      r.netAmount.toFixed(2),
-      r.currency,
-      r.transactionCount,
-      `"${r.transactionIds.join(';')}"`,
-    ].join(',')),
+    ...rows.map(r => {
+      const isVES = r.paymentCurrency === 'VES'
+      const interbankFee = isVES ? Math.round(r.grossAmount * INTERBANK_FEE_VES_RATE * 100) / 100 : 0
+      const usdtFlatFee = !isVES && r.source === 'seller' ? USDT_FLAT_FEE : 0
+      const iva = Math.round((r.grossAmount - r.feeAmount - interbankFee - usdtFlatFee) * IVA_RATE * 100) / 100
+      const neto = r.grossAmount - r.feeAmount - interbankFee - usdtFlatFee - iva
+      return [
+        `"${r.source === 'referral' ? 'Drop Social' : 'Venta'}"`,
+        `"${r.sellerName}"`,
+        `"${payoutMethodLabel(r.payoutMethodType)}"`,
+        `"${r.payoutAccount}"`,
+        `"${r.titular}"`,
+        `"${r.cedula}"`,
+        `"${r.telefono}"`,
+        `"${r.numeroCuenta}"`,
+        `"${r.banco}"`,
+        `"${r.payId}"`,
+        `"${r.email}"`,
+        r.paymentCurrency,
+        r.grossAmount.toFixed(2),
+        r.feeAmount.toFixed(2),
+        interbankFee.toFixed(2),
+        iva.toFixed(2),
+        neto.toFixed(2),
+        r.fechaValor || r.oldestTransactionDate?.slice(0, 10) || '',
+        r.exchangeRate,
+        r.transactionCount,
+        `"${r.transactionIds.join(';')}"`,
+        `"${r.referralReference}"`,
+      ].join(',')
+    }),
   ].join('\n')
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
@@ -959,7 +984,10 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
             </button>
             {payouts && payouts.length > 0 && (
               <button
-                onClick={() => exportCSV(payouts)}
+                onClick={async () => {
+                  const r = await getConsolidatedPayoutReport()
+                  if (r.success && r.data) exportCSV(r.data)
+                }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                 style={{ background: 'rgba(0,174,239,0.12)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.25)' }}
               >
@@ -996,7 +1024,10 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
             </div>
             <div className="mb-4 flex justify-end">
               <button
-                onClick={() => exportCSV(payouts)}
+                onClick={async () => {
+                  const r = await getConsolidatedPayoutReport()
+                  if (r.success && r.data) exportCSV(r.data)
+                }}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium"
                 style={{ background: 'rgba(0,174,239,0.15)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.3)' }}
               >

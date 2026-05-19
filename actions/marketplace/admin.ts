@@ -43,9 +43,43 @@ export interface AdminStats {
   missingPayoutMethodCount: number
 }
 
+import { PLATFORM_FEE_RATE, INTERBANK_FEE_VES_RATE, USDT_FLAT_FEE, IVA_RATE } from '@/lib/marketplace/fees'
+
 export interface PayoutDetail {
   label: string
   value: string
+}
+
+export interface PayoutReportRow {
+  sellerId: string
+  sellerName: string
+  payoutMethodId: string | null
+  payoutMethodType: string
+  payoutAccount: string
+  payoutMethodIsDefault: boolean
+  payoutDetails: PayoutDetail[]
+  hasPayoutMethod: boolean
+  grossAmount: number
+  feeAmount: number
+  netAmount: number
+  currency: string
+  transactionCount: number
+  transactionIds: string[]
+  oldestTransactionDate: string
+  // ── Nuevos campos para CSV separado ──
+  titular: string
+  cedula: string
+  telefono: string
+  numeroCuenta: string
+  banco: string
+  payId: string
+  email: string
+  paymentCurrency: string
+  exchangeRate: string
+  fechaValor: string
+  source: 'seller' | 'referral'
+  referralReference: string
+  ivaAmount: number
 }
 
 export interface EscrowItem {
@@ -132,15 +166,34 @@ function parsePayoutDetails(encryptedData: string | null | undefined): PayoutDet
     const parsed = JSON.parse(encryptedData) as Record<string, unknown>
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return []
 
-    return Object.entries(parsed)
-      .map(([label, value]) => ({
-        label,
-        value: String(value ?? '').trim(),
-      }))
-      .filter(detail => detail.value.length > 0)
+    return Object.entries(parsed).map(([key, value]) => ({
+      label: key,
+      value: typeof value === 'string' ? value : JSON.stringify(value ?? ''),
+    }))
   } catch {
     return []
   }
+}
+
+/** Extract individual bank fields from encryptedData for CSV columns */
+function extractBankFields(encryptedData: string | null | undefined): {
+  titular: string; cedula: string; telefono: string; numeroCuenta: string; banco: string; payId: string; email: string
+} {
+  const fields = { titular: '', cedula: '', telefono: '', numeroCuenta: '', banco: '', payId: '', email: '' }
+  if (!encryptedData) return fields
+  try {
+    const d = JSON.parse(encryptedData) as Record<string, unknown>
+    if (!d || typeof d !== 'object' || Array.isArray(d)) return fields
+    const s = (k: string) => typeof d[k] === 'string' ? d[k] as string : ''
+    fields.titular = s('titular') || s('name') || s('fullName') || s('beneficiary') || ''
+    fields.cedula = s('cedula') || s('ci') || s('dni') || s('document') || s('idNumber') || ''
+    fields.telefono = s('telefono') || s('phone') || s('celular') || s('mobile') || ''
+    fields.numeroCuenta = s('numeroCuenta') || s('accountNumber') || s('cuenta') || s('bankAccount') || ''
+    fields.banco = s('banco') || s('bank') || s('bankName') || s('bankCode') || ''
+    fields.payId = s('payId') || s('payID') || s('binanceId') || s('binancePayId') || s('email') || ''
+    fields.email = s('email') || s('correo') || s('mail') || ''
+  } catch { /* ignore */ }
+  return fields
 }
 
 // ─── GET ADMIN STATS ──────────────────────────────────────────────────────────
@@ -352,11 +405,24 @@ export async function getPayoutReport(): Promise<ActionResult<PayoutReportRow[]>
     const txs = await db.mpTransaction.findMany({
       where: { status: 'RELEASED' },
       orderBy: { createdAt: 'asc' },
-      include: {
+      select: {
+        id: true,
+        amount: true,
+        currency: true,
+        sellerId: true,
+        paymentMethod: true,
+        platformFeeAmount: true,
+        sellerNetAmount: true,
+        frozenRate: true,
+        frozenRateSource: true,
+        frozenRateFechaValor: true,
+        createdAt: true,
         seller: {
           select: {
             id: true,
             displayName: true,
+            email: true,
+            phone: true,
             payoutMethods: {
               where: { isActive: true },
               select: {
@@ -394,12 +460,21 @@ export async function getPayoutReport(): Promise<ActionResult<PayoutReportRow[]>
         existing.transactionIds.push(tx.id)
       } else {
         const payout = tx.seller.payoutMethods[0]
+        const bank = extractBankFields(payout?.encryptedData)
+        
+        // Determine payment currency: USDT only if buyer paid in USDT AND seller collects in USDT
+        const buyerPaymentIsUSDT = tx.paymentMethod === 'BINANCE_PAY' || tx.paymentMethod === 'CRYPTO_WALLET' || tx.currency === 'USDT'
+        const sellerPayoutIsUSDT = payout?.methodType === 'BINANCE_PAY' || payout?.methodType === 'CRYPTO_WALLET' || payout?.currency === 'USDT'
+        const paymentCurrency = buyerPaymentIsUSDT && sellerPayoutIsUSDT ? 'USDT' : 'VES'
+        const usedFrozenRate = tx.frozenRate ? String(tx.frozenRate) : ''
+        const usedFechaValor = tx.frozenRateFechaValor ? new Date(tx.frozenRateFechaValor).toISOString().slice(0, 10) : ''
+        
         sellerMap.set(tx.sellerId, {
           sellerId: tx.sellerId,
           sellerName: tx.seller.displayName,
           payoutMethodId: payout?.id ?? null,
           payoutMethodType: payout?.methodType ?? 'UNKNOWN',
-          payoutAccount: payout?.displayLabel ?? 'Falta método de cobro',
+          payoutAccount: payout?.displayLabel ?? 'Falta metodo de cobro',
           payoutMethodIsDefault: payout?.isDefault ?? false,
           payoutDetails: parsePayoutDetails(payout?.encryptedData),
           hasPayoutMethod: Boolean(payout),
@@ -410,6 +485,19 @@ export async function getPayoutReport(): Promise<ActionResult<PayoutReportRow[]>
           transactionCount: 1,
           transactionIds: [tx.id],
           oldestTransactionDate: tx.createdAt.toISOString(),
+          titular: bank.titular,
+          cedula: bank.cedula,
+          telefono: bank.telefono || (tx.seller.phone ?? ''),
+          numeroCuenta: bank.numeroCuenta,
+          banco: bank.banco,
+          payId: bank.payId,
+          email: bank.email || (tx.seller.email ?? ''),
+          paymentCurrency,
+          exchangeRate: usedFrozenRate,
+          fechaValor: usedFechaValor,
+          source: 'seller' as const,
+          referralReference: '',
+          ivaAmount: 0,
         })
       }
     }
@@ -419,6 +507,71 @@ export async function getPayoutReport(): Promise<ActionResult<PayoutReportRow[]>
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
   }
+}
+
+// ── Consolidated report: seller payouts + Drop Social referral payouts ──────
+export async function getConsolidatedPayoutReport(): Promise<ActionResult<PayoutReportRow[]>> {
+  const [sellerResult, referralResult] = await Promise.all([
+    getPayoutReport(),
+    (async (): Promise<ActionResult<PayoutReportRow[]>> => {
+      try { await requireSuper() } catch (e: any) { return { success: false, message: e?.message ?? 'Sin permiso' } }
+      const db = await getDb()
+      if (!db) return { success: false, message: 'DB no disponible' }
+      try {
+        const payouts = await db.mpPayout.findMany({
+          where: { reference: { startsWith: 'REF-' }, status: 'PENDING' },
+          orderBy: { createdAt: 'asc' },
+          select: {
+            id: true, amount: true, currency: true, sellerId: true, reference: true,
+            transactionIds: true, createdAt: true,
+            seller: { select: { id: true, displayName: true, email: true, phone: true } },
+          },
+        })
+        await db.$disconnect()
+        const rows: PayoutReportRow[] = payouts.map((p: any) => ({
+          sellerId: p.sellerId,
+          sellerName: p.seller.displayName,
+          payoutMethodId: null,
+          payoutMethodType: 'PAGO_MOVIL',
+          payoutAccount: 'Comision Drop Social',
+          payoutMethodIsDefault: false,
+          payoutDetails: [],
+          hasPayoutMethod: true,
+          grossAmount: Number(p.amount),
+          feeAmount: 0,
+          netAmount: Number(p.amount),
+          currency: p.currency,
+          transactionCount: p.transactionIds.length,
+          transactionIds: p.transactionIds,
+          oldestTransactionDate: p.createdAt.toISOString(),
+          titular: p.seller.displayName,
+          cedula: '',
+          telefono: p.seller.phone ?? '',
+          numeroCuenta: '',
+          banco: '',
+          payId: '',
+          email: p.seller.email ?? '',
+          paymentCurrency: 'VES',
+          exchangeRate: '',
+          fechaValor: '',
+          source: 'referral' as const,
+          referralReference: p.reference ?? '',
+          ivaAmount: 0,
+        }))
+        return { success: true, data: rows, message: 'OK' }
+      } catch (e: any) {
+        await db.$disconnect().catch(() => {})
+        return { success: false, message: e?.message ?? 'Error' }
+      }
+    })(),
+  ])
+
+  if (!sellerResult.success && !referralResult.success) {
+    return { success: false, message: 'No se pudo generar el reporte consolidado' }
+  }
+
+  const all = [...(sellerResult.data ?? []), ...(referralResult.data ?? [])]
+  return { success: true, data: all, message: `${all.length} filas` }
 }
 
 // ─── ADMIN VALIDATE PAYMENT ───────────────────────────────────────────────────
