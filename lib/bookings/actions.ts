@@ -23,6 +23,7 @@ import {
 import { sendBookingNotifications } from '@/lib/bookings/notifications'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
 import { isLabPhoneVerifiedRecently } from '@/lib/whatsapp/lab-token-store'
+import { isSecureLinkPhoneVerifiedRecently } from '@/lib/whatsapp/secure-link-store'
 import { sendBookingWhatsapp } from '@/lib/whatsapp/booking-notifications'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -289,12 +290,17 @@ export async function submitBookingRequest(
       }
     }
 
-    const whatsappVerification = await isLabPhoneVerifiedRecently(requesterPhone)
-    if (!whatsappVerification.ok) {
+    const whatsappLabVerification = await isLabPhoneVerifiedRecently(requesterPhone)
+    const whatsappSecureLinkVerification = whatsappLabVerification.ok
+      ? { ok: true, reason: null as 'not_found' | 'not_verified' | 'expired' | null }
+      : await isSecureLinkPhoneVerifiedRecently(requesterPhone)
+
+    if (!whatsappLabVerification.ok && !whatsappSecureLinkVerification.ok) {
       return {
         success: false,
         error:
-          whatsappVerification.reason === 'expired'
+          whatsappLabVerification.reason === 'expired' ||
+          whatsappSecureLinkVerification.reason === 'expired'
             ? 'Tu verificacion de WhatsApp vencio. Verifica nuevamente antes de crear la reserva.'
             : 'Debes verificar tu WhatsApp antes de crear la solicitud de reserva.',
       }

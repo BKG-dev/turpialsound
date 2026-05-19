@@ -6,6 +6,7 @@ import {
 
 export type BookingWhatsappEvent =
   | 'verification_code'
+  | 'whatsapp_secure_link'
   | 'return_link'
   | 'pending_payment'
   | 'payment_reported'
@@ -30,6 +31,8 @@ interface BookingContext {
   paymentWindowMinutes?: number
   reuploadUrl?: string | null
   incidenceReason?: string | null
+  secureLinkUrl?: string | null
+  secureLinkTtlMinutes?: number | null
 }
 
 export interface BookingWhatsappResult {
@@ -83,6 +86,18 @@ function formatMessage(
   switch (event) {
     case 'verification_code':
       return ''
+    case 'whatsapp_secure_link':
+      lines.push(
+        `Hola ${customer.name}, solicitaste continuar una reserva en Turpial Sound.`,
+        '',
+        'Toca aqui para seguir:',
+        booking.secureLinkUrl ?? `${process.env.APP_URL?.replace(/\/+$/, '') ?? 'https://www.turpialsound.com'}/reservas`,
+        '',
+        `Este enlace vence en ${booking.secureLinkTtlMinutes ?? 30} minutos.`,
+        '',
+        'Si no fuiste tu, ignora este mensaje.',
+      )
+      break
     case 'return_link':
       lines.push(
         `Hola ${customer.name}, verificamos tu WhatsApp.`,
