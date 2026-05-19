@@ -168,7 +168,7 @@ function exportCSV(rows: PayoutReportRow[]) {
     'Fuente', 'Miembro', 'Metodo de cobro', 'Cuenta/Direccion',
     'Titular', 'Cedula', 'Telefono', 'N° Cuenta', 'Banco', 'Pay ID', 'Email',
     'Moneda de pago', 'Bruto (USD)', 'Comision plataforma', 'Comision interbancaria', 'IVA', 'Neto a pagar',
-    'Fecha valor', 'Tasa de cambio', 'Num. TX', 'IDs Transacciones', 'Referencia'
+    'Fecha valor', 'Tasa BCV', 'Tasa Binance', 'Neto a pagar (Bs)', 'Neto a pagar (USDT)', 'Num. TX', 'IDs Transacciones', 'Referencia'
   ]
   const csv = [
     headers.join(','),
@@ -197,7 +197,10 @@ function exportCSV(rows: PayoutReportRow[]) {
         iva.toFixed(2),
         neto.toFixed(2),
         r.fechaValor || r.oldestTransactionDate?.slice(0, 10) || '',
-        r.exchangeRate,
+        r.bcvRate,
+        r.binanceRate,
+        r.netoBs.toFixed(2),
+        r.netoUsdt.toFixed(2),
         r.transactionCount,
         `"${r.transactionIds.join(';')}"`,
         `"${r.referralReference}"`,

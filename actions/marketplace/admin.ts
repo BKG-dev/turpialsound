@@ -80,6 +80,10 @@ export interface PayoutReportRow {
   source: 'seller' | 'referral'
   referralReference: string
   ivaAmount: number
+  bcvRate: string
+  binanceRate: string
+  netoBs: number
+  netoUsdt: number
 }
 
 export interface EscrowItem {
@@ -194,6 +198,69 @@ function extractBankFields(encryptedData: string | null | undefined): {
     fields.email = s('email') || s('correo') || s('mail') || ''
   } catch { /* ignore */ }
   return fields
+}
+
+/** Query snapshot tables for BCV & Binance rates for each unique fechaValor and populate neto columns */
+async function enrichPayoutRowsWithRates(rows: PayoutReportRow[]): Promise<void> {
+  if (rows.length === 0) return
+
+  const db = await getDb()
+  if (!db) return
+
+  try {
+    const uniqueFechas = [...new Set(rows.map(r => r.fechaValor).filter(Boolean))]
+    const ratesMap = new Map<string, { bcvRate: number | null; binanceRate: number | null }>()
+
+    for (const fecha of uniqueFechas) {
+      const date = new Date(fecha as string)
+      const start = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+      const end = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1)
+
+      const [bcv, binance] = await Promise.all([
+        db.mpReferenceRateSnapshot.findFirst({
+          where: { fechaValor: { gte: start, lt: end } },
+          orderBy: { fechaValor: 'desc' },
+          select: { rate: true },
+        }),
+        db.mpBinanceRateSnapshot.findFirst({
+          where: { fechaValor: { gte: start, lt: end } },
+          orderBy: { fechaValor: 'desc' },
+          select: { rate: true },
+        }),
+      ])
+
+      ratesMap.set(fecha as string, {
+        bcvRate: bcv ? Number(bcv.rate) : null,
+        binanceRate: binance ? Number(binance.rate) : null,
+      })
+    }
+
+    for (const row of rows) {
+      const rates = row.fechaValor ? ratesMap.get(row.fechaValor) : null
+      const bcv = rates?.bcvRate ?? null
+      const binance = rates?.binanceRate ?? null
+
+      row.bcvRate = bcv != null ? String(bcv) : ''
+      row.binanceRate = binance != null ? String(binance) : ''
+
+      const isVES = row.paymentCurrency === 'VES'
+      if (isVES) {
+        row.netoBs = Math.round(row.netAmount * 100) / 100
+        row.netoUsdt = binance != null && binance > 0
+          ? Math.round((row.netAmount / binance) * 100) / 100
+          : 0
+      } else {
+        row.netoUsdt = Math.round(row.netAmount * 100) / 100
+        row.netoBs = bcv != null && bcv > 0
+          ? Math.round((row.netAmount * bcv) * 100) / 100
+          : 0
+      }
+    }
+  } catch {
+    // enrichment fails gracefully — rows keep default empty values
+  } finally {
+    await db.$disconnect().catch(() => {})
+  }
 }
 
 // ─── GET ADMIN STATS ──────────────────────────────────────────────────────────
@@ -498,6 +565,10 @@ export async function getPayoutReport(): Promise<ActionResult<PayoutReportRow[]>
           source: 'seller' as const,
           referralReference: '',
           ivaAmount: 0,
+          bcvRate: '',
+          binanceRate: '',
+          netoBs: 0,
+          netoUsdt: 0,
         })
       }
     }
@@ -553,10 +624,14 @@ export async function getConsolidatedPayoutReport(): Promise<ActionResult<Payout
           email: p.seller.email ?? '',
           paymentCurrency: 'VES',
           exchangeRate: '',
-          fechaValor: '',
+          fechaValor: p.createdAt.toISOString().slice(0, 10),
           source: 'referral' as const,
           referralReference: p.reference ?? '',
           ivaAmount: 0,
+          bcvRate: '',
+          binanceRate: '',
+          netoBs: 0,
+          netoUsdt: 0,
         }))
         return { success: true, data: rows, message: 'OK' }
       } catch (e: any) {
@@ -571,6 +646,7 @@ export async function getConsolidatedPayoutReport(): Promise<ActionResult<Payout
   }
 
   const all = [...(sellerResult.data ?? []), ...(referralResult.data ?? [])]
+  await enrichPayoutRowsWithRates(all)
   return { success: true, data: all, message: `${all.length} filas` }
 }
 

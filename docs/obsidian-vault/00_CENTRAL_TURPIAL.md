@@ -3,7 +3,7 @@ type: master-dashboard
 project: "Turpial Sound"
 status: active-integration
 phase: "Fase G: Optimizacion marketplace post-cierre. 8 sprints nuevos (S-MP-01 a S-MP-08)."
-last_updated: "18/05/26 14:13"
+last_updated: "19/05/26 18:57"
 mother_branch: "MADRE/v7-s-mp-07-dark-mode-cards-admin-igor-2026-05-18"
 mother_head: "RAMAMADRE_BASE"
 production_branch: "prod/current-www-turpialsound-2026-05-08"
@@ -115,28 +115,27 @@ tags:
 
 ## 👤 MANUEL (Manuel Vera) — ESTADO
 
-### Rama activa: `Manuel/s-adm-01-legal-entity-2026-05-15`
+### Rama activa: `Manuel/s-mp-08-notificaciones-2026-05-18`
 
 | Commit | Descripcion |
 |--------|-------------|
+| `1aea15e` | feat(marketplace): Drop Social admin payouts + CSV export + exchange rate columns |
 | `93e4536` | fix(search): eliminar filtro estricto que bloqueaba busqueda difusa Fuse.js |
 | `be609b0` | fix(sync): date mismatch no bloquea push |
 | `c423d46` | merge: consolidar sprints marketplace + docs RAMA-MADRE + preflight v3.0 |
 
-### Sprints cerrados
+### Sprints cerrados (Marketplace Post-Cierre)
 
 | Sprint | Descripcion | Fecha |
 |--------|-------------|-------|
-| S12-S14B | Purchase flow, proof upload, admin dashboard, shopping cart | ✅ May 13-14 |
-| S15 | Location filters + listing modal | ✅ May 14 |
-| S16 | Notificaciones y chat | ✅ May 14 |
-| S18 | Full regression (25 PASS) | ✅ May 14 |
-| S20 | SEO/AEO audit | ✅ May 14 |
-| S-REV-01 | Ratings, reviews + Full E2E | ✅ May 14 |
-| S-MK-01 a 06 | Mercado, KPIs, SEO, RRSS, Marketing | ✅ May 14 |
-| S-UX-01 | Plan tecnico UI Inmersiva | ✅ May 15 |
-| S-UX-02 | Implementacion UI Inmersiva + Refac Global | ✅ May 15 |
-| S-ADM-01 | Verificar estado legal de la entidad | ✅ En rama hija |
+| S-MP-01 | Carrito consolidado (17/17 PASS QA) | ✅ May 17 |
+| S-MP-02 | Busqueda difusa y filtros (10/10 PASS QA) | ✅ May 17 |
+| S-MP-03 | Formulario de pago y tasas (10/10) | ✅ Jean |
+| S-MP-04 | Publicacion con imagenes reales (8/8 PASS QA) | ✅ May 17 |
+| S-MP-05 | Modal desktop + semaforo (9/9) | ✅ Jean |
+| S-MP-06 | Drop Social — programa de referidos (10/10 PASS QA) | ✅ May 19 |
+| S-MP-07 | Home + dark mode cards + Igor admin (9/9) | ✅ May 18 |
+| S-MP-08 | Notificaciones + Drop Social admin + CSV export + tasas | ✅ May 19 |
 
 ### 🟠 ZONAS ACTIVAS RECIENTES DE MANUEL (NO SOLAPAR)
 
@@ -182,6 +181,79 @@ tags:
 ### Pendiente separado
 
 - Browser E2E Playwright de clicks reales del carrito en preview. No usar CDP ni HTTP ad hoc.
+
+---
+
+## Actualizacion Manuel — S-MP-08 Notificaciones + Drop Social Admin + CSV Export (2026-05-19 18:57 VET)
+
+| Campo | Valor |
+|-------|-------|
+| Rama | `Manuel/s-mp-08-notificaciones-2026-05-18` |
+| Estado | CERRADO — implementado y documentado |
+| Ultimo deploy | `https://turpialsound-8oeml93wq-bkgs-projects-829c67c1.vercel.app` |
+
+### Entregado
+
+**Drop Social (S-MP-06) fixes:**
+- Redireccion de enlace de referido: `getListingBySlug` acepta slugs e IDs (`findFirst({ OR: [{ slug }, { id: slug }] })`)
+- Trazabilidad completa: `referredBy` registrado en `MpTransaction` al comprar via enlace
+- Comisiones parametrizables via `MP_REFERRAL_COMMISSION_PERCENT` (default 0.5%)
+
+**Admin Dashboard — Pagos vendedores:**
+- Reporte consolidado `getConsolidatedPayoutReport()`: seller payouts + Drop Social referral payouts
+- CSV export con **26 columnas** separadas (antes 11):
+  - Datos bancarios desglosados: titular, cedula, telefono, N° cuenta, banco, Pay ID, email
+  - **Tasa BCV** y **Tasa Binance** como columnas independientes (consultadas de `mp_reference_rate_snapshots` y `mp_binance_rate_snapshots`)
+  - **Neto a pagar (Bs)** y **Neto a pagar (USDT)** — calculados segun moneda de pago
+  - Fuente: "Venta" o "Drop Social"
+- Seccion de pagos Drop Social en tab "Pagos vendedores" con badge 🎁 REF-*
+
+**Fee parameterization (no-deploy):**
+- `lib/marketplace/fees.ts`: `PLATFORM_FEE_PERCENT`, `INTERBANK_FEE_VES_PERCENT`, `USDT_FLAT_FEE`, `IVA_PERCENT`, `REFERRAL_COMMISSION_PERCENT`
+- Sobrescritura via env vars: `MP_PLATFORM_FEE_PERCENT`, `MP_INTERBANK_FEE_VES_PERCENT`, etc.
+
+**Logica de moneda de pago:**
+- VES por defecto
+- USDT solo si buyer pago USDT Y seller cobra USDT
+- NetoBs = netAmount × tasa BCV (si es USDT); NetoUsdt = netAmount ÷ tasa Binance (si es VES)
+
+**Fix DB critico:**
+- `channel_binding=require` removido de `DATABASE_URL` en `lib/marketplace/db.ts` — resolvio error `orderId does not exist`
+
+### Trabajo fuera de sprint (no planeado)
+
+- `scripts/oreshnik/runs/db-fingerprint.mjs` — fingerprint de columnas en preview Neon
+- `scripts/oreshnik/runs/verify-columns.sql` — verificacion de columnas `orderId`, `quantity`, `unitPrice`
+- `scripts/oreshnik/runs/fix-legacy-inventory.mjs` — correccion de inventario legacy
+
+### 🔴 PENDIENTE PARA PROXIMA SESION
+
+| # | Accion | Prioridad |
+|---|--------|-----------|
+| 1 | **Test CSV export en preview**: verificar que columnas Tasa BCV, Tasa Binance, NetoBs, NetoUsdt se populan con datos reales de los snapshot tables | 🔴 |
+| 2 | **Test "Pagar todo"** para Drop Social referral payouts — verificar que `completeReferralPayout` procesa correctamente | 🔴 |
+| 3 | Verificar que filas "Drop Social" aparecen en CSV export (columnas titular, cedula, etc. pobladas) | 🟡 |
+| 4 | QA manual integral buyer -> admin -> escrow -> release | 🔴 |
+| 5 | Implementar Cron T+7 para liberacion automatica de escrow | 🟡 |
+| 6 | Pasarelas automaticas Mercantil/Binance (diferidas por decision de producto) | 🟠 |
+| 7 | `pnpm run build` limpio en Vercel preview | 🟡 |
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `lib/marketplace/fees.ts` | NUEVO — config central de fees |
+| `lib/marketplace/db.ts` | Fix `channel_binding=require` |
+| `actions/marketplace/admin.ts` | `getConsolidatedPayoutReport`, `extractBankFields`, `enrichPayoutRowsWithRates` |
+| `actions/marketplace/referrals.ts` | `REFERRAL_COMMISSION_RATE` parametrizable |
+| `actions/marketplace/listings.ts` | `getListingBySlug` acepta IDs |
+| `components/marketplace/admin/AdminDashboard.tsx` | CSV 26 cols, seccion Drop Social |
+| `components/marketplace/DropSocialButton.tsx` | Fee parametrizable |
+| `components/marketplace/dashboard/DashboardClient.tsx` | Fee constants en UI |
+| `app/marketplace/r/[code]/route.ts` | Redirect fix |
+| `app/api/marketplace/track-referral-click/route.ts` | Tracking endpoint |
+| `components/marketplace/ReferralTracker.tsx` | Client-side tracker |
+| `prisma/migrations/*` | Migraciones `slug` + `inventory` legacy |
 
 ---
 
@@ -316,7 +388,7 @@ git push origin main
 
 ---
 
-> **Ultima actualizacion:** 18/05/26 14:13 VET | **Estado:** S-MP-01..S-MP-08 CERRADOS | **Tag:** `tc-doc-mp-09-01-align-2026-05-18`
+> **Ultima actualizacion:** 19/05/26 18:57 VET | **Estado:** S-MP-08 CERRADO | **Tag:** `close-manuel-s-mp-08-2026-05-19`
 
 ---
 
@@ -327,6 +399,7 @@ git push origin main
 | Rama | Ultimo Preview | Fecha | Estado |
 |------|---------------|-------|--------|
 | **Madre** `RAMA MADRE` | `25fdca6` | 2026-05-15 12:30 | ✅ Actualizada con docs |
+| `Manuel/s-mp-08-notificaciones-2026-05-18` | `1aea15e` | 2026-05-19 18:57 | ✅ CERRADO — CSV tasas + neto |
 | `Manuel/s-ds-01-dropsocial-referral` | — | 2026-05-14 16:18 | En deploy |
 | `Manuel/s-opt-01-loc-inv-src-lang` | `8dl39wqiw` | 2026-05-14 15:40 | ● Ready |
 | `Manuel/s-rev-01-reviews-ratings-full-e2e` | `2z0aoc1rc` | 2026-05-14 13:00 | ● Ready |
