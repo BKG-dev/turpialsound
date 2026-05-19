@@ -1,0 +1,35 @@
+{
+  "sprint": "S-MP-08",
+  "operator": "Manuel",
+  "status": "CERRADO",
+  "date": "2026-05-19",
+  "fulldate": "19/05/26 19:40",
+  "iso": "2026-05-19T23:40:07.963Z",
+  "childBranch": "Manuel/s-mp-08-notificaciones-2026-05-18",
+  "motherBranch": "MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19",
+  "description": "csv-tasas-neto-drop-social",
+  "previousMother": "MADRE/v7-s-mp-07-dark-mode-cards-admin-igor-2026-05-18",
+  "changedZones": [
+    "Server Actions Marketplace",
+    "API Marketplace",
+    "Componentes Marketplace",
+    "Documentacion",
+    "Migraciones DB",
+    "DB Schema",
+    "Scripts Oreshnik",
+    "QA Playwright"
+  ],
+  "docsUpdated": [
+    "docs/marketplace/01_ROADMAP_AND_STATUS.md",
+    "docs/07_handoffs/qa-dispatcher.json",
+    "docs/obsidian-vault/00_CENTRAL_TURPIAL.md",
+    "docs/obsidian-vault/ARQUITECTURA/ARQUITECTURA_TASAS.md",
+    "docs/obsidian-vault/00_INDICE_MAESTRO.md",
+    "docs/obsidian-vault/METODOLOGIA/METODOLOGIA_ORESHNIK.md",
+    "docs/obsidian-vault/METODOLOGIA/INSTRUCCION_APERTURA_SESION.md",
+    "docs/07_handoffs/qa-canonical-runbook.md",
+    "docs/obsidian-vault/SPRINTS/PLAN_MAESTRO_SPRINTS.md"
+  ],
+  "coverageGaps": 0,
+  "forceClose": false
+}

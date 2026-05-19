@@ -1,6 +1,6 @@
 {
-  "version": 7,
-  "current": "MADRE/v7-s-mp-07-dark-mode-cards-admin-igor-2026-05-18",
+  "version": 8,
+  "current": "MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19",
   "branches": [
     {
       "version": 1,
@@ -71,6 +71,16 @@
       "fulldate": "18/05/26 09:39",
       "description": "dark-mode-cards-admin-igor",
       "previous": "MADRE/v6-s-mp-06-drop-social-referidos-dashboard-2026-05-18"
+    },
+    {
+      "version": 8,
+      "name": "MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19",
+      "sprint": "S-MP-08",
+      "operator": "Manuel",
+      "date": "2026-05-19",
+      "fulldate": "19/05/26 19:40",
+      "description": "csv-tasas-neto-drop-social",
+      "previous": "MADRE/v7-s-mp-07-dark-mode-cards-admin-igor-2026-05-18"
     }
   ]
 }
