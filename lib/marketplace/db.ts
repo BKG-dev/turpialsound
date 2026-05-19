@@ -4,11 +4,12 @@
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getDb(): Promise<any | null> {
-  if (!process.env.DATABASE_URL) return null
+  const url = process.env.DIRECT_URL || process.env.DATABASE_URL
+  if (!url) return null
   try {
     const { PrismaClient } = await import('../../generated/prisma/client')
     const { PrismaPg } = await import('@prisma/adapter-pg')
-    const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+    const adapter = new PrismaPg({ connectionString: url })
     return new PrismaClient({ adapter })
   } catch {
     return null
