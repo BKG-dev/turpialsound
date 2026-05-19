@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate && prisma migrate deploy",
+    "postinstall": "prisma generate",
     "format": "prettier --write .",
     "seed:dev": "npx tsx prisma/seed-dev.ts"
   },
