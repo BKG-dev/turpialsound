@@ -1,0 +1,77 @@
+{
+  "runId": "2026-05-19T02-33-40-039Z",
+  "appUrl": "https://turpialsound-29oxrthhr-bkgs-projects-829c67c1.vercel.app",
+  "startedAt": "2026-05-19T02:33:40.041Z",
+  "finishedAt": "2026-05-19T02:33:43.919Z",
+  "modules": [
+    {
+      "module": "QA-01",
+      "status": "RUNNING",
+      "durationMs": null,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [],
+      "startedAt": "2026-05-19T02:33:40.520Z",
+      "finishedAt": null
+    },
+    {
+      "module": "QA-01",
+      "status": "PASS",
+      "durationMs": 3398,
+      "failureCode": null,
+      "failureDetail": null,
+      "checks": [
+        {
+          "check": "buyer",
+          "status": "PASS",
+          "detail": "AUTH_DATA_PASS: buyerIA (buyerIA@local.test)",
+          "result": {
+            "id": "cmo8s1ypo00001sneqb7uf2wz",
+            "email": "buyerIA@local.test",
+            "displayName": "buyerIA",
+            "isSeller": false,
+            "role": "USER",
+            "isBanned": false
+          },
+          "sessionNote": "SESSION_BROWSER_REQUIRED — session cookie validation needs browser/HTTP context"
+        },
+        {
+          "check": "seller",
+          "status": "PASS",
+          "detail": "AUTH_DATA_PASS: sellerIA (sellerIA@local.test)",
+          "result": {
+            "id": "cmo8s1z8b00011snebee13ges",
+            "email": "sellerIA@local.test",
+            "displayName": "sellerIA",
+            "isSeller": true,
+            "role": "USER",
+            "isBanned": false
+          },
+          "sessionNote": "SESSION_BROWSER_REQUIRED — session cookie validation needs browser/HTTP context"
+        },
+        {
+          "check": "admin",
+          "status": "PASS",
+          "detail": "AUTH_DATA_PASS: mvera (mvera@dev.local), role=SUPER",
+          "result": {
+            "id": "cmnw0qtms00001cnew7o28bnp",
+            "email": "mvera@dev.local",
+            "displayName": "mvera",
+            "isSeller": true,
+            "role": "SUPER",
+            "isBanned": false
+          },
+          "sessionNote": "SESSION_BROWSER_REQUIRED — session cookie validation needs browser/HTTP context"
+        }
+      ],
+      "startedAt": "2026-05-19T02:33:40.520Z",
+      "finishedAt": "2026-05-19T02:33:43.918Z"
+    }
+  ],
+  "summary": {
+    "total": 2,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0
+  }
+}

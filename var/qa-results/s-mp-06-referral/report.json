@@ -1,0 +1,23 @@
+{
+  "sprint": "S-MP-06",
+  "test": "DropSocial Referral Program",
+  "appUrl": "https://turpialsound-29oxrthhr-bkgs-projects-829c67c1.vercel.app",
+  "referralUrl": "",
+  "referralCode": "",
+  "listingSlug": "",
+  "timestamp": "2026-05-19T02:33:07.199Z",
+  "steps": [
+    {
+      "step": "fatal",
+      "status": "FAIL",
+      "detail": "locator.waitFor: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[title=\"Salir\"], [aria-label=\"Salir\"]') to be visible\u001b[22m\n"
+    }
+  ],
+  "summary": {
+    "pass": 0,
+    "fail": 1,
+    "warn": 0,
+    "skip": 0,
+    "total": 1
+  }
+}

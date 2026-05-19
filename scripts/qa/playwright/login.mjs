@@ -13,15 +13,15 @@ export async function loginViaMarketplaceModal(page, identifier, password) {
   await entrarBtn.waitFor({ state: 'visible', timeout: 10000 })
   await entrarBtn.click()
 
-  const modal = page.locator('text=Email o usuario')
-  await modal.waitFor({ state: 'visible', timeout: 10000 })
+  const loginForm = page.locator('form').filter({ hasText: 'Email o usuario' }).first()
+  await loginForm.waitFor({ state: 'visible', timeout: 10000 })
 
   await page.waitForTimeout(500)
 
-  const identifierInput = page.locator('input[type="text"]').first()
+  const identifierInput = loginForm.locator('input[type="text"]').first()
   await identifierInput.fill(identifier)
 
-  const passwordInput = page.locator('input[type="password"]').first()
+  const passwordInput = loginForm.locator('input[type="password"]').first()
   await passwordInput.fill(password)
 
   const submitBtn = page.locator('button[type="submit"]:has-text("Iniciar sesión")')
