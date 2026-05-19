@@ -7,15 +7,8 @@ export const dynamic = 'force-dynamic'
 const REFERRAL_COOKIE = 'mp_ref'
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30 // 30 days
 
-export async function GET(request: Request, { params }: { params: Promise<{ code: string }> }) {
-  let code = ''
-  try {
-    const p = await params
-    code = p.code || ''
-  } catch {
-    return redirect('/marketplace')
-  }
-
+export async function GET(_request: Request, { params }: { params: { code: string } }) {
+  const code = params.code || ''
   if (!code) return redirect('/marketplace')
 
   try {
@@ -31,7 +24,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ code
     const result = await trackReferralClick(code)
     const target = result.slug || result.listingId
     if (target) {
-      return redirect(`/marketplace/${target}?ref=${code}`)
+      return redirect(`/marketplace/${target}`)
     }
     return redirect('/marketplace')
   } catch {

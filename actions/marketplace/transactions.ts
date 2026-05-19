@@ -1,5 +1,6 @@
 'use server'
 
+import { randomUUID } from 'node:crypto'
 import { cookies } from 'next/headers'
 import { getDb } from '@/lib/marketplace/db'
 import { getSession } from '@/lib/marketplace/auth'
@@ -26,6 +27,8 @@ type CheckoutPaymentMethod =
   | 'BINANCE_PAY'
 type TxPaymentMethod = 'MERCANTIL_PAGO_MOVIL' | 'ZELLE' | 'CRYPTO_WALLET_MANUAL'
 const SELLER_DELIVERED_EVENT = 'seller_delivered'
+const REFERRAL_COOKIE = 'mp_ref'
+const LEGACY_CART_ORDER_PREFIX = 'legacy-cart:'
 type PurchaseRateContext = {
   bcvRate: number
   binanceRate: number
@@ -45,17 +48,38 @@ type CheckoutListingRow = {
   inventory: number | null
   seller: { payoutMethods: Array<{ methodType: string | null }> }
 }
-const INVENTORY_CONSUMING_TRANSACTION_STATUSES = [
-  'INITIATED',
-  'PENDING_PAYMENT',
-  'PAYMENT_RECEIVED',
-  'VALIDATING',
-  'IN_ESCROW',
-  'DELIVERY_CONFIRMED',
-  'DISPUTED',
-  'RELEASED',
-] as const
-
+type ReferralPurchaseContext = {
+  referralCode: string
+  referredBy: string
+}
+type MarketplaceSchemaCapabilities = {
+  hasOrders: boolean
+  hasTransactionQuantity: boolean
+  hasTransactionUnitPrice: boolean
+  hasTransactionOrderId: boolean
+}
+type CreateMarketplaceTransactionInput = {
+  idempotencyKey: string
+  orderId?: string | null
+  buyerId: string
+  sellerId: string
+  listingId: string
+  paymentMethod: TxPaymentMethod
+  status: 'PENDING_PAYMENT'
+  amount: string
+  currency: string
+  quantity: number
+  unitPrice: string
+  platformFeePercent: string
+  platformFeeAmount: string
+  sellerNetAmount: string
+  frozenRate: string | null
+  frozenRateSource: string | null
+  frozenRateFechaValor: Date | null
+  rateSnapshotId: string | null
+  adminNotes: string | null
+  referredBy: string | null
+}
 function getAvailableInventory(
   listing: { hasInventory: boolean; inventory: number | null },
   consumedUnits: number,
@@ -69,13 +93,11 @@ async function getConsumedInventoryUnits(
   db: any,
   listingId: string,
 ) {
-  const result = await db.mpTransaction.count({
-    where: {
-      listingId,
-      status: { in: [...INVENTORY_CONSUMING_TRANSACTION_STATUSES] },
-    },
-  })
-  return result
+  void db
+  void listingId
+  // Inventory is now decremented atomically on purchase initiation.
+  // Counting transactions here would double-subtract remaining stock.
+  return 0
 }
 
 function hasSellerDelivered(
@@ -130,6 +152,159 @@ function mapCheckoutPaymentMethod(method: string): TxPaymentMethod | null {
   if (method === 'BINANCE_PAY') return 'CRYPTO_WALLET_MANUAL'
   if (method === 'CRYPTO_WALLET') return 'CRYPTO_WALLET_MANUAL'
   return null
+}
+
+async function getMarketplaceSchemaCapabilities(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
+): Promise<MarketplaceSchemaCapabilities> {
+  try {
+    const tables = await db.$queryRaw`
+      select table_name
+      from information_schema.tables
+      where table_schema = 'public'
+        and table_name = 'mp_orders'
+    ` as Array<{ table_name: string }>
+    const columns = await db.$queryRaw`
+      select column_name
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'mp_transactions'
+        and column_name in ('quantity', 'unitPrice', 'orderId')
+    ` as Array<{ column_name: string }>
+    const names = new Set(columns.map((row) => row.column_name))
+    return {
+      hasOrders: tables.length > 0,
+      hasTransactionQuantity: names.has('quantity'),
+      hasTransactionUnitPrice: names.has('unitPrice'),
+      hasTransactionOrderId: names.has('orderId'),
+    }
+  } catch {
+    return {
+      hasOrders: false,
+      hasTransactionQuantity: false,
+      hasTransactionUnitPrice: false,
+      hasTransactionOrderId: false,
+    }
+  }
+}
+
+async function getReferralPurchaseContext(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
+  buyerId: string,
+  listingId: string,
+): Promise<ReferralPurchaseContext | null> {
+  try {
+    const referralCode = cookies().get(REFERRAL_COOKIE)?.value?.trim()
+    if (!referralCode) return null
+
+    const refLink = await db.mpReferralLink.findUnique({
+      where: { code: referralCode },
+      select: { referrerId: true, listingId: true, isActive: true },
+    })
+
+    if (!refLink?.isActive) return null
+    if (refLink.referrerId === buyerId) return null
+    if (refLink.listingId !== listingId) return null
+
+    return { referralCode, referredBy: refLink.referrerId }
+  } catch {
+    return null
+  }
+}
+
+function clearReferralCookie() {
+  try {
+    cookies().set(REFERRAL_COOKIE, '', {
+      path: '/',
+      maxAge: 0,
+      sameSite: 'lax',
+    })
+  } catch {}
+}
+
+function createLegacyTransactionId() {
+  return `tx_${Date.now().toString(36)}_${randomUUID().replace(/-/g, '').slice(0, 16)}`
+}
+
+async function createMarketplaceTransaction(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  prisma: any,
+  schemaCapabilities: MarketplaceSchemaCapabilities,
+  data: CreateMarketplaceTransactionInput,
+): Promise<{ id: string }> {
+  const canUsePrismaCreate =
+    schemaCapabilities.hasTransactionQuantity &&
+    schemaCapabilities.hasTransactionUnitPrice &&
+    (!data.orderId || schemaCapabilities.hasTransactionOrderId)
+
+  if (canUsePrismaCreate) {
+    return await prisma.mpTransaction.create({
+      data: {
+        idempotencyKey: data.idempotencyKey,
+        ...(data.orderId ? { orderId: data.orderId } : {}),
+        buyerId: data.buyerId,
+        sellerId: data.sellerId,
+        listingId: data.listingId,
+        paymentMethod: data.paymentMethod,
+        status: data.status,
+        amount: data.amount,
+        currency: data.currency,
+        quantity: data.quantity,
+        unitPrice: data.unitPrice,
+        platformFeePercent: data.platformFeePercent,
+        platformFeeAmount: data.platformFeeAmount,
+        sellerNetAmount: data.sellerNetAmount,
+        frozenRate: data.frozenRate,
+        frozenRateSource: data.frozenRateSource,
+        frozenRateFechaValor: data.frozenRateFechaValor,
+        rateSnapshotId: data.rateSnapshotId,
+        adminNotes: data.adminNotes,
+        referredBy: data.referredBy,
+      },
+      select: { id: true },
+    })
+  }
+
+  const id = createLegacyTransactionId()
+  const rows = data.orderId && schemaCapabilities.hasTransactionOrderId
+    ? await prisma.$queryRaw`
+        insert into "mp_transactions" (
+          "id", "idempotencyKey", "orderId", "buyerId", "sellerId", "listingId",
+          "paymentMethod", "status", "amount", "currency",
+          "platformFeePercent", "platformFeeAmount", "sellerNetAmount",
+          "frozenRate", "frozenRateSource", "frozenRateFechaValor", "rateSnapshotId",
+          "adminNotes", "referredBy", "createdAt", "updatedAt"
+        )
+        values (
+          ${id}, ${data.idempotencyKey}, ${data.orderId}, ${data.buyerId}, ${data.sellerId}, ${data.listingId},
+          ${data.paymentMethod}::mp_payment_method_type, ${data.status}::mp_transaction_status, ${data.amount}::numeric, ${data.currency},
+          ${data.platformFeePercent}::numeric, ${data.platformFeeAmount}::numeric, ${data.sellerNetAmount}::numeric,
+          ${data.frozenRate}::numeric, ${data.frozenRateSource}, ${data.frozenRateFechaValor}, ${data.rateSnapshotId},
+          ${data.adminNotes}, ${data.referredBy}, now(), now()
+        )
+        returning "id"
+      ` as Array<{ id: string }>
+    : await prisma.$queryRaw`
+        insert into "mp_transactions" (
+          "id", "idempotencyKey", "buyerId", "sellerId", "listingId",
+          "paymentMethod", "status", "amount", "currency",
+          "platformFeePercent", "platformFeeAmount", "sellerNetAmount",
+          "frozenRate", "frozenRateSource", "frozenRateFechaValor", "rateSnapshotId",
+          "adminNotes", "referredBy", "createdAt", "updatedAt"
+        )
+        values (
+          ${id}, ${data.idempotencyKey}, ${data.buyerId}, ${data.sellerId}, ${data.listingId},
+          ${data.paymentMethod}::mp_payment_method_type, ${data.status}::mp_transaction_status, ${data.amount}::numeric, ${data.currency},
+          ${data.platformFeePercent}::numeric, ${data.platformFeeAmount}::numeric, ${data.sellerNetAmount}::numeric,
+          ${data.frozenRate}::numeric, ${data.frozenRateSource}, ${data.frozenRateFechaValor}, ${data.rateSnapshotId},
+          ${data.adminNotes}, ${data.referredBy}, now(), now()
+        )
+        returning "id"
+      ` as Array<{ id: string }>
+
+  return rows[0] ?? { id }
 }
 
 async function resolvePurchaseRateContext(
@@ -228,6 +403,8 @@ export async function initiatePurchase(
         inventory: true,
         seller: {
           select: {
+            phone: true,
+            displayName: true,
             payoutMethods: {
               where: { isActive: true },
               orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
@@ -254,6 +431,7 @@ export async function initiatePurchase(
     const unitPrice = Number(listing.price)
     const amount = unitPrice * requestedQuantity
     const idempotencyKey = `${session.userId}_${listingId}_${requestedQuantity}_${Date.now()}`
+    const schemaCapabilities = await getMarketplaceSchemaCapabilities(db)
 
     // ─── Referral tracking ───
     let referredBy: string | null = null
@@ -277,6 +455,10 @@ export async function initiatePurchase(
     // ─── Rate resolution & frozen-column persistence ───
     // Three mutually exclusive paths; each sets frozenRate columns or blocks with a clear error.
     // No silent fallback to USD_REFERENCE_RATE=1.
+    const referral = await getReferralPurchaseContext(db, session.userId, listingId)
+    referredBy = referral?.referredBy ?? null
+    referralCode = referral?.referralCode ?? null
+
     let bcvRate = 0
     let binanceRate = 0
     let frozenRate: string | null = null
@@ -338,29 +520,26 @@ export async function initiatePurchase(
         })
       }
 
-      const record = await prisma.mpTransaction.create({
-        data: {
-          idempotencyKey,
-          buyerId: session.userId,
-          sellerId: listing.sellerId,
-          listingId,
-          paymentMethod: mappedPaymentMethod,
-          status: 'PENDING_PAYMENT',
-          amount: String(amount),
-          currency: listing.currency,
-          quantity: requestedQuantity,
-          unitPrice: String(unitPrice),
-          platformFeePercent: String(fee.platformFeePercent),
-          platformFeeAmount: String(fee.platformFeeAmount),
-          sellerNetAmount: String(fee.sellerNetAmount),
-          frozenRate,
-          frozenRateSource,
-          frozenRateFechaValor,
-          rateSnapshotId,
-          adminNotes,
-          referredBy,
-        },
-        select: { id: true },
+      const record = await createMarketplaceTransaction(prisma, schemaCapabilities, {
+        idempotencyKey,
+        buyerId: session.userId,
+        sellerId: listing.sellerId,
+        listingId,
+        paymentMethod: mappedPaymentMethod,
+        status: 'PENDING_PAYMENT',
+        amount: String(amount),
+        currency: listing.currency,
+        quantity: requestedQuantity,
+        unitPrice: String(unitPrice),
+        platformFeePercent: String(fee.platformFeePercent),
+        platformFeeAmount: String(fee.platformFeeAmount),
+        sellerNetAmount: String(fee.sellerNetAmount),
+        frozenRate,
+        frozenRateSource,
+        frozenRateFechaValor,
+        rateSnapshotId,
+        adminNotes: requestedQuantity > 1 ? `Cantidad: ${requestedQuantity}. ${adminNotes}` : adminNotes,
+        referredBy,
       })
 
       await prisma.mpTransactionStatusHistory.create({
@@ -379,18 +558,15 @@ export async function initiatePurchase(
 
     // Process referral conversion if applicable (fire-and-forget)
     if (referredBy && referralCode) {
+      clearReferralCookie()
       void processReferralConversion(tx.id, referralCode, amount).catch(() => {})
     }
 
     // WhatsApp notification: new sale (fire-and-forget)
     void (async () => {
       try {
-        const seller = await db.mpUser.findUnique({
-          where: { id: listing.sellerId },
-          select: { phone: true, displayName: true },
-        })
-        if (seller?.phone) {
-          await sendWhatsAppNotification(seller.phone, 'payment_sent', {
+        if (listing.seller.phone) {
+          await sendWhatsAppNotification(listing.seller.phone, 'payment_sent', {
             senderName: 'Turpial Market',
             amount: `${amount} ${listing.currency}`,
             txId: tx.id,
@@ -422,7 +598,10 @@ export async function submitPaymentProof(
   if (!db) return { success: false, message: 'Base de datos no disponible' }
 
   try {
-    const tx = await db.mpTransaction.findUnique({ where: { id: transactionId } })
+    const tx = await db.mpTransaction.findUnique({
+      where: { id: transactionId },
+      select: { id: true, buyerId: true, status: true, paymentMethod: true },
+    })
     if (!tx) return { success: false, message: 'Transaccion no encontrada' }
     if (tx.buyerId !== session.userId) return { success: false, message: 'Sin permiso' }
     if (tx.status !== 'INITIATED' && tx.status !== 'PENDING_PAYMENT') {
@@ -487,7 +666,10 @@ export async function validatePayment(
   if (!db) return { success: false, message: 'Base de datos no disponible' }
 
   try {
-    const tx = await db.mpTransaction.findUnique({ where: { id: transactionId } })
+    const tx = await db.mpTransaction.findUnique({
+      where: { id: transactionId },
+      select: { id: true, status: true, listingId: true },
+    })
     if (!tx) return { success: false, message: 'Transaccion no encontrada' }
     if (tx.status !== 'PAYMENT_RECEIVED' && tx.status !== 'VALIDATING') {
       return { success: false, message: `Estado invalido para validar: ${tx.status}` }
@@ -559,7 +741,12 @@ export async function sellerDeliver(transactionId: string): Promise<ActionResult
   try {
     const tx = await db.mpTransaction.findUnique({
       where: { id: transactionId },
-      include: {
+      select: {
+        id: true,
+        buyerId: true,
+        sellerId: true,
+        listingId: true,
+        status: true,
         statusHistory: {
           select: { reason: true, toStatus: true, changedBy: true },
         },
@@ -612,7 +799,12 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
   try {
     const tx = await db.mpTransaction.findUnique({
       where: { id: transactionId },
-      include: {
+      select: {
+        id: true,
+        buyerId: true,
+        sellerId: true,
+        listingId: true,
+        status: true,
         disputes: { where: { status: { in: ['OPEN', 'UNDER_REVIEW'] } }, select: { id: true } },
         statusHistory: { select: { reason: true, toStatus: true, changedBy: true } },
       },
@@ -678,7 +870,10 @@ export async function releaseEscrow(transactionId: string): Promise<ActionResult
   try {
     const tx = await db.mpTransaction.findUnique({
       where: { id: transactionId },
-      include: {
+      select: {
+        id: true,
+        status: true,
+        buyerConfirmedAt: true,
         disputes: { where: { status: { in: ['OPEN', 'UNDER_REVIEW'] } }, select: { id: true } },
       },
     })
@@ -730,7 +925,10 @@ export async function openDispute(
   if (!db) return { success: false, message: 'Base de datos no disponible' }
 
   try {
-    const tx = await db.mpTransaction.findUnique({ where: { id: transactionId } })
+    const tx = await db.mpTransaction.findUnique({
+      where: { id: transactionId },
+      select: { id: true, buyerId: true, sellerId: true, status: true },
+    })
     if (!tx) return { success: false, message: 'Transaccion no encontrada' }
 
     const isParticipant = tx.buyerId === session.userId || tx.sellerId === session.userId
@@ -840,7 +1038,10 @@ export async function cancelTransaction(
   if (!db) return { success: false, message: 'Base de datos no disponible' }
 
   try {
-    const tx = await db.mpTransaction.findUnique({ where: { id: transactionId } })
+    const tx = await db.mpTransaction.findUnique({
+      where: { id: transactionId },
+      select: { id: true, buyerId: true, sellerId: true, status: true },
+    })
     if (!tx) return { success: false, message: 'Transaccion no encontrada' }
 
     const isParticipant = tx.buyerId === session.userId || tx.sellerId === session.userId
@@ -882,7 +1083,37 @@ export async function getTransaction(transactionId: string): Promise<ActionResul
   try {
     const tx = await db.mpTransaction.findUnique({
       where: { id: transactionId },
-      include: {
+      select: {
+        id: true,
+        buyerId: true,
+        sellerId: true,
+        listingId: true,
+        paymentMethod: true,
+        status: true,
+        amount: true,
+        currency: true,
+        platformFeePercent: true,
+        platformFeeAmount: true,
+        sellerNetAmount: true,
+        frozenRate: true,
+        frozenRateSource: true,
+        frozenRateFechaValor: true,
+        rateSnapshotId: true,
+        externalTxId: true,
+        paymentReference: true,
+        paymentSenderBank: true,
+        paymentPaidAt: true,
+        paymentProofUrl: true,
+        escrowHeldAt: true,
+        escrowReleaseAt: true,
+        releasedAt: true,
+        buyerConfirmedAt: true,
+        referredBy: true,
+        disputeReason: true,
+        disputeOpenedAt: true,
+        adminNotes: true,
+        createdAt: true,
+        updatedAt: true,
         buyer: { select: { id: true, displayName: true, email: true, avatarUrl: true } },
         seller: { select: { id: true, displayName: true, email: true, avatarUrl: true } },
         listing: { select: { id: true, title: true, slug: true, coverImageUrl: true, price: true, currency: true } },
@@ -989,6 +1220,7 @@ export async function checkoutCart(
       listingId: item.listingId,
       quantity: Math.max(1, Math.floor(item.quantity ?? 1)),
     }))
+    const schemaCapabilities = await getMarketplaceSchemaCapabilities(db)
     const listingIds = [...new Set(normalizedItems.map(item => item.listingId))]
     const listings = await db.mpListing.findMany({
       where: { id: { in: listingIds } },
@@ -1034,8 +1266,6 @@ export async function checkoutCart(
         continue
       }
 
-      const consumedUnits = await getConsumedInventoryUnits(db, item.listingId)
-      const availableInventory = getAvailableInventory(listing, consumedUnits)
       // Pre-check: si listing tiene inventory, al menos debe haber 1 disponible (el in-transaction es definitive)
       if (listing.hasInventory && listing.inventory != null && listing.inventory < 1) {
         errorMessages.push(`${item.listingId}: agotado`)
@@ -1056,7 +1286,8 @@ export async function checkoutCart(
       const unitPrice = Number(listing.price)
       const amount = unitPrice * item.quantity
       const fee = calcFee(amount, mappedPaymentMethod, sellerPayoutMethod, rateContext.data.bcvRate, rateContext.data.binanceRate)
-      return { item, listing, unitPrice, amount, fee, rateContext: rateContext.data }
+      const referralContext = await getReferralPurchaseContext(db, session.userId, item.listingId)
+      return { item, listing, unitPrice, amount, fee, rateContext: rateContext.data, referralContext }
     }))
     const totalAmount = prepared.reduce((sum, row) => sum + row.amount, 0)
 
@@ -1079,42 +1310,44 @@ export async function checkoutCart(
         }
       }
 
-      const order = await prisma.mpOrder.create({
-        data: {
-          buyerId: session.userId,
-          paymentMethod: mappedPaymentMethod,
-          status: 'PENDING_PAYMENT',
-          amount: String(totalAmount),
-          currency,
-        },
-        select: { id: true },
-      })
+      const order = schemaCapabilities.hasOrders
+        ? await prisma.mpOrder.create({
+            data: {
+              buyerId: session.userId,
+              paymentMethod: mappedPaymentMethod,
+              status: 'PENDING_PAYMENT',
+              amount: String(totalAmount),
+              currency,
+            },
+            select: { id: true },
+          })
+        : null
 
       for (const row of prepared) {
         const idempotencyKey = `${session.userId}_${row.item.listingId}_${row.item.quantity}_${Date.now()}`
-        const record = await prisma.mpTransaction.create({
-          data: {
-            idempotencyKey,
-            orderId: order.id,
-            buyerId: session.userId,
-            sellerId: row.listing.sellerId,
-            listingId: row.item.listingId,
-            paymentMethod: mappedPaymentMethod,
-            status: 'PENDING_PAYMENT',
-            amount: String(row.amount),
-            currency,
-            quantity: row.item.quantity,
-            unitPrice: String(row.unitPrice),
-            platformFeePercent: String(row.fee.platformFeePercent),
-            platformFeeAmount: String(row.fee.platformFeeAmount),
-            sellerNetAmount: String(row.fee.sellerNetAmount),
-            frozenRate: row.rateContext.frozenRate,
-            frozenRateSource: row.rateContext.frozenRateSource,
-            frozenRateFechaValor: row.rateContext.frozenRateFechaValor,
-            rateSnapshotId: row.rateContext.rateSnapshotId,
-            adminNotes: row.rateContext.adminNotes,
-          },
-          select: { id: true },
+        const record = await createMarketplaceTransaction(prisma, schemaCapabilities, {
+          idempotencyKey,
+          orderId: order?.id ?? null,
+          buyerId: session.userId,
+          sellerId: row.listing.sellerId,
+          listingId: row.item.listingId,
+          paymentMethod: mappedPaymentMethod,
+          status: 'PENDING_PAYMENT',
+          amount: String(row.amount),
+          currency,
+          quantity: row.item.quantity,
+          unitPrice: String(row.unitPrice),
+          platformFeePercent: String(row.fee.platformFeePercent),
+          platformFeeAmount: String(row.fee.platformFeeAmount),
+          sellerNetAmount: String(row.fee.sellerNetAmount),
+          frozenRate: row.rateContext.frozenRate,
+          frozenRateSource: row.rateContext.frozenRateSource,
+          frozenRateFechaValor: row.rateContext.frozenRateFechaValor,
+          rateSnapshotId: row.rateContext.rateSnapshotId,
+          adminNotes: row.item.quantity > 1
+            ? `Cantidad: ${row.item.quantity}. ${row.rateContext.adminNotes}`
+            : row.rateContext.adminNotes,
+          referredBy: row.referralContext?.referredBy ?? null,
         })
 
         await prisma.mpTransactionStatusHistory.create({
@@ -1122,17 +1355,33 @@ export async function checkoutCart(
             transactionId: record.id,
             toStatus: 'PENDING_PAYMENT',
             changedBy: session.userId,
-            reason: `Orden consolidada ${order.id}. Cantidad: ${row.item.quantity}. Esperando comprobante de pago.`,
+            reason: order
+              ? `Orden consolidada ${order.id}. Cantidad: ${row.item.quantity}. Esperando comprobante de pago.`
+              : `Checkout carrito legacy. Cantidad: ${row.item.quantity}. Esperando comprobante de pago.`,
           },
         })
 
         transactions.push({ transactionId: record.id, listingId: row.item.listingId, idempotencyKey })
       }
 
-      return { orderId: order.id }
+      return {
+        orderId: order?.id ?? `${LEGACY_CART_ORDER_PREFIX}${transactions.map(transaction => transaction.transactionId).join(',')}`,
+      }
     })
 
     await db.$disconnect()
+
+    const convertedRows = prepared.filter(row => row.referralContext)
+    if (convertedRows.length > 0) {
+      clearReferralCookie()
+      for (const row of convertedRows) {
+        const transaction = transactions.find(tx => tx.listingId === row.item.listingId)
+        if (transaction && row.referralContext) {
+          void processReferralConversion(transaction.transactionId, row.referralContext.referralCode, row.amount).catch(() => {})
+        }
+      }
+    }
+
     return {
       success: true,
       data: { orderId: result.orderId, transactions, totalAmount },
@@ -1141,6 +1390,89 @@ export async function checkoutCart(
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'No se pudo iniciar la orden consolidada' }
+  }
+}
+
+async function submitLegacyCartPaymentProof(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
+  session: { userId: string },
+  orderId: string,
+  reference: string,
+  details: {
+    senderBank?: string | null
+    paymentDate: string
+  },
+  proofUrl?: string,
+): Promise<ActionResult<{ orderId: string }>> {
+  try {
+    const transactionIds = orderId
+      .slice(LEGACY_CART_ORDER_PREFIX.length)
+      .split(',')
+      .map(id => id.trim())
+      .filter(Boolean)
+
+    if (transactionIds.length === 0) {
+      return { success: false, message: 'Orden legacy sin transacciones' }
+    }
+
+    const transactions = await db.mpTransaction.findMany({
+      where: { id: { in: transactionIds } },
+      select: { id: true, buyerId: true, status: true, paymentMethod: true },
+    })
+
+    if (transactions.length !== transactionIds.length) return { success: false, message: 'Una o mas transacciones no existen' }
+    if (transactions.some((tx: { buyerId: string }) => tx.buyerId !== session.userId)) return { success: false, message: 'Sin permiso' }
+
+    const invalidTx = transactions.find((tx: { status: string }) => tx.status !== 'INITIATED' && tx.status !== 'PENDING_PAYMENT')
+    if (invalidTx) return { success: false, message: `Estado invalido para reportar pago: ${invalidTx.status}` }
+
+    const cleanReference = reference.trim()
+    if (!cleanReference) return { success: false, message: 'La referencia de pago es obligatoria' }
+
+    const isBinancePayment = transactions[0]?.paymentMethod === 'CRYPTO_WALLET_MANUAL'
+    const cleanSenderBank = details.senderBank?.trim() ?? ''
+    if (!isBinancePayment && !cleanSenderBank) return { success: false, message: 'El banco emisor es obligatorio' }
+    if (!proofUrl?.trim()) return { success: false, message: 'El comprobante de pago es obligatorio' }
+    if (!details.paymentDate.trim()) return { success: false, message: 'La fecha de pago es obligatoria' }
+
+    const paidAt = new Date(`${details.paymentDate}T12:00:00-04:00`)
+    if (Number.isNaN(paidAt.getTime())) return { success: false, message: 'La fecha de pago no es valida' }
+
+    await db.$transaction(async (prisma: any) => {
+      for (const tx of transactions) {
+        await prisma.mpTransaction.update({
+          where: { id: tx.id },
+          data: {
+            status: 'PAYMENT_RECEIVED',
+            paymentReference: cleanReference,
+            paymentSenderBank: isBinancePayment ? null : cleanSenderBank,
+            paymentPaidAt: paidAt,
+            paymentProofUrl: proofUrl ?? null,
+          },
+        })
+
+        await prisma.mpTransactionStatusHistory.create({
+          data: {
+            transactionId: tx.id,
+            fromStatus: tx.status,
+            toStatus: 'PAYMENT_RECEIVED',
+            changedBy: session.userId,
+            reason: isBinancePayment
+              ? `Comprobante Binance enviado para checkout legacy. Operacion: ${cleanReference}. Fecha: ${details.paymentDate}`
+              : `Comprobante enviado para checkout legacy. Banco: ${cleanSenderBank}. Operacion: ${cleanReference}. Fecha: ${details.paymentDate}`,
+          },
+        })
+      }
+    })
+
+    return {
+      success: true,
+      data: { orderId },
+      message: 'Pago reportado. Cada vendedor avanzara su entrega por separado.',
+    }
+  } finally {
+    await db.$disconnect().catch(() => {})
   }
 }
 
@@ -1160,6 +1492,10 @@ export async function submitOrderPaymentProof(
   if (!db) return { success: false, message: 'Base de datos no disponible' }
 
   try {
+    if (orderId.startsWith(LEGACY_CART_ORDER_PREFIX)) {
+      return await submitLegacyCartPaymentProof(db, session, orderId, reference, details, proofUrl)
+    }
+
     const order = await db.mpOrder.findUnique({
       where: { id: orderId },
       include: {

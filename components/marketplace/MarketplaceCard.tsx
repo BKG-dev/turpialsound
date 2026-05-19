@@ -301,7 +301,9 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite, 
         <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: 'var(--mp-border)' }}>
           <AddToCartButton listing={listing} currentUserId={currentUserId} variant="card" />
           <ShareListingButton listing={listing} variant="card" />
-          <DropSocialButton listing={listing} variant="card" />
+          {(!currentUserId || currentUserId !== listing.seller.id) && (
+            <DropSocialButton listing={listing} variant="card" currentUserId={currentUserId ?? null} />
+          )}
         </div>
       </div>
     </div>
@@ -466,7 +468,9 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite, 
         <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: 'var(--mp-border)' }}>
           <AddToCartButton listing={listing} currentUserId={currentUserId} variant="card" />
           <ShareListingButton listing={listing} variant="card" />
-          <DropSocialButton listing={listing} variant="card" />
+          {(!currentUserId || currentUserId !== listing.talent.id) && (
+            <DropSocialButton listing={listing} variant="card" currentUserId={currentUserId ?? null} />
+          )}
         </div>
       </div>
     </div>

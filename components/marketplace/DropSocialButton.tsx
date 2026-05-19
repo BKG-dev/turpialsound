@@ -4,22 +4,31 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { Gift, Copy, Check, MessageCircle, Loader2 } from 'lucide-react'
 import { getOrCreateReferralLink } from '@/actions/marketplace/referrals'
 import { trackMarketplaceClientEvent } from '@/lib/marketplace/analytics-client'
+import { MarketplaceAuthModal } from '@/components/marketplace/MarketplaceAuthModal'
 import type { Listing } from '@/types/marketplace'
+import type { MpSessionPayload } from '@/lib/marketplace/auth'
 
 type DropSocialButtonProps = {
   listing: Listing
   variant?: 'card' | 'detail'
+  currentUserId?: string | null
 }
 
-export function DropSocialButton({ listing, variant = 'card' }: DropSocialButtonProps) {
+export function DropSocialButton({ listing, variant = 'card', currentUserId = null }: DropSocialButtonProps) {
   const [open, setOpen] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [referralUrl, setReferralUrl] = useState<string | null>(null)
   const [referralCode, setReferralCode] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [fetched, setFetched] = useState(false)
+  const [localUserId, setLocalUserId] = useState<string | null>(currentUserId)
   const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setLocalUserId(currentUserId)
+  }, [currentUserId])
 
   useEffect(() => {
     if (!open) return
@@ -37,7 +46,7 @@ export function DropSocialButton({ listing, variant = 'card' }: DropSocialButton
     setLoading(true)
     setError(null)
     try {
-      const res = await getOrCreateReferralLink(listing.id)
+      const res = await getOrCreateReferralLink(listing.id, listing.slug)
       if (res.success && res.code && res.url) {
         setReferralCode(res.code)
         setReferralUrl(`${window.location.origin}${res.url}`)
@@ -51,11 +60,15 @@ export function DropSocialButton({ listing, variant = 'card' }: DropSocialButton
     } finally {
       setLoading(false)
     }
-  }, [listing.id, fetched])
+  }, [listing.id, listing.slug, fetched])
 
   const handleToggle = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
+      if (!localUserId) {
+        setAuthOpen(true)
+        return
+      }
       if (!open) {
         setOpen(true)
         fetchReferralLink()
@@ -63,8 +76,16 @@ export function DropSocialButton({ listing, variant = 'card' }: DropSocialButton
         setOpen(false)
       }
     },
-    [open, fetchReferralLink],
+    [localUserId, open, fetchReferralLink],
   )
+
+  const handleAuthSuccess = useCallback((session: MpSessionPayload) => {
+    setLocalUserId(session.userId)
+    setAuthOpen(false)
+    setOpen(true)
+    setFetched(false)
+    fetchReferralLink()
+  }, [fetchReferralLink])
 
   const handleCopyLink = useCallback(async () => {
     if (!referralUrl) return
@@ -91,6 +112,13 @@ export function DropSocialButton({ listing, variant = 'card' }: DropSocialButton
   const isDetail = variant === 'detail'
 
   return (
+    <>
+    <MarketplaceAuthModal
+      isOpen={authOpen}
+      defaultTab="login"
+      onClose={() => setAuthOpen(false)}
+      onSuccess={handleAuthSuccess}
+    />
     <div className="relative inline-flex" ref={ref}>
       <button
         onClick={handleToggle}
@@ -178,5 +206,6 @@ export function DropSocialButton({ listing, variant = 'card' }: DropSocialButton
         </div>
       )}
     </div>
+    </>
   )
 }

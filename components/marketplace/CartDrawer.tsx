@@ -17,7 +17,7 @@ const EXPO = [0.16, 1, 0.3, 1] as const
 export function CartDrawer() {
   const router = useRouter()
   const { items, removeItem, updateQuantity, clearCart, getCartTotal } = useCart()
-  const { session } = useMarketplaceSession()
+  const { session, refreshSession } = useMarketplaceSession()
   const [open, setOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
   const [checkoutOpen, setCheckoutOpen] = useState(false)
@@ -57,10 +57,11 @@ export function CartDrawer() {
     setCheckoutOpen(true)
   }, [session, items, getCartTotal])
 
-  const handleAuthSuccess = useCallback((_s: MpSessionPayload) => {
+  const handleAuthSuccess = useCallback(async (_s: MpSessionPayload) => {
     setAuthOpen(false)
+    await refreshSession()
     if (items.length > 0) setCheckoutOpen(true)
-  }, [items.length])
+  }, [items.length, refreshSession])
 
   const total = getCartTotal()
   const isEmpty = items.length === 0

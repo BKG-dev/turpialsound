@@ -13,7 +13,7 @@ export function ReferralTracker() {
     ran.current = true
 
     // Setear cookie mp_ref (30 dias)
-    document.cookie = `mp_ref=${ref}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`
+    document.cookie = `mp_ref=${encodeURIComponent(ref)}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`
 
     // Trackear click (fire-and-forget)
     fetch(`/api/marketplace/track-referral-click?code=${encodeURIComponent(ref)}`).catch(() => {})

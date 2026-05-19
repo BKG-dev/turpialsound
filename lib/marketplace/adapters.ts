@@ -79,12 +79,11 @@ export function adaptDbListing(l: any): Listing {
     ? [l.coverImageUrl, ...l.mediaUrls]
     : l.mediaUrls
 
-  const inventoryTransactions = l.transactions as Array<{ status: string; quantity?: number }> | undefined
+  const inventoryTransactions = l.transactions as Array<{ status: string }> | undefined
   const activeTx = inventoryTransactions?.find((tx) => ACTIVE_UNAVAILABLE_STATUSES.has(tx.status))
   const hasInventory = Boolean(l.hasInventory && typeof l.inventory === 'number')
-  const consumedInventory = inventoryTransactions?.reduce((sum, tx) => sum + Math.max(1, Number(tx.quantity ?? 1)), 0) ?? 0
   const remainingInventory = hasInventory
-    ? Math.max(0, Number(l.inventory) - consumedInventory)
+    ? Math.max(0, Number(l.inventory))
     : null
   const isSoldOut = hasInventory
     ? remainingInventory === 0

@@ -1406,7 +1406,7 @@ function ReferralLinkCard({
   link,
   onCopy,
 }: {
-  link: { id: string; code: string; listingId: string; clicks: number; conversions: number; totalEarned: unknown; createdAt: string | Date }
+  link: { id: string; code: string; listingId: string; slug?: string; clicks: number; conversions: number; totalEarned: unknown; createdAt: string | Date }
   onCopy: () => void
 }) {
   const [copied, setCopied] = useState(false)
@@ -2599,7 +2599,7 @@ export function DashboardClient({
   const [favorites, setFavorites] = useState<DashListing[]>(rawMyFavorites as DashListing[])
   const myInteracted = rawMyInteracted as DashInteracted[]
   const referralLinks = rawReferralLinks as Array<{
-    id: string; code: string; listingId: string; clicks: number; conversions: number; totalEarned: unknown; createdAt: string | Date
+    id: string; code: string; listingId: string; slug?: string; clicks: number; conversions: number; totalEarned: unknown; createdAt: string | Date
   }>
   const referralPendingPayouts = rawReferralPendingPayouts as Array<{
     id: string; amount: string; currency: string; status: string; reference: string; createdAt: string | Date
@@ -3707,7 +3707,8 @@ export function DashboardClient({
                       key={link.id}
                       link={link}
                       onCopy={() => {
-                        const url = `${window.location.origin}/marketplace/r/${link.code}`
+                        const target = link.slug && link.slug !== link.listingId ? link.slug : link.listingId
+                        const url = `${window.location.origin}/marketplace/${encodeURIComponent(target)}?ref=${encodeURIComponent(link.code)}`
                         navigator.clipboard.writeText(url).catch(() => {})
                         setDashboardMessageTone('success')
                         setDashboardMessage('Link copiado al portapapeles.')

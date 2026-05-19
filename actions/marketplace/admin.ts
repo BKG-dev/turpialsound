@@ -5,17 +5,6 @@ import { getSession } from '@/lib/marketplace/auth'
 import type { ActionResult } from '@/lib/validations/marketplace'
 import { sendSystemMessage } from '@/actions/marketplace/chat'
 
-const INVENTORY_CONSUMING_TRANSACTION_STATUSES = [
-  'INITIATED',
-  'PENDING_PAYMENT',
-  'PAYMENT_RECEIVED',
-  'VALIDATING',
-  'IN_ESCROW',
-  'DELIVERY_CONFIRMED',
-  'DISPUTED',
-  'RELEASED',
-] as const
-
 function getAvailableInventory(
   listing: { hasInventory: boolean; inventory: number | null },
   consumedUnits: number,
@@ -29,14 +18,10 @@ async function getConsumedInventoryUnits(
   db: any,
   listingId: string,
 ) {
-  const result = await db.mpTransaction.aggregate({
-    where: {
-      listingId,
-      status: { in: [...INVENTORY_CONSUMING_TRANSACTION_STATUSES] },
-    },
-    _sum: { quantity: true },
-  })
-  return Number(result._sum.quantity ?? 0)
+  void db
+  void listingId
+  // Inventory is decremented at purchase initiation; do not sum legacy TX columns.
+  return 0
 }
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -449,7 +434,10 @@ export async function adminValidatePayment(
     if (!db) return { success: false, message: 'Base de datos no disponible' }
 
     try {
-      const tx = await db.mpTransaction.findUnique({ where: { id: txId } })
+      const tx = await db.mpTransaction.findUnique({
+        where: { id: txId },
+        select: { id: true, buyerId: true, sellerId: true, listingId: true, status: true },
+      })
       if (!tx) return { success: false, message: 'Transacción no encontrada' }
       if (!['PAYMENT_RECEIVED', 'VALIDATING'].includes(tx.status)) {
         return { success: false, message: `No se puede validar en estado ${tx.status}` }
@@ -539,7 +527,13 @@ export async function adminReleaseEscrow(txId: string, note: string): Promise<Ac
     try {
       const tx = await db.mpTransaction.findUnique({
         where: { id: txId },
-        include: {
+        select: {
+          id: true,
+          buyerId: true,
+          sellerId: true,
+          listingId: true,
+          status: true,
+          buyerConfirmedAt: true,
           disputes: { where: { status: { in: ['OPEN', 'UNDER_REVIEW'] } }, select: { id: true } },
         },
       })
@@ -603,7 +597,18 @@ export async function adminMarkSellerPaid(
     if (!db) return { success: false, message: 'Base de datos no disponible' }
 
     try {
-      const tx = await db.mpTransaction.findUnique({ where: { id: txId } })
+      const tx = await db.mpTransaction.findUnique({
+        where: { id: txId },
+        select: {
+          id: true,
+          buyerId: true,
+          sellerId: true,
+          listingId: true,
+          status: true,
+          sellerNetAmount: true,
+          currency: true,
+        },
+      })
       if (!tx) return { success: false, message: 'Transacción no encontrada' }
       if (tx.status !== 'RELEASED') {
         return {
@@ -710,7 +715,10 @@ export async function adminResolveDispute(
     if (!db) return { success: false, message: 'Base de datos no disponible' }
 
     try {
-      const tx = await db.mpTransaction.findUnique({ where: { id: txId } })
+      const tx = await db.mpTransaction.findUnique({
+        where: { id: txId },
+        select: { id: true, status: true },
+      })
       if (!tx) return { success: false, message: 'Transacción no encontrada' }
       if (tx.status !== 'DISPUTED') {
         return { success: false, message: 'Solo se pueden resolver disputas activas' }
@@ -762,7 +770,10 @@ export async function adminCancelTransaction(txId: string, note: string): Promis
     if (!db) return { success: false, message: 'Base de datos no disponible' }
 
     try {
-      const tx = await db.mpTransaction.findUnique({ where: { id: txId } })
+      const tx = await db.mpTransaction.findUnique({
+        where: { id: txId },
+        select: { id: true, status: true },
+      })
       if (!tx) return { success: false, message: 'Transacción no encontrada' }
       if (['RELEASED', 'REFUNDED', 'CANCELLED'].includes(tx.status)) {
         return { success: false, message: 'No se puede cancelar una transacción en estado terminal' }

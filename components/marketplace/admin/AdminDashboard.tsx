@@ -43,6 +43,10 @@ import {
   adminSetUserRole,
   adminVerifyUser,
 } from '@/actions/marketplace/admin'
+import {
+  completeReferralPayout,
+  getAdminReferralPayouts,
+} from '@/actions/marketplace/referrals'
 import { MarketplaceThemeToggle } from '@/components/marketplace/MarketplaceTheme'
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -55,6 +59,8 @@ type PendingAction = {
   note: string
   loading: boolean
 } | null
+
+type AdminReferralPayoutRow = Awaited<ReturnType<typeof getAdminReferralPayouts>>['data'][number]
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -322,6 +328,9 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
 
   // Payouts
   const [payouts, setPayouts] = useState<PayoutReportRow[] | null>(null)
+  const [referralPayouts, setReferralPayouts] = useState<AdminReferralPayoutRow[] | null>(null)
+  const [referralPayoutBusyId, setReferralPayoutBusyId] = useState<string | null>(null)
+  const [referralPayoutMsg, setReferralPayoutMsg] = useState('')
 
   // Users
   const [users, setUsers] = useState<AdminUserRow[] | null>(null)
@@ -401,6 +410,36 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
       if (r.success && r.data) setPayouts(r.data)
     })
   }, [])
+
+  const loadReferralPayouts = useCallback(() => {
+    startTransition(async () => {
+      const r = await getAdminReferralPayouts()
+      if (r.success) {
+        setReferralPayouts(r.data)
+        setReferralPayoutMsg('')
+      } else {
+        setReferralPayoutMsg(r.message ?? 'No se pudieron cargar comisiones Drop Social')
+      }
+    })
+  }, [])
+
+  async function handleCompleteReferralPayout(payoutId: string) {
+    setReferralPayoutBusyId(payoutId)
+    setReferralPayoutMsg('')
+
+    const result = await completeReferralPayout(payoutId)
+    setReferralPayoutMsg(result.message)
+    setReferralPayoutBusyId(null)
+
+    if (result.success) {
+      setReferralPayouts(prev => prev?.map(row => (
+        row.id === payoutId
+          ? { ...row, status: 'COMPLETED', completedAt: new Date().toISOString() }
+          : row
+      )) ?? prev)
+      router.refresh()
+    }
+  }
 
   // ─── Users tab ─────────────────────────────────────────────────────────────
 
@@ -1001,6 +1040,11 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
     const gross = payoutRows.reduce((sum, row) => sum + row.grossAmount, 0)
     const fees = payoutRows.reduce((sum, row) => sum + row.feeAmount, 0)
     const net = payoutRows.reduce((sum, row) => sum + row.netAmount, 0)
+    const referralRows = referralPayouts ?? []
+    const pendingReferralRows = referralRows.filter(row => row.status === 'PENDING')
+    const completedReferralRows = referralRows.filter(row => row.status === 'COMPLETED')
+    const pendingReferralTotal = pendingReferralRows.reduce((sum, row) => sum + Number(row.amount), 0)
+    const completedReferralTotal = completedReferralRows.reduce((sum, row) => sum + Number(row.amount), 0)
 
     return (
       <div className="space-y-4">
@@ -1037,6 +1081,128 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
             </div>
           </div>
         </div>
+
+        <section
+          className="rounded-xl p-4"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+        >
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="text-xs font-semibold text-white">Comisiones Drop Social</h3>
+              <p className="mt-1 text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                Payouts REF-* generados por conversiones de links de referido.
+              </p>
+            </div>
+            <button
+              onClick={() => loadReferralPayouts()}
+              disabled={isPending}
+              className="flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-all hover:bg-white/5"
+              style={{ color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <RefreshCw size={11} className={isPending ? 'animate-spin' : ''} /> Cargar
+            </button>
+          </div>
+
+          <div className="mb-4 grid gap-3 md:grid-cols-3">
+            <div className="rounded-xl p-3" style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.18)' }}>
+              <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.45)' }}>Pendientes</p>
+              <p className="mt-1 text-lg font-semibold text-white">{fmtUSD(pendingReferralTotal)}</p>
+              <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>{pendingReferralRows.length} payout(s)</p>
+            </div>
+            <div className="rounded-xl p-3" style={{ background: 'rgba(74,222,128,0.07)', border: '1px solid rgba(74,222,128,0.18)' }}>
+              <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.45)' }}>Pagadas</p>
+              <p className="mt-1 text-lg font-semibold text-white">{fmtUSD(completedReferralTotal)}</p>
+              <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>{completedReferralRows.length} payout(s)</p>
+            </div>
+            <div className="rounded-xl p-3" style={{ background: 'rgba(0,174,239,0.07)', border: '1px solid rgba(0,174,239,0.18)' }}>
+              <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.45)' }}>Registros</p>
+              <p className="mt-1 text-lg font-semibold text-white">{referralRows.length}</p>
+              <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>REF-* auditables</p>
+            </div>
+          </div>
+
+          {referralPayoutMsg && (
+            <p className="mb-3 rounded-lg px-3 py-2 text-xs"
+              style={{ background: 'rgba(0,174,239,0.08)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.15)' }}>
+              {referralPayoutMsg}
+            </p>
+          )}
+
+          {referralPayouts === null ? (
+            <p className="py-6 text-center text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>
+              Haz clic en Cargar para ver comisiones de referidos.
+            </p>
+          ) : referralRows.length === 0 ? (
+            <p className="py-6 text-center text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>
+              No hay comisiones Drop Social registradas.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {referralRows.map(row => {
+                const isPendingPayout = row.status === 'PENDING'
+                const isBusy = referralPayoutBusyId === row.id
+                return (
+                  <div
+                    key={row.id}
+                    className="rounded-xl p-4"
+                    style={{
+                      background: isPendingPayout ? 'rgba(251,191,36,0.045)' : 'rgba(74,222,128,0.045)',
+                      border: isPendingPayout ? '1px solid rgba(251,191,36,0.18)' : '1px solid rgba(74,222,128,0.18)',
+                    }}
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-semibold text-white">{row.referrerName}</p>
+                          <span
+                            className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                            style={{
+                              background: isPendingPayout ? 'rgba(251,191,36,0.14)' : 'rgba(74,222,128,0.12)',
+                              color: isPendingPayout ? '#fbbf24' : '#4ade80',
+                              border: isPendingPayout ? '1px solid rgba(251,191,36,0.24)' : '1px solid rgba(74,222,128,0.22)',
+                            }}
+                          >
+                            {row.status}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[11px]" style={{ color: 'rgba(255,255,255,0.4)' }}>{row.referrerEmail}</p>
+                        <p className="mt-2 font-mono text-[10px] [overflow-wrap:anywhere]" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                          {row.reference ?? row.id}
+                        </p>
+                        <p className="mt-1 font-mono text-[10px] [overflow-wrap:anywhere]" style={{ color: 'rgba(255,255,255,0.2)' }}>
+                          TX: {row.transactionIds.length > 0 ? row.transactionIds.join(', ') : '-'}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col items-start gap-2 sm:items-end">
+                        <div className="text-left sm:text-right">
+                          <p className="text-base font-semibold" style={{ color: isPendingPayout ? '#fbbf24' : '#4ade80' }}>
+                            {fmtUSD(Number(row.amount))}
+                          </p>
+                          <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                            Creado: {fmtShortDate(row.createdAt)}
+                            {row.completedAt ? ` - Pagado: ${fmtShortDate(row.completedAt)}` : ''}
+                          </p>
+                        </div>
+                        {isPendingPayout && (
+                          <button
+                            onClick={() => handleCompleteReferralPayout(row.id)}
+                            disabled={isBusy}
+                            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
+                            style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}
+                          >
+                            {isBusy ? <RefreshCw size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
+                            {isBusy ? 'Procesando...' : 'Marcar pagada'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </section>
       </div>
     )
   }
@@ -1195,7 +1361,10 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                 if (t.id === 'escrow') applyEscrowFilter('IN_ESCROW')
                 if (t.id === 'validations') applyEscrowFilter('PAYMENT_RECEIVED')
                 if (t.id === 'payouts' && payouts === null) loadPayouts()
-                if (t.id === 'commissions' && payouts === null) loadPayouts()
+                if (t.id === 'commissions') {
+                  if (payouts === null) loadPayouts()
+                  if (referralPayouts === null) loadReferralPayouts()
+                }
                 if (t.id === 'users' && users === null) loadUsers()
               }}
               className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all"

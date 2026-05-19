@@ -48,7 +48,7 @@ type ListingStatusSnapshot = {
 
 type DbListingWithTransactions = {
   id: string
-  transactions?: Array<{ status: string; quantity: number }>
+  transactions?: Array<{ status: string }>
 }
 
 async function withActiveTransactions<T extends DbListingWithTransactions>(
@@ -64,13 +64,13 @@ async function withActiveTransactions<T extends DbListingWithTransactions>(
         listingId: { in: listings.map(listing => listing.id) },
         status: { notIn: [...INVENTORY_TRANSACTION_EXCLUDED_STATUSES] },
       },
-      select: { listingId: true, status: true, quantity: true },
+      select: { listingId: true, status: true },
     })
 
-    const byListingId = new Map<string, Array<{ status: string; quantity: number }>>()
+    const byListingId = new Map<string, Array<{ status: string }>>()
     for (const tx of transactions) {
       const current = byListingId.get(tx.listingId) ?? []
-      current.push({ status: tx.status, quantity: tx.quantity ?? 1 })
+      current.push({ status: tx.status })
       byListingId.set(tx.listingId, current)
     }
 
@@ -215,8 +215,11 @@ export async function getListingBySlug(slug: string): Promise<Listing | null> {
   const db = await getDb()
   if (!db) return null
   try {
-    const l = await db.mpListing.findUnique({
-      where: { slug, status: { in: [...LISTING_DETAIL_VISIBLE_STATUSES] } },
+    const l = await db.mpListing.findFirst({
+      where: {
+        OR: [{ slug }, { id: slug }],
+        status: { in: [...LISTING_DETAIL_VISIBLE_STATUSES] },
+      },
       include: { seller: true },
     })
     if (!l) { await db.$disconnect(); return null }
