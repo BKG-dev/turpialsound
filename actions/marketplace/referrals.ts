@@ -2,6 +2,7 @@
 
 import { getDb } from '@/lib/marketplace/db'
 import { getSession } from '@/lib/marketplace/auth'
+import { REFERRAL_COMMISSION_RATE } from '@/lib/marketplace/fees'
 import { revalidatePath } from 'next/cache'
 
 function generateCode(): string {
@@ -162,7 +163,7 @@ export async function processReferralConversion(
       return
     }
 
-    const commission = saleAmount * 0.005 // 0.5%
+    const commission = saleAmount * REFERRAL_COMMISSION_RATE // param configurable
     const referrer = await db.mpUser.findUnique({
       where: { id: link.referrerId },
       select: { phone: true },

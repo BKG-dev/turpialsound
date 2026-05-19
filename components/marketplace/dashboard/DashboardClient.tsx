@@ -48,6 +48,7 @@ import {
   type SellerPayoutMethod,
   type TxPayoutDisplay,
 } from '@/lib/marketplace/finance'
+import { REFERRAL_COMMISSION_RATE, REFERRAL_COMMISSION_PERCENT } from '@/lib/marketplace/fees'
 import {
   addPayoutMethod,
   removePayoutMethod,
@@ -1459,7 +1460,7 @@ function ReferredTransactionCard({
     listing: { id: string; title: string; slug: string } | null
   }
 }) {
-  const commission = Number(tx.amount ?? 0) * 0.005
+  const commission = Number(tx.amount ?? 0) * REFERRAL_COMMISSION_RATE
 
   return (
     <div
@@ -3660,7 +3661,7 @@ export function DashboardClient({
                     <p className="text-[10px] font-semibold uppercase tracking-normal text-[#ffc107]">Programa de Referidos</p>
                     <h2 className="mt-2 text-2xl font-semibold leading-tight" style={{ color: 'var(--mp-text-strong)' }}>Drop Social</h2>
                     <p className="mt-2 max-w-2xl text-sm leading-relaxed" style={{ color: 'var(--mp-text-muted)' }}>
-                      Comparte tus listings y gana <span style={{ color: '#ffc107' }}>0.5%</span> de cada compra que venga de tus links.
+                      Comparte tus listings y gana <span style={{ color: '#ffc107' }}>{REFERRAL_COMMISSION_PERCENT}%</span> de cada compra que venga de tus links.
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
@@ -3685,7 +3686,7 @@ export function DashboardClient({
                   icon={Gift}
                   label="Comisiones"
                   value={`$${referralEarnings.toFixed(2)}`}
-                  sub="0.5% por compra referida"
+                  sub={`${REFERRAL_COMMISSION_PERCENT}% por compra referida`}
                   accent="#4ade80"
                   tone="compact"
                 />
