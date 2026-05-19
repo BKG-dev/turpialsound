@@ -8,7 +8,7 @@ function generateCode(): string {
   return `ds-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-export async function getOrCreateReferralLink(listingId: string, _listingSlug?: string): Promise<{ success: boolean; code?: string; url?: string; message?: string }> {
+export async function getOrCreateReferralLink(listingId: string): Promise<{ success: boolean; code?: string; url?: string; message?: string }> {
   const session = await getSession()
   if (!session) return { success: false, message: 'Inicia sesion para compartir y ganar' }
 
@@ -24,20 +24,19 @@ export async function getOrCreateReferralLink(listingId: string, _listingSlug?: 
       return { success: true, code: existing.code, url: `/marketplace/r/${existing.code}` }
     }
 
-    // Obtener slug real del listing (server-side, confiable)
-    const listing = await db.mpListing.findUnique({
-      where: { id: listingId },
-      select: { slug: true },
-    })
+    const code = generateCode()
+    // Obtener slug para URL directa
+    const listing = await db.mpListing.findUnique({ where: { id: listingId }, select: { slug: true } })
     const slug = listing?.slug || listingId
 
-    const code = generateCode()
     await db.mpReferralLink.create({
       data: { referrerId: session.userId, listingId, code, slug },
     })
     await db.$disconnect()
     revalidatePath('/marketplace')
-    return { success: true, code, url: `/marketplace/r/${code}` }
+
+    // URL directa al listing con param ref — sin ruta intermedia
+    return { success: true, code, url: `/marketplace/${slug}?ref=${code}` }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error al generar link' }

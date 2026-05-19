@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { Suspense } from 'react'
 import { BadgeCheck, Clock, MapPin, Shield, Star } from 'lucide-react'
 import { siteConfig } from '@/content/site'
 import { getListingBySlug } from '@/actions/marketplace/listings'
@@ -10,6 +11,7 @@ import { ListingDetailActions } from '@/components/marketplace/ListingDetailActi
 import { AddToCartButton } from '@/components/marketplace/AddToCartButton'
 import { ShareListingButton } from '@/components/marketplace/ShareListingButton'
 import { DropSocialButton } from '@/components/marketplace/DropSocialButton'
+import { ReferralTracker } from '@/components/marketplace/ReferralTracker'
 import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
 import { SmartMarketplaceAuthBar } from '@/components/marketplace/MarketplaceAuthBar'
 import type { Listing } from '@/types/marketplace'
@@ -263,6 +265,7 @@ export default async function ListingPage({ params }: ListingPageParams) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(listingJsonLd) }}
       />
       <div className="min-h-screen">
+        <Suspense fallback={null}><ReferralTracker /></Suspense>
         <SmartMarketplaceAuthBar />
 
         <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">

@@ -37,7 +37,7 @@ export function DropSocialButton({ listing, variant = 'card' }: DropSocialButton
     setLoading(true)
     setError(null)
     try {
-      const res = await getOrCreateReferralLink(listing.id, listing.slug)
+      const res = await getOrCreateReferralLink(listing.id)
       if (res.success && res.code && res.url) {
         setReferralCode(res.code)
         setReferralUrl(`${window.location.origin}${res.url}`)
