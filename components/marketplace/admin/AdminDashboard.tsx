@@ -1026,6 +1026,60 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                   <div className="space-y-3">{missingMethodPayouts.map(row => renderPayoutRow(row, 'missing'))}</div>
                 )}
               </section>
+
+              {/* ── Pagos Drop Social (consolidados por usuario) ── */}
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <h3 className="text-xs font-semibold" style={{ color: '#fbbf24' }}>Pagos Drop Social</h3>
+                  <span className="rounded-full px-2 py-0.5 text-[9px] font-bold" style={{ background: 'rgba(251,191,36,0.14)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)' }}>🎁 REF-*</span>
+                </div>
+                {referralPayouts === null ? (
+                  <button onClick={() => loadReferralPayouts()} disabled={isPending} className="rounded-xl px-4 py-3 text-xs w-full text-left transition-colors hover:bg-white/5" style={{ color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    Cargar comisiones de Drop Social...
+                  </button>
+                ) : (() => {
+                  const pendingRefRows = referralPayouts.filter(r => r.status === 'PENDING')
+                  const consolidated: Record<string, { referrerName: string; referrerEmail: string; total: number; rows: AdminReferralPayoutRow[] }> = {}
+                  for (const row of pendingRefRows) {
+                    const key = row.referrerId
+                    if (!consolidated[key]) consolidated[key] = { referrerName: row.referrerName, referrerEmail: row.referrerEmail, total: 0, rows: [] }
+                    consolidated[key].total += Number(row.amount)
+                    consolidated[key].rows.push(row)
+                  }
+                  const entries = Object.entries(consolidated)
+                  return entries.length === 0 ? (
+                    <p className="rounded-xl px-4 py-3 text-xs" style={{ color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)' }}>Sin comisiones pendientes de Drop Social.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {entries.map(([sellerId, c]) => (
+                        <div key={sellerId} className="rounded-xl p-4" style={{ background: 'rgba(251,191,36,0.045)', border: '1px solid rgba(251,191,36,0.18)' }}>
+                          <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-sm font-semibold text-white">{c.referrerName}</p>
+                                <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: 'rgba(251,191,36,0.14)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.24)' }}>🎁 Drop Social</span>
+                              </div>
+                              <p className="text-[11px] mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>{c.referrerEmail} — {c.rows.length} comision{c.rows.length !== 1 ? 'es' : ''} por referidos</p>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                              <div className="text-right">
+                                <p className="text-base font-semibold" style={{ color: '#fbbf24' }}>{fmtUSD(c.total)}</p>
+                                <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>total a pagar</p>
+                              </div>
+                              <button onClick={async () => { for (const row of c.rows) { await handleCompleteReferralPayout(row.id) } }} disabled={c.rows.some(r => referralPayoutBusyId === r.id)} className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all" style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}>
+                                <CheckCircle2 size={11} /> Pagar todo
+                              </button>
+                            </div>
+                          </div>
+                          <div className="grid gap-1 text-[10px] font-mono [overflow-wrap:anywhere]" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.75rem', color: 'rgba(255,255,255,0.2)' }}>
+                            {c.rows.map(r => <p key={r.id}>{r.reference} — {fmtUSD(Number(r.amount))} — {fmtShortDate(r.createdAt)}</p>)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
+              </section>
             </div>
           </>
         )}
