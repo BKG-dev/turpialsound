@@ -1,16 +1,16 @@
 import { resolveReferenceRate } from '@/lib/marketplace/reference-rate'
-import { markRefreshed, shouldRefresh, getScheduleDescription } from '@/lib/marketplace/bcv-scheduler'
 import { NextResponse } from 'next/server'
 
 /**
  * @route GET /api/cron/refresh-bcv-rate
- * @description Vercel Cron Job — refresca la tasa BCV según política dual (peak/off-peak)
- * @access Cron (Authorization header requerido en producción)
+ * @description Vercel Cron Job — refresca tasa BCV. Schedule definido en vercel.json.
+ *              La cadena de fallbacks de resolveReferenceRate maneja la resiliencia:
+ *              Live → File → DB Snapshot (Fallback 3) → Unavailable.
+ * @access Cron (Authorization header requerido si CRON_SECRET está configurado)
  */
 export async function GET(request: Request) {
   const startTime = Date.now()
 
-  // En producción, verificar CRON_SECRET para seguridad
   const cronSecret = process.env.CRON_SECRET
   if (cronSecret) {
     const authHeader = request.headers.get('authorization')
@@ -19,34 +19,20 @@ export async function GET(request: Request) {
     }
   }
 
-  const schedule = getScheduleDescription()
-  console.log(`[BCV-CRON] Triggered — ${schedule}`)
-
-  if (!shouldRefresh()) {
-    console.log('[BCV-CRON] Skipped — within refresh interval')
-    return NextResponse.json({
-      status: 'skipped',
-      reason: 'within_refresh_interval',
-      schedule,
-      elapsedMs: Date.now() - startTime,
-    })
-  }
+  console.log('[BCV-CRON] Triggered')
 
   try {
     const result = await resolveReferenceRate()
 
-    markRefreshed()
-
-    console.log(`[BCV-CRON] Refreshed — rate=${result.rate} mode=${result.mode} source=${result.source}`)
+    console.log(`[BCV-CRON] rate=${result.rate} mode=${result.mode} source=${result.source}`)
 
     return NextResponse.json({
-      status: 'refreshed',
+      status: 'ok',
       rate: result.rate,
       mode: result.mode,
       source: result.source,
       fechaValor: result.fechaValor,
       snapshotId: result.snapshotId,
-      schedule,
       elapsedMs: Date.now() - startTime,
     })
   } catch (error) {
@@ -55,7 +41,6 @@ export async function GET(request: Request) {
       {
         status: 'error',
         error: (error as Error).message,
-        schedule,
         elapsedMs: Date.now() - startTime,
       },
       { status: 500 },

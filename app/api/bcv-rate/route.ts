@@ -1,4 +1,4 @@
-import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
+import { resolveReferenceRate } from '@/lib/marketplace/reference-rate'
 import { NextResponse } from 'next/server'
 
 /**

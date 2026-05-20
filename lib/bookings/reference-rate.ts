@@ -58,7 +58,7 @@ const DEFAULT_MAX_PROVIDER_AGE_HOURS = 72
 
 const DEFAULT_SOURCE_A_NAME = 'GoogleSheets-BCV'
 const DEFAULT_SOURCE_A_URL =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vSJogl8OrOxNFvrHAcLNtBQsjLswfYkjD_VwxyAju71rC-IDMaoId_As_RCBjRSr--CmBqVjXFqsVUB/pub?gid=0&single=true&output=csv'
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQhM4CaccFvhOqWRfmRj3Cx_0B_oxwq45OT0YnJs6PGKpf60vcPMwshac6Wvk0hzhxPH_nZt4ILSt_i/pub?gid=0&single=true&output=csv'
 const DEFAULT_SOURCE_B_NAME = 'DolarApi-Oficial'
 const DEFAULT_SOURCE_B_URL = 'https://ve.dolarapi.com/v1/dolares/oficial'
 const DEFAULT_SOURCE_B_PATH = 'promedio'

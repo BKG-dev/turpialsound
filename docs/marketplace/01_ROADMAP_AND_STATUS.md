@@ -184,3 +184,351 @@ Todo cambio operativo, bloqueo o decision practica debe reflejarse primero en Ob
 - Manuel mantiene ownership de home, subpaginas, marketplace y frontend publico no-booking.
 - Media publica no-booking usa `TS_WEB_BLOB_READ_WRITE_TOKEN`.
 - Comprobantes sensibles del marketplace no usan esa capa publica; requieren storage sensible dedicado o proxy autenticado.
+# MARKETPLACE ROADMAP & STATUS
+
+**Actualizado:** 2026-05-17 17:35 VET
+**Estado:** Marketplace completo S12-S-REV-01 + S-MP-01 carrito consolidado. Ratings, reviews, KPI, SEO, export pagos, carrito multivendedor e inventario por cantidad implementados.
+**Preview Vercel:** `turpialsound-egsoseogk-bkgs-projects-829c67c1.vercel.app`
+**Scope:** Marketplace separado del booking
+**Fuente viva de seguimiento:** `docs/obsidian-vault/*`
+
+---
+
+## Estado rapido
+
+| Area | Estado real |
+|---|---|
+| Schema Prisma `Mp*` | Operativo y separado del booking |
+| Auth y sesiones | Completo |
+| Listings | Completo |
+| Detalle `/marketplace/[slug]` | Completo |
+| Dashboard buyer/seller | Completo |
+| Admin panel | Completo |
+| Chat persistente | Completo |
+| Favoritos | Completo |
+| Q&A publica | Completo |
+| Checkout | Completo en modo manual temporal (transicion a confirmacion de entrega implementada) |
+| Carrito consolidado | Completo S-MP-01: `MpOrder` padre, hijas por seller/listing, cantidad e inventario real |
+| Pasarelas automaticas | Diferidas |
+| Cron T+7 | Pendiente |
+| Upload de imagenes productivo | Implementado con Vercel Blob publico no-booking; QA viva completada |
+| TypeScript | Limpio (`npx tsc --noEmit`) |
+| Playwright UI testing | Instalado en rama madre (S11). Login UI smoke 3/3 PASS. |
+
+---
+
+## Decision operativa vigente
+
+El proyecto entra en una etapa de estabilizacion del marketplace antes de integrar pasarelas.
+
+1. El marketplace queda validado como modulo independiente del booking.
+2. El pago sigue siendo manual temporalmente.
+3. El checkout ya no usa mocks de cobro.
+4. Mercantil y Binance quedan explicitamente diferidos.
+5. Obsidian concentra el seguimiento vivo de riesgos, rescate y decisiones.
+
+---
+
+## Flujo de pago vigente
+
+### Lo que ya esta resuelto
+
+- `CheckoutModal.tsx` carga metodos reales del seller.
+- `getSellerPayoutMethodsForCheckout()` entrega metodos activos compatibles.
+- `initiatePurchase()` crea transaccion coherente con el flujo actual.
+- `checkoutCart()` crea orden consolidada con transacciones hijas por listing/seller.
+- `submitOrderPaymentProof()` exige comprobante y propaga proof a orden e hijas.
+- `submitPaymentProof()` registra referencia y comprobante.
+- `validatePayment()` define entrada real a escrow.
+
+### Lo que todavia no existe
+
+- Cobro automatico por Mercantil
+- Cobro automatico por Binance
+- Webhooks de pago reales en produccion
+- Storage sensible para comprobantes separado del Blob publico no-booking
+
+---
+
+## Definition of Done actual
+
+### Cumplido
+
+- Codigo funcional del marketplace
+- TS limpio
+- Checkout sin mocks de pago
+- Listing no se agota antes de validacion real
+- Carrito consolidado multivendedor con inventario por cantidad
+- QA canonico `S-MP-01` 17/17 PASS
+- Documentacion base sincronizada
+- QA harness server-side 12/12 PASS
+- Playwright login UI smoke 3/3 PASS
+
+### Aun no cumplido
+
+- QA manual integral buyer -> admin -> escrow -> release
+- Configurar y validar Vercel Blob no-booking con `TS_WEB_BLOB_READ_WRITE_TOKEN`
+- Implementar cron T+7
+- Definir roadmap real de pasarelas
+- Purchase flow browser E2E (S12)
+- Full regression browser (S17)
+
+---
+
+## Fases
+
+### Fase A - Base marketplace
+**Estado:** Completa
+
+- auth
+- listings
+- chat
+- dashboard
+- admin
+- favoritos
+- Q&A
+
+### Fase B - Checkout manual estabilizado
+**Estado:** Completa
+
+- metodos reales del seller
+- referencia + comprobante
+- validacion manual por admin
+- escrow coherente
+- carrito consolidado con `MpOrder`
+- unidades por transaccion en `MpTransaction.quantity`
+
+### Fase C - Infraestructura pendiente
+**Estado:** En curso
+
+- cron T+7
+- QA viva de storage de imagenes/comprobantes
+- endurecimiento operativo
+- Playwright setup (S11 completo)
+
+### Fase D - Pasarelas
+**Estado:** Diferida
+
+- Mercantil
+- Binance Pay
+- webhooks reales
+- conciliacion automatica
+
+---
+
+## Bloqueadores y decisiones abiertas
+
+| Item | Tipo | Estado |
+|---|---|---|
+| Storage de imagenes | Decision tecnica | Vercel Blob no-booking implementado |
+| Base64 en produccion | Riesgo tecnico | Fuera del flujo productivo |
+| Credenciales Mercantil | Externo | No disponibles |
+| Decision Binance | Producto/negocio | Diferida |
+| Cron T+7 | Infraestructura | Pendiente |
+| QA manual completa | Operacion | Pendiente |
+
+---
+
+## Nota de gobierno documental
+
+Desde esta fecha:
+
+- `docs/marketplace/` describe arquitectura y estado tecnico consolidado.
+- `docs/obsidian-vault/` es la fuente de trazabilidad viva del proyecto.
+
+Todo cambio operativo, bloqueo o decision practica debe reflejarse primero en Obsidian y luego consolidarse aqui si cambia el estado tecnico del sistema.
+
+## Regla de storage/media
+
+- DB compartida con el equipo: si.
+- Blob/token compartido con booking/reservas: no.
+- Jean mantiene ownership de `/reservas` y booking con su propio Blob/token.
+- Manuel mantiene ownership de home, subpaginas, marketplace y frontend publico no-booking.
+- Media publica no-booking usa `TS_WEB_BLOB_READ_WRITE_TOKEN`.
+- Comprobantes sensibles del marketplace no usan esa capa publica; requieren storage sensible dedicado o proxy autenticado.
+# MARKETPLACE ROADMAP & STATUS
+
+**Actualizado:** 2026-05-18 11:24 VET
+**Estado:** Marketplace completo S12-S-REV-01 + S-MP-01..S-MP-08 cerrados. Ratings, reviews, KPI, SEO, export pagos, carrito multivendedor, búsqueda fuzzy, publicación validada, referidos, dashboard avanzado y notificaciones implementados.
+**Preview Vercel:** `turpialsound-egsoseogk-bkgs-projects-829c67c1.vercel.app`
+**Scope:** Marketplace separado del booking
+**Fuente viva de seguimiento:** `docs/obsidian-vault/*`
+
+---
+
+## Estado rapido
+
+| Area | Estado real |
+|---|---|
+| Schema Prisma `Mp*` | Operativo y separado del booking |
+| Auth y sesiones | Completo |
+| Listings | Completo |
+| Detalle `/marketplace/[slug]` | Completo |
+| Dashboard buyer/seller | Completo |
+| Admin panel | Completo |
+| Chat persistente | Completo |
+| Favoritos | Completo |
+| Q&A publica | Completo |
+| Checkout | Completo en modo manual temporal (transicion a confirmacion de entrega implementada) |
+| Carrito consolidado | Completo S-MP-01: `MpOrder` padre, hijas por seller/listing, cantidad e inventario real |
+| Búsqueda y filtros | Completo S-MP-02: fuzzy search con Fuse.js, dropdowns de ubicación, búsqueda fuera de filtros |
+| Publicación de productos | Completo S-MP-04: imagen requerida en upload, sin placeholders genéricos, validación server-side |
+| Drop Social | Completo S-MP-06: botón de referido, auto-código, cookie tracking, referredBy en TX, pestaña Mis Referidos |
+| Dashboard avanzado | Completo S-MP-07: dark mode toggle, tarjetas clickeables, Igor promovido a ADMIN |
+| Pasarelas automaticas | Diferidas |
+| Cron T+7 | Pendiente |
+| Upload de imagenes productivo | Implementado con Vercel Blob publico no-booking; QA viva completada |
+| TypeScript | Limpio (`npx tsc --noEmit`) |
+| Playwright UI testing | Instalado en rama madre (S11). Login UI smoke 3/3 PASS. |
+
+---
+
+## Decision operativa vigente
+
+El proyecto entra en una etapa de estabilizacion del marketplace antes de integrar pasarelas.
+
+1. El marketplace queda validado como modulo independiente del booking.
+2. El pago sigue siendo manual temporalmente.
+3. El checkout ya no usa mocks de cobro.
+4. Mercantil y Binance quedan explicitamente diferidos.
+5. Obsidian concentra el seguimiento vivo de riesgos, rescate y decisiones.
+
+---
+
+## Flujo de pago vigente
+
+### Lo que ya esta resuelto
+
+- `CheckoutModal.tsx` carga metodos reales del seller.
+- `getSellerPayoutMethodsForCheckout()` entrega metodos activos compatibles.
+- `initiatePurchase()` crea transaccion coherente con el flujo actual.
+- `checkoutCart()` crea orden consolidada con transacciones hijas por listing/seller.
+- `submitOrderPaymentProof()` exige comprobante y propaga proof a orden e hijas.
+- `submitPaymentProof()` registra referencia y comprobante.
+- `validatePayment()` define entrada real a escrow.
+
+### Lo que todavia no existe
+
+- Cobro automatico por Mercantil
+- Cobro automatico por Binance
+- Webhooks de pago reales en produccion
+- Storage sensible para comprobantes separado del Blob publico no-booking
+
+---
+
+## Definition of Done actual
+
+### Cumplido
+
+- Codigo funcional del marketplace
+- TS limpio
+- Checkout sin mocks de pago
+- Listing no se agota antes de validacion real
+- Carrito consolidado multivendedor con inventario por cantidad
+- QA canonico `S-MP-01` 17/17 PASS
+- Búsqueda y filtros S-MP-02 con Fuse.js y dropdowns de ubicación
+- Publicación de productos S-MP-04 con imagen obligatoria y validación server
+- Drop Social S-MP-06 con referidos, cookie tracking y referredBy en TX
+- Dashboard S-MP-07 con dark mode, tarjetas clickeables e Igor ADMIN
+- Documentacion base sincronizada
+- QA harness server-side 12/12 PASS
+- Playwright login UI smoke 3/3 PASS
+
+### Aun no cumplido
+
+- QA manual integral buyer -> admin -> escrow -> release
+- Implementar/validar cron T+7
+- Definir roadmap de pasarelas automáticas (Mercantil/Binance) manteniéndolas diferidas hasta decisión de producto
+
+---
+
+## Fases
+
+### Fase A - Base marketplace
+**Estado:** Completa
+
+- auth
+- listings
+- chat
+- dashboard
+- admin
+- favoritos
+- Q&A
+
+### Fase B - Checkout manual estabilizado
+**Estado:** Completa
+
+- metodos reales del seller
+- referencia + comprobante
+- validacion manual por admin
+- escrow coherente
+- carrito consolidado con `MpOrder`
+- unidades por transaccion en `MpTransaction.quantity`
+
+### Fase C - Infraestructura pendiente
+**Estado:** En curso
+
+- cron T+7
+- QA viva de storage de imagenes/comprobantes
+- endurecimiento operativo
+- Playwright setup (S11 completo)
+
+### Fase D - Pasarelas
+**Estado:** Diferida
+
+- Mercantil
+- Binance Pay
+- webhooks reales
+- conciliacion automatica
+
+---
+
+## Bloqueadores y decisiones abiertas
+
+| Item | Tipo | Estado |
+|---|---|---|
+| Storage de imagenes | Decision tecnica | Vercel Blob no-booking implementado |
+| Base64 en produccion | Riesgo tecnico | Fuera del flujo productivo |
+| Credenciales Mercantil | Externo | No disponibles |
+| Decision Binance | Producto/negocio | Diferida |
+| Cron T+7 | Infraestructura | Pendiente |
+| QA manual completa | Operacion | Pendiente |
+
+---
+
+## Sprints Marketplace CERRADOS
+
+### ✅ S-MP-01 Carrito de Compras — CERRADO 2026-05-17
+Inventory validation real (`hasInventory` + `inventory`), `Math.min` para máximo disponible descontando cantidades vendidas, `checkoutCart()` multivendedor con `MpOrder` padre e `MpTransaction` hijas, imágenes visibles en carrito. QA 17/17 PASS.
+
+### ✅ S-MP-02 Búsqueda y Filtros — CERRADO 2026-05-18
+Búsqueda fuzzy con Fuse.js en títulos y descripciones, dropdowns de ubicación (estado/municipio), búsqueda funciona fuera de los filtros activos.
+
+### ✅ S-MP-04 Publicación de Productos — CERRADO 2026-05-18
+Imagen requerida para publicar listing (sin placeholders genéricos), validación server-side del upload, preview de imagen antes de publicar.
+
+### ✅ S-MP-06 Drop Social — CERRADO 2026-05-18
+Botón de referido en dashboard, generación automática de código de referido, cookie de tracking (`turpial_ref`), campo `referredBy` en `MpTransaction`, pestaña "Mis Referidos" en dashboard.
+
+### ✅ S-MP-07 Dashboard — CERRADO 2026-05-18
+Dark mode toggle persistente, tarjetas de dashboard clickeables (navegación completa), Igor promovido a ADMIN vía seed.
+
+---
+
+## Nota de gobierno documental
+
+Desde esta fecha:
+
+- `docs/marketplace/` describe arquitectura y estado tecnico consolidado.
+- `docs/obsidian-vault/` es la fuente de trazabilidad viva del proyecto.
+
+Todo cambio operativo, bloqueo o decision practica debe reflejarse primero en Obsidian y luego consolidarse aqui si cambia el estado tecnico del sistema.
+
+## Regla de storage/media
+
+- DB compartida con el equipo: si.
+- Blob/token compartido con booking/reservas: no.
+- Jean mantiene ownership de `/reservas` y booking con su propio Blob/token.
+- Manuel mantiene ownership de home, subpaginas, marketplace y frontend publico no-booking.
+- Media publica no-booking usa `TS_WEB_BLOB_READ_WRITE_TOKEN`.
+- Comprobantes sensibles del marketplace no usan esa capa publica; requieren storage sensible dedicado o proxy autenticado.
