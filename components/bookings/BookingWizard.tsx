@@ -1703,7 +1703,7 @@ export function BookingWizard({
 
       <div
         className={cn(
-          'p-4 pb-24 md:px-6 md:py-3',
+          'p-4 pb-28 md:px-6 md:py-3',
           currentStep === 5 && 'md:py-2.5 lg:py-2',
         )}
       >
@@ -1890,8 +1890,9 @@ export function BookingWizard({
 
       <div
         className={cn(
-          'sticky bottom-0 z-20 flex items-center justify-between border-t border-brand-border px-3 py-2.5',
+          'fixed inset-x-0 bottom-0 z-40 flex items-center justify-between border-t border-brand-border px-3 py-2.5',
           'bg-brand-surface/95 backdrop-blur supports-[backdrop-filter]:bg-brand-surface/85',
+          'shadow-[0_-10px_30px_rgba(0,0,0,0.35)]',
           '[padding-bottom:calc(env(safe-area-inset-bottom)+0.625rem)]',
           'md:static md:z-auto md:bg-transparent md:backdrop-blur-0 md:px-6 md:py-3 md:[padding-bottom:0]',
         )}

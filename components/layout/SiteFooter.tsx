@@ -1,6 +1,9 @@
+'use client'
+
 import Link from 'next/link'
 import Image from 'next/image'
 import { MapPin, Phone, Mail } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import { MapEmbed } from '@/components/layout/MapEmbed'
 import { FlipCounter } from '@/components/ui/FlipCounter'
 import { footerNavItems, ctaNav } from '@/content/navigation'
@@ -9,6 +12,8 @@ import { Button } from '@/components/ui/Button'
 
 export function SiteFooter() {
   const currentYear = new Date().getFullYear()
+  const pathname = usePathname()
+  const isBookingWizardRoute = pathname?.startsWith('/reservas') ?? false
 
   return (
     <footer className="snap-end border-t border-white/[0.04] bg-brand-surface">
@@ -30,11 +35,13 @@ export function SiteFooter() {
             <div className="mt-5">
               <span className="accent-line-animated" aria-hidden="true" />
             </div>
-            <div className="mt-6">
-              <Button as="link" href={ctaNav.href} variant="primary" size="sm">
-                {ctaNav.label}
-              </Button>
-            </div>
+            {!isBookingWizardRoute && (
+              <div className="mt-6">
+                <Button as="link" href={ctaNav.href} variant="primary" size="sm">
+                  {ctaNav.label}
+                </Button>
+              </div>
+            )}
 
             <MapEmbed />
           </div>

@@ -15,7 +15,7 @@ interface ServiceSelectStepProps {
 export function ServiceSelectStep({ selected, onChange }: ServiceSelectStepProps) {
   return (
     <div>
-      <p className="mb-4 text-sm text-text-secondary md:mb-2 md:text-[11px]">
+      <p className="mb-4 hidden text-sm text-text-secondary md:mb-2 md:block md:text-[11px]">
         Elige el servicio que necesitas. Podrás seleccionar la modalidad en el paso siguiente.
       </p>
 
