@@ -2,7 +2,7 @@ import type { Route } from 'next'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'whatsapp'
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'whatsapp' | 'glow-cyan'
 type ButtonSize = 'sm' | 'md' | 'lg'
 
 interface ButtonBaseProps {
@@ -31,20 +31,36 @@ interface ButtonAsLink extends ButtonBaseProps {
 type ButtonProps = ButtonAsButton | ButtonAsLink
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary:
-    'bg-accent-gold text-brand-bg font-semibold hover:bg-accent-gold-light transition-colors duration-250',
-  secondary:
-    'border border-brand-border text-text-primary hover:border-accent-gold hover:text-accent-gold transition-colors duration-250',
-  ghost:
-    'text-text-secondary hover:text-text-primary transition-colors duration-250',
-  whatsapp:
-    'bg-[#25D366] text-white font-semibold hover:bg-[#1ebe5e] transition-colors duration-250',
+  primary: [
+    'btn-silky-primary font-semibold',
+    'transition-all duration-250',
+    'hover:brightness-110',
+  ].join(' '),
+  secondary: [
+    'btn-gradient-border text-text-primary',
+    'transition-all duration-250',
+    'hover:text-accent-gold',
+  ].join(' '),
+  ghost: [
+    'text-text-secondary',
+    'transition-colors duration-250',
+    'hover:text-text-primary',
+  ].join(' '),
+  whatsapp: [
+    'bg-[#25D366] text-white font-semibold',
+    'transition-all duration-250',
+    'hover:bg-[#1ebe5e]',
+  ].join(' '),
+  'glow-cyan': [
+    'btn-gradient-outline text-accent-cyan',
+    'transition-all duration-250',
+  ].join(' '),
 }
 
 const sizeClasses: Record<ButtonSize, string> = {
   sm: 'px-4 py-2 text-sm rounded',
   md: 'px-6 py-3 text-base rounded',
-  lg: 'px-8 py-4 text-base rounded-lg',
+  lg: 'px-8 py-4 text-base rounded-xl',
 }
 
 export function Button({

@@ -4,20 +4,33 @@
 
 /* ─── CSS Custom Properties ─────────────────────────────────────── */
 :root {
-  /* Colors — SUGGESTED palette; CLIENT_REQUIRED for brand approval */
+  /* Base surfaces */
   --color-bg: #0a0a0a;
   --color-surface: #111111;
   --color-border: #1e1e1e;
   --color-muted: #2a2a2a;
-  --color-accent: #c9973a;
-  --color-accent-light: #e5b76a;
+
+  /* Brand accents */
+  --color-gold: #ffc107;
+  --color-gold-light: #ffd54f;
+  --color-gold-dark: #e6a800;
+  --color-cyan: #00aeef;
+  --color-cyan-light: #29bcff;
+  --color-cyan-dark: #0090c8;
+
+  /* Glassmorphism */
+  --glass-bg: rgba(17, 17, 17, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-blur: 12px;
+
+  /* Text */
   --color-text-primary: #f2f2f2;
   --color-text-secondary: #a0a0a0;
   --color-text-muted: #5a5a5a;
 
-  /* Typography */
-  --font-display: var(--font-syne), system-ui, sans-serif;
-  --font-body: var(--font-inter), system-ui, sans-serif;
+  /* Typography — Michroma exclusiva en todo el sitio */
+  --font-display: var(--font-michroma), system-ui, sans-serif;
+  --font-body: var(--font-michroma), system-ui, sans-serif;
 
   /* Spacing */
   --container-max: 1200px;
@@ -41,6 +54,7 @@
 html {
   scroll-behavior: smooth;
   text-size-adjust: 100%;
+  overflow-y: scroll;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -60,9 +74,28 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text-primary);
   font-family: var(--font-body);
-  line-height: 1.6;
+  /* Michroma es más ancha que Inter — line-height y tracking compensados */
+  line-height: 1.8;
+  letter-spacing: 0.02em;
+  font-size: clamp(0.8rem, 1.05vw, 0.875rem);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Ambient background: slow drifting radial glows ──────────────────────── */
+/* Uses transform (GPU-composited) → zero layout thrashing, near-zero GPU cost */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 40% at 15% 20%, rgba(0, 174, 239, 0.042) 0%, transparent 65%),
+    radial-gradient(ellipse 45% 35% at 80% 72%, rgba(255, 193,   7, 0.026) 0%, transparent 60%),
+    radial-gradient(ellipse 35% 30% at 55% 45%, rgba(0,  80, 200, 0.028) 0%, transparent 65%);
+  animation: bgDrift 22s ease-in-out infinite;
+  will-change: transform;
 }
 
 /* ─── Typography Base ────────────────────────────────────────────── */
@@ -73,9 +106,10 @@ h4,
 h5,
 h6 {
   font-family: var(--font-display);
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  font-weight: 400;
+  /* Michroma es ancha: line-height ligeramente mayor que con Inter */
+  line-height: 1.15;
+  letter-spacing: 0.015em;
   color: var(--color-text-primary);
 }
 
@@ -94,13 +128,171 @@ video {
   max-width: 100%;
 }
 
+/* ─── Keyframes ──────────────────────────────────────────────────── */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+/* ── Gradient shift — animated background-position (blue-dominant) ───────── */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%;   }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%;   }
+}
+
+/* ── Silky Blue button — numinous halo pulse ─────────────────────────────── */
+@keyframes silkyHalo {
+  0%, 100% {
+    box-shadow:
+      0 0 18px rgba(0, 174, 239, 0.28),
+      0 0 48px rgba(0, 174, 239, 0.07),
+      inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  50% {
+    box-shadow:
+      0 0 30px rgba(0, 174, 239, 0.46),
+      0 0 72px rgba(0, 174, 239, 0.14),
+      inset 0 1px 0 rgba(255,255,255,0.13);
+  }
+}
+
+/* ── Ambient background drift (GPU-composited via transform) ─────────────── */
+@keyframes bgDrift {
+  0%,  100% { transform: translate(0%,    0%)    scale(1);     }
+  25%        { transform: translate(1.5%,  2%)    scale(1.015); }
+  50%        { transform: translate(-1%,   3.5%)  scale(1.008); }
+  75%        { transform: translate(2%,   -1.5%)  scale(0.997); }
+}
+
+/* ── WhatsApp / numinous pulse rings ─────────────────────────────────────── */
+@keyframes ringPulse {
+  0%   { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+/* ── Text gradient cyan ───────────────────────────────────────────────────── */
+.text-gradient-cyan {
+  background: linear-gradient(135deg, var(--color-cyan), var(--color-cyan-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Animated gradient text (logo numinoso, blue-dominant) ───────────────── */
+.text-gradient-animated {
+  background: linear-gradient(
+    135deg,
+    #00aeef  0%,
+    #0050c8 25%,
+    #0068e0 55%,
+    #00aeef 80%,
+    #ffc107 100%
+  );
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 5s ease infinite;
+}
+
+/* ── Gradient border — outline buttons (mask technique, GPU-safe) ─────────── */
+/* Technique: ::before padding-box + mask xor = only border ring visible      */
+/* ── Animated gradient border — cards (Turpial cyan · blue · gold) ────────── */
+.card-gradient-border {
+  position: relative;
+}
+
+.card-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    #00aeef  0%,
+    #0050c8 35%,
+    #ffc107 65%,
+    #00aeef 100%
+  );
+  background-size: 300% 300%;
+  animation: gradientShift 6s ease infinite;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.btn-gradient-border {
+  position: relative;
+}
+
+.btn-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;           /* = visual border thickness */
+  background: linear-gradient(
+    135deg,
+    #00aeef  0%,
+    #0050c8 30%,
+    #00aeef 70%,
+    #ffc107 100%
+  );
+  background-size: 300% 300%;
+  animation: gradientShift 5s ease infinite;
+  /* Show only the 1px padding ring, mask away the content area */
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
 /* ─── Utility Classes ────────────────────────────────────────────── */
 @layer utilities {
+  /*
+   * Center-stacked experiment: contenedor centrado, ancho expandido (1440px).
+   * Márgenes simétricos — safe zone clamp para no llegar al borde del viewport
+   * ni colisionar con el botón WhatsApp (right-6 + w-14 = 80px, ~5rem).
+   */
   .container-base {
     width: 100%;
-    max-width: var(--container-max);
-    margin-inline: auto;
-    padding-inline: var(--container-px);
+    max-width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: clamp(1.5rem, 4vw, 3.5rem);
+    padding-right: clamp(1.5rem, 4vw, 3.5rem);
+  }
+
+  /* Kept for backwards compat on non-home pages */
+  .container-base--right {
+    margin-left: auto;
+    margin-right: 0;
+    padding-left: clamp(1.5rem, 4vw, 3.5rem);
+    padding-right: clamp(1.5rem, 4vw, 3.5rem);
   }
 
   .section-padding {
@@ -111,17 +303,460 @@ video {
     padding-block: clamp(2rem, 4vw, 4rem);
   }
 
+  /* Accent decorative lines */
   .accent-line {
     display: block;
     width: 2.5rem;
     height: 2px;
-    background-color: var(--color-accent);
+    background-color: var(--color-gold);
+    flex-shrink: 0;
   }
 
+  .accent-line-cyan {
+    display: block;
+    width: 2.5rem;
+    height: 2px;
+    background-color: var(--color-cyan);
+    flex-shrink: 0;
+  }
+
+  /* ── Gradient animated accent line — numinous, blue-dominant ── */
+  .accent-line-animated {
+    display: block;
+    width: 2.5rem;
+    height: 2px;
+    background: linear-gradient(90deg, #00aeef 0%, #0050c8 35%, #00aeef 70%, #ffc107 100%);
+    background-size: 300% 100%;
+    animation: gradientShift 5s ease infinite;
+    flex-shrink: 0;
+  }
+
+  /* Text gradients */
   .text-gradient-gold {
-    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-light));
+    background: linear-gradient(135deg, var(--color-gold), var(--color-gold-light));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  .text-gradient-dual {
+    background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glassmorphism surface */
+  .glass-surface {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+  }
+
+  /* Navbar animated gradient */
+  .navbar-gradient {
+    background: linear-gradient(
+      to right,
+      rgba(0,174,239,0.26)  0%,
+      rgba(0,174,239,0.18) 18%,
+      rgba(255,193,7,0.14) 38%,
+      rgba(55,55,55,0.72)  55%,
+      rgba(55,55,55,0.72)  70%,
+      rgba(255,193,7,0.14) 82%,
+      rgba(0,174,239,0.26) 100%
+    );
+    background-size: 280% 100%;
+    animation: navbarGradientFlow 12.6s ease-in-out infinite;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  @keyframes navbarGradientFlow {
+    0%   { background-position: 0%   50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0%   50%; }
+  }
+
+  /* Animations */
+  .animate-slide-down {
+    animation: slideDown 280ms var(--ease-out-expo) forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 400ms ease forwards;
+  }
+
+  .animate-pulse-glow {
+    animation: pulseGlow 3s ease-in-out infinite;
+  }
+
+  /* ── Silky Blue primary: blue-dominant animated gradient ─────────────── */
+  .btn-silky-primary {
+    /* Gradient: cyan → deep-blue → mid-blue → cyan → gold (blue dominant: 0–80%) */
+    background: linear-gradient(
+      135deg,
+      #00aeef  0%,
+      #0050c8 25%,
+      #0068e0 55%,
+      #00aeef 80%,
+      #ffc107 100%
+    );
+    background-size: 300% 300%;
+    color: #fff;
+    border: 1px solid rgba(0, 174, 239, 0.45);
+    animation: gradientShift 5s ease infinite, silkyHalo 3.5s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-silky-primary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, rgba(255,255,255,0.07) 0%, transparent 55%);
+    pointer-events: none;
+  }
+
+  .btn-silky-primary:hover {
+    filter: brightness(1.12);
+  }
+
+  /* ── Gradient outline: same palette, transparent fill ──────────────────── */
+  .btn-gradient-outline {
+    background: linear-gradient(
+      135deg,
+      rgba(0, 174, 239, 0.11)  0%,
+      rgba(0,  80, 200, 0.09) 30%,
+      rgba(0, 104, 224, 0.08) 55%,
+      rgba(0, 174, 239, 0.10) 80%,
+      rgba(255, 193, 7, 0.06) 100%
+    );
+    background-size: 300% 300%;
+    border: 1px solid transparent;
+    /* Box-shadow renders the "border" so border: transparent is safe */
+    box-shadow: 0 0 0 1px rgba(0, 174, 239, 0.42), 0 0 14px rgba(0, 174, 239, 0.10);
+    animation: gradientShift 5s ease infinite;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-gradient-outline:hover {
+    box-shadow: 0 0 0 1px rgba(0, 174, 239, 0.70), 0 0 24px rgba(0, 174, 239, 0.18);
+    filter: brightness(1.08);
+  }
+
+  /* Scrollbar hide for carousels */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ── Pricing: thick gradient border variant ───────────────────────────────── */
+.card-gradient-border-thick::before {
+  padding: 2px;
+}
+
+/* ── Pricing cards: depth shadow + hover lift ─────────────────────────────── */
+.pricing-card {
+  transition:
+    transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.42s ease;
+  box-shadow:
+    0 4px 28px rgba(0, 0, 0, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.pricing-card:hover {
+  transform: translateY(-8px);
+}
+
+.pricing-card--gold:hover {
+  box-shadow:
+    0 18px 52px rgba(0, 0, 0, 0.68),
+    0 0   80px rgba(255, 193,   7, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.pricing-card--cyan:hover {
+  box-shadow:
+    0 18px 52px rgba(0, 0, 0, 0.68),
+    0 0   80px rgba(0, 174, 239, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+/* ── Pricing carousel: nav buttons with numinous glow ──────────────────────── */
+/* GPU-safe: only box-shadow + border-color + transform animate on hover.       */
+.pricing-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  cursor: pointer;
+  color: var(--color-cyan);
+  background: rgba(17, 17, 17, 0.75);
+  border: 1px solid rgba(0, 174, 239, 0.30);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    0 0  20px rgba(0, 174, 239, 0.16),
+    0 0  50px rgba(0, 174, 239, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition:
+    box-shadow   0.32s ease,
+    border-color 0.32s ease,
+    transform    0.20s ease;
+}
+
+.pricing-nav-btn:hover {
+  border-color: rgba(0, 174, 239, 0.75);
+  box-shadow:
+    0 0  36px rgba(0, 174, 239, 0.52),
+    0 0  80px rgba(0, 174, 239, 0.20),
+    0 0 120px rgba(0, 174, 239, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transform: scale(1.10);
+}
+
+.pricing-nav-btn:active {
+  transform: scale(0.94);
+  transition-duration: 0.08s;
+}
+
+/* ── Premium card wrapper — thick animated border + depth shadow + lift ──── */
+/* GPU-safe: border via ::before mask technique (no layout thrashing)        */
+/* Usage: add .card-premium-wrapper to any card div. For gold hover glow,   */
+/* also add .card-premium-wrapper--gold. Works on div, article, a.          */
+.card-premium-wrapper {
+  position: relative;
+  box-shadow:
+    0 4px 28px rgba(0, 0, 0, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition:
+    transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.42s ease;
+}
+
+.card-premium-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(
+    135deg,
+    #00aeef  0%,
+    #0050c8 35%,
+    #ffc107 65%,
+    #00aeef 100%
+  );
+  background-size: 300% 300%;
+  animation: gradientShift 6s ease infinite;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  /* z-index: 1 garantiza que el ring de borde pinte SOBRE cualquier contenido
+     interno posicionado (imágenes, divs con position:relative), sin interferir
+     con clicks (pointer-events:none). La máscara deja transparente el interior,
+     solo los 2px del perímetro son visibles — el marco queda completo. */
+  z-index: 1;
+}
+
+.card-premium-wrapper:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 18px 52px rgba(0, 0, 0, 0.68),
+    0 0   72px rgba(0, 174, 239, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.card-premium-wrapper--gold:hover {
+  box-shadow:
+    0 18px 52px rgba(0, 0, 0, 0.68),
+    0 0   72px rgba(255, 193, 7, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+/* ── Price halo: micro-stars orbiting around price values ─────────────────── */
+/* GPU-composited (transform + opacity only). Two counter-rotating rings.      */
+@keyframes pricingHaloSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pricingHaloPulse {
+  0%, 100% { opacity: 0.18; }
+  50%       { opacity: 0.42; }
+}
+
+.price-halo {
+  position: relative;
+  display: inline-block;
+  isolation: isolate;
+}
+
+.price-halo--gold { --halo-color: var(--color-gold); }
+.price-halo--cyan { --halo-color: var(--color-cyan); }
+
+/* Outer ring — 8 dots, slow clockwise */
+.price-halo::before {
+  content: '';
+  position: absolute;
+  inset: -14px -22px;
+  pointer-events: none;
+  z-index: -1;
+  background-image:
+    radial-gradient(circle 2px   at  8%  50%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1.5px at 50%   7%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 2px   at 92%  50%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1.5px at 50%  93%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1px   at 17%  18%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1.5px at 83%  82%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1.5px at 80%  17%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1px   at 20%  83%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%);
+  animation:
+    pricingHaloSpin   16s linear       infinite,
+    pricingHaloPulse   4s ease-in-out  infinite;
+}
+
+/* Inner ring — 4 dots, faster counter-clockwise */
+.price-halo::after {
+  content: '';
+  position: absolute;
+  inset: -8px -14px;
+  pointer-events: none;
+  z-index: -1;
+  background-image:
+    radial-gradient(circle 1.5px at 50%   5%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1px   at 95%  40%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1.5px at 72%  93%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%),
+    radial-gradient(circle 1px   at 10%  65%, var(--halo-color, var(--color-cyan)) 100%, transparent 100%);
+  animation:
+    pricingHaloSpin  10s linear       infinite reverse,
+    pricingHaloPulse  5s ease-in-out  infinite 1.8s;
+}
+
+/* ── Nav glow Marketplace — neon pulse oro/cian ──────────────────────────── */
+@keyframes navMarketplaceGlow {
+  0%, 100% {
+    background-position: 0% 50%;
+    text-shadow:
+      0 0  8px rgba(0, 174, 239, 0.55),
+      0 0 18px rgba(0, 174, 239, 0.25),
+      0 0  4px rgba(255, 193,   7, 0.30);
+  }
+  50% {
+    background-position: 100% 50%;
+    text-shadow:
+      0 0 14px rgba(255, 193,   7, 0.65),
+      0 0 30px rgba(255, 193,   7, 0.28),
+      0 0  6px rgba(0,  174, 239, 0.35);
+  }
+}
+
+.nav-glow-marketplace {
+  background: linear-gradient(
+    135deg,
+    #ffc107  0%,
+    #00aeef 35%,
+    #0068e0 55%,
+    #00aeef 75%,
+    #ffc107 100%
+  );
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: navMarketplaceGlow 3.8s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MARKETPLACE — Turpial Market
+   ─ Estilos adicionales para el sistema de Matchmaking & Escrow.
+   ─ GPU-safe: solo transform + opacity + box-shadow en animaciones.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Security warning pulse — ban notice en el chat ─────────────────────── */
+@keyframes securityPulse {
+  0%, 100% { border-color: rgba(239, 68, 68, 0.22); }
+  50%       { border-color: rgba(239, 68, 68, 0.42); }
+}
+
+.market-security-banner {
+  animation: securityPulse 3.5s ease-in-out infinite;
+}
+
+/* ── Escrow chip — pulse de confianza ────────────────────────────────────── */
+@keyframes escrowPing {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 174, 239, 0); }
+  50%       { box-shadow: 0 0 0 6px rgba(0, 174, 239, 0); }
+}
+
+/* ── Intent card grid — mobile-first responsive ──────────────────────────── */
+.market-intent-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .market-intent-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .market-intent-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ── Quote card — fiduciary payment card in chat ─────────────────────────── */
+.market-quote-card {
+  background: rgba(13, 13, 13, 0.95);
+  border: 1px solid rgba(0, 174, 239, 0.18);
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 48px rgba(0, 174, 239, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* ── Hero Numinoso — slow breathing zoom ─────────────────────────────────── */
+@keyframes heroSlowZoom {
+  0%   { transform: scale(1); }
+  100% { transform: scale(1.06); }
+}
+
+.hero-slow-zoom {
+  animation: heroSlowZoom 18s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* ── Listing card image placeholder shimmer ──────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.market-image-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(30, 30, 30, 0.4) 0%,
+    rgba(50, 50, 50, 0.6) 50%,
+    rgba(30, 30, 30, 0.4) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
 }

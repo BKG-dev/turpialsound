@@ -12,7 +12,7 @@ export const faqItems: FAQItem[] = [
   {
     id: 'reserva',
     question: '¿Cómo reservo una sala o sesión?',
-    answer: 'Puedes reservar directamente por WhatsApp o a través de nuestro formulario de contacto. Confirmamos disponibilidad en menos de 24 horas.', // SUGGESTED — confirmar proceso real
+    answer: 'Puedes iniciar tu solicitud desde la seccion de reservas. Si necesitas ayuda, te atendemos por WhatsApp. Confirmamos disponibilidad en menos de 24 horas.', // SUGGESTED — confirmar proceso real
     category: 'general',
     relatedServiceSlug: 'salas-de-ensayo',
   },

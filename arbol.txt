@@ -1,0 +1,150 @@
+D:\PROYECTOS\PROYECTOS VISUAL STUDIO\Turpialsound\turpialsound
+├── app
+|  ├── artistas
+|  |  └── page.tsx
+|  ├── contacto
+|  |  └── page.tsx
+|  ├── estudio-de-grabacion
+|  |  └── page.tsx
+|  ├── layout.tsx
+|  ├── manifest.ts
+|  ├── nosotros
+|  |  └── page.tsx
+|  ├── not-found.tsx
+|  ├── page.tsx
+|  ├── politica-de-privacidad
+|  |  └── page.tsx
+|  ├── produccion-musical
+|  |  └── page.tsx
+|  ├── recursos
+|  |  ├── page.tsx
+|  |  └── preguntas-frecuentes
+|  |     └── page.tsx
+|  ├── robots.ts
+|  ├── salas-de-ensayo
+|  |  └── page.tsx
+|  ├── servicios
+|  |  ├── arreglos-musicales
+|  |  |  └── page.tsx
+|  |  ├── mezcla-masterizacion
+|  |  |  └── page.tsx
+|  |  ├── page.tsx
+|  |  ├── podcast-locucion
+|  |  |  └── page.tsx
+|  |  └── video-session
+|  |     └── page.tsx
+|  └── sitemap.ts
+├── CLAUDE.md
+├── components
+|  ├── effects
+|  |  └── BokehCanvas.tsx
+|  ├── fx
+|  |  └── ParticleCanvas.tsx
+|  ├── home
+|  |  ├── HeroSection.tsx
+|  |  ├── ServiceGallery.tsx
+|  |  └── StackingSection.tsx
+|  ├── layout
+|  |  ├── AnimatedLogo.tsx
+|  |  ├── AnimatedNavLinks.tsx
+|  |  ├── MobileMenu.tsx
+|  |  ├── SiteFooter.tsx
+|  |  └── SiteHeader.tsx
+|  ├── media
+|  |  ├── AudioVisualizerFrequency.tsx
+|  |  ├── AudioVisualizerPlasma.tsx
+|  |  ├── AudioVisualizerWaterfall3D.tsx
+|  |  ├── CinematicVideo.tsx
+|  |  ├── FluidCurveScrollImg.tsx
+|  |  ├── Lightbox.tsx
+|  |  ├── LogoGlb.tsx
+|  |  ├── Mac3DGallery.tsx
+|  |  └── SocialVideoPlayer.tsx
+|  ├── sections
+|  |  ├── ContactBlock.tsx
+|  |  ├── CTASection.tsx
+|  |  ├── FAQList.tsx
+|  |  ├── PageHero.tsx
+|  |  └── SectionShell.tsx
+|  └── ui
+|     ├── AnimatedHeading.tsx
+|     ├── Button.tsx
+|     ├── NuminousPersonCard.tsx
+|     ├── NuminousServiceCard.tsx
+|     ├── StatsBar.tsx
+|     ├── TiltCard.tsx
+|     └── WhatsAppButton.tsx
+├── content
+|  ├── artists.ts
+|  ├── faq.ts
+|  ├── navigation.ts
+|  ├── services.ts
+|  └── site.ts
+├── docs
+|  ├── 00_governance
+|  |  ├── phases-detail.md
+|  |  ├── roadmap-master.md
+|  |  └── session-handoff-template.md
+|  ├── 01_strategy
+|  |  ├── authority-map.md
+|  |  ├── brand-core.md
+|  |  ├── competitors-and-gaps.md
+|  |  ├── customer-profiles.md
+|  |  ├── market-positioning.md
+|  |  └── offers-and-economics.md
+|  ├── 02_information_architecture
+|  |  ├── internal-linking-logic.md
+|  |  ├── navigation-system.md
+|  |  ├── sitemap-master.md
+|  |  └── url-architecture.md
+|  ├── 03_editorial
+|  |  ├── content-matrix.md
+|  |  ├── messaging-pillars.md
+|  |  ├── page-briefs.md
+|  |  └── tone-of-voice.md
+|  ├── 04_design
+|  |  ├── design-tokens.md
+|  |  └── motion-rules.md
+|  ├── 05_technical
+|  |  ├── app-architecture.md
+|  |  ├── asset-requirements.md
+|  |  ├── ods-reference.md
+|  |  ├── shell-implementation-log.md
+|  |  └── stack-decision.md
+|  ├── 06_delivery
+|  |  └── qa-checklist.md
+|  ├── 07_handoffs
+|  |  ├── next-window-brief.md
+|  |  └── session-summary-active.md
+|  ├── control-points
+|  |  └── turpial_sound_control_point_01.md
+|  ├── docs turpial sound.zip
+|  ├── INSTRUCCIONES_REFAC_GLOBAL.md
+|  ├── INSTRUCCIONES_UI_INMERSIVA.md
+|  └── intake
+|     └── cuestionario_maestro_cliente_turpial_song.md
+├── FluidCurveScrollImg.jsx
+├── lib
+|  ├── bell.ts
+|  ├── getPublicImages.ts
+|  ├── imageArrays.ts
+|  ├── metadata.ts
+|  ├── schema.ts
+|  └── utils.ts
+├── next-env.d.ts
+├── next.config.mjs
+├── package-lock.json
+├── package.json
+├── postcss.config.mjs
+├── styles
+|  └── globals.css
+├── tailwind.config.ts
+├── TASK_ROUTING.md
+├── tsconfig.json
+├── tsconfig.tsbuildinfo
+└── types
+   └── index.ts
+
+directory: 1680 file: 11310
+
+ignored: directory (28)

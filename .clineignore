@@ -1,0 +1,26 @@
+# Dependencias y builds
+node_modules/
+.next/
+dist/
+build/
+.git/
+
+# Archivos de bloqueo (Son gigantes y confunden a la IA)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Multimedia (La IA no necesita "leer" el binario de una imagen)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.pdf
+*.mp4
+
+# Logs y variables de entorno
+*.log
+.env*
+.ds_store

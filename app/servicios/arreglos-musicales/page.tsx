@@ -42,15 +42,18 @@ export default function ArreglosMusicalesPage() {
         heading="Estructura y criterio para tu música."
         subheading="Arreglos completos o parciales para proyectos que necesitan dirección musical profesional."
       >
-        <Button as="link" href="/contacto" variant="primary" size="lg">
-          Hablar con el equipo
+        <Button as="link" href="/reservas" variant="primary" size="lg">
+          Reserva ahora
         </Button>
       </PageHero>
 
       <SectionShell size="sm">
-        <p className="text-sm font-medium uppercase tracking-widest text-text-muted">
-          También puede interesarte
-        </p>
+        <div className="flex items-center gap-4">
+          <span className="accent-line-animated" aria-hidden="true" />
+          <span className="font-display text-xs tracking-[0.25em] uppercase text-gradient-animated">
+            También puede interesarte
+          </span>
+        </div>
         <div className="mt-6 flex flex-wrap gap-4">
           <Button as="link" href="/produccion-musical" variant="secondary" size="sm">
             Producción musical
