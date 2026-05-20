@@ -3,11 +3,5 @@
     "enabled": true,
     "silent": false,
     "autoAlias": true
-  },
-  "crons": [
-    {
-      "path": "/api/cron/refresh-bcv-rate",
-      "schedule": "0 22 * * 1-5"
-    }
-  ]
+  }
 }

@@ -449,7 +449,7 @@ interface DbReferenceSnapshot {
   snapshotId: string | null
 }
 
-async function readLastValidReferenceSnapshot(): Promise<DbReferenceSnapshot | null> {
+export async function readLastValidReferenceSnapshot(): Promise<DbReferenceSnapshot | null> {
   const db = await getDb()
   if (!db) return null
 
