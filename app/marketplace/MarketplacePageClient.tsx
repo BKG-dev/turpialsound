@@ -20,6 +20,8 @@ import {
   Search,
   SlidersHorizontal,
   X,
+  LayoutGrid,
+  List,
 } from 'lucide-react'
 import type { ModalFlow, ModalState, Listing, MarketplaceUser, MessageThread } from '@/types/marketplace'
 import { MarketplaceModals } from '@/components/marketplace/MarketplaceModals'
@@ -29,6 +31,7 @@ import { useMarketplaceAssistantLauncher } from '@/components/marketplace/Market
 import { CheckoutModal } from '@/components/marketplace/CheckoutModal'
 import { SmartMarketplaceAuthBar, useMarketplaceSession } from '@/components/marketplace/MarketplaceAuthBar'
 import { TurpialWaveShader } from '@/components/marketplace/TurpialWaveShader'
+import { DropSocialInfo } from '@/components/marketplace/DropSocialInfo'
 import { getActiveListings, getOrCreateThread } from '@/actions/marketplace'
 import { toggleFavorite, getMyFavoriteIds } from '@/actions/marketplace/favorites'
 import { trackMarketplaceClientEvent } from '@/lib/marketplace/analytics-client'
@@ -239,6 +242,18 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
   const [filterState, setFilterState] = useState('')
   const [priceRange, setPriceRange] = useState('')
   const [sortBy, setSortBy] = useState('')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    if (typeof window === 'undefined') return 'grid'
+    return (localStorage.getItem('mp-view-mode') as 'grid' | 'list') ?? 'grid'
+  })
+
+  const toggleViewMode = useCallback(() => {
+    setViewMode(prev => {
+      const next = prev === 'grid' ? 'list' : 'grid'
+      localStorage.setItem('mp-view-mode', next)
+      return next
+    })
+  }, [])
 
   // Auth & Session from global context
   const {
@@ -873,6 +888,19 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
               </div>
 
               <button
+                onClick={toggleViewMode}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs transition-all"
+                title={viewMode === 'grid' ? 'Cambiar a vista lista' : 'Cambiar a vista grid'}
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: '#9a9a9a',
+                }}
+              >
+                {viewMode === 'grid' ? <List size={12} /> : <LayoutGrid size={12} />}
+              </button>
+
+              <button
                 onClick={() => setShowFilters(p => !p)}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs transition-all"
                 style={{
@@ -1027,65 +1055,118 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
               </div>
             )}
 
-            {/* Grid */}
+            {/* Listing area — grid or list */}
             <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
-              >
-                {listingsLoading ? (
-                  <div className="col-span-full flex flex-col items-center gap-3 py-20 text-center">
-                    <p className="text-sm text-[#b8b8b8]">Cargando listados...</p>
-                  </div>
-                ) : listingsError ? (
-                  <div className="col-span-full flex flex-col items-center gap-3 py-20 text-center">
-                    <p className="text-sm text-[#b8b8b8]">{LISTINGS_LOAD_ERROR_MESSAGE}</p>
-                  </div>
-                ) : listings.length === 0 ? (
-                  <div className="col-span-full flex flex-col items-center gap-3 py-20 text-center">
-                    <p className="text-sm text-[#b8b8b8]">
-                      {emptyStateMessage}
-                    </p>
-                    {hasDiscoveryFiltersActive && (
-                      <button
-                        onClick={resetDiscoveryFilters}
-                        className="text-xs underline"
-                        style={{ color: '#00aeef' }}
-                      >
-                        {hideUnavailable ? 'Mostrar todos los listados' : 'Limpiar filtros'}
-                      </button>
-                    )}
-                    {!hasDiscoveryFiltersActive && (
-                      <button
-                        onClick={() => openFlow('sell')}
-                        className="text-xs underline"
-                        style={{ color: '#00aeef' }}
-                      >
-                        ¿Quieres publicar el primero?
-                      </button>
-                    )}
-                  </div>
-                ) : listings.map((listing, i) => (
-                  <motion.div
-                    key={listing.id}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    <MarketplaceCard
-                      listing={listing}
+              {listingsLoading ? (
+                <div className="flex flex-col items-center gap-3 py-20 text-center">
+                  <p className="text-sm text-[#b8b8b8]">Cargando listados...</p>
+                </div>
+              ) : listingsError ? (
+                <div className="flex flex-col items-center gap-3 py-20 text-center">
+                  <p className="text-sm text-[#b8b8b8]">{LISTINGS_LOAD_ERROR_MESSAGE}</p>
+                </div>
+              ) : listings.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-20 text-center">
+                  <p className="text-sm text-[#b8b8b8]">
+                    {emptyStateMessage}
+                  </p>
+                  {hasDiscoveryFiltersActive && (
+                    <button
+                      onClick={resetDiscoveryFilters}
+                      className="text-xs underline"
+                      style={{ color: '#00aeef' }}
+                    >
+                      {hideUnavailable ? 'Mostrar todos los listados' : 'Limpiar filtros'}
+                    </button>
+                  )}
+                  {!hasDiscoveryFiltersActive && (
+                    <button
+                      onClick={() => openFlow('sell')}
+                      className="text-xs underline"
+                      style={{ color: '#00aeef' }}
+                    >
+                      ¿Quieres publicar el primero?
+                    </button>
+                  )}
+                </div>
+              ) : viewMode === 'grid' ? (
+                <motion.div
+                  key={activeTab + '-grid'}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+                >
+                  {listings.map((listing, i) => (
+                    <motion.div
+                      key={listing.id}
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      <MarketplaceCard
+                        listing={listing}
+                        onClick={() => handleListingClick(listing)}
+                        isFavorited={favoritedIds.has(listing.id)}
+                        onToggleFavorite={handleToggleFavorite}
+                        currentUserId={session?.userId}
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key={activeTab + '-list'}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex flex-col gap-2"
+                >
+                  {listings.map((listing, i) => (
+                    <motion.div
+                      key={listing.id}
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.04, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                      className="flex items-center gap-4 rounded-xl p-3 cursor-pointer transition-all hover:-translate-y-0.5 active:scale-[0.99]"
+                      style={{
+                        background: 'var(--mp-card-subtle)',
+                        border: '1px solid var(--mp-border)',
+                      }}
                       onClick={() => handleListingClick(listing)}
-                      isFavorited={favoritedIds.has(listing.id)}
-                      onToggleFavorite={handleToggleFavorite}
-                      currentUserId={session?.userId}
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
+                    >
+                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#0a0a0a] flex items-center justify-center"
+                        style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+                        {listing.type === 'product' && listing.images?.[0] ? (
+                          <img
+                            src={listing.images[0]}
+                            alt={listing.title}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <Tag size={18} style={{ color: 'var(--mp-text-faint)' }} />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="truncate text-sm font-semibold text-[#f2f2f2]">{listing.title}</h3>
+                        <p className="mt-0.5 truncate text-xs text-[#b8b8b8]">
+                          {listing.description?.slice(0, 100)}{(listing.description?.length ?? 0) > 100 ? '...' : ''}
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-bold text-[#4ade80]">
+                          ${listing.type === 'product' ? listing.price : listing.priceFrom}
+                        </p>
+                        <p className="text-[10px] text-[#6a6a6a]">
+                          {listing.type === 'product' ? 'Producto' : 'Servicio'}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </section>
@@ -1169,6 +1250,11 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
             </div>
           </div>
         </section>
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            DROP SOCIAL INFO
+        ═══════════════════════════════════════════════════════════════════ */}
+        <DropSocialInfo />
 
         {/* ═══════════════════════════════════════════════════════════════════
             PUBLIC ASSISTANT

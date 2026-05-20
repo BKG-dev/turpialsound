@@ -22,7 +22,7 @@ export const metadata = {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { tab?: string }
+  searchParams: { tab?: string; threadId?: string }
 }) {
   const session = await getSession()
   if (!session) redirect('/marketplace')
@@ -65,6 +65,7 @@ export default async function DashboardPage({
       listingReferralStats={(listingReferralStats.listings as object[]) ?? []}
       referredTransactions={(referredTxsRes.success ? (referredTxsRes.data as object[]) : []) ?? []}
       initialTab={initialTab}
+      initialThreadId={searchParams.threadId ?? undefined}
     />
   )
 }

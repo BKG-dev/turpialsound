@@ -839,10 +839,7 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
     if (!tx) return { success: false, message: 'Transaccion no encontrada' }
     if (tx.buyerId !== session.userId) return { success: false, message: 'Solo el comprador puede confirmar la entrega' }
     if (tx.status !== 'IN_ESCROW') {
-      return { success: false, message: `No se puede confirmar desde el estado: ${tx.status}. Espera a que el vendedor registre la entrega.` }
-    }
-    if (!hasSellerDelivered(tx.statusHistory, tx.sellerId)) {
-      return { success: false, message: 'El vendedor aun no ha registrado la entrega.' }
+      return { success: false, message: `No se puede confirmar desde el estado: ${tx.status}` }
     }
 
     // Dispute guard: if there is an active dispute, block buyer confirmation
@@ -863,7 +860,7 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
         fromStatus: 'IN_ESCROW',
         toStatus: 'DELIVERY_CONFIRMED',
         changedBy: session.userId,
-        reason: 'buyer_confirmed_receipt: comprador confirmo la recepcion; pendiente liberacion admin',
+        reason: 'buyer_confirmed_receipt: comprador confirmo la recepcion del articulo; pendiente liberacion admin',
       },
     })
 

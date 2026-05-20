@@ -36,8 +36,10 @@ interface PersistedRate {
   asOf: string
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const DEFAULT_DELTA_PCT = 0.005
 const DEFAULT_MAX_JUMP_PCT = 0.05
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const DEFAULT_STORAGE_FILE = path.join(process.cwd(), '.cache', 'reference-rate.json')
 const DEFAULT_TIMEOUT_MS = 4000
 const DEFAULT_GOOGLE_SHEETS_BCV_URL =
@@ -51,6 +53,7 @@ function parseEnvNumber(value: string | undefined, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function normalizeStorageMode(value: string | undefined): 'memory' | 'file' {
   return value?.toLowerCase() === 'file' ? 'file' : 'memory'
 }
@@ -216,6 +219,7 @@ function median(values: number[]): number {
   return (sorted[middleIndex - 1] + sorted[middleIndex]) / 2
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function findConsensus(
   attempts: Array<{ name: string; rate: number }>,
   tolerancePct: number,
@@ -256,6 +260,7 @@ function findConsensus(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function readPersistedRate(storageMode: 'memory' | 'file', storageFile: string): Promise<PersistedRate | null> {
   if (inMemoryLastValidRate) {
     return inMemoryLastValidRate
@@ -278,6 +283,7 @@ async function readPersistedRate(storageMode: 'memory' | 'file', storageFile: st
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function writePersistedRate(
   storageMode: 'memory' | 'file',
   storageFile: string,

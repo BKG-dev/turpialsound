@@ -766,11 +766,11 @@ function SellFlow({
                 Fotos del equipo <span className="text-[#9a9a9a]">({imageFiles.length}/5)</span>
               </label>
               {imageFiles.length > 0 ? (
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                   {imageFiles.map((upload, i) => (
                     <div key={i} className="relative aspect-square rounded-lg overflow-hidden group">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={upload.previewUrl} alt="" className="w-full h-full object-cover" />
+                      <img src={upload.previewUrl} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
                       <button type="button" onClick={() => onRemoveImage(i)}
                         className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <X size={14} className="text-white" />

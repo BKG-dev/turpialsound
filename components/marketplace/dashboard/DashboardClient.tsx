@@ -2562,6 +2562,7 @@ interface DashboardClientProps {
   listingReferralStats: object[]
   referredTransactions: object[]
   initialTab?: Tab
+  initialThreadId?: string
 }
 
 export function DashboardClient({
@@ -2580,6 +2581,7 @@ export function DashboardClient({
   listingReferralStats: rawListingReferralStats,
   referredTransactions: rawReferredTransactions,
   initialTab,
+  initialThreadId,
 }: DashboardClientProps) {
   const router = useRouter()
 
@@ -2642,6 +2644,17 @@ export function DashboardClient({
   useEffect(() => {
     if (initialTab) setActiveTab(initialTab)
   }, [initialTab])
+
+  useEffect(() => {
+    if (initialThreadId && initialThreads.length > 0) {
+      const targetThread = initialThreads.find(t => t.id === initialThreadId)
+      if (targetThread) {
+        setActiveTab('messages')
+        setTimeout(() => handleOpenThread(targetThread), 100)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialThreadId, initialThreads])
 
   async function refreshThreadsAndUnread() {
     const [unreadResult, threadsResult] = await Promise.allSettled([
@@ -3430,7 +3443,7 @@ export function DashboardClient({
                       className="rounded-full px-2 py-1 text-[10px] font-semibold"
                       style={{ background: 'rgba(0,174,239,0.08)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.15)' }}
                     >
-                      Pago manual
+                      Pago procesado
                     </span>
                   </div>
 

@@ -325,7 +325,7 @@ export async function markMessagesRead(threadId: string): Promise<ActionResult> 
 // Returns the total count of unread messages addressed to the current user.
 // Lightweight query — safe to poll every 30s.
 
-export async function getUnreadCount(): Promise<ActionResult<{ count: number }>> {
+export async function getUnreadCount(): Promise<ActionResult<{ count: number; firstThreadId: string | null }>> {
   const session = await getSession()
   if (!session) return { success: false, message: 'No autenticado' }
 
@@ -336,8 +336,19 @@ export async function getUnreadCount(): Promise<ActionResult<{ count: number }>>
     const count = await db.mpMessage.count({
       where: { receiverId: session.userId, isRead: false },
     })
+
+    let firstThreadId: string | null = null
+    if (count > 0) {
+      const firstMsg = await db.mpMessage.findFirst({
+        where: { receiverId: session.userId, isRead: false },
+        orderBy: { createdAt: 'desc' },
+        select: { threadId: true },
+      })
+      firstThreadId = firstMsg?.threadId ?? null
+    }
+
     await db.$disconnect()
-    return { success: true, data: { count }, message: 'OK' }
+    return { success: true, data: { count, firstThreadId }, message: 'OK' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error' }

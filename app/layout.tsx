@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Michroma } from 'next/font/google'
 import { SiteHeader } from '@/components/layout/SiteHeader'
-import { SiteFooter } from '@/components/layout/SiteFooter'
+import { FooterRouter } from '@/components/layout/FooterRouter'
 import { WhatsAppButton } from '@/components/ui/WhatsAppButton'
 import { rootMetadata } from '@/lib/metadata'
 import { buildOrganizationSchema } from '@/lib/schema'
@@ -42,7 +42,7 @@ export default function RootLayout({
         <main id="main-content" className="pt-16">
           {children}
         </main>
-        <SiteFooter />
+        <FooterRouter />
         <WhatsAppButton />
       </body>
     </html>
