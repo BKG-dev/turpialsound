@@ -96,10 +96,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -853,10 +853,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -2246,10 +2246,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -3003,10 +3003,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -4393,10 +4393,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -5786,10 +5786,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -6543,10 +6543,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -7933,10 +7933,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -9323,10 +9323,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -10716,10 +10716,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -11473,10 +11473,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -12863,10 +12863,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -14253,10 +14253,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -15643,10 +15643,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -17036,10 +17036,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -17793,10 +17793,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -19183,10 +19183,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -20573,10 +20573,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -21963,10 +21963,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -23353,10 +23353,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -24746,10 +24746,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -25503,10 +25503,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -26893,10 +26893,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -28283,10 +28283,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -29673,10 +29673,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -31063,10 +31063,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
@@ -32453,10 +32453,10 @@ tags:
 - **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
 - **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
 - **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Configurar `CRON_SECRET` en Vercel para BCV scheduler
-- **ARQUITECTURA_TASAS:** 7 items de liquidación seller pendientes
-- **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin). Reunión 2026-05-20. Owner: Jean
-- **S-UX-02 (v2):** Marketplace UI + Plataforma de Notificaciones (correo y WhatsApp). Reunión 2026-05-20. Owner: Jean + Manuel
+- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
+- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
+- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
+- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
 
 
 ---
