@@ -323,8 +323,8 @@ export function DateTimeStep({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="rounded-lg border border-brand-border bg-brand-bg/25 px-3 py-2">
+    <div className="space-y-2.5 md:space-y-3">
+      <div className="hidden rounded-lg border border-brand-border bg-brand-bg/25 px-3 py-2 md:block">
         <div className="flex flex-wrap gap-1.5">
           <span
             className={cn(
@@ -377,7 +377,7 @@ export function DateTimeStep({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-2">
+      <div className="grid grid-cols-1 gap-2.5 md:grid-cols-3 md:gap-2">
         <div>
           <label
             htmlFor="event-date"
@@ -420,6 +420,47 @@ export function DateTimeStep({
           </button>
           <p className="mt-1 text-[11px] text-text-muted">
             Horario operativo en America/Caracas.
+          </p>
+
+          <div className="mt-1.5 flex flex-wrap gap-1 md:hidden">
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide',
+                eventDate
+                  ? 'border-emerald-400/35 bg-emerald-500/10 text-emerald-200'
+                  : 'border-white/15 bg-white/5 text-text-muted',
+              )}
+            >
+              Fecha {eventDate ? 'lista' : 'pendiente'}
+            </span>
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide',
+                startTime
+                  ? 'border-emerald-400/35 bg-emerald-500/10 text-emerald-200'
+                  : eventDate
+                    ? 'border-accent-gold/45 bg-accent-gold/10 text-accent-gold'
+                    : 'border-white/15 bg-white/5 text-text-muted',
+              )}
+            >
+              Inicio {startTime ?? ''}
+            </span>
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide',
+                endTime
+                  ? 'border-emerald-400/35 bg-emerald-500/10 text-emerald-200'
+                  : isSelectingEnd
+                    ? 'border-accent-gold/45 bg-accent-gold/10 text-accent-gold'
+                    : 'border-white/15 bg-white/5 text-text-muted',
+              )}
+            >
+              Final {endTime ?? ''}
+            </span>
+          </div>
+          <p className="mt-1 text-[10px] text-text-muted md:hidden">{selectionGuideMessage}</p>
+          <p className="mt-0.5 text-[10px] text-text-muted md:hidden">
+            Solicitado puede liberarse. Reportado/confirmado no disponible.
           </p>
         </div>
 
