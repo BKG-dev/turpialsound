@@ -7,7 +7,7 @@
   "crons": [
     {
       "path": "/api/cron/refresh-bcv-rate",
-      "schedule": "0 12 * * 1-5"
+      "schedule": "0 22 * * 1-5"
     }
   ]
 }
