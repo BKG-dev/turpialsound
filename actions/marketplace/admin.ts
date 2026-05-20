@@ -598,41 +598,63 @@ export async function getConsolidatedPayoutReport(): Promise<ActionResult<Payout
             seller: { select: { id: true, displayName: true, email: true, phone: true } },
           },
         })
+
+        // Fetch associated transactions to get frozen rates and fechaValor
+        const allTxIds = [...new Set(payouts.flatMap((p: any) => p.transactionIds as string[]))]
+        const associatedTxs = allTxIds.length > 0
+          ? await db.mpTransaction.findMany({
+              where: { id: { in: allTxIds } },
+              select: { id: true, frozenRate: true, frozenRateSource: true, frozenRateFechaValor: true, paymentMethod: true, currency: true },
+            }) as Array<{ id: string; frozenRate: number | null; frozenRateSource: string | null; frozenRateFechaValor: Date | null; paymentMethod: string | null; currency: string }>
+          : []
+        const txMap = new Map(associatedTxs.map(tx => [tx.id, tx] as [string, typeof associatedTxs[0]]))
+
         await db.$disconnect()
-        const rows: PayoutReportRow[] = payouts.map((p: any) => ({
-          sellerId: p.sellerId,
-          sellerName: p.seller.displayName,
-          payoutMethodId: null,
-          payoutMethodType: 'PAGO_MOVIL',
-          payoutAccount: 'Comision Drop Social',
-          payoutMethodIsDefault: false,
-          payoutDetails: [],
-          hasPayoutMethod: true,
-          grossAmount: Number(p.amount),
-          feeAmount: 0,
-          netAmount: Number(p.amount),
-          currency: p.currency,
-          transactionCount: p.transactionIds.length,
-          transactionIds: p.transactionIds,
-          oldestTransactionDate: p.createdAt.toISOString(),
-          titular: p.seller.displayName,
-          cedula: '',
-          telefono: p.seller.phone ?? '',
-          numeroCuenta: '',
-          banco: '',
-          payId: '',
-          email: p.seller.email ?? '',
-          paymentCurrency: 'VES',
-          exchangeRate: '',
-          fechaValor: p.createdAt.toISOString().slice(0, 10),
-          source: 'referral' as const,
-          referralReference: p.reference ?? '',
-          ivaAmount: 0,
-          bcvRate: '',
-          binanceRate: '',
-          netoBs: 0,
-          netoUsdt: 0,
-        }))
+        const rows: PayoutReportRow[] = payouts.map((p: any) => {
+          const firstTxId = p.transactionIds[0]
+          const tx = firstTxId ? txMap.get(firstTxId) : null
+          const fechaValor = tx?.frozenRateFechaValor
+            ? new Date(tx.frozenRateFechaValor).toISOString().slice(0, 10)
+            : p.createdAt.toISOString().slice(0, 10)
+          const frozenRate = tx?.frozenRate ? String(tx.frozenRate) : ''
+          const buyerPaymentIsUSDT = tx?.paymentMethod === 'BINANCE_PAY' || tx?.paymentMethod === 'CRYPTO_WALLET' || tx?.currency === 'USDT'
+          const paymentCurrency = buyerPaymentIsUSDT ? 'USDT' : 'VES'
+
+          return {
+            sellerId: p.sellerId,
+            sellerName: p.seller.displayName,
+            payoutMethodId: null,
+            payoutMethodType: 'PAGO_MOVIL',
+            payoutAccount: 'Comision Drop Social',
+            payoutMethodIsDefault: false,
+            payoutDetails: [],
+            hasPayoutMethod: true,
+            grossAmount: Number(p.amount),
+            feeAmount: 0,
+            netAmount: Number(p.amount),
+            currency: p.currency,
+            transactionCount: p.transactionIds.length,
+            transactionIds: p.transactionIds,
+            oldestTransactionDate: p.createdAt.toISOString(),
+            titular: p.seller.displayName,
+            cedula: '',
+            telefono: p.seller.phone ?? '',
+            numeroCuenta: '',
+            banco: '',
+            payId: '',
+            email: p.seller.email ?? '',
+            paymentCurrency,
+            exchangeRate: frozenRate,
+            fechaValor,
+            source: 'referral' as const,
+            referralReference: p.reference ?? '',
+            ivaAmount: 0,
+            bcvRate: '',
+            binanceRate: '',
+            netoBs: 0,
+            netoUsdt: 0,
+          }
+        })
         return { success: true, data: rows, message: 'OK' }
       } catch (e: any) {
         await db.$disconnect().catch(() => {})
