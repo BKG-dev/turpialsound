@@ -4,6 +4,144 @@ import { getDb } from '@/lib/marketplace/db'
 import { getSession } from '@/lib/marketplace/auth'
 import type { ActionResult } from '@/lib/validations/marketplace'
 import { sendSystemMessage } from '@/actions/marketplace/chat'
+import { sendMarketplaceEmail } from '@/lib/email/send'
+import { sendMarketplaceWhatsapp } from '@/lib/whatsapp/marketplace-notifications'
+
+function getAvailableInventory(
+  listing: { hasInventory: boolean; inventory: number | null },
+  consumedUnits: number,
+) {
+  if (!listing.hasInventory || listing.inventory == null) return null
+  return listing.inventory - consumedUnits
+}
+
+async function getConsumedInventoryUnits(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
+  listingId: string,
+) {
+  void db
+  void listingId
+  // Inventory is decremented at purchase initiation; do not sum legacy TX columns.
+  return 0
+}
+
+function getMarketplaceBaseUrl(): string {
+  return process.env.APP_URL?.replace(/\/+$/, '') ?? 'https://turpialsong.com'
+}
+
+function buildMarketplaceTransactionUrl(transactionId: string): string {
+  const baseUrl = getMarketplaceBaseUrl()
+  return `${baseUrl}/marketplace/dashboard/transactions/${encodeURIComponent(transactionId)}`
+}
+
+function buildTxCode(transactionId: string): string {
+  return transactionId.slice(-8).toUpperCase()
+}
+
+async function notifyMarketplacePaymentApproved(params: {
+  transactionId: string
+  listingTitle: string
+  buyer: { email?: string | null; phone?: string | null; displayName?: string | null }
+  seller: { email?: string | null; phone?: string | null; displayName?: string | null }
+}): Promise<void> {
+  const txCode = buildTxCode(params.transactionId)
+  const txUrl = buildMarketplaceTransactionUrl(params.transactionId)
+  const listingTitle = params.listingTitle?.trim() || 'Producto Marketplace'
+  const buyerName = params.buyer.displayName?.trim() || 'Comprador'
+  const sellerName = params.seller.displayName?.trim() || 'Vendedor'
+  const notifications: Array<Promise<unknown>> = []
+
+  if (params.buyer.email?.trim()) {
+    notifications.push(
+      sendMarketplaceEmail(
+        'payment_approved',
+        { email: params.buyer.email, name: buyerName },
+        { recipientName: buyerName, recipientRole: 'buyer', listingTitle, txCode, txUrl },
+      ),
+    )
+  }
+
+  if (params.buyer.phone?.trim()) {
+    notifications.push(
+      sendMarketplaceWhatsapp(
+        'mp_payment_approved',
+        { phone: params.buyer.phone, name: buyerName },
+        { txCode, listingTitle },
+      ),
+    )
+  }
+
+  if (params.seller.email?.trim()) {
+    notifications.push(
+      sendMarketplaceEmail(
+        'payment_approved',
+        { email: params.seller.email, name: sellerName },
+        { recipientName: sellerName, recipientRole: 'seller', listingTitle, txCode, txUrl },
+      ),
+    )
+  }
+
+  if (params.seller.phone?.trim()) {
+    notifications.push(
+      sendMarketplaceWhatsapp(
+        'mp_payment_approved',
+        { phone: params.seller.phone, name: sellerName },
+        { txCode, listingTitle },
+      ),
+    )
+  }
+
+  if (notifications.length > 0) {
+    await Promise.allSettled(notifications)
+  }
+}
+
+async function notifyMarketplacePayoutReleased(params: {
+  transactionId: string
+  amount: number
+  currency: string
+  seller: { email?: string | null; phone?: string | null; displayName?: string | null }
+}): Promise<void> {
+  const txCode = buildTxCode(params.transactionId)
+  const txUrl = buildMarketplaceTransactionUrl(params.transactionId)
+  const sellerName = params.seller.displayName?.trim() || 'Vendedor'
+  const notifications: Array<Promise<unknown>> = []
+
+  if (params.seller.email?.trim()) {
+    notifications.push(
+      sendMarketplaceEmail(
+        'payout_released',
+        { email: params.seller.email, name: sellerName },
+        {
+          sellerName,
+          amount: params.amount,
+          currency: params.currency,
+          txCode,
+          txUrl,
+        },
+      ),
+    )
+  }
+
+  if (params.seller.phone?.trim()) {
+    notifications.push(
+      sendMarketplaceWhatsapp(
+        'mp_payout_released',
+        { phone: params.seller.phone, name: sellerName },
+        {
+          txCode,
+          amount: params.amount,
+          currency: params.currency,
+        },
+      ),
+    )
+  }
+
+  if (notifications.length > 0) {
+    await Promise.allSettled(notifications)
+  }
+}
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -24,9 +162,49 @@ export interface AdminStats {
   missingPayoutMethodCount: number
 }
 
+import { PLATFORM_FEE_RATE, INTERBANK_FEE_VES_RATE, USDT_FLAT_FEE, IVA_RATE } from '@/lib/marketplace/fees'
+
 export interface PayoutDetail {
   label: string
   value: string
+}
+
+export interface PayoutReportRow {
+  sellerId: string
+  sellerName: string
+  payoutMethodId: string | null
+  payoutMethodType: string
+  payoutAccount: string
+  payoutMethodIsDefault: boolean
+  payoutDetails: PayoutDetail[]
+  hasPayoutMethod: boolean
+  grossAmount: number
+  feeAmount: number
+  netAmount: number
+  currency: string
+  transactionCount: number
+  transactionIds: string[]
+  oldestTransactionDate: string
+  // ── Nuevos campos para CSV separado ──
+  titular: string
+  cedula: string
+  telefono: string
+  numeroCuenta: string
+  banco: string
+  payId: string
+  email: string
+  paymentCurrency: string
+  exchangeRate: string
+  fechaValor: string
+  source: 'seller' | 'referral'
+  referralReference: string
+  ivaAmount: number
+  bcvRate: string
+  binanceRate: string
+  netoBs: number
+  netoUsdt: number
+  rateSource: string
+  interbankFee: number
 }
 
 export interface EscrowItem {
@@ -113,14 +291,108 @@ function parsePayoutDetails(encryptedData: string | null | undefined): PayoutDet
     const parsed = JSON.parse(encryptedData) as Record<string, unknown>
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return []
 
-    return Object.entries(parsed)
-      .map(([label, value]) => ({
-        label,
-        value: String(value ?? '').trim(),
-      }))
-      .filter(detail => detail.value.length > 0)
+    return Object.entries(parsed).map(([key, value]) => ({
+      label: key,
+      value: typeof value === 'string' ? value : JSON.stringify(value ?? ''),
+    }))
   } catch {
     return []
+  }
+}
+
+/** Extract individual bank fields from encryptedData for CSV columns */
+function extractBankFields(encryptedData: string | null | undefined): {
+  titular: string; cedula: string; telefono: string; numeroCuenta: string; banco: string; payId: string; email: string
+} {
+  const fields = { titular: '', cedula: '', telefono: '', numeroCuenta: '', banco: '', payId: '', email: '' }
+  if (!encryptedData) return fields
+  try {
+    const d = JSON.parse(encryptedData) as Record<string, unknown>
+    if (!d || typeof d !== 'object' || Array.isArray(d)) return fields
+    const s = (k: string) => typeof d[k] === 'string' ? d[k] as string : ''
+    fields.titular = s('titular') || s('name') || s('fullName') || s('beneficiary') || ''
+    fields.cedula = s('cedula') || s('ci') || s('dni') || s('document') || s('idNumber') || ''
+    fields.telefono = s('telefono') || s('phone') || s('celular') || s('mobile') || ''
+    fields.numeroCuenta = s('numeroCuenta') || s('accountNumber') || s('cuenta') || s('bankAccount') || ''
+    fields.banco = s('banco') || s('bank') || s('bankName') || s('bankCode') || ''
+    fields.payId = s('payId') || s('payID') || s('binanceId') || s('binancePayId') || s('email') || ''
+    fields.email = s('email') || s('correo') || s('mail') || ''
+  } catch { /* ignore */ }
+  return fields
+}
+
+/** Query snapshot tables for BCV & Binance rates for each unique fechaValor and populate neto columns */
+async function enrichPayoutRowsWithRates(rows: PayoutReportRow[]): Promise<void> {
+  if (rows.length === 0) return
+
+  const db = await getDb()
+  if (!db) return
+
+  try {
+    const uniqueFechas = [...new Set(rows.map(r => r.fechaValor).filter(Boolean))]
+    const ratesMap = new Map<string, { bcvRate: number | null; binanceRate: number | null }>()
+
+    for (const fecha of uniqueFechas) {
+      const date = new Date(fecha as string)
+      const start = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+      const end = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1)
+
+      const [bcv, binance] = await Promise.all([
+        db.mpReferenceRateSnapshot.findFirst({
+          where: { fechaValor: { gte: start, lt: end } },
+          orderBy: { fechaValor: 'desc' },
+          select: { rate: true },
+        }),
+        db.mpBinanceRateSnapshot.findFirst({
+          where: { fechaValor: { gte: start, lt: end } },
+          orderBy: { fechaValor: 'desc' },
+          select: { rate: true },
+        }),
+      ])
+
+      ratesMap.set(fecha as string, {
+        bcvRate: bcv ? Number(bcv.rate) : null,
+        binanceRate: binance ? Number(binance.rate) : null,
+      })
+    }
+
+    function parseRate(str: string): number | null {
+      const n = parseFloat(str)
+      return Number.isFinite(n) && n > 0 ? n : null
+    }
+
+    for (const row of rows) {
+      const rates = row.fechaValor ? ratesMap.get(row.fechaValor) : null
+      let bcv: number | null = rates?.bcvRate ?? null
+      let binance: number | null = rates?.binanceRate ?? null
+
+      const fallback = parseRate(row.exchangeRate)
+      if (bcv == null && fallback != null) bcv = fallback
+      if (binance == null && fallback != null) binance = fallback
+
+      row.bcvRate = bcv != null ? String(bcv) : ''
+      row.binanceRate = binance != null ? String(binance) : ''
+
+      const b = bcv != null && bcv > 0 ? bcv : 0
+      const bi = binance != null && binance > 0 ? binance : 0
+      const isUSDT = row.paymentCurrency === 'USDT'
+
+      if (isUSDT) {
+        row.netoUsdt = Math.round(row.netAmount * 100) / 100
+        row.netoBs = 0
+        row.interbankFee = 0.06
+      } else {
+        const rate = row.rateSource === 'BINANCE' ? bi : b
+        row.netoBs = rate > 0 ? Math.round(row.netAmount * rate * 100) / 100 : 0
+        row.netoUsdt = 0
+        const afterPlatform = row.grossAmount - row.feeAmount
+        row.interbankFee = afterPlatform > 0 ? Math.round(afterPlatform * 0.003 * 100) / 100 : 0
+      }
+    }
+  } catch {
+    // enrichment fails gracefully — rows keep default empty values
+  } finally {
+    await db.$disconnect().catch(() => {})
   }
 }
 
@@ -333,11 +605,24 @@ export async function getPayoutReport(): Promise<ActionResult<PayoutReportRow[]>
     const txs = await db.mpTransaction.findMany({
       where: { status: 'RELEASED' },
       orderBy: { createdAt: 'asc' },
-      include: {
+      select: {
+        id: true,
+        amount: true,
+        currency: true,
+        sellerId: true,
+        paymentMethod: true,
+        platformFeeAmount: true,
+        sellerNetAmount: true,
+        frozenRate: true,
+        frozenRateSource: true,
+        frozenRateFechaValor: true,
+        createdAt: true,
         seller: {
           select: {
             id: true,
             displayName: true,
+            email: true,
+            phone: true,
             payoutMethods: {
               where: { isActive: true },
               select: {
@@ -375,12 +660,22 @@ export async function getPayoutReport(): Promise<ActionResult<PayoutReportRow[]>
         existing.transactionIds.push(tx.id)
       } else {
         const payout = tx.seller.payoutMethods[0]
+        const bank = extractBankFields(payout?.encryptedData)
+        
+        // Determine payment currency: USDT only if buyer paid in USDT AND seller collects in USDT
+        const buyerPaymentIsUSDT = tx.paymentMethod === 'BINANCE_PAY' || tx.paymentMethod === 'CRYPTO_WALLET' || tx.currency === 'USDT'
+        const sellerPayoutIsUSDT = payout?.methodType === 'BINANCE_PAY' || payout?.methodType === 'CRYPTO_WALLET' || payout?.currency === 'USDT'
+        const paymentCurrency = buyerPaymentIsUSDT && sellerPayoutIsUSDT ? 'USDT' : 'VES'
+        const usedFrozenRate = tx.frozenRate ? String(tx.frozenRate) : ''
+        const usedRateSource = tx.frozenRateSource || ''
+        const usedFechaValor = tx.frozenRateFechaValor ? new Date(tx.frozenRateFechaValor).toISOString().slice(0, 10) : new Date(tx.createdAt).toISOString().slice(0, 10)
+        
         sellerMap.set(tx.sellerId, {
           sellerId: tx.sellerId,
           sellerName: tx.seller.displayName,
           payoutMethodId: payout?.id ?? null,
           payoutMethodType: payout?.methodType ?? 'UNKNOWN',
-          payoutAccount: payout?.displayLabel ?? 'Falta método de cobro',
+          payoutAccount: payout?.displayLabel ?? 'Falta metodo de cobro',
           payoutMethodIsDefault: payout?.isDefault ?? false,
           payoutDetails: parsePayoutDetails(payout?.encryptedData),
           hasPayoutMethod: Boolean(payout),
@@ -391,6 +686,25 @@ export async function getPayoutReport(): Promise<ActionResult<PayoutReportRow[]>
           transactionCount: 1,
           transactionIds: [tx.id],
           oldestTransactionDate: tx.createdAt.toISOString(),
+          titular: bank.titular,
+          cedula: bank.cedula,
+          telefono: bank.telefono || (tx.seller.phone ?? ''),
+          numeroCuenta: bank.numeroCuenta,
+          banco: bank.banco,
+          payId: bank.payId,
+          email: bank.email || (tx.seller.email ?? ''),
+          paymentCurrency,
+          exchangeRate: usedFrozenRate,
+          fechaValor: usedFechaValor,
+          source: 'seller' as const,
+          referralReference: '',
+          ivaAmount: 0,
+          bcvRate: '',
+          binanceRate: '',
+          netoBs: 0,
+          netoUsdt: 0,
+          rateSource: usedRateSource,
+          interbankFee: 0,
         })
       }
     }
@@ -400,6 +714,100 @@ export async function getPayoutReport(): Promise<ActionResult<PayoutReportRow[]>
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
   }
+}
+
+// ── Consolidated report: seller payouts + Drop Social referral payouts ──────
+export async function getConsolidatedPayoutReport(): Promise<ActionResult<PayoutReportRow[]>> {
+  const [sellerResult, referralResult] = await Promise.all([
+    getPayoutReport(),
+    (async (): Promise<ActionResult<PayoutReportRow[]>> => {
+      try { await requireSuper() } catch (e: any) { return { success: false, message: e?.message ?? 'Sin permiso' } }
+      const db = await getDb()
+      if (!db) return { success: false, message: 'DB no disponible' }
+      try {
+        const payouts = await db.mpPayout.findMany({
+          where: { reference: { startsWith: 'REF-' }, status: 'PENDING' },
+          orderBy: { createdAt: 'asc' },
+          select: {
+            id: true, amount: true, currency: true, sellerId: true, reference: true,
+            transactionIds: true, createdAt: true,
+            seller: { select: { id: true, displayName: true, email: true, phone: true } },
+          },
+        })
+
+        // Fetch associated transactions to get frozen rates and fechaValor
+        const allTxIds = [...new Set(payouts.flatMap((p: any) => p.transactionIds as string[]))]
+        const associatedTxs = allTxIds.length > 0
+          ? await db.mpTransaction.findMany({
+              where: { id: { in: allTxIds } },
+              select: { id: true, frozenRate: true, frozenRateSource: true, frozenRateFechaValor: true, paymentMethod: true, currency: true },
+            }) as Array<{ id: string; frozenRate: number | null; frozenRateSource: string | null; frozenRateFechaValor: Date | null; paymentMethod: string | null; currency: string }>
+          : []
+        const txMap = new Map(associatedTxs.map(tx => [tx.id, tx] as [string, typeof associatedTxs[0]]))
+
+        await db.$disconnect()
+        const rows: PayoutReportRow[] = payouts.map((p: any) => {
+          const firstTxId = p.transactionIds[0]
+          const tx = firstTxId ? txMap.get(firstTxId) : null
+          const fechaValor = tx?.frozenRateFechaValor
+            ? new Date(tx.frozenRateFechaValor).toISOString().slice(0, 10)
+            : p.createdAt.toISOString().slice(0, 10)
+          const frozenRate = tx?.frozenRate ? String(tx.frozenRate) : ''
+          const rateSource = tx?.frozenRateSource || 'BCV'
+          const paymentCurrency = 'VES'
+
+          return {
+            sellerId: p.sellerId,
+            sellerName: p.seller.displayName,
+            payoutMethodId: null,
+            payoutMethodType: 'PAGO_MOVIL',
+            payoutAccount: 'Comision Drop Social',
+            payoutMethodIsDefault: false,
+            payoutDetails: [],
+            hasPayoutMethod: true,
+            grossAmount: Number(p.amount),
+            feeAmount: 0,
+            netAmount: Number(p.amount),
+            currency: p.currency,
+            transactionCount: p.transactionIds.length,
+            transactionIds: p.transactionIds,
+            oldestTransactionDate: p.createdAt.toISOString(),
+            titular: p.seller.displayName,
+            cedula: '',
+            telefono: p.seller.phone ?? '',
+            numeroCuenta: '',
+            banco: '',
+            payId: '',
+            email: p.seller.email ?? '',
+            paymentCurrency,
+            exchangeRate: frozenRate,
+            fechaValor,
+            source: 'referral' as const,
+            referralReference: p.reference ?? '',
+            ivaAmount: 0,
+            bcvRate: '',
+            binanceRate: '',
+            netoBs: 0,
+            netoUsdt: 0,
+            rateSource,
+            interbankFee: 0,
+          }
+        })
+        return { success: true, data: rows, message: 'OK' }
+      } catch (e: any) {
+        await db.$disconnect().catch(() => {})
+        return { success: false, message: e?.message ?? 'Error' }
+      }
+    })(),
+  ])
+
+  if (!sellerResult.success && !referralResult.success) {
+    return { success: false, message: 'No se pudo generar el reporte consolidado' }
+  }
+
+  const all = [...(sellerResult.data ?? []), ...(referralResult.data ?? [])]
+  await enrichPayoutRowsWithRates(all)
+  return { success: true, data: all, message: `${all.length} filas` }
 }
 
 // ─── ADMIN VALIDATE PAYMENT ───────────────────────────────────────────────────
@@ -415,7 +823,19 @@ export async function adminValidatePayment(
     if (!db) return { success: false, message: 'Base de datos no disponible' }
 
     try {
-      const tx = await db.mpTransaction.findUnique({ where: { id: txId } })
+      const tx = await db.mpTransaction.findUnique({
+        where: { id: txId },
+        select: {
+          id: true,
+          buyerId: true,
+          sellerId: true,
+          listingId: true,
+          status: true,
+          listing: { select: { title: true } },
+          buyer: { select: { email: true, phone: true, displayName: true } },
+          seller: { select: { email: true, phone: true, displayName: true } },
+        },
+      })
       if (!tx) return { success: false, message: 'Transacción no encontrada' }
       if (!['PAYMENT_RECEIVED', 'VALIDATING'].includes(tx.status)) {
         return { success: false, message: `No se puede validar en estado ${tx.status}` }
@@ -439,10 +859,20 @@ export async function adminValidatePayment(
         })
 
         if (approved) {
-          await txDb.mpListing.update({
+          const listing = await txDb.mpListing.findUnique({
             where: { id: tx.listingId },
-            data: { status: 'SOLD_OUT' },
+            select: { hasInventory: true, inventory: true },
           })
+          if (listing?.hasInventory && listing.inventory != null) {
+            const consumedUnits = await getConsumedInventoryUnits(txDb, tx.listingId)
+            const availableInventory = getAvailableInventory(listing, consumedUnits)
+            if (availableInventory != null && availableInventory <= 0) {
+              await txDb.mpListing.update({
+                where: { id: tx.listingId },
+                data: { status: 'SOLD_OUT' },
+              })
+            }
+          }
         }
 
         await txDb.mpTransactionStatusHistory.create({
@@ -457,6 +887,33 @@ export async function adminValidatePayment(
       })
 
       await db.$disconnect()
+
+      // S16: Notify seller when admin validates payment (funds in escrow)
+      if (approved) {
+        void sendSystemMessage({
+          buyerId: tx.buyerId,
+          sellerId: tx.sellerId,
+          listingId: tx.listingId,
+          senderId: session.userId,
+          receiverId: tx.sellerId,
+          content: '🔒 ESCROW — Pago validado por admin. Fondos retenidos en escrow hasta que el comprador confirme recepcion.',
+        }).catch(() => {})
+        void notifyMarketplacePaymentApproved({
+          transactionId: tx.id,
+          listingTitle: tx.listing?.title ?? 'Producto Marketplace',
+          buyer: {
+            email: tx.buyer?.email,
+            phone: tx.buyer?.phone,
+            displayName: tx.buyer?.displayName,
+          },
+          seller: {
+            email: tx.seller?.email,
+            phone: tx.seller?.phone,
+            displayName: tx.seller?.displayName,
+          },
+        }).catch(() => {})
+      }
+
       return {
         success: true,
         data: undefined,
@@ -482,7 +939,16 @@ export async function adminReleaseEscrow(txId: string, note: string): Promise<Ac
     try {
       const tx = await db.mpTransaction.findUnique({
         where: { id: txId },
-        include: {
+        select: {
+          id: true,
+          amount: true,
+          currency: true,
+          buyerId: true,
+          sellerId: true,
+          listingId: true,
+          status: true,
+          buyerConfirmedAt: true,
+          seller: { select: { email: true, phone: true, displayName: true } },
           disputes: { where: { status: { in: ['OPEN', 'UNDER_REVIEW'] } }, select: { id: true } },
         },
       })
@@ -513,6 +979,27 @@ export async function adminReleaseEscrow(txId: string, note: string): Promise<Ac
       })
 
       await db.$disconnect()
+
+      // S16: Notify seller on escrow release
+      void sendSystemMessage({
+        buyerId: tx.buyerId,
+        sellerId: tx.sellerId,
+        listingId: tx.listingId,
+        senderId: session.userId,
+        receiverId: tx.sellerId,
+        content: '💰 PAGO LIBERADO — El admin libero el pago a tu cuenta. Revisa tu metodo de pago registrado.',
+      }).catch(() => {})
+      void notifyMarketplacePayoutReleased({
+        transactionId: tx.id,
+        amount: Number(tx.amount),
+        currency: tx.currency,
+        seller: {
+          email: tx.seller?.email,
+          phone: tx.seller?.phone,
+          displayName: tx.seller?.displayName,
+        },
+      }).catch(() => {})
+
       return { success: true, data: undefined, message: 'Pago del vendedor liberado' }
     } catch (err) {
       await db.$disconnect().catch(() => {})
@@ -535,7 +1022,18 @@ export async function adminMarkSellerPaid(
     if (!db) return { success: false, message: 'Base de datos no disponible' }
 
     try {
-      const tx = await db.mpTransaction.findUnique({ where: { id: txId } })
+      const tx = await db.mpTransaction.findUnique({
+        where: { id: txId },
+        select: {
+          id: true,
+          buyerId: true,
+          sellerId: true,
+          listingId: true,
+          status: true,
+          sellerNetAmount: true,
+          currency: true,
+        },
+      })
       if (!tx) return { success: false, message: 'Transacción no encontrada' }
       if (tx.status !== 'RELEASED') {
         return {
@@ -642,7 +1140,10 @@ export async function adminResolveDispute(
     if (!db) return { success: false, message: 'Base de datos no disponible' }
 
     try {
-      const tx = await db.mpTransaction.findUnique({ where: { id: txId } })
+      const tx = await db.mpTransaction.findUnique({
+        where: { id: txId },
+        select: { id: true, status: true },
+      })
       if (!tx) return { success: false, message: 'Transacción no encontrada' }
       if (tx.status !== 'DISPUTED') {
         return { success: false, message: 'Solo se pueden resolver disputas activas' }
@@ -694,7 +1195,10 @@ export async function adminCancelTransaction(txId: string, note: string): Promis
     if (!db) return { success: false, message: 'Base de datos no disponible' }
 
     try {
-      const tx = await db.mpTransaction.findUnique({ where: { id: txId } })
+      const tx = await db.mpTransaction.findUnique({
+        where: { id: txId },
+        select: { id: true, status: true },
+      })
       if (!tx) return { success: false, message: 'Transacción no encontrada' }
       if (['RELEASED', 'REFUNDED', 'CANCELLED'].includes(tx.status)) {
         return { success: false, message: 'No se puede cancelar una transacción en estado terminal' }
@@ -820,10 +1324,19 @@ export async function adminUnbanUser(userId: string): Promise<ActionResult> {
 export async function adminSetUserRole(
   userId: string,
   role: 'USER' | 'SOCIO' | 'SUPER',
+  confirmPassword?: string,
 ): Promise<ActionResult> {
   try {
     const session = await requireSuper()
     if (userId === session.userId) return { success: false, message: 'No puedes cambiar tu propio rol' }
+
+    // Require password confirmation for elevation to SUPER
+    if (role === 'SUPER') {
+      const requiredPass = process.env.SUPER_ADMIN_ELEVATION_PASS
+      if (requiredPass && confirmPassword !== requiredPass) {
+        return { success: false, message: 'Contrasena de elevacion incorrecta. Requerida para asignar rol SUPER.' }
+      }
+    }
 
     const db = await getDb()
     if (!db) return { success: false, message: 'Base de datos no disponible' }

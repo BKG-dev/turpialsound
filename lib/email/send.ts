@@ -4,6 +4,9 @@ import {
   buildPurchaseConfirmationEmail,
   buildNewSaleEmail,
   buildPaymentReceivedEmail,
+  buildPaymentApprovedEmail,
+  buildSellerDeliveredEmail,
+  buildDeliveryConfirmedEmail,
   buildReferralCommissionEmail,
   buildPayoutReleasedEmail,
 } from './templates'
@@ -120,6 +123,24 @@ export async function sendMarketplaceEmail(
       subject = 'Pago recibido — Turpial Market'
       html = buildPaymentReceivedEmail(templateData as {
         buyerName: string; txCode: string; amount: number; currency: string; txUrl: string
+      })
+      break
+    case 'payment_approved':
+      subject = 'Pago aprobado — Turpial Market'
+      html = buildPaymentApprovedEmail(templateData as {
+        recipientName: string; recipientRole: 'buyer' | 'seller'; listingTitle: string; txCode: string; txUrl: string
+      })
+      break
+    case 'seller_delivered':
+      subject = 'Entrega registrada — Turpial Market'
+      html = buildSellerDeliveredEmail(templateData as {
+        buyerName: string; listingTitle: string; txCode: string; txUrl: string
+      })
+      break
+    case 'delivery_confirmed':
+      subject = 'Recepcion confirmada — Turpial Market'
+      html = buildDeliveryConfirmedEmail(templateData as {
+        sellerName: string; listingTitle: string; txCode: string; txUrl: string
       })
       break
     case 'referral_commission':
