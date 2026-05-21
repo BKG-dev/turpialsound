@@ -93,13 +93,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -850,13 +863,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -2243,13 +2269,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -3000,13 +3039,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -4390,13 +4442,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -5783,13 +5848,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -6540,13 +6618,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -7930,13 +8021,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -9320,13 +9424,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -10713,13 +10830,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -11470,13 +11600,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -12860,13 +13003,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -14250,13 +14406,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -15640,13 +15809,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -17033,13 +17215,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -17790,13 +17985,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -19180,13 +19388,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -20570,13 +20791,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -21960,13 +22194,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -23350,13 +23597,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -24743,13 +25003,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -25500,13 +25773,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -26890,13 +27176,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -28280,13 +28579,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -29670,13 +29982,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -31060,13 +31385,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
@@ -32450,13 +32788,26 @@ tags:
 
 ### 🔴 PENDIENTE INMEDIATO
 
-- **RECONCILIACION DE RAMAS:** Unificar `Manuel/integration-s12-s14b-marketplace-closure-2026-05-13` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
-- **Pendiente Jean:** Mergear y validar. Ver [[INSTRUCCION_APERTURA_SESION]] y [[00_CENTRAL_TURPIAL]]
-- **Pendiente Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Pendiente Jean:** Lazy BCV refresh (>1h) en booking + unificar stores tasas con marketplace
-- **ARQUITECTURA_TASAS:** 7 items liquidacion seller — 6/7 cubiertos en S-MP-08. Pendiente: migracion Binance en prod.
-- **S-BOOKING-01:** Ajustes finales de Reserva. Owner: Jean
-- **S-UX-02 (v2):** ✅ CERRADO 2026-05-20. Owner: Manuel. Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`
+**Manuel — COMPLETADO 2026-05-20.** Branch: `Manuel/s-ux-02-notificaciones-2026-05-20`. Nada pendiente. Bloqueado por Jean.
+
+**Jean — 5 pendientes:**
+
+1. **RECONCILIACION DE RAMAS:** Mergear `Manuel/s-ux-02-notificaciones-2026-05-20` + `integration/preserve-dashboard-cwv-aeo-reservas-2026-05-13` en `RAMA MADRE`
+2. **Tokens Vercel:** Configurar `WHATSAPP_BRIDGE_API_KEY`, `WHATSAPP_BRIDGE_SEND_URL`, `RESEND_API_KEY` para que WhatsApp y email envien de verdad (hoy estan vacios en Vercel)
+3. **Lazy BCV refresh en booking:** Migrar `lib/bookings/reference-rate.ts` al mismo patron que marketplace (>1h cache, sin cron). Unificar stores de tasas.
+4. **S-BOOKING-01:** Ajustes finales de Reserva (mobile, WhatsApp, dashboard admin).
+5. **Refactor tasas booking:** Quitar codigo no usado (findConsensus, readPersistedRate, etc.) ya que marketplace limpio los suyos en S-MP-08.
+
+**HECHO HOY (Manuel, S-UX-02):**
+- 15 tareas UI + infra: toggle grid/lista, Drop Social, footer marketplace, badges mobile, preview imagenes, mensajes colapsados, badge → threadId
+- Infra email: 6 templates HTML + sender (Resend-ready), QA 10/10 PASS
+- Infra WhatsApp marketplace: 5 tipos de mensaje via baileys_bridge, QA 2/2 PASS
+- API export-payouts migrada a consolidado con BCV/Binance/netoBs/netoUsdt/Drop Social
+- BCV lazy refresh (>1h → refresh, sin cron Vercel)
+- TX state machine: confirmDelivery() ya no exige hasSellerDelivered()
+- Migracion Binance verificada en prod (3 snapshots, 8/8 QA)
+- "Pago manual" → "Pago procesado"
+- ANALISIS_COSTOS_COMISIONES.md
 
 
 ---
