@@ -668,6 +668,51 @@
       "sprint_target": "S-MP-07",
       "implemented_at": "2026-05-18",
       "last_validated_at": "2026-05-18"
+    },
+    "sux02_tx_states": {
+      "task_id": "sux02_tx_states",
+      "mode": "script",
+      "module": "S-UX-02-M13",
+      "layer": "B",
+      "canonical_script": "npx tsx scripts/qa/modules/qa-s-ux-02-tx-states.mjs",
+      "preconditions": [
+        "DATABASE_URL valida"
+      ],
+      "notes": "S-UX-02 Transaction State Machine — Server-side: validates confirmDelivery flow (buyer can confirm without seller deliver), RELEASED has buyerConfirmedAt, seller_delivered entries are IN_ESCROW → IN_ESCROW, dispute guard blocks confirmation.",
+      "status": "canonical",
+      "sprint_target": "S-UX-02",
+      "implemented_at": "2026-05-20",
+      "last_validated_at": "2026-05-20"
+    },
+    "sux02_email": {
+      "task_id": "sux02_email",
+      "mode": "script",
+      "module": "S-UX-02-M10",
+      "layer": "B",
+      "canonical_script": "npx tsx scripts/qa/modules/qa-s-ux-02-email.mjs",
+      "preconditions": [
+        "lib/email/templates.ts y lib/email/send.ts presentes"
+      ],
+      "notes": "S-UX-02 Email Transactional — Server-side: validates 6/6 template exports, HTML generation with branding, email sender module, provider configuration.",
+      "status": "canonical",
+      "sprint_target": "S-UX-02",
+      "implemented_at": "2026-05-20",
+      "last_validated_at": "2026-05-20"
+    },
+    "sux02_whatsapp": {
+      "task_id": "sux02_whatsapp",
+      "mode": "script",
+      "module": "S-UX-02-M11",
+      "layer": "B",
+      "canonical_script": "npx tsx scripts/qa/modules/qa-s-ux-02-whatsapp.mjs",
+      "preconditions": [
+        "lib/whatsapp/marketplace-notifications.ts presente"
+      ],
+      "notes": "S-UX-02 WhatsApp Marketplace — Server-side: validates 5 message events, provider configuration, marketplace + booking coexistence.",
+      "status": "canonical",
+      "sprint_target": "S-UX-02",
+      "implemented_at": "2026-05-20",
+      "last_validated_at": "2026-05-20"
     }
   }
 }
