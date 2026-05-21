@@ -626,32 +626,41 @@ export async function initiatePurchase(
     }
     const requestedQuantity = Math.max(1, Math.floor(quantity))
 
-    const listing = await db.mpListing.findUnique({
-      where: { id: listingId },
-      select: {
-        id: true,
-        title: true,
-        status: true,
-        sellerId: true,
-        price: true,
-        currency: true,
-        hasInventory: true,
-        inventory: true,
-        seller: {
-          select: {
-            phone: true,
-            email: true,
-            displayName: true,
-            payoutMethods: {
-              where: { isActive: true },
-              orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
-              take: 1,
-              select: { methodType: true },
+    const [listing, buyerProfile] = await Promise.all([
+      db.mpListing.findUnique({
+        where: { id: listingId },
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          sellerId: true,
+          price: true,
+          currency: true,
+          hasInventory: true,
+          inventory: true,
+          seller: {
+            select: {
+              phone: true,
+              email: true,
+              displayName: true,
+              payoutMethods: {
+                where: { isActive: true },
+                orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+                take: 1,
+                select: { methodType: true },
+              },
             },
           },
         },
-      },
-    })
+      }),
+      db.mpUser.findUnique({
+        where: { id: session.userId },
+        select: {
+          email: true,
+          displayName: true,
+        },
+      }),
+    ])
 
     if (!listing) return { success: false, message: 'Listing no encontrado' }
     if (listing.status !== 'ACTIVE') return { success: false, message: 'Este listing no esta disponible' }
@@ -805,8 +814,8 @@ export async function initiatePurchase(
       amount,
       currency: listing.currency,
       buyer: {
-        email: session.email,
-        displayName: session.displayName,
+        email: buyerProfile?.email ?? session.email,
+        displayName: buyerProfile?.displayName ?? session.displayName,
       },
       seller: {
         email: listing.seller.email,
