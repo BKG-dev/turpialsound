@@ -546,7 +546,7 @@ export async function getPayoutReport(): Promise<ActionResult<PayoutReportRow[]>
         const paymentCurrency = buyerPaymentIsUSDT && sellerPayoutIsUSDT ? 'USDT' : 'VES'
         const usedFrozenRate = tx.frozenRate ? String(tx.frozenRate) : ''
         const usedRateSource = tx.frozenRateSource || ''
-        const usedFechaValor = tx.frozenRateFechaValor ? new Date(tx.frozenRateFechaValor).toISOString().slice(0, 10) : ''
+        const usedFechaValor = tx.frozenRateFechaValor ? new Date(tx.frozenRateFechaValor).toISOString().slice(0, 10) : new Date(tx.createdAt).toISOString().slice(0, 10)
         
         sellerMap.set(tx.sellerId, {
           sellerId: tx.sellerId,
