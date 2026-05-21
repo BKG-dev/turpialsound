@@ -4,7 +4,7 @@
  * 
  * NOVEDADES v4.0:
  *   - Madre dinámica: leida de .mother-version.json (ya no hardcodeada)
- *   - Sync forzado de docs: siempre jala docs de madre al iniciar (sin cache para docs)
+ *   - Sync evaluado siempre: jala docs de madre si madre es mas reciente (sin cache para docs)
  *   - Paso 0: sync-from-mother automático si hay docs mas nuevos en madre
  *   - Rama madre versionada: cada cierre de sprint genera MADRE/v{N}-{tags}-{fecha}
  * 
@@ -78,6 +78,13 @@ const today = getToday()
 
 function sh(cmd) {
   try { return execSync(cmd, { encoding: 'utf8', stdio: 'pipe' }).trim() } catch { return '' }
+}
+function parseDocTimestamp(value) {
+  if (!value) return null
+  const parts = value.split(/[\s\/:]/).map(Number)
+  if (parts.length < 5 || parts.some(Number.isNaN)) return null
+  const [d, mo, y, h, min] = parts
+  return new Date(2000 + y, mo - 1, d, h, min).getTime()
 }
 function run(cmd) {
   try {
@@ -194,7 +201,15 @@ if (motherRef) {
     const motherLastUpdated = sh(`git show origin/${MOTHER}:docs/obsidian-vault/00_CENTRAL_TURPIAL.md 2>nul`)
     const localMatch = localLastUpdated.match(/last_updated:\s*"(\d{2}\/\d{2}\/\d{2}\s+\d{2}:\d{2})"/)
     const motherMatch = motherLastUpdated.match(/last_updated:\s*"(\d{2}\/\d{2}\/\d{2}\s+\d{2}:\d{2})"/)
-    info(`Docs difieren. Local: ${localMatch?.[1] || '?'} | Madre: ${motherMatch?.[1] || '?'}. Fusionando...`)
+    const localDocTime = parseDocTimestamp(localMatch?.[1])
+    const motherDocTime = parseDocTimestamp(motherMatch?.[1])
+    info(`Docs difieren. Local: ${localMatch?.[1] || '?'} | Madre: ${motherMatch?.[1] || '?'}.`)
+
+    if (localDocTime !== null && motherDocTime !== null && motherDocTime < localDocTime) {
+      info('Madre tiene timestamp mas antiguo; se evalua, pero el merger conserva la actualizacion local mas reciente.')
+    } else {
+      info('Fusionando docs con madre...')
+    }
 
     // Stash local changes if any, but preserve them
     const hasDocChanges = sh('git diff --name-only -- docs/')

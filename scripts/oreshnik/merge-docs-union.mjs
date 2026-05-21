@@ -110,6 +110,76 @@ function tryMergeJson(baseContent, currentContent, sourceContent) {
   }
 }
 
+function normalizeText(content) {
+  return String(content ?? '').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n')
+}
+
+function parseDocTimestamp(content) {
+  const match = normalizeText(content).match(/last_updated:\s*"(\d{2})\/(\d{2})\/(\d{2})\s+(\d{2}):(\d{2})"/)
+  if (!match) return null
+  const [, d, mo, y, h, min] = match.map(Number)
+  return new Date(2000 + y, mo - 1, d, h, min).getTime()
+}
+
+function blockKey(block) {
+  return normalizeText(block)
+    .split('\n')
+    .map(line => line.trimEnd())
+    .join('\n')
+    .trim()
+}
+
+function meaningfulBlockKeys(content) {
+  const text = normalizeText(content)
+  const keys = new Set()
+
+  const addKey = (block) => {
+    const key = blockKey(block)
+    if (key.length >= 160) keys.add(key)
+  }
+
+  let headingBlock = []
+  for (const line of text.split('\n')) {
+    if (/^#{1,6}\s+/.test(line) && headingBlock.length > 0) {
+      addKey(headingBlock.join('\n'))
+      headingBlock = [line]
+    } else {
+      headingBlock.push(line)
+    }
+  }
+  addKey(headingBlock.join('\n'))
+
+  for (const block of text.split(/\n{2,}/)) addKey(block)
+
+  return keys
+}
+
+function sourceAlreadyCovered(currentContent, sourceContent) {
+  const currentTime = parseDocTimestamp(currentContent) ?? currentDocsTime
+  const sourceTime = parseDocTimestamp(sourceContent) ?? sourceDocsTime
+  if (currentTime !== null && sourceTime !== null && sourceTime > currentTime) return false
+  if (currentTime !== null && sourceTime !== null && sourceTime < currentTime) return true
+
+  const sourceKeys = meaningfulBlockKeys(sourceContent)
+  if (sourceKeys.size === 0) return false
+
+  const currentKeys = meaningfulBlockKeys(currentContent)
+  let covered = 0
+  for (const key of sourceKeys) {
+    if (currentKeys.has(key)) covered++
+  }
+  if (covered === sourceKeys.size) return true
+
+  const coverage = covered / sourceKeys.size
+  return currentTime !== null && sourceTime !== null && sourceTime <= currentTime && coverage >= 0.8
+}
+
+function normalizeMergedText(file, currentContent, sourceContent, mergedContent) {
+  if (!file.endsWith('.md')) return mergedContent
+  if (sourceAlreadyCovered(currentContent, sourceContent)) return currentContent
+  return mergedContent
+}
+
 function mergeTextUnion(file, baseContent, currentContent, sourceContent) {
   mkdirSync(CACHE_DIR, { recursive: true })
   const id = Buffer.from(file).toString('hex')
@@ -120,10 +190,12 @@ function mergeTextUnion(file, baseContent, currentContent, sourceContent) {
     writeFileSync(basePath, baseContent ?? '')
     writeFileSync(currentPath, currentContent ?? '')
     writeFileSync(sourcePath, sourceContent ?? '')
-    return execFileSync('git', ['merge-file', '--union', '-p', currentPath, basePath, sourcePath], {
+    const merged = execFileSync('git', ['merge-file', '--union', '-p', currentPath, basePath, sourcePath], {
       cwd: ROOT,
-      encoding: 'utf8'
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024
     })
+    return normalizeMergedText(file, currentContent, sourceContent, merged)
   } finally {
     rmSync(basePath, { force: true })
     rmSync(currentPath, { force: true })
@@ -135,6 +207,8 @@ const diff = git(['diff', '--name-only', `${baseRef}...${sourceRef}`, '--', 'doc
 const files = diff.split(/\r?\n/).filter(Boolean)
 const changed = []
 const warnings = []
+const currentDocsTime = parseDocTimestamp(readWorkingFile('docs/obsidian-vault/00_CENTRAL_TURPIAL.md'))
+const sourceDocsTime = parseDocTimestamp(readRef(sourceRef, 'docs/obsidian-vault/00_CENTRAL_TURPIAL.md'))
 
 for (const file of files) {
   if (!file.startsWith('docs/')) continue
