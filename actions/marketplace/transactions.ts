@@ -5,7 +5,8 @@ import { cookies } from 'next/headers'
 import { getDb } from '@/lib/marketplace/db'
 import { getSession } from '@/lib/marketplace/auth'
 import { processReferralConversion } from '@/actions/marketplace/referrals'
-import { sendWhatsAppNotification } from '@/lib/marketplace/notifications'
+import { sendMarketplaceEmail } from '@/lib/email/send'
+import { sendMarketplaceWhatsapp } from '@/lib/whatsapp/marketplace-notifications'
 import {
   BANK_FEE,
   calculateSellerPayout,
@@ -29,6 +30,213 @@ type TxPaymentMethod = 'MERCANTIL_PAGO_MOVIL' | 'ZELLE' | 'CRYPTO_WALLET_MANUAL'
 const SELLER_DELIVERED_EVENT = 'seller_delivered'
 const REFERRAL_COOKIE = 'mp_ref'
 const LEGACY_CART_ORDER_PREFIX = 'legacy-cart:'
+
+function getMarketplaceBaseUrl(): string {
+  return process.env.APP_URL?.replace(/\/+$/, '') ?? 'https://turpialsong.com'
+}
+
+function buildMarketplaceTransactionUrl(transactionId: string): string {
+  const baseUrl = getMarketplaceBaseUrl()
+  return `${baseUrl}/marketplace/dashboard/transactions/${encodeURIComponent(transactionId)}`
+}
+
+function buildTxCode(transactionId: string): string {
+  return transactionId.slice(-8).toUpperCase()
+}
+
+async function notifyMarketplacePurchaseInitiated(params: {
+  transactionId: string
+  listingTitle: string
+  amount: number
+  currency: string
+  buyer: { email?: string | null; displayName?: string | null }
+  seller: { email?: string | null; phone?: string | null; displayName?: string | null }
+}): Promise<void> {
+  const txCode = buildTxCode(params.transactionId)
+  const txUrl = buildMarketplaceTransactionUrl(params.transactionId)
+  const buyerName = params.buyer.displayName?.trim() || 'Comprador'
+  const sellerName = params.seller.displayName?.trim() || 'Vendedor'
+  const listingTitle = params.listingTitle?.trim() || 'Producto Marketplace'
+  const notifications: Array<Promise<unknown>> = []
+
+  if (params.buyer.email?.trim()) {
+    notifications.push(
+      sendMarketplaceEmail(
+        'purchase_confirmation',
+        { email: params.buyer.email, name: buyerName },
+        {
+          buyerName,
+          listingTitle,
+          amount: params.amount,
+          currency: params.currency,
+          txCode,
+          txUrl,
+        },
+      ),
+    )
+  }
+
+  if (params.seller.email?.trim()) {
+    notifications.push(
+      sendMarketplaceEmail(
+        'new_sale',
+        { email: params.seller.email, name: sellerName },
+        {
+          sellerName,
+          listingTitle,
+          amount: params.amount,
+          currency: params.currency,
+          txCode,
+          txUrl,
+        },
+      ),
+    )
+  }
+
+  if (params.seller.phone?.trim()) {
+    notifications.push(
+      sendMarketplaceWhatsapp(
+        'mp_new_sale',
+        { phone: params.seller.phone, name: sellerName },
+        {
+          txCode,
+          listingTitle,
+          amount: params.amount,
+          currency: params.currency,
+        },
+      ),
+    )
+  }
+
+  if (notifications.length > 0) {
+    await Promise.allSettled(notifications)
+  }
+}
+
+async function notifyMarketplacePaymentReceived(params: {
+  transactionId: string
+  amount: number
+  currency: string
+  buyer: { email?: string | null; phone?: string | null; displayName?: string | null }
+}): Promise<void> {
+  const txCode = buildTxCode(params.transactionId)
+  const txUrl = buildMarketplaceTransactionUrl(params.transactionId)
+  const buyerName = params.buyer.displayName?.trim() || 'Comprador'
+  const notifications: Array<Promise<unknown>> = []
+
+  if (params.buyer.email?.trim()) {
+    notifications.push(
+      sendMarketplaceEmail(
+        'payment_received',
+        { email: params.buyer.email, name: buyerName },
+        {
+          buyerName,
+          txCode,
+          amount: params.amount,
+          currency: params.currency,
+          txUrl,
+        },
+      ),
+    )
+  }
+
+  if (params.buyer.phone?.trim()) {
+    notifications.push(
+      sendMarketplaceWhatsapp(
+        'mp_payment_received',
+        { phone: params.buyer.phone, name: buyerName },
+        {
+          txCode,
+          amount: params.amount,
+          currency: params.currency,
+        },
+      ),
+    )
+  }
+
+  if (notifications.length > 0) {
+    await Promise.allSettled(notifications)
+  }
+}
+
+async function notifyMarketplacePayoutReleased(params: {
+  transactionId: string
+  amount: number
+  currency: string
+  seller: { email?: string | null; phone?: string | null; displayName?: string | null }
+}): Promise<void> {
+  const txCode = buildTxCode(params.transactionId)
+  const txUrl = buildMarketplaceTransactionUrl(params.transactionId)
+  const sellerName = params.seller.displayName?.trim() || 'Vendedor'
+  const notifications: Array<Promise<unknown>> = []
+
+  if (params.seller.email?.trim()) {
+    notifications.push(
+      sendMarketplaceEmail(
+        'payout_released',
+        { email: params.seller.email, name: sellerName },
+        {
+          sellerName,
+          amount: params.amount,
+          currency: params.currency,
+          txCode,
+          txUrl,
+        },
+      ),
+    )
+  }
+
+  if (params.seller.phone?.trim()) {
+    notifications.push(
+      sendMarketplaceWhatsapp(
+        'mp_payout_released',
+        { phone: params.seller.phone, name: sellerName },
+        {
+          txCode,
+          amount: params.amount,
+          currency: params.currency,
+        },
+      ),
+    )
+  }
+
+  if (notifications.length > 0) {
+    await Promise.allSettled(notifications)
+  }
+}
+
+async function notifyMarketplaceDisputeOpened(params: {
+  transactionId: string
+  buyer: { phone?: string | null; displayName?: string | null }
+  seller: { phone?: string | null; displayName?: string | null }
+}): Promise<void> {
+  const txCode = buildTxCode(params.transactionId)
+  const notifications: Array<Promise<unknown>> = []
+
+  if (params.buyer.phone?.trim()) {
+    notifications.push(
+      sendMarketplaceWhatsapp(
+        'mp_dispute_opened',
+        { phone: params.buyer.phone, name: params.buyer.displayName?.trim() || 'Comprador' },
+        { txCode },
+      ),
+    )
+  }
+
+  if (params.seller.phone?.trim()) {
+    notifications.push(
+      sendMarketplaceWhatsapp(
+        'mp_dispute_opened',
+        { phone: params.seller.phone, name: params.seller.displayName?.trim() || 'Vendedor' },
+        { txCode },
+      ),
+    )
+  }
+
+  if (notifications.length > 0) {
+    await Promise.allSettled(notifications)
+  }
+}
 type PurchaseRateContext = {
   bcvRate: number
   binanceRate: number
@@ -422,6 +630,7 @@ export async function initiatePurchase(
       where: { id: listingId },
       select: {
         id: true,
+        title: true,
         status: true,
         sellerId: true,
         price: true,
@@ -431,6 +640,7 @@ export async function initiatePurchase(
         seller: {
           select: {
             phone: true,
+            email: true,
             displayName: true,
             payoutMethods: {
               where: { isActive: true },
@@ -589,18 +799,21 @@ export async function initiatePurchase(
       void processReferralConversion(tx.id, referralCode, amount).catch(() => {})
     }
 
-    // WhatsApp notification: new sale (fire-and-forget)
-    void (async () => {
-      try {
-        if (listing.seller.phone) {
-          await sendWhatsAppNotification(listing.seller.phone, 'payment_sent', {
-            senderName: 'Turpial Market',
-            amount: `${amount} ${listing.currency}`,
-            txId: tx.id,
-          })
-        }
-      } catch {}
-    })()
+    void notifyMarketplacePurchaseInitiated({
+      transactionId: tx.id,
+      listingTitle: listing.title,
+      amount,
+      currency: listing.currency,
+      buyer: {
+        email: session.email,
+        displayName: session.displayName,
+      },
+      seller: {
+        email: listing.seller.email,
+        phone: listing.seller.phone,
+        displayName: listing.seller.displayName,
+      },
+    }).catch(() => {})
 
     return { success: true, data: { transactionId: tx.id, idempotencyKey }, message: 'Transaccion iniciada' }
   } catch (err) {
@@ -627,7 +840,15 @@ export async function submitPaymentProof(
   try {
     const tx = await db.mpTransaction.findUnique({
       where: { id: transactionId },
-      select: { id: true, buyerId: true, status: true, paymentMethod: true },
+      select: {
+        id: true,
+        buyerId: true,
+        status: true,
+        paymentMethod: true,
+        amount: true,
+        currency: true,
+        buyer: { select: { email: true, phone: true, displayName: true } },
+      },
     })
     if (!tx) return { success: false, message: 'Transaccion no encontrada' }
     if (tx.buyerId !== session.userId) return { success: false, message: 'Sin permiso' }
@@ -672,6 +893,16 @@ export async function submitPaymentProof(
     })
 
     await db.$disconnect()
+    void notifyMarketplacePaymentReceived({
+      transactionId,
+      amount: Number(tx.amount),
+      currency: tx.currency,
+      buyer: {
+        email: tx.buyer?.email,
+        phone: tx.buyer?.phone,
+        displayName: tx.buyer?.displayName,
+      },
+    }).catch(() => {})
     return { success: true, data: undefined, message: 'Comprobante registrado. El equipo revisara el pago.' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
@@ -896,8 +1127,11 @@ export async function releaseEscrow(transactionId: string): Promise<ActionResult
       where: { id: transactionId },
       select: {
         id: true,
+        amount: true,
+        currency: true,
         status: true,
         buyerConfirmedAt: true,
+        seller: { select: { email: true, phone: true, displayName: true } },
         disputes: { where: { status: { in: ['OPEN', 'UNDER_REVIEW'] } }, select: { id: true } },
       },
     })
@@ -930,6 +1164,16 @@ export async function releaseEscrow(transactionId: string): Promise<ActionResult
     })
 
     await db.$disconnect()
+    void notifyMarketplacePayoutReleased({
+      transactionId,
+      amount: Number(tx.amount),
+      currency: tx.currency,
+      seller: {
+        email: tx.seller?.email,
+        phone: tx.seller?.phone,
+        displayName: tx.seller?.displayName,
+      },
+    }).catch(() => {})
     return { success: true, data: undefined, message: 'Fondos liberados para pago al vendedor.' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
@@ -951,7 +1195,14 @@ export async function openDispute(
   try {
     const tx = await db.mpTransaction.findUnique({
       where: { id: transactionId },
-      select: { id: true, buyerId: true, sellerId: true, status: true },
+      select: {
+        id: true,
+        buyerId: true,
+        sellerId: true,
+        status: true,
+        buyer: { select: { phone: true, displayName: true } },
+        seller: { select: { phone: true, displayName: true } },
+      },
     })
     if (!tx) return { success: false, message: 'Transaccion no encontrada' }
 
@@ -982,6 +1233,17 @@ export async function openDispute(
     })
 
     await db.$disconnect()
+    void notifyMarketplaceDisputeOpened({
+      transactionId,
+      buyer: {
+        phone: tx.buyer?.phone,
+        displayName: tx.buyer?.displayName,
+      },
+      seller: {
+        phone: tx.seller?.phone,
+        displayName: tx.seller?.displayName,
+      },
+    }).catch(() => {})
     return { success: true, data: { disputeId: dispute.id }, message: 'Disputa abierta. El equipo revisara el caso en 24-48 h.' }
   } catch (err) {
     await db.$disconnect().catch(() => {})

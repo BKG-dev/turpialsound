@@ -31,7 +31,10 @@ async function sendWithResend(params: {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return { sent: false, provider: 'resend', reason: 'missing_api_key' }
 
-  const fromEmail = process.env.EMAIL_FROM ?? 'Turpial Market <market@turpialsong.com>'
+  const fromEmail =
+    process.env.MARKETPLACE_EMAIL_FROM
+    ?? process.env.EMAIL_FROM
+    ?? 'Turpial Market <market@turpialsong.com>'
 
   try {
     const response = await fetch('https://api.resend.com/emails', {

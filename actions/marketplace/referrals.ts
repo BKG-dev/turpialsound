@@ -3,6 +3,8 @@
 import { getDb } from '@/lib/marketplace/db'
 import { getSession } from '@/lib/marketplace/auth'
 import { REFERRAL_COMMISSION_RATE } from '@/lib/marketplace/fees'
+import { sendMarketplaceEmail } from '@/lib/email/send'
+import { sendMarketplaceWhatsapp } from '@/lib/whatsapp/marketplace-notifications'
 import { revalidatePath } from 'next/cache'
 
 function generateCode(): string {
@@ -117,16 +119,103 @@ export async function trackReferralClick(code: string): Promise<{ listingId?: st
   }
 }
 
-async function notifyReferralPayout(phone: string | null | undefined, amount: number | string, txId: string) {
-  if (!phone) return
-  try {
-    const { sendWhatsAppNotification } = await import('@/lib/marketplace/notifications')
-    await sendWhatsAppNotification(phone, 'payout', {
-      senderName: 'Turpial Market',
-      amount: typeof amount === 'number' ? `$${amount.toFixed(2)}` : amount,
-      txId,
-    })
-  } catch {}
+function getMarketplaceBaseUrl(): string {
+  return process.env.APP_URL?.replace(/\/+$/, '') ?? 'https://turpialsong.com'
+}
+
+async function notifyReferralCommission(params: {
+  phone?: string | null
+  email?: string | null
+  displayName?: string | null
+  listingTitle?: string | null
+  commissionAmount: number
+  txCode: string
+}): Promise<void> {
+  const displayName = params.displayName?.trim() || 'Artista'
+  const listingTitle = params.listingTitle?.trim() || 'Producto Marketplace'
+  const marketplaceUrl = `${getMarketplaceBaseUrl()}/marketplace`
+  const notifications: Array<Promise<unknown>> = []
+
+  if (params.phone?.trim()) {
+    notifications.push(
+      sendMarketplaceWhatsapp(
+        'mp_referral_commission',
+        { phone: params.phone, name: displayName },
+        {
+          txCode: params.txCode,
+          listingTitle,
+          amount: params.commissionAmount,
+          currency: 'USD',
+        },
+      ),
+    )
+  }
+
+  if (params.email?.trim()) {
+    notifications.push(
+      sendMarketplaceEmail(
+        'referral_commission',
+        { email: params.email, name: displayName },
+        {
+          referrerName: displayName,
+          listingTitle,
+          commissionAmount: params.commissionAmount,
+          currency: 'USD',
+          marketplaceUrl,
+        },
+      ),
+    )
+  }
+
+  if (notifications.length > 0) {
+    await Promise.allSettled(notifications)
+  }
+}
+
+async function notifyReferralPayoutReleased(params: {
+  phone?: string | null
+  email?: string | null
+  displayName?: string | null
+  amount: number
+  txCode: string
+}): Promise<void> {
+  const displayName = params.displayName?.trim() || 'Artista'
+  const txUrl = `${getMarketplaceBaseUrl()}/marketplace/dashboard?tab=referrals`
+  const notifications: Array<Promise<unknown>> = []
+
+  if (params.phone?.trim()) {
+    notifications.push(
+      sendMarketplaceWhatsapp(
+        'mp_payout_released',
+        { phone: params.phone, name: displayName },
+        {
+          txCode: params.txCode,
+          amount: params.amount,
+          currency: 'USD',
+        },
+      ),
+    )
+  }
+
+  if (params.email?.trim()) {
+    notifications.push(
+      sendMarketplaceEmail(
+        'payout_released',
+        { email: params.email, name: displayName },
+        {
+          sellerName: displayName,
+          amount: params.amount,
+          currency: 'USD',
+          txCode: params.txCode,
+          txUrl,
+        },
+      ),
+    )
+  }
+
+  if (notifications.length > 0) {
+    await Promise.allSettled(notifications)
+  }
 }
 
 export async function processReferralConversion(
@@ -164,10 +253,16 @@ export async function processReferralConversion(
     }
 
     const commission = saleAmount * REFERRAL_COMMISSION_RATE // param configurable
-    const referrer = await db.mpUser.findUnique({
-      where: { id: link.referrerId },
-      select: { phone: true },
-    })
+    const [referrer, listing] = await Promise.all([
+      db.mpUser.findUnique({
+        where: { id: link.referrerId },
+        select: { phone: true, email: true, displayName: true },
+      }),
+      db.mpListing.findUnique({
+        where: { id: link.listingId },
+        select: { title: true },
+      }),
+    ])
 
     let conversionRecorded = false
     try {
@@ -196,7 +291,14 @@ export async function processReferralConversion(
 
     await db.$disconnect()
     if (conversionRecorded) {
-      void notifyReferralPayout(referrer?.phone, commission, transactionId)
+      void notifyReferralCommission({
+        phone: referrer?.phone,
+        email: referrer?.email,
+        displayName: referrer?.displayName,
+        listingTitle: listing?.title,
+        commissionAmount: commission,
+        txCode: transactionId,
+      }).catch(() => {})
     }
   } catch {
     await db.$disconnect().catch(() => {})
@@ -349,7 +451,7 @@ export async function completeReferralPayout(payoutId: string): Promise<{ succes
 
     const referrer = await db.mpUser.findUnique({
       where: { id: payout.sellerId },
-      select: { phone: true },
+      select: { phone: true, email: true, displayName: true },
     })
 
     await db.mpPayout.update({
@@ -360,7 +462,13 @@ export async function completeReferralPayout(payoutId: string): Promise<{ succes
     await db.$disconnect()
     revalidatePath('/marketplace/dashboard')
     revalidatePath('/marketplace/admin')
-    void notifyReferralPayout(referrer?.phone, `$${Number(payout.amount).toFixed(2)}`, payoutId)
+    void notifyReferralPayoutReleased({
+      phone: referrer?.phone,
+      email: referrer?.email,
+      displayName: referrer?.displayName,
+      amount: Number(payout.amount),
+      txCode: payout.reference ?? payoutId,
+    }).catch(() => {})
     return { success: true, message: 'Payout de referido pagado' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
