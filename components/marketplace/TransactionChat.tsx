@@ -62,6 +62,111 @@ function formatMarketplaceTime(value: string | Date) {
   })
 }
 
+const MESSAGE_GROUP_WINDOW_MS = 5 * 60 * 1000
+
+type MessageTimelineItem =
+  | { kind: 'date'; id: string; label: string }
+  | { kind: 'unread'; id: string }
+  | { kind: 'group'; id: string; messages: Message[]; isOwn: boolean; isSystem: boolean }
+
+function getMessageDateKey(value: string | Date) {
+  const date = new Date(value)
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+}
+
+function formatMessageDateLabel(value: string | Date) {
+  const date = new Date(value)
+  const today = new Date()
+  const yesterday = new Date()
+  yesterday.setDate(today.getDate() - 1)
+
+  const dateKey = getMessageDateKey(date)
+  if (dateKey === getMessageDateKey(today)) return 'Hoy'
+  if (dateKey === getMessageDateKey(yesterday)) return 'Ayer'
+
+  return date.toLocaleDateString('es-VE', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+function isSystemMessage(message: Message) {
+  return message.type === 'system-info' || message.type === 'system-warning'
+}
+
+function isCriticalSystemMessage(message: Message) {
+  if (!isSystemMessage(message)) return false
+  const content = message.content.toLowerCase()
+  return [
+    'pago',
+    'valid',
+    'entrega',
+    'recepcion',
+    'listo',
+    'cierre',
+    'liberad',
+    'disputa',
+  ].some(token => content.includes(token))
+}
+
+function shouldStartMessageGroup(prev: Message | undefined, message: Message, firstUnreadMessageId?: string) {
+  if (!prev) return true
+  if (message.id === firstUnreadMessageId) return true
+  if (getMessageDateKey(prev.createdAt) !== getMessageDateKey(message.createdAt)) return true
+  if (message.type === 'quote' || prev.type === 'quote') return true
+  if (isCriticalSystemMessage(message) || isCriticalSystemMessage(prev)) return true
+  if (isSystemMessage(message) || isSystemMessage(prev)) {
+    return message.type !== prev.type || message.senderId !== prev.senderId
+  }
+  if (message.senderId !== prev.senderId || message.type !== prev.type) return true
+
+  const elapsed = new Date(message.createdAt).getTime() - new Date(prev.createdAt).getTime()
+  return elapsed > MESSAGE_GROUP_WINDOW_MS
+}
+
+function buildMessageTimeline(messages: Message[], currentUserId: string, firstUnreadMessageId?: string): MessageTimelineItem[] {
+  const timeline: MessageTimelineItem[] = []
+  let currentGroup: Extract<MessageTimelineItem, { kind: 'group' }> | null = null
+  let lastDateKey: string | null = null
+  let prevMessage: Message | undefined
+
+  messages.forEach((message) => {
+    const dateKey = getMessageDateKey(message.createdAt)
+    if (dateKey !== lastDateKey) {
+      timeline.push({
+        kind: 'date',
+        id: `date-${dateKey}-${message.id}`,
+        label: formatMessageDateLabel(message.createdAt),
+      })
+      currentGroup = null
+      lastDateKey = dateKey
+    }
+
+    if (message.id === firstUnreadMessageId) {
+      timeline.push({ kind: 'unread', id: `unread-${message.id}` })
+      currentGroup = null
+    }
+
+    if (!currentGroup || shouldStartMessageGroup(prevMessage, message, firstUnreadMessageId)) {
+      currentGroup = {
+        kind: 'group',
+        id: `group-${message.id}`,
+        messages: [message],
+        isOwn: message.senderId === currentUserId,
+        isSystem: isSystemMessage(message),
+      }
+      timeline.push(currentGroup)
+    } else {
+      currentGroup.messages.push(message)
+    }
+
+    prevMessage = message
+  })
+
+  return timeline
+}
+
 // ─── Security Warning Banner ──────────────────────────────────────────────────
 
 function SecurityBanner() {
@@ -114,7 +219,7 @@ function QuoteCard({ quote, isOwn, onPay }: {
 
   return (
     <div
-      className="rounded-xl overflow-hidden w-full max-w-sm"
+      className="w-full max-w-[min(100%,24rem)] overflow-hidden rounded-xl"
       style={{
         background: 'var(--mp-card)',
         border: '1px solid rgba(0,174,239,0.2)',
@@ -244,9 +349,9 @@ function MessageBubble({ message, isOwn }: { message: Message; isOwn: boolean })
   }
 
   return (
-    <div className={cn('flex flex-col gap-1 max-w-[75%]', isOwn ? 'items-end self-end' : 'items-start self-start')}>
+    <div className={cn('flex max-w-[min(82%,34rem)] flex-col gap-1', isOwn ? 'items-end self-end' : 'items-start self-start')}>
       <div
-        className="px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed"
+        className="rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed [overflow-wrap:anywhere]"
         style={
           isOwn
             ? {
@@ -278,6 +383,95 @@ function MessageBubble({ message, isOwn }: { message: Message; isOwn: boolean })
 }
 
 // ─── Chat Header ──────────────────────────────────────────────────────────────
+
+function MessageGroup({ group }: { group: Extract<MessageTimelineItem, { kind: 'group' }> }) {
+  const first = group.messages[0]
+  const last = group.messages[group.messages.length - 1]
+
+  if (!first || !last) return null
+  if (first.type === 'quote') {
+    return <MessageBubble message={first} isOwn={group.isOwn} />
+  }
+
+  if (group.isSystem) {
+    return (
+      <div className="flex justify-center px-1">
+        <div
+          className="max-w-[min(92%,34rem)] rounded-xl px-3 py-2 text-center text-[11px] leading-relaxed [overflow-wrap:anywhere]"
+          style={{
+            background: first.type === 'system-warning' ? 'rgba(249,115,22,0.08)' : 'var(--mp-card-subtle)',
+            border: first.type === 'system-warning' ? '1px solid rgba(249,115,22,0.2)' : '1px solid var(--mp-border)',
+            color: first.type === 'system-warning' ? '#f97316' : 'var(--mp-text-muted)',
+          }}
+        >
+          {group.messages.map((message) => (
+            <p key={message.id} id={`message-${message.id}`} className="leading-relaxed">
+              {message.content}
+            </p>
+          ))}
+          <span className="mt-1 block text-[9px]" style={{ color: 'var(--mp-text-faint)' }}>
+            {formatMarketplaceTime(first.createdAt)}
+            {first.id !== last.id && ` - ${formatMarketplaceTime(last.createdAt)}`}
+          </span>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className={cn('flex w-full flex-col gap-1', group.isOwn ? 'items-end' : 'items-start')}>
+      {!group.isOwn && (
+        <span className="px-1 text-[10px] font-semibold" style={{ color: 'var(--mp-text-muted)' }}>
+          {first.senderName}
+        </span>
+      )}
+      <div className={cn('flex max-w-[min(82%,34rem)] flex-col gap-1', group.isOwn ? 'items-end' : 'items-start')}>
+        {group.messages.map((message, index) => {
+          const isFirst = index === 0
+          const isLast = index === group.messages.length - 1
+          return (
+            <div
+              key={message.id}
+              id={`message-${message.id}`}
+              className={cn(
+                'px-3.5 py-2.5 text-sm leading-relaxed [overflow-wrap:anywhere]',
+                group.isOwn ? 'rounded-l-2xl rounded-r-md' : 'rounded-r-2xl rounded-l-md',
+                group.isOwn && isFirst && 'rounded-tr-2xl',
+                group.isOwn && isLast && 'rounded-br',
+                !group.isOwn && isFirst && 'rounded-tl-2xl',
+                !group.isOwn && isLast && 'rounded-bl',
+              )}
+              style={
+                group.isOwn
+                  ? {
+                      background: 'linear-gradient(135deg, rgba(0,174,239,0.18) 0%, rgba(0,80,200,0.14) 100%)',
+                      border: '1px solid rgba(0,174,239,0.2)',
+                      color: '#f2f2f2',
+                    }
+                  : {
+                      background: 'var(--mp-input)',
+                      border: '1px solid var(--mp-input-border)',
+                      color: 'var(--mp-text-soft)',
+                    }
+              }
+            >
+              {message.content}
+            </div>
+          )
+        })}
+      </div>
+      <span className="flex items-center gap-0.5 px-1 text-[9px] text-[#9a9a9a]">
+        {formatMarketplaceTime(first.createdAt)}
+        {first.id !== last.id && ` - ${formatMarketplaceTime(last.createdAt)}`}
+        {group.isOwn && (
+          last.read
+            ? <CheckCheck size={11} style={{ color: '#00aeef' }} />
+            : <Check size={11} className="text-[#5a5a5a]" />
+        )}
+      </span>
+    </div>
+  )
+}
 
 interface RealChatUser {
   displayName: string
@@ -479,6 +673,7 @@ export function TransactionChat({
   onSyncNeeded,
 }: TransactionChatProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const unreadMarkerRef = useRef<HTMLDivElement>(null)
 
   // The effective viewer ID — falls back to the mock buyer for the demo thread.
   const effectiveUserId = currentUserId ?? 'u6'
@@ -491,6 +686,8 @@ export function TransactionChat({
     tone: 'error' | 'info'
     text: string
   } | null>(null)
+  const firstUnreadMessageId = localMessages.find(message => !message.read && message.senderId !== effectiveUserId)?.id
+  const messageTimeline = buildMessageTimeline(localMessages, effectiveUserId, firstUnreadMessageId)
 
   // Mock mode: sync when thread changes. Real mode: managed by the DB effect below.
   useEffect(() => {
@@ -539,12 +736,14 @@ export function TransactionChat({
     }
   }
 
-  // Auto-scroll to bottom whenever messages change.
+  // Prefer the first unread marker; otherwise keep the active thread pinned to bottom.
   useEffect(() => {
-    if (scrollRef.current) {
+    if (unreadMarkerRef.current) {
+      unreadMarkerRef.current.scrollIntoView({ block: 'center' })
+    } else if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [localMessages])
+  }, [localMessages, firstUnreadMessageId])
 
   async function handleSend(content: string) {
     if (!content.trim()) return
@@ -678,13 +877,31 @@ export function TransactionChat({
             </p>
           </div>
         )}
-        {localMessages.map(message => (
-          <MessageBubble
-            key={message.id}
-            message={message}
-            isOwn={message.senderId === effectiveUserId}
-          />
-        ))}
+        {messageTimeline.map(item => {
+          if (item.kind === 'date') {
+            return (
+              <div key={item.id} className="flex items-center gap-3 py-1">
+                <div className="h-px flex-1" style={{ background: 'var(--mp-border)' }} />
+                <span className="rounded-full px-2.5 py-1 text-[10px] font-semibold" style={{ background: 'var(--mp-card-subtle)', color: 'var(--mp-text-faint)', border: '1px solid var(--mp-border)' }}>
+                  {item.label}
+                </span>
+                <div className="h-px flex-1" style={{ background: 'var(--mp-border)' }} />
+              </div>
+            )
+          }
+          if (item.kind === 'unread') {
+            return (
+              <div key={item.id} ref={unreadMarkerRef} className="flex items-center gap-3 py-1">
+                <div className="h-px flex-1 bg-[#00aeef]/40" />
+                <span className="rounded-full bg-[#00aeef]/10 px-2.5 py-1 text-[10px] font-semibold text-[#00aeef] ring-1 ring-[#00aeef]/25">
+                  Nuevo sin leer
+                </span>
+                <div className="h-px flex-1 bg-[#00aeef]/40" />
+              </div>
+            )
+          }
+          return <MessageGroup key={item.id} group={item} />
+        })}
         <div className="h-2" />
       </div>
 

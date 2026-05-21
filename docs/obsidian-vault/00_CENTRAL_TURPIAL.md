@@ -3,7 +3,7 @@ type: master-dashboard
 project: "Turpial Sound"
 status: active-integration
 phase: "Fase G: Optimizacion marketplace post-cierre. 8 sprints nuevos (S-MP-01 a S-MP-08)."
-last_updated: "19/05/26 19:40"
+last_updated: "2026-05-19T23:40:07.963Z"
 mother_branch: "MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19"
 mother_head: "RAMAMADRE_BASE"
 production_branch: "prod/current-www-turpialsound-2026-05-08"
@@ -2487,7 +2487,7 @@ type: master-dashboard
 project: "Turpial Sound"
 status: active-integration
 phase: "Fase G: Optimizacion marketplace post-cierre. 8 sprints nuevos (S-MP-01 a S-MP-08)."
-last_updated: "19/05/26 19:40"
+last_updated: "2026-05-19T23:40:07.963Z"
 mother_branch: "MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19"
 mother_head: "RAMAMADRE_BASE"
 production_branch: "prod/current-www-turpialsound-2026-05-08"

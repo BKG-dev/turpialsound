@@ -1,17 +1,18 @@
-﻿# Next Window Brief — S11 Complete → S12 Ready
+﻿# Next Window Brief — UI/UX Redesign → Dashboard Live Audit
 
-> Date: 2026-05-11
-> Mother: `RAMA MADRE` @ `48e4479`
+> Date: 2026-05-20
+> Branch: `Manuel/uiux-dashboard-mobile-redesign-2026-05-19`
+> Base: `MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19` @ `e4ad725`
 
-## Current state: S11 CLOSED — 3/3 PASS, MERGED TO MOTHER
+## Current state: UI/UX changes applied, pending commit/push
 
-Playwright + Chromium instalado en rama madre. Helpers y spec S11 funcionando.
+Message grouping, dashboard mobile-first, modals full-height implementados en 3 archivos. TypeScript y build pasan limpios. 0/12 viewports con overflow horizontal.
 
 ## What to read first
 
-1. `docs/obsidian-vault/NEXT_PHASE_PLAN_S11_S20.md` — Plan S11-S20
-2. `docs/07_handoffs/session-summary-active.md` — Resumen S11
-3. `scripts/qa/playwright/login.mjs` — Helper de login Playwright (reusable para S12+)
+1. `docs/07_handoffs/uiux-dashboard-mobile-redesign-2026-05-19.md` — Reporte completo de cambios
+2. `docs/07_handoffs/session-summary-active.md` — Resumen sesion activa
+3. `scripts/qa/playwright/login.mjs` — Helper de login Playwright
 
 ## Credenciales QA
 
@@ -19,27 +20,24 @@ Playwright + Chromium instalado en rama madre. Helpers y spec S11 funcionando.
 |-----|--------------|---------|
 | Buyer | buyerIA | QA_BUYER_IDENTIFIER, QA_BUYER_PASSWORD |
 | Seller | sellerIA | QA_SELLER_IDENTIFIER, QA_SELLER_PASSWORD |
-| Admin | mvera | QA_ADMIN_IDENTIFIER, QA_ADMIN_PASSWORD |
+| Admin | mvera (pass: 13894619) | QA_ADMIN_IDENTIFIER, QA_ADMIN_PASSWORD |
 
-## Plan Maestro vigente
+## Siguiente paso — Dashboard Live Audit
 
-> 📋 **Leer antes de ejecutar:** [[PLAN_MAESTRO_SPRINTS_2026-05-12]]
-> 5 tracks, 27 sprints totales. Marketplace + Booking + Crecimiento + Admin-Legal + UI/UX.
+- **Owner:** 👤 Manuel
+- **Branch:** `Manuel/uiux-dashboard-mobile-redesign-2026-05-19` (misma rama)
+- **Tareas:**
+  1. Commit + push cambios actuales
+  2. Login con credenciales QA (admin: mvera/13894619)
+  3. Auditar dashboard comprador/vendedor/admin en vivo con Playwright
+  4. Verificar agrupacion de mensajes con datos reales
+  5. Medir contraste WCAG en light/dark mode
+  6. PR a rama madre
 
-## S12 — Próximo sprint (Jean)
+## Previous: S11-S12 (historical)
 
-- **Owner:** 👤 Jean
-- **Branch:** `jean/s12-purchase-flow-browser-2026-05-12`
-- **Base:** `RAMA MADRE` (Playwright ya disponible)
-- **Tareas:** Navegar listing QA → click "Comprar" → Pago Móvil → Confirmar → Screenshots
-- **Reutilizar:** `scripts/qa/playwright/login.mjs` para login buyer
-
-## Acciones inmediatas adicionales
-
-- **Jean:** Push de cambios locales pendientes al repo
-- **Jean:** Configurar `TS_MARKETPLACE_SENSITIVE_BLOB_READ_WRITE_TOKEN` en Vercel
-- **Manuel:** Verificar estado legal de la entidad
-- **Manuel:** Preparar deploy CDA (viernes 15 mayo 2026, 11AM VET)
+S11 (CLOSED): Playwright setup + login smoke 3/3 PASS. Merged to mother @ `48e4479`.
+S12 (Jean): Purchase flow browser E2E.
 
 ## Canonical commands
 

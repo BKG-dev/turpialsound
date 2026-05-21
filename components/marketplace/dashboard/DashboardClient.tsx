@@ -763,7 +763,7 @@ function KpiCard({
       onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick() } : undefined}
       className={cn(
         "rounded-2xl flex min-w-0 flex-col justify-between gap-4 relative overflow-hidden",
-        tone === 'primary' ? "p-5 min-h-[148px]" : tone === 'compact' ? "p-4 min-h-[118px]" : "p-4 min-h-[132px]",
+        tone === 'primary' ? "min-h-[124px] p-4 sm:min-h-[148px] sm:p-5" : tone === 'compact' ? "min-h-[104px] p-3.5 sm:min-h-[118px] sm:p-4" : "min-h-[112px] p-3.5 sm:min-h-[132px] sm:p-4",
         onClick && "cursor-pointer transition-all duration-200 hover:ring-1 ring-[#00aeef] hover:brightness-110 active:scale-[0.98]",
       )}
       style={{
@@ -786,7 +786,7 @@ function KpiCard({
       <div className="relative z-10 min-w-0">
         <p className={cn(
           "font-bold leading-none tracking-normal tabular-nums",
-          tone === 'primary' ? "text-3xl" : "text-2xl",
+          tone === 'primary' ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl",
           "[overflow-wrap:anywhere]",
         )}
           style={{ color: 'var(--mp-text-strong)' }}
@@ -843,11 +843,11 @@ function DisputeModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4"
       style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)' }}
     >
       <div
-        className="w-full max-w-md rounded-2xl overflow-hidden"
+        className="flex max-h-[100dvh] w-full max-w-md flex-col overflow-hidden rounded-t-2xl sm:max-h-[92vh] sm:rounded-2xl"
         style={{
           background: 'rgba(11,11,11,0.98)',
           border: '1px solid rgba(249,115,22,0.2)',
@@ -871,7 +871,7 @@ function DisputeModal({
           </button>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
           <div
             className="rounded-xl p-3 flex items-start gap-2.5"
             style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.15)' }}
@@ -933,7 +933,7 @@ function DisputeModal({
             </div>
           )}
 
-          <div className="flex gap-3 pt-1">
+          <div className="flex flex-col gap-3 pt-1 min-[420px]:flex-row">
             <button
               onClick={onClose}
               disabled={submitting}
@@ -1001,7 +1001,7 @@ function TxCard({
           onOpenDetails?.(tx)
         }
       }}
-      className="w-full rounded-xl p-4 flex gap-3 group text-left transition-all duration-200 hover:border-[rgba(0,174,239,0.2)]"
+      className="group flex w-full gap-3 rounded-xl p-3.5 text-left transition-all duration-200 hover:border-[rgba(0,174,239,0.2)] active:scale-[0.995] sm:p-4"
       style={{
         background: 'var(--mp-card)',
         border: '1px solid var(--mp-border)',
@@ -1028,17 +1028,17 @@ function TxCard({
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-start min-[420px]:justify-between">
           <div className="min-w-0">
-            <p className="text-sm font-medium truncate" style={{ color: 'var(--mp-text-strong)' }}>
+            <p className="text-sm font-medium leading-snug [overflow-wrap:anywhere] min-[420px]:truncate" style={{ color: 'var(--mp-text-strong)' }}>
               {tx.listing?.title ?? 'Listing eliminado'}
             </p>
-            <p className="text-[11px] mt-0.5" style={{ color: 'var(--mp-text-faint)' }}>
+            <p className="mt-0.5 text-[11px] leading-snug [overflow-wrap:anywhere]" style={{ color: 'var(--mp-text-faint)' }}>
               {viewAs === 'buyer' ? 'Miembro: ' : 'Comprador: '}
               <span style={{ color: 'var(--mp-text-muted)' }}>{otherParty.displayName}</span>
             </p>
           </div>
-          <div className="text-right flex-shrink-0">
+          <div className="flex-shrink-0 text-left min-[420px]:text-right">
             <p className="text-sm font-semibold" style={{ color: 'var(--mp-text-strong)' }}>
               ${Number(tx.amount).toLocaleString('es-VE')}
             </p>
@@ -1073,7 +1073,7 @@ function TxCard({
                 event.stopPropagation()
                 onDispute(tx)
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200"
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-medium transition-all duration-200 min-[420px]:w-auto min-[420px]:py-1.5"
               style={{
                 background: 'rgba(249,115,22,0.06)',
                 border: '1px solid rgba(249,115,22,0.18)',
@@ -1098,7 +1098,7 @@ function TxCard({
               event.stopPropagation()
               onOpenDetails?.(tx)
             }}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all"
+            className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-semibold transition-all min-[420px]:w-auto min-[420px]:py-1.5"
             style={{ background: 'rgba(0,174,239,0.08)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.18)' }}
           >
             {getBuyerCtaLabel(tx.status)}
@@ -1535,7 +1535,7 @@ function TabBar({
 
   return (
     <div
-      className="sticky top-[49px] z-30 grid grid-cols-2 gap-1.5 rounded-2xl p-1.5 backdrop-blur-xl sm:grid-cols-3 lg:grid-cols-6"
+      className="sticky top-[49px] z-30 -mx-4 flex gap-1.5 overflow-x-auto px-4 py-2 backdrop-blur-xl sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:rounded-2xl sm:p-1.5 lg:grid-cols-7"
       style={{ background: 'color-mix(in srgb, var(--mp-panel) 92%, transparent)', border: '1px solid var(--mp-border)', boxShadow: 'var(--mp-card-shadow)' }}
     >
       {tabs.map(t => {
@@ -1546,7 +1546,7 @@ function TabBar({
           <button
             key={t.id}
             onClick={() => onChange(t.id)}
-            className="flex min-h-[64px] min-w-0 flex-col items-start justify-between rounded-xl px-3 py-2.5 text-left transition-all duration-200"
+            className="flex min-h-[52px] min-w-[116px] flex-col items-start justify-between rounded-xl px-3 py-2 text-left transition-all duration-200 sm:min-h-[64px] sm:min-w-0 sm:py-2.5"
             style={
               isActive
                 ? {
@@ -1619,7 +1619,7 @@ function ProfileHeader({
 
   return (
     <div
-      className="rounded-2xl p-5 relative overflow-hidden"
+      className="relative overflow-hidden rounded-2xl p-4 sm:p-5"
       style={{
         background: 'linear-gradient(135deg, var(--mp-card) 0%, var(--mp-panel-soft) 100%)',
         border: '1px solid rgba(0,174,239,0.18)',
@@ -1697,7 +1697,7 @@ function ProfileHeader({
         {unreadCount > 0 && (
           <button
             onClick={() => onTabClick?.('messages')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl flex-shrink-0 animate-pulse"
+            className="flex w-full flex-shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2 animate-pulse sm:w-auto sm:py-1.5"
             style={{
               background: 'rgba(0,174,239,0.1)',
               border: '1px solid rgba(0,174,239,0.3)',
@@ -1716,7 +1716,7 @@ function ProfileHeader({
         )}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 relative z-10">
+      <div className="relative z-10 mt-4 grid grid-cols-2 gap-2.5 sm:mt-5 sm:grid-cols-4 sm:gap-3">
         <KpiCard
           icon={TrendingUp}
           label="Publicaciones"
@@ -1773,10 +1773,10 @@ function ChatOverlay({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4"
       style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
     >
-      <div className="w-full max-w-lg" style={{ height: 'min(640px, 85vh)' }}>
+      <div className="h-[100dvh] w-full max-w-none sm:h-[min(640px,85vh)] sm:max-w-lg">
         <TransactionChat
           threadId={thread.id}
           currentUserId={currentUserId}
@@ -1789,7 +1789,7 @@ function ChatOverlay({
           listingSlug={thread.listing?.slug}
           onClose={onClose}
           onSyncNeeded={onSyncNeeded}
-          className="h-full"
+          className="h-full rounded-none sm:rounded-2xl"
         />
       </div>
     </div>
@@ -2494,8 +2494,8 @@ function ActionCenterSection({
                           </span>
 
                           <div className="min-w-0">
-                            <p className="text-[11px] leading-snug" style={{ color: 'var(--mp-text-muted)' }}>{item.description}</p>
-                            <p className="mt-0.5 truncate text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
+                            <p className="text-[11px] leading-snug [overflow-wrap:anywhere]" style={{ color: 'var(--mp-text-muted)' }}>{item.description}</p>
+                            <p className="mt-0.5 text-[10px] leading-snug [overflow-wrap:anywhere] sm:truncate" style={{ color: 'var(--mp-text-faint)' }}>
                               <span className="font-medium" style={{ color: 'var(--mp-text-soft)' }}>{listingTitle}</span>
                               <span className="mx-1">-</span>
                               {item.viewAs === 'buyer' ? 'Vendedor: ' : 'Comprador: '}
@@ -2510,7 +2510,7 @@ function ActionCenterSection({
                           <button
                             onClick={() => onAction(item)}
                             disabled={isBusy || item.disabled}
-                            className="inline-flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all disabled:opacity-50"
+                            className="inline-flex w-full flex-shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-semibold transition-all disabled:opacity-50 sm:w-auto sm:whitespace-nowrap sm:py-1.5"
                             style={{
                               background: item.priority === 'required' ? 'rgba(249,115,22,0.12)' : 'rgba(0,174,239,0.08)',
                               border: `1px solid ${item.priority === 'required' ? 'rgba(249,115,22,0.25)' : 'rgba(0,174,239,0.2)'}`,

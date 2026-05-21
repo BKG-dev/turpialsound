@@ -355,7 +355,7 @@ export function CheckoutModal({ listing, quantity = 1, onClose, onSuccess }: Che
 
   if (success) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -369,7 +369,7 @@ export function CheckoutModal({ listing, quantity = 1, onClose, onSuccess }: Che
           className="relative z-10 w-full max-w-md"
         >
           <div
-            className="flex flex-col items-center justify-center gap-5 rounded-2xl px-8 py-16 text-center"
+            className="flex flex-col items-center justify-center gap-5 rounded-t-2xl px-6 py-12 text-center sm:rounded-2xl sm:px-8 sm:py-16"
             style={{
               background: 'var(--mp-panel-solid)',
               border: '1px solid var(--mp-border)',
@@ -427,7 +427,7 @@ export function CheckoutModal({ listing, quantity = 1, onClose, onSuccess }: Che
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -442,12 +442,12 @@ export function CheckoutModal({ listing, quantity = 1, onClose, onSuccess }: Che
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.97, y: 8 }}
         transition={{ duration: 0.3, ease: EXPO }}
-        className="relative z-10 w-full max-w-md"
-        style={{ maxHeight: '92vh' }}
+        className="relative z-10 h-[100dvh] w-full max-w-md sm:h-auto"
+        style={{ maxHeight: '100dvh' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="flex max-h-[92vh] flex-col overflow-hidden rounded-2xl"
+          className="flex h-full max-h-[100dvh] flex-col overflow-hidden rounded-t-2xl sm:h-auto sm:max-h-[92vh] sm:rounded-2xl"
           style={{
             background: 'var(--mp-panel-solid)',
             border: '1px solid var(--mp-border)',
@@ -470,7 +470,7 @@ export function CheckoutModal({ listing, quantity = 1, onClose, onSuccess }: Che
             </button>
           </div>
 
-          <div className="scrollbar-none flex-1 space-y-5 overflow-y-auto p-5">
+          <div className="scrollbar-none flex-1 space-y-5 overflow-y-auto p-4 sm:p-5">
             <div
               className="rounded-xl p-4"
               style={{ background: 'rgba(0,174,239,0.04)', border: '1px solid rgba(0,174,239,0.12)' }}
@@ -538,7 +538,7 @@ export function CheckoutModal({ listing, quantity = 1, onClose, onSuccess }: Che
 
             <div>
               <p className="mb-3 text-[10px] uppercase tracking-widest text-[#9a9a9a]">Metodo de pago</p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-3">
                 {MANUAL_METHODS.map((method) => {
                   const Icon = method.icon
                   const selected = selectedMethod.id === method.id
@@ -612,7 +612,7 @@ export function CheckoutModal({ listing, quantity = 1, onClose, onSuccess }: Che
                 Reportar pago
               </p>
 
-              <div className="max-h-[55vh] space-y-3 overflow-y-auto pr-2">
+              <div className="space-y-3">
                 <InputField
                   label="Metodo seleccionado"
                   value={selectedMethod.label}

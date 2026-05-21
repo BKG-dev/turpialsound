@@ -1,33 +1,33 @@
-﻿# S11 Session Summary — Playwright Login UI Smoke
+﻿# Active Session Summary — UI/UX Dashboard Mobile Redesign
 
-> Branch: `Manuel/s11-playwright-login-ui-2026-05-12`
-> Base: `RAMA MADRE`
-> Date: 2026-05-11
-> Sprint: S11 — Playwright setup + Login UI smoke
-> Status: CLOSED — 3/3 PASS, MERGED TO MOTHER
+> Branch: `Manuel/uiux-dashboard-mobile-redesign-2026-05-19`
+> Base: `MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19` @ `e4ad725`
+> Date: 2026-05-19 / 2026-05-20
+> Agent: Codex 5.5 Thinking → Kilo (DeepSeek V4 Pro)
+> Status: ACTIVE — cambios aplicados, pendiente commit y push
 
-## S11 Deliverables
+## Deliverables
 
 | Task | Result |
 |------|--------|
-| Playwright install | `@playwright/test ^1.59.1` + Chromium |
-| Helpers | `scripts/qa/playwright/login.mjs`, `screenshot.mjs` |
-| Spec | `scripts/qa/playwright/s11-login-smoke.spec.mjs` |
-| BUYER (buyerIA) | PASS |
-| SELLER (sellerIA) | PASS |
-| ADMIN (mvera) | PASS |
-| Evidence | `var/qa-results/s11-login-report/` (6 screenshots) |
+| Message grouping (TransactionChat) | Implementado — timeline, date/unread separators, system event compact |
+| Dashboard mobile-first (DashboardClient) | Tabs horizontal scroll, KPI cards compact, modals full-height |
+| CheckoutModal mobile-first | Full-height mobile, payment methods 1-col mobile |
+| Playwright visual audit | 6 viewports x 2 routes = 0/12 horizontal overflows |
+| TypeScript check | PASS (no errors) |
+| Build | PASS (48/48 pages) |
 
-## Key commits
+## Key commits (pendiente)
 
 ```
-55a5d88  qa(s11): playwright setup + login UI smoke buyer/seller/admin 3/3 PASS
-48e4479  merge(s11): playwright setup + login UI smoke 3/3 PASS — ready for S12  (on mother)
+[PENDING] fix(marketplace): refine dashboard mobile ui and message grouping
+e4ad725   fix(oreshnik): preserve latest docs sync
 ```
-
-Mother branch: `RAMA MADRE` @ `48e4479`
 
 ## Next step
 
-S12 listo para Jean. Purchase flow browser E2E. Playwright disponible en rama madre.
-Branch sugerida: `jean/s12-purchase-flow-browser-2026-05-12`
+Commit + push. Luego login con `mvera:13894619` para auditar dashboard en vivo con Playwright.
+
+## Previous: S11 (CLOSED)
+
+S11: Playwright setup + login UI smoke 3/3 PASS. Merged to mother @ `48e4479`.
