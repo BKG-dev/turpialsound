@@ -1,12 +1,40 @@
-# UI/UX Dashboard Mobile Redesign — 2026-05-19/20
+# UI/UX Dashboard Mobile Redesign — 2026-05-19/21
 
 > Branch: `Manuel/uiux-dashboard-mobile-redesign-2026-05-19`
 > Base: `MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19` @ `e4ad725`
-> Date: 2026-05-19 / 2026-05-20
+> Date: 2026-05-19 → 2026-05-21 01:23 VET
 > Agent: Codex 5.5 Thinking → Kilo (DeepSeek V4 Pro)
-> Status: COMPLETED — 0/24 overflow, build PASS, tsc PASS, pushed
+> Status: FINAL — 0/24 overflow, build PASS, tsc PASS, pushed, Vercel deploy en curso
 
-## Rutas auditadas
+## Commits
+
+```
+29c2fa6 fix(marketplace): actionable dashboard fixes
+2db4318 fix(marketplace): refine dashboard mobile ui and message grouping
+```
+
+## Preview
+
+https://turpialsound-7ukcxz4ed-bkgs-projects-829c67c1.vercel.app
+
+Login: `mvera` / `13894619`
+
+## Cambios completos
+
+### Fase 1 — Mobile-first UI (commit 2db4318)
+- Message grouping: timeline, date/unread separators, system event compact, 5-min window
+- Dashboard: tabs horizontal scroll mobile, KPI/Tx cards responsive, modals full-height mobile
+- CheckoutModal: full-height mobile, payment methods 1-col mobile
+
+### Fase 2 — Dashboard UX actions (commit 29c2fa6)
+- **Bandeja prioritaria**: Todos los grupos colapsados por defecto. Chips de accion ahora clickeables (llevan al modal correcto).
+- **Semáforo (TransactionDetailModal)**: Botones "Reportar pago" (PENDING_PAYMENT+buyer), "Confirmar recibido" (IN_ESCROW+buyer+entregado), "Marcar entregado" (IN_ESCROW+seller).
+- **Admin chips**: Eliminados "Todas", "En revisión", "Recepción conf.". Renombrado "Pago al vendedor pendiente" → "Pagos pendientes".
+- **Admin nota interna**: Panel de confirmación ahora inline dentro de la fila de operación (no al principio de la tabla).
+- **Vault**: Fechas actualizadas a 2026-05-21 (sync OK, 1 fecha única).
+
+### Fase 3 — Auditoría visual
+24 combinaciones (6 viewports × 4 rutas): 0 overflows horizontales.
 
 | Ruta | Tipo | Auditado | Resultado |
 |------|------|----------|-----------|
@@ -70,22 +98,31 @@
 
 | Validacion | Resultado |
 |-----------|----------|
-| `git diff --check` | PASS (solo warnings CRLF cosmeticos) |
-| `npx tsc --noEmit` | PASS (sin errores) |
-| `pnpm run build` | PASS (48/48 paginas, compiled successfully) |
-| Playwright publico (12 viewports) | 0 overflows horizontales |
-| Playwright dashboard privado (6 viewports) | 0 overflows horizontales |
-| Playwright admin privado (6 viewports) | 0 overflows horizontales |
-| Console errors (nuevos por nuestro diff) | 0 |
+| `git diff --check` | PASS |
+| `npx tsc --noEmit` | PASS |
+| `pnpm run build` | PASS (48/48 paginas) |
+| Playwright publico (12 viewports) | 0 overflows |
+| Playwright dashboard privado (6 viewports) | 0 overflows |
+| Playwright admin privado (6 viewports) | 0 overflows |
+| Vercel preview build | PASS (compilado OK) |
+
+## Archivos modificados
+
+| Archivo | Cambios |
+|---------|---------|
+| `components/marketplace/TransactionChat.tsx` | Agrupacion de mensajes: timeline, date/unread separators, system events compact |
+| `components/marketplace/dashboard/DashboardClient.tsx` | Tabs rail mobile, KPI cards compact, modals full-height, bandeja colapsada, semáforo con acciones, chips clickeables |
+| `components/marketplace/CheckoutModal.tsx` | Modales full-height mobile, payment methods responsive |
+| `components/marketplace/admin/AdminDashboard.tsx` | Chips simplificados, nota interna inline |
+| `docs/07_handoffs/*` | Handoff doc creado, session-summary + next-window actualizados |
+| `docs/obsidian-vault/*` (x4) | Fechas normalizadas a 2026-05-21T04:45Z
 
 ## Riesgos restantes
 
-- **Chat/mensajes con datos reales**: La logica de agrupacion usa el tipo `Message` existente sin modificar DB, pero no fue verificada con transacciones reales en vivo.
-- **Dark/light theme toggle**: No verificado cuantitativamente. Los estilos usan variables CSS (`--mp-*`) existentes.
-- **Contraste WCAG**: No medido. Pendiente para sprint de accesibilidad.
-- **Login inestable**: El `getMpSession()` puede tardar >30s en primera carga post-build fria (Next.js server action). No es causado por nuestro diff.
+- **Chat/mensajes con datos reales**: Logica usa tipo `Message` existente sin modificar DB. No verificada con transacciones reales.
+- **Dark/light theme + contraste WCAG**: No medidos. Pendiente sprint de accesibilidad.
 
-## Siguiente paso real
+## Siguiente paso
 
 1. PR a rama madre.
 2. Sprint de contraste/accesibilidad WCAG.
