@@ -7,6 +7,9 @@ import {
 export type MarketplaceWhatsappEvent =
   | 'mp_new_sale'
   | 'mp_payment_received'
+  | 'mp_payment_approved'
+  | 'mp_seller_delivered'
+  | 'mp_delivery_confirmed'
   | 'mp_dispute_opened'
   | 'mp_payout_released'
   | 'mp_referral_commission'
@@ -58,6 +61,30 @@ function formatMarketplaceMessage(
         ctx.txCode
           ? `Estado: ${baseUrl}/marketplace/dashboard?tab=purchases`
           : `Revisa tu panel: ${baseUrl}/marketplace/dashboard`,
+      ].filter(Boolean).join('\n')
+
+    case 'mp_payment_approved':
+      return [
+        `Hola ${customer.name}, el pago fue aprobado.`,
+        ctx.listingTitle ? `Producto: ${ctx.listingTitle}.` : '',
+        ctx.txCode ? `Referencia: ${ctx.txCode}.` : '',
+        `Ya puedes continuar el flujo de entrega en tu panel: ${baseUrl}/marketplace/dashboard`,
+      ].filter(Boolean).join('\n')
+
+    case 'mp_seller_delivered':
+      return [
+        `Hola ${customer.name}, el vendedor marco el producto como entregado.`,
+        ctx.listingTitle ? `Producto: ${ctx.listingTitle}.` : '',
+        ctx.txCode ? `Referencia: ${ctx.txCode}.` : '',
+        `Confirma recepcion o abre disputa si hay un problema: ${baseUrl}/marketplace/dashboard?tab=purchases`,
+      ].filter(Boolean).join('\n')
+
+    case 'mp_delivery_confirmed':
+      return [
+        `Hola ${customer.name}, el comprador confirmo recepcion.`,
+        ctx.listingTitle ? `Producto: ${ctx.listingTitle}.` : '',
+        ctx.txCode ? `Referencia: ${ctx.txCode}.` : '',
+        `La operacion queda lista para liberacion de fondos: ${baseUrl}/marketplace/dashboard?tab=sales`,
       ].filter(Boolean).join('\n')
 
     case 'mp_dispute_opened':

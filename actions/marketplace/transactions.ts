@@ -159,6 +159,158 @@ async function notifyMarketplacePaymentReceived(params: {
   }
 }
 
+async function notifyMarketplacePaymentApproved(params: {
+  transactionId: string
+  listingTitle: string
+  buyer: { email?: string | null; phone?: string | null; displayName?: string | null }
+  seller: { email?: string | null; phone?: string | null; displayName?: string | null }
+}): Promise<void> {
+  const txCode = buildTxCode(params.transactionId)
+  const txUrl = buildMarketplaceTransactionUrl(params.transactionId)
+  const listingTitle = params.listingTitle?.trim() || 'Producto Marketplace'
+  const buyerName = params.buyer.displayName?.trim() || 'Comprador'
+  const sellerName = params.seller.displayName?.trim() || 'Vendedor'
+  const notifications: Array<Promise<unknown>> = []
+
+  if (params.buyer.email?.trim()) {
+    notifications.push(
+      sendMarketplaceEmail(
+        'payment_approved',
+        { email: params.buyer.email, name: buyerName },
+        {
+          recipientName: buyerName,
+          recipientRole: 'buyer',
+          listingTitle,
+          txCode,
+          txUrl,
+        },
+      ),
+    )
+  }
+
+  if (params.buyer.phone?.trim()) {
+    notifications.push(
+      sendMarketplaceWhatsapp(
+        'mp_payment_approved',
+        { phone: params.buyer.phone, name: buyerName },
+        { txCode, listingTitle },
+      ),
+    )
+  }
+
+  if (params.seller.email?.trim()) {
+    notifications.push(
+      sendMarketplaceEmail(
+        'payment_approved',
+        { email: params.seller.email, name: sellerName },
+        {
+          recipientName: sellerName,
+          recipientRole: 'seller',
+          listingTitle,
+          txCode,
+          txUrl,
+        },
+      ),
+    )
+  }
+
+  if (params.seller.phone?.trim()) {
+    notifications.push(
+      sendMarketplaceWhatsapp(
+        'mp_payment_approved',
+        { phone: params.seller.phone, name: sellerName },
+        { txCode, listingTitle },
+      ),
+    )
+  }
+
+  if (notifications.length > 0) {
+    await Promise.allSettled(notifications)
+  }
+}
+
+async function notifyMarketplaceSellerDelivered(params: {
+  transactionId: string
+  listingTitle: string
+  buyer: { email?: string | null; phone?: string | null; displayName?: string | null }
+}): Promise<void> {
+  const txCode = buildTxCode(params.transactionId)
+  const txUrl = buildMarketplaceTransactionUrl(params.transactionId)
+  const listingTitle = params.listingTitle?.trim() || 'Producto Marketplace'
+  const buyerName = params.buyer.displayName?.trim() || 'Comprador'
+  const notifications: Array<Promise<unknown>> = []
+
+  if (params.buyer.email?.trim()) {
+    notifications.push(
+      sendMarketplaceEmail(
+        'seller_delivered',
+        { email: params.buyer.email, name: buyerName },
+        {
+          buyerName,
+          listingTitle,
+          txCode,
+          txUrl,
+        },
+      ),
+    )
+  }
+
+  if (params.buyer.phone?.trim()) {
+    notifications.push(
+      sendMarketplaceWhatsapp(
+        'mp_seller_delivered',
+        { phone: params.buyer.phone, name: buyerName },
+        { txCode, listingTitle },
+      ),
+    )
+  }
+
+  if (notifications.length > 0) {
+    await Promise.allSettled(notifications)
+  }
+}
+
+async function notifyMarketplaceDeliveryConfirmed(params: {
+  transactionId: string
+  listingTitle: string
+  seller: { email?: string | null; phone?: string | null; displayName?: string | null }
+}): Promise<void> {
+  const txCode = buildTxCode(params.transactionId)
+  const txUrl = buildMarketplaceTransactionUrl(params.transactionId)
+  const listingTitle = params.listingTitle?.trim() || 'Producto Marketplace'
+  const sellerName = params.seller.displayName?.trim() || 'Vendedor'
+  const notifications: Array<Promise<unknown>> = []
+
+  if (params.seller.email?.trim()) {
+    notifications.push(
+      sendMarketplaceEmail(
+        'delivery_confirmed',
+        { email: params.seller.email, name: sellerName },
+        {
+          sellerName,
+          listingTitle,
+          txCode,
+          txUrl,
+        },
+      ),
+    )
+  }
+
+  if (params.seller.phone?.trim()) {
+    notifications.push(
+      sendMarketplaceWhatsapp(
+        'mp_delivery_confirmed',
+        { phone: params.seller.phone, name: sellerName },
+        { txCode, listingTitle },
+      ),
+    )
+  }
+
+  if (notifications.length > 0) {
+    await Promise.allSettled(notifications)
+  }
+}
+
 async function notifyMarketplacePayoutReleased(params: {
   transactionId: string
   amount: number
@@ -935,7 +1087,14 @@ export async function validatePayment(
   try {
     const tx = await db.mpTransaction.findUnique({
       where: { id: transactionId },
-      select: { id: true, status: true, listingId: true },
+      select: {
+        id: true,
+        status: true,
+        listingId: true,
+        buyer: { select: { email: true, phone: true, displayName: true } },
+        seller: { select: { email: true, phone: true, displayName: true } },
+        listing: { select: { title: true } },
+      },
     })
     if (!tx) return { success: false, message: 'Transaccion no encontrada' }
     if (tx.status !== 'PAYMENT_RECEIVED' && tx.status !== 'VALIDATING') {
@@ -987,6 +1146,22 @@ export async function validatePayment(
     })
 
     await db.$disconnect()
+    if (approved) {
+      void notifyMarketplacePaymentApproved({
+        transactionId,
+        listingTitle: tx.listing?.title ?? 'Producto Marketplace',
+        buyer: {
+          email: tx.buyer?.email,
+          phone: tx.buyer?.phone,
+          displayName: tx.buyer?.displayName,
+        },
+        seller: {
+          email: tx.seller?.email,
+          phone: tx.seller?.phone,
+          displayName: tx.seller?.displayName,
+        },
+      }).catch(() => {})
+    }
     return {
       success: true,
       data: undefined,
@@ -1014,6 +1189,8 @@ export async function sellerDeliver(transactionId: string): Promise<ActionResult
         sellerId: true,
         listingId: true,
         status: true,
+        buyer: { select: { email: true, phone: true, displayName: true } },
+        listing: { select: { title: true } },
         statusHistory: {
           select: { reason: true, toStatus: true, changedBy: true },
         },
@@ -1049,6 +1226,15 @@ export async function sellerDeliver(transactionId: string): Promise<ActionResult
     })
 
     await db.$disconnect()
+    void notifyMarketplaceSellerDelivered({
+      transactionId,
+      listingTitle: tx.listing?.title ?? 'Producto Marketplace',
+      buyer: {
+        email: tx.buyer?.email,
+        phone: tx.buyer?.phone,
+        displayName: tx.buyer?.displayName,
+      },
+    }).catch(() => {})
     return { success: true, data: undefined, message: 'Entrega registrada. Los fondos siguen protegidos hasta la confirmacion del comprador y liberacion admin.' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
@@ -1072,6 +1258,8 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
         sellerId: true,
         listingId: true,
         status: true,
+        seller: { select: { email: true, phone: true, displayName: true } },
+        listing: { select: { title: true } },
         disputes: { where: { status: { in: ['OPEN', 'UNDER_REVIEW'] } }, select: { id: true } },
         statusHistory: { select: { reason: true, toStatus: true, changedBy: true } },
       },
@@ -1115,6 +1303,15 @@ export async function confirmDelivery(transactionId: string): Promise<ActionResu
     })
 
     await db.$disconnect()
+    void notifyMarketplaceDeliveryConfirmed({
+      transactionId,
+      listingTitle: tx.listing?.title ?? 'Producto Marketplace',
+      seller: {
+        email: tx.seller?.email,
+        phone: tx.seller?.phone,
+        displayName: tx.seller?.displayName,
+      },
+    }).catch(() => {})
     return { success: true, data: undefined, message: 'Recepcion confirmada. El admin debe liberar el pago al vendedor.' }
   } catch (err) {
     await db.$disconnect().catch(() => {})

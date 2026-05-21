@@ -4,6 +4,8 @@ import { getDb } from '@/lib/marketplace/db'
 import { getSession } from '@/lib/marketplace/auth'
 import type { ActionResult } from '@/lib/validations/marketplace'
 import { sendSystemMessage } from '@/actions/marketplace/chat'
+import { sendMarketplaceEmail } from '@/lib/email/send'
+import { sendMarketplaceWhatsapp } from '@/lib/whatsapp/marketplace-notifications'
 
 function getAvailableInventory(
   listing: { hasInventory: boolean; inventory: number | null },
@@ -22,6 +24,123 @@ async function getConsumedInventoryUnits(
   void listingId
   // Inventory is decremented at purchase initiation; do not sum legacy TX columns.
   return 0
+}
+
+function getMarketplaceBaseUrl(): string {
+  return process.env.APP_URL?.replace(/\/+$/, '') ?? 'https://turpialsong.com'
+}
+
+function buildMarketplaceTransactionUrl(transactionId: string): string {
+  const baseUrl = getMarketplaceBaseUrl()
+  return `${baseUrl}/marketplace/dashboard/transactions/${encodeURIComponent(transactionId)}`
+}
+
+function buildTxCode(transactionId: string): string {
+  return transactionId.slice(-8).toUpperCase()
+}
+
+async function notifyMarketplacePaymentApproved(params: {
+  transactionId: string
+  listingTitle: string
+  buyer: { email?: string | null; phone?: string | null; displayName?: string | null }
+  seller: { email?: string | null; phone?: string | null; displayName?: string | null }
+}): Promise<void> {
+  const txCode = buildTxCode(params.transactionId)
+  const txUrl = buildMarketplaceTransactionUrl(params.transactionId)
+  const listingTitle = params.listingTitle?.trim() || 'Producto Marketplace'
+  const buyerName = params.buyer.displayName?.trim() || 'Comprador'
+  const sellerName = params.seller.displayName?.trim() || 'Vendedor'
+  const notifications: Array<Promise<unknown>> = []
+
+  if (params.buyer.email?.trim()) {
+    notifications.push(
+      sendMarketplaceEmail(
+        'payment_approved',
+        { email: params.buyer.email, name: buyerName },
+        { recipientName: buyerName, recipientRole: 'buyer', listingTitle, txCode, txUrl },
+      ),
+    )
+  }
+
+  if (params.buyer.phone?.trim()) {
+    notifications.push(
+      sendMarketplaceWhatsapp(
+        'mp_payment_approved',
+        { phone: params.buyer.phone, name: buyerName },
+        { txCode, listingTitle },
+      ),
+    )
+  }
+
+  if (params.seller.email?.trim()) {
+    notifications.push(
+      sendMarketplaceEmail(
+        'payment_approved',
+        { email: params.seller.email, name: sellerName },
+        { recipientName: sellerName, recipientRole: 'seller', listingTitle, txCode, txUrl },
+      ),
+    )
+  }
+
+  if (params.seller.phone?.trim()) {
+    notifications.push(
+      sendMarketplaceWhatsapp(
+        'mp_payment_approved',
+        { phone: params.seller.phone, name: sellerName },
+        { txCode, listingTitle },
+      ),
+    )
+  }
+
+  if (notifications.length > 0) {
+    await Promise.allSettled(notifications)
+  }
+}
+
+async function notifyMarketplacePayoutReleased(params: {
+  transactionId: string
+  amount: number
+  currency: string
+  seller: { email?: string | null; phone?: string | null; displayName?: string | null }
+}): Promise<void> {
+  const txCode = buildTxCode(params.transactionId)
+  const txUrl = buildMarketplaceTransactionUrl(params.transactionId)
+  const sellerName = params.seller.displayName?.trim() || 'Vendedor'
+  const notifications: Array<Promise<unknown>> = []
+
+  if (params.seller.email?.trim()) {
+    notifications.push(
+      sendMarketplaceEmail(
+        'payout_released',
+        { email: params.seller.email, name: sellerName },
+        {
+          sellerName,
+          amount: params.amount,
+          currency: params.currency,
+          txCode,
+          txUrl,
+        },
+      ),
+    )
+  }
+
+  if (params.seller.phone?.trim()) {
+    notifications.push(
+      sendMarketplaceWhatsapp(
+        'mp_payout_released',
+        { phone: params.seller.phone, name: sellerName },
+        {
+          txCode,
+          amount: params.amount,
+          currency: params.currency,
+        },
+      ),
+    )
+  }
+
+  if (notifications.length > 0) {
+    await Promise.allSettled(notifications)
+  }
 }
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -706,7 +825,16 @@ export async function adminValidatePayment(
     try {
       const tx = await db.mpTransaction.findUnique({
         where: { id: txId },
-        select: { id: true, buyerId: true, sellerId: true, listingId: true, status: true },
+        select: {
+          id: true,
+          buyerId: true,
+          sellerId: true,
+          listingId: true,
+          status: true,
+          listing: { select: { title: true } },
+          buyer: { select: { email: true, phone: true, displayName: true } },
+          seller: { select: { email: true, phone: true, displayName: true } },
+        },
       })
       if (!tx) return { success: false, message: 'Transacción no encontrada' }
       if (!['PAYMENT_RECEIVED', 'VALIDATING'].includes(tx.status)) {
@@ -770,6 +898,20 @@ export async function adminValidatePayment(
           receiverId: tx.sellerId,
           content: '🔒 ESCROW — Pago validado por admin. Fondos retenidos en escrow hasta que el comprador confirme recepcion.',
         }).catch(() => {})
+        void notifyMarketplacePaymentApproved({
+          transactionId: tx.id,
+          listingTitle: tx.listing?.title ?? 'Producto Marketplace',
+          buyer: {
+            email: tx.buyer?.email,
+            phone: tx.buyer?.phone,
+            displayName: tx.buyer?.displayName,
+          },
+          seller: {
+            email: tx.seller?.email,
+            phone: tx.seller?.phone,
+            displayName: tx.seller?.displayName,
+          },
+        }).catch(() => {})
       }
 
       return {
@@ -799,11 +941,14 @@ export async function adminReleaseEscrow(txId: string, note: string): Promise<Ac
         where: { id: txId },
         select: {
           id: true,
+          amount: true,
+          currency: true,
           buyerId: true,
           sellerId: true,
           listingId: true,
           status: true,
           buyerConfirmedAt: true,
+          seller: { select: { email: true, phone: true, displayName: true } },
           disputes: { where: { status: { in: ['OPEN', 'UNDER_REVIEW'] } }, select: { id: true } },
         },
       })
@@ -843,6 +988,16 @@ export async function adminReleaseEscrow(txId: string, note: string): Promise<Ac
         senderId: session.userId,
         receiverId: tx.sellerId,
         content: '💰 PAGO LIBERADO — El admin libero el pago a tu cuenta. Revisa tu metodo de pago registrado.',
+      }).catch(() => {})
+      void notifyMarketplacePayoutReleased({
+        transactionId: tx.id,
+        amount: Number(tx.amount),
+        currency: tx.currency,
+        seller: {
+          email: tx.seller?.email,
+          phone: tx.seller?.phone,
+          displayName: tx.seller?.displayName,
+        },
       }).catch(() => {})
 
       return { success: true, data: undefined, message: 'Pago del vendedor liberado' }

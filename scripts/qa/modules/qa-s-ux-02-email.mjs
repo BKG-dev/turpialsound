@@ -15,6 +15,9 @@ export async function run() {
     'purchase_confirmation',
     'new_sale',
     'payment_received',
+    'payment_approved',
+    'seller_delivered',
+    'delivery_confirmed',
     'referral_commission',
     'payout_released',
   ]
@@ -28,13 +31,16 @@ export async function run() {
       'buildPurchaseConfirmationEmail',
       'buildNewSaleEmail',
       'buildPaymentReceivedEmail',
+      'buildPaymentApprovedEmail',
+      'buildSellerDeliveredEmail',
+      'buildDeliveryConfirmedEmail',
       'buildReferralCommissionEmail',
       'buildPayoutReleasedEmail',
     ]
     const exported = Object.keys(templates)
     const missing = requiredFns.filter(f => !exported.includes(f))
     if (missing.length === 0) {
-      pass('templates-exports', `6/6 template functions exported`)
+      pass('templates-exports', `9/9 template functions exported`)
       requiredFns.forEach(f => info(f, 'exported'))
     } else {
       fail('templates-exports', `missing: ${missing.join(', ')}`)
@@ -54,6 +60,7 @@ export async function run() {
       marketplaceUrl: 'https://turpialsound.com/marketplace',
       resetLink: 'https://turpialsound.com/reset-password?token=test',
       commissionAmount: 0.5,
+      recipientRole: 'buyer',
     }
 
     const emails = [
@@ -61,6 +68,10 @@ export async function run() {
       { name: 'purchase_confirmation', html: templates.buildPurchaseConfirmationEmail(testData) },
       { name: 'new_sale', html: templates.buildNewSaleEmail(testData) },
       { name: 'payment_received', html: templates.buildPaymentReceivedEmail(testData) },
+      { name: 'payment_approved_buyer', html: templates.buildPaymentApprovedEmail({ recipientName: testData.buyerName, recipientRole: 'buyer', listingTitle: testData.listingTitle, txCode: testData.txCode, txUrl: testData.txUrl }) },
+      { name: 'payment_approved_seller', html: templates.buildPaymentApprovedEmail({ recipientName: testData.sellerName, recipientRole: 'seller', listingTitle: testData.listingTitle, txCode: testData.txCode, txUrl: testData.txUrl }) },
+      { name: 'seller_delivered', html: templates.buildSellerDeliveredEmail({ buyerName: testData.buyerName, listingTitle: testData.listingTitle, txCode: testData.txCode, txUrl: testData.txUrl }) },
+      { name: 'delivery_confirmed', html: templates.buildDeliveryConfirmedEmail({ sellerName: testData.sellerName, listingTitle: testData.listingTitle, txCode: testData.txCode, txUrl: testData.txUrl }) },
       { name: 'referral_commission', html: templates.buildReferralCommissionEmail(testData) },
       { name: 'payout_released', html: templates.buildPayoutReleasedEmail(testData) },
     ]
@@ -83,7 +94,7 @@ export async function run() {
       }
     }
 
-    if (allValid) pass('all-templates-valid', '6/6 templates generate valid HTML with branding')
+    if (allValid) pass('all-templates-valid', '10/10 templates generate valid HTML with branding')
   } catch (e) {
     fail('templates-import', `cannot import templates.ts: ${e.message}`)
   }

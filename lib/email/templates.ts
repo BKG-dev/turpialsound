@@ -5,6 +5,9 @@ export type MarketplaceEmailEvent =
   | 'purchase_confirmation'
   | 'new_sale'
   | 'payment_received'
+  | 'payment_approved'
+  | 'seller_delivered'
+  | 'delivery_confirmed'
   | 'referral_commission'
   | 'payout_released'
 
@@ -144,6 +147,77 @@ export function buildPaymentReceivedEmail(data: {
     </p>
     <p style="margin:0 0 8px;font-size:12px;color:${MUTED_COLOR};">Referencia: <span style="color:${TEXT_COLOR};">${data.txCode}</span></p>
     <p style="margin:0 0 24px;font-size:12px;color:${MUTED_COLOR};">Monto: <span style="color:#4ade80;font-weight:600;">${data.currency} ${data.amount.toFixed(2)}</span></p>
+    <table cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr><td align="center" style="background:${BRAND_COLOR};border-radius:8px;padding:12px 32px;">
+      <a href="${data.txUrl}" style="color:#081018;text-decoration:none;font-size:14px;font-weight:600;">Ver estado</a>
+    </td></tr></table>`
+  return baseTemplate(body, ctx)
+}
+
+export function buildPaymentApprovedEmail(data: {
+  recipientName: string
+  recipientRole: 'buyer' | 'seller'
+  listingTitle: string
+  txCode: string
+  txUrl: string
+}): string {
+  const ctx = getContext()
+  const message = data.recipientRole === 'buyer'
+    ? 'Tu pago fue aprobado. El vendedor ya puede entregar el producto.'
+    : 'El pago fue aprobado. Ya puedes entregar el producto.'
+  const ctaLabel = data.recipientRole === 'buyer' ? 'Ver mi compra' : 'Ver mi venta'
+  const body = `
+    <h2 style="margin:0 0 12px;font-size:22px;color:#4ade80;">Pago aprobado</h2>
+    <p style="margin:0 0 16px;font-size:14px;color:${MUTED_COLOR};line-height:1.6;">
+      Hola ${data.recipientName}, ${message}
+    </p>
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 24px;border-collapse:collapse;">
+      <tr><td style="padding:8px 0;font-size:12px;color:${MUTED_COLOR};border-bottom:1px solid rgba(255,255,255,0.04);">Producto</td><td style="padding:8px 0;font-size:12px;color:${TEXT_COLOR};border-bottom:1px solid rgba(255,255,255,0.04);text-align:right;">${data.listingTitle}</td></tr>
+      <tr><td style="padding:8px 0;font-size:12px;color:${MUTED_COLOR};">Referencia</td><td style="padding:8px 0;font-size:12px;color:${TEXT_COLOR};text-align:right;">${data.txCode}</td></tr>
+    </table>
+    <table cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr><td align="center" style="background:${BRAND_COLOR};border-radius:8px;padding:12px 32px;">
+      <a href="${data.txUrl}" style="color:#081018;text-decoration:none;font-size:14px;font-weight:600;">${ctaLabel}</a>
+    </td></tr></table>`
+  return baseTemplate(body, ctx)
+}
+
+export function buildSellerDeliveredEmail(data: {
+  buyerName: string
+  listingTitle: string
+  txCode: string
+  txUrl: string
+}): string {
+  const ctx = getContext()
+  const body = `
+    <h2 style="margin:0 0 12px;font-size:22px;color:#ffc107;">Entrega registrada</h2>
+    <p style="margin:0 0 16px;font-size:14px;color:${MUTED_COLOR};line-height:1.6;">
+      Hola ${data.buyerName}, el vendedor marco el producto como entregado. Confirma recepcion o abre disputa si hay un problema.
+    </p>
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 24px;border-collapse:collapse;">
+      <tr><td style="padding:8px 0;font-size:12px;color:${MUTED_COLOR};border-bottom:1px solid rgba(255,255,255,0.04);">Producto</td><td style="padding:8px 0;font-size:12px;color:${TEXT_COLOR};border-bottom:1px solid rgba(255,255,255,0.04);text-align:right;">${data.listingTitle}</td></tr>
+      <tr><td style="padding:8px 0;font-size:12px;color:${MUTED_COLOR};">Referencia</td><td style="padding:8px 0;font-size:12px;color:${TEXT_COLOR};text-align:right;">${data.txCode}</td></tr>
+    </table>
+    <table cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr><td align="center" style="background:${BRAND_COLOR};border-radius:8px;padding:12px 32px;">
+      <a href="${data.txUrl}" style="color:#081018;text-decoration:none;font-size:14px;font-weight:600;">Revisar transaccion</a>
+    </td></tr></table>`
+  return baseTemplate(body, ctx)
+}
+
+export function buildDeliveryConfirmedEmail(data: {
+  sellerName: string
+  listingTitle: string
+  txCode: string
+  txUrl: string
+}): string {
+  const ctx = getContext()
+  const body = `
+    <h2 style="margin:0 0 12px;font-size:22px;color:#00aeef;">Recepcion confirmada</h2>
+    <p style="margin:0 0 16px;font-size:14px;color:${MUTED_COLOR};line-height:1.6;">
+      Hola ${data.sellerName}, el comprador confirmo recepcion. La operacion queda lista para liberacion de fondos.
+    </p>
+    <table cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 24px;border-collapse:collapse;">
+      <tr><td style="padding:8px 0;font-size:12px;color:${MUTED_COLOR};border-bottom:1px solid rgba(255,255,255,0.04);">Producto</td><td style="padding:8px 0;font-size:12px;color:${TEXT_COLOR};border-bottom:1px solid rgba(255,255,255,0.04);text-align:right;">${data.listingTitle}</td></tr>
+      <tr><td style="padding:8px 0;font-size:12px;color:${MUTED_COLOR};">Referencia</td><td style="padding:8px 0;font-size:12px;color:${TEXT_COLOR};text-align:right;">${data.txCode}</td></tr>
+    </table>
     <table cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr><td align="center" style="background:${BRAND_COLOR};border-radius:8px;padding:12px 32px;">
       <a href="${data.txUrl}" style="color:#081018;text-decoration:none;font-size:14px;font-weight:600;">Ver estado</a>
     </td></tr></table>`
