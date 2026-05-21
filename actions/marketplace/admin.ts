@@ -84,6 +84,8 @@ export interface PayoutReportRow {
   binanceRate: string
   netoBs: number
   netoUsdt: number
+  rateSource: string
+  interbankFee: number
 }
 
 export interface EscrowItem {
@@ -235,25 +237,34 @@ async function enrichPayoutRowsWithRates(rows: PayoutReportRow[]): Promise<void>
       })
     }
 
+    function parseRate(str: string): number | null {
+      const n = parseFloat(str)
+      return Number.isFinite(n) && n > 0 ? n : null
+    }
+
     for (const row of rows) {
       const rates = row.fechaValor ? ratesMap.get(row.fechaValor) : null
-      const bcv = rates?.bcvRate ?? null
-      const binance = rates?.binanceRate ?? null
+      let bcv: number | null = rates?.bcvRate ?? null
+      let binance: number | null = rates?.binanceRate ?? null
+
+      const fallback = parseRate(row.exchangeRate)
+      if (bcv == null && fallback != null) bcv = fallback
+      if (binance == null && fallback != null) binance = fallback
 
       row.bcvRate = bcv != null ? String(bcv) : ''
       row.binanceRate = binance != null ? String(binance) : ''
 
-      const isVES = row.paymentCurrency === 'VES'
-      if (isVES) {
-        row.netoBs = Math.round(row.netAmount * 100) / 100
-        row.netoUsdt = binance != null && binance > 0
-          ? Math.round((row.netAmount / binance) * 100) / 100
-          : 0
-      } else {
+      const b = bcv != null && bcv > 0 ? bcv : 0
+      const bi = binance != null && binance > 0 ? binance : 0
+      const isUSDT = row.paymentCurrency === 'USDT'
+
+      if (isUSDT) {
         row.netoUsdt = Math.round(row.netAmount * 100) / 100
-        row.netoBs = bcv != null && bcv > 0
-          ? Math.round((row.netAmount * bcv) * 100) / 100
-          : 0
+        row.netoBs = 0
+      } else {
+        const rate = row.rateSource === 'BINANCE' ? bi : b
+        row.netoBs = rate > 0 ? Math.round(row.netAmount * rate * 100) / 100 : 0
+        row.netoUsdt = 0
       }
     }
   } catch {
@@ -534,6 +545,7 @@ export async function getPayoutReport(): Promise<ActionResult<PayoutReportRow[]>
         const sellerPayoutIsUSDT = payout?.methodType === 'BINANCE_PAY' || payout?.methodType === 'CRYPTO_WALLET' || payout?.currency === 'USDT'
         const paymentCurrency = buyerPaymentIsUSDT && sellerPayoutIsUSDT ? 'USDT' : 'VES'
         const usedFrozenRate = tx.frozenRate ? String(tx.frozenRate) : ''
+        const usedRateSource = tx.frozenRateSource || ''
         const usedFechaValor = tx.frozenRateFechaValor ? new Date(tx.frozenRateFechaValor).toISOString().slice(0, 10) : ''
         
         sellerMap.set(tx.sellerId, {
@@ -569,6 +581,8 @@ export async function getPayoutReport(): Promise<ActionResult<PayoutReportRow[]>
           binanceRate: '',
           netoBs: 0,
           netoUsdt: 0,
+          rateSource: usedRateSource,
+          interbankFee: 0,
         })
       }
     }
@@ -617,8 +631,8 @@ export async function getConsolidatedPayoutReport(): Promise<ActionResult<Payout
             ? new Date(tx.frozenRateFechaValor).toISOString().slice(0, 10)
             : p.createdAt.toISOString().slice(0, 10)
           const frozenRate = tx?.frozenRate ? String(tx.frozenRate) : ''
-          const buyerPaymentIsUSDT = tx?.paymentMethod === 'BINANCE_PAY' || tx?.paymentMethod === 'CRYPTO_WALLET' || tx?.currency === 'USDT'
-          const paymentCurrency = buyerPaymentIsUSDT ? 'USDT' : 'VES'
+          const rateSource = tx?.frozenRateSource || 'BCV'
+          const paymentCurrency = 'VES'
 
           return {
             sellerId: p.sellerId,
@@ -653,6 +667,8 @@ export async function getConsolidatedPayoutReport(): Promise<ActionResult<Payout
             binanceRate: '',
             netoBs: 0,
             netoUsdt: 0,
+            rateSource,
+            interbankFee: 0,
           }
         })
         return { success: true, data: rows, message: 'OK' }

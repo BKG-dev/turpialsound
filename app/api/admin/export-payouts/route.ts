@@ -72,7 +72,7 @@ export async function GET(request: Request) {
       const headers = [
         'Fuente', 'Miembro', 'Metodo de cobro', 'Cuenta/Direccion',
         'Titular', 'Cedula', 'Telefono', 'N° Cuenta', 'Banco', 'Pay ID', 'Email',
-        'Moneda de pago', 'Bruto (USD)', 'Comision plataforma', 'Neto a pagar',
+        'Moneda de pago', 'Bruto (USD)', 'Comision plataforma', 'Comision interbancaria', 'Neto a pagar',
         'Fecha valor', 'Tasa BCV', 'Tasa Binance', 'Neto a pagar (Bs)', 'Neto a pagar (USDT)',
         'Num. TX', 'IDs Transacciones', 'Referencia'
       ]
@@ -91,6 +91,7 @@ export async function GET(request: Request) {
         r.paymentCurrency,
         r.grossAmount.toFixed(2),
         r.feeAmount.toFixed(2),
+        r.interbankFee.toFixed(2),
         r.netAmount.toFixed(2),
         r.fechaValor || '',
         String(r.bcvRate),
