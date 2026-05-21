@@ -2,7 +2,7 @@
 type: methodology-nexus
 project: "Turpial Sound"
 fecha: 2026-05-19
-actualizado: "2026-05-19T23:40:07.963Z"
+actualizado: "2026-05-21T04:45:00.000Z"
 metodologia: "Oreshnik v4.0 + Madre Dinamica + Cierre Automatizado"
 tags:
   - "#central"
@@ -3930,7 +3930,7 @@ Select-String "last_updated|actualizado" docs/obsidian-vault/00_CENTRAL_TURPIAL.
 type: methodology-nexus
 project: "Turpial Sound"
 fecha: 2026-05-19
-actualizado: "2026-05-19T23:40:07.963Z"
+actualizado: "2026-05-21T04:45:00.000Z"
 metodologia: "Oreshnik v4.0 + Madre Dinamica + Cierre Automatizado"
 tags:
   - "#central"

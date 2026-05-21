@@ -2,7 +2,7 @@
 type: session-starter
 project: "Turpial Sound"
 fecha: 2026-05-19
-actualizado: "2026-05-19T23:40:07.963Z"
+actualizado: "2026-05-21T04:45:00.000Z"
 para: "Jean Arteaga y Manuel Vera — proxima sesion Kilo"
 metodologia: "Oreshnik v4.0 + Madre Dinamica + Cierre Automatizado"
 mother_branch: "MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19"
@@ -1970,7 +1970,7 @@ node scripts/oreshnik/preflight.mjs --sprint SXX --operator Jean|Manuel --desc "
 type: session-starter
 project: "Turpial Sound"
 fecha: 2026-05-19
-actualizado: "2026-05-19T23:40:07.963Z"
+actualizado: "2026-05-21T04:45:00.000Z"
 para: "Jean Arteaga y Manuel Vera — proxima sesion Kilo"
 metodologia: "Oreshnik v4.0 + Madre Dinamica + Cierre Automatizado"
 mother_branch: "MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19"

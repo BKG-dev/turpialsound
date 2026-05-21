@@ -2190,6 +2190,45 @@ function TransactionDetailModal({
             className="flex flex-wrap gap-2 rounded-2xl p-3"
             style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
           >
+            {viewAs === 'buyer' && tx.status === 'PENDING_PAYMENT' && (
+              <a
+                href="/marketplace"
+                className="rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:brightness-110"
+                style={{ background: 'rgba(249,115,22,0.12)', color: '#f97316', border: '1px solid rgba(249,115,22,0.25)' }}
+              >
+                Reportar pago
+              </a>
+            )}
+            {viewAs === 'buyer' && tx.status === 'IN_ESCROW' && hasSellerDeliveryAudit(tx) && (
+              <button
+                type="button"
+                onClick={async () => {
+                  const c = window.confirm('Confirma solo si ya recibiste y revisaste el producto o servicio.')
+                  if (!c) return
+                  await confirmDelivery(tx.id)
+                  onClose()
+                }}
+                className="rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:brightness-110"
+                style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}
+              >
+                Confirmar recibido
+              </button>
+            )}
+            {viewAs === 'seller' && tx.status === 'IN_ESCROW' && !hasSellerDeliveryAudit(tx) && (
+              <button
+                type="button"
+                onClick={async () => {
+                  const c = window.confirm('Marca entregado solo cuando ya completaste la entrega.')
+                  if (!c) return
+                  await sellerDeliver(tx.id)
+                  onClose()
+                }}
+                className="rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:brightness-110"
+                style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}
+              >
+                Marcar entregado
+              </button>
+            )}
             {tx.listing?.slug && (
               <Link
                 href={`/marketplace/${tx.listing.slug}`}
@@ -2318,8 +2357,8 @@ function ActionCenterSection({
   busyKey: string | null
 }) {
   const [collapsedGroups, setCollapsedGroups] = useState<Record<ActionPriority, boolean>>({
-    required: false,
-    review: false,
+    required: true,
+    review: true,
     pending: true,
     closed: true,
   })
@@ -2478,8 +2517,10 @@ function ActionCenterSection({
                         className="flex flex-col gap-3 px-4 py-3 transition-colors hover:bg-[rgba(255,255,255,0.01)] sm:flex-row sm:items-center"
                       >
                         <div className="flex min-w-0 flex-1 items-start gap-3">
-                          <span
-                            className="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
+                          <button
+                            type="button"
+                            onClick={() => onAction(item)}
+                            className="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-semibold transition-all hover:brightness-110 active:scale-95 cursor-pointer"
                             style={{
                               background: CHIP_BG[item.priority],
                               border: `1px solid ${CHIP_BORDER[item.priority]}`,
@@ -2491,7 +2532,7 @@ function ActionCenterSection({
                             {item.priority === 'pending' && <Shield size={9} />}
                             {item.priority === 'closed' && <CheckCircle2 size={9} />}
                             {item.chipLabel}
-                          </span>
+                          </button>
 
                           <div className="min-w-0">
                             <p className="text-[11px] leading-snug [overflow-wrap:anywhere]" style={{ color: 'var(--mp-text-muted)' }}>{item.description}</p>

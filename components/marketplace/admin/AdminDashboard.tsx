@@ -596,14 +596,11 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
     const currentView = viewConfig[(tab === 'transactions' || tab === 'escrow' || tab === 'validations') ? tab : 'transactions']
     const filters: { value: EscrowFilter; label: string }[] = [
       { value: 'operations', label: 'Requieren accion' },
-      { value: 'all', label: 'Todas' },
       { value: 'PAYMENT_RECEIVED', label: 'Pago recibido' },
-      { value: 'VALIDATING', label: 'En revision' },
       { value: 'IN_ESCROW', label: 'En proceso' },
       { value: 'expiring', label: 'Por vencer' },
       { value: 'DISPUTED', label: 'En disputa' },
-      { value: 'DELIVERY_CONFIRMED', label: 'Recepcion conf.' },
-      { value: 'RELEASED', label: 'Pago al vendedor pendiente' },
+      { value: 'RELEASED', label: 'Pagos pendientes' },
     ]
 
     const availableSenderBanks = Array.from(
@@ -733,17 +730,8 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
           </button>
         </div>
 
-        {/* Action confirmation panel */}
-        {pendingAction && (
-          <ActionPanel
-            action={pendingAction}
-            onNote={note => setPendingAction(prev => prev ? { ...prev, note } : null)}
-            onConfirm={confirmAction}
-            onCancel={() => { setPendingAction(null); setActionMsg('') }}
-          />
-        )}
-
-        {actionMsg && (
+        {/* Action confirmation — inline per transaction */}
+        {actionMsg && !pendingAction && (
           <p className="text-xs mb-3 px-3 py-2 rounded-lg"
             style={
               actionMsgTone === 'success'
@@ -846,6 +834,28 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                   {tx.adminNotes && (
                     <p className="text-[11px] mb-2 italic" style={{ color: 'rgba(255,255,255,0.3)' }}>
                       Nota: {tx.adminNotes}
+                    </p>
+                  )}
+
+                  {pendingAction && pendingAction.txId === tx.id && (
+                    <ActionPanel
+                      action={pendingAction}
+                      onNote={note => setPendingAction(prev => prev ? { ...prev, note } : null)}
+                      onConfirm={confirmAction}
+                      onCancel={() => { setPendingAction(null); setActionMsg('') }}
+                    />
+                  )}
+
+                  {actionMsg && pendingAction && pendingAction.txId === tx.id && (
+                    <p className="text-xs mb-3 px-3 py-2 rounded-lg"
+                      style={
+                        actionMsgTone === 'success'
+                          ? { background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }
+                          : actionMsgTone === 'error'
+                            ? { background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)' }
+                            : { background: 'rgba(0,174,239,0.08)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.15)' }
+                      }>
+                      {actionMsg}
                     </p>
                   )}
 

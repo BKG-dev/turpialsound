@@ -3,7 +3,7 @@ type: master-plan
 project: "Turpial Sound"
 status: active-integration
 version: "2.0"
-last_updated: "2026-05-20T17:21:00.000Z"
+last_updated: "2026-05-21T04:45:00.000Z"
 methodology: "Oreshnik v4.0 + Madre Dinamica"
 mother_branch: "MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19"
 tags:
@@ -773,7 +773,7 @@ type: master-plan
 project: "Turpial Sound"
 status: active-integration
 version: "2.0"
-last_updated: "2026-05-20T17:21:00.000Z"
+last_updated: "2026-05-21T04:45:00.000Z"
 methodology: "Oreshnik v4.0 + Madre Dinamica"
 mother_branch: "MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19"
 tags:
@@ -2949,7 +2949,7 @@ type: master-plan
 project: "Turpial Sound"
 status: active-integration
 version: "2.0"
-last_updated: "2026-05-20T17:21:00.000Z"
+last_updated: "2026-05-21T04:45:00.000Z"
 methodology: "Oreshnik v4.0 + Madre Dinamica"
 mother_branch: "MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19"
 tags:
@@ -6528,7 +6528,7 @@ type: master-plan
 project: "Turpial Sound"
 status: active-integration
 version: "2.0"
-last_updated: "2026-05-20T17:21:00.000Z"
+last_updated: "2026-05-21T04:45:00.000Z"
 methodology: "Oreshnik v4.0 + Madre Dinamica"
 mother_branch: "MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19"
 tags:
@@ -11510,7 +11510,7 @@ type: master-plan
 project: "Turpial Sound"
 status: active-integration
 version: "2.0"
-last_updated: "2026-05-20T17:21:00.000Z"
+last_updated: "2026-05-21T04:45:00.000Z"
 methodology: "Oreshnik v4.0 + Madre Dinamica"
 mother_branch: "MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19"
 tags:
@@ -17895,7 +17895,7 @@ type: master-plan
 project: "Turpial Sound"
 status: active-integration
 version: "2.0"
-last_updated: "2026-05-20T17:21:00.000Z"
+last_updated: "2026-05-21T04:45:00.000Z"
 methodology: "Oreshnik v4.0 + Madre Dinamica"
 mother_branch: "MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19"
 tags:
@@ -25683,7 +25683,7 @@ type: master-plan
 project: "Turpial Sound"
 status: active-integration
 version: "2.0"
-last_updated: "2026-05-20T17:21:00.000Z"
+last_updated: "2026-05-21T04:45:00.000Z"
 methodology: "Oreshnik v4.0 + Madre Dinamica"
 mother_branch: "MADRE/v8-s-mp-08-csv-tasas-neto-drop-social-2026-05-19"
 tags:
