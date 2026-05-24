@@ -436,16 +436,29 @@ function deriveActionItems(
         accent: ACTION_ACCENT.pending,
       })
     } else if (tx.status === 'RELEASED') {
-      items.push({
-        ...base,
-        key: `buyer-released-${tx.id}`,
-        priority: 'pending',
-        chipLabel: 'Pago pendiente',
-        description: 'Pago al vendedor pendiente. El equipo lo procesara en breve.',
-        ctaLabel: 'Ver operacion',
-        ctaType: 'view-detail',
-        accent: ACTION_ACCENT.pending,
-      })
+      if (hasSellerPaidAudit(tx)) {
+        items.push({
+          ...base,
+          key: `buyer-payout-sent-${tx.id}`,
+          priority: 'closed',
+          chipLabel: 'Completado',
+          description: 'Pago enviado al vendedor. No hay acciones pendientes para esta operacion.',
+          ctaLabel: 'Ver operacion',
+          ctaType: 'view-detail',
+          accent: ACTION_ACCENT.closed,
+        })
+      } else {
+        items.push({
+          ...base,
+          key: `buyer-released-${tx.id}`,
+          priority: 'pending',
+          chipLabel: 'Pago pendiente',
+          description: 'Pago al vendedor pendiente. El equipo lo procesara en breve.',
+          ctaLabel: 'Ver operacion',
+          ctaType: 'view-detail',
+          accent: ACTION_ACCENT.pending,
+        })
+      }
     } else if (tx.status === 'DISPUTED') {
       items.push({
         ...base,
@@ -510,18 +523,31 @@ function deriveActionItems(
         accent: ACTION_ACCENT.pending,
       })
     } else if (tx.status === 'RELEASED') {
-      items.push({
-        ...base,
-        key: hasUsablePayoutMethod ? `seller-released-${tx.id}` : `seller-payout-missing-${tx.id}`,
-        priority: hasUsablePayoutMethod ? 'pending' : 'required',
-        chipLabel: hasUsablePayoutMethod ? 'Pago pendiente' : 'Accion requerida',
-        description: hasUsablePayoutMethod
-          ? 'Pago al vendedor pendiente. El equipo lo procesara con tus datos de cobro.'
-          : 'Configura un metodo de cobro para que el equipo pueda pagarte.',
-        ctaLabel: hasUsablePayoutMethod ? 'Ver operacion' : 'Configurar metodo de cobro',
-        ctaType: hasUsablePayoutMethod ? 'view-detail' : 'payout-setup',
-        accent: hasUsablePayoutMethod ? ACTION_ACCENT.pending : ACTION_ACCENT.required,
-      })
+      if (hasSellerPaidAudit(tx)) {
+        items.push({
+          ...base,
+          key: `seller-payout-sent-${tx.id}`,
+          priority: 'closed',
+          chipLabel: 'Pago enviado',
+          description: 'El equipo ya registro el envio del pago al vendedor.',
+          ctaLabel: 'Ver operacion',
+          ctaType: 'view-detail',
+          accent: ACTION_ACCENT.closed,
+        })
+      } else {
+        items.push({
+          ...base,
+          key: hasUsablePayoutMethod ? `seller-released-${tx.id}` : `seller-payout-missing-${tx.id}`,
+          priority: hasUsablePayoutMethod ? 'pending' : 'required',
+          chipLabel: hasUsablePayoutMethod ? 'Pago pendiente' : 'Accion requerida',
+          description: hasUsablePayoutMethod
+            ? 'Pago al vendedor pendiente. El equipo lo procesara con tus datos de cobro.'
+            : 'Configura un metodo de cobro para que el equipo pueda pagarte.',
+          ctaLabel: hasUsablePayoutMethod ? 'Ver operacion' : 'Configurar metodo de cobro',
+          ctaType: hasUsablePayoutMethod ? 'view-detail' : 'payout-setup',
+          accent: hasUsablePayoutMethod ? ACTION_ACCENT.pending : ACTION_ACCENT.required,
+        })
+      }
     } else if (tx.status === 'DISPUTED') {
       items.push({
         ...base,
@@ -548,8 +574,8 @@ function getSemaphoreState(currentStatus: string, milestoneStatus: string): 'com
   return getMarketplaceTimelineState(currentStatus, milestoneStatus)
 }
 
-function hasSellerPaidAudit(tx: DashTransactionDetail) {
-  return hasSellerPayoutSentAuditFromMapper(tx)
+function hasSellerPaidAudit(tx: Pick<DashTransaction, 'status' | 'statusHistory' | 'hasSellerPayoutSent'>) {
+  return tx.status === 'RELEASED' && hasSellerPayoutSentAuditFromMapper(tx)
 }
 
 // ─── Section Header ───────────────────────────────────────────────────────────
@@ -2630,12 +2656,14 @@ export function DashboardClient({
   const pendingValidationSales = sales.filter(tx => ['PAYMENT_RECEIVED', 'VALIDATING'].includes(tx.status))
   const escrowSales = sales.filter(tx => ['IN_ESCROW', 'DELIVERY_CONFIRMED'].includes(tx.status))
   const releasedSales = sales.filter(tx => tx.status === 'RELEASED')
+  const payoutSentSales = releasedSales.filter(tx => hasSellerPaidAudit(tx))
+  const releasedPendingPayoutSales = releasedSales.filter(tx => !hasSellerPaidAudit(tx))
   const hasUsablePayoutMethod = payoutMethods.length > 0
   const actionItems = deriveActionItems(purchases, sales, hasUsablePayoutMethod)
   const defaultPayoutMethod = payoutMethods.find(method => method.isDefault) ?? payoutMethods[0] ?? null
   const sellerPayoutMethod = mapSellerPayoutMethod(defaultPayoutMethod)
-  const payoutReadySales = hasUsablePayoutMethod ? releasedSales : []
-  const releasedWithoutPayoutMethodSales = hasUsablePayoutMethod ? [] : releasedSales
+  const payoutReadySales = hasUsablePayoutMethod ? releasedPendingPayoutSales : []
+  const releasedWithoutPayoutMethodSales = hasUsablePayoutMethod ? [] : releasedPendingPayoutSales
   const payoutRelevantSales = sales.filter(tx => ['IN_ESCROW', 'DELIVERY_CONFIRMED', 'RELEASED'].includes(tx.status))
   const payoutFor = (tx: DashTransaction) => getTxPayoutCalculation(tx, sellerPayoutMethod)
   const payoutNetTotal = (rows: DashTransaction[]) => roundMoney(rows.reduce((sum, tx) => sum + payoutFor(tx).netUSD, 0))
@@ -2650,6 +2678,7 @@ export function DashboardClient({
   const pendingValidationNet = payoutNetTotal(pendingValidationSales)
   const protectedInProcessNet = payoutNetTotal(escrowSales)
   const payoutReadyNet = payoutNetTotal(payoutReadySales)
+  const payoutSentNet = payoutNetTotal(payoutSentSales)
   const releasedWithoutPayoutMethodNet = payoutNetTotal(releasedWithoutPayoutMethodSales)
   const sellerCanAddPayoutProfile = Boolean(profile?.isSeller && payoutMethods.length === 0)
   const sellerNeedsPayoutProfile = sellerCanAddPayoutProfile && payoutRelevantSales.length > 0
@@ -3300,11 +3329,12 @@ export function DashboardClient({
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
                     {[
                       { label: 'En revision', value: pendingValidationSales.length, amount: fmtUSD(pendingValidationNet), helper: 'pagos reportados', color: '#f59e0b' },
                       { label: 'En proceso', value: escrowSales.length, amount: fmtUSD(protectedInProcessNet), helper: 'aprobadas, no cobrables', color: '#00aeef' },
                       { label: 'Pago pendiente', value: payoutReadySales.length, amount: fmtUSD(payoutReadyNet), helper: 'liberado con metodo', color: '#4ade80' },
+                      { label: 'Pago enviado', value: payoutSentSales.length, amount: fmtUSD(payoutSentNet), helper: 'cierre completo', color: '#22c55e' },
                       { label: 'Sin metodo', value: releasedWithoutPayoutMethodSales.length, amount: fmtUSD(releasedWithoutPayoutMethodNet), helper: 'liberado no cobrable', color: '#f97316' },
                     ].map(item => (
                       <div
@@ -3324,20 +3354,21 @@ export function DashboardClient({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
                 <KpiCard icon={Clock} label="Monto en revision" value={fmtUSD(pendingValidationNet)} sub={`${pendingValidationSales.length} pago${pendingValidationSales.length !== 1 ? 's' : ''} por revisar`} accent="#f59e0b" tone="primary" />
                 <KpiCard icon={Shield} label="Monto en proceso" value={fmtUSD(protectedInProcessNet)} sub={`${escrowSales.length} venta${escrowSales.length !== 1 ? 's' : ''} no cobrable${escrowSales.length !== 1 ? 's' : ''}`} accent="#00aeef" tone="primary" />
                 <KpiCard icon={Landmark} label="Pago pendiente" value={fmtUSD(payoutReadyNet)} sub={`${payoutReadySales.length} venta${payoutReadySales.length !== 1 ? 's' : ''} liberada${payoutReadySales.length !== 1 ? 's' : ''} con metodo`} accent="#4ade80" tone="primary" />
+                <KpiCard icon={CheckCircle2} label="Pago enviado" value={fmtUSD(payoutSentNet)} sub={`${payoutSentSales.length} venta${payoutSentSales.length !== 1 ? 's' : ''} completada${payoutSentSales.length !== 1 ? 's' : ''}`} accent="#22c55e" tone="primary" />
                 <KpiCard icon={AlertTriangle} label="Sin metodo configurado" value={fmtUSD(releasedWithoutPayoutMethodNet)} sub={`${releasedWithoutPayoutMethodSales.length} venta${releasedWithoutPayoutMethodSales.length !== 1 ? 's' : ''} liberada${releasedWithoutPayoutMethodSales.length !== 1 ? 's' : ''} bloqueada${releasedWithoutPayoutMethodSales.length !== 1 ? 's' : ''}`} accent="#f97316" tone="primary" />
               </div>
 
-              {payoutReadySales.length === 0 && (
+              {payoutReadySales.length === 0 && releasedWithoutPayoutMethodSales.length === 0 && (
                 <div
                   className="rounded-2xl p-4 text-sm leading-relaxed"
                   style={{ background: 'rgba(0,174,239,0.06)', border: '1px solid rgba(0,174,239,0.16)', color: 'var(--mp-text-muted)' }}
                 >
                   <p className="font-semibold" style={{ color: 'var(--mp-text-strong)' }}>No tienes fondos disponibles para cobrar todavia.</p>
-                  <p className="mt-1">Tus ventas apareceran aqui cuando esten liberadas y tengas metodo de cobro configurado. RELEASED significa pago al vendedor pendiente, no cierre completo.</p>
+                  <p className="mt-1">Tus ventas apareceran aqui cuando esten liberadas y tengas metodo de cobro configurado. RELEASED indica fondos liberados; el cierre completo ocurre cuando el admin registra pago enviado.</p>
                 </div>
               )}
 
@@ -3567,6 +3598,10 @@ export function DashboardClient({
                       <div className="flex items-center justify-between text-[#a0a0a0]">
                         <span>Pago pendiente al vendedor</span>
                         <span style={{ color: 'var(--mp-text-strong)' }}>{payoutReadySales.length}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[#a0a0a0]">
+                        <span>Pago enviado</span>
+                        <span style={{ color: 'var(--mp-text-strong)' }}>{payoutSentSales.length}</span>
                       </div>
                       <div className="flex items-center justify-between text-[#a0a0a0]">
                         <span>Sin metodo configurado</span>
