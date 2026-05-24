@@ -1620,8 +1620,23 @@ export async function getTransaction(transactionId: string): Promise<ActionResul
     const isAdmin = session.role === 'SUPER'
     if (!isParticipant && !isAdmin) return { success: false, message: 'Sin permiso' }
 
+    const completedPayout = await db.mpPayout.findFirst({
+      where: {
+        status: 'COMPLETED',
+        transactionIds: { has: transactionId },
+      },
+      select: { id: true },
+    })
+
     await db.$disconnect()
-    return { success: true, data: tx, message: 'OK' }
+    return {
+      success: true,
+      data: {
+        ...tx,
+        hasSellerPayoutSent: Boolean(completedPayout),
+      },
+      message: 'OK',
+    }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
@@ -1674,8 +1689,31 @@ export async function getMyTransactions(
       orderBy: { createdAt: 'desc' },
     })
 
+    const txIds = txs.map((tx: { id: string }) => tx.id)
+    const completedPayouts = txIds.length
+      ? await db.mpPayout.findMany({
+        where: {
+          status: 'COMPLETED',
+          transactionIds: { hasSome: txIds },
+        },
+        select: { transactionIds: true },
+      })
+      : []
+
+    const txIdSet = new Set(txIds)
+    const payoutSentTxIds = new Set(
+      completedPayouts
+        .flatMap((payout: { transactionIds: string[] }) => payout.transactionIds)
+        .filter((id: string): id is string => txIdSet.has(id)),
+    )
+
+    const txsWithPayoutFlag = txs.map((tx: { id: string }) => ({
+      ...tx,
+      hasSellerPayoutSent: payoutSentTxIds.has(tx.id),
+    }))
+
     await db.$disconnect()
-    return { success: true, data: txs, message: 'OK' }
+    return { success: true, data: txsWithPayoutFlag, message: 'OK' }
   } catch (err) {
     await db.$disconnect().catch(() => {})
     return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }

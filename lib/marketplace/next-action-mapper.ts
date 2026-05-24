@@ -8,6 +8,7 @@ export interface MarketplaceStatusHistoryEntry {
 export interface MarketplaceTxLike {
   status: string
   statusHistory?: MarketplaceStatusHistoryEntry[] | null
+  hasSellerPayoutSent?: boolean | null
 }
 
 export type MarketplacePrimaryAction =
@@ -126,10 +127,18 @@ export function hasSellerDeliveryAudit(tx: Pick<MarketplaceTxLike, 'statusHistor
   ) ?? false
 }
 
-export function hasSellerPayoutSentAudit(tx: Pick<MarketplaceTxLike, 'statusHistory'>) {
-  return tx.statusHistory?.some(entry =>
-    (entry.reason ?? '').toLowerCase().includes('pago al vendedor registrado'),
-  ) ?? false
+export function hasSellerPayoutSentAudit(tx: Pick<MarketplaceTxLike, 'statusHistory' | 'hasSellerPayoutSent'>) {
+  if (tx.hasSellerPayoutSent) return true
+
+  return tx.statusHistory?.some((entry) => {
+    const reason = (entry.reason ?? '').toLowerCase()
+    return (
+      reason.includes('pago al vendedor registrado') ||
+      reason.includes('pago enviado al vendedor') ||
+      reason.includes('payout_sent') ||
+      reason.includes('payout sent')
+    )
+  }) ?? false
 }
 
 export function getBuyerCtaLabel(status: string) {
