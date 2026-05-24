@@ -28,6 +28,7 @@ export const MARKETPLACE_TIMELINE_MILESTONES = [
   { status: 'IN_ESCROW', label: 'Fondos en custodia' },
   { status: 'DELIVERY_CONFIRMED', label: 'Entrega confirmada' },
   { status: 'RELEASED', label: 'Pago liberado' },
+  { status: 'PAYOUT_SENT', label: 'Pago enviado' },
 ] as const
 
 export const MARKETPLACE_TERMINAL_STATUSES = ['CANCELLED', 'PAYMENT_FAILED', 'REFUNDED'] as const
@@ -55,8 +56,8 @@ function getOperationalStatusCopy(status: string, viewAs: MarketplaceViewAs) {
       seller: 'El comprador confirmo recepcion. El pago al vendedor queda pendiente de liberacion admin.',
     },
     RELEASED: {
-      buyer: 'La operacion esta completa. El vendedor recibira su pago.',
-      seller: 'El pago esta siendo procesado por el equipo. Asegurate de tener tus datos de cobro actualizados.',
+      buyer: 'Los fondos ya fueron liberados. El equipo gestiona el envio del pago al vendedor.',
+      seller: 'Fondos liberados. El equipo debe registrar el envio del pago a tu metodo de cobro.',
     },
     DISPUTED: {
       buyer: 'La operacion esta en revision. No se liberaran fondos hasta resolverla.',
@@ -103,7 +104,7 @@ function getOperationalNextStep(status: string, viewAs: MarketplaceViewAs) {
     },
     RELEASED: {
       buyer: 'El pago al vendedor esta siendo gestionado. No necesitas hacer nada adicional.',
-      seller: 'El pago esta en cola para ser enviado. Si tu metodo de cobro esta actualizado, no necesitas hacer nada mas.',
+      seller: 'Espera la confirmacion de pago enviado por el equipo. Verifica que tu metodo de cobro este actualizado.',
     },
     DISPUTED: {
       buyer: 'Espera la resolucion del equipo y conserva el contexto de la entrega.',
@@ -125,12 +126,18 @@ export function hasSellerDeliveryAudit(tx: Pick<MarketplaceTxLike, 'statusHistor
   ) ?? false
 }
 
+export function hasSellerPayoutSentAudit(tx: Pick<MarketplaceTxLike, 'statusHistory'>) {
+  return tx.statusHistory?.some(entry =>
+    (entry.reason ?? '').toLowerCase().includes('pago al vendedor registrado'),
+  ) ?? false
+}
+
 export function getBuyerCtaLabel(status: string) {
   if (status === 'PENDING_PAYMENT') return 'Reportar pago'
   if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado / esperando validacion'
   if (status === 'IN_ESCROW') return 'Pago validado / esperando entrega'
   if (status === 'DELIVERY_CONFIRMED') return 'Recepcion confirmada / esperando liberacion admin'
-  if (status === 'RELEASED') return 'Pago al vendedor pendiente'
+  if (status === 'RELEASED') return 'Fondos liberados'
   if (status === 'DISPUTED') return 'En disputa / esperando resolucion'
   return 'Ver detalle'
 }
@@ -145,10 +152,11 @@ export function getStatusLabelForView(
     if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado'
     if (status === 'IN_ESCROW') return 'Pago validado'
     if (status === 'DELIVERY_CONFIRMED') return 'Recepcion confirmada'
-    if (status === 'RELEASED') return 'Pago al vendedor pendiente'
+    if (status === 'RELEASED') return 'Fondos liberados'
     if (status === 'DISPUTED') return 'En disputa'
   }
 
+  if (viewAs === 'seller' && status === 'RELEASED') return 'Fondos liberados'
   return fallbackLabel ?? status
 }
 
@@ -279,19 +287,33 @@ export function deriveMarketplaceOperationCardState(
   options?: { hasUsablePayoutMethod?: boolean; fallbackLabel?: string },
 ) {
   const derived = deriveMarketplaceNextActionState(tx, viewAs, options?.fallbackLabel)
+  const payoutSent = tx.status === 'RELEASED' && hasSellerPayoutSentAudit(tx)
   const hasUsablePayoutMethod = options?.hasUsablePayoutMethod ?? true
-  const primaryAction = buildPrimaryAction(tx, viewAs, derived.deliveredBySeller, hasUsablePayoutMethod)
+  const primaryAction = payoutSent
+    ? 'none'
+    : buildPrimaryAction(tx, viewAs, derived.deliveredBySeller, hasUsablePayoutMethod)
+  const resolvedTitle = payoutSent
+    ? (viewAs === 'seller' ? 'Pago enviado' : 'Operacion completada')
+    : buildCardTitle(viewAs, tx.status, primaryAction)
+  const resolvedHumanStatus = payoutSent ? 'Pago enviado al vendedor' : derived.statusLabel
+  const resolvedStatusCopy = payoutSent
+    ? 'El equipo ya registro el envio del pago al vendedor. La operacion queda cerrada a nivel operativo.'
+    : derived.statusCopy
+  const resolvedNextStep = payoutSent
+    ? 'No hay acciones pendientes para esta operacion.'
+    : derived.nextStep
 
   return {
-    title: buildCardTitle(viewAs, tx.status, primaryAction),
-    humanStatus: derived.statusLabel,
-    statusCopy: derived.statusCopy,
-    nextStep: derived.nextStep,
+    title: resolvedTitle,
+    humanStatus: resolvedHumanStatus,
+    statusCopy: resolvedStatusCopy,
+    nextStep: resolvedNextStep,
     deliveredBySeller: derived.deliveredBySeller,
     primaryAction,
     secondaryActions: buildSecondaryActions(tx, viewAs, primaryAction),
     canOpenDispute: viewAs === 'buyer' && tx.status === 'IN_ESCROW',
-    timelineCurrentStatus: normalizeTimelineStatus(tx.status),
+    payoutSent,
+    timelineCurrentStatus: payoutSent ? 'PAYOUT_SENT' : normalizeTimelineStatus(tx.status),
   }
 }
 

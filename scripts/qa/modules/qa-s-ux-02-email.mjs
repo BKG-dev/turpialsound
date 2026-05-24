@@ -20,6 +20,7 @@ export async function run() {
     'delivery_confirmed',
     'referral_commission',
     'payout_released',
+    'payout_sent',
   ]
 
   // ─── 1. Verify email templates module exports all 6 events ───
@@ -36,11 +37,12 @@ export async function run() {
       'buildDeliveryConfirmedEmail',
       'buildReferralCommissionEmail',
       'buildPayoutReleasedEmail',
+      'buildPayoutSentEmail',
     ]
     const exported = Object.keys(templates)
     const missing = requiredFns.filter(f => !exported.includes(f))
     if (missing.length === 0) {
-      pass('templates-exports', `9/9 template functions exported`)
+      pass('templates-exports', `10/10 template functions exported`)
       requiredFns.forEach(f => info(f, 'exported'))
     } else {
       fail('templates-exports', `missing: ${missing.join(', ')}`)
@@ -74,6 +76,7 @@ export async function run() {
       { name: 'delivery_confirmed', html: templates.buildDeliveryConfirmedEmail({ sellerName: testData.sellerName, listingTitle: testData.listingTitle, txCode: testData.txCode, txUrl: testData.txUrl }) },
       { name: 'referral_commission', html: templates.buildReferralCommissionEmail(testData) },
       { name: 'payout_released', html: templates.buildPayoutReleasedEmail(testData) },
+      { name: 'payout_sent', html: templates.buildPayoutSentEmail(testData) },
     ]
 
     let allValid = true
@@ -94,7 +97,7 @@ export async function run() {
       }
     }
 
-    if (allValid) pass('all-templates-valid', '10/10 templates generate valid HTML with branding')
+    if (allValid) pass('all-templates-valid', '11/11 templates generate valid HTML with branding')
   } catch (e) {
     fail('templates-import', `cannot import templates.ts: ${e.message}`)
   }

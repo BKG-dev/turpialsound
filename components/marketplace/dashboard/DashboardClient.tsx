@@ -68,6 +68,7 @@ import {
   getBuyerCtaLabel as getBuyerCtaLabelFromMapper,
   getMarketplaceTimelineState,
   hasSellerDeliveryAudit as hasSellerDeliveryAuditFromMapper,
+  hasSellerPayoutSentAudit as hasSellerPayoutSentAuditFromMapper,
 } from '@/lib/marketplace/next-action-mapper'
 
 // ─── Local Types ──────────────────────────────────────────────────────────────
@@ -182,7 +183,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   VALIDATING:          { label: 'Validando',         color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', glow: 'rgba(167,139,250,0.25)' },
   IN_ESCROW:           { label: 'Esperando conformidad', color: '#00aeef', bg: 'rgba(0,174,239,0.1)',   glow: 'rgba(0,174,239,0.25)'   },
   DELIVERY_CONFIRMED:  { label: 'Recepcion confirmada', color: '#34d399', bg: 'rgba(52,211,153,0.1)',  glow: 'rgba(52,211,153,0.25)'  },
-  RELEASED:            { label: 'Pago al vendedor pendiente', color: '#4ade80', bg: 'rgba(74,222,128,0.1)',  glow: 'rgba(74,222,128,0.25)'  },
+  RELEASED:            { label: 'Fondos liberados', color: '#4ade80', bg: 'rgba(74,222,128,0.1)',  glow: 'rgba(74,222,128,0.25)'  },
   PAYMENT_FAILED:      { label: 'Pago Fallido',      color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   glow: 'rgba(239,68,68,0.25)'   },
   DISPUTED:            { label: 'En Disputa',        color: '#f97316', bg: 'rgba(249,115,22,0.1)',  glow: 'rgba(249,115,22,0.25)'  },
   REFUNDED:            { label: 'Reembolsado',       color: '#c084fc', bg: 'rgba(192,132,252,0.1)', glow: 'rgba(192,132,252,0.25)' },
@@ -546,9 +547,7 @@ function getSemaphoreState(currentStatus: string, milestoneStatus: string): 'com
 }
 
 function hasSellerPaidAudit(tx: DashTransactionDetail) {
-  return tx.statusHistory?.some(entry =>
-    entry.reason?.toLowerCase().includes('pago al vendedor registrado'),
-  ) ?? false
+  return hasSellerPayoutSentAuditFromMapper(tx)
 }
 
 // ─── Section Header ───────────────────────────────────────────────────────────
@@ -1982,7 +1981,7 @@ function TransactionDetailModal({
             <SectionHeader title="Semaforo de Estados" />
             <div className="space-y-0">
               {SEMAFORO_MILESTONES.map((milestone, idx) => {
-                const state = TERMINAL_STATUSES.includes(tx.status)
+                let state: 'completed' | 'current' | 'pending' = TERMINAL_STATUSES.includes(tx.status)
                   ? getSemaphoreState(
                       tx.status === 'CANCELLED' ? 'PENDING_PAYMENT' :
                         tx.status === 'PAYMENT_FAILED' ? 'PENDING_PAYMENT' :
@@ -1992,6 +1991,10 @@ function TransactionDetailModal({
                   : tx.status === 'DISPUTED'
                     ? getSemaphoreState('IN_ESCROW', milestone.status)
                     : getSemaphoreState(tx.status, milestone.status)
+
+                if (tx.status === 'RELEASED' && sellerPaid && (milestone.status === 'RELEASED' || milestone.status === 'PAYOUT_SENT')) {
+                  state = 'completed'
+                }
 
                 const dotColor =
                   state === 'completed' ? '#4ade80' :

@@ -12,6 +12,7 @@ export type MarketplaceWhatsappEvent =
   | 'mp_delivery_confirmed'
   | 'mp_dispute_opened'
   | 'mp_payout_released'
+  | 'mp_payout_sent'
   | 'mp_referral_commission'
 
 interface MarketplaceCustomer {
@@ -101,6 +102,14 @@ function formatMarketplaceMessage(
         ctx.txCode ? `Referencia: ${ctx.txCode}.` : '',
         ctx.amount ? `Monto neto: ${currency} ${ctx.amount.toFixed(2)}.` : '',
         `Revisa tu panel de cobros: ${baseUrl}/marketplace/dashboard?tab=payouts`,
+      ].filter(Boolean).join('\n')
+
+    case 'mp_payout_sent':
+      return [
+        `Hola ${customer.name}, tu pago fue enviado por el equipo.`,
+        ctx.txCode ? `Referencia: ${ctx.txCode}.` : '',
+        ctx.amount ? `Monto enviado: ${currency} ${ctx.amount.toFixed(2)}.` : '',
+        `Verifica tu metodo de cobro en: ${baseUrl}/marketplace/dashboard?tab=payouts`,
       ].filter(Boolean).join('\n')
 
     case 'mp_referral_commission':

@@ -18,6 +18,7 @@ export async function run() {
     'mp_delivery_confirmed',
     'mp_dispute_opened',
     'mp_payout_released',
+    'mp_payout_sent',
     'mp_referral_commission',
   ]
 

@@ -127,7 +127,7 @@ const STATUS_LABEL: Record<string, string> = {
   PAYMENT_FAILED: 'Pago fallido',
   IN_ESCROW: 'En proceso',
   DELIVERY_CONFIRMED: 'Recepcion confirmada',
-  RELEASED: 'Pago al vendedor pendiente',
+  RELEASED: 'Fondos liberados (pendiente pago enviado)',
   REFUNDED: 'Reembolsado',
   DISPUTED: 'Disputa abierta',
   CANCELLED: 'Cancelado',
@@ -275,7 +275,7 @@ function ActionPanel({
   const labels: Record<string, { title: string; color: string }> = {
     approve:          { title: 'Aprobar pago reportado', color: '#4ade80' },
     reject:           { title: 'Rechazar pago reportado', color: '#ef4444' },
-    release:          { title: 'Marcar listo para pago al vendedor', color: '#00aeef' },
+    release:          { title: 'Liberar fondos (estado RELEASED)', color: '#00aeef' },
     'mark-paid':      { title: 'Registrar pago enviado al vendedor', color: '#4ade80' },
     'resolve-buyer':  { title: 'Resolver disputa a favor del comprador', color: '#a855f7' },
     'resolve-seller': { title: 'Resolver disputa a favor del vendedor', color: '#4ade80' },
