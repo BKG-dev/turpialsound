@@ -2458,7 +2458,14 @@ git push origin main
 
 ---
 
-> **Ultima actualizacion:** 19/05/26 19:40 VET | **Estado:** S-MP-08 CERRADO | **Tag:** `close-manuel-s-mp-08-2026-05-19`
+> **Ultima actualizacion:** 24/05/26 14:19 VET | **Estado:** MiroFish Escrow Seed CREADO | **Tag:** `mirofish-escrow-seed-2026-05-24`
+
+### 🧪 MiroFish Escrow Simulation Seed (2026-05-24)
+
+- **Seed:** [[../marketplace/MIROFISH_ESCROW_SIMULATION_SEED|MiroFish Escrow Simulation Seed]] — Documento semilla para simulacion MiroFish sobre Pago Protegido / Escrow / Compra Protegida. 14 secciones con datos confirmados del repo y supuestos marcados.
+- **Reporte:** [[../07_handoffs/MIROFISH_ESCROW_SEED_REPORT_2026-05-24|Reporte de generacion]] — Archivos leidos, hallazgos, supuestos, validaciones.
+- **Proposito:** Comparar 4 escenarios de pago protegido (sin escrow, escrow manual total, hibrido por riesgo, compra protegida automatizada) y decidir modelo para los primeros 12 meses.
+- **Pendiente:** Completar datos reales de Manuel (volumen, ticket promedio, capacidad operativa) y correr simulacion en MiroFish.
 
 ---
 

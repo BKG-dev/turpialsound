@@ -49,6 +49,12 @@ tags: ["#roadmap", "#status/urgent", "#status/live-source"]
 - Jean: integracion, Vercel/envs, DB/Prisma/schema/migrations, booking/reservas, rama madre, merges, preview integrado.
 - Manuel: marketplace producto, buyer/seller/admin flow, QA operacional, rates, payout, estados, copy/UX operativo.
 
+## MiroFish Escrow Simulation Seed (2026-05-24)
+
+- 📄 [[../marketplace/MIROFISH_ESCROW_SIMULATION_SEED|MiroFish Seed]] — Documento semilla completo para simulacion de Pago Protegido / Escrow.
+- 📋 [[../07_handoffs/MIROFISH_ESCROW_SEED_REPORT_2026-05-24|Reporte]] — Hallazgos, supuestos, validaciones.
+- ⏳ **Pendiente:** Completar datos reales + correr simulacion MiroFish.
+
 ## Ola 1
 
 - J1 Docs Control Tower.
