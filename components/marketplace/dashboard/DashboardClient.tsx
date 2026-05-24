@@ -29,6 +29,10 @@ import {
   CheckCircle2,
   Send,
   ExternalLink,
+  Gift,
+  Users,
+  Copy,
+  Check,
 } from 'lucide-react'
 import type { MpSessionPayload } from '@/lib/marketplace/auth'
 import { TransactionChat } from '@/components/marketplace/TransactionChat'
@@ -44,6 +48,7 @@ import {
   type SellerPayoutMethod,
   type TxPayoutDisplay,
 } from '@/lib/marketplace/finance'
+import { REFERRAL_COMMISSION_RATE, REFERRAL_COMMISSION_PERCENT } from '@/lib/marketplace/fees'
 import {
   addPayoutMethod,
   removePayoutMethod,
@@ -54,6 +59,14 @@ import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
 import { MarketplaceThemeToggle } from '@/components/marketplace/MarketplaceTheme'
 import { VENEZUELAN_BANK_OPTIONS } from '@/lib/marketplace/venezuelan-banks'
 import { normalizeVenezuelanMobilePhone } from '@/lib/marketplace/venezuelan-phone'
+import {
+  MARKETPLACE_TERMINAL_STATUSES,
+  MARKETPLACE_TIMELINE_MILESTONES,
+  deriveMarketplaceNextActionState,
+  getBuyerCtaLabel as getBuyerCtaLabelFromMapper,
+  getMarketplaceTimelineState,
+  hasSellerDeliveryAudit as hasSellerDeliveryAuditFromMapper,
+} from '@/lib/marketplace/next-action-mapper'
 
 // ─── Local Types ──────────────────────────────────────────────────────────────
 
@@ -155,7 +168,7 @@ interface ActionItem {
 
 // ─── Tab Type ─────────────────────────────────────────────────────────────────
 
-type Tab = 'my_store' | 'sales' | 'purchases' | 'messages' | 'favorites' | 'payouts'
+type Tab = 'my_store' | 'sales' | 'purchases' | 'messages' | 'favorites' | 'payouts' | 'referrals'
 type ChatSyncReason = 'message_sent' | 'messages_read' | 'send_error' | 'refresh_error'
 
 // ─── Status Config ────────────────────────────────────────────────────────────
@@ -251,160 +264,30 @@ function normalizePayoutMethodType(methodType: string) {
   return methodType === 'BINANCE_PAY' ? 'CRYPTO_WALLET' : methodType
 }
 
-function getOperationalStatusCopy(status: string, viewAs: 'buyer' | 'seller') {
-  const copy: Record<string, { buyer: string; seller: string }> = {
-    PENDING_PAYMENT: {
-      buyer: 'Completa el pago para iniciar la validacion.',
-      seller: 'El comprador inicio la compra, pero aun no ha reportado el pago.',
-    },
-    PAYMENT_RECEIVED: {
-      buyer: 'Estamos validando tu pago. Te avisaremos cuando avance.',
-      seller: 'El comprador ya reporto el pago. La revision manual esta en curso y te notificaremos cuando la operacion avance.',
-    },
-    VALIDATING: {
-      buyer: 'Estamos validando tu pago. Te avisaremos cuando avance.',
-      seller: 'La revision manual sigue en curso. Te notificaremos cuando el pago quede conciliado.',
-    },
-    IN_ESCROW: {
-      buyer: 'Los fondos estan protegidos. Coordina la entrega con el vendedor.',
-      seller: 'El pago ya fue validado. Completa la entrega para avanzar al cierre de la venta.',
-    },
-    DELIVERY_CONFIRMED: {
-      buyer: 'Confirmaste la recepcion. La operacion esta lista para liberacion admin si no hay disputa.',
-      seller: 'El comprador confirmo recepcion. El pago al vendedor queda pendiente de liberacion admin.',
-    },
-    RELEASED: {
-      buyer: 'La operacion esta en cola de pago al vendedor. El equipo procesara el pago manual en breve.',
-      seller: 'El pago esta pendiente de ser enviado por el equipo. Asegurate de tener tus datos de cobro actualizados.',
-    },
-    DISPUTED: {
-      buyer: 'La operacion esta en revision. No se liberaran fondos hasta resolverla.',
-      seller: 'La transaccion entro en disputa. El dinero queda retenido hasta la resolucion.',
-    },
-    PAYMENT_FAILED: {
-      buyer: 'El pago fue rechazado o no pudo conciliarse. Revisa los datos antes de intentar de nuevo.',
-      seller: 'El pago del comprador no pudo validarse y la operacion quedo rechazada.',
-    },
-    CANCELLED: {
-      buyer: 'La transaccion fue cancelada.',
-      seller: 'La transaccion fue cancelada.',
-    },
-    REFUNDED: {
-      buyer: 'La disputa se resolvio a favor del comprador y la operacion fue reembolsada.',
-      seller: 'La disputa se resolvio a favor del comprador y no habra cobro para esta operacion.',
-    },
-  }
-
-  return copy[status]?.[viewAs] ?? 'Consulta el estado de la transaccion para continuar con el siguiente paso.'
-}
-
-function getOperationalNextStep(status: string, viewAs: 'buyer' | 'seller') {
-  const nextStep: Record<string, { buyer: string; seller: string }> = {
-    PENDING_PAYMENT: {
-      buyer: 'Reporta tu pago con referencia, fecha y comprobante para iniciar la validacion.',
-      seller: 'Espera a que el comprador reporte el pago para que el equipo pueda validarlo.',
-    },
-    PAYMENT_RECEIVED: {
-      buyer: 'Espera la validacion manual. No hace falta reenviar el comprobante salvo que soporte lo solicite.',
-      seller: 'Espera la conciliacion manual. Te notificaremos cuando la operacion avance o si hace falta revision adicional.',
-    },
-    VALIDATING: {
-      buyer: 'Mantente atento a la confirmacion del equipo mientras termina la conciliacion.',
-      seller: 'Mantente atento a la confirmacion del equipo mientras termina la conciliacion.',
-    },
-    IN_ESCROW: {
-      buyer: 'Coordina la entrega y abre disputa solo si aparece una incidencia real.',
-      seller: 'Completa la entrega para que la venta pueda avanzar a cierre y cobro.',
-    },
-    DELIVERY_CONFIRMED: {
-      buyer: 'Espera la liberacion admin. La operacion todavia no esta cerrada.',
-      seller: 'Espera la liberacion admin antes de considerar cobrable la operacion.',
-    },
-    RELEASED: {
-      buyer: 'El pago al vendedor esta siendo gestionado. No necesitas hacer nada adicional.',
-      seller: 'El pago esta en cola para ser enviado. Si tu metodo de cobro esta actualizado, no necesitas hacer nada mas.',
-    },
-    DISPUTED: {
-      buyer: 'Espera la resolucion del equipo y conserva el contexto de la entrega.',
-      seller: 'Espera la resolucion del equipo y conserva el contexto de la entrega.',
-    },
-    PAYMENT_FAILED: {
-      buyer: 'Revisa los datos del pago antes de intentar nuevamente.',
-      seller: 'La operacion no seguira hasta que exista un nuevo pago valido.',
-    },
-  }
-
-  return nextStep[status]?.[viewAs] ?? 'Revisa la linea de estado para identificar el siguiente paso.'
-}
-
 function getTxUnreadCount(thread: DashThread, currentUserId: string) {
   if (typeof thread.unreadCount === 'number') return thread.unreadCount
   const lastMsg = thread.messages[0]
   return lastMsg && !lastMsg.isRead && lastMsg.senderId !== currentUserId ? 1 : 0
 }
 
-function getStatusLabelForView(status: string, viewAs: 'buyer' | 'seller') {
-  if (viewAs === 'buyer') {
-    if (status === 'PENDING_PAYMENT') return 'Reportar pago'
-    if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado'
-    if (status === 'IN_ESCROW') return 'Pago validado'
-    if (status === 'DELIVERY_CONFIRMED') return 'Recepcion confirmada'
-    if (status === 'RELEASED') return 'Pago al vendedor pendiente'
-    if (status === 'DISPUTED') return 'En disputa'
-  }
-
-  return STATUS_CONFIG[status]?.label ?? status
-}
-
 function hasSellerDeliveryAudit(tx: Pick<DashTransaction, 'statusHistory'>) {
-  return tx.statusHistory?.some(entry =>
-    entry.toStatus === 'IN_ESCROW' &&
-    (entry.reason ?? '').includes('seller_delivered'),
-  ) ?? false
+  return hasSellerDeliveryAuditFromMapper(tx)
 }
 
 function getTxStatusLabel(tx: DashTransaction, viewAs: 'buyer' | 'seller') {
-  if (tx.status === 'IN_ESCROW' && hasSellerDeliveryAudit(tx)) {
-    return viewAs === 'buyer' ? 'Entrega registrada' : 'Entrega reportada'
-  }
-  if (tx.status === 'DELIVERY_CONFIRMED') return 'Recepcion confirmada'
-  return getStatusLabelForView(tx.status, viewAs)
+  return deriveMarketplaceNextActionState(tx, viewAs, STATUS_CONFIG[tx.status]?.label).statusLabel
 }
 
 function getTxStatusCopy(tx: DashTransaction, viewAs: 'buyer' | 'seller') {
-  if (tx.status === 'IN_ESCROW' && hasSellerDeliveryAudit(tx)) {
-    return viewAs === 'buyer'
-      ? 'El vendedor registro la entrega. Confirma recepcion solo si ya revisaste y estas conforme.'
-      : 'La entrega quedo registrada. Los fondos siguen protegidos hasta que el comprador confirme y admin libere.'
-  }
-  if (tx.status === 'DELIVERY_CONFIRMED') {
-    return viewAs === 'buyer'
-      ? 'Confirmaste la recepcion. El admin debe liberar el pago al vendedor si no hay disputa activa.'
-      : 'El comprador confirmo la recepcion. El admin debe liberar el pago antes de marcarlo como enviado.'
-  }
-  return getOperationalStatusCopy(tx.status, viewAs)
+  return deriveMarketplaceNextActionState(tx, viewAs, STATUS_CONFIG[tx.status]?.label).statusCopy
 }
 
 function getTxNextStep(tx: DashTransaction, viewAs: 'buyer' | 'seller') {
-  if (tx.status === 'IN_ESCROW' && hasSellerDeliveryAudit(tx)) {
-    return viewAs === 'buyer'
-      ? 'Confirma recibido solo si estas conforme, o abre disputa si hay una incidencia real.'
-      : 'Espera la confirmacion del comprador. No hay fondos liberados todavia.'
-  }
-  if (tx.status === 'DELIVERY_CONFIRMED') {
-    return 'Espera la liberacion admin. La operacion todavia no esta pagada al vendedor.'
-  }
-  return getOperationalNextStep(tx.status, viewAs)
+  return deriveMarketplaceNextActionState(tx, viewAs, STATUS_CONFIG[tx.status]?.label).nextStep
 }
 
 function getBuyerCtaLabel(status: string) {
-  if (status === 'PENDING_PAYMENT') return 'Reportar pago'
-  if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado / esperando validacion'
-  if (status === 'IN_ESCROW') return 'Pago validado / esperando entrega'
-  if (status === 'DELIVERY_CONFIRMED') return 'Recepcion confirmada / esperando liberacion admin'
-  if (status === 'RELEASED') return 'Pago al vendedor pendiente'
-  if (status === 'DISPUTED') return 'En disputa / esperando resolucion'
-  return 'Ver detalle'
+  return getBuyerCtaLabelFromMapper(status)
 }
 
 function isBinanceTransaction(tx: DashTransaction) {
@@ -652,19 +535,12 @@ function deriveActionItems(
   return items.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
 }
 
-function statusLabelForTimeline(status: string | null, viewAs: 'buyer' | 'seller') {
-  if (!status) return 'Inicio'
-  return getStatusLabelForView(status, viewAs)
-}
+const SEMAFORO_MILESTONES = [...MARKETPLACE_TIMELINE_MILESTONES]
 
-function timelineReasonLabel(reason: string) {
-  if (reason.includes('seller_delivered')) {
-    return 'Entrega registrada por vendedor. Fondos protegidos hasta confirmacion del comprador.'
-  }
-  if (reason.includes('buyer_confirmed_receipt')) {
-    return 'Comprador confirmo recepcion. Pendiente liberacion admin.'
-  }
-  return reason
+const TERMINAL_STATUSES: string[] = [...MARKETPLACE_TERMINAL_STATUSES]
+
+function getSemaphoreState(currentStatus: string, milestoneStatus: string): 'completed' | 'current' | 'pending' {
+  return getMarketplaceTimelineState(currentStatus, milestoneStatus)
 }
 
 function hasSellerPaidAudit(tx: DashTransactionDetail) {
@@ -686,6 +562,39 @@ function SectionHeader({ title, count }: { title: string; count?: number }) {
         )}
       </span>
       <div className="h-px flex-1" style={{ background: 'var(--mp-border)' }} />
+    </div>
+  )
+}
+
+// ─── Collapsible Section ─────────────────────────────────────────────────────
+function CollapsibleSection({ title, count, defaultCollapsed, children }: {
+  title: string
+  count?: number
+  defaultCollapsed?: boolean
+  children: React.ReactNode
+}) {
+  const [collapsed, setCollapsed] = useState(defaultCollapsed ?? false)
+  return (
+    <div>
+      <button
+        onClick={() => setCollapsed(p => !p)}
+        className="w-full flex items-center gap-2 mb-3 group"
+      >
+        <div className="h-px flex-1" style={{ background: 'var(--mp-border)' }} />
+        <ChevronRight
+          size={12}
+          className="transition-transform duration-200"
+          style={{ color: 'var(--mp-text-disabled)', transform: collapsed ? 'rotate(0deg)' : 'rotate(90deg)' }}
+        />
+        <span className="text-[10px] font-semibold uppercase tracking-widest whitespace-nowrap" style={{ color: 'var(--mp-text-faint)' }}>
+          {title}
+          {count !== undefined && count > 0 && (
+            <span className="ml-1.5" style={{ color: 'var(--mp-text-muted)' }}>({count})</span>
+          )}
+        </span>
+        <div className="h-px flex-1" style={{ background: 'var(--mp-border)' }} />
+      </button>
+      {!collapsed && children}
     </div>
   )
 }
@@ -717,7 +626,7 @@ function KpiCard({
       onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick() } : undefined}
       className={cn(
         "rounded-2xl flex min-w-0 flex-col justify-between gap-4 relative overflow-hidden",
-        tone === 'primary' ? "p-5 min-h-[148px]" : tone === 'compact' ? "p-4 min-h-[118px]" : "p-4 min-h-[132px]",
+        tone === 'primary' ? "min-h-[124px] p-4 sm:min-h-[148px] sm:p-5" : tone === 'compact' ? "min-h-[104px] p-3.5 sm:min-h-[118px] sm:p-4" : "min-h-[112px] p-3.5 sm:min-h-[132px] sm:p-4",
         onClick && "cursor-pointer transition-all duration-200 hover:ring-1 ring-[#00aeef] hover:brightness-110 active:scale-[0.98]",
       )}
       style={{
@@ -740,7 +649,7 @@ function KpiCard({
       <div className="relative z-10 min-w-0">
         <p className={cn(
           "font-bold leading-none tracking-normal tabular-nums",
-          tone === 'primary' ? "text-3xl" : "text-2xl",
+          tone === 'primary' ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl",
           "[overflow-wrap:anywhere]",
         )}
           style={{ color: 'var(--mp-text-strong)' }}
@@ -797,11 +706,11 @@ function DisputeModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4"
       style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)' }}
     >
       <div
-        className="w-full max-w-md rounded-2xl overflow-hidden"
+        className="flex max-h-[100dvh] w-full max-w-md flex-col overflow-hidden rounded-t-2xl sm:max-h-[92vh] sm:rounded-2xl"
         style={{
           background: 'rgba(11,11,11,0.98)',
           border: '1px solid rgba(249,115,22,0.2)',
@@ -825,7 +734,7 @@ function DisputeModal({
           </button>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
           <div
             className="rounded-xl p-3 flex items-start gap-2.5"
             style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.15)' }}
@@ -855,14 +764,14 @@ function DisputeModal({
           <div className="space-y-1.5">
             <label className="text-xs text-[#a0a0a0]">
               Descripción detallada{' '}
-              <span className="text-[#3a3a3a]">(mín. 20 caracteres)</span>
+              <span className="text-[#6a6a6a]">(mín. 20 caracteres)</span>
             </label>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="Describe con detalle qué ocurrió, cuándo y por qué solicitas una disputa..."
               rows={4}
-              className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#3a3a3a] outline-none resize-none"
+              className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[#6a6a6a] outline-none resize-none"
               style={{
                 background: 'rgba(20,20,20,0.8)',
                 border: `1px solid ${description.trim().length > 0 && description.trim().length < 20 ? 'rgba(239,68,68,0.4)' : 'rgba(249,115,22,0.15)'}`,
@@ -873,7 +782,7 @@ function DisputeModal({
               {description.trim().length > 0 && description.trim().length < 20 && (
                 <p className="text-[11px] text-[#ef4444]">Mínimo 20 caracteres</p>
               )}
-              <p className="text-[10px] text-[#3a3a3a] ml-auto">{description.length}/1500</p>
+              <p className="text-[10px] text-[#6a6a6a] ml-auto">{description.length}/1500</p>
             </div>
           </div>
 
@@ -887,7 +796,7 @@ function DisputeModal({
             </div>
           )}
 
-          <div className="flex gap-3 pt-1">
+          <div className="flex flex-col gap-3 pt-1 min-[420px]:flex-row">
             <button
               onClick={onClose}
               disabled={submitting}
@@ -955,7 +864,7 @@ function TxCard({
           onOpenDetails?.(tx)
         }
       }}
-      className="w-full rounded-xl p-4 flex gap-3 group text-left transition-all duration-200 hover:border-[rgba(0,174,239,0.2)]"
+      className="group flex w-full gap-3 rounded-xl p-3.5 text-left transition-all duration-200 hover:border-[rgba(0,174,239,0.2)] active:scale-[0.995] sm:p-4"
       style={{
         background: 'var(--mp-card)',
         border: '1px solid var(--mp-border)',
@@ -982,17 +891,17 @@ function TxCard({
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-start min-[420px]:justify-between">
           <div className="min-w-0">
-            <p className="text-sm font-medium truncate" style={{ color: 'var(--mp-text-strong)' }}>
+            <p className="text-sm font-medium leading-snug [overflow-wrap:anywhere] min-[420px]:truncate" style={{ color: 'var(--mp-text-strong)' }}>
               {tx.listing?.title ?? 'Listing eliminado'}
             </p>
-            <p className="text-[11px] mt-0.5" style={{ color: 'var(--mp-text-faint)' }}>
+            <p className="mt-0.5 text-[11px] leading-snug [overflow-wrap:anywhere]" style={{ color: 'var(--mp-text-faint)' }}>
               {viewAs === 'buyer' ? 'Miembro: ' : 'Comprador: '}
               <span style={{ color: 'var(--mp-text-muted)' }}>{otherParty.displayName}</span>
             </p>
           </div>
-          <div className="text-right flex-shrink-0">
+          <div className="flex-shrink-0 text-left min-[420px]:text-right">
             <p className="text-sm font-semibold" style={{ color: 'var(--mp-text-strong)' }}>
               ${Number(tx.amount).toLocaleString('es-VE')}
             </p>
@@ -1027,7 +936,7 @@ function TxCard({
                 event.stopPropagation()
                 onDispute(tx)
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200"
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-medium transition-all duration-200 min-[420px]:w-auto min-[420px]:py-1.5"
               style={{
                 background: 'rgba(249,115,22,0.06)',
                 border: '1px solid rgba(249,115,22,0.18)',
@@ -1052,7 +961,7 @@ function TxCard({
               event.stopPropagation()
               onOpenDetails?.(tx)
             }}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all"
+            className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-semibold transition-all min-[420px]:w-auto min-[420px]:py-1.5"
             style={{ background: 'rgba(0,174,239,0.08)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.18)' }}
           >
             {getBuyerCtaLabel(tx.status)}
@@ -1346,12 +1255,102 @@ function ThreadCard({
             {lastMsg.senderId === currentUserId ? 'Tú: ' : ''}{lastMsg.content}
           </p>
         ) : (
-          <p className="text-xs text-[#3a3a3a] italic">Sin mensajes aún</p>
+          <p className="text-xs text-[#6a6a6a] italic">Sin mensajes aún</p>
         )}
       </div>
 
       <ChevronRight size={14} className="group-hover:text-[#00aeef] transition-colors flex-shrink-0 self-center" style={{ color: 'var(--mp-text-disabled)' }} />
     </button>
+  )
+}
+
+// ─── Referral Components ────────────────────────────────────────────────────────
+
+function ReferralLinkCard({
+  link,
+  onCopy,
+}: {
+  link: { id: string; code: string; listingId: string; slug?: string; clicks: number; conversions: number; totalEarned: unknown; createdAt: string | Date }
+  onCopy: () => void
+}) {
+  const [copied, setCopied] = useState(false)
+
+  function handleCopy() {
+    onCopy()
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div
+      className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl"
+      style={{ background: 'var(--mp-card)', border: '1px solid var(--mp-border)', boxShadow: 'var(--mp-card-shadow)' }}
+    >
+      <div className="flex-1 min-w-0 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold font-mono" style={{ background: 'rgba(255,193,7,0.1)', border: '1px solid rgba(255,193,7,0.2)', color: '#ffc107' }}>
+            {link.code}
+          </span>
+          <span className="text-[11px]" style={{ color: 'var(--mp-text-faint)' }}>
+            {link.clicks} clicks · {link.conversions} conversiones
+          </span>
+        </div>
+        <p className="text-xs" style={{ color: 'var(--mp-text-strong)' }}>
+          Comision: <span style={{ color: '#ffc107' }}>${Number(link.totalEarned ?? 0).toFixed(2)}</span>
+        </p>
+        <p className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>Creado: {fmtDate(link.createdAt)}</p>
+      </div>
+      <button
+        onClick={handleCopy}
+        className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all"
+        style={copied
+          ? { background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }
+          : { background: 'rgba(255,193,7,0.08)', color: '#ffc107', border: '1px solid rgba(255,193,7,0.2)' }
+        }
+      >
+        {copied ? <Check size={12} /> : <Copy size={12} />}
+        {copied ? 'Copiado' : 'Copiar link'}
+      </button>
+    </div>
+  )
+}
+
+function ReferredTransactionCard({
+  tx,
+}: {
+  tx: { id: string; amount: string; currency: string; status: string; platformFeeAmount?: string; createdAt: string | Date
+    buyer: { id: string; displayName: string; email: string }
+    listing: { id: string; title: string; slug: string } | null
+  }
+}) {
+  const commission = Number(tx.amount ?? 0) * REFERRAL_COMMISSION_RATE
+
+  return (
+    <div
+      className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl"
+      style={{ background: 'var(--mp-card)', border: '1px solid var(--mp-border)', boxShadow: 'var(--mp-card-shadow)' }}
+    >
+      <div className="flex-1 min-w-0 space-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm font-medium truncate" style={{ color: 'var(--mp-text-strong)' }}>
+            {tx.listing?.title ?? 'Listing eliminado'}
+          </p>
+          <StatusBadge status={tx.status} />
+        </div>
+        <p className="text-xs" style={{ color: 'var(--mp-text-faint)' }}>
+          Comprador: <span style={{ color: 'var(--mp-text-muted)' }}>{tx.buyer.displayName}</span>
+        </p>
+        <p className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>{fmtDate(tx.createdAt)}</p>
+      </div>
+      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+        <span className="text-sm font-semibold" style={{ color: 'var(--mp-text-strong)' }}>
+          ${Number(tx.amount).toLocaleString('es-VE')}
+        </span>
+        <span className="text-[10px] font-medium" style={{ color: '#ffc107' }}>
+          +${commission.toFixed(2)} comision
+        </span>
+      </div>
+    </div>
   )
 }
 
@@ -1394,25 +1393,27 @@ function TabBar({
     { id: 'messages',  label: 'Mensajes',     icon: MessageSquare },
     { id: 'favorites', label: 'Favoritos',    icon: Heart         },
     { id: 'payouts',   label: 'Cobros',       icon: Wallet        },
+    { id: 'referrals', label: 'Mis Referidos',icon: Users         },
   ]
 
   return (
     <div
-      className="grid grid-cols-3 gap-1 rounded-xl p-1 lg:grid-cols-6"
-      style={{ background: 'var(--mp-panel)', border: '1px solid var(--mp-border)' }}
+      className="sticky top-[49px] z-30 -mx-4 flex gap-1.5 overflow-x-auto px-4 py-2 backdrop-blur-xl sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:rounded-2xl sm:p-1.5 lg:grid-cols-7"
+      style={{ background: 'color-mix(in srgb, var(--mp-panel) 92%, transparent)', border: '1px solid var(--mp-border)', boxShadow: 'var(--mp-card-shadow)' }}
     >
       {tabs.map(t => {
         const isActive = active === t.id
         const Icon = t.icon
+        const count = counts[t.id]
         return (
           <button
             key={t.id}
             onClick={() => onChange(t.id)}
-            className="flex min-h-[48px] min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-all duration-200"
+            className="flex min-h-[52px] min-w-[116px] flex-col items-start justify-between rounded-xl px-3 py-2 text-left transition-all duration-200 sm:min-h-[64px] sm:min-w-0 sm:py-2.5"
             style={
               isActive
                 ? {
-                    background: 'linear-gradient(135deg, rgba(0,174,239,0.18) 0%, rgba(0,80,200,0.14) 100%)',
+                    background: 'linear-gradient(135deg, rgba(0,174,239,0.2) 0%, rgba(0,80,200,0.14) 100%)',
                     border: '1px solid rgba(0,174,239,0.25)',
                     color: '#00aeef',
                     boxShadow: '0 0 16px rgba(0,174,239,0.15)',
@@ -1420,12 +1421,14 @@ function TabBar({
                 : { color: 'var(--mp-text-faint)', border: '1px solid transparent' }
             }
           >
-            <Icon size={13} className="shrink-0" />
-            <span className="min-w-0 truncate">{t.label}</span>
-            {counts[t.id] > 0 && (
+            <span className="flex w-full min-w-0 items-center gap-1.5">
+              <Icon size={13} className="shrink-0" />
+              <span className="min-w-0 truncate text-[11px] font-semibold">{t.label}</span>
+            </span>
+            {count > 0 ? (
               <span
                 className={cn(
-                  'ml-0.5 shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold tabular-nums',
+                  'rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums',
                   t.id === 'messages' && !isActive && 'animate-pulse',
                 )}
                 style={
@@ -1436,8 +1439,10 @@ function TabBar({
                       : { background: 'var(--mp-card-subtle)', color: 'var(--mp-text-faint)' }
                 }
               >
-                {counts[t.id] > 99 ? '99+' : counts[t.id]}
+                {count > 99 ? '99+' : count}
               </span>
+            ) : (
+              <span className="text-[10px]" style={{ color: 'var(--mp-text-disabled)' }}>0</span>
             )}
           </button>
         )
@@ -1473,11 +1478,11 @@ function ProfileHeader({
   const role = profile?.role ?? 'USER'
 
   const roleLabel: Record<string, string> = { USER: 'Miembro', SOCIO: 'Socio', SUPER: 'Admin' }
-  const roleColor: Record<string, string> = { USER: '#5a5a5a', SOCIO: '#ffc107', SUPER: '#ef4444' }
+  const roleColor: Record<string, string> = { USER: 'var(--mp-text-disabled)', SOCIO: '#ffc107', SUPER: '#ef4444' }
 
   return (
     <div
-      className="rounded-2xl p-5 relative overflow-hidden"
+      className="relative overflow-hidden rounded-2xl p-4 sm:p-5"
       style={{
         background: 'linear-gradient(135deg, var(--mp-card) 0%, var(--mp-panel-soft) 100%)',
         border: '1px solid rgba(0,174,239,0.18)',
@@ -1555,7 +1560,7 @@ function ProfileHeader({
         {unreadCount > 0 && (
           <button
             onClick={() => onTabClick?.('messages')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl flex-shrink-0 animate-pulse"
+            className="flex w-full flex-shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2 animate-pulse sm:w-auto sm:py-1.5"
             style={{
               background: 'rgba(0,174,239,0.1)',
               border: '1px solid rgba(0,174,239,0.3)',
@@ -1574,7 +1579,7 @@ function ProfileHeader({
         )}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 relative z-10">
+      <div className="relative z-10 mt-4 grid grid-cols-2 gap-2.5 sm:mt-5 sm:grid-cols-4 sm:gap-3">
         <KpiCard
           icon={TrendingUp}
           label="Publicaciones"
@@ -1631,10 +1636,10 @@ function ChatOverlay({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4"
       style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
     >
-      <div className="w-full max-w-lg" style={{ height: 'min(640px, 85vh)' }}>
+      <div className="h-[100dvh] w-full max-w-none sm:h-[min(640px,85vh)] sm:max-w-lg">
         <TransactionChat
           threadId={thread.id}
           currentUserId={currentUserId}
@@ -1647,7 +1652,7 @@ function ChatOverlay({
           listingSlug={thread.listing?.slug}
           onClose={onClose}
           onSyncNeeded={onSyncNeeded}
-          className="h-full"
+          className="h-full rounded-none sm:rounded-2xl"
         />
       </div>
     </div>
@@ -1836,7 +1841,7 @@ function TransactionDetailModal({
       style={{ background: 'var(--mp-overlay)', backdropFilter: 'blur(10px)' }}
     >
       <div
-        className="relative flex w-full flex-col h-[100dvh] sm:h-auto sm:max-h-[85vh] sm:max-w-2xl sm:rounded-2xl"
+        className="relative flex w-full flex-col h-[100dvh] sm:h-auto sm:max-h-[92vh] sm:max-w-2xl sm:rounded-2xl"
         style={{
           background: 'var(--mp-panel-solid)',
           border: '1px solid var(--mp-border)',
@@ -1934,33 +1939,159 @@ function TransactionDetailModal({
             </div>
           )}
 
-          {tx.statusHistory && tx.statusHistory.length > 0 && (
-            <div>
-              <SectionHeader title="Linea de Estado" count={tx.statusHistory.length} />
-              <div className="space-y-2">
-                {tx.statusHistory.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="rounded-xl p-3"
-                    style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-xs" style={{ color: 'var(--mp-text-strong)' }}>
-                        {statusLabelForTimeline(entry.fromStatus, viewAs)} <span style={{ color: 'var(--mp-text-faint)' }}>-&gt;</span> {statusLabelForTimeline(entry.toStatus, viewAs)}
-                      </p>
-                      <span className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>{fmtDate(entry.createdAt)}</span>
+          <div>
+            <SectionHeader title="Semaforo de Estados" />
+            <div className="space-y-0">
+              {SEMAFORO_MILESTONES.map((milestone, idx) => {
+                const state = TERMINAL_STATUSES.includes(tx.status)
+                  ? getSemaphoreState(
+                      tx.status === 'CANCELLED' ? 'PENDING_PAYMENT' :
+                        tx.status === 'PAYMENT_FAILED' ? 'PENDING_PAYMENT' :
+                          tx.status === 'REFUNDED' ? 'INITIATED' : tx.status,
+                      milestone.status,
+                    )
+                  : tx.status === 'DISPUTED'
+                    ? getSemaphoreState('IN_ESCROW', milestone.status)
+                    : getSemaphoreState(tx.status, milestone.status)
+
+                const dotColor =
+                  state === 'completed' ? '#4ade80' :
+                    state === 'current' ? '#f59e0b' :
+                      '#ef4444'
+
+                const dotGlow =
+                  state === 'completed' ? '0 0 12px rgba(74,222,128,0.5)' :
+                    state === 'current' ? '0 0 16px rgba(245,158,11,0.6)' :
+                      '0 0 6px rgba(239,68,68,0.3)'
+
+                const bgColor =
+                  state === 'completed' ? 'rgba(74,222,128,0.08)' :
+                    state === 'current' ? 'rgba(245,158,11,0.1)' :
+                      'rgba(239,68,68,0.04)'
+
+                const textColor =
+                  state === 'completed' ? 'var(--mp-text-strong)' :
+                    state === 'current' ? '#f59e0b' :
+                      'var(--mp-text-faint)'
+
+                const isLast = idx === SEMAFORO_MILESTONES.length - 1
+
+                return (
+                  <div key={milestone.status} className="flex items-stretch gap-3">
+                    <div className="flex flex-col items-center">
+                      <div
+                        className="w-3.5 h-3.5 rounded-full flex-shrink-0 mt-1"
+                        style={{ background: dotColor, boxShadow: dotGlow }}
+                      />
+                      {!isLast && (
+                        <div
+                          className="w-px flex-1 my-1"
+                          style={{ background: state === 'completed' ? 'rgba(74,222,128,0.3)' : 'rgba(255,255,255,0.06)' }}
+                        />
+                      )}
                     </div>
-                    {entry.reason && <p className="mt-1 text-[11px]" style={{ color: 'var(--mp-text-muted)' }}>{timelineReasonLabel(entry.reason)}</p>}
+                    <div
+                      className={`flex-1 rounded-xl px-3 py-2 ${!isLast ? 'mb-1' : ''}`}
+                      style={{ background: bgColor, border: state === 'current' ? `1px solid rgba(245,158,11,0.25)` : '1px solid transparent' }}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-medium" style={{ color: textColor }}>
+                          {milestone.label}
+                        </p>
+                        {state === 'completed' && (
+                          <span className="text-[10px] font-semibold" style={{ color: '#4ade80' }}>✓</span>
+                        )}
+                        {state === 'current' && (
+                          <span className="text-[10px] font-semibold animate-pulse" style={{ color: '#f59e0b' }}>●</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
+                )
+              })}
+              {TERMINAL_STATUSES.includes(tx.status) && (
+                <div className="flex items-stretch gap-3 mt-1">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className="w-3.5 h-3.5 rounded-full flex-shrink-0 mt-1"
+                      style={{ background: '#6b7280', boxShadow: '0 0 12px rgba(107,114,128,0.5)' }}
+                    />
+                  </div>
+                  <div
+                    className="flex-1 rounded-xl px-3 py-2"
+                    style={{ background: 'rgba(107,114,128,0.08)', border: '1px solid rgba(107,114,128,0.2)' }}
+                  >
+                    <p className="text-xs font-medium" style={{ color: 'var(--mp-text-faint)' }}>
+                      {STATUS_CONFIG[tx.status]?.label ?? tx.status}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {tx.status === 'DISPUTED' && (
+                <div className="flex items-stretch gap-3 mt-1">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className="w-3.5 h-3.5 rounded-full flex-shrink-0 mt-1"
+                      style={{ background: '#f97316', boxShadow: '0 0 14px rgba(249,115,22,0.6)' }}
+                    />
+                  </div>
+                  <div
+                    className="flex-1 rounded-xl px-3 py-2"
+                    style={{ background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.25)' }}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-medium" style={{ color: '#f97316' }}>En Disputa</p>
+                      <span className="text-[10px] font-semibold animate-pulse" style={{ color: '#f97316' }}>●</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           <div
             className="flex flex-wrap gap-2 rounded-2xl p-3"
             style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
           >
+            {viewAs === 'buyer' && tx.status === 'PENDING_PAYMENT' && (
+              <a
+                href="/marketplace"
+                className="rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:brightness-110"
+                style={{ background: 'rgba(249,115,22,0.12)', color: '#f97316', border: '1px solid rgba(249,115,22,0.25)' }}
+              >
+                Reportar pago
+              </a>
+            )}
+            {viewAs === 'buyer' && tx.status === 'IN_ESCROW' && hasSellerDeliveryAudit(tx) && (
+              <button
+                type="button"
+                onClick={async () => {
+                  const c = window.confirm('Confirma solo si ya recibiste y revisaste el producto o servicio.')
+                  if (!c) return
+                  await confirmDelivery(tx.id)
+                  onClose()
+                }}
+                className="rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:brightness-110"
+                style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}
+              >
+                Confirmar recibido
+              </button>
+            )}
+            {viewAs === 'seller' && tx.status === 'IN_ESCROW' && !hasSellerDeliveryAudit(tx) && (
+              <button
+                type="button"
+                onClick={async () => {
+                  const c = window.confirm('Marca entregado solo cuando ya completaste la entrega.')
+                  if (!c) return
+                  await sellerDeliver(tx.id)
+                  onClose()
+                }}
+                className="rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:brightness-110"
+                style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}
+              >
+                Marcar entregado
+              </button>
+            )}
             {tx.listing?.slug && (
               <Link
                 href={`/marketplace/${tx.listing.slug}`}
@@ -2088,10 +2219,59 @@ function ActionCenterSection({
   onAction: (item: ActionItem) => void
   busyKey: string | null
 }) {
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<ActionPriority, boolean>>({
+    required: true,
+    review: true,
+    pending: true,
+    closed: true,
+  })
   if (items.length === 0) return null
 
   const requiredCount = items.filter(item => item.priority === 'required').length
   const reviewCount = items.filter(item => item.priority === 'review').length
+  const groupConfigs: Array<{
+    id: ActionPriority
+    title: string
+    subtitle: string
+    icon: LucideIcon
+    accent: string
+  }> = [
+    {
+      id: 'required',
+      title: 'Requiere tu accion',
+      subtitle: 'Bloquea el avance de una compra, venta o cobro.',
+      icon: AlertTriangle,
+      accent: ACTION_ACCENT.required,
+    },
+    {
+      id: 'review',
+      title: 'En revision Turpial',
+      subtitle: 'Pagos o disputas que estan siendo validadas por el equipo.',
+      icon: Clock,
+      accent: ACTION_ACCENT.review,
+    },
+    {
+      id: 'pending',
+      title: 'Esperando a otra parte',
+      subtitle: 'Seguimiento sin accion inmediata de tu lado.',
+      icon: Shield,
+      accent: ACTION_ACCENT.pending,
+    },
+    {
+      id: 'closed',
+      title: 'Cerradas',
+      subtitle: 'Operaciones finalizadas o sin bloqueo actual.',
+      icon: CheckCircle2,
+      accent: ACTION_ACCENT.closed,
+    },
+  ]
+  const groups = groupConfigs
+    .map(group => ({ ...group, items: items.filter(item => item.priority === group.id) }))
+    .filter(group => group.items.length > 0)
+
+  function toggleGroup(groupId: ActionPriority) {
+    setCollapsedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }))
+  }
 
   return (
     <div
@@ -2122,9 +2302,9 @@ function ActionCenterSection({
             <Zap size={14} color={requiredCount > 0 ? '#f97316' : '#00aeef'} />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold" style={{ color: 'var(--mp-text-strong)' }}>Proximos pasos</p>
+            <p className="truncate text-sm font-semibold" style={{ color: 'var(--mp-text-strong)' }}>Bandeja prioritaria</p>
             <p className="truncate text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
-              {items.length} operacion{items.length !== 1 ? 'es' : ''}
+              {items.length} mensaje{items.length !== 1 ? 's' : ''} agrupado{items.length !== 1 ? 's' : ''}
               {requiredCount > 0 && <span className="ml-1" style={{ color: '#f97316' }}>- {requiredCount} requiere{requiredCount === 1 ? '' : 'n'} accion</span>}
               {reviewCount > 0 && <span className="ml-1" style={{ color: '#f59e0b' }}>- {reviewCount} en revision</span>}
             </p>
@@ -2132,73 +2312,135 @@ function ActionCenterSection({
         </div>
       </div>
 
-      <div className="divide-y" style={{ borderColor: 'var(--mp-border)' }}>
-        {items.map(item => {
-          const isBusy = busyKey === item.key
-          const hasCta = Boolean(item.ctaLabel && item.ctaType)
-          const listingTitle = item.tx.listing?.title ?? 'Listing eliminado'
-          const otherParty = item.viewAs === 'buyer' ? item.tx.seller : item.tx.buyer
+      <div className="space-y-2 p-2 sm:p-3">
+        {groups.map(group => {
+          const GroupIcon = group.icon
+          const isCollapsed = collapsedGroups[group.id]
+          const buyerCount = group.items.filter(item => item.viewAs === 'buyer').length
+          const sellerCount = group.items.length - buyerCount
 
           return (
             <div
-              key={item.key}
-              className="flex flex-col gap-3 px-4 py-3 transition-colors hover:bg-[rgba(255,255,255,0.01)] sm:flex-row sm:items-center sm:px-5"
+              key={group.id}
+              className="overflow-hidden rounded-xl"
+              style={{ background: 'var(--mp-card-subtle)', border: `1px solid ${CHIP_BORDER[group.id]}` }}
             >
-              <div className="flex min-w-0 flex-1 items-start gap-3">
-                <span
-                  className="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
-                  style={{
-                    background: CHIP_BG[item.priority],
-                    border: `1px solid ${CHIP_BORDER[item.priority]}`,
-                    color: item.accent,
-                  }}
-                >
-                  {item.priority === 'required' && <AlertTriangle size={9} />}
-                  {item.priority === 'review' && <Clock size={9} />}
-                  {item.priority === 'pending' && <Shield size={9} />}
-                  {item.priority === 'closed' && <CheckCircle2 size={9} />}
-                  {item.chipLabel}
-                </span>
-
-                <div className="min-w-0">
-                  <p className="text-[11px] leading-snug" style={{ color: 'var(--mp-text-muted)' }}>{item.description}</p>
-                  <p className="mt-0.5 truncate text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
-                    <span className="font-medium" style={{ color: 'var(--mp-text-soft)' }}>{listingTitle}</span>
-                    <span className="mx-1">-</span>
-                    {item.viewAs === 'buyer' ? 'Vendedor: ' : 'Comprador: '}
-                    {otherParty.displayName}
-                    <span className="mx-1">-</span>
-                    ${Number(item.tx.amount).toLocaleString('es-VE')}
-                  </p>
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.id)}
+                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-white/[0.02]"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span
+                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
+                    style={{ background: CHIP_BG[group.id], color: group.accent, border: `1px solid ${CHIP_BORDER[group.id]}` }}
+                  >
+                    <GroupIcon size={14} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-xs font-semibold" style={{ color: 'var(--mp-text-strong)' }}>
+                      {group.title}
+                    </span>
+                    <span className="mt-0.5 block truncate text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
+                      {group.subtitle}
+                    </span>
+                  </span>
                 </div>
-              </div>
+                <div className="flex flex-shrink-0 items-center gap-2">
+                  <span className="hidden text-[10px] sm:inline" style={{ color: 'var(--mp-text-faint)' }}>
+                    {buyerCount > 0 && `${buyerCount} compra${buyerCount === 1 ? '' : 's'}`}
+                    {buyerCount > 0 && sellerCount > 0 && ' - '}
+                    {sellerCount > 0 && `${sellerCount} venta${sellerCount === 1 ? '' : 's'}`}
+                  </span>
+                  <span
+                    className="rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums"
+                    style={{ background: CHIP_BG[group.id], color: group.accent }}
+                  >
+                    {group.items.length}
+                  </span>
+                  <ChevronRight
+                    size={14}
+                    className={cn('transition-transform duration-200', !isCollapsed && 'rotate-90')}
+                    style={{ color: 'var(--mp-text-faint)' }}
+                  />
+                </div>
+              </button>
 
-              {hasCta && (
-                <button
-                  onClick={() => onAction(item)}
-                  disabled={isBusy || item.disabled}
-                  className="inline-flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all disabled:opacity-50"
-                  style={{
-                    background: item.priority === 'required' ? 'rgba(249,115,22,0.12)' : 'rgba(0,174,239,0.08)',
-                    border: `1px solid ${item.priority === 'required' ? 'rgba(249,115,22,0.25)' : 'rgba(0,174,239,0.2)'}`,
-                    color: item.priority === 'required' ? '#f97316' : '#00aeef',
-                  }}
-                >
-                  {isBusy ? (
-                    <Loader2 size={11} className="animate-spin" />
-                  ) : item.ctaType === 'confirm-delivery' ? (
-                    <CheckCircle2 size={11} />
-                  ) : item.ctaType === 'seller-deliver' ? (
-                    <Send size={11} />
-                  ) : item.ctaType === 'payout-setup' ? (
-                    <Wallet size={11} />
-                  ) : item.ctaType === 'open-messages' ? (
-                    <MessageSquare size={11} />
-                  ) : (
-                    <ExternalLink size={11} />
-                  )}
-                  {item.ctaLabel}
-                </button>
+              {!isCollapsed && (
+                <div className="divide-y" style={{ borderColor: 'var(--mp-border)' }}>
+                  {group.items.map(item => {
+                    const isBusy = busyKey === item.key
+                    const hasCta = Boolean(item.ctaLabel && item.ctaType)
+                    const listingTitle = item.tx.listing?.title ?? 'Listing eliminado'
+                    const otherParty = item.viewAs === 'buyer' ? item.tx.seller : item.tx.buyer
+
+                    return (
+                      <div
+                        key={item.key}
+                        className="flex flex-col gap-3 px-4 py-3 transition-colors hover:bg-[rgba(255,255,255,0.01)] sm:flex-row sm:items-center"
+                      >
+                        <div className="flex min-w-0 flex-1 items-start gap-3">
+                          <button
+                            type="button"
+                            onClick={() => onAction(item)}
+                            className="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-semibold transition-all hover:brightness-110 active:scale-95 cursor-pointer"
+                            style={{
+                              background: CHIP_BG[item.priority],
+                              border: `1px solid ${CHIP_BORDER[item.priority]}`,
+                              color: item.accent,
+                            }}
+                          >
+                            {item.priority === 'required' && <AlertTriangle size={9} />}
+                            {item.priority === 'review' && <Clock size={9} />}
+                            {item.priority === 'pending' && <Shield size={9} />}
+                            {item.priority === 'closed' && <CheckCircle2 size={9} />}
+                            {item.chipLabel}
+                          </button>
+
+                          <div className="min-w-0">
+                            <p className="text-[11px] leading-snug [overflow-wrap:anywhere]" style={{ color: 'var(--mp-text-muted)' }}>{item.description}</p>
+                            <p className="mt-0.5 text-[10px] leading-snug [overflow-wrap:anywhere] sm:truncate" style={{ color: 'var(--mp-text-faint)' }}>
+                              <span className="font-medium" style={{ color: 'var(--mp-text-soft)' }}>{listingTitle}</span>
+                              <span className="mx-1">-</span>
+                              {item.viewAs === 'buyer' ? 'Vendedor: ' : 'Comprador: '}
+                              {otherParty.displayName}
+                              <span className="mx-1">-</span>
+                              ${Number(item.tx.amount).toLocaleString('es-VE')}
+                            </p>
+                          </div>
+                        </div>
+
+                        {hasCta && (
+                          <button
+                            onClick={() => onAction(item)}
+                            disabled={isBusy || item.disabled}
+                            className="inline-flex w-full flex-shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-semibold transition-all disabled:opacity-50 sm:w-auto sm:whitespace-nowrap sm:py-1.5"
+                            style={{
+                              background: item.priority === 'required' ? 'rgba(249,115,22,0.12)' : 'rgba(0,174,239,0.08)',
+                              border: `1px solid ${item.priority === 'required' ? 'rgba(249,115,22,0.25)' : 'rgba(0,174,239,0.2)'}`,
+                              color: item.priority === 'required' ? '#f97316' : '#00aeef',
+                            }}
+                          >
+                            {isBusy ? (
+                              <Loader2 size={11} className="animate-spin" />
+                            ) : item.ctaType === 'confirm-delivery' ? (
+                              <CheckCircle2 size={11} />
+                            ) : item.ctaType === 'seller-deliver' ? (
+                              <Send size={11} />
+                            ) : item.ctaType === 'payout-setup' ? (
+                              <Wallet size={11} />
+                            ) : item.ctaType === 'open-messages' ? (
+                              <MessageSquare size={11} />
+                            ) : (
+                              <ExternalLink size={11} />
+                            )}
+                            {item.ctaLabel}
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               )}
             </div>
           )
@@ -2218,7 +2460,13 @@ interface DashboardClientProps {
   myFavorites: object[]
   myInteracted: object[]
   payoutMethods: object[]
+  referralEarnings: number
+  referralLinks: object[]
+  referralPendingPayouts: object[]
+  listingReferralStats: object[]
+  referredTransactions: object[]
   initialTab?: Tab
+  initialThreadId?: string
 }
 
 export function DashboardClient({
@@ -2231,7 +2479,13 @@ export function DashboardClient({
   myFavorites: rawMyFavorites,
   myInteracted: rawMyInteracted,
   payoutMethods: rawPayoutMethods,
+  referralEarnings,
+  referralLinks: rawReferralLinks,
+  referralPendingPayouts: rawReferralPendingPayouts,
+  listingReferralStats: rawListingReferralStats,
+  referredTransactions: rawReferredTransactions,
   initialTab,
+  initialThreadId,
 }: DashboardClientProps) {
   const router = useRouter()
 
@@ -2251,6 +2505,21 @@ export function DashboardClient({
   const [disputedTxIds, setDisputedTxIds] = useState<Set<string>>(new Set())
   const [favorites, setFavorites] = useState<DashListing[]>(rawMyFavorites as DashListing[])
   const myInteracted = rawMyInteracted as DashInteracted[]
+  const referralLinks = rawReferralLinks as Array<{
+    id: string; code: string; listingId: string; slug?: string; clicks: number; conversions: number; totalEarned: unknown; createdAt: string | Date
+  }>
+  const referralPendingPayouts = rawReferralPendingPayouts as Array<{
+    id: string; amount: string; currency: string; status: string; reference: string; createdAt: string | Date
+  }>
+  const listingReferralStats = rawListingReferralStats as Array<{
+    listingId: string; title: string; slug: string
+    linksCreated: number; totalClicks: number; totalConversions: number; totalEarnedForReferrers: number
+  }>
+  const referredTransactions = rawReferredTransactions as Array<{
+    id: string; amount: string; currency: string; status: string; platformFeeAmount?: string; createdAt: string | Date
+    buyer: { id: string; displayName: string; email: string }
+    listing: { id: string; title: string; slug: string } | null
+  }>
   const [threads, setThreads] = useState<DashThread[]>(initialThreads)
   const [payoutMethods, setPayoutMethods] = useState<DashPayoutMethod[]>(initialPayoutMethods)
   const [payoutBusyId, setPayoutBusyId] = useState<string | null>(null)
@@ -2275,6 +2544,21 @@ export function DashboardClient({
 
   const initialUnread = initialThreads.reduce((sum, thread) => sum + getTxUnreadCount(thread, session.userId), 0)
   const [unreadCount, setUnreadCount] = useState(initialUnread)
+
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab)
+  }, [initialTab])
+
+  useEffect(() => {
+    if (initialThreadId && initialThreads.length > 0) {
+      const targetThread = initialThreads.find(t => t.id === initialThreadId)
+      if (targetThread) {
+        setActiveTab('messages')
+        setTimeout(() => handleOpenThread(targetThread), 100)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialThreadId, initialThreads])
 
   async function refreshThreadsAndUnread() {
     const [unreadResult, threadsResult] = await Promise.allSettled([
@@ -2338,6 +2622,7 @@ export function DashboardClient({
     messages:  unreadCount,
     favorites: favorites.length,
     payouts:   payoutRelevantSales.length,
+    referrals: referredTransactions.length,
   }
 
   function handleTabChange(tab: Tab) {
@@ -2617,14 +2902,14 @@ export function DashboardClient({
           onTabClick={handleTabChange}
         />
 
+        {/* Tab Navigation */}
+        <TabBar active={activeTab} onChange={handleTabChange} counts={counts} />
+
         <ActionCenterSection
           items={actionItems}
           onAction={handleActionCenterCta}
           busyKey={actionBusyKey}
         />
-
-        {/* Tab Navigation */}
-        <TabBar active={activeTab} onChange={handleTabChange} counts={counts} />
 
         {dashboardMessage && (
           <div
@@ -2697,24 +2982,25 @@ export function DashboardClient({
               })()}
 
               <div className="space-y-2">
-                <SectionHeader title="Mis Publicaciones" count={myListings.length} />
-                {myListings.length === 0 ? (
-                  <EmptyState
-                    icon={Package}
-                    title="Sin publicaciones"
-                    sub="Publica tu primer listing desde el Marketplace para comenzar a vender."
-                  />
-                ) : (
-                  <>
-                    {myListings.map((l: DashListing) => (
-                      <MyListingRow
-                        key={l.id}
-                        listing={l}
-                        onClick={() => router.push(`/marketplace/${l.slug}`)}
-                      />
-                    ))}
-                  </>
-                )}
+                <CollapsibleSection title="Mis Publicaciones" count={myListings.length} defaultCollapsed={true}>
+                  {myListings.length === 0 ? (
+                    <EmptyState
+                      icon={Package}
+                      title="Sin publicaciones"
+                      sub="Publica tu primer listing desde el Marketplace para comenzar a vender."
+                    />
+                  ) : (
+                    <>
+                      {myListings.map((l: DashListing) => (
+                        <MyListingRow
+                          key={l.id}
+                          listing={l}
+                          onClick={() => router.push(`/marketplace/${l.slug}`)}
+                        />
+                      ))}
+                    </>
+                  )}
+                </CollapsibleSection>
               </div>
             </div>
           )}
@@ -3061,7 +3347,7 @@ export function DashboardClient({
                       className="rounded-full px-2 py-1 text-[10px] font-semibold"
                       style={{ background: 'rgba(0,174,239,0.08)', color: '#00aeef', border: '1px solid rgba(0,174,239,0.15)' }}
                     >
-                      Pago manual
+                      Pago procesado
                     </span>
                   </div>
 
@@ -3276,6 +3562,168 @@ export function DashboardClient({
             </div>
           )}
 
+          {/* ─ Mis Referidos ─ */}
+          {activeTab === 'referrals' && (
+            <div className="space-y-6">
+              <div
+                className="rounded-2xl p-5 sm:p-6"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,193,7,0.08) 0%, var(--mp-card) 58%, rgba(249,115,22,0.04) 100%)',
+                  border: '1px solid var(--mp-border)',
+                  boxShadow: 'var(--mp-card-shadow)',
+                }}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-normal text-[#ffc107]">Programa de Referidos</p>
+                    <h2 className="mt-2 text-2xl font-semibold leading-tight" style={{ color: 'var(--mp-text-strong)' }}>Drop Social</h2>
+                    <p className="mt-2 max-w-2xl text-sm leading-relaxed" style={{ color: 'var(--mp-text-muted)' }}>
+                      Comparte tus listings y gana <span style={{ color: '#ffc107' }}>{REFERRAL_COMMISSION_PERCENT}%</span> de cada compra que venga de tus links.
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--mp-text-faint)' }}>Comisiones acumuladas</span>
+                    <span className="text-3xl font-bold tabular-nums" style={{ color: '#ffc107' }}>
+                      ${referralEarnings.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-3">
+                <KpiCard
+                  icon={Users}
+                  label="Referidos"
+                  value={referredTransactions.length.toString()}
+                  sub="Personas que compraron con tu link"
+                  accent="#ffc107"
+                  tone="compact"
+                />
+                <KpiCard
+                  icon={Gift}
+                  label="Comisiones"
+                  value={`$${referralEarnings.toFixed(2)}`}
+                  sub={`${REFERRAL_COMMISSION_PERCENT}% por compra referida`}
+                  accent="#4ade80"
+                  tone="compact"
+                />
+                <KpiCard
+                  icon={Copy}
+                  label="Links activos"
+                  value={referralLinks.filter((l: { code: string }) => l.code).length.toString()}
+                  sub="Comparte para generar mas"
+                  accent="#00aeef"
+                  tone="compact"
+                />
+              </div>
+
+              {referralLinks.length > 0 && (
+                <div className="space-y-3">
+                  <SectionHeader title="Tus Links de Referido" count={referralLinks.length} />
+                  {referralLinks.map((link) => (
+                    <ReferralLinkCard
+                      key={link.id}
+                      link={link}
+                      onCopy={() => {
+                        const target = link.slug && link.slug !== link.listingId ? link.slug : link.listingId
+                        const url = `${window.location.origin}/marketplace/${encodeURIComponent(target)}?ref=${encodeURIComponent(link.code)}`
+                        navigator.clipboard.writeText(url).catch(() => {})
+                        setDashboardMessageTone('success')
+                        setDashboardMessage('Link copiado al portapapeles.')
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {referredTransactions.length > 0 && (
+                <div className="space-y-3">
+                  <SectionHeader title="Compras Referidas" count={referredTransactions.length} />
+                  {referredTransactions.map((tx) => (
+                    <ReferredTransactionCard key={tx.id} tx={tx} />
+                  ))}
+                </div>
+              )}
+
+              {/* ── Mis Listings: referidos generados por otros ── */}
+              {listingReferralStats.filter(l => l.linksCreated > 0).length > 0 && (
+                <div className="space-y-3">
+                  <SectionHeader
+                    title="Tus Listings — Referidos por otros"
+                    count={listingReferralStats.filter(l => l.linksCreated > 0).length}
+                  />
+                  {listingReferralStats.filter(l => l.linksCreated > 0).map(stat => (
+                    <div
+                      key={stat.listingId}
+                      className="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-white/5 transition-colors"
+                      style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
+                      onClick={() => router.push(`/marketplace/${stat.slug}`)}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate" style={{ color: 'var(--mp-text)' }}>{stat.title}</p>
+                        <div className="flex gap-4 mt-1">
+                          <span className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
+                            {stat.linksCreated} link{stat.linksCreated !== 1 ? 's' : ''}
+                          </span>
+                          <span className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>
+                            {stat.totalClicks} click{stat.totalClicks !== 1 ? 's' : ''}
+                          </span>
+                          {stat.totalConversions > 0 && (
+                            <span className="text-[10px]" style={{ color: '#4ade80' }}>
+                              {stat.totalConversions} venta{stat.totalConversions !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {stat.totalEarnedForReferrers > 0 && (
+                        <span className="text-[11px] font-semibold whitespace-nowrap" style={{ color: '#ffc107' }}>
+                          ${stat.totalEarnedForReferrers.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* ── Comisiones pendientes de pago ── */}
+              {referralPendingPayouts.length > 0 && (
+                <div className="space-y-3">
+                  <SectionHeader
+                    title="Comisiones pendientes"
+                    count={referralPendingPayouts.filter(p => p.status === 'PENDING').length}
+                  />
+                  {referralPendingPayouts.map((payout) => (
+                    <div
+                      key={payout.id}
+                      className="flex items-center gap-3 p-3 rounded-xl"
+                      style={{
+                        background: payout.status === 'COMPLETED' ? 'rgba(74,222,128,0.05)' : 'rgba(255,193,7,0.05)',
+                        border: payout.status === 'COMPLETED' ? '1px solid rgba(74,222,128,0.18)' : '1px solid rgba(255,193,7,0.18)',
+                      }}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium" style={{ color: 'var(--mp-text)' }}>
+                          ${Number(payout.amount).toFixed(2)} USD
+                        </p>
+                        <p className="text-[9px] mt-0.5" style={{ color: 'var(--mp-text-faint)' }}>
+                          {payout.status === 'COMPLETED' ? '✅ Pagado' : payout.status === 'PENDING' ? '⏳ Pendiente' : payout.status}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {referralLinks.length === 0 && referredTransactions.length === 0 && (
+                <EmptyState
+                  icon={Users}
+                  title="Sin referidos aun"
+                  sub="Ve a un listing y usa el boton Drop Social para generar tu primer link de referido."
+                />
+              )}
+            </div>
+          )}
+
           {activeTab === 'favorites' && (
             <div className="space-y-3">
               {favorites.length === 0 ? (
@@ -3286,7 +3734,7 @@ export function DashboardClient({
                 />
               ) : (
                 <>
-                  <p className="text-[10px] text-[#3a3a3a] text-center pb-1">
+                  <p className="text-[10px] text-[#6a6a6a] text-center pb-1">
                     {favorites.length} listing{favorites.length !== 1 ? 's' : ''} guardado{favorites.length !== 1 ? 's' : ''}
                   </p>
                   {favorites.map((l: DashListing) => (
