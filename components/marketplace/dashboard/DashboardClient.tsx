@@ -57,12 +57,14 @@ import {
 import { cn } from '@/lib/utils'
 import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
 import { MarketplaceThemeToggle } from '@/components/marketplace/MarketplaceTheme'
+import { OperationNextStepCard } from '@/components/marketplace/dashboard/OperationNextStepCard'
 import { VENEZUELAN_BANK_OPTIONS } from '@/lib/marketplace/venezuelan-banks'
 import { normalizeVenezuelanMobilePhone } from '@/lib/marketplace/venezuelan-phone'
 import {
   MARKETPLACE_TERMINAL_STATUSES,
   MARKETPLACE_TIMELINE_MILESTONES,
   deriveMarketplaceNextActionState,
+  deriveMarketplaceOperationCardState,
   getBuyerCtaLabel as getBuyerCtaLabelFromMapper,
   getMarketplaceTimelineState,
   hasSellerDeliveryAudit as hasSellerDeliveryAuditFromMapper,
@@ -1819,21 +1821,46 @@ function TransactionDetailModal({
   viewAs,
   onClose,
   onOpenMessages,
+  onOpenDispute,
+  onSetupPayout,
+  onReportPayment,
   sellerPayoutMethod = 'NONE',
 }: {
   tx: DashTransactionDetail
   viewAs: 'buyer' | 'seller'
   onClose: () => void
   onOpenMessages?: () => void
+  onOpenDispute?: (tx: DashTransaction) => void
+  onSetupPayout?: () => void
+  onReportPayment?: () => void
   sellerPayoutMethod?: SellerPayoutMethod
 }) {
   const otherParty = viewAs === 'buyer' ? tx.seller : tx.buyer
   const buyerPaidWithBinance = mapTxBuyerPaymentMethod(tx) === 'BINANCE'
   const sellerPaid = tx.status === 'RELEASED' && hasSellerPaidAudit(tx)
+  const hasUsablePayoutMethod = sellerPayoutMethod !== 'NONE'
   const detailStateLabel = sellerPaid ? 'Pago enviado al vendedor' : getTxStatusLabel(tx, viewAs)
   const detailStateCopy = sellerPaid
     ? 'El pago al vendedor ya fue registrado por el equipo. La operacion queda cerrada a nivel operativo.'
     : getTxStatusCopy(tx, viewAs)
+  const operationCardState = deriveMarketplaceOperationCardState(tx, viewAs, {
+    hasUsablePayoutMethod,
+    fallbackLabel: STATUS_CONFIG[tx.status]?.label,
+  })
+
+  async function handleConfirmReceived() {
+    const c = window.confirm('Confirma solo si ya recibiste y revisaste el producto o servicio.')
+    if (!c) return
+    await confirmDelivery(tx.id)
+    onClose()
+  }
+
+  async function handleMarkDelivered() {
+    const c = window.confirm('Marca entregado solo cuando ya completaste la entrega.')
+    if (!c) return
+    await sellerDeliver(tx.id)
+    onClose()
+  }
 
   return (
     <div
@@ -1901,6 +1928,18 @@ function TransactionDetailModal({
               }
             />
           </div>
+
+          <OperationNextStepCard
+            state={operationCardState}
+            role={viewAs}
+            onReportPayment={onReportPayment}
+            onMarkDelivered={viewAs === 'seller' ? handleMarkDelivered : undefined}
+            onConfirmReceived={viewAs === 'buyer' ? handleConfirmReceived : undefined}
+            onOpenDispute={operationCardState.canOpenDispute ? () => onOpenDispute?.(tx) : undefined}
+            onOpenMessages={onOpenMessages}
+            onViewOperation={undefined}
+            onSetupPayout={viewAs === 'seller' ? onSetupPayout : undefined}
+          />
 
           {viewAs === 'seller' && (
             <SellerFinancialSummary tx={tx} sellerPayoutMethod={sellerPayoutMethod} />
@@ -2065,12 +2104,7 @@ function TransactionDetailModal({
             {viewAs === 'buyer' && tx.status === 'IN_ESCROW' && hasSellerDeliveryAudit(tx) && (
               <button
                 type="button"
-                onClick={async () => {
-                  const c = window.confirm('Confirma solo si ya recibiste y revisaste el producto o servicio.')
-                  if (!c) return
-                  await confirmDelivery(tx.id)
-                  onClose()
-                }}
+                onClick={() => { void handleConfirmReceived() }}
                 className="rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:brightness-110"
                 style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}
               >
@@ -2080,12 +2114,7 @@ function TransactionDetailModal({
             {viewAs === 'seller' && tx.status === 'IN_ESCROW' && !hasSellerDeliveryAudit(tx) && (
               <button
                 type="button"
-                onClick={async () => {
-                  const c = window.confirm('Marca entregado solo cuando ya completaste la entrega.')
-                  if (!c) return
-                  await sellerDeliver(tx.id)
-                  onClose()
-                }}
+                onClick={() => { void handleMarkDelivered() }}
                 className="rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:brightness-110"
                 style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}
               >
@@ -3788,10 +3817,21 @@ export function DashboardClient({
               setSelectedTx(null)
               setSelectedTxDetail(null)
             }}
+            onReportPayment={() => {
+              setSelectedTx(null)
+              setSelectedTxDetail(null)
+              router.push('/marketplace')
+            }}
             onOpenMessages={() => {
               setSelectedTx(null)
               setSelectedTxDetail(null)
               handleTabChange('messages')
+            }}
+            onOpenDispute={(tx) => { setDisputeTarget(tx) }}
+            onSetupPayout={() => {
+              setSelectedTx(null)
+              setSelectedTxDetail(null)
+              handleTabChange('payouts')
             }}
           />
         )

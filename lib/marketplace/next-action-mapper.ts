@@ -10,6 +10,16 @@ export interface MarketplaceTxLike {
   statusHistory?: MarketplaceStatusHistoryEntry[] | null
 }
 
+export type MarketplacePrimaryAction =
+  | 'report_payment'
+  | 'mark_delivered'
+  | 'confirm_received'
+  | 'open_dispute'
+  | 'setup_payout'
+  | 'open_messages'
+  | 'view_operation'
+  | 'none'
+
 export const MARKETPLACE_TIMELINE_MILESTONES = [
   { status: 'INITIATED', label: 'Iniciado' },
   { status: 'PENDING_PAYMENT', label: 'Pago pendiente' },
@@ -188,6 +198,100 @@ export function deriveMarketplaceNextActionState(
     statusCopy,
     nextStep,
     buyerCtaLabel: getBuyerCtaLabel(tx.status),
+  }
+}
+
+function normalizeTimelineStatus(status: string) {
+  if (status === 'CANCELLED' || status === 'PAYMENT_FAILED') return 'PENDING_PAYMENT'
+  if (status === 'REFUNDED') return 'INITIATED'
+  if (status === 'DISPUTED') return 'IN_ESCROW'
+  return status
+}
+
+function buildCardTitle(
+  viewAs: MarketplaceViewAs,
+  status: string,
+  primaryAction: MarketplacePrimaryAction,
+) {
+  if (status === 'DISPUTED') return 'Disputa abierta'
+  if (status === 'RELEASED') return viewAs === 'buyer' ? 'Operacion completada' : 'Pago en proceso'
+  if (status === 'DELIVERY_CONFIRMED') return viewAs === 'buyer' ? 'Esperando liberacion admin' : 'Esperando al equipo'
+  if (primaryAction === 'mark_delivered') return 'Tu siguiente paso'
+  if (primaryAction === 'confirm_received') return 'Tu siguiente paso'
+  if (primaryAction === 'report_payment') return 'Tu siguiente paso'
+  if (primaryAction === 'setup_payout') return 'Configura tu cobro'
+  if (primaryAction === 'open_messages') {
+    return viewAs === 'buyer' ? 'Esperando al vendedor' : 'Esperando al comprador'
+  }
+  return 'Estado de la operacion'
+}
+
+function buildPrimaryAction(
+  tx: MarketplaceTxLike,
+  viewAs: MarketplaceViewAs,
+  deliveredBySeller: boolean,
+  hasUsablePayoutMethod: boolean,
+): MarketplacePrimaryAction {
+  if (tx.status === 'DISPUTED') return 'open_messages'
+
+  if (viewAs === 'buyer') {
+    if (tx.status === 'PENDING_PAYMENT') return 'report_payment'
+    if (tx.status === 'IN_ESCROW' && deliveredBySeller) return 'confirm_received'
+    if (tx.status === 'PAYMENT_RECEIVED' || tx.status === 'VALIDATING') return 'view_operation'
+    if (tx.status === 'IN_ESCROW') return 'open_messages'
+    if (tx.status === 'DELIVERY_CONFIRMED' || tx.status === 'RELEASED') return 'view_operation'
+    return 'none'
+  }
+
+  if (tx.status === 'IN_ESCROW' && !deliveredBySeller) return 'mark_delivered'
+  if (tx.status === 'RELEASED' && !hasUsablePayoutMethod) return 'setup_payout'
+  if (tx.status === 'PENDING_PAYMENT' || tx.status === 'PAYMENT_RECEIVED' || tx.status === 'VALIDATING') {
+    return 'open_messages'
+  }
+  if (tx.status === 'IN_ESCROW' || tx.status === 'DELIVERY_CONFIRMED' || tx.status === 'RELEASED') {
+    return 'view_operation'
+  }
+  if (tx.status === 'DISPUTED') return 'open_messages'
+  return 'none'
+}
+
+function buildSecondaryActions(
+  tx: MarketplaceTxLike,
+  viewAs: MarketplaceViewAs,
+  primaryAction: MarketplacePrimaryAction,
+): MarketplacePrimaryAction[] {
+  const actions: MarketplacePrimaryAction[] = []
+
+  if (primaryAction !== 'open_messages') actions.push('open_messages')
+  if (primaryAction !== 'view_operation') actions.push('view_operation')
+
+  const canOpenDispute = viewAs === 'buyer' && tx.status === 'IN_ESCROW'
+  if (canOpenDispute && primaryAction !== 'open_dispute') {
+    actions.push('open_dispute')
+  }
+
+  return actions
+}
+
+export function deriveMarketplaceOperationCardState(
+  tx: MarketplaceTxLike,
+  viewAs: MarketplaceViewAs,
+  options?: { hasUsablePayoutMethod?: boolean; fallbackLabel?: string },
+) {
+  const derived = deriveMarketplaceNextActionState(tx, viewAs, options?.fallbackLabel)
+  const hasUsablePayoutMethod = options?.hasUsablePayoutMethod ?? true
+  const primaryAction = buildPrimaryAction(tx, viewAs, derived.deliveredBySeller, hasUsablePayoutMethod)
+
+  return {
+    title: buildCardTitle(viewAs, tx.status, primaryAction),
+    humanStatus: derived.statusLabel,
+    statusCopy: derived.statusCopy,
+    nextStep: derived.nextStep,
+    deliveredBySeller: derived.deliveredBySeller,
+    primaryAction,
+    secondaryActions: buildSecondaryActions(tx, viewAs, primaryAction),
+    canOpenDispute: viewAs === 'buyer' && tx.status === 'IN_ESCROW',
+    timelineCurrentStatus: normalizeTimelineStatus(tx.status),
   }
 }
 
