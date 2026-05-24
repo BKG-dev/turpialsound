@@ -210,8 +210,20 @@ export function OperationNextStepCard({
             let stateValue: 'completed' | 'current' | 'pending'
             if (step.key === 'SELLER_DELIVERED') {
               stateValue = deliveredCompleted ? 'completed' : (state.timelineCurrentStatus === 'IN_ESCROW' ? 'current' : 'pending')
+            } else if (step.key === 'RELEASED') {
+              if (state.timelineCurrentStatus === 'RELEASED' || state.timelineCurrentStatus === 'PAYOUT_SENT') {
+                stateValue = 'completed'
+              } else {
+                stateValue = getMarketplaceTimelineState(state.timelineCurrentStatus, step.key)
+              }
             } else if (step.key === 'PAYOUT_SENT') {
-              stateValue = state.payoutSent ? 'completed' : 'pending'
+              if (state.payoutSent) {
+                stateValue = 'completed'
+              } else if (state.timelineCurrentStatus === 'RELEASED') {
+                stateValue = 'current'
+              } else {
+                stateValue = 'pending'
+              }
             } else {
               stateValue = getMarketplaceTimelineState(state.timelineCurrentStatus, step.key)
             }

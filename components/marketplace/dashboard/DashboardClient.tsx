@@ -104,6 +104,7 @@ interface DashTransaction {
   frozenRateSource?: string | null
   frozenRateFechaValor?: string | Date | null
   rateSnapshotId?: string | null
+  hasSellerPayoutSent?: boolean
   statusHistory?: DashTransactionHistory[]
   buyer: { id: string; displayName: string; avatarUrl: string | null }
   seller: { id: string; displayName: string; avatarUrl: string | null }
@@ -122,6 +123,7 @@ interface DashTransactionDetail extends DashTransaction {
   adminNotes?: string | null
   paymentSenderBank?: string | null
   paymentPaidAt?: string | Date | null
+  releasedAt?: string | Date | null
   statusHistory?: DashTransactionHistory[]
 }
 
@@ -1992,7 +1994,15 @@ function TransactionDetailModal({
                     ? getSemaphoreState('IN_ESCROW', milestone.status)
                     : getSemaphoreState(tx.status, milestone.status)
 
-                if (tx.status === 'RELEASED' && sellerPaid && (milestone.status === 'RELEASED' || milestone.status === 'PAYOUT_SENT')) {
+                if (tx.status === 'RELEASED' && milestone.status === 'RELEASED') {
+                  state = 'completed'
+                }
+
+                if (tx.status === 'RELEASED' && !sellerPaid && milestone.status === 'PAYOUT_SENT') {
+                  state = 'current'
+                }
+
+                if (tx.status === 'RELEASED' && sellerPaid && milestone.status === 'PAYOUT_SENT') {
                   state = 'completed'
                 }
 
