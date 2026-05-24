@@ -102,45 +102,111 @@ async function notifyMarketplacePayoutReleased(params: {
   amount: number
   currency: string
   seller: { email?: string | null; phone?: string | null; displayName?: string | null }
-}): Promise<void> {
+}): Promise<{
+  hasEmail: boolean
+  hasPhone: boolean
+  emailSent: boolean
+  whatsappSent: boolean
+  emailReason: string | null
+  whatsappReason: string | null
+}> {
   const txCode = buildTxCode(params.transactionId)
   const txUrl = buildMarketplaceTransactionUrl(params.transactionId)
   const sellerName = params.seller.displayName?.trim() || 'Vendedor'
-  const notifications: Array<Promise<unknown>> = []
+  const hasEmail = Boolean(params.seller.email?.trim())
+  const hasPhone = Boolean(params.seller.phone?.trim())
+  let emailSent = false
+  let whatsappSent = false
+  let emailReason: string | null = hasEmail ? 'not_sent' : 'missing_email'
+  let whatsappReason: string | null = hasPhone ? 'not_sent' : 'missing_phone'
 
-  if (params.seller.email?.trim()) {
-    notifications.push(
-      sendMarketplaceEmail(
-        'payout_released',
-        { email: params.seller.email, name: sellerName },
-        {
-          sellerName,
-          amount: params.amount,
-          currency: params.currency,
-          txCode,
-          txUrl,
-        },
-      ),
+  if (hasEmail) {
+    const emailResult = await sendMarketplaceEmail(
+      'payout_released',
+      { email: params.seller.email!, name: sellerName },
+      {
+        sellerName,
+        amount: params.amount,
+        currency: params.currency,
+        txCode,
+        txUrl,
+      },
     )
+    emailSent = emailResult.sent
+    emailReason = emailResult.reason ?? (emailResult.sent ? 'sent' : 'not_sent')
   }
 
-  if (params.seller.phone?.trim()) {
-    notifications.push(
-      sendMarketplaceWhatsapp(
-        'mp_payout_released',
-        { phone: params.seller.phone, name: sellerName },
-        {
-          txCode,
-          amount: params.amount,
-          currency: params.currency,
-        },
-      ),
+  if (hasPhone) {
+    const whatsappResult = await sendMarketplaceWhatsapp(
+      'mp_payout_released',
+      { phone: params.seller.phone!, name: sellerName },
+      {
+        txCode,
+        amount: params.amount,
+        currency: params.currency,
+      },
     )
+    whatsappSent = whatsappResult.sent
+    whatsappReason = whatsappResult.reason ?? (whatsappResult.sent ? 'sent' : 'not_sent')
   }
 
-  if (notifications.length > 0) {
-    await Promise.allSettled(notifications)
+  return { hasEmail, hasPhone, emailSent, whatsappSent, emailReason, whatsappReason }
+}
+
+async function notifyMarketplacePayoutSent(params: {
+  transactionId: string
+  amount: number
+  currency: string
+  seller: { email?: string | null; phone?: string | null; displayName?: string | null }
+}): Promise<{
+  hasEmail: boolean
+  hasPhone: boolean
+  emailSent: boolean
+  whatsappSent: boolean
+  emailReason: string | null
+  whatsappReason: string | null
+}> {
+  const txCode = buildTxCode(params.transactionId)
+  const txUrl = buildMarketplaceTransactionUrl(params.transactionId)
+  const sellerName = params.seller.displayName?.trim() || 'Vendedor'
+  const hasEmail = Boolean(params.seller.email?.trim())
+  const hasPhone = Boolean(params.seller.phone?.trim())
+  let emailSent = false
+  let whatsappSent = false
+  let emailReason: string | null = hasEmail ? 'not_sent' : 'missing_email'
+  let whatsappReason: string | null = hasPhone ? 'not_sent' : 'missing_phone'
+
+  if (hasEmail) {
+    const emailResult = await sendMarketplaceEmail(
+      'payout_sent',
+      { email: params.seller.email!, name: sellerName },
+      {
+        sellerName,
+        amount: params.amount,
+        currency: params.currency,
+        txCode,
+        txUrl,
+      },
+    )
+    emailSent = emailResult.sent
+    emailReason = emailResult.reason ?? (emailResult.sent ? 'sent' : 'not_sent')
   }
+
+  if (hasPhone) {
+    const whatsappResult = await sendMarketplaceWhatsapp(
+      'mp_payout_sent',
+      { phone: params.seller.phone!, name: sellerName },
+      {
+        txCode,
+        amount: params.amount,
+        currency: params.currency,
+      },
+    )
+    whatsappSent = whatsappResult.sent
+    whatsappReason = whatsappResult.reason ?? (whatsappResult.sent ? 'sent' : 'not_sent')
+  }
+
+  return { hasEmail, hasPhone, emailSent, whatsappSent, emailReason, whatsappReason }
 }
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -998,7 +1064,28 @@ export async function adminReleaseEscrow(txId: string, note: string): Promise<Ac
           phone: tx.seller?.phone,
           displayName: tx.seller?.displayName,
         },
-      }).catch(() => {})
+      })
+        .then((summary) => {
+          console.info('[marketplace.notify]', {
+            event: 'payout_released',
+            recipientRole: 'seller',
+            transactionId: tx.id,
+            hasEmail: summary.hasEmail,
+            hasPhone: summary.hasPhone,
+            emailSent: summary.emailSent,
+            whatsappSent: summary.whatsappSent,
+            emailReason: summary.emailReason,
+            whatsappReason: summary.whatsappReason,
+          })
+        })
+        .catch((error) => {
+          console.warn('[marketplace.notify]', {
+            event: 'payout_released',
+            recipientRole: 'seller',
+            transactionId: tx.id,
+            error: error instanceof Error ? error.message : 'unknown_error',
+          })
+        })
 
       return { success: true, data: undefined, message: 'Pago del vendedor liberado' }
     } catch (err) {
@@ -1032,6 +1119,7 @@ export async function adminMarkSellerPaid(
           status: true,
           sellerNetAmount: true,
           currency: true,
+          seller: { select: { email: true, phone: true, displayName: true } },
         },
       })
       if (!tx) return { success: false, message: 'Transacción no encontrada' }
@@ -1114,7 +1202,38 @@ export async function adminMarkSellerPaid(
         senderId: session.userId,
         receiverId: tx.sellerId,
         content: `💰 El equipo de Turpial Market ha registrado el envío de tu pago${externalPayoutId ? ` (referencia: ${externalPayoutId})` : ''}. Si tienes dudas, responde a este chat.`,
+      }).catch(() => {})
+      void notifyMarketplacePayoutSent({
+        transactionId: tx.id,
+        amount: Number(tx.sellerNetAmount),
+        currency: tx.currency,
+        seller: {
+          email: tx.seller?.email,
+          phone: tx.seller?.phone,
+          displayName: tx.seller?.displayName,
+        },
       })
+        .then((summary) => {
+          console.info('[marketplace.notify]', {
+            event: 'payout_sent',
+            recipientRole: 'seller',
+            transactionId: tx.id,
+            hasEmail: summary.hasEmail,
+            hasPhone: summary.hasPhone,
+            emailSent: summary.emailSent,
+            whatsappSent: summary.whatsappSent,
+            emailReason: summary.emailReason,
+            whatsappReason: summary.whatsappReason,
+          })
+        })
+        .catch((error) => {
+          console.warn('[marketplace.notify]', {
+            event: 'payout_sent',
+            recipientRole: 'seller',
+            transactionId: tx.id,
+            error: error instanceof Error ? error.message : 'unknown_error',
+          })
+        })
 
       await db.$disconnect()
       return { success: true, data: undefined, message: 'Pago al vendedor registrado exitosamente.' }

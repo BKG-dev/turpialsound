@@ -13,6 +13,7 @@ interface OperationNextStepCardState {
   primaryAction: MarketplacePrimaryAction
   secondaryActions: MarketplacePrimaryAction[]
   deliveredBySeller: boolean
+  payoutSent: boolean
   timelineCurrentStatus: string
 }
 
@@ -41,7 +42,8 @@ const SIMPLE_TIMELINE = [
   { key: 'IN_ESCROW', label: 'Pago aprobado' },
   { key: 'SELLER_DELIVERED', label: 'Entregado' },
   { key: 'DELIVERY_CONFIRMED', label: 'Confirmado' },
-  { key: 'RELEASED', label: 'Liberado' },
+  { key: 'RELEASED', label: 'Fondos liberados' },
+  { key: 'PAYOUT_SENT', label: 'Pago enviado' },
 ] as const
 
 function actionToConfig(
@@ -143,7 +145,7 @@ export function OperationNextStepCard({
     }))
     .filter((config): config is ActionConfig => Boolean(config))
 
-  const deliveredCompleted = state.deliveredBySeller || ['DELIVERY_CONFIRMED', 'RELEASED'].includes(state.timelineCurrentStatus)
+  const deliveredCompleted = state.deliveredBySeller || ['DELIVERY_CONFIRMED', 'RELEASED', 'PAYOUT_SENT'].includes(state.timelineCurrentStatus)
 
   return (
     <section
@@ -208,6 +210,8 @@ export function OperationNextStepCard({
             let stateValue: 'completed' | 'current' | 'pending'
             if (step.key === 'SELLER_DELIVERED') {
               stateValue = deliveredCompleted ? 'completed' : (state.timelineCurrentStatus === 'IN_ESCROW' ? 'current' : 'pending')
+            } else if (step.key === 'PAYOUT_SENT') {
+              stateValue = state.payoutSent ? 'completed' : 'pending'
             } else {
               stateValue = getMarketplaceTimelineState(state.timelineCurrentStatus, step.key)
             }

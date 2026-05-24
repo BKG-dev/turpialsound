@@ -9,6 +9,7 @@ import {
   buildDeliveryConfirmedEmail,
   buildReferralCommissionEmail,
   buildPayoutReleasedEmail,
+  buildPayoutSentEmail,
 } from './templates'
 
 type EmailProvider = 'resend' | 'smtp' | 'disabled'
@@ -152,6 +153,12 @@ export async function sendMarketplaceEmail(
     case 'payout_released':
       subject = 'Fondos liberados — Turpial Market'
       html = buildPayoutReleasedEmail(templateData as {
+        sellerName: string; amount: number; currency: string; txCode: string; txUrl: string
+      })
+      break
+    case 'payout_sent':
+      subject = "Pago enviado - Turpial Market"
+      html = buildPayoutSentEmail(templateData as {
         sellerName: string; amount: number; currency: string; txCode: string; txUrl: string
       })
       break

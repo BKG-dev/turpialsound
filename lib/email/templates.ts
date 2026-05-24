@@ -10,6 +10,7 @@ export type MarketplaceEmailEvent =
   | 'delivery_confirmed'
   | 'referral_commission'
   | 'payout_released'
+  | 'payout_sent'
 
 export interface EmailRecipient {
   email: string
@@ -263,6 +264,26 @@ export function buildPayoutReleasedEmail(data: {
     <p style="margin:0 0 24px;font-size:12px;color:${MUTED_COLOR};">Monto neto: <span style="color:#4ade80;font-weight:600;">${data.currency} ${data.amount.toFixed(2)}</span></p>
     <table cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr><td align="center" style="background:${BRAND_COLOR};border-radius:8px;padding:12px 32px;">
       <a href="${data.txUrl}" style="color:#081018;text-decoration:none;font-size:14px;font-weight:600;">Ver transacción</a>
+    </td></tr></table>`
+  return baseTemplate(body, ctx)
+}
+
+export function buildPayoutSentEmail(data: {
+  sellerName: string
+  amount: number
+  currency: string
+  txCode: string
+  txUrl: string
+}): string {
+  const ctx = getContext()
+  const body = `
+    <h2 style="margin:0 0 12px;font-size:22px;color:#4ade80;">Pago enviado</h2>
+    <p style="margin:0 0 16px;font-size:14px;color:${MUTED_COLOR};line-height:1.6;">
+      Hola ${data.sellerName}, tu pago fue enviado por el equipo para la transacciÃ³n ${data.txCode}.
+    </p>
+    <p style="margin:0 0 24px;font-size:12px;color:${MUTED_COLOR};">Monto enviado: <span style="color:#4ade80;font-weight:600;">${data.currency} ${data.amount.toFixed(2)}</span></p>
+    <table cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr><td align="center" style="background:${BRAND_COLOR};border-radius:8px;padding:12px 32px;">
+      <a href="${data.txUrl}" style="color:#081018;text-decoration:none;font-size:14px;font-weight:600;">Ver transacciÃ³n</a>
     </td></tr></table>`
   return baseTemplate(body, ctx)
 }
