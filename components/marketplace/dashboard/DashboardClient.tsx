@@ -1862,6 +1862,7 @@ function TransactionDetailModal({
   onReportPayment?: () => void
   sellerPayoutMethod?: SellerPayoutMethod
 }) {
+  const router = useRouter()
   const otherParty = viewAs === 'buyer' ? tx.seller : tx.buyer
   const buyerPaidWithBinance = mapTxBuyerPaymentMethod(tx) === 'BINANCE'
   const sellerPaid = tx.status === 'RELEASED' && hasSellerPaidAudit(tx)
@@ -1890,15 +1891,33 @@ function TransactionDetailModal({
   async function handleConfirmReceived() {
     const c = window.confirm('Confirma solo si ya recibiste y revisaste el producto o servicio.')
     if (!c) return
-    await confirmDelivery(tx.id)
-    onClose()
+    try {
+      const result = await confirmDelivery(tx.id)
+      if (!result.success) {
+        window.alert(result.message ?? 'No se pudo confirmar la recepcion. Intenta nuevamente.')
+        return
+      }
+      router.refresh()
+      onClose()
+    } catch {
+      window.alert('No se pudo confirmar la recepcion. Intenta nuevamente.')
+    }
   }
 
   async function handleMarkDelivered() {
     const c = window.confirm('Marca entregado solo cuando ya completaste la entrega.')
     if (!c) return
-    await sellerDeliver(tx.id)
-    onClose()
+    try {
+      const result = await sellerDeliver(tx.id)
+      if (!result.success) {
+        window.alert(result.message ?? 'No se pudo registrar la entrega. Intenta nuevamente.')
+        return
+      }
+      router.refresh()
+      onClose()
+    } catch {
+      window.alert('No se pudo registrar la entrega. Intenta nuevamente.')
+    }
   }
 
   return (
