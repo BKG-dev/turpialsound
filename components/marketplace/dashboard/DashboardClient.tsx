@@ -401,29 +401,19 @@ function deriveActionItems(
         accent: ACTION_ACCENT.review,
       })
     } else if (tx.status === 'IN_ESCROW') {
-      if (hasSellerDeliveryAudit(tx)) {
-        items.push({
-          ...base,
-          key: `buyer-confirm-${tx.id}`,
-          priority: 'required',
-          chipLabel: 'Accion requerida',
-          description: 'El vendedor registro la entrega. Confirma recibido solo si estas conforme.',
-          ctaLabel: 'Confirmar recibido',
-          ctaType: 'confirm-delivery',
-          accent: ACTION_ACCENT.required,
-        })
-      } else {
-        items.push({
-          ...base,
-          key: `buyer-escrow-${tx.id}`,
-          priority: 'pending',
-          chipLabel: 'Esperando vendedor',
-          description: 'Coordina la entrega con el vendedor. Confirma solo cuando el vendedor registre la entrega.',
-          ctaLabel: 'Abrir conversacion',
-          ctaType: 'open-messages',
-          accent: ACTION_ACCENT.pending,
-        })
-      }
+      const sellerDelivered = hasSellerDeliveryAudit(tx)
+      items.push({
+        ...base,
+        key: sellerDelivered ? `buyer-confirm-${tx.id}` : `buyer-confirm-independent-${tx.id}`,
+        priority: 'required',
+        chipLabel: 'Accion requerida',
+        description: sellerDelivered
+          ? 'El vendedor registro la entrega. Confirma recibido solo si estas conforme.'
+          : 'Si ya recibiste el producto y estas conforme, confirma recibido. Si no, mantente en mensajes con el vendedor.',
+        ctaLabel: 'Confirmar recibido',
+        ctaType: 'confirm-delivery',
+        accent: ACTION_ACCENT.required,
+      })
     } else if (tx.status === 'DELIVERY_CONFIRMED') {
       items.push({
         ...base,
@@ -875,7 +865,7 @@ function TxCard({
 }) {
   const otherParty = viewAs === 'buyer' ? tx.seller : tx.buyer
   const guidance = getTxStatusCopy(tx, viewAs)
-  const actionLabel = viewAs === 'buyer' && !hasSellerDeliveryAudit(tx) ? getBuyerCtaLabel(tx.status) : getTxStatusLabel(tx, viewAs)
+  const actionLabel = getTxStatusLabel(tx, viewAs)
   const actionTone =
     tx.status === 'RELEASED' ? 'info' :
       tx.status === 'PENDING_PAYMENT' || tx.status === 'PAYMENT_RECEIVED' || tx.status === 'VALIDATING' ? 'warning' :
@@ -2171,7 +2161,7 @@ function TransactionDetailModal({
                 Reportar pago
               </a>
             )}
-            {viewAs === 'buyer' && tx.status === 'IN_ESCROW' && hasSellerDeliveryAudit(tx) && !cardCoversConfirmReceived && (
+            {viewAs === 'buyer' && tx.status === 'IN_ESCROW' && !cardCoversConfirmReceived && (
               <button
                 type="button"
                 onClick={() => { void handleConfirmReceived() }}

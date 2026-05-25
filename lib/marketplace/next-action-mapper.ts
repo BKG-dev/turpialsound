@@ -144,7 +144,7 @@ export function hasSellerPayoutSentAudit(tx: Pick<MarketplaceTxLike, 'statusHist
 export function getBuyerCtaLabel(status: string) {
   if (status === 'PENDING_PAYMENT') return 'Reportar pago'
   if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado / esperando validacion'
-  if (status === 'IN_ESCROW') return 'Pago validado / esperando entrega'
+  if (status === 'IN_ESCROW') return 'Confirmar recibido'
   if (status === 'DELIVERY_CONFIRMED') return 'Recepcion confirmada / esperando liberacion admin'
   if (status === 'RELEASED') return 'Fondos liberados'
   if (status === 'DISPUTED') return 'En disputa / esperando resolucion'
@@ -159,7 +159,7 @@ export function getStatusLabelForView(
   if (viewAs === 'buyer') {
     if (status === 'PENDING_PAYMENT') return 'Reportar pago'
     if (status === 'PAYMENT_RECEIVED' || status === 'VALIDATING') return 'Pago reportado'
-    if (status === 'IN_ESCROW') return 'Pago validado'
+    if (status === 'IN_ESCROW') return 'Fondos en custodia'
     if (status === 'DELIVERY_CONFIRMED') return 'Recepcion confirmada'
     if (status === 'RELEASED') return 'Fondos liberados'
     if (status === 'DISPUTED') return 'En disputa'
@@ -179,6 +179,8 @@ export function deriveMarketplaceNextActionState(
   let statusLabel: string
   if (deliveredBySeller) {
     statusLabel = viewAs === 'buyer' ? 'Entrega registrada' : 'Entrega reportada'
+  } else if (tx.status === 'IN_ESCROW' && viewAs === 'buyer') {
+    statusLabel = 'Fondos en custodia'
   } else if (tx.status === 'DELIVERY_CONFIRMED') {
     statusLabel = 'Recepcion confirmada'
   } else {
@@ -190,6 +192,8 @@ export function deriveMarketplaceNextActionState(
     statusCopy = viewAs === 'buyer'
       ? 'El vendedor registro la entrega. Confirma recepcion solo si ya revisaste y estas conforme.'
       : 'La entrega quedo registrada. Los fondos siguen protegidos hasta que el comprador confirme y admin libere.'
+  } else if (tx.status === 'IN_ESCROW' && viewAs === 'buyer') {
+    statusCopy = 'Si ya recibiste el producto y estas conforme, puedes confirmar la recepcion. Si todavia no recibiste nada, espera al vendedor o usa mensajes.'
   } else if (tx.status === 'DELIVERY_CONFIRMED') {
     statusCopy = viewAs === 'buyer'
       ? 'Confirmaste la recepcion. El admin debe liberar el pago al vendedor si no hay disputa activa.'
@@ -203,6 +207,8 @@ export function deriveMarketplaceNextActionState(
     nextStep = viewAs === 'buyer'
       ? 'Confirma recibido solo si estas conforme, o abre disputa si hay una incidencia real.'
       : 'Espera la confirmacion del comprador. No hay fondos liberados todavia.'
+  } else if (tx.status === 'IN_ESCROW' && viewAs === 'buyer') {
+    nextStep = 'Si ya recibiste y estas conforme, confirma recibido. Si no, mantente en mensajes con el vendedor o abre disputa si aplica.'
   } else if (tx.status === 'DELIVERY_CONFIRMED') {
     nextStep = 'Espera la liberacion admin. La operacion todavia no esta pagada al vendedor.'
   } else {
@@ -253,9 +259,8 @@ function buildPrimaryAction(
 
   if (viewAs === 'buyer') {
     if (tx.status === 'PENDING_PAYMENT') return 'report_payment'
-    if (tx.status === 'IN_ESCROW' && deliveredBySeller) return 'confirm_received'
+    if (tx.status === 'IN_ESCROW') return 'confirm_received'
     if (tx.status === 'PAYMENT_RECEIVED' || tx.status === 'VALIDATING') return 'view_operation'
-    if (tx.status === 'IN_ESCROW') return 'open_messages'
     if (tx.status === 'DELIVERY_CONFIRMED' || tx.status === 'RELEASED') return 'view_operation'
     return 'none'
   }
