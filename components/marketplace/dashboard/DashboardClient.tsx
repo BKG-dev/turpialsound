@@ -58,6 +58,8 @@ import { cn } from '@/lib/utils'
 import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
 import { MarketplaceThemeToggle } from '@/components/marketplace/MarketplaceTheme'
 import { OperationNextStepCard } from '@/components/marketplace/dashboard/OperationNextStepCard'
+import { BuyerPaymentDetailsCard } from '@/components/marketplace/dashboard/BuyerPaymentDetailsCard'
+import { SellerSettlementDetailsCard } from '@/components/marketplace/dashboard/SellerSettlementDetailsCard'
 import { VENEZUELAN_BANK_OPTIONS } from '@/lib/marketplace/venezuelan-banks'
 import { normalizeVenezuelanMobilePhone } from '@/lib/marketplace/venezuelan-phone'
 import {
@@ -1861,6 +1863,29 @@ function TransactionDetailModal({
   const detailStateCopy = sellerPaid
     ? 'El pago al vendedor ya fue registrado por el equipo. La operacion queda cerrada a nivel operativo.'
     : getTxStatusCopy(tx, viewAs)
+  const sellerFundsStatus =
+    sellerPaid
+      ? 'Pago enviado'
+      : tx.status === 'RELEASED'
+        ? 'Fondos liberados'
+        : tx.status === 'DELIVERY_CONFIRMED'
+          ? 'Pendiente liberacion admin'
+          : tx.status === 'IN_ESCROW'
+            ? 'En custodia'
+            : tx.status === 'DISPUTED'
+              ? 'En disputa'
+              : 'En proceso'
+  const sellerFundsHint =
+    sellerPaid
+      ? 'El pago enviado indica que el equipo registro el pago al vendedor.'
+      : tx.status === 'RELEASED'
+        ? 'Fondos liberados; pendiente registrar pago enviado.'
+        : 'El estado operativo puede cambiar segun validacion, entrega y liberacion admin.'
+  const grossAmountLabel = `${fmtUSD(roundMoney(Number(tx.amount ?? 0)))} ${tx.currency}`
+  const platformFeeAmount = Number(tx.platformFeeAmount ?? Number.NaN)
+  const sellerNetAmount = Number(tx.sellerNetAmount ?? Number.NaN)
+  const platformFeeLabel = Number.isFinite(platformFeeAmount) ? `${fmtUSD(roundMoney(platformFeeAmount))} ${tx.currency}` : null
+  const sellerNetLabel = Number.isFinite(sellerNetAmount) ? `${fmtUSD(roundMoney(sellerNetAmount))} ${tx.currency}` : null
   const operationCardState = deriveMarketplaceOperationCardState(tx, viewAs, {
     hasUsablePayoutMethod,
     fallbackLabel: STATUS_CONFIG[tx.status]?.label,
@@ -1993,16 +2018,48 @@ function TransactionDetailModal({
             <SellerFinancialSummary tx={tx} sellerPayoutMethod={sellerPayoutMethod} />
           )}
 
+          {viewAs === 'buyer' ? (
+            <BuyerPaymentDetailsCard
+              paymentMethodLabel={payoutMethodLabel(tx.paymentMethod)}
+              paymentReference={tx.paymentReference}
+              paymentSenderBank={tx.paymentSenderBank}
+              paymentPaidAtLabel={tx.paymentPaidAt ? fmtDate(tx.paymentPaidAt) : null}
+              paymentProofUrl={tx.paymentProofUrl ?? null}
+              isBinancePayment={buyerPaidWithBinance}
+              status={tx.status}
+              nextStep={sellerPaid ? 'No hay acciones pendientes para esta operacion.' : getTxNextStep(tx, viewAs)}
+            />
+          ) : viewAs === 'seller' ? (
+            <SellerSettlementDetailsCard
+              grossAmountLabel={grossAmountLabel}
+              platformFeeLabel={platformFeeLabel}
+              netAmountLabel={sellerNetLabel}
+              payoutStatusLabel={sellerFundsStatus}
+              payoutStatusHint={sellerFundsHint}
+              paymentMethodLabel={payoutMethodLabel(tx.paymentMethod)}
+              onOpenPayouts={onSetupPayout}
+              payoutActionLabel={hasUsablePayoutMethod ? 'Ir a Cobros' : 'Configurar cobro'}
+            />
+          ) : (
+            <div>
+              <SectionHeader title="Detalles de operacion" />
+              <div className="grid gap-3 md:grid-cols-2">
+                <PayoutDetailRow label="ID transaccion" value={tx.id} />
+                <PayoutDetailRow label="Metodo de pago" value={payoutMethodLabel(tx.paymentMethod)} />
+                <PayoutDetailRow label={buyerPaidWithBinance ? 'Referencia / hash Binance' : 'Referencia'} value={tx.paymentReference ?? 'Sin referencia reportada'} />
+                {!buyerPaidWithBinance && (
+                  <PayoutDetailRow label="Banco emisor" value={tx.paymentSenderBank ?? 'Sin banco reportado'} />
+                )}
+                <PayoutDetailRow label="Fecha de pago" value={tx.paymentPaidAt ? fmtDate(tx.paymentPaidAt) : 'Sin fecha reportada'} />
+                <PayoutDetailRow label="Fecha estimada de cierre" value={tx.escrowReleaseAt ? fmtDate(tx.escrowReleaseAt) : 'Aun sin fecha estimada'} />
+              </div>
+            </div>
+          )}
+
           <div>
-            <SectionHeader title="Detalles de operacion" />
+            <SectionHeader title="Datos operativos" />
             <div className="grid gap-3 md:grid-cols-2">
               <PayoutDetailRow label="ID transaccion" value={tx.id} />
-              <PayoutDetailRow label="Metodo de pago" value={payoutMethodLabel(tx.paymentMethod)} />
-              <PayoutDetailRow label={buyerPaidWithBinance ? 'Referencia / hash Binance' : 'Referencia'} value={tx.paymentReference ?? 'Sin referencia reportada'} />
-              {!buyerPaidWithBinance && (
-                <PayoutDetailRow label="Banco emisor" value={tx.paymentSenderBank ?? 'Sin banco reportado'} />
-              )}
-              <PayoutDetailRow label="Fecha de pago" value={tx.paymentPaidAt ? fmtDate(tx.paymentPaidAt) : 'Sin fecha reportada'} />
               <PayoutDetailRow label="Fecha estimada de cierre" value={tx.escrowReleaseAt ? fmtDate(tx.escrowReleaseAt) : 'Aun sin fecha estimada'} />
               <PayoutDetailRow label="Siguiente paso" value={sellerPaid ? 'Pago enviado al vendedor. No hay acciones pendientes.' : getTxNextStep(tx, viewAs)} />
               {tx.frozenRate ? (
