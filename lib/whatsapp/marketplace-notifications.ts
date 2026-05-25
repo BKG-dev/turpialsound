@@ -21,11 +21,20 @@ interface MarketplaceCustomer {
 }
 
 interface MarketplaceContext {
+  txId?: string
   txCode?: string
   listingTitle?: string
   amount?: number
   currency?: string
   appUrl?: string
+}
+
+function buildMarketplaceDashboardLink(baseUrl: string, options?: { txId?: string; tab?: string }): string {
+  const params = new URLSearchParams()
+  if (options?.tab) params.set('tab', options.tab)
+  if (options?.txId) params.set('txId', options.txId)
+  const query = params.toString()
+  return `${baseUrl}/marketplace/dashboard${query ? `?${query}` : ''}`
 }
 
 export interface MarketplaceWhatsappResult {
@@ -43,6 +52,10 @@ function formatMarketplaceMessage(
 ): string {
   const baseUrl = ctx.appUrl ?? (process.env.APP_URL?.replace(/\/+$/, '') ?? 'https://turpialsong.com')
   const currency = ctx.currency ?? 'USD'
+  const salesLink = buildMarketplaceDashboardLink(baseUrl, { tab: 'sales', txId: ctx.txId })
+  const purchasesLink = buildMarketplaceDashboardLink(baseUrl, { tab: 'purchases', txId: ctx.txId })
+  const payoutsLink = buildMarketplaceDashboardLink(baseUrl, { tab: 'payouts', txId: ctx.txId })
+  const dashboardLink = buildMarketplaceDashboardLink(baseUrl, { txId: ctx.txId })
 
   switch (event) {
     case 'mp_new_sale':
@@ -51,7 +64,7 @@ function formatMarketplaceMessage(
         `Producto: ${ctx.listingTitle ?? 'Sin titulo'}.`,
         `Monto: ${currency} ${ctx.amount?.toFixed(2) ?? '0.00'}.`,
         ctx.txCode ? `Referencia: ${ctx.txCode}.` : '',
-        `Revisa tu panel: ${baseUrl}/marketplace/dashboard?tab=sales`,
+        `Revisa tu panel: ${salesLink}`,
       ].filter(Boolean).join('\n')
 
     case 'mp_payment_received':
@@ -59,9 +72,7 @@ function formatMarketplaceMessage(
         `Hola ${customer.name}, tu pago fue recibido y esta en revision.`,
         ctx.txCode ? `Referencia: ${ctx.txCode}.` : '',
         ctx.amount ? `Monto: ${currency} ${ctx.amount.toFixed(2)}.` : '',
-        ctx.txCode
-          ? `Estado: ${baseUrl}/marketplace/dashboard?tab=purchases`
-          : `Revisa tu panel: ${baseUrl}/marketplace/dashboard`,
+        ctx.txCode ? `Estado: ${purchasesLink}` : `Revisa tu panel: ${dashboardLink}`,
       ].filter(Boolean).join('\n')
 
     case 'mp_payment_approved':
@@ -69,7 +80,7 @@ function formatMarketplaceMessage(
         `Hola ${customer.name}, el pago fue aprobado.`,
         ctx.listingTitle ? `Producto: ${ctx.listingTitle}.` : '',
         ctx.txCode ? `Referencia: ${ctx.txCode}.` : '',
-        `Ya puedes continuar el flujo de entrega en tu panel: ${baseUrl}/marketplace/dashboard`,
+        `Ya puedes continuar el flujo de entrega en tu panel: ${dashboardLink}`,
       ].filter(Boolean).join('\n')
 
     case 'mp_seller_delivered':
@@ -77,7 +88,7 @@ function formatMarketplaceMessage(
         `Hola ${customer.name}, el vendedor marco el producto como entregado.`,
         ctx.listingTitle ? `Producto: ${ctx.listingTitle}.` : '',
         ctx.txCode ? `Referencia: ${ctx.txCode}.` : '',
-        `Confirma recepcion o abre disputa si hay un problema: ${baseUrl}/marketplace/dashboard?tab=purchases`,
+        `Confirma recepcion o abre disputa si hay un problema: ${purchasesLink}`,
       ].filter(Boolean).join('\n')
 
     case 'mp_delivery_confirmed':
@@ -85,7 +96,7 @@ function formatMarketplaceMessage(
         `Hola ${customer.name}, el comprador confirmo recepcion.`,
         ctx.listingTitle ? `Producto: ${ctx.listingTitle}.` : '',
         ctx.txCode ? `Referencia: ${ctx.txCode}.` : '',
-        `La operacion queda lista para liberacion de fondos: ${baseUrl}/marketplace/dashboard?tab=sales`,
+        `La operacion queda lista para liberacion de fondos: ${salesLink}`,
       ].filter(Boolean).join('\n')
 
     case 'mp_dispute_opened':
@@ -93,7 +104,7 @@ function formatMarketplaceMessage(
         `Hola ${customer.name}, se abrio una disputa en tu transaccion.`,
         ctx.txCode ? `Referencia: ${ctx.txCode}.` : '',
         `El equipo revisara el caso y te contactara.`,
-        `Panel: ${baseUrl}/marketplace/dashboard`,
+        `Panel: ${dashboardLink}`,
       ].filter(Boolean).join('\n')
 
     case 'mp_payout_released':
@@ -101,7 +112,7 @@ function formatMarketplaceMessage(
         `Hola ${customer.name}, tus fondos fueron liberados.`,
         ctx.txCode ? `Referencia: ${ctx.txCode}.` : '',
         ctx.amount ? `Monto neto: ${currency} ${ctx.amount.toFixed(2)}.` : '',
-        `Revisa tu panel de cobros: ${baseUrl}/marketplace/dashboard?tab=payouts`,
+        `Revisa tu panel de cobros: ${payoutsLink}`,
       ].filter(Boolean).join('\n')
 
     case 'mp_payout_sent':
@@ -109,7 +120,7 @@ function formatMarketplaceMessage(
         `Hola ${customer.name}, tu pago fue enviado por el equipo.`,
         ctx.txCode ? `Referencia: ${ctx.txCode}.` : '',
         ctx.amount ? `Monto enviado: ${currency} ${ctx.amount.toFixed(2)}.` : '',
-        `Verifica tu metodo de cobro en: ${baseUrl}/marketplace/dashboard?tab=payouts`,
+        `Verifica tu metodo de cobro en: ${payoutsLink}`,
       ].filter(Boolean).join('\n')
 
     case 'mp_referral_commission':
