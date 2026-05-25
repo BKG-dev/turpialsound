@@ -910,15 +910,19 @@ export async function initiatePurchase(
       })
       if (!latestListing) throw new Error('Listing no encontrado')
 
-      // Decremento directo del inventory (mas fiable que count() con pg-adapter)
-      if (latestListing.hasInventory && latestListing.inventory != null) {
-        if (latestListing.inventory < requestedQuantity) {
-          throw new Error(latestListing.inventory <= 0 ? 'Este articulo esta agotado' : `Solo quedan ${latestListing.inventory} disponibles`)
-        }
-        await prisma.mpListing.update({
-          where: { id: listingId },
+      // Atomic stock guard: decrements only when current inventory can satisfy the request.
+      if (latestListing.hasInventory) {
+        const updated = await prisma.mpListing.updateMany({
+          where: {
+            id: listingId,
+            hasInventory: true,
+            inventory: { gte: requestedQuantity },
+          },
           data: { inventory: { decrement: requestedQuantity } },
         })
+        if (updated.count !== 1) {
+          throw new Error('Stock insuficiente. La disponibilidad cambio; ajusta la cantidad e intenta de nuevo.')
+        }
       }
 
       const record = await createMarketplaceTransaction(prisma, schemaCapabilities, {
@@ -1831,15 +1835,19 @@ export async function checkoutCart(
           select: { hasInventory: true, inventory: true },
         })
         if (!latestListing) throw new Error(`Listing no encontrado: ${row.item.listingId}`)
-        // Atomic decrement — mas fiable que count() con pg-adapter
-        if (latestListing.hasInventory && latestListing.inventory != null) {
-          if (latestListing.inventory < row.item.quantity) {
-            throw new Error(latestListing.inventory <= 0 ? `${row.item.listingId}: agotado` : `${row.item.listingId}: solo quedan ${latestListing.inventory} disponibles`)
-          }
-          await prisma.mpListing.update({
-            where: { id: row.item.listingId },
+        // Atomic stock guard: decrements only when inventory can satisfy each row.
+        if (latestListing.hasInventory) {
+          const updated = await prisma.mpListing.updateMany({
+            where: {
+              id: row.item.listingId,
+              hasInventory: true,
+              inventory: { gte: row.item.quantity },
+            },
             data: { inventory: { decrement: row.item.quantity } },
           })
+          if (updated.count !== 1) {
+            throw new Error('Stock insuficiente. La disponibilidad cambio; ajusta la cantidad e intenta de nuevo.')
+          }
         }
       }
 
