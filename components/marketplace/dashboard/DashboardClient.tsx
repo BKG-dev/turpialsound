@@ -1874,6 +1874,18 @@ function TransactionDetailModal({
     hasUsablePayoutMethod,
     fallbackLabel: STATUS_CONFIG[tx.status]?.label,
   })
+  const cardCoversReportPayment =
+    operationCardState.primaryAction === 'report_payment' ||
+    operationCardState.secondaryActions.includes('report_payment')
+  const cardCoversConfirmReceived =
+    operationCardState.primaryAction === 'confirm_received' ||
+    operationCardState.secondaryActions.includes('confirm_received')
+  const cardCoversMarkDelivered =
+    operationCardState.primaryAction === 'mark_delivered' ||
+    operationCardState.secondaryActions.includes('mark_delivered')
+  const cardCoversOpenMessages =
+    operationCardState.primaryAction === 'open_messages' ||
+    operationCardState.secondaryActions.includes('open_messages')
 
   async function handleConfirmReceived() {
     const c = window.confirm('Confirma solo si ya recibiste y revisaste el producto o servicio.')
@@ -2131,7 +2143,7 @@ function TransactionDetailModal({
             className="flex flex-wrap gap-2 rounded-2xl p-3"
             style={{ background: 'var(--mp-card-subtle)', border: '1px solid var(--mp-border)' }}
           >
-            {viewAs === 'buyer' && tx.status === 'PENDING_PAYMENT' && (
+            {viewAs === 'buyer' && tx.status === 'PENDING_PAYMENT' && !cardCoversReportPayment && (
               <a
                 href="/marketplace"
                 className="rounded-xl px-4 py-2 text-sm font-semibold transition-all hover:brightness-110"
@@ -2140,7 +2152,7 @@ function TransactionDetailModal({
                 Reportar pago
               </a>
             )}
-            {viewAs === 'buyer' && tx.status === 'IN_ESCROW' && hasSellerDeliveryAudit(tx) && (
+            {viewAs === 'buyer' && tx.status === 'IN_ESCROW' && hasSellerDeliveryAudit(tx) && !cardCoversConfirmReceived && (
               <button
                 type="button"
                 onClick={() => { void handleConfirmReceived() }}
@@ -2150,7 +2162,7 @@ function TransactionDetailModal({
                 Confirmar recibido
               </button>
             )}
-            {viewAs === 'seller' && tx.status === 'IN_ESCROW' && !hasSellerDeliveryAudit(tx) && (
+            {viewAs === 'seller' && tx.status === 'IN_ESCROW' && !hasSellerDeliveryAudit(tx) && !cardCoversMarkDelivered && (
               <button
                 type="button"
                 onClick={() => { void handleMarkDelivered() }}
@@ -2169,7 +2181,7 @@ function TransactionDetailModal({
                 Ver listing
               </Link>
             )}
-            {onOpenMessages && (
+            {onOpenMessages && !cardCoversOpenMessages && (
               <button
                 onClick={onOpenMessages}
                 className="rounded-xl px-4 py-2 text-sm font-semibold"
