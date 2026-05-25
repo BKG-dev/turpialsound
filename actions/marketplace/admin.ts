@@ -32,7 +32,7 @@ function getMarketplaceBaseUrl(): string {
 
 function buildMarketplaceTransactionUrl(transactionId: string): string {
   const baseUrl = getMarketplaceBaseUrl()
-  return `${baseUrl}/marketplace/dashboard/transactions/${encodeURIComponent(transactionId)}`
+  return `${baseUrl}/marketplace/dashboard?txId=${encodeURIComponent(transactionId)}`
 }
 
 function buildTxCode(transactionId: string): string {
@@ -67,7 +67,7 @@ async function notifyMarketplacePaymentApproved(params: {
       sendMarketplaceWhatsapp(
         'mp_payment_approved',
         { phone: params.buyer.phone, name: buyerName },
-        { txCode, listingTitle },
+        { txId: params.transactionId, txCode, listingTitle },
       ),
     )
   }
@@ -87,7 +87,7 @@ async function notifyMarketplacePaymentApproved(params: {
       sendMarketplaceWhatsapp(
         'mp_payment_approved',
         { phone: params.seller.phone, name: sellerName },
-        { txCode, listingTitle },
+        { txId: params.transactionId, txCode, listingTitle },
       ),
     )
   }
@@ -141,6 +141,7 @@ async function notifyMarketplacePayoutReleased(params: {
       'mp_payout_released',
       { phone: params.seller.phone!, name: sellerName },
       {
+        txId: params.transactionId,
         txCode,
         amount: params.amount,
         currency: params.currency,
@@ -197,6 +198,7 @@ async function notifyMarketplacePayoutSent(params: {
       'mp_payout_sent',
       { phone: params.seller.phone!, name: sellerName },
       {
+        txId: params.transactionId,
         txCode,
         amount: params.amount,
         currency: params.currency,

@@ -2547,6 +2547,7 @@ interface DashboardClientProps {
   referredTransactions: object[]
   initialTab?: Tab
   initialThreadId?: string
+  initialTxId?: string
 }
 
 export function DashboardClient({
@@ -2566,6 +2567,7 @@ export function DashboardClient({
   referredTransactions: rawReferredTransactions,
   initialTab,
   initialThreadId,
+  initialTxId,
 }: DashboardClientProps) {
   const router = useRouter()
 
@@ -2606,6 +2608,7 @@ export function DashboardClient({
   const [payoutMessage, setPayoutMessage] = useState<string | null>(null)
   const [dashboardMessage, setDashboardMessage] = useState<string | null>(null)
   const [dashboardMessageTone, setDashboardMessageTone] = useState<'success' | 'error' | 'info'>('info')
+  const [deepLinkHandledTxId, setDeepLinkHandledTxId] = useState<string | null>(null)
   const [payoutSubmitting, setPayoutSubmitting] = useState(false)
   const [actionBusyKey, setActionBusyKey] = useState<string | null>(null)
   const [payoutForm, setPayoutForm] = useState({
@@ -2639,6 +2642,25 @@ export function DashboardClient({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialThreadId, initialThreads])
+
+  useEffect(() => {
+    if (!initialTxId || deepLinkHandledTxId === initialTxId) return
+
+    const purchaseTx = purchases.find(tx => tx.id === initialTxId)
+    const salesTx = sales.find(tx => tx.id === initialTxId)
+    const target = purchaseTx
+      ? { tx: purchaseTx, viewAs: 'buyer' as const, tab: 'purchases' as const }
+      : salesTx
+        ? { tx: salesTx, viewAs: 'seller' as const, tab: 'sales' as const }
+        : null
+
+    setDeepLinkHandledTxId(initialTxId)
+    if (!target) return
+
+    setActiveTab(target.tab)
+    void handleOpenTransaction(target.tx, target.viewAs)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTxId, deepLinkHandledTxId, purchases, sales])
 
   async function refreshThreadsAndUnread() {
     const [unreadResult, threadsResult] = await Promise.allSettled([

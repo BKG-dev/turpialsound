@@ -37,7 +37,7 @@ function getMarketplaceBaseUrl(): string {
 
 function buildMarketplaceTransactionUrl(transactionId: string): string {
   const baseUrl = getMarketplaceBaseUrl()
-  return `${baseUrl}/marketplace/dashboard/transactions/${encodeURIComponent(transactionId)}`
+  return `${baseUrl}/marketplace/dashboard?txId=${encodeURIComponent(transactionId)}`
 }
 
 function buildTxCode(transactionId: string): string {
@@ -99,6 +99,7 @@ async function notifyMarketplacePurchaseInitiated(params: {
         'mp_new_sale',
         { phone: params.seller.phone, name: sellerName },
         {
+          txId: params.transactionId,
           txCode,
           listingTitle,
           amount: params.amount,
@@ -146,6 +147,7 @@ async function notifyMarketplacePaymentReceived(params: {
         'mp_payment_received',
         { phone: params.buyer.phone, name: buyerName },
         {
+          txId: params.transactionId,
           txCode,
           amount: params.amount,
           currency: params.currency,
@@ -193,7 +195,7 @@ async function notifyMarketplacePaymentApproved(params: {
       sendMarketplaceWhatsapp(
         'mp_payment_approved',
         { phone: params.buyer.phone, name: buyerName },
-        { txCode, listingTitle },
+        { txId: params.transactionId, txCode, listingTitle },
       ),
     )
   }
@@ -219,7 +221,7 @@ async function notifyMarketplacePaymentApproved(params: {
       sendMarketplaceWhatsapp(
         'mp_payment_approved',
         { phone: params.seller.phone, name: sellerName },
-        { txCode, listingTitle },
+        { txId: params.transactionId, txCode, listingTitle },
       ),
     )
   }
@@ -260,7 +262,7 @@ async function notifyMarketplaceSellerDelivered(params: {
       sendMarketplaceWhatsapp(
         'mp_seller_delivered',
         { phone: params.buyer.phone, name: buyerName },
-        { txCode, listingTitle },
+        { txId: params.transactionId, txCode, listingTitle },
       ),
     )
   }
@@ -301,7 +303,7 @@ async function notifyMarketplaceDeliveryConfirmed(params: {
       sendMarketplaceWhatsapp(
         'mp_delivery_confirmed',
         { phone: params.seller.phone, name: sellerName },
-        { txCode, listingTitle },
+        { txId: params.transactionId, txCode, listingTitle },
       ),
     )
   }
@@ -344,6 +346,7 @@ async function notifyMarketplacePayoutReleased(params: {
         'mp_payout_released',
         { phone: params.seller.phone, name: sellerName },
         {
+          txId: params.transactionId,
           txCode,
           amount: params.amount,
           currency: params.currency,
@@ -370,7 +373,7 @@ async function notifyMarketplaceDisputeOpened(params: {
       sendMarketplaceWhatsapp(
         'mp_dispute_opened',
         { phone: params.buyer.phone, name: params.buyer.displayName?.trim() || 'Comprador' },
-        { txCode },
+        { txId: params.transactionId, txCode },
       ),
     )
   }
@@ -380,7 +383,7 @@ async function notifyMarketplaceDisputeOpened(params: {
       sendMarketplaceWhatsapp(
         'mp_dispute_opened',
         { phone: params.seller.phone, name: params.seller.displayName?.trim() || 'Vendedor' },
-        { txCode },
+        { txId: params.transactionId, txCode },
       ),
     )
   }
