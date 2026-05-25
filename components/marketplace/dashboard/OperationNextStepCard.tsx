@@ -6,6 +6,7 @@ import {
 } from '@/lib/marketplace/next-action-mapper'
 
 interface OperationNextStepCardState {
+  currentStatus: string
   title: string
   humanStatus: string
   statusCopy: string
@@ -38,6 +39,7 @@ type ActionConfig = {
 
 const SIMPLE_TIMELINE = [
   { key: 'INITIATED', label: 'Compra creada' },
+  { key: 'PENDING_PAYMENT', label: 'Pago pendiente' },
   { key: 'PAYMENT_RECEIVED', label: 'Pago reportado' },
   { key: 'IN_ESCROW', label: 'Pago aprobado' },
   { key: 'SELLER_DELIVERED', label: 'Entregado' },
@@ -45,6 +47,33 @@ const SIMPLE_TIMELINE = [
   { key: 'RELEASED', label: 'Fondos liberados' },
   { key: 'PAYOUT_SENT', label: 'Pago enviado' },
 ] as const
+
+function resolveTimelineState(stepKey: (typeof SIMPLE_TIMELINE)[number]['key'], state: OperationNextStepCardState): 'completed' | 'current' | 'pending' {
+  const status = state.currentStatus
+  const releasedOrSent = status === 'RELEASED' || state.payoutSent
+  const inEscrowOrBeyond = status === 'IN_ESCROW' || status === 'DELIVERY_CONFIRMED' || releasedOrSent
+  const paymentReceivedOrBeyond = status === 'PAYMENT_RECEIVED' || status === 'VALIDATING' || inEscrowOrBeyond
+
+  if (stepKey === 'INITIATED') return 'completed'
+  if (stepKey === 'PENDING_PAYMENT') return paymentReceivedOrBeyond ? 'completed' : status === 'PENDING_PAYMENT' ? 'current' : 'pending'
+  if (stepKey === 'PAYMENT_RECEIVED') return paymentReceivedOrBeyond ? 'completed' : 'pending'
+  if (stepKey === 'IN_ESCROW') return inEscrowOrBeyond ? 'completed' : 'pending'
+
+  if (stepKey === 'SELLER_DELIVERED') {
+    if (state.deliveredBySeller || status === 'DELIVERY_CONFIRMED' || releasedOrSent) return 'completed'
+    return status === 'IN_ESCROW' ? 'current' : 'pending'
+  }
+
+  if (stepKey === 'DELIVERY_CONFIRMED') {
+    if (status === 'DELIVERY_CONFIRMED' || releasedOrSent) return 'completed'
+    if (status === 'IN_ESCROW' && state.deliveredBySeller) return 'current'
+    return 'pending'
+  }
+
+  if (stepKey === 'RELEASED') return releasedOrSent ? 'completed' : 'pending'
+  if (stepKey === 'PAYOUT_SENT') return state.payoutSent ? 'completed' : status === 'RELEASED' ? 'current' : 'pending'
+  return getMarketplaceTimelineState(state.timelineCurrentStatus, stepKey)
+}
 
 function actionToConfig(
   action: MarketplacePrimaryAction,
@@ -145,8 +174,6 @@ export function OperationNextStepCard({
     }))
     .filter((config): config is ActionConfig => Boolean(config))
 
-  const deliveredCompleted = state.deliveredBySeller || ['DELIVERY_CONFIRMED', 'RELEASED', 'PAYOUT_SENT'].includes(state.timelineCurrentStatus)
-
   return (
     <section
       className="rounded-2xl p-4 space-y-4"
@@ -207,26 +234,7 @@ export function OperationNextStepCard({
         </p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {SIMPLE_TIMELINE.map(step => {
-            let stateValue: 'completed' | 'current' | 'pending'
-            if (step.key === 'SELLER_DELIVERED') {
-              stateValue = deliveredCompleted ? 'completed' : (state.timelineCurrentStatus === 'IN_ESCROW' ? 'current' : 'pending')
-            } else if (step.key === 'RELEASED') {
-              if (state.timelineCurrentStatus === 'RELEASED' || state.timelineCurrentStatus === 'PAYOUT_SENT') {
-                stateValue = 'completed'
-              } else {
-                stateValue = getMarketplaceTimelineState(state.timelineCurrentStatus, step.key)
-              }
-            } else if (step.key === 'PAYOUT_SENT') {
-              if (state.payoutSent) {
-                stateValue = 'completed'
-              } else if (state.timelineCurrentStatus === 'RELEASED') {
-                stateValue = 'current'
-              } else {
-                stateValue = 'pending'
-              }
-            } else {
-              stateValue = getMarketplaceTimelineState(state.timelineCurrentStatus, step.key)
-            }
+            const stateValue = resolveTimelineState(step.key, state)
 
             const isCompleted = stateValue === 'completed'
             const isCurrent = stateValue === 'current'

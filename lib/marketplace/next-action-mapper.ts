@@ -318,6 +318,7 @@ export function deriveMarketplaceOperationCardState(
     : derived.nextStep
 
   return {
+    currentStatus: tx.status,
     title: resolvedTitle,
     humanStatus: resolvedHumanStatus,
     statusCopy: resolvedStatusCopy,
