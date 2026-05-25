@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
+import { Suspense } from 'react'
 import { BadgeCheck, Clock, MapPin, Shield, Star } from 'lucide-react'
 import { siteConfig } from '@/content/site'
 import { getListingBySlug } from '@/actions/marketplace/listings'
@@ -9,11 +10,16 @@ import { ListingQASection } from '@/components/marketplace/ListingQASection'
 import { ListingDetailActions } from '@/components/marketplace/ListingDetailActions'
 import { AddToCartButton } from '@/components/marketplace/AddToCartButton'
 import { ShareListingButton } from '@/components/marketplace/ShareListingButton'
-import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
+import { DropSocialButton } from '@/components/marketplace/DropSocialButton'
+import { ReferralTracker } from '@/components/marketplace/ReferralTracker'
+import { ListingImageGallery } from '@/components/marketplace/ListingImageGallery'
 import { SmartMarketplaceAuthBar } from '@/components/marketplace/MarketplaceAuthBar'
 import type { Listing } from '@/types/marketplace'
 
-type ListingPageParams = { params: { slug: string } }
+type ListingPageParams = {
+  params: { slug: string }
+  searchParams?: { ref?: string | string[] }
+}
 
 function truncateForMetadata(value: string, maxLength = 155) {
   const normalized = value.replace(/\s+/g, ' ').trim()
@@ -231,9 +237,16 @@ export async function generateMetadata({ params }: ListingPageParams): Promise<M
   }
 }
 
-export default async function ListingPage({ params }: ListingPageParams) {
+export default async function ListingPage({ params, searchParams }: ListingPageParams) {
   const listing = await getListingBySlug(params.slug)
   if (!listing) notFound()
+
+  if (listing.slug && listing.slug !== params.slug) {
+    const ref = typeof searchParams?.ref === 'string'
+      ? `?ref=${encodeURIComponent(searchParams.ref)}`
+      : ''
+    redirect(`/marketplace/${listing.slug}${ref}`)
+  }
 
   const sellerId = listing.type === 'product' ? listing.seller.id : listing.talent.id
   const seller = listing.type === 'product' ? listing.seller : listing.talent
@@ -245,7 +258,6 @@ export default async function ListingPage({ params }: ListingPageParams) {
 
   const questions = questionsResult.success ? (questionsResult.data ?? []) : []
   const coverImages = getListingImages(listing)
-  const cover = coverImages[0] ?? null
 
   const price = listing.type === 'product' ? listing.price : listing.priceFrom
   const priceTo = listing.type === 'service' ? listing.priceTo : undefined
@@ -262,69 +274,16 @@ export default async function ListingPage({ params }: ListingPageParams) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(listingJsonLd) }}
       />
       <div className="min-h-screen">
+        <Suspense fallback={null}><ReferralTracker /></Suspense>
         <SmartMarketplaceAuthBar />
 
         <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="space-y-3">
-              <div
-                className="w-full aspect-[4/3] rounded-2xl overflow-hidden relative"
-                style={{ background: 'var(--mp-media-bg)', border: '1px solid var(--mp-border)' }}
-              >
-                {cover ? (
-                  <MarketplaceImage
-                    src={cover}
-                    alt={listing.title}
-                    fill
-                    className="w-full h-full object-cover"
-                    sizes="(min-width: 1024px) 50vw, 100vw"
-                    priority
-                  />
-                ) : (
-                  <div
-                    className="w-full h-full"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(0,174,239,0.05) 0%, rgba(0,80,200,0.03) 100%)',
-                    }}
-                  />
-                )}
-                {listing.status === 'sold' && (
-                  <div
-                    className="absolute inset-0 flex items-center justify-center"
-                    style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)' }}
-                  >
-                    <span
-                      className="px-6 py-2 rounded-xl text-xl font-bold tracking-widest"
-                      style={{
-                        background: 'rgba(239,68,68,0.15)',
-                        border: '2px solid rgba(239,68,68,0.7)',
-                        color: '#ef4444',
-                        boxShadow: '0 0 32px rgba(239,68,68,0.35)',
-                        transform: 'rotate(-8deg)',
-                      }}
-                    >
-                      VENDIDO
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {coverImages.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {coverImages.slice(0, 6).map((img, i) => (
-                    <MarketplaceImage
-                      key={i}
-                      src={img}
-                      alt={`${listing.title} ${i + 1}`}
-                      width={64}
-                      height={64}
-                      className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-                      style={{ border: i === 0 ? '2px solid rgba(0,174,239,0.5)' : '1px solid var(--mp-border)' }}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            <ListingImageGallery
+              images={coverImages}
+              title={listing.title}
+              isSold={listing.status === 'sold'}
+            />
 
             <div className="space-y-5">
               <p className="text-[11px] text-[#9a9a9a] uppercase tracking-widest">
@@ -472,6 +431,9 @@ export default async function ListingPage({ params }: ListingPageParams) {
               <div className="flex flex-wrap gap-2 pt-2">
                 <AddToCartButton listing={listing} currentUserId={session?.userId ?? null} variant="detail" />
                 <ShareListingButton listing={listing} variant="detail" />
+                {(!session?.userId || session.userId !== sellerId) && (
+                  <DropSocialButton listing={listing} variant="detail" currentUserId={session?.userId ?? null} />
+                )}
               </div>
 
               <ListingDetailActions
