@@ -25,6 +25,7 @@ import type {
   AdminStats,
   EscrowItem,
   PayoutReportRow,
+  SellerPayoutAuditRow,
   AdminUserRow,
   EscrowFilter,
 } from '@/actions/marketplace/admin'
@@ -33,6 +34,7 @@ import {
   getAdminStats,
   getEscrowList,
   getPayoutReport,
+  getSellerPayoutAuditRows,
   getConsolidatedPayoutReport,
   adminGetUsers,
   adminValidatePayment,
@@ -50,6 +52,7 @@ import {
   getAdminReferralPayouts,
 } from '@/actions/marketplace/referrals'
 import { MarketplaceThemeToggle } from '@/components/marketplace/MarketplaceTheme'
+import { SellerPayoutAuditPanel } from '@/components/marketplace/admin/SellerPayoutAuditPanel'
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
@@ -356,6 +359,7 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
 
   // Payouts
   const [payouts, setPayouts] = useState<PayoutReportRow[] | null>(null)
+  const [payoutAuditRows, setPayoutAuditRows] = useState<SellerPayoutAuditRow[] | null>(null)
   const [referralPayouts, setReferralPayouts] = useState<AdminReferralPayoutRow[] | null>(null)
   const [referralPayoutBusyId, setReferralPayoutBusyId] = useState<string | null>(null)
   const [referralPayoutMsg, setReferralPayoutMsg] = useState('')
@@ -436,6 +440,13 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
     startTransition(async () => {
       const r = await getPayoutReport()
       if (r.success && r.data) setPayouts(r.data)
+    })
+  }, [])
+
+  const loadPayoutAuditRows = useCallback(() => {
+    startTransition(async () => {
+      const r = await getSellerPayoutAuditRows()
+      if (r.success && r.data) setPayoutAuditRows(r.data)
     })
   }, [])
 
@@ -988,7 +999,10 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => loadPayouts()}
+              onClick={() => {
+                loadPayouts()
+                loadPayoutAuditRows()
+              }}
               disabled={isPending}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all hover:bg-white/5"
               style={{ color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.08)' }}
@@ -1008,6 +1022,14 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
               </button>
             )}
           </div>
+        </div>
+
+        <div className="mb-5">
+          <SellerPayoutAuditPanel
+            rows={payoutAuditRows}
+            isLoading={isPending}
+            onReload={loadPayoutAuditRows}
+          />
         </div>
 
         {payouts === null ? (
@@ -1458,7 +1480,10 @@ export function AdminDashboard({ initialStats, initialEscrow }: Props) {
                 if (t.id === 'transactions') applyEscrowFilter('operations')
                 if (t.id === 'escrow') applyEscrowFilter('IN_ESCROW')
                 if (t.id === 'validations') applyEscrowFilter('PAYMENT_RECEIVED')
-                if (t.id === 'payouts' && payouts === null) loadPayouts()
+                if (t.id === 'payouts') {
+                  if (payouts === null) loadPayouts()
+                  if (payoutAuditRows === null) loadPayoutAuditRows()
+                }
                 if (t.id === 'commissions') {
                   if (payouts === null) loadPayouts()
                   if (referralPayouts === null) loadReferralPayouts()
