@@ -298,6 +298,39 @@ export interface EscrowItem {
   createdAt: string
 }
 
+export interface SellerPayoutAuditRow {
+  transactionId: string
+  createdAt: string
+  listingTitle: string
+  buyerName: string
+  buyerEmail: string | null
+  sellerName: string
+  sellerEmail: string | null
+  status: string
+  amount: number
+  currency: string
+  paymentMethod: string
+  platformFeePercent: number | null
+  platformFeeAmount: number | null
+  sellerNetAmount: number | null
+  releasedAt: string | null
+  payoutId: string | null
+  payoutAmount: number | null
+  payoutStatus: string | null
+  payoutMethod: string | null
+  externalPayoutId: string | null
+  payoutCreatedAt: string | null
+  payoutUpdatedAt: string | null
+  payoutCompletedAt: string | null
+  payoutAmountMismatch: boolean
+  releasedWithoutPayout: boolean
+  completedPayout: boolean
+  pendingPayout: boolean
+  payoutCompletedButTxNotReleased: boolean
+  missingSellerNetAmount: boolean
+  missingPayoutAmount: boolean
+}
+
 export interface PayoutReportRow {
   sellerId: string
   sellerName: string
@@ -879,6 +912,167 @@ export async function getConsolidatedPayoutReport(): Promise<ActionResult<Payout
 }
 
 // ─── ADMIN VALIDATE PAYMENT ───────────────────────────────────────────────────
+
+export async function getSellerPayoutAuditRows(): Promise<ActionResult<SellerPayoutAuditRow[]>> {
+  try {
+    await requireSuper()
+  } catch (err) {
+    return { success: false, message: err instanceof Error ? err.message : 'Sin permiso' }
+  }
+
+  const db = await getDb()
+  if (!db) return { success: false, message: 'Base de datos no disponible' }
+
+  try {
+    const payouts = await db.mpPayout.findMany({
+      where: {
+        NOT: { reference: { startsWith: 'REF-' } },
+      },
+      select: {
+        id: true,
+        amount: true,
+        status: true,
+        method: true,
+        externalPayoutId: true,
+        createdAt: true,
+        updatedAt: true,
+        completedAt: true,
+        transactionIds: true,
+      },
+      orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
+    })
+
+    const payoutByTxId = new Map<string, {
+      id: string
+      amount: unknown
+      status: string
+      method: string
+      externalPayoutId: string | null
+      createdAt: Date
+      updatedAt: Date
+      completedAt: Date | null
+    }>()
+
+    for (const payout of payouts) {
+      for (const txId of payout.transactionIds) {
+        if (!payoutByTxId.has(txId)) {
+          payoutByTxId.set(txId, {
+            id: payout.id,
+            amount: payout.amount,
+            status: payout.status,
+            method: payout.method,
+            externalPayoutId: payout.externalPayoutId,
+            createdAt: payout.createdAt,
+            updatedAt: payout.updatedAt,
+            completedAt: payout.completedAt,
+          })
+        }
+      }
+    }
+
+    const payoutTxIds = Array.from(payoutByTxId.keys())
+    const txWhere = payoutTxIds.length > 0
+      ? {
+        OR: [
+          { status: { in: ['DELIVERY_CONFIRMED', 'RELEASED'] } },
+          { id: { in: payoutTxIds } },
+        ],
+      }
+      : { status: { in: ['DELIVERY_CONFIRMED', 'RELEASED'] } }
+
+    const txs = await db.mpTransaction.findMany({
+      where: txWhere,
+      orderBy: { createdAt: 'desc' },
+      take: 300,
+      select: {
+        id: true,
+        status: true,
+        amount: true,
+        currency: true,
+        paymentMethod: true,
+        platformFeePercent: true,
+        platformFeeAmount: true,
+        sellerNetAmount: true,
+        releasedAt: true,
+        createdAt: true,
+        buyer: { select: { displayName: true, email: true } },
+        seller: { select: { displayName: true, email: true } },
+        listing: { select: { title: true } },
+      },
+    })
+
+    await db.$disconnect()
+
+    const rows: SellerPayoutAuditRow[] = (txs as Array<{
+      id: string
+      status: string
+      amount: unknown
+      currency: string
+      paymentMethod: string
+      platformFeePercent: unknown
+      platformFeeAmount: unknown
+      sellerNetAmount: unknown
+      releasedAt: Date | null
+      createdAt: Date
+      buyer: { displayName: string | null; email: string | null } | null
+      seller: { displayName: string | null; email: string | null } | null
+      listing: { title: string | null } | null
+    }>).map((tx) => {
+      const payout = payoutByTxId.get(tx.id)
+      const payoutAmount = payout ? Number(payout.amount) : null
+      const sellerNetAmount = tx.sellerNetAmount != null ? Number(tx.sellerNetAmount) : null
+      const hasPayout = Boolean(payout)
+      const missingSellerNetAmount = !Number.isFinite(sellerNetAmount ?? Number.NaN)
+      const missingPayoutAmount = hasPayout && !Number.isFinite(payoutAmount ?? Number.NaN)
+      const payoutAmountMismatch = hasPayout &&
+        !missingSellerNetAmount &&
+        !missingPayoutAmount &&
+        Math.abs((payoutAmount ?? 0) - (sellerNetAmount ?? 0)) > 0.01
+      const completedPayout = payout?.status === 'COMPLETED'
+      const releasedWithoutPayout = tx.status === 'RELEASED' && !hasPayout
+      const pendingPayout = hasPayout && payout?.status !== 'COMPLETED'
+      const payoutCompletedButTxNotReleased = completedPayout && tx.status !== 'RELEASED'
+
+      return {
+        transactionId: tx.id,
+        createdAt: tx.createdAt.toISOString(),
+        listingTitle: tx.listing?.title ?? 'Operacion Marketplace',
+        buyerName: tx.buyer?.displayName ?? 'Comprador',
+        buyerEmail: tx.buyer?.email ?? null,
+        sellerName: tx.seller?.displayName ?? 'Vendedor',
+        sellerEmail: tx.seller?.email ?? null,
+        status: tx.status,
+        amount: Number(tx.amount),
+        currency: tx.currency,
+        paymentMethod: tx.paymentMethod,
+        platformFeePercent: tx.platformFeePercent != null ? Number(tx.platformFeePercent) : null,
+        platformFeeAmount: tx.platformFeeAmount != null ? Number(tx.platformFeeAmount) : null,
+        sellerNetAmount,
+        releasedAt: tx.releasedAt?.toISOString() ?? null,
+        payoutId: payout?.id ?? null,
+        payoutAmount: hasPayout ? payoutAmount : null,
+        payoutStatus: payout?.status ?? null,
+        payoutMethod: payout?.method ?? null,
+        externalPayoutId: payout?.externalPayoutId ?? null,
+        payoutCreatedAt: payout?.createdAt?.toISOString() ?? null,
+        payoutUpdatedAt: payout?.updatedAt?.toISOString() ?? null,
+        payoutCompletedAt: payout?.completedAt?.toISOString() ?? null,
+        payoutAmountMismatch,
+        releasedWithoutPayout,
+        completedPayout,
+        pendingPayout,
+        payoutCompletedButTxNotReleased,
+        missingSellerNetAmount,
+        missingPayoutAmount,
+      }
+    })
+
+    return { success: true, data: rows, message: 'OK' }
+  } catch (err) {
+    await db.$disconnect().catch(() => {})
+    return { success: false, message: err instanceof Error ? err.message : 'Error desconocido' }
+  }
+}
 
 export async function adminValidatePayment(
   txId: string,
