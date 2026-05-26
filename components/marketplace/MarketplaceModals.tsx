@@ -96,6 +96,16 @@ const stepVariants = {
   exit: (dir: number) => ({ opacity: 0, x: dir > 0 ? -32 : 32, transition: { duration: 0.18 } }),
 }
 
+const SELL_FORM_DEFAULTS: Record<string, string> = {
+  hasInventory: 'true',
+  inventory: '1',
+}
+
+function buildInitialFormValues(flow: ModalFlow): Record<string, string> {
+  if (flow === 'sell') return { ...SELL_FORM_DEFAULTS }
+  return {}
+}
+
 // ─── Modal Shell ──────────────────────────────────────────────────────────────
 
 function ModalShell({
@@ -752,7 +762,12 @@ function SellFlow({
             {/* S-INV: Inventory with stock tracking */}
             <div className="space-y-1.5">
               <label className="text-xs text-[#a0a0a0]">Cantidad disponible</label>
-              <input type="number" min="1" max="999" value={formValues.inventory ?? '1'} onChange={e => { onFieldChange('inventory', e.target.value); onFieldChange('hasInventory', 'true') }}
+              <input type="number" min="1" max="999" value={formValues.inventory ?? '1'} onChange={e => {
+                const parsed = Number.parseInt(e.target.value, 10)
+                const nextValue = Number.isFinite(parsed) && parsed > 0 ? String(parsed) : '1'
+                onFieldChange('inventory', nextValue)
+                onFieldChange('hasInventory', 'true')
+              }}
                 placeholder="1"
                 className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[var(--mp-text-faint)] outline-none"
                 style={fieldInputStyle('inventory', fieldErrors)}
@@ -1126,7 +1141,7 @@ export function MarketplaceModals({
 
   // Reset all state when modal opens or closes
   useEffect(() => {
-    setFormValues({})
+    setFormValues(buildInitialFormValues(flow))
     setSubmitError(null)
     setIsSubmitting(false)
     setFieldErrors({})
@@ -1210,6 +1225,11 @@ export function MarketplaceModals({
 
     try {
       const rawPrice = formValues.price ?? formValues.priceFrom ?? '0'
+      const parsedInventory = Number.parseInt(formValues.inventory ?? '', 10)
+      const normalizedSellInventory =
+        Number.isFinite(parsedInventory) && parsedInventory > 0
+          ? parsedInventory
+          : 1
       const uploadedImageUrls = await Promise.all(
         imageFiles.map(upload => uploadMarketplaceFile(upload.file, 'listing-image').then(result => result.url)),
       )
@@ -1220,8 +1240,12 @@ export function MarketplaceModals({
         tags: [],
         price: parseFloat(rawPrice) || 0,
         currency: 'USD',
-        hasInventory: formValues.hasInventory === 'true',
-        inventory: formValues.inventory ? parseInt(formValues.inventory) : undefined,
+        hasInventory: flow === 'sell' ? true : formValues.hasInventory === 'true',
+        inventory: flow === 'sell'
+          ? normalizedSellInventory
+          : formValues.inventory
+            ? parseInt(formValues.inventory, 10)
+            : undefined,
         city: formValues.city || undefined,
         state: formValues.state || undefined,
         isLocationPublic: true,

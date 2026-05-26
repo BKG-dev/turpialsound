@@ -19,6 +19,31 @@ const INVENTORY_TRANSACTION_EXCLUDED_STATUSES = [
   'PAYMENT_FAILED',
   'CANCELLED',
 ] as const
+const INVENTORY_TRACKED_CATEGORIES = new Set([
+  'instrumentos-nuevos',
+  'instrumentos-usados',
+  'audio-pro-estudio',
+  'consumibles',
+  'alquiler-equipos',
+])
+
+function normalizeListingInventory(data: CreateListingInput): { hasInventory: boolean; inventory: number | null } {
+  const parsedInventory =
+    typeof data.inventory === 'number' && Number.isFinite(data.inventory)
+      ? Math.max(1, Math.floor(data.inventory))
+      : null
+  const shouldTrackInventory = INVENTORY_TRACKED_CATEGORIES.has(data.category)
+
+  if (shouldTrackInventory) {
+    return { hasInventory: true, inventory: parsedInventory ?? 1 }
+  }
+
+  if (data.hasInventory) {
+    return { hasInventory: true, inventory: parsedInventory ?? 1 }
+  }
+
+  return { hasInventory: false, inventory: null }
+}
 
 function buildDiscoveryWhere(filters?: { city?: string; state?: string }) {
   const where: Record<string, unknown> = {
@@ -351,6 +376,7 @@ export async function createListing(
 
   try {
     const slug = generateSlug(data.title)
+    const inventoryData = normalizeListingInventory(data)
 
     const listing = await db.mpListing.create({
       data: {
@@ -363,8 +389,8 @@ export async function createListing(
         currency: data.currency,
         coverImageUrl: data.coverImageUrl ?? null,
         mediaUrls: data.mediaUrls,
-        hasInventory: data.hasInventory,
-        inventory: data.inventory ?? null,
+        hasInventory: inventoryData.hasInventory,
+        inventory: inventoryData.inventory,
         city: data.city ?? null,
         state: data.state ?? null,
         isLocationPublic: data.isLocationPublic ?? true,
