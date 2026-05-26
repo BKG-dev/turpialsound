@@ -14,12 +14,48 @@ import { attachMarketplaceBlobMetadataToEntity } from '@/lib/marketplace/blob-me
 
 const DISCOVERY_LISTING_STATUSES = ['ACTIVE'] as const
 const LISTING_DETAIL_VISIBLE_STATUSES = ['ACTIVE', 'SOLD_OUT'] as const
-const ACTIVE_TRANSACTION_EXCLUDED_STATUSES = [
-  'RELEASED',
+const INVENTORY_TRANSACTION_EXCLUDED_STATUSES = [
   'REFUNDED',
   'PAYMENT_FAILED',
   'CANCELLED',
 ] as const
+const INVENTORY_TRACKED_CATEGORIES = new Set([
+  'instrumentos-nuevos',
+  'instrumentos-usados',
+  'audio-pro-estudio',
+  'consumibles',
+  'alquiler-equipos',
+])
+
+function normalizeListingInventory(data: CreateListingInput): { hasInventory: boolean; inventory: number | null } {
+  const parsedInventory =
+    typeof data.inventory === 'number' && Number.isFinite(data.inventory)
+      ? Math.max(1, Math.floor(data.inventory))
+      : null
+  const shouldTrackInventory = INVENTORY_TRACKED_CATEGORIES.has(data.category)
+
+  if (shouldTrackInventory) {
+    return { hasInventory: true, inventory: parsedInventory ?? 1 }
+  }
+
+  if (data.hasInventory) {
+    return { hasInventory: true, inventory: parsedInventory ?? 1 }
+  }
+
+  return { hasInventory: false, inventory: null }
+}
+
+function buildDiscoveryWhere(filters?: { city?: string; state?: string }) {
+  const where: Record<string, unknown> = {
+    OR: [
+      { status: { in: [...DISCOVERY_LISTING_STATUSES] } },
+      { status: 'SOLD_OUT', hasInventory: true, inventory: { gt: 0 } },
+    ],
+  }
+  if (filters?.state) where.state = filters.state
+  if (filters?.city) where.city = filters.city
+  return where
+}
 const MARKETPLACE_DISCOVERY_DIAGNOSTICS_PREFIX = '[marketplace.discovery]'
 
 type DiscoveryDiagnosticsCode =
@@ -51,7 +87,7 @@ async function withActiveTransactions<T extends DbListingWithTransactions>(
     const transactions = await db.mpTransaction.findMany({
       where: {
         listingId: { in: listings.map(listing => listing.id) },
-        status: { notIn: [...ACTIVE_TRANSACTION_EXCLUDED_STATUSES] },
+        status: { notIn: [...INVENTORY_TRANSACTION_EXCLUDED_STATUSES] },
       },
       select: { listingId: true, status: true },
     })
@@ -123,7 +159,10 @@ function generateSlug(title: string): string {
 }
 
 // ─── GET ACTIVE LISTINGS (UI-compatible) ─────────────────────────────────────
-export async function getActiveListings(): Promise<Listing[]> {
+export async function getActiveListings(filters?: {
+  city?: string
+  state?: string
+}): Promise<Listing[]> {
   const db = await getDb()
   if (!db) {
     logDiscoveryDiagnostics('DB_MISSING', {
@@ -133,9 +172,11 @@ export async function getActiveListings(): Promise<Listing[]> {
   }
 
   try {
+    const where = buildDiscoveryWhere(filters)
+
     const [listings, snapshot] = await Promise.all([
       db.mpListing.findMany({
-        where: { status: { in: [...DISCOVERY_LISTING_STATUSES] } },
+        where: where as Record<string, unknown>,
         orderBy: { createdAt: 'desc' },
         include: { seller: true },
       }),
@@ -154,7 +195,8 @@ export async function getActiveListings(): Promise<Listing[]> {
     const adaptedListings: Listing[] = []
     for (const listing of listingsWithTransactions) {
       try {
-        adaptedListings.push(adaptDbListing(listing))
+        const adapted = adaptDbListing(listing)
+        if (adapted.status === 'active') adaptedListings.push(adapted)
       } catch (error) {
         logDiscoveryDiagnostics('QUERY_ERROR', {
           stage: 'ADAPT_LISTING',
@@ -198,8 +240,11 @@ export async function getListingBySlug(slug: string): Promise<Listing | null> {
   const db = await getDb()
   if (!db) return null
   try {
-    const l = await db.mpListing.findUnique({
-      where: { slug, status: { in: [...LISTING_DETAIL_VISIBLE_STATUSES] } },
+    const l = await db.mpListing.findFirst({
+      where: {
+        OR: [{ slug }, { id: slug }],
+        status: { in: [...LISTING_DETAIL_VISIBLE_STATUSES] },
+      },
       include: { seller: true },
     })
     if (!l) { await db.$disconnect(); return null }
@@ -221,14 +266,14 @@ export async function getListingsByCategory(
   if (!db) return []
   try {
     const listings = await db.mpListing.findMany({
-      where: { category, status: { in: [...DISCOVERY_LISTING_STATUSES] } },
+      where: { category, ...buildDiscoveryWhere() },
       orderBy: { createdAt: 'desc' },
       take: limit,
       include: { seller: true },
     })
     const listingsWithTransactions = await withActiveTransactions(db, listings)
     await db.$disconnect()
-    return listingsWithTransactions.map(adaptDbListing)
+    return listingsWithTransactions.map(adaptDbListing).filter(listing => listing.status === 'active')
   } catch {
     await db.$disconnect().catch(() => {})
     return []
@@ -315,6 +360,10 @@ export async function createListing(
 
   const data = parsed.data
 
+  if (!data.coverImageUrl && data.mediaUrls.length === 0) {
+    return { success: false, message: 'Debes subir al menos 1 imagen del producto' }
+  }
+
   const session = await getSession()
   if (!session) {
     return { success: false, message: 'Debes iniciar sesión para publicar un listing' }
@@ -327,6 +376,7 @@ export async function createListing(
 
   try {
     const slug = generateSlug(data.title)
+    const inventoryData = normalizeListingInventory(data)
 
     const listing = await db.mpListing.create({
       data: {
@@ -339,8 +389,11 @@ export async function createListing(
         currency: data.currency,
         coverImageUrl: data.coverImageUrl ?? null,
         mediaUrls: data.mediaUrls,
-        hasInventory: data.hasInventory,
-        inventory: data.inventory ?? null,
+        hasInventory: inventoryData.hasInventory,
+        inventory: inventoryData.inventory,
+        city: data.city ?? null,
+        state: data.state ?? null,
+        isLocationPublic: data.isLocationPublic ?? true,
         status: 'ACTIVE',
         publishedAt: new Date(),
         slug,

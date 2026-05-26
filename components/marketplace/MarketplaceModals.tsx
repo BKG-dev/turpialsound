@@ -96,6 +96,16 @@ const stepVariants = {
   exit: (dir: number) => ({ opacity: 0, x: dir > 0 ? -32 : 32, transition: { duration: 0.18 } }),
 }
 
+const SELL_FORM_DEFAULTS: Record<string, string> = {
+  hasInventory: 'true',
+  inventory: '1',
+}
+
+function buildInitialFormValues(flow: ModalFlow): Record<string, string> {
+  if (flow === 'sell') return { ...SELL_FORM_DEFAULTS }
+  return {}
+}
+
 // ─── Modal Shell ──────────────────────────────────────────────────────────────
 
 function ModalShell({
@@ -286,7 +296,7 @@ function ListingQASection({
   sellerId?: string
   currentUserId?: string
 }) {
-  const [expanded, setExpanded] = useState(true)
+  const [expanded, setExpanded] = useState(false)
   const [questions, setQuestions] = useState<QuestionItem[]>([])
   const [loading, setLoading] = useState(false)
   const [newQ, setNewQ] = useState('')
@@ -682,24 +692,107 @@ function SellFlow({
               </select>
             </div>
 
+            {/* S-LOC: Location dropdowns state→city cascade */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs text-[#a0a0a0]">Estado</label>
+                <select value={formValues.state ?? ''} onChange={e => { onFieldChange('state', e.target.value); onFieldChange('city', '') }}
+                  className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] outline-none"
+                  style={{ background: 'var(--mp-input)', border: '1px solid var(--mp-input-border)' }}>
+                  <option value="">Seleccionar estado</option>
+                  <option value="Distrito Capital">Distrito Capital</option>
+                  <option value="Miranda">Miranda</option>
+                  <option value="Zulia">Zulia</option>
+                  <option value="Carabobo">Carabobo</option>
+                  <option value="Lara">Lara</option>
+                  <option value="Aragua">Aragua</option>
+                  <option value="Anzoategui">Anzoategui</option>
+                  <option value="Bolivar">Bolivar</option>
+                  <option value="Tachira">Tachira</option>
+                  <option value="Merida">Merida</option>
+                  <option value="Falcon">Falcon</option>
+                  <option value="Monagas">Monagas</option>
+                  <option value="Sucre">Sucre</option>
+                  <option value="Nueva Esparta">Nueva Esparta</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs text-[#a0a0a0]">Ciudad</label>
+                <select value={formValues.city ?? ''} onChange={e => onFieldChange('city', e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] outline-none"
+                  style={{ background: 'var(--mp-input)', border: '1px solid var(--mp-input-border)' }}>
+                  <option value="">Seleccionar ciudad</option>
+                  {(formValues.state === 'Distrito Capital' || !formValues.state) && (
+                    <><option value="Caracas">Caracas</option><option value="El Hatillo">El Hatillo</option></>
+                  )}
+                  {formValues.state === 'Miranda' && (
+                    <><option value="Los Teques">Los Teques</option><option value="Guarenas">Guarenas</option><option value="Guatire">Guatire</option><option value="San Antonio">San Antonio</option><option value="Charallave">Charallave</option></>
+                  )}
+                  {formValues.state === 'Zulia' && (
+                    <><option value="Maracaibo">Maracaibo</option><option value="Cabimas">Cabimas</option><option value="Ciudad Ojeda">Ciudad Ojeda</option></>
+                  )}
+                  {formValues.state === 'Carabobo' && (
+                    <><option value="Valencia">Valencia</option><option value="Naguanagua">Naguanagua</option><option value="Puerto Cabello">Puerto Cabello</option></>
+                  )}
+                  {formValues.state === 'Lara' && (
+                    <><option value="Barquisimeto">Barquisimeto</option><option value="Cabudare">Cabudare</option></>
+                  )}
+                  {formValues.state === 'Aragua' && (
+                    <><option value="Maracay">Maracay</option><option value="Turmero">Turmero</option><option value="La Victoria">La Victoria</option></>
+                  )}
+                  {formValues.state === 'Anzoategui' && (
+                    <><option value="Barcelona">Barcelona</option><option value="Puerto La Cruz">Puerto La Cruz</option><option value="Lecheria">Lecheria</option></>
+                  )}
+                  {formValues.state === 'Bolivar' && (
+                    <><option value="Ciudad Guayana">Ciudad Guayana</option><option value="Ciudad Bolivar">Ciudad Bolivar</option></>
+                  )}
+                  {formValues.state === 'Tachira' && (
+                    <><option value="San Cristobal">San Cristobal</option><option value="San Antonio del Tachira">San Antonio del Tachira</option></>
+                  )}
+                  {formValues.state === 'Merida' && (
+                    <><option value="Merida">Merida</option><option value="El Vigia">El Vigia</option></>
+                  )}
+                  {formValues.state === 'Falcon' && (
+                    <><option value="Coro">Coro</option><option value="Punto Fijo">Punto Fijo</option></>
+                  )}
+                </select>
+              </div>
+            </div>
+
+            {/* S-INV: Inventory with stock tracking */}
+            <div className="space-y-1.5">
+              <label className="text-xs text-[#a0a0a0]">Cantidad disponible</label>
+              <input type="number" min="1" max="999" value={formValues.inventory ?? '1'} onChange={e => {
+                const parsed = Number.parseInt(e.target.value, 10)
+                const nextValue = Number.isFinite(parsed) && parsed > 0 ? String(parsed) : '1'
+                onFieldChange('inventory', nextValue)
+                onFieldChange('hasInventory', 'true')
+              }}
+                placeholder="1"
+                className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] placeholder:text-[var(--mp-text-faint)] outline-none"
+                style={fieldInputStyle('inventory', fieldErrors)}
+                onFocus={onFocus('inventory')} onBlur={onBlur('inventory')} />
+              <p className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>Se descuenta automaticamente con cada venta hasta agotarse. Minimo 1.</p>
+            </div>
+
             {/* Image upload */}
             <div className="space-y-2">
               <label className="text-xs text-[#a0a0a0]">
-                Fotos del equipo <span className="text-[#9a9a9a]">({imageFiles.length}/8)</span>
+                Fotos del equipo <span className="text-[#9a9a9a]">({imageFiles.length}/5)</span>
               </label>
               {imageFiles.length > 0 ? (
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                   {imageFiles.map((upload, i) => (
                     <div key={i} className="relative aspect-square rounded-lg overflow-hidden group">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={upload.previewUrl} alt="" className="w-full h-full object-cover" />
+                      <img src={upload.previewUrl} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
                       <button type="button" onClick={() => onRemoveImage(i)}
                         className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <X size={14} className="text-white" />
                       </button>
                     </div>
                   ))}
-                  {imageFiles.length < 8 && (
+                  {imageFiles.length < 5 && (
                     <label className="relative aspect-square rounded-lg flex items-center justify-center cursor-pointer overflow-hidden"
                       style={{ border: '1px dashed var(--mp-input-border)' }}
                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,193,7,0.3)' }}
@@ -725,7 +818,7 @@ function SellFlow({
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,193,7,0.3)' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--mp-input-border)' }}>
                   <Upload size={20} className="text-[var(--mp-text-faint)]" />
-                  <p className="text-xs text-[#b8b8b8]">Subir fotos del equipo (máx. 8)</p>
+                  <p className="text-xs text-[#b8b8b8]">Subir fotos del equipo (máx. 5)</p>
                   <p className="text-[10px] text-[var(--mp-text-faint)]">JPG, PNG, WEBP o HEIC</p>
                   <input
                     type="file"
@@ -927,6 +1020,73 @@ function OfferTalentFlow({
                 onFocus={onFocus('description')} onBlur={onBlur('description')} />
               <FieldError errors={fieldErrors} field="description" />
             </div>
+
+            {/* S-LOC: Location dropdowns state→city cascade */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs text-[#a0a0a0]">Estado</label>
+                <select value={formValues.state ?? ''} onChange={e => { onFieldChange('state', e.target.value); onFieldChange('city', '') }}
+                  className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] outline-none"
+                  style={{ background: 'var(--mp-input)', border: '1px solid var(--mp-input-border)' }}>
+                  <option value="">Seleccionar estado</option>
+                  <option value="Distrito Capital">Distrito Capital</option>
+                  <option value="Miranda">Miranda</option>
+                  <option value="Zulia">Zulia</option>
+                  <option value="Carabobo">Carabobo</option>
+                  <option value="Lara">Lara</option>
+                  <option value="Aragua">Aragua</option>
+                  <option value="Anzoategui">Anzoategui</option>
+                  <option value="Bolivar">Bolivar</option>
+                  <option value="Tachira">Tachira</option>
+                  <option value="Merida">Merida</option>
+                  <option value="Falcon">Falcon</option>
+                  <option value="Monagas">Monagas</option>
+                  <option value="Sucre">Sucre</option>
+                  <option value="Nueva Esparta">Nueva Esparta</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs text-[#a0a0a0]">Ciudad</label>
+                <select value={formValues.city ?? ''} onChange={e => onFieldChange('city', e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl text-sm text-[#f2f2f2] outline-none"
+                  style={{ background: 'var(--mp-input)', border: '1px solid var(--mp-input-border)' }}>
+                  <option value="">Seleccionar ciudad</option>
+                  {(formValues.state === 'Distrito Capital' || !formValues.state) && (
+                    <><option value="Caracas">Caracas</option><option value="El Hatillo">El Hatillo</option></>
+                  )}
+                  {formValues.state === 'Miranda' && (
+                    <><option value="Los Teques">Los Teques</option><option value="Guarenas">Guarenas</option><option value="Guatire">Guatire</option><option value="San Antonio">San Antonio</option><option value="Charallave">Charallave</option></>
+                  )}
+                  {formValues.state === 'Zulia' && (
+                    <><option value="Maracaibo">Maracaibo</option><option value="Cabimas">Cabimas</option><option value="Ciudad Ojeda">Ciudad Ojeda</option></>
+                  )}
+                  {formValues.state === 'Carabobo' && (
+                    <><option value="Valencia">Valencia</option><option value="Naguanagua">Naguanagua</option><option value="Puerto Cabello">Puerto Cabello</option></>
+                  )}
+                  {formValues.state === 'Lara' && (
+                    <><option value="Barquisimeto">Barquisimeto</option><option value="Cabudare">Cabudare</option></>
+                  )}
+                  {formValues.state === 'Aragua' && (
+                    <><option value="Maracay">Maracay</option><option value="Turmero">Turmero</option><option value="La Victoria">La Victoria</option></>
+                  )}
+                  {formValues.state === 'Anzoategui' && (
+                    <><option value="Barcelona">Barcelona</option><option value="Puerto La Cruz">Puerto La Cruz</option><option value="Lecheria">Lecheria</option></>
+                  )}
+                  {formValues.state === 'Bolivar' && (
+                    <><option value="Ciudad Guayana">Ciudad Guayana</option><option value="Ciudad Bolivar">Ciudad Bolivar</option></>
+                  )}
+                  {formValues.state === 'Tachira' && (
+                    <><option value="San Cristobal">San Cristobal</option><option value="San Antonio del Tachira">San Antonio del Tachira</option></>
+                  )}
+                  {formValues.state === 'Merida' && (
+                    <><option value="Merida">Merida</option><option value="El Vigia">El Vigia</option></>
+                  )}
+                  {formValues.state === 'Falcon' && (
+                    <><option value="Coro">Coro</option><option value="Punto Fijo">Punto Fijo</option></>
+                  )}
+                </select>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -981,7 +1141,7 @@ export function MarketplaceModals({
 
   // Reset all state when modal opens or closes
   useEffect(() => {
-    setFormValues({})
+    setFormValues(buildInitialFormValues(flow))
     setSubmitError(null)
     setIsSubmitting(false)
     setFieldErrors({})
@@ -1015,13 +1175,13 @@ export function MarketplaceModals({
   }, [])
 
   const handleAddImages = useCallback(async (files: FileList) => {
-    const fileArray = Array.from(files).slice(0, 8) // cap to 8 total
+    const fileArray = Array.from(files).slice(0, 5) // cap to 5 total
     try {
       const prepared = await Promise.all(
         fileArray.map(file => prepareMarketplaceUpload(file, 'listing-image')),
       )
       setImageFiles(prev => {
-        const slots = 8 - prev.length
+        const slots = 5 - prev.length
         return [...prev, ...prepared.slice(0, slots)]
       })
     } catch (error) {
@@ -1044,11 +1204,32 @@ export function MarketplaceModals({
       setSubmitError('Selecciona una categoría primero')
       return
     }
+    if (flow === 'sell' && imageFiles.length === 0) {
+      setSubmitError('Debes subir al menos 1 imagen del producto')
+      return
+    }
     setIsSubmitting(true)
     setSubmitError(null)
     setFieldErrors({})
+
+    // S-LOC: Require location before publishing
+    const missingLocation: Record<string, string[]> = {}
+    if (!formValues.state?.trim()) missingLocation.state = ['Selecciona un estado']
+    if (!formValues.city?.trim()) missingLocation.city = ['Selecciona una ciudad']
+    if (Object.keys(missingLocation).length > 0) {
+      setFieldErrors(missingLocation)
+      setSubmitError('Debes seleccionar estado y ciudad para publicar')
+      setIsSubmitting(false)
+      return
+    }
+
     try {
       const rawPrice = formValues.price ?? formValues.priceFrom ?? '0'
+      const parsedInventory = Number.parseInt(formValues.inventory ?? '', 10)
+      const normalizedSellInventory =
+        Number.isFinite(parsedInventory) && parsedInventory > 0
+          ? parsedInventory
+          : 1
       const uploadedImageUrls = await Promise.all(
         imageFiles.map(upload => uploadMarketplaceFile(upload.file, 'listing-image').then(result => result.url)),
       )
@@ -1059,7 +1240,15 @@ export function MarketplaceModals({
         tags: [],
         price: parseFloat(rawPrice) || 0,
         currency: 'USD',
-        hasInventory: false,
+        hasInventory: flow === 'sell' ? true : formValues.hasInventory === 'true',
+        inventory: flow === 'sell'
+          ? normalizedSellInventory
+          : formValues.inventory
+            ? parseInt(formValues.inventory, 10)
+            : undefined,
+        city: formValues.city || undefined,
+        state: formValues.state || undefined,
+        isLocationPublic: true,
         coverImageUrl: uploadedImageUrls[0],
         mediaUrls: uploadedImageUrls.slice(1),
       })
