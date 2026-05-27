@@ -91,7 +91,7 @@ export function ContactStep({
   const emailInvalid = emailHasContent && !isValidEmail(email)
   const phoneHasContent = phone.trim().length > 0
   const phoneInvalid = phoneHasContent && !isValidWhatsappVe(phone)
-  const canStartVerification = !phoneInvalid && phoneHasContent && whatsappConsentAccepted
+  const canStartVerification = !phoneInvalid && phoneHasContent
   const isSecureLinkMode = whatsappFlowMode === 'secure_link'
   return (
     <div className="space-y-3 md:space-y-2.5">
@@ -212,11 +212,7 @@ export function ContactStep({
                 className="mt-0.5 h-4 w-4 rounded border-brand-border bg-brand-surface accent-accent-gold"
               />
               <span className="space-y-1 text-[11px] leading-snug">
-                <span className="block text-text-primary">
-                  Acepto recibir por WhatsApp mensajes de Turpial Sound relacionados con esta
-                  solicitud de reserva: enlace para continuar, instrucciones de pago, revision del
-                  comprobante, confirmacion, recordatorios e incidencias.
-                </span>
+                <span className="block text-text-primary">Acepto recibir por WhatsApp mensajes de Turpial Sound.</span>
                 <span className="block text-text-muted">
                   Sin esta autorizacion no podremos dar seguimiento operativo a tu reserva por
                   WhatsApp.

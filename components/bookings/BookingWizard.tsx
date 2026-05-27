@@ -69,10 +69,17 @@ const INITIAL_DATA: WizardData = {
   requesterName: '',
   requesterEmail: '',
   requesterPhone: '',
-  whatsappConsentAccepted: false,
+  whatsappConsentAccepted: true,
 }
 
 const PAYMENT_PROOF_MAX_SIZE_BYTES = Math.floor(4.5 * 1024 * 1024)
+const PAYMENT_PROOF_ACCEPT_ATTR = 'image/jpeg,image/png,image/webp,image/avif'
+const PAYMENT_PROOF_ALLOWED_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/avif',
+])
 
 type PostSubmitOperationalStatus = 'pending_payment' | 'payment_reported'
 type WhatsappVerificationStatus =
@@ -107,11 +114,34 @@ interface BookingDraftV1 {
   secureLinkRequestExpiresAt?: string | null
 }
 
+interface BookingPendingPaymentSessionV1 {
+  version: 1
+  savedAt: string
+  publicCode: string
+  operationalStatus: PostSubmitOperationalStatus
+  serviceSlug: string | null
+  variantSlug: string | null
+  serviceName: string
+  variantName: string
+  eventDate: string | null
+  startTime: string | null
+  durationMinutes: number | null
+  paymentDeadlineIso: string | null
+  selectedPaymentMethodSlug: BookingPaymentMethodSlug
+  paymentReference: string
+  amountUsd: number
+  amountBs: number
+  amountUsdLabel: string
+  amountBsLabel: string
+  bcvRate: number
+}
+
 type ContactVerificationFlowMode = 'manual_code' | 'secure_link'
 
 type SecureLinkRequestState = 'idle' | 'loading' | 'sent' | 'failed'
 
 const BOOKING_DRAFT_STORAGE_KEY = 'turpial_booking_draft_v1'
+const BOOKING_PENDING_PAYMENT_STORAGE_KEY = 'turpial_booking_pending_payment_v1'
 const BOOKING_DRAFT_TTL_MS = 2 * 60 * 60 * 1000
 const WHATSAPP_VERIFICATION_TTL_MS = 30 * 60 * 1000
 const WHATSAPP_STATUS_POLL_MS = 2500
@@ -147,6 +177,10 @@ function formatCaracasDateTime(value: string): string {
 
 function normalizePaymentReference(value: string): string {
   return value.replace(/[^a-z0-9]/gi, '').toUpperCase()
+}
+
+function isAllowedPaymentProofMimeType(value: string): boolean {
+  return PAYMENT_PROOF_ALLOWED_MIME_TYPES.has(value.trim().toLowerCase())
 }
 
 function getDigitsOnly(value: string | null | undefined): string {
@@ -298,6 +332,8 @@ export function BookingWizard({
   const [secureLinkRequestError, setSecureLinkRequestError] = useState<string | null>(null)
   const [secureLinkRequestExpiresAt, setSecureLinkRequestExpiresAt] = useState<string | null>(null)
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false)
+  const [hasRestoredPendingPayment, setHasRestoredPendingPayment] = useState(false)
+  const [paymentRecoveryNotice, setPaymentRecoveryNotice] = useState<string | null>(null)
   const pollTimerRef = useRef<number | null>(null)
 
   const totalSteps = WIZARD_STEPS.length
@@ -595,6 +631,17 @@ export function BookingWizard({
   }
 
   async function handleSendSecureLink() {
+    if (!data.whatsappConsentAccepted) {
+      const consentMessage =
+        'Debes aceptar la comunicacion por WhatsApp para enviarte el enlace seguro de seguimiento.'
+      setContactConsentError(consentMessage)
+      setSecureLinkRequestError(consentMessage)
+      setSecureLinkRequestState('failed')
+      focusWhatsappConsentBlock()
+      return
+    }
+    setContactConsentError(null)
+
     if (!isSecureLinkEnabledByConfig) {
       setSecureLinkRequestError('El enlace seguro no esta disponible en este entorno.')
       setSecureLinkRequestState('failed')
@@ -644,7 +691,13 @@ export function BookingWizard({
         const payload = (await response.json().catch(() => null)) as
           | { error?: string; fallback?: string }
           | null
-        if (payload?.fallback === 'manual_code') {
+        if (payload?.error === 'consent_required') {
+          const consentMessage =
+            'Debes aceptar la comunicacion por WhatsApp para enviarte el enlace seguro de seguimiento.'
+          setContactConsentError(consentMessage)
+          setSecureLinkRequestError(consentMessage)
+          focusWhatsappConsentBlock()
+        } else if (payload?.fallback === 'manual_code') {
           setContactVerificationFlowMode('manual_code')
           setSecureLinkRequestError(
             'No pudimos enviar el enlace seguro. Puedes verificar con codigo manual.',
@@ -752,6 +805,124 @@ export function BookingWizard({
   }, [hasRestoredDraft, totalSteps])
 
   useEffect(() => {
+    if (!hasRestoredDraft || hasRestoredPendingPayment) return
+    setHasRestoredPendingPayment(true)
+
+    try {
+      const raw = window.localStorage.getItem(BOOKING_PENDING_PAYMENT_STORAGE_KEY)
+      if (!raw) return
+
+      const parsed = JSON.parse(raw) as BookingPendingPaymentSessionV1
+      if (!parsed || parsed.version !== 1 || !parsed.publicCode) {
+        window.localStorage.removeItem(BOOKING_PENDING_PAYMENT_STORAGE_KEY)
+        return
+      }
+
+      if (parsed.operationalStatus === 'pending_payment' && parsed.paymentDeadlineIso) {
+        const deadlineMs = new Date(parsed.paymentDeadlineIso).getTime()
+        if (Number.isFinite(deadlineMs) && deadlineMs <= Date.now()) {
+          window.localStorage.removeItem(BOOKING_PENDING_PAYMENT_STORAGE_KEY)
+          setPaymentRecoveryNotice('Tu ventana de pago anterior vencio. Puedes crear una nueva solicitud.')
+          return
+        }
+      }
+
+      const restoredMethod =
+        paymentMethods.find((method) => method.slug === parsed.selectedPaymentMethodSlug)?.slug ??
+        defaultSuccessPaymentMethod.slug
+      const restoredSelectedItem =
+        parsed.serviceSlug && parsed.variantSlug
+          ? [{ serviceSlug: parsed.serviceSlug, variantSlug: parsed.variantSlug, quantity: 1 }]
+          : []
+
+      setData((current) => ({
+        ...current,
+        selectedItems: restoredSelectedItem,
+        eventDate: parsed.eventDate,
+        startTime: parsed.startTime,
+        durationMinutes: parsed.durationMinutes,
+      }))
+      setSubmissionState('success')
+      setPublicCode(parsed.publicCode)
+      setAssignedResourceName(null)
+      setPaymentDeadlineIso(parsed.paymentDeadlineIso)
+      setShowPaymentOptions(true)
+      setSelectedPaymentMethodSlug(restoredMethod)
+      setPostSubmitOperationalStatus(parsed.operationalStatus)
+      setPaymentReportReference(parsed.paymentReference || normalizePaymentReference(parsed.publicCode))
+      setPaymentReportProofFile(null)
+      setPaymentReportState('idle')
+      setPaymentReportError(null)
+      setPaymentReportWarning(null)
+      setPaymentReportedAtIso(
+        parsed.operationalStatus === 'payment_reported' ? parsed.savedAt : null,
+      )
+      setPaymentReportedWhatsappLink(null)
+      setSubmitError(null)
+      setPaymentRecoveryNotice('Continuamos con tu pago pendiente para que no pierdas el apartado.')
+    } catch {
+      window.localStorage.removeItem(BOOKING_PENDING_PAYMENT_STORAGE_KEY)
+    }
+  }, [
+    defaultSuccessPaymentMethod.slug,
+    hasRestoredDraft,
+    hasRestoredPendingPayment,
+    paymentMethods,
+  ])
+
+  useEffect(() => {
+    if (!hasRestoredDraft) return
+    if (submissionState !== 'success' || !publicCode) return
+
+    const pendingPaymentSession: BookingPendingPaymentSessionV1 = {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      publicCode,
+      operationalStatus: postSubmitOperationalStatus,
+      serviceSlug: selectedServiceSlug,
+      variantSlug: selectedVariantSlug,
+      serviceName: selectedServiceName,
+      variantName: selectedVariantName,
+      eventDate: data.eventDate,
+      startTime: data.startTime,
+      durationMinutes: data.durationMinutes,
+      paymentDeadlineIso,
+      selectedPaymentMethodSlug,
+      paymentReference: paymentReportReference.trim() || normalizePaymentReference(publicCode),
+      amountUsd: bookingEstimate.estimatedTotalUsd,
+      amountBs: bsAmountEstimated,
+      amountUsdLabel: secondaryAmountLabel,
+      amountBsLabel: activeAmountLabel,
+      bcvRate: bcvState.rate,
+    }
+
+    window.localStorage.setItem(
+      BOOKING_PENDING_PAYMENT_STORAGE_KEY,
+      JSON.stringify(pendingPaymentSession),
+    )
+  }, [
+    activeAmountLabel,
+    bcvState.rate,
+    bookingEstimate.estimatedTotalUsd,
+    bsAmountEstimated,
+    data.durationMinutes,
+    data.eventDate,
+    data.startTime,
+    hasRestoredDraft,
+    paymentDeadlineIso,
+    paymentReportReference,
+    postSubmitOperationalStatus,
+    publicCode,
+    secondaryAmountLabel,
+    selectedPaymentMethodSlug,
+    selectedServiceName,
+    selectedServiceSlug,
+    selectedVariantName,
+    selectedVariantSlug,
+    submissionState,
+  ])
+
+  useEffect(() => {
     if (!hasRestoredDraft) return
 
     const draft: BookingDraftV1 = {
@@ -857,7 +1028,9 @@ export function BookingWizard({
 
   function handleNext() {
     if (currentStep === 4 && !data.whatsappConsentAccepted) {
-      setContactConsentError('Debes autorizar el seguimiento por WhatsApp para continuar.')
+      setContactConsentError(
+        'Debes aceptar la comunicacion por WhatsApp para enviarte el enlace seguro de seguimiento.',
+      )
       focusWhatsappConsentBlock()
       return
     }
@@ -915,13 +1088,18 @@ export function BookingWizard({
     setSecureLinkRequestState('idle')
     setSecureLinkRequestError(null)
     setSecureLinkRequestExpiresAt(null)
+    setHasRestoredPendingPayment(false)
+    setPaymentRecoveryNotice(null)
     window.localStorage.removeItem(BOOKING_DRAFT_STORAGE_KEY)
+    window.localStorage.removeItem(BOOKING_PENDING_PAYMENT_STORAGE_KEY)
   }
 
   async function handleContactPrimaryAction() {
     if (!contactDataIsComplete) {
       if (!data.whatsappConsentAccepted) {
-        setContactConsentError('Debes autorizar el seguimiento por WhatsApp para continuar.')
+        setContactConsentError(
+          'Debes aceptar la comunicacion por WhatsApp para enviarte el enlace seguro de seguimiento.',
+        )
         focusWhatsappConsentBlock()
       }
       return
@@ -1009,6 +1187,7 @@ export function BookingWizard({
     setPaymentReportedAtIso(null)
     setPaymentReportedWhatsappLink(null)
     setSubmitError(null)
+    setPaymentRecoveryNotice(null)
 
     const result = await submitBookingRequest({
       serviceSlug: selectedServiceSlug,
@@ -1038,6 +1217,7 @@ export function BookingWizard({
       setPaymentReportError(null)
       setPaymentReportedAtIso(null)
       setPaymentReportedWhatsappLink(null)
+      setPaymentRecoveryNotice(null)
       setSubmissionState('success')
     } else {
       setSubmitError(result.error ?? 'Error al enviar. Intenta de nuevo.')
@@ -1079,7 +1259,7 @@ export function BookingWizard({
     }
 
     if (requiresProofFile && !paymentReportProofFile) {
-      setPaymentReportError('Debes adjuntar el comprobante JPG/JPEG.')
+      setPaymentReportError('Sube tu comprobante en JPG, PNG, WEBP o AVIF.')
       setPaymentReportState('error')
       setPaymentReportWarning(null)
       closeWhatsappWindow()
@@ -1088,8 +1268,8 @@ export function BookingWizard({
 
     if (paymentReportProofFile) {
       const proofType = paymentReportProofFile.type.toLowerCase()
-      if (proofType !== 'image/jpeg') {
-        setPaymentReportError('Solo se acepta comprobante image/jpeg.')
+      if (!isAllowedPaymentProofMimeType(proofType)) {
+        setPaymentReportError('Formato no soportado. Sube una imagen JPG, PNG, WEBP o AVIF.')
         setPaymentReportState('error')
         setPaymentReportWarning(null)
         closeWhatsappWindow()
@@ -1528,11 +1708,11 @@ export function BookingWizard({
                     {selectedPaymentMethod.slug !== 'efectivo' && (
                       <label className="block space-y-0.5">
                         <span className="text-[10px] uppercase tracking-wide text-text-muted">
-                          Comprobante (image/jpeg, max 4.5MB)
+                          Sube tu comprobante en JPG, PNG, WEBP o AVIF.
                         </span>
                         <input
                           type="file"
-                          accept="image/jpeg"
+                          accept={PAYMENT_PROOF_ACCEPT_ATTR}
                           onChange={(event) => setPaymentReportProofFile(event.target.files?.[0] ?? null)}
                           className="w-full rounded-md border border-brand-border bg-brand-bg/40 px-2 py-1.5 text-[11px] text-text-secondary file:mr-2 file:rounded-md file:border-0 file:bg-accent-gold/15 file:px-2 file:py-1 file:text-[10px] file:font-medium file:text-text-primary"
                           disabled={paymentReportState === 'loading'}
@@ -1707,6 +1887,11 @@ export function BookingWizard({
           currentStep === 5 && 'md:py-2.5 lg:py-2',
         )}
       >
+        {paymentRecoveryNotice && (
+          <div className="mb-3 rounded-lg border border-amber-300/40 bg-amber-400/10 px-3 py-2">
+            <p className="text-[11px] text-amber-100">{paymentRecoveryNotice}</p>
+          </div>
+        )}
         {currentStep === totalSteps - 1 && submissionState === 'loading' && (
           <div className="mb-6 rounded-lg border border-accent-gold/30 bg-accent-gold/5 px-4 py-3">
             <div className="flex items-start gap-3">
@@ -1851,6 +2036,9 @@ export function BookingWizard({
               setData((d) => ({ ...d, whatsappConsentAccepted: value }))
               if (value) {
                 setContactConsentError(null)
+                if (secureLinkRequestState === 'failed') {
+                  setSecureLinkRequestError(null)
+                }
               }
             }}
           />

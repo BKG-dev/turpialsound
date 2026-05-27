@@ -19,7 +19,7 @@ import {
   type PaymentProofDuplicateStatus,
   PaymentProofValidationError,
   uploadPaymentProofToBlob,
-} from '@/lib/storage/payment-proofs'
+} from '@/lib/bookings/payment-proof-upload'
 import { sendBookingNotifications } from '@/lib/bookings/notifications'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
 import { isLabPhoneVerifiedRecently } from '@/lib/whatsapp/lab-token-store'
@@ -617,7 +617,7 @@ export async function reportBookingPayment(
     const requiresPaymentProofFile = paymentMethod !== 'efectivo'
 
     if (requiresPaymentProofFile && !(paymentProofFile instanceof File)) {
-      return { success: false, error: 'Debes adjuntar el comprobante en JPG.' }
+      return { success: false, error: 'Sube tu comprobante en JPG, PNG, WEBP o AVIF.' }
     }
 
     const booking = await prisma.bookingRequest.findUnique({
@@ -711,7 +711,7 @@ export async function reportBookingPayment(
     }
 
     if (requiresPaymentProofFile && !uploadedPaymentProof) {
-      return { success: false, error: 'Debes adjuntar el comprobante en formato image/jpeg.' }
+      return { success: false, error: 'Sube tu comprobante en JPG, PNG, WEBP o AVIF.' }
     }
 
     const paymentReportedAt = new Date()
