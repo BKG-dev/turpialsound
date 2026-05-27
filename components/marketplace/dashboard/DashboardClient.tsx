@@ -48,7 +48,13 @@ import {
   type SellerPayoutMethod,
   type TxPayoutDisplay,
 } from '@/lib/marketplace/finance'
-import { REFERRAL_COMMISSION_RATE, REFERRAL_COMMISSION_PERCENT } from '@/lib/marketplace/fees'
+import {
+  DROP_SOCIAL_SHARE_OF_PLATFORM_FEE_PERCENT,
+  INTERBANK_FEE_VES_PERCENT,
+  PLATFORM_FEE_PERCENT,
+  USDT_FLAT_FEE,
+  calculateDropSocialCommissionFromSaleAmount,
+} from '@/lib/marketplace/fees'
 import {
   addPayoutMethod,
   removePayoutMethod,
@@ -1344,7 +1350,7 @@ function ReferredTransactionCard({
     listing: { id: string; title: string; slug: string } | null
   }
 }) {
-  const commission = Number(tx.amount ?? 0) * REFERRAL_COMMISSION_RATE
+  const commission = calculateDropSocialCommissionFromSaleAmount(Number(tx.amount ?? 0))
 
   return (
     <div
@@ -2782,9 +2788,9 @@ export function DashboardClient({
   const releasedWithoutPayoutMethodNet = payoutNetTotal(releasedWithoutPayoutMethodSales)
   const sellerCanAddPayoutProfile = Boolean(profile?.isSeller && payoutMethods.length === 0)
   const sellerNeedsPayoutProfile = sellerCanAddPayoutProfile && payoutRelevantSales.length > 0
-  const commissionLabel = 'Comision 5%'
+  const commissionLabel = `Comision ${PLATFORM_FEE_PERCENT}%`
   const commissionSub = 'base plataforma'
-  const commissionCopy = 'Comision base plataforma: 5%. Cargo bancario: 0.3%. Cargo adicional Binance: $0.06.'
+  const commissionCopy = `Comision base plataforma: ${PLATFORM_FEE_PERCENT}%. Cargo bancario: ${INTERBANK_FEE_VES_PERCENT}%. Cargo adicional Binance: $${USDT_FLAT_FEE.toFixed(2)}.`
 
   const counts: Record<Tab, number> = {
     my_store:  myListings.length,
@@ -3495,8 +3501,8 @@ export function DashboardClient({
                 </div>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
                   <KpiCard icon={CreditCard} label={commissionLabel} value={fmtUSD(operationalCommissions)} sub={commissionSub} accent="#f59e0b" tone="compact" />
-                  <KpiCard icon={Landmark} label="Cargo bancario 0.3%" value={fmtUSD(operationalBankFees)} sub="pago movil / transferencia" accent="#ffc107" tone="compact" />
-                  <KpiCard icon={Wallet} label="Cargo Binance" value={fmtUSD(operationalBinanceFees)} sub="$0.06 por operacion" accent="#00aeef" tone="compact" />
+                  <KpiCard icon={Landmark} label={`Cargo bancario ${INTERBANK_FEE_VES_PERCENT}%`} value={fmtUSD(operationalBankFees)} sub="pago movil / transferencia" accent="#ffc107" tone="compact" />
+                  <KpiCard icon={Wallet} label="Cargo Binance" value={fmtUSD(operationalBinanceFees)} sub={`$${USDT_FLAT_FEE.toFixed(2)} por operacion`} accent="#00aeef" tone="compact" />
                 </div>
               </div>
 
@@ -3755,7 +3761,7 @@ export function DashboardClient({
                     <p className="text-[10px] font-semibold uppercase tracking-normal text-[#ffc107]">Programa de Referidos</p>
                     <h2 className="mt-2 text-2xl font-semibold leading-tight" style={{ color: 'var(--mp-text-strong)' }}>Drop Social</h2>
                     <p className="mt-2 max-w-2xl text-sm leading-relaxed" style={{ color: 'var(--mp-text-muted)' }}>
-                      Comparte tus listings y gana <span style={{ color: '#ffc107' }}>{REFERRAL_COMMISSION_PERCENT}%</span> de cada compra que venga de tus links.
+                      Gana <span style={{ color: '#ffc107' }}>{DROP_SOCIAL_SHARE_OF_PLATFORM_FEE_PERCENT}%</span> de la comision por compartir cada enlace.
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
@@ -3780,7 +3786,7 @@ export function DashboardClient({
                   icon={Gift}
                   label="Comisiones"
                   value={`$${referralEarnings.toFixed(2)}`}
-                  sub={`${REFERRAL_COMMISSION_PERCENT}% por compra referida`}
+                  sub={`${DROP_SOCIAL_SHARE_OF_PLATFORM_FEE_PERCENT}% de la comision por compra referida`}
                   accent="#4ade80"
                   tone="compact"
                 />

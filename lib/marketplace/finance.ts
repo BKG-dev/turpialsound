@@ -1,6 +1,14 @@
-export const PLATFORM_FEE = 0.05
-export const BANK_FEE = 0.003
-export const USDT_FEE = 0.06
+import {
+  BANK_PAYOUT_FEE_PERCENT,
+  BANK_PAYOUT_FEE_RATE,
+  PLATFORM_FEE_PERCENT,
+  PLATFORM_FEE_RATE,
+  USDT_FLAT_FEE,
+} from '@/lib/marketplace/fees'
+
+export const PLATFORM_FEE = PLATFORM_FEE_RATE
+export const BANK_FEE = BANK_PAYOUT_FEE_RATE
+export const USDT_FEE = USDT_FLAT_FEE
 export const USD_REFERENCE_RATE = 0
 
 export type BuyerPaymentMethod = 'BINANCE' | 'BANK' | 'PAGO_MOVIL'
@@ -79,7 +87,7 @@ export function calculateSellerPayout(params: CalculateSellerPayoutParams): Sell
       netBS: 0,
       finalAmount: netUSD,
       appliedRateType: null,
-      breakdown: 'Payout USDT: 5% plataforma + 0.06 USDT.',
+      breakdown: `Payout USDT: ${PLATFORM_FEE_PERCENT}% plataforma + ${USDT_FEE} USDT.`,
     }
   }
 
@@ -99,7 +107,7 @@ export function calculateSellerPayout(params: CalculateSellerPayoutParams): Sell
     netBS,
     finalAmount: netBS,
     appliedRateType,
-    breakdown: `Payout BS: 5% plataforma + 0.3% bancario con tasa ${appliedRateType}.`,
+    breakdown: `Payout BS: ${PLATFORM_FEE_PERCENT}% plataforma + ${BANK_PAYOUT_FEE_PERCENT}% bancario con tasa ${appliedRateType}.`,
   }
 }
 
