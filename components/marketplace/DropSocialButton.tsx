@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { Gift, Copy, Check, MessageCircle, Loader2 } from 'lucide-react'
 import { getOrCreateReferralLink } from '@/actions/marketplace/referrals'
-import { REFERRAL_COMMISSION_PERCENT } from '@/lib/marketplace/fees'
+import { DROP_SOCIAL_SHARE_OF_PLATFORM_FEE_PERCENT } from '@/lib/marketplace/fees'
 import { trackMarketplaceClientEvent } from '@/lib/marketplace/analytics-client'
 import { MarketplaceAuthModal } from '@/components/marketplace/MarketplaceAuthModal'
 import type { Listing } from '@/types/marketplace'
@@ -156,7 +156,7 @@ export function DropSocialButton({ listing, variant = 'card', currentUserId = nu
               Drop Social
             </p>
             <p className="text-[10px] mt-1" style={{ color: 'var(--mp-text-faint)' }}>
-              Comparte este listing y gana <span style={{ color: '#ffc107' }}>{REFERRAL_COMMISSION_PERCENT}%</span> de cada compra que venga de tu link.
+              Comparte este listing y gana <span style={{ color: '#ffc107' }}>{DROP_SOCIAL_SHARE_OF_PLATFORM_FEE_PERCENT}%</span> de la comision de plataforma por cada compra que venga de tu link.
             </p>
           </div>
 

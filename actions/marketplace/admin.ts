@@ -481,13 +481,13 @@ async function enrichPayoutRowsWithRates(rows: PayoutReportRow[]): Promise<void>
       if (isUSDT) {
         row.netoUsdt = Math.round(row.netAmount * 100) / 100
         row.netoBs = 0
-        row.interbankFee = 0.06
+        row.interbankFee = USDT_FLAT_FEE
       } else {
         const rate = row.rateSource === 'BINANCE' ? bi : b
         row.netoBs = rate > 0 ? Math.round(row.netAmount * rate * 100) / 100 : 0
         row.netoUsdt = 0
         const afterPlatform = row.grossAmount - row.feeAmount
-        row.interbankFee = afterPlatform > 0 ? Math.round(afterPlatform * 0.003 * 100) / 100 : 0
+        row.interbankFee = afterPlatform > 0 ? Math.round(afterPlatform * INTERBANK_FEE_VES_RATE * 100) / 100 : 0
       }
     }
   } catch {

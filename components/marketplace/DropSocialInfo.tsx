@@ -3,6 +3,7 @@
 import { Share2, Gift, TrendingUp, Link2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useMarketplaceSession } from '@/components/marketplace/MarketplaceAuthBar'
+import { DROP_SOCIAL_SHARE_OF_PLATFORM_FEE_PERCENT } from '@/lib/marketplace/fees'
 
 export function DropSocialInfo() {
   const { session } = useMarketplaceSession()
@@ -11,7 +12,7 @@ export function DropSocialInfo() {
     {
       icon: Link2,
       title: 'Link unico de referido',
-      desc: 'Comparte tu enlace personal y recibe 0.5% de comision por cada venta generada.',
+      desc: `Comparte tu enlace personal y recibe el ${DROP_SOCIAL_SHARE_OF_PLATFORM_FEE_PERCENT}% de la comision de plataforma por cada venta generada.`,
     },
     {
       icon: Gift,
@@ -42,6 +43,10 @@ export function DropSocialInfo() {
           <p className="max-w-xl text-sm leading-relaxed text-[#b8b8b8]">
             Drop Social es el programa de referidos de Turpial Market. Comparte productos, servicios
             o tu enlace personal y recibe comisiones por cada venta que se concrete.
+            Cuando una venta se confirma desde tu enlace, recibes el {DROP_SOCIAL_SHARE_OF_PLATFORM_FEE_PERCENT}% de la comision de Turpial Market.
+          </p>
+          <p className="mt-2 max-w-xl text-xs leading-relaxed text-[#8e8e8e]">
+            Ejemplo: venta de $500 - comision de plataforma $25 - tu comision Drop Social $2.50.
           </p>
         </div>
 

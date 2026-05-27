@@ -2,7 +2,7 @@
 
 import { getDb } from '@/lib/marketplace/db'
 import { getSession } from '@/lib/marketplace/auth'
-import { REFERRAL_COMMISSION_RATE } from '@/lib/marketplace/fees'
+import { calculateDropSocialCommissionFromSaleAmount } from '@/lib/marketplace/fees'
 import { sendMarketplaceEmail } from '@/lib/email/send'
 import { sendMarketplaceWhatsapp } from '@/lib/whatsapp/marketplace-notifications'
 import { revalidatePath } from 'next/cache'
@@ -252,7 +252,7 @@ export async function processReferralConversion(
       return
     }
 
-    const commission = saleAmount * REFERRAL_COMMISSION_RATE // param configurable
+    const commission = calculateDropSocialCommissionFromSaleAmount(saleAmount)
     const [referrer, listing] = await Promise.all([
       db.mpUser.findUnique({
         where: { id: link.referrerId },
