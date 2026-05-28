@@ -1,6 +1,10 @@
 import { Prisma } from '@/generated/prisma/client'
 
-type ManagedServiceSlug = 'grabacion' | 'podcast-locucion' | 'sala-ensayo'
+type ManagedServiceSlug =
+  | 'grabacion'
+  | 'produccion-musical'
+  | 'podcast-locucion'
+  | 'sala-ensayo'
 type ResourceSlug =
   | 'sala-1-grande'
   | 'sala-2-podcast-locucion'
@@ -32,11 +36,16 @@ const RESOURCE_ALIAS_FALLBACK: Partial<Record<ResourceSlug, string[]>> = {
 }
 
 function isManagedServiceSlug(serviceSlug: string): serviceSlug is ManagedServiceSlug {
-  return serviceSlug === 'grabacion' || serviceSlug === 'podcast-locucion' || serviceSlug === 'sala-ensayo'
+  return (
+    serviceSlug === 'grabacion' ||
+    serviceSlug === 'produccion-musical' ||
+    serviceSlug === 'podcast-locucion' ||
+    serviceSlug === 'sala-ensayo'
+  )
 }
 
 function getResourcePriorityByService(serviceSlug: ManagedServiceSlug): ResourceSlug[] {
-  if (serviceSlug === 'grabacion') {
+  if (serviceSlug === 'grabacion' || serviceSlug === 'produccion-musical') {
     return ['sala-1-grande']
   }
 
@@ -54,6 +63,10 @@ function getServiceUnavailableMessage(serviceSlug: ManagedServiceSlug): string {
 
   if (serviceSlug === 'grabacion') {
     return 'El bloque seleccionado no esta disponible para Grabacion. Elige otro horario.'
+  }
+
+  if (serviceSlug === 'produccion-musical') {
+    return 'El bloque seleccionado no esta disponible para Produccion Musical. Elige otro horario.'
   }
 
   return 'No hay salas disponibles para Sala de Ensayo en ese bloque. Elige otro horario.'

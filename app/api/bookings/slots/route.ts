@@ -27,7 +27,11 @@ const STRONG_BLOCKING_OPERATIONAL_STATUSES = new Set<OperationalBookingStatus>([
   'confirmed',
 ])
 
-type ManagedServiceSlug = 'grabacion' | 'podcast-locucion' | 'sala-ensayo'
+type ManagedServiceSlug =
+  | 'grabacion'
+  | 'produccion-musical'
+  | 'podcast-locucion'
+  | 'sala-ensayo'
 type ResourceSlug = 'sala-1-grande' | 'sala-2-podcast-locucion' | 'sala-3-ensayo'
 type SlotState =
   | 'available'
@@ -71,11 +75,16 @@ function normalizeText(value: string): string {
 }
 
 function isManagedServiceSlug(serviceSlug: string): serviceSlug is ManagedServiceSlug {
-  return serviceSlug === 'grabacion' || serviceSlug === 'podcast-locucion' || serviceSlug === 'sala-ensayo'
+  return (
+    serviceSlug === 'grabacion' ||
+    serviceSlug === 'produccion-musical' ||
+    serviceSlug === 'podcast-locucion' ||
+    serviceSlug === 'sala-ensayo'
+  )
 }
 
 function getResourcePriorityByService(serviceSlug: ManagedServiceSlug): ResourceSlug[] {
-  if (serviceSlug === 'grabacion') {
+  if (serviceSlug === 'grabacion' || serviceSlug === 'produccion-musical') {
     return ['sala-1-grande']
   }
 
