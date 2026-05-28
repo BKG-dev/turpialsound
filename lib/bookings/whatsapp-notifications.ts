@@ -14,6 +14,8 @@ export interface SendBookingWhatsappNotificationResult {
 }
 
 const DEFAULT_TIMEOUT_MS = 1500
+// Non-destructive QA hardening: do not toggle/disable bridge infra from app code.
+// Failure tolerance is validated through timeout + non-throwing result statuses.
 
 function isBridgeEnabled(): boolean {
   const raw = process.env.BOOKINGS_WHATSAPP_BRIDGE_ENABLED?.trim().toLowerCase() ?? ''

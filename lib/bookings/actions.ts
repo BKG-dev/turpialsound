@@ -858,14 +858,30 @@ export async function reportBookingPayment(
         `Turpial Sound recibio tu comprobante de pago para la solicitud ${booking.publicCode}. ` +
         'Tu pago esta en revision manual. Te notificaremos cuando sea verificado.'
 
-      const whatsappResult = await sendBookingWhatsappNotification({
-        phone: booking.requesterPhone,
-        publicCode: booking.publicCode,
-        event: 'payment_reported',
-        message: whatsappMessage,
-      })
+      try {
+        const whatsappResult = await sendBookingWhatsappNotification({
+          phone: booking.requesterPhone,
+          publicCode: booking.publicCode,
+          event: 'payment_reported',
+          message: whatsappMessage,
+        })
 
-      if (whatsappResult.status === 'failed') {
+        if (whatsappResult.status === 'failed') {
+          await prisma.auditLog
+            .create({
+              data: {
+                bookingRequestId: booking.id,
+                action: 'whatsapp_bridge_failed_on_payment_reported',
+                nextState: {
+                  operationalStatus: nextOperationalStatus,
+                  reason: whatsappResult.reason ?? 'unknown',
+                  responseStatus: whatsappResult.responseStatus ?? null,
+                },
+              },
+            })
+            .catch(() => {})
+        }
+      } catch {
         await prisma.auditLog
           .create({
             data: {
@@ -873,8 +889,7 @@ export async function reportBookingPayment(
               action: 'whatsapp_bridge_failed_on_payment_reported',
               nextState: {
                 operationalStatus: nextOperationalStatus,
-                reason: whatsappResult.reason ?? 'unknown',
-                responseStatus: whatsappResult.responseStatus ?? null,
+                reason: 'unexpected_error',
               },
             },
           })
