@@ -21,6 +21,7 @@ import {
   uploadPaymentProofToBlob,
 } from '@/lib/bookings/payment-proof-upload'
 import { sendBookingNotifications } from '@/lib/bookings/notifications'
+import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
 import { sendBookingWhatsappNotification } from '@/lib/bookings/whatsapp-notifications'
 import { isLabPhoneVerifiedRecently } from '@/lib/whatsapp/lab-token-store'
 import { isSecureLinkPhoneVerifiedRecently } from '@/lib/whatsapp/secure-link-store'
@@ -158,6 +159,15 @@ function withWhatsappConsentTags(baseInternalNotes: string, acceptedAt: Date): s
 
 function hasWhatsappConsentAccepted(internalNotes: string | null | undefined): boolean {
   return (internalNotes ?? '').toLowerCase().includes(WHATSAPP_CONSENT_ACCEPTED_TAG)
+}
+
+function formatPaymentMethodLabel(value: string | null | undefined): string {
+  const normalized = (value ?? '').trim().toLowerCase()
+  if (normalized === 'pago_movil') return 'Pago Móvil'
+  if (normalized === 'transferencia') return 'Transferencia Bancaria'
+  if (normalized === 'binance') return 'Binance Pay'
+  if (normalized === 'efectivo') return 'Efectivo'
+  return 'Por confirmar'
 }
 
 function getPaymentProofDuplicateWarning(
@@ -854,9 +864,42 @@ export async function reportBookingPayment(
     })
 
     if (hasWhatsappConsentAccepted(booking.internalNotes) && booking.requesterPhone) {
-      const whatsappMessage =
-        `Turpial Sound recibio tu comprobante de pago para la solicitud ${booking.publicCode}. ` +
-        'Tu pago esta en revision manual. Te notificaremos cuando sea verificado.'
+      const serviceName = primaryItem?.serviceVariant.service.name ?? 'Por confirmar'
+      const variantName = primaryItem?.serviceVariant.name ?? 'Por confirmar'
+      const estimatedTotal = parseOptionalAmount(booking.estimatedTotal)
+      const amountUsd =
+        typeof estimatedTotal === 'number' && Number.isFinite(estimatedTotal)
+          ? estimatedTotal.toFixed(2)
+          : 'Por confirmar'
+      let amountBs = 'No disponible'
+
+      if (typeof estimatedTotal === 'number' && Number.isFinite(estimatedTotal)) {
+        try {
+          const referenceRate = await resolveReferenceRate()
+          const computedBs = estimatedTotal * referenceRate.rate
+          if (Number.isFinite(computedBs)) {
+            amountBs = computedBs.toLocaleString('es-VE', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })
+          }
+        } catch {
+          amountBs = 'No disponible'
+        }
+      }
+
+      const paymentMethodLabel = formatPaymentMethodLabel(paymentMethod)
+      const clientName = booking.requesterName?.trim() || 'cliente'
+      const whatsappMessage = [
+        `Hola, ${clientName}. Ya reportaste el pago de tu solicitud en Turpial Sound.`,
+        `Código: ${booking.publicCode}`,
+        `Servicio: ${serviceName}`,
+        `Modalidad: ${variantName}`,
+        `Monto: USD ${amountUsd}`,
+        `Monto referencial: Bs. ${amountBs}`,
+        `Método: ${paymentMethodLabel}`,
+        'Atento a las actualizaciones de tu reserva por parte de nuestro equipo.',
+      ].join('\n')
 
       try {
         const whatsappResult = await sendBookingWhatsappNotification({
