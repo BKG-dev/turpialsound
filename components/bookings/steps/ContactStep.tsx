@@ -242,7 +242,7 @@ export function ContactStep({
                 variant="primary"
                 size="sm"
                 onClick={onSendSecureLink}
-                disabled={!canStartVerification || secureLinkRequestState === 'loading'}
+                disabled={secureLinkRequestState === 'loading'}
                 className="w-full sm:w-auto"
               >
                 {secureLinkPrimaryLabel}

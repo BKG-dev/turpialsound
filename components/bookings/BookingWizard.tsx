@@ -632,6 +632,21 @@ export function BookingWizard({
   }
 
   async function handleSendSecureLink() {
+    const rawPhone = data.requesterPhone.trim()
+    if (rawPhone.length === 0) {
+      setSecureLinkRequestError('Ingresa tu número de WhatsApp para enviarte el enlace seguro.')
+      setSecureLinkRequestState('failed')
+      focusWhatsappInput()
+      return
+    }
+
+    if (!isValidWhatsappVe(rawPhone)) {
+      setSecureLinkRequestError('Ingresa un número de WhatsApp válido.')
+      setSecureLinkRequestState('failed')
+      focusWhatsappInput()
+      return
+    }
+
     if (!data.whatsappConsentAccepted) {
       const consentMessage =
         'Debes aceptar la comunicacion por WhatsApp para enviarte el enlace seguro de seguimiento.'
@@ -650,11 +665,6 @@ export function BookingWizard({
     }
 
     const phone = normalizedRequesterPhone
-    if (!isValidWhatsappVe(phone)) {
-      setSecureLinkRequestError('Introduce un WhatsApp valido antes de solicitar el enlace.')
-      setSecureLinkRequestState('failed')
-      return
-    }
 
     const bookingEndTime =
       data.startTime && data.durationMinutes !== null
@@ -1024,6 +1034,17 @@ export function BookingWizard({
       block: 'center',
     })
     consentBlock.focus({ preventScroll: true })
+  }
+
+  function focusWhatsappInput() {
+    const whatsappInput = document.getElementById('requester-phone')
+    if (!(whatsappInput instanceof HTMLElement)) return
+
+    whatsappInput.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    })
+    whatsappInput.focus({ preventScroll: true })
   }
 
   function setPrimaryItem(
