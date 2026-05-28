@@ -1,3 +1,5 @@
+import { sendWhatsappMessage } from '@/lib/whatsapp/outbound-provider'
+
 export type BookingWhatsappBridgeEvent = 'payment_reported'
 
 export interface SendBookingWhatsappNotificationInput {
@@ -13,77 +15,49 @@ export interface SendBookingWhatsappNotificationResult {
   responseStatus?: number
 }
 
-const DEFAULT_TIMEOUT_MS = 1500
+function mapOutboundFailureToStatus(reason?: string): 'skipped' | 'failed' {
+  if (!reason) return 'failed'
+  if (reason === 'outbound_disabled') return 'skipped'
+  if (reason === 'missing_provider') return 'skipped'
+  if (reason === 'missing_bridge_url') return 'skipped'
+  if (reason === 'missing_api_key') return 'skipped'
+  if (reason.startsWith('unsupported_provider:')) return 'skipped'
+  return 'failed'
+}
+
 // Non-destructive QA hardening: do not toggle/disable bridge infra from app code.
-// Failure tolerance is validated through timeout + non-throwing result statuses.
-
-function isBridgeEnabled(): boolean {
-  const raw = process.env.BOOKINGS_WHATSAPP_BRIDGE_ENABLED?.trim().toLowerCase() ?? ''
-  return raw === 'true' || raw === '1' || raw === 'yes'
-}
-
-function normalizeBridgePhone(value: string): string {
-  return value.replace(/[+\s\-()]/g, '').replace(/[^\d]/g, '')
-}
+// Failure tolerance is validated through non-throwing result statuses from the
+// legacy outbound provider that is already used by pending_payment.
 
 export async function sendBookingWhatsappNotification(
   input: SendBookingWhatsappNotificationInput,
 ): Promise<SendBookingWhatsappNotificationResult> {
-  if (!isBridgeEnabled()) {
-    return { status: 'skipped', reason: 'bridge_disabled' }
-  }
-
-  const bridgeUrl = process.env.BOOKINGS_WHATSAPP_BRIDGE_URL?.trim()
-  const bridgeSecret = process.env.BOOKINGS_WHATSAPP_BRIDGE_SECRET?.trim()
-
-  if (!bridgeUrl || !bridgeSecret) {
-    return { status: 'skipped', reason: 'missing_bridge_config' }
-  }
-
-  const normalizedPhone = normalizeBridgePhone(input.phone)
+  const normalizedPhone = input.phone.replace(/[+\s\-()]/g, '').replace(/[^\d]/g, '')
   if (!normalizedPhone) {
     return { status: 'failed', reason: 'missing_phone' }
   }
 
-  const abortController = new AbortController()
-  const timeout = setTimeout(() => abortController.abort(), DEFAULT_TIMEOUT_MS)
-
   try {
-    const response = await fetch(bridgeUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${bridgeSecret}`,
-      },
-      body: JSON.stringify({
-        phone: normalizedPhone,
-        event: input.event,
-        publicCode: input.publicCode,
-        message: input.message,
-      }),
-      cache: 'no-store',
-      signal: abortController.signal,
+    const outbound = await sendWhatsappMessage({
+      to: normalizedPhone,
+      message: input.message,
+      event: input.event,
+      publicCode: input.publicCode,
     })
 
-    if (!response.ok) {
+    if (outbound.ok) {
       return {
-        status: 'failed',
-        reason: 'bridge_rejected',
-        responseStatus: response.status,
+        status: 'sent',
+        responseStatus: outbound.bridgeResponseCode,
       }
     }
 
     return {
-      status: 'sent',
-      responseStatus: response.status,
+      status: mapOutboundFailureToStatus(outbound.reason),
+      reason: outbound.reason ?? 'unknown',
+      responseStatus: outbound.bridgeResponseCode,
     }
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      return { status: 'failed', reason: 'timeout' }
-    }
-
+  } catch {
     return { status: 'failed', reason: 'bridge_network_error' }
-  } finally {
-    clearTimeout(timeout)
   }
 }
