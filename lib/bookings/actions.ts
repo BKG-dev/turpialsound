@@ -21,6 +21,11 @@ import {
   uploadPaymentProofToBlob,
 } from '@/lib/bookings/payment-proof-upload'
 import { sendBookingNotifications } from '@/lib/bookings/notifications'
+import {
+  buildPaymentRecoveryPath,
+  buildPaymentRecoveryToken,
+} from '@/lib/bookings/payment-recovery-token'
+import { buildScheduledPaymentReminderJobs } from '@/lib/bookings/payment-reminders'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
 import { sendBookingWhatsappNotification } from '@/lib/bookings/whatsapp-notifications'
 import { isLabPhoneVerifiedRecently } from '@/lib/whatsapp/lab-token-store'
@@ -36,6 +41,10 @@ const BOOKING_SUBMIT_MAX_ATTEMPTS = 3
 const RETRYABLE_BOOKING_SUBMIT_ERROR_CODES = new Set(['P2034', 'P2002', '40001', '40P01'])
 const ACTIVE_HOLD_BLOCKING_ERROR =
   'Ya tienes una solicitud pendiente de pago o revision. Completa esa solicitud antes de crear una nueva.'
+const PAYMENT_REMINDER_SCHEDULER_URL_ENV = 'BOOKINGS_PAYMENT_REMINDER_SCHEDULER_URL'
+const PAYMENT_REMINDER_SCHEDULER_SECRET_ENV = 'BOOKINGS_PAYMENT_REMINDER_SCHEDULER_SECRET'
+const PAYMENT_REMINDER_CALLBACK_SECRET_ENV = 'BOOKINGS_PAYMENT_REMINDER_SECRET'
+const PAYMENT_REMINDER_CALLBACK_PATH = '/api/bookings/payment-reminders/send'
 
 class PaymentReportSlotTakenError extends Error {
   constructor() {
@@ -204,7 +213,129 @@ export interface SubmitBookingResult {
   publicCode?: string
   assignedResourceName?: string | null
   paymentDeadlineIso?: string
+  paymentRecoveryPath?: string | null
   error?: string
+}
+
+function resolvePublicBaseUrl(): string {
+  return (process.env.APP_URL?.trim() || 'https://turpialsong.com').replace(/\/+$/, '')
+}
+
+async function schedulePendingPaymentReminderJobs(input: {
+  bookingRequestId: string
+  publicCode: string
+  token: string
+  createdAt: Date
+}): Promise<void> {
+  const schedulerUrl = process.env[PAYMENT_REMINDER_SCHEDULER_URL_ENV]?.trim() ?? ''
+  const callbackSecret = process.env[PAYMENT_REMINDER_CALLBACK_SECRET_ENV]?.trim() ?? ''
+
+  if (!schedulerUrl || !callbackSecret) {
+    await prisma.auditLog
+      .create({
+        data: {
+          bookingRequestId: input.bookingRequestId,
+          action: 'payment_reminders_schedule_pending_config',
+          nextState: {
+            hasSchedulerUrl: Boolean(schedulerUrl),
+            hasReminderSecret: Boolean(callbackSecret),
+          },
+        },
+      })
+      .catch(() => {})
+    return
+  }
+
+  const callbackUrl = `${resolvePublicBaseUrl()}${PAYMENT_REMINDER_CALLBACK_PATH}`
+  const reminders = buildScheduledPaymentReminderJobs(input.createdAt)
+
+  const schedulerAuth = process.env[PAYMENT_REMINDER_SCHEDULER_SECRET_ENV]?.trim() ?? ''
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+  if (schedulerAuth) {
+    headers.Authorization = `Bearer ${schedulerAuth}`
+  }
+
+  const abortController = new AbortController()
+  const timeout = setTimeout(() => abortController.abort(), 1800)
+
+  try {
+    const response = await fetch(schedulerUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        source: 'turpialsound_bookings',
+        callback: {
+          method: 'POST',
+          url: callbackUrl,
+          headers: {
+            authorization: `Bearer ${callbackSecret}`,
+          },
+        },
+        reminders: reminders.map((reminder) => ({
+          reminderKind: reminder.reminderKind,
+          dueAt: reminder.dueAtIso,
+          payload: {
+            publicCode: input.publicCode,
+            token: input.token,
+            reminderKind: reminder.reminderKind,
+          },
+        })),
+      }),
+      cache: 'no-store',
+      signal: abortController.signal,
+    })
+
+    if (!response.ok) {
+      await prisma.auditLog
+        .create({
+          data: {
+            bookingRequestId: input.bookingRequestId,
+            action: 'payment_reminders_schedule_failed',
+            nextState: {
+              reason: 'scheduler_rejected',
+              responseStatus: response.status,
+            },
+          },
+        })
+        .catch(() => {})
+      return
+    }
+
+    await prisma.auditLog
+      .create({
+        data: {
+          bookingRequestId: input.bookingRequestId,
+          action: 'payment_reminders_schedule_requested',
+          nextState: {
+            callbackUrl,
+            reminders: reminders.map((reminder) => ({
+              reminderKind: reminder.reminderKind,
+              dueAt: reminder.dueAtIso,
+            })),
+          },
+        },
+      })
+      .catch(() => {})
+  } catch {
+    await prisma.auditLog
+      .create({
+        data: {
+          bookingRequestId: input.bookingRequestId,
+          action: 'payment_reminders_schedule_failed',
+          nextState: {
+            reason:
+              abortController.signal.aborted
+                ? 'scheduler_timeout'
+                : 'scheduler_network_error',
+          },
+        },
+      })
+      .catch(() => {})
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 
 export async function submitBookingRequest(
@@ -496,31 +627,44 @@ export async function submitBookingRequest(
       status: 'pending_payment',
     })
 
-    sendBookingWhatsapp(
-      'pending_payment',
-      { phone: requesterPhone, name: requesterName },
-      {
-        publicCode: submitResult.publicCode,
-        serviceName,
-        variantName: serviceVariant.name,
-        resourceName: submitResult.resourceName,
-      },
-    ).catch((error) => {
-      console.error('[whatsapp.pending_payment]', {
-        event: 'pending_payment',
-        publicCode: submitResult.publicCode,
-        hasPhone: Boolean(requesterPhone?.trim()),
-        reason: 'unexpected_error',
-        messageId: null,
-        errorType: error instanceof Error ? error.name : typeof error,
-      })
+    const paymentRecoveryToken = buildPaymentRecoveryToken({
+      bookingPublicCode: submitResult.publicCode,
+      expiresAt: paymentDeadline,
     })
+    const paymentRecoveryPath = paymentRecoveryToken
+      ? buildPaymentRecoveryPath({
+          publicCode: submitResult.publicCode,
+          token: paymentRecoveryToken,
+        })
+      : null
+
+    if (paymentRecoveryToken) {
+      await schedulePendingPaymentReminderJobs({
+        bookingRequestId: submitResult.bookingId,
+        publicCode: submitResult.publicCode,
+        token: paymentRecoveryToken,
+        createdAt: submitResult.createdAt,
+      })
+    } else {
+      await prisma.auditLog
+        .create({
+          data: {
+            bookingRequestId: submitResult.bookingId,
+            action: 'payment_recovery_token_not_generated',
+            nextState: {
+              reason: 'missing_or_invalid_secret',
+            },
+          },
+        })
+        .catch(() => {})
+    }
 
     return {
       success: true,
       publicCode: submitResult.publicCode,
       assignedResourceName: submitResult.resourceName,
       paymentDeadlineIso: paymentDeadline.toISOString(),
+      paymentRecoveryPath,
     }
   } catch (error) {
     console.error('[submitBookingRequest]', error)

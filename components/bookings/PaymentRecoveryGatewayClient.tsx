@@ -5,11 +5,36 @@ import { useEffect, useMemo, useState } from 'react'
 
 const BOOKING_PENDING_PAYMENT_STORAGE_KEY = 'turpial_booking_pending_payment_v1'
 
+type RecoveryState =
+  | 'checking'
+  | 'pending_payment'
+  | 'payment_reported'
+  | 'confirmed'
+  | 'expired'
+  | 'cancelled'
+  | 'invalid_link'
+  | 'not_found'
+  | 'unavailable'
+
 interface PendingSessionPayload {
-  version?: number
-  publicCode?: string
-  operationalStatus?: 'pending_payment' | 'payment_reported'
-  paymentDeadlineIso?: string | null
+  version: 1
+  publicCode: string
+  operationalStatus: 'pending_payment'
+  serviceSlug: string | null
+  variantSlug: string | null
+  serviceName: string
+  variantName: string
+  eventDate: string | null
+  startTime: string | null
+  durationMinutes: number | null
+  paymentDeadlineIso: string | null
+  selectedPaymentMethodSlug: 'pago_movil' | 'transferencia' | 'binance' | 'efectivo'
+  paymentReference: string
+  amountUsd: number
+  amountBs: number
+  amountUsdLabel: string
+  amountBsLabel: string
+  bcvRate: number
 }
 
 interface PaymentRecoveryGatewayClientProps {
@@ -17,13 +42,12 @@ interface PaymentRecoveryGatewayClientProps {
   token: string
 }
 
-type RecoveryState = 'checking' | 'ready' | 'unavailable'
-
 export function PaymentRecoveryGatewayClient({
   code,
   token,
 }: PaymentRecoveryGatewayClientProps) {
   const [state, setState] = useState<RecoveryState>('checking')
+  const [detail, setDetail] = useState<string | null>(null)
 
   const hasParams = useMemo(
     () => code.trim().length > 0 && token.trim().length > 0,
@@ -31,38 +55,71 @@ export function PaymentRecoveryGatewayClient({
   )
 
   useEffect(() => {
+    let cancelled = false
+
     if (!hasParams) {
       setState('unavailable')
+      setDetail('Debes usar un enlace valido con codigo y token.')
       return
     }
 
-    try {
-      const raw = window.localStorage.getItem(BOOKING_PENDING_PAYMENT_STORAGE_KEY)
-      if (!raw) {
+    const run = async () => {
+      try {
+        const response = await fetch('/api/bookings/payment-recovery/session', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ code, token }),
+        })
+
+        const payload = (await response.json().catch(() => null)) as
+          | {
+              state?: RecoveryState
+              reason?: string
+              session?: PendingSessionPayload
+            }
+          | null
+
+        if (cancelled) return
+        if (!response.ok || !payload?.state) {
+          setState('unavailable')
+          setDetail('No pudimos validar tu enlace seguro. Intenta nuevamente.')
+          return
+        }
+
+        if (payload.state === 'pending_payment' && payload.session) {
+          const pendingPaymentSession = {
+            ...payload.session,
+            savedAt: new Date().toISOString(),
+          }
+          window.localStorage.setItem(
+            BOOKING_PENDING_PAYMENT_STORAGE_KEY,
+            JSON.stringify(pendingPaymentSession),
+          )
+          setState('pending_payment')
+          setDetail(null)
+          return
+        }
+
+        setState(payload.state)
+
+        if (payload.state === 'invalid_link') {
+          if (payload.reason === 'expired_token') {
+            setDetail('Este enlace seguro vencio. Solicita uno nuevo desde /reservas.')
+          } else {
+            setDetail('No pudimos validar este enlace seguro.')
+          }
+        }
+      } catch {
+        if (cancelled) return
         setState('unavailable')
-        return
+        setDetail('No pudimos validar tu enlace seguro. Intenta nuevamente.')
       }
+    }
 
-      const parsed = JSON.parse(raw) as PendingSessionPayload
-      if (!parsed || parsed.version !== 1 || parsed.publicCode !== code.toUpperCase()) {
-        setState('unavailable')
-        return
-      }
+    void run()
 
-      const deadlineMs = parsed.paymentDeadlineIso
-        ? new Date(parsed.paymentDeadlineIso).getTime()
-        : Number.NaN
-      const isExpired = Number.isFinite(deadlineMs) && deadlineMs <= Date.now()
-
-      if (parsed.operationalStatus === 'pending_payment' && isExpired) {
-        window.localStorage.removeItem(BOOKING_PENDING_PAYMENT_STORAGE_KEY)
-        setState('unavailable')
-        return
-      }
-
-      setState('ready')
-    } catch {
-      setState('unavailable')
+    return () => {
+      cancelled = true
     }
   }, [code, hasParams])
 
@@ -72,11 +129,11 @@ export function PaymentRecoveryGatewayClient({
       {state === 'checking' && (
         <p className="mt-3 text-sm text-text-secondary">Estamos validando tu acceso seguro...</p>
       )}
-      {state === 'ready' && (
+      {state === 'pending_payment' && (
         <div className="mt-3 space-y-3">
           <p className="text-sm text-text-secondary">
-            Detectamos una sesion local pendiente para {code}. Puedes continuar el reporte de pago
-            desde reservas.
+            Detectamos una solicitud pendiente de pago para {code}. Puedes continuar el reporte del
+            comprobante desde reservas.
           </p>
           <Link
             href="/reservas"
@@ -86,14 +143,32 @@ export function PaymentRecoveryGatewayClient({
           </Link>
         </div>
       )}
-      {state === 'unavailable' && (
+      {state === 'payment_reported' && (
+        <p className="mt-3 text-sm text-text-secondary">
+          Esta solicitud ya tiene el pago reportado y se encuentra en revision manual.
+        </p>
+      )}
+      {state === 'confirmed' && (
+        <p className="mt-3 text-sm text-text-secondary">
+          Esta reserva ya fue confirmada por el equipo de Turpial Sound.
+        </p>
+      )}
+      {state === 'expired' && (
+        <p className="mt-3 text-sm text-text-secondary">
+          La ventana de pago de esta solicitud vencio. Puedes crear una nueva solicitud en
+          /reservas.
+        </p>
+      )}
+      {state === 'cancelled' && (
+        <p className="mt-3 text-sm text-text-secondary">
+          Esta solicitud ya no esta disponible para reporte de pago.
+        </p>
+      )}
+      {(state === 'invalid_link' || state === 'not_found' || state === 'unavailable') && (
         <div className="mt-3 space-y-2">
-          <p className="text-sm text-amber-300">
-            No pudimos recuperar una sesion segura activa con este enlace.
-          </p>
+          <p className="text-sm text-amber-300">{detail ?? 'No pudimos validar este enlace.'}</p>
           <p className="text-xs text-text-muted">
-            Por seguridad no mostramos datos de pago solo con codigo publico. Continua desde
-            /reservas para crear o retomar tu solicitud.
+            Por seguridad no mostramos datos de pago solo con codigo publico.
           </p>
           <Link
             href="/reservas"
