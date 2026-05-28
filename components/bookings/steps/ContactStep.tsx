@@ -47,6 +47,7 @@ interface ContactStepProps {
   secureLinkRequestState?: 'idle' | 'loading' | 'sent' | 'failed'
   secureLinkExpiresAt?: string | null
   secureLinkError?: string | null
+  onPrimarySecureLinkAction: () => void
   onStartWhatsappVerification: () => void
   onSendSecureLink: () => void
   onUseManualCodeFallback: () => void
@@ -76,6 +77,7 @@ export function ContactStep({
   secureLinkRequestState = 'idle',
   secureLinkExpiresAt,
   secureLinkError,
+  onPrimarySecureLinkAction,
   onStartWhatsappVerification,
   onSendSecureLink,
   onUseManualCodeFallback,
@@ -241,7 +243,7 @@ export function ContactStep({
                 type="button"
                 variant="primary"
                 size="sm"
-                onClick={onSendSecureLink}
+                onClick={onPrimarySecureLinkAction}
                 disabled={secureLinkRequestState === 'loading'}
                 className="w-full sm:w-auto"
               >

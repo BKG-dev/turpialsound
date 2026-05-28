@@ -1158,6 +1158,19 @@ export function BookingWizard({
     }
   }
 
+  async function handleContactPrimarySecureLinkAction() {
+    setSubmitError(null)
+
+    if (isSecureLinkFlowActive && !isWhatsappVerificationFresh) {
+      if (secureLinkRequestState !== 'loading') {
+        await handleSendSecureLink()
+      }
+      return
+    }
+
+    await handleContactPrimaryAction()
+  }
+
   function markCopied(key: string) {
     setCopyStatusKey(key)
     window.setTimeout(() => {
@@ -2015,6 +2028,9 @@ export function BookingWizard({
             secureLinkRequestState={secureLinkRequestState}
             secureLinkExpiresAt={secureLinkRequestExpiresAt}
             secureLinkError={secureLinkRequestError}
+            onPrimarySecureLinkAction={() => {
+              void handleContactPrimarySecureLinkAction()
+            }}
             onStartWhatsappVerification={() => {
               setSubmitError(null)
               setContactVerificationFlowMode('manual_code')
