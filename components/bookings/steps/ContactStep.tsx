@@ -238,7 +238,7 @@ export function ContactStep({
           </div>
 
           {isSecureLinkMode && whatsappVerificationStatus !== 'verified' && (
-            <div className="mt-2">
+            <div className="mt-2 flex justify-stretch sm:justify-end">
               <Button
                 type="button"
                 variant="primary"
