@@ -10,7 +10,7 @@ function generateCode(): string {
 
 export async function getOrCreateReferralLink(listingId: string): Promise<{ success: boolean; code?: string; url?: string; message?: string }> {
   const session = await getSession()
-  if (!session) return { success: false, message: 'Inicia sesion para compartir y ganar' }
+  if (!session) return { success: false, message: 'Inicia sesion para compartir y ganar el 10% de nuestra comision' }
 
   const db = await getDb()
   if (!db) return { success: false, message: 'DB no disponible' }

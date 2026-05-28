@@ -1,8 +1,8 @@
 {
-  "lastRun": "2026-05-18T00:22:06.036Z",
-  "originCommit": "9badb3e",
-  "branch": "Manuel/s-mp-01-carrito-2026-05-17",
+  "lastRun": "2026-05-28T17:44:24.450Z",
+  "originCommit": "db51970",
+  "branch": "jean/s-mp-09-marketplace-safe-start-no-solape-2026-05-18",
   "blockers": 0,
   "warnings": 2,
-  "mother": "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16"
+  "mother": "MADRE/v7-s-mp-07-dark-mode-cards-admin-igor-2026-05-18"
 }

@@ -17,6 +17,7 @@ import { HeroSection } from '@/components/home/HeroSection'
 import { StackingSection } from '@/components/home/StackingSection'
 import { ServiceGallery } from '@/components/home/ServiceGallery'
 import { InstalacionesSection } from '@/components/home/InstalacionesSection'
+import { DropSocialHomeBlock } from '@/components/dropsocial/DropSocialHomeBlock'
 
 export const metadata: Metadata = generatePageMetadata({
   title: 'Estudio de grabación y producción musical en Caracas',
@@ -233,6 +234,13 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+        </SectionShell>
+      </StackingSection>
+
+      {/* ── DROPSOCIAL — stacking section 5 ───────────────────────────── */}
+      <StackingSection index={5} waves>
+        <SectionShell background="none">
+          <DropSocialHomeBlock variant="turpial" />
         </SectionShell>
       </StackingSection>
 

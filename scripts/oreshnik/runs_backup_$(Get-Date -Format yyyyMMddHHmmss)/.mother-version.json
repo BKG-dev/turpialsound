@@ -1,0 +1,76 @@
+{
+  "version": 7,
+  "current": "MADRE/v7-s-mp-07-dark-mode-cards-admin-igor-2026-05-18",
+  "branches": [
+    {
+      "version": 1,
+      "name": "RAMA-MADRE",
+      "sprint": null,
+      "operator": null,
+      "date": "2026-05-15",
+      "fulldate": "15/05/26 14:26",
+      "description": "Madre original (pre-v4.0). Reemplazada por sistema dinamico.",
+      "previous": null
+    },
+    {
+      "version": 2,
+      "name": "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16",
+      "sprint": "integracion-docs",
+      "operator": "Manuel",
+      "date": "2026-05-17",
+      "fulldate": "17/05/26 00:10",
+      "description": "Integracion de documentacion: Jean/s12-reservas + Manuel/s-adm-01. Code merge pendiente.",
+      "previous": "RAMA-MADRE"
+    },
+    {
+      "version": 3,
+      "name": "MADRE/v3-s-mp-01-2026-05-18",
+      "sprint": "S-MP-01",
+      "operator": "Manuel",
+      "date": "2026-05-18",
+      "fulldate": "17/05/26 20:22",
+      "description": "CERRADO",
+      "previous": "MADRE/v2-jean-s12-reservas-manuel-s-adm-01-2026-05-16"
+    },
+    {
+      "version": 4,
+      "name": "MADRE/v4-oreshnik-docs-sync-2026-05-18",
+      "sprint": "S-MP-01",
+      "operator": "Manuel",
+      "date": "2026-05-18",
+      "fulldate": "17/05/26 20:45",
+      "description": "Blindaje sync docs Google Docs style",
+      "previous": "MADRE/v3-s-mp-01-2026-05-18"
+    },
+    {
+      "version": 5,
+      "name": "MADRE/v5-s-mp-02-busqueda-fuzzy-filtros-ubicacion-2026-05-18",
+      "sprint": "S-MP-02",
+      "operator": "Manuel",
+      "date": "2026-05-18",
+      "fulldate": "18/05/26 09:09",
+      "description": "busqueda-fuzzy-filtros-ubicacion",
+      "previous": "MADRE/v4-oreshnik-docs-sync-2026-05-18"
+    },
+    {
+      "version": 6,
+      "name": "MADRE/v6-s-mp-06-drop-social-referidos-dashboard-2026-05-18",
+      "sprint": "S-MP-06",
+      "operator": "Manuel",
+      "date": "2026-05-18",
+      "fulldate": "18/05/26 09:10",
+      "description": "drop-social-referidos-dashboard",
+      "previous": "MADRE/v5-s-mp-02-busqueda-fuzzy-filtros-ubicacion-2026-05-18"
+    },
+    {
+      "version": 7,
+      "name": "MADRE/v7-s-mp-07-dark-mode-cards-admin-igor-2026-05-18",
+      "sprint": "S-MP-07",
+      "operator": "Manuel",
+      "date": "2026-05-18",
+      "fulldate": "18/05/26 09:39",
+      "description": "dark-mode-cards-admin-igor",
+      "previous": "MADRE/v6-s-mp-06-drop-social-referidos-dashboard-2026-05-18"
+    }
+  ]
+}

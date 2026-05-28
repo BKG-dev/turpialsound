@@ -33,6 +33,7 @@ import { getActiveListings, getOrCreateThread } from '@/actions/marketplace'
 import { toggleFavorite, getMyFavoriteIds } from '@/actions/marketplace/favorites'
 import { trackMarketplaceClientEvent } from '@/lib/marketplace/analytics-client'
 import type { MpSessionPayload } from '@/lib/marketplace/auth'
+import { DropSocialHomeBlock } from '@/components/dropsocial/DropSocialHomeBlock'
 
 // ─── Build a MessageThread from a listing + optional session ──────────────────
 // Used when opening a real chat: we have the listing data but no pre-fetched thread.
@@ -805,6 +806,15 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
                 ))}
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            DROPSOCIAL — comparte y gana 10% de nuestra comision
+        ═══════════════════════════════════════════════════════════════════ */}
+        <section className="section-padding-sm">
+          <div className="container-base">
+            <DropSocialHomeBlock variant="marketplace" />
           </div>
         </section>
 

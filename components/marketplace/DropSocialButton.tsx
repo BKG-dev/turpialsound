@@ -102,10 +102,10 @@ export function DropSocialButton({ listing, variant = 'card' }: DropSocialButton
           border: open ? '1px solid rgba(255,193,7,0.35)' : '1px solid var(--mp-border)',
           color: open ? '#ffc107' : 'var(--mp-text-muted)',
         }}
-        title="Drop Social — Comparte y gana"
+        title="DropSocial — Comparte y gana"
       >
         <Gift size={isDetail ? 16 : 13} />
-        {isDetail && 'Drop Social'}
+        {isDetail && 'DropSocial'}
       </button>
 
       {open && (
@@ -124,10 +124,10 @@ export function DropSocialButton({ listing, variant = 'card' }: DropSocialButton
           >
             <p className="text-[11px] font-semibold text-[#ffc107] flex items-center gap-1.5">
               <Gift size={13} />
-              Drop Social
+              DropSocial
             </p>
             <p className="text-[10px] mt-1" style={{ color: 'var(--mp-text-faint)' }}>
-              Comparte este listing y gana <span style={{ color: '#ffc107' }}>0.5%</span> de cada compra que venga de tu link.
+              Comparte y gana el <span style={{ color: '#ffc107' }}>10%</span> de nuestra comisión por cada venta que traiga tu link.
             </p>
           </div>
 
