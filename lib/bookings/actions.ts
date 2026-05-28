@@ -43,8 +43,6 @@ const ACTIVE_HOLD_BLOCKING_ERROR =
   'Ya tienes una solicitud pendiente de pago o revision. Completa esa solicitud antes de crear una nueva.'
 const PAYMENT_REMINDER_SCHEDULER_URL_ENV = 'BOOKINGS_PAYMENT_REMINDER_SCHEDULER_URL'
 const PAYMENT_REMINDER_SCHEDULER_SECRET_ENV = 'BOOKINGS_PAYMENT_REMINDER_SCHEDULER_SECRET'
-const PAYMENT_REMINDER_CALLBACK_SECRET_ENV = 'BOOKINGS_PAYMENT_REMINDER_SECRET'
-const PAYMENT_REMINDER_CALLBACK_PATH = '/api/bookings/payment-reminders/send'
 
 class PaymentReportSlotTakenError extends Error {
   constructor() {
@@ -217,10 +215,6 @@ export interface SubmitBookingResult {
   error?: string
 }
 
-function resolvePublicBaseUrl(): string {
-  return (process.env.APP_URL?.trim() || 'https://turpialsong.com').replace(/\/+$/, '')
-}
-
 async function schedulePendingPaymentReminderJobs(input: {
   bookingRequestId: string
   publicCode: string
@@ -228,9 +222,9 @@ async function schedulePendingPaymentReminderJobs(input: {
   createdAt: Date
 }): Promise<void> {
   const schedulerUrl = process.env[PAYMENT_REMINDER_SCHEDULER_URL_ENV]?.trim() ?? ''
-  const callbackSecret = process.env[PAYMENT_REMINDER_CALLBACK_SECRET_ENV]?.trim() ?? ''
+  const schedulerAuth = process.env[PAYMENT_REMINDER_SCHEDULER_SECRET_ENV]?.trim() ?? ''
 
-  if (!schedulerUrl || !callbackSecret) {
+  if (!schedulerUrl || !schedulerAuth) {
     await prisma.auditLog
       .create({
         data: {
@@ -238,7 +232,7 @@ async function schedulePendingPaymentReminderJobs(input: {
           action: 'payment_reminders_schedule_pending_config',
           nextState: {
             hasSchedulerUrl: Boolean(schedulerUrl),
-            hasReminderSecret: Boolean(callbackSecret),
+            hasSchedulerSecret: Boolean(schedulerAuth),
           },
         },
       })
@@ -246,96 +240,83 @@ async function schedulePendingPaymentReminderJobs(input: {
     return
   }
 
-  const callbackUrl = `${resolvePublicBaseUrl()}${PAYMENT_REMINDER_CALLBACK_PATH}`
   const reminders = buildScheduledPaymentReminderJobs(input.createdAt)
-
-  const schedulerAuth = process.env[PAYMENT_REMINDER_SCHEDULER_SECRET_ENV]?.trim() ?? ''
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-  }
-  if (schedulerAuth) {
-    headers.Authorization = `Bearer ${schedulerAuth}`
+    Authorization: `Bearer ${schedulerAuth}`,
   }
 
-  const abortController = new AbortController()
-  const timeout = setTimeout(() => abortController.abort(), 1800)
+  await Promise.allSettled(
+    reminders.map(async (reminder) => {
+      const abortController = new AbortController()
+      const timeout = setTimeout(() => abortController.abort(), 1800)
 
-  try {
-    const response = await fetch(schedulerUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        source: 'turpialsound_bookings',
-        callback: {
+      try {
+        const response = await fetch(schedulerUrl, {
           method: 'POST',
-          url: callbackUrl,
-          headers: {
-            authorization: `Bearer ${callbackSecret}`,
-          },
-        },
-        reminders: reminders.map((reminder) => ({
-          reminderKind: reminder.reminderKind,
-          dueAt: reminder.dueAtIso,
-          payload: {
+          headers,
+          body: JSON.stringify({
             publicCode: input.publicCode,
             token: input.token,
             reminderKind: reminder.reminderKind,
-          },
-        })),
-      }),
-      cache: 'no-store',
-      signal: abortController.signal,
-    })
-
-    if (!response.ok) {
-      await prisma.auditLog
-        .create({
-          data: {
-            bookingRequestId: input.bookingRequestId,
-            action: 'payment_reminders_schedule_failed',
-            nextState: {
-              reason: 'scheduler_rejected',
-              responseStatus: response.status,
-            },
-          },
+            dueAt: reminder.dueAtIso,
+          }),
+          cache: 'no-store',
+          signal: abortController.signal,
         })
-        .catch(() => {})
-      return
-    }
 
-    await prisma.auditLog
-      .create({
-        data: {
-          bookingRequestId: input.bookingRequestId,
-          action: 'payment_reminders_schedule_requested',
-          nextState: {
-            callbackUrl,
-            reminders: reminders.map((reminder) => ({
-              reminderKind: reminder.reminderKind,
-              dueAt: reminder.dueAtIso,
-            })),
-          },
-        },
-      })
-      .catch(() => {})
-  } catch {
-    await prisma.auditLog
-      .create({
-        data: {
-          bookingRequestId: input.bookingRequestId,
-          action: 'payment_reminders_schedule_failed',
-          nextState: {
-            reason:
-              abortController.signal.aborted
-                ? 'scheduler_timeout'
-                : 'scheduler_network_error',
-          },
-        },
-      })
-      .catch(() => {})
-  } finally {
-    clearTimeout(timeout)
-  }
+        if (!response.ok) {
+          await prisma.auditLog
+            .create({
+              data: {
+                bookingRequestId: input.bookingRequestId,
+                action: 'payment_reminders_schedule_failed',
+                nextState: {
+                  reminderKind: reminder.reminderKind,
+                  dueAt: reminder.dueAtIso,
+                  reason: 'scheduler_rejected',
+                  responseStatus: response.status,
+                },
+              },
+            })
+            .catch(() => {})
+          return
+        }
+
+        await prisma.auditLog
+          .create({
+            data: {
+              bookingRequestId: input.bookingRequestId,
+              action: 'payment_reminders_schedule_requested',
+              nextState: {
+                reminderKind: reminder.reminderKind,
+                dueAt: reminder.dueAtIso,
+                responseStatus: response.status,
+              },
+            },
+          })
+          .catch(() => {})
+      } catch {
+        await prisma.auditLog
+          .create({
+            data: {
+              bookingRequestId: input.bookingRequestId,
+              action: 'payment_reminders_schedule_failed',
+              nextState: {
+                reminderKind: reminder.reminderKind,
+                dueAt: reminder.dueAtIso,
+                reason: abortController.signal.aborted
+                  ? 'scheduler_timeout'
+                  : 'scheduler_network_error',
+              },
+            },
+          })
+          .catch(() => {})
+      } finally {
+        clearTimeout(timeout)
+      }
+    }),
+  )
 }
 
 export async function submitBookingRequest(
