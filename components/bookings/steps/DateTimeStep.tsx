@@ -561,7 +561,7 @@ export function DateTimeStep({
                       'rounded-lg border px-2 py-2 text-center text-[12px] font-medium transition-colors',
                       getSlotButtonClass(slot, isStartSelected || isEndSelected),
                       isEndSelected && 'ring-1 ring-offset-0 ring-accent-gold/70',
-                      isInSelectedRange && 'border-sky-400/45 bg-sky-500/10 text-sky-100',
+                      isInSelectedRange && 'border-accent-gold/70 bg-accent-gold/15 text-accent-gold',
                       isSelectingEnd &&
                         canEndHere &&
                         !isEndSelected &&
