@@ -21,7 +21,7 @@ import {
   uploadPaymentProofToBlob,
 } from '@/lib/bookings/payment-proof-upload'
 import { sendBookingNotifications } from '@/lib/bookings/notifications'
-import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
+import { sendBookingWhatsappNotification } from '@/lib/bookings/whatsapp-notifications'
 import { isLabPhoneVerifiedRecently } from '@/lib/whatsapp/lab-token-store'
 import { isSecureLinkPhoneVerifiedRecently } from '@/lib/whatsapp/secure-link-store'
 import { sendBookingWhatsapp } from '@/lib/whatsapp/booking-notifications'
@@ -158,62 +158,6 @@ function withWhatsappConsentTags(baseInternalNotes: string, acceptedAt: Date): s
 
 function hasWhatsappConsentAccepted(internalNotes: string | null | undefined): boolean {
   return (internalNotes ?? '').toLowerCase().includes(WHATSAPP_CONSENT_ACCEPTED_TAG)
-}
-
-function getBookingsWhatsappNumber(): string | null {
-  const compact = process.env.BOOKINGS_WHATSAPP_NUMBER?.replace(/[^\d]/g, '') ?? ''
-  return compact.length > 0 ? compact : null
-}
-
-function formatUsdAmount(amount: number | null): string | null {
-  if (typeof amount !== 'number' || !Number.isFinite(amount)) {
-    return null
-  }
-
-  return amount.toFixed(2)
-}
-
-function formatBsAmount(amount: number | null, rate: number | null): string | null {
-  if (
-    typeof amount !== 'number' ||
-    !Number.isFinite(amount) ||
-    typeof rate !== 'number' ||
-    !Number.isFinite(rate)
-  ) {
-    return null
-  }
-
-  return (amount * rate).toLocaleString('es-VE', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
-}
-
-function buildPaymentReportedWhatsappDeepLink(input: {
-  number: string
-  clientName: string | null | undefined
-  publicCode: string
-  serviceName?: string | null
-  variantName?: string | null
-  usdTotal?: string | null
-  bsTotal?: string | null
-  paymentMethod?: string | null
-}): string {
-  const lines = [
-    `Hola, soy ${input.clientName?.trim() || 'cliente'}. Ya reporte el pago de mi solicitud en Turpial Sound.`,
-    '',
-    `Codigo: ${input.publicCode}`,
-    input.serviceName ? `Servicio: ${input.serviceName}` : '',
-    input.variantName ? `Modalidad: ${input.variantName}` : '',
-    input.usdTotal ? `Monto: USD ${input.usdTotal}` : '',
-    input.bsTotal ? `Monto referencial: Bs. ${input.bsTotal}` : '',
-    input.paymentMethod ? `Metodo: ${input.paymentMethod}` : '',
-    '',
-    'Quedo atento a las actualizaciones de mi reserva por WhatsApp.',
-  ].filter(Boolean)
-
-  const encodedMessage = encodeURIComponent(lines.join('\n'))
-  return `https://wa.me/${input.number}?text=${encodedMessage}`
 }
 
 function getPaymentProofDuplicateWarning(
@@ -585,7 +529,6 @@ export interface ReportBookingPaymentResult {
   paymentProofId?: string
   duplicateStatus?: PaymentProofDuplicateStatus
   warning?: string
-  whatsappDeepLink?: string | null
   error?: string
 }
 
@@ -889,19 +832,6 @@ export async function reportBookingPayment(
       })
     }
 
-    if (booking.requesterPhone) {
-      sendBookingWhatsapp(
-        'payment_reported',
-        { phone: booking.requesterPhone, name: booking.requesterName },
-        {
-          publicCode: booking.publicCode,
-          serviceName: primaryItem?.serviceVariant.service.name ?? null,
-          variantName: primaryItem?.serviceVariant.name ?? null,
-          resourceName: resolvedResourceName,
-        },
-      ).catch(() => {})
-    }
-
     await sendBookingNotifications('booking.payment_reported', {
       publicCode: booking.publicCode,
       paymentProofId,
@@ -923,36 +853,32 @@ export async function reportBookingPayment(
       status: nextOperationalStatus,
     })
 
-    let whatsappDeepLink: string | null = null
-    if (hasWhatsappConsentAccepted(booking.internalNotes)) {
-      const whatsappNumber = getBookingsWhatsappNumber()
-      if (whatsappNumber) {
-        const estimatedTotal = parseOptionalAmount(booking.estimatedTotal)
-        let bsTotal: string | null = null
+    if (hasWhatsappConsentAccepted(booking.internalNotes) && booking.requesterPhone) {
+      const whatsappMessage =
+        `Turpial Sound recibio tu comprobante de pago para la solicitud ${booking.publicCode}. ` +
+        'Tu pago esta en revision manual. Te notificaremos cuando sea verificado.'
 
-        if (
-          booking.currency?.toUpperCase() === 'USD' &&
-          typeof estimatedTotal === 'number' &&
-          Number.isFinite(estimatedTotal)
-        ) {
-          try {
-            const referenceRate = await resolveReferenceRate()
-            bsTotal = formatBsAmount(estimatedTotal, referenceRate.rate)
-          } catch {
-            bsTotal = null
-          }
-        }
+      const whatsappResult = await sendBookingWhatsappNotification({
+        phone: booking.requesterPhone,
+        publicCode: booking.publicCode,
+        event: 'payment_reported',
+        message: whatsappMessage,
+      })
 
-        whatsappDeepLink = buildPaymentReportedWhatsappDeepLink({
-          number: whatsappNumber,
-          clientName: booking.requesterName,
-          publicCode: booking.publicCode,
-          serviceName: primaryItem?.serviceVariant.service.name ?? null,
-          variantName: primaryItem?.serviceVariant.name ?? null,
-          usdTotal: formatUsdAmount(estimatedTotal),
-          bsTotal,
-          paymentMethod,
-        })
+      if (whatsappResult.status === 'failed') {
+        await prisma.auditLog
+          .create({
+            data: {
+              bookingRequestId: booking.id,
+              action: 'whatsapp_bridge_failed_on_payment_reported',
+              nextState: {
+                operationalStatus: nextOperationalStatus,
+                reason: whatsappResult.reason ?? 'unknown',
+                responseStatus: whatsappResult.responseStatus ?? null,
+              },
+            },
+          })
+          .catch(() => {})
       }
     }
 
@@ -964,7 +890,6 @@ export async function reportBookingPayment(
       paymentProofId: paymentProofId ?? undefined,
       duplicateStatus: uploadedPaymentProof?.duplicateStatus,
       warning: getPaymentProofDuplicateWarning(uploadedPaymentProof?.duplicateStatus) ?? undefined,
-      whatsappDeepLink,
     }
   } catch (error) {
     console.error('[reportBookingPayment]', error)
