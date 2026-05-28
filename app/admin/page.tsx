@@ -18,7 +18,6 @@ import {
   isValidAdminSessionValue,
 } from '@/lib/auth/session'
 import {
-  expireOverduePendingPayments,
   getPaymentDeadline,
   getOperationalStatus,
   isPaymentReportedWithinWindow,
@@ -452,7 +451,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const statusFilter: OperationalBookingStatus | 'all' =
     requestedStatus && isOperationalBookingStatus(requestedStatus) ? requestedStatus : 'all'
 
-  await expireOverduePendingPayments()
   const dashboardSnapshot = await getAdminDashboardSnapshot(dashboardRange)
 
   const resources = await prisma.resource.findMany({
