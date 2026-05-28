@@ -637,7 +637,6 @@ export async function reportBookingPayment(
         createdAt: true,
         calendarEventId: true,
         items: {
-          take: 1,
           orderBy: { createdAt: 'asc' },
           select: {
             serviceVariant: {
@@ -666,6 +665,16 @@ export async function reportBookingPayment(
     }
 
     const currentOperationalStatus = getOperationalStatus(booking)
+    const primaryItem = booking.items[0]
+    const assignedResourceNames = Array.from(
+      new Set(
+        booking.items
+          .map((item) => item.resource?.name?.trim() ?? '')
+          .filter((name) => name.length > 0),
+      ),
+    )
+    const resolvedResourceName =
+      assignedResourceNames.length > 0 ? assignedResourceNames.join(', ') : null
 
     if (currentOperationalStatus === 'payment_reported') {
       return { success: false, error: 'Esta solicitud ya tiene un pago reportado.' }
@@ -845,7 +854,6 @@ export async function reportBookingPayment(
       }
     }
 
-    const primaryItem = booking.items[0]
     const calendarSync = await syncBookingToGoogleCalendar({
       publicCode: booking.publicCode,
       paymentProofId,
@@ -889,7 +897,7 @@ export async function reportBookingPayment(
           publicCode: booking.publicCode,
           serviceName: primaryItem?.serviceVariant.service.name ?? null,
           variantName: primaryItem?.serviceVariant.name ?? null,
-          resourceName: primaryItem?.resource?.name ?? null,
+          resourceName: resolvedResourceName,
         },
       ).catch(() => {})
     }
@@ -902,7 +910,7 @@ export async function reportBookingPayment(
       clientWhatsapp: booking.requesterPhone,
       serviceName: primaryItem?.serviceVariant.service.name ?? null,
       variantName: primaryItem?.serviceVariant.name ?? null,
-      resourceName: primaryItem?.resource?.name ?? null,
+      resourceName: resolvedResourceName,
       requestCreatedAt: booking.createdAt,
       startAt: booking.eventDate,
       endAt: booking.eventEndDate,

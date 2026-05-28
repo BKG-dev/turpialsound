@@ -335,6 +335,7 @@ export function BookingWizard({
   const [hasRestoredPendingPayment, setHasRestoredPendingPayment] = useState(false)
   const [paymentRecoveryNotice, setPaymentRecoveryNotice] = useState<string | null>(null)
   const pollTimerRef = useRef<number | null>(null)
+  const wizardContainerRef = useRef<HTMLDivElement | null>(null)
 
   const totalSteps = WIZARD_STEPS.length
   const step = WIZARD_STEPS[currentStep]
@@ -962,6 +963,17 @@ export function BookingWizard({
 
     return () => window.clearTimeout(timer)
   }, [currentStep, isWhatsappVerificationFresh])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const container = wizardContainerRef.current
+    if (!container) return
+
+    container.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
+  }, [currentStep])
 
   const canProceed =
     currentStep === 0
@@ -1791,6 +1803,7 @@ export function BookingWizard({
 
   return (
     <div
+      ref={wizardContainerRef}
       className="overflow-x-hidden rounded-2xl border border-brand-border bg-brand-surface"
       aria-busy={submissionState === 'loading'}
     >
@@ -2101,16 +2114,22 @@ export function BookingWizard({
 
         {currentStep < totalSteps - 1 ? (
           currentStep === 4 ? (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => {
-                void handleContactPrimaryAction()
-              }}
-              disabled={!contactDataIsComplete || isContactVerificationRunning}
-            >
-              {contactPrimaryCtaLabel}
-            </Button>
+            isSecureLinkFlowActive && !isWhatsappVerificationFresh ? (
+              <Button variant="ghost" size="sm" disabled>
+                Completa la verificacion arriba
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  void handleContactPrimaryAction()
+                }}
+                disabled={!contactDataIsComplete || isContactVerificationRunning}
+              >
+                {contactPrimaryCtaLabel}
+              </Button>
+            )
           ) : (
             <Button variant="primary" size="sm" onClick={handleNext} disabled={!canProceed}>
               Continuar

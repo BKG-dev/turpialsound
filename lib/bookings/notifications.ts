@@ -175,6 +175,14 @@ function formatAmount(payload: BookingNotificationPayload): string {
   return 'Por confirmar'
 }
 
+function formatResourceName(
+  value: string | null | undefined,
+  fallback: string,
+): string {
+  const normalized = value?.trim()
+  return normalized && normalized.length > 0 ? normalized : fallback
+}
+
 function formatBsReferenceAmount(payload: BookingNotificationPayload): string | null {
   const currency = payload.currency?.trim().toUpperCase() || 'USD'
   if (currency !== 'USD') {
@@ -216,7 +224,7 @@ function buildCommonLines(payload: BookingNotificationPayload): string[] {
     `Servicio: ${payload.serviceName ?? 'Por confirmar'}`,
     `Modalidad: ${payload.variantName ?? 'Por confirmar'}`,
     `Horario: ${formatSchedule(payload.startAt, payload.endAt)}`,
-    `Sala: ${payload.resourceName ?? 'Por asignar'}`,
+    `Sala: ${formatResourceName(payload.resourceName, 'Por asignar')}`,
     `Monto: ${formatAmount(payload)}`,
   ]
 
@@ -282,7 +290,7 @@ function buildPaymentReportedAdminText(payload: BookingNotificationPayload): str
     `WhatsApp cliente: ${payload.clientWhatsapp ?? 'No disponible'}`,
     `Servicio: ${payload.serviceName ?? 'Por confirmar'}`,
     `Modalidad: ${payload.variantName ?? 'Por confirmar'}`,
-    payload.resourceName ? `Sala/recurso: ${payload.resourceName}` : 'Sala/recurso: por confirmar',
+    `Sala/recurso: ${formatResourceName(payload.resourceName, 'por confirmar')}`,
     `Fecha reservada: ${formatDateOnly(payload.startAt)}`,
     `Bloque horario: ${formatTimeOnly(payload.startAt)} - ${formatTimeOnly(payload.endAt)}`,
     `Monto USD: ${formatAmount(payload)}`,
@@ -330,7 +338,7 @@ function buildPaymentReportedAdminHtml(payload: BookingNotificationPayload): str
         <tr><td style="padding:6px 0;color:#64748b;">WhatsApp</td><td style="padding:6px 0;">${payload.clientWhatsapp ?? 'No disponible'}</td></tr>
         <tr><td style="padding:6px 0;color:#64748b;">Servicio</td><td style="padding:6px 0;">${payload.serviceName ?? 'Por confirmar'}</td></tr>
         <tr><td style="padding:6px 0;color:#64748b;">Modalidad</td><td style="padding:6px 0;">${payload.variantName ?? 'Por confirmar'}</td></tr>
-        <tr><td style="padding:6px 0;color:#64748b;">Sala / recurso</td><td style="padding:6px 0;">${payload.resourceName ?? 'Por confirmar'}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b;">Sala / recurso</td><td style="padding:6px 0;">${formatResourceName(payload.resourceName, 'Por confirmar')}</td></tr>
         <tr><td style="padding:6px 0;color:#64748b;">Fecha reservada</td><td style="padding:6px 0;">${formatDateOnly(payload.startAt)}</td></tr>
         <tr><td style="padding:6px 0;color:#64748b;">Bloque horario</td><td style="padding:6px 0;">${formatTimeOnly(payload.startAt)} - ${formatTimeOnly(payload.endAt)}</td></tr>
         <tr><td style="padding:6px 0;color:#64748b;">Metodo reportado</td><td style="padding:6px 0;">${paymentMethodLabel}</td></tr>
@@ -374,7 +382,7 @@ function buildConfirmedAdminText(payload: BookingNotificationPayload): string {
     `Servicio: ${payload.serviceName ?? 'Por confirmar'}`,
     `Modalidad: ${payload.variantName ?? 'Por confirmar'}`,
     `Horario: ${formatSchedule(payload.startAt, payload.endAt)}`,
-    `Sala: ${payload.resourceName ?? 'Por asignar'}`,
+    `Sala: ${formatResourceName(payload.resourceName, 'Por asignar')}`,
     `Monto: ${formatAmount(payload)}`,
   ].join('\n')
 }

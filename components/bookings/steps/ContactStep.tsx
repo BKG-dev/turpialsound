@@ -93,6 +93,10 @@ export function ContactStep({
   const phoneInvalid = phoneHasContent && !isValidWhatsappVe(phone)
   const canStartVerification = !phoneInvalid && phoneHasContent
   const isSecureLinkMode = whatsappFlowMode === 'secure_link'
+  const secureLinkPrimaryLabel =
+    secureLinkRequestState === 'loading'
+      ? 'Enviando enlace seguro...'
+      : 'Enviar enlace seguro a mi WhatsApp'
   return (
     <div className="space-y-3 md:space-y-2.5">
       <p className="text-[12px] text-text-secondary md:text-[11px]">
@@ -231,6 +235,21 @@ export function ContactStep({
             )}
           </div>
 
+          {isSecureLinkMode && whatsappVerificationStatus !== 'verified' && (
+            <div className="mt-2">
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={onSendSecureLink}
+                disabled={!canStartVerification || secureLinkRequestState === 'loading'}
+                className="w-full sm:w-auto"
+              >
+                {secureLinkPrimaryLabel}
+              </Button>
+            </div>
+          )}
+
           <div className="mt-2.5 rounded-lg border border-brand-border/80 bg-brand-bg/20 p-2.5">
             <p className="text-[10px] text-text-secondary">
               Confirmamos tu WhatsApp para proteger la disponibilidad de las salas.
@@ -259,19 +278,26 @@ export function ContactStep({
                     <p className="mt-0.5 text-[10px] text-red-300">{secureLinkError}</p>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={onSendSecureLink}
-                    disabled={!canStartVerification || secureLinkRequestState === 'loading'}
+                    onClick={onUseManualCodeFallback}
                   >
-                    {secureLinkRequestState === 'sent' ? 'Reenviar enlace' : 'Enviar enlace'}
-                  </Button>
-                  <Button type="button" variant="ghost" size="sm" onClick={onUseManualCodeFallback}>
                     Prefiero verificar con codigo
                   </Button>
+                  {secureLinkRequestState === 'sent' && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={onSendSecureLink}
+                      disabled={!canStartVerification}
+                    >
+                      Reenviar enlace
+                    </Button>
+                  )}
                 </div>
               </div>
             ) : (
