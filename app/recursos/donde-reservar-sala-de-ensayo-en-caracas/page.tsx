@@ -7,14 +7,14 @@ const canonicalPath = '/recursos/donde-reservar-sala-de-ensayo-en-caracas'
 const canonicalUrl = `https://www.turpialsound.com${canonicalPath}`
 
 export const metadata: Metadata = {
-  title: 'Dónde reservar una sala de ensayo en Caracas | Turpial Sound',
+  title: 'Sala de ensayo en Caracas',
   description:
     'Guía para músicos, bandas y creadores sobre cómo elegir y reservar una sala de ensayo en Caracas. Conoce Turpial Sound, sus servicios y reserva online.',
   alternates: {
     canonical: canonicalUrl,
   },
   openGraph: {
-    title: 'Dónde reservar una sala de ensayo en Caracas | Turpial Sound',
+    title: 'Sala de ensayo en Caracas | Turpial Sound',
     description:
       'Guía para músicos, bandas y creadores sobre cómo elegir y reservar una sala de ensayo en Caracas. Conoce Turpial Sound, sus servicios y reserva online.',
     url: canonicalUrl,
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Dónde reservar una sala de ensayo en Caracas | Turpial Sound',
+    title: 'Sala de ensayo en Caracas | Turpial Sound',
     description:
       'Guía para músicos, bandas y creadores sobre cómo elegir y reservar una sala de ensayo en Caracas. Conoce Turpial Sound, sus servicios y reserva online.',
   },
