@@ -5,6 +5,17 @@ export const mainNavItems: NavItem[] = [
   {
     label: 'Salas de ensayo',
     href: '/salas-de-ensayo',
+    children: [
+      { label: 'Salas de ensayo', href: '/salas-de-ensayo' },
+      { label: 'Grabación en Caracas', href: '/salas-de-ensayo/grabacion-en-caracas' },
+      { label: 'Producción musical', href: '/salas-de-ensayo/produccion-musical-en-caracas' },
+      { label: 'Mezcla y masterización', href: '/salas-de-ensayo/mezcla-y-masterizacion-en-caracas' },
+      { label: 'Podcast', href: '/salas-de-ensayo/podcast-en-caracas' },
+      { label: 'Locución', href: '/salas-de-ensayo/locucion-en-caracas' },
+      { label: 'Video session', href: '/salas-de-ensayo/video-session-en-caracas' },
+      { label: 'Arreglos musicales', href: '/salas-de-ensayo/arreglos-musicales-en-caracas' },
+      { label: 'Consultoría musical', href: '/salas-de-ensayo/consultoria-musical-en-caracas' },
+    ],
   },
   {
     label: 'Estudio de grabación',

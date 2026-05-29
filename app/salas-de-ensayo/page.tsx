@@ -39,6 +39,49 @@ const artistasDestacados = [
   { src: '/images/FQ.JPG',      name: 'Frank Quintero' },
 ]
 
+const serviciosConectados = [
+  {
+    title: 'GrabaciÃ³n en Caracas',
+    href: '/salas-de-ensayo/grabacion-en-caracas',
+    description: 'Para voces, instrumentos, demos y sesiones musicales.',
+  },
+  {
+    title: 'ProducciÃ³n musical en Caracas',
+    href: '/salas-de-ensayo/produccion-musical-en-caracas',
+    description: 'Para desarrollar una canciÃ³n desde la idea hasta una versiÃ³n mÃ¡s sÃ³lida.',
+  },
+  {
+    title: 'Mezcla y masterizaciÃ³n en Caracas',
+    href: '/salas-de-ensayo/mezcla-y-masterizacion-en-caracas',
+    description: 'Para dar balance, limpieza y acabado final a tus canciones.',
+  },
+  {
+    title: 'Podcast en Caracas',
+    href: '/salas-de-ensayo/podcast-en-caracas',
+    description: 'Para grabar conversaciones, entrevistas y episodios con mejor audio.',
+  },
+  {
+    title: 'LocuciÃ³n en Caracas',
+    href: '/salas-de-ensayo/locucion-en-caracas',
+    description: 'Para voces comerciales, narraciones, cuÃ±as y contenido de marca.',
+  },
+  {
+    title: 'Video session en Caracas',
+    href: '/salas-de-ensayo/video-session-en-caracas',
+    description: 'Para registrar performances, sesiones musicales y contenido para redes.',
+  },
+  {
+    title: 'Arreglos musicales en Caracas',
+    href: '/salas-de-ensayo/arreglos-musicales-en-caracas',
+    description: 'Para fortalecer estructura, dinÃ¡mica e instrumentaciÃ³n de una canciÃ³n.',
+  },
+  {
+    title: 'ConsultorÃ­a musical en Caracas',
+    href: '/salas-de-ensayo/consultoria-musical-en-caracas',
+    description: 'Para orientar decisiones creativas, tÃ©cnicas y estratÃ©gicas del proyecto.',
+  },
+]
+
 const faqItems = [
   {
     question: '¿Dónde reservar una sala de ensayo en Caracas?',
@@ -186,6 +229,37 @@ export default function SalasDeEnsayoPage() {
       {/* ── SECCIÓN AEO: FAQ Visible ─────────────────────────────────── */}
       <StackingSection index={2} waves>
         <SectionShell background="none">
+          <SectionHeading
+            eyebrow="Servicios conectados"
+            heading="Servicios que puedes conectar desde la sala de ensayo"
+            subheading="Ensaya, graba, produce y convierte tus ideas en contenido desde el ecosistema creativo de Turpial Sound en Caracas."
+            align="center"
+          />
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {serviciosConectados.map((service) => (
+              <Link
+                key={service.href}
+                href={service.href}
+                className="card-premium-wrapper group rounded-xl bg-brand-surface p-5 transition-transform duration-300 hover:-translate-y-0.5"
+              >
+                <h3 className="font-display text-base font-semibold text-text-primary transition-colors group-hover:text-accent-gold">
+                  {service.title}
+                </h3>
+                <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+                  {service.description}
+                </p>
+                <p className="mt-4 text-xs font-semibold tracking-wide text-accent-cyan uppercase">
+                  Ver servicio
+                </p>
+              </Link>
+            ))}
+          </div>
+        </SectionShell>
+      </StackingSection>
+
+      {/* â”€â”€ SECCIÃ“N AEO: FAQ Visible â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <StackingSection index={3} waves>
+        <SectionShell background="none">
           <div className="mx-auto max-w-4xl">
             <SectionHeading
               eyebrow="Preguntas Frecuentes"
@@ -217,7 +291,7 @@ export default function SalasDeEnsayoPage() {
       </StackingSection>
 
       {/* ── CTA + "También puede interesarte" — bloque unificado sin onda extra ── */}
-      <StackingSection index={3}>
+      <StackingSection index={4}>
         <CTASection
           heading="¿Cuándo quieres ensayar?"
           subheading="En Turpial Sound puedes reservar una sala de ensayo en Caracas online 24/7. El espacio está listo cuando tú lo estés."
