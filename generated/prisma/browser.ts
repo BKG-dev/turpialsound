@@ -142,3 +142,18 @@ export type MpReferenceRateSnapshot = Prisma.MpReferenceRateSnapshotModel
  *
  */
 export type MpWebhookLog = Prisma.MpWebhookLogModel
+/**
+ * Model MpOrder
+ *
+ */
+export type MpOrder = Prisma.MpOrderModel
+/**
+ * Model MpReview
+ *
+ */
+export type MpReview = Prisma.MpReviewModel
+/**
+ * Model MpReferralLink
+ *
+ */
+export type MpReferralLink = Prisma.MpReferralLinkModel

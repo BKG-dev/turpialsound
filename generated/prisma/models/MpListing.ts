@@ -360,6 +360,7 @@ export type MpListingWhereInput = {
   transactions?: Prisma.MpTransactionListRelationFilter
   questions?: Prisma.MpListingQuestionListRelationFilter
   favoritedBy?: Prisma.MpUserListRelationFilter
+  reviews?: Prisma.MpReviewListRelationFilter
 }
 
 export type MpListingOrderByWithRelationInput = {
@@ -389,6 +390,7 @@ export type MpListingOrderByWithRelationInput = {
   transactions?: Prisma.MpTransactionOrderByRelationAggregateInput
   questions?: Prisma.MpListingQuestionOrderByRelationAggregateInput
   favoritedBy?: Prisma.MpUserOrderByRelationAggregateInput
+  reviews?: Prisma.MpReviewOrderByRelationAggregateInput
 }
 
 export type MpListingWhereUniqueInput = Prisma.AtLeast<{
@@ -421,6 +423,7 @@ export type MpListingWhereUniqueInput = Prisma.AtLeast<{
   transactions?: Prisma.MpTransactionListRelationFilter
   questions?: Prisma.MpListingQuestionListRelationFilter
   favoritedBy?: Prisma.MpUserListRelationFilter
+  reviews?: Prisma.MpReviewListRelationFilter
 }, "id" | "slug">
 
 export type MpListingOrderByWithAggregationInput = {
@@ -507,6 +510,7 @@ export type MpListingCreateInput = {
   transactions?: Prisma.MpTransactionCreateNestedManyWithoutListingInput
   questions?: Prisma.MpListingQuestionCreateNestedManyWithoutListingInput
   favoritedBy?: Prisma.MpUserCreateNestedManyWithoutFavoriteListingsInput
+  reviews?: Prisma.MpReviewCreateNestedManyWithoutListingInput
 }
 
 export type MpListingUncheckedCreateInput = {
@@ -535,6 +539,7 @@ export type MpListingUncheckedCreateInput = {
   transactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutListingInput
   questions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutListingInput
   favoritedBy?: Prisma.MpUserUncheckedCreateNestedManyWithoutFavoriteListingsInput
+  reviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutListingInput
 }
 
 export type MpListingUpdateInput = {
@@ -563,6 +568,7 @@ export type MpListingUpdateInput = {
   transactions?: Prisma.MpTransactionUpdateManyWithoutListingNestedInput
   questions?: Prisma.MpListingQuestionUpdateManyWithoutListingNestedInput
   favoritedBy?: Prisma.MpUserUpdateManyWithoutFavoriteListingsNestedInput
+  reviews?: Prisma.MpReviewUpdateManyWithoutListingNestedInput
 }
 
 export type MpListingUncheckedUpdateInput = {
@@ -591,6 +597,7 @@ export type MpListingUncheckedUpdateInput = {
   transactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutListingNestedInput
   questions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutListingNestedInput
   favoritedBy?: Prisma.MpUserUncheckedUpdateManyWithoutFavoriteListingsNestedInput
+  reviews?: Prisma.MpReviewUncheckedUpdateManyWithoutListingNestedInput
 }
 
 export type MpListingCreateManyInput = {
@@ -775,6 +782,11 @@ export type MpListingScalarRelationFilter = {
   isNot?: Prisma.MpListingWhereInput
 }
 
+export type MpListingNullableScalarRelationFilter = {
+  is?: Prisma.MpListingWhereInput | null
+  isNot?: Prisma.MpListingWhereInput | null
+}
+
 export type MpListingCreateNestedManyWithoutSellerInput = {
   create?: Prisma.XOR<Prisma.MpListingCreateWithoutSellerInput, Prisma.MpListingUncheckedCreateWithoutSellerInput> | Prisma.MpListingCreateWithoutSellerInput[] | Prisma.MpListingUncheckedCreateWithoutSellerInput[]
   connectOrCreate?: Prisma.MpListingCreateOrConnectWithoutSellerInput | Prisma.MpListingCreateOrConnectWithoutSellerInput[]
@@ -921,6 +933,22 @@ export type MpListingUpdateOneRequiredWithoutTransactionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.MpListingUpdateToOneWithWhereWithoutTransactionsInput, Prisma.MpListingUpdateWithoutTransactionsInput>, Prisma.MpListingUncheckedUpdateWithoutTransactionsInput>
 }
 
+export type MpListingCreateNestedOneWithoutReviewsInput = {
+  create?: Prisma.XOR<Prisma.MpListingCreateWithoutReviewsInput, Prisma.MpListingUncheckedCreateWithoutReviewsInput>
+  connectOrCreate?: Prisma.MpListingCreateOrConnectWithoutReviewsInput
+  connect?: Prisma.MpListingWhereUniqueInput
+}
+
+export type MpListingUpdateOneWithoutReviewsNestedInput = {
+  create?: Prisma.XOR<Prisma.MpListingCreateWithoutReviewsInput, Prisma.MpListingUncheckedCreateWithoutReviewsInput>
+  connectOrCreate?: Prisma.MpListingCreateOrConnectWithoutReviewsInput
+  upsert?: Prisma.MpListingUpsertWithoutReviewsInput
+  disconnect?: Prisma.MpListingWhereInput | boolean
+  delete?: Prisma.MpListingWhereInput | boolean
+  connect?: Prisma.MpListingWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.MpListingUpdateToOneWithWhereWithoutReviewsInput, Prisma.MpListingUpdateWithoutReviewsInput>, Prisma.MpListingUncheckedUpdateWithoutReviewsInput>
+}
+
 export type MpListingCreateWithoutSellerInput = {
   id?: string
   title: string
@@ -946,6 +974,7 @@ export type MpListingCreateWithoutSellerInput = {
   transactions?: Prisma.MpTransactionCreateNestedManyWithoutListingInput
   questions?: Prisma.MpListingQuestionCreateNestedManyWithoutListingInput
   favoritedBy?: Prisma.MpUserCreateNestedManyWithoutFavoriteListingsInput
+  reviews?: Prisma.MpReviewCreateNestedManyWithoutListingInput
 }
 
 export type MpListingUncheckedCreateWithoutSellerInput = {
@@ -973,6 +1002,7 @@ export type MpListingUncheckedCreateWithoutSellerInput = {
   transactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutListingInput
   questions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutListingInput
   favoritedBy?: Prisma.MpUserUncheckedCreateNestedManyWithoutFavoriteListingsInput
+  reviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutListingInput
 }
 
 export type MpListingCreateOrConnectWithoutSellerInput = {
@@ -1010,6 +1040,7 @@ export type MpListingCreateWithoutFavoritedByInput = {
   seller: Prisma.MpUserCreateNestedOneWithoutListingsInput
   transactions?: Prisma.MpTransactionCreateNestedManyWithoutListingInput
   questions?: Prisma.MpListingQuestionCreateNestedManyWithoutListingInput
+  reviews?: Prisma.MpReviewCreateNestedManyWithoutListingInput
 }
 
 export type MpListingUncheckedCreateWithoutFavoritedByInput = {
@@ -1037,6 +1068,7 @@ export type MpListingUncheckedCreateWithoutFavoritedByInput = {
   publishedAt?: Date | string | null
   transactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutListingInput
   questions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutListingInput
+  reviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutListingInput
 }
 
 export type MpListingCreateOrConnectWithoutFavoritedByInput = {
@@ -1129,6 +1161,7 @@ export type MpListingCreateWithoutQuestionsInput = {
   seller: Prisma.MpUserCreateNestedOneWithoutListingsInput
   transactions?: Prisma.MpTransactionCreateNestedManyWithoutListingInput
   favoritedBy?: Prisma.MpUserCreateNestedManyWithoutFavoriteListingsInput
+  reviews?: Prisma.MpReviewCreateNestedManyWithoutListingInput
 }
 
 export type MpListingUncheckedCreateWithoutQuestionsInput = {
@@ -1156,6 +1189,7 @@ export type MpListingUncheckedCreateWithoutQuestionsInput = {
   publishedAt?: Date | string | null
   transactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutListingInput
   favoritedBy?: Prisma.MpUserUncheckedCreateNestedManyWithoutFavoriteListingsInput
+  reviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutListingInput
 }
 
 export type MpListingCreateOrConnectWithoutQuestionsInput = {
@@ -1199,6 +1233,7 @@ export type MpListingUpdateWithoutQuestionsInput = {
   seller?: Prisma.MpUserUpdateOneRequiredWithoutListingsNestedInput
   transactions?: Prisma.MpTransactionUpdateManyWithoutListingNestedInput
   favoritedBy?: Prisma.MpUserUpdateManyWithoutFavoriteListingsNestedInput
+  reviews?: Prisma.MpReviewUpdateManyWithoutListingNestedInput
 }
 
 export type MpListingUncheckedUpdateWithoutQuestionsInput = {
@@ -1226,6 +1261,7 @@ export type MpListingUncheckedUpdateWithoutQuestionsInput = {
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   transactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutListingNestedInput
   favoritedBy?: Prisma.MpUserUncheckedUpdateManyWithoutFavoriteListingsNestedInput
+  reviews?: Prisma.MpReviewUncheckedUpdateManyWithoutListingNestedInput
 }
 
 export type MpListingCreateWithoutTransactionsInput = {
@@ -1253,6 +1289,7 @@ export type MpListingCreateWithoutTransactionsInput = {
   seller: Prisma.MpUserCreateNestedOneWithoutListingsInput
   questions?: Prisma.MpListingQuestionCreateNestedManyWithoutListingInput
   favoritedBy?: Prisma.MpUserCreateNestedManyWithoutFavoriteListingsInput
+  reviews?: Prisma.MpReviewCreateNestedManyWithoutListingInput
 }
 
 export type MpListingUncheckedCreateWithoutTransactionsInput = {
@@ -1280,6 +1317,7 @@ export type MpListingUncheckedCreateWithoutTransactionsInput = {
   publishedAt?: Date | string | null
   questions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutListingInput
   favoritedBy?: Prisma.MpUserUncheckedCreateNestedManyWithoutFavoriteListingsInput
+  reviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutListingInput
 }
 
 export type MpListingCreateOrConnectWithoutTransactionsInput = {
@@ -1323,6 +1361,7 @@ export type MpListingUpdateWithoutTransactionsInput = {
   seller?: Prisma.MpUserUpdateOneRequiredWithoutListingsNestedInput
   questions?: Prisma.MpListingQuestionUpdateManyWithoutListingNestedInput
   favoritedBy?: Prisma.MpUserUpdateManyWithoutFavoriteListingsNestedInput
+  reviews?: Prisma.MpReviewUpdateManyWithoutListingNestedInput
 }
 
 export type MpListingUncheckedUpdateWithoutTransactionsInput = {
@@ -1348,6 +1387,135 @@ export type MpListingUncheckedUpdateWithoutTransactionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  questions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutListingNestedInput
+  favoritedBy?: Prisma.MpUserUncheckedUpdateManyWithoutFavoriteListingsNestedInput
+  reviews?: Prisma.MpReviewUncheckedUpdateManyWithoutListingNestedInput
+}
+
+export type MpListingCreateWithoutReviewsInput = {
+  id?: string
+  title: string
+  description: string
+  category: string
+  tags?: Prisma.MpListingCreatetagsInput | string[]
+  price: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: string
+  coverImageUrl?: string | null
+  mediaUrls?: Prisma.MpListingCreatemediaUrlsInput | string[]
+  hasInventory?: boolean
+  inventory?: number | null
+  status?: $Enums.MpListingStatus
+  city?: string | null
+  state?: string | null
+  isLocationPublic?: boolean
+  slug: string
+  viewCount?: number
+  favoriteCount?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  publishedAt?: Date | string | null
+  seller: Prisma.MpUserCreateNestedOneWithoutListingsInput
+  transactions?: Prisma.MpTransactionCreateNestedManyWithoutListingInput
+  questions?: Prisma.MpListingQuestionCreateNestedManyWithoutListingInput
+  favoritedBy?: Prisma.MpUserCreateNestedManyWithoutFavoriteListingsInput
+}
+
+export type MpListingUncheckedCreateWithoutReviewsInput = {
+  id?: string
+  sellerId: string
+  title: string
+  description: string
+  category: string
+  tags?: Prisma.MpListingCreatetagsInput | string[]
+  price: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: string
+  coverImageUrl?: string | null
+  mediaUrls?: Prisma.MpListingCreatemediaUrlsInput | string[]
+  hasInventory?: boolean
+  inventory?: number | null
+  status?: $Enums.MpListingStatus
+  city?: string | null
+  state?: string | null
+  isLocationPublic?: boolean
+  slug: string
+  viewCount?: number
+  favoriteCount?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  publishedAt?: Date | string | null
+  transactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutListingInput
+  questions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutListingInput
+  favoritedBy?: Prisma.MpUserUncheckedCreateNestedManyWithoutFavoriteListingsInput
+}
+
+export type MpListingCreateOrConnectWithoutReviewsInput = {
+  where: Prisma.MpListingWhereUniqueInput
+  create: Prisma.XOR<Prisma.MpListingCreateWithoutReviewsInput, Prisma.MpListingUncheckedCreateWithoutReviewsInput>
+}
+
+export type MpListingUpsertWithoutReviewsInput = {
+  update: Prisma.XOR<Prisma.MpListingUpdateWithoutReviewsInput, Prisma.MpListingUncheckedUpdateWithoutReviewsInput>
+  create: Prisma.XOR<Prisma.MpListingCreateWithoutReviewsInput, Prisma.MpListingUncheckedCreateWithoutReviewsInput>
+  where?: Prisma.MpListingWhereInput
+}
+
+export type MpListingUpdateToOneWithWhereWithoutReviewsInput = {
+  where?: Prisma.MpListingWhereInput
+  data: Prisma.XOR<Prisma.MpListingUpdateWithoutReviewsInput, Prisma.MpListingUncheckedUpdateWithoutReviewsInput>
+}
+
+export type MpListingUpdateWithoutReviewsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
+  tags?: Prisma.MpListingUpdatetagsInput | string[]
+  price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  coverImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mediaUrls?: Prisma.MpListingUpdatemediaUrlsInput | string[]
+  hasInventory?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  inventory?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  status?: Prisma.EnumMpListingStatusFieldUpdateOperationsInput | $Enums.MpListingStatus
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isLocationPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
+  favoriteCount?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  seller?: Prisma.MpUserUpdateOneRequiredWithoutListingsNestedInput
+  transactions?: Prisma.MpTransactionUpdateManyWithoutListingNestedInput
+  questions?: Prisma.MpListingQuestionUpdateManyWithoutListingNestedInput
+  favoritedBy?: Prisma.MpUserUpdateManyWithoutFavoriteListingsNestedInput
+}
+
+export type MpListingUncheckedUpdateWithoutReviewsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  sellerId?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  category?: Prisma.StringFieldUpdateOperationsInput | string
+  tags?: Prisma.MpListingUpdatetagsInput | string[]
+  price?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  coverImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mediaUrls?: Prisma.MpListingUpdatemediaUrlsInput | string[]
+  hasInventory?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  inventory?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  status?: Prisma.EnumMpListingStatusFieldUpdateOperationsInput | $Enums.MpListingStatus
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isLocationPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  viewCount?: Prisma.IntFieldUpdateOperationsInput | number
+  favoriteCount?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  transactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutListingNestedInput
   questions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutListingNestedInput
   favoritedBy?: Prisma.MpUserUncheckedUpdateManyWithoutFavoriteListingsNestedInput
 }
@@ -1401,6 +1569,7 @@ export type MpListingUpdateWithoutSellerInput = {
   transactions?: Prisma.MpTransactionUpdateManyWithoutListingNestedInput
   questions?: Prisma.MpListingQuestionUpdateManyWithoutListingNestedInput
   favoritedBy?: Prisma.MpUserUpdateManyWithoutFavoriteListingsNestedInput
+  reviews?: Prisma.MpReviewUpdateManyWithoutListingNestedInput
 }
 
 export type MpListingUncheckedUpdateWithoutSellerInput = {
@@ -1428,6 +1597,7 @@ export type MpListingUncheckedUpdateWithoutSellerInput = {
   transactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutListingNestedInput
   questions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutListingNestedInput
   favoritedBy?: Prisma.MpUserUncheckedUpdateManyWithoutFavoriteListingsNestedInput
+  reviews?: Prisma.MpReviewUncheckedUpdateManyWithoutListingNestedInput
 }
 
 export type MpListingUncheckedUpdateManyWithoutSellerInput = {
@@ -1479,6 +1649,7 @@ export type MpListingUpdateWithoutFavoritedByInput = {
   seller?: Prisma.MpUserUpdateOneRequiredWithoutListingsNestedInput
   transactions?: Prisma.MpTransactionUpdateManyWithoutListingNestedInput
   questions?: Prisma.MpListingQuestionUpdateManyWithoutListingNestedInput
+  reviews?: Prisma.MpReviewUpdateManyWithoutListingNestedInput
 }
 
 export type MpListingUncheckedUpdateWithoutFavoritedByInput = {
@@ -1506,6 +1677,7 @@ export type MpListingUncheckedUpdateWithoutFavoritedByInput = {
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   transactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutListingNestedInput
   questions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutListingNestedInput
+  reviews?: Prisma.MpReviewUncheckedUpdateManyWithoutListingNestedInput
 }
 
 export type MpListingUncheckedUpdateManyWithoutFavoritedByInput = {
@@ -1542,12 +1714,14 @@ export type MpListingCountOutputType = {
   transactions: number
   questions: number
   favoritedBy: number
+  reviews: number
 }
 
 export type MpListingCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   transactions?: boolean | MpListingCountOutputTypeCountTransactionsArgs
   questions?: boolean | MpListingCountOutputTypeCountQuestionsArgs
   favoritedBy?: boolean | MpListingCountOutputTypeCountFavoritedByArgs
+  reviews?: boolean | MpListingCountOutputTypeCountReviewsArgs
 }
 
 /**
@@ -1581,6 +1755,13 @@ export type MpListingCountOutputTypeCountFavoritedByArgs<ExtArgs extends runtime
   where?: Prisma.MpUserWhereInput
 }
 
+/**
+ * MpListingCountOutputType without action
+ */
+export type MpListingCountOutputTypeCountReviewsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MpReviewWhereInput
+}
+
 
 export type MpListingSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1609,6 +1790,7 @@ export type MpListingSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   transactions?: boolean | Prisma.MpListing$transactionsArgs<ExtArgs>
   questions?: boolean | Prisma.MpListing$questionsArgs<ExtArgs>
   favoritedBy?: boolean | Prisma.MpListing$favoritedByArgs<ExtArgs>
+  reviews?: boolean | Prisma.MpListing$reviewsArgs<ExtArgs>
   _count?: boolean | Prisma.MpListingCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["mpListing"]>
 
@@ -1695,6 +1877,7 @@ export type MpListingInclude<ExtArgs extends runtime.Types.Extensions.InternalAr
   transactions?: boolean | Prisma.MpListing$transactionsArgs<ExtArgs>
   questions?: boolean | Prisma.MpListing$questionsArgs<ExtArgs>
   favoritedBy?: boolean | Prisma.MpListing$favoritedByArgs<ExtArgs>
+  reviews?: boolean | Prisma.MpListing$reviewsArgs<ExtArgs>
   _count?: boolean | Prisma.MpListingCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type MpListingIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1711,6 +1894,7 @@ export type $MpListingPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     transactions: Prisma.$MpTransactionPayload<ExtArgs>[]
     questions: Prisma.$MpListingQuestionPayload<ExtArgs>[]
     favoritedBy: Prisma.$MpUserPayload<ExtArgs>[]
+    reviews: Prisma.$MpReviewPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2133,6 +2317,7 @@ export interface Prisma__MpListingClient<T, Null = never, ExtArgs extends runtim
   transactions<T extends Prisma.MpListing$transactionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpListing$transactionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpTransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   questions<T extends Prisma.MpListing$questionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpListing$questionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpListingQuestionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   favoritedBy<T extends Prisma.MpListing$favoritedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpListing$favoritedByArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpUserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  reviews<T extends Prisma.MpListing$reviewsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpListing$reviewsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpReviewPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2654,6 +2839,30 @@ export type MpListing$favoritedByArgs<ExtArgs extends runtime.Types.Extensions.I
   take?: number
   skip?: number
   distinct?: Prisma.MpUserScalarFieldEnum | Prisma.MpUserScalarFieldEnum[]
+}
+
+/**
+ * MpListing.reviews
+ */
+export type MpListing$reviewsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MpReview
+   */
+  select?: Prisma.MpReviewSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the MpReview
+   */
+  omit?: Prisma.MpReviewOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MpReviewInclude<ExtArgs> | null
+  where?: Prisma.MpReviewWhereInput
+  orderBy?: Prisma.MpReviewOrderByWithRelationInput | Prisma.MpReviewOrderByWithRelationInput[]
+  cursor?: Prisma.MpReviewWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MpReviewScalarFieldEnum | Prisma.MpReviewScalarFieldEnum[]
 }
 
 /**

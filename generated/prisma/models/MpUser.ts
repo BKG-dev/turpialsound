@@ -28,12 +28,14 @@ export type AggregateMpUser = {
 
 export type MpUserAvgAggregateOutputType = {
   sellerRating: runtime.Decimal | null
+  reviewCount: number | null
   totalSales: number | null
   totalPurchases: number | null
 }
 
 export type MpUserSumAggregateOutputType = {
   sellerRating: runtime.Decimal | null
+  reviewCount: number | null
   totalSales: number | null
   totalPurchases: number | null
 }
@@ -51,10 +53,13 @@ export type MpUserMinAggregateOutputType = {
   verificationLevel: string | null
   isSeller: boolean | null
   sellerRating: runtime.Decimal | null
+  reviewCount: number | null
   totalSales: number | null
   totalPurchases: number | null
   passwordHash: string | null
   role: $Enums.MpUserRole | null
+  city: string | null
+  state: string | null
   phone: string | null
   whatsappConsent: boolean | null
   whatsappConsentAt: Date | null
@@ -80,10 +85,13 @@ export type MpUserMaxAggregateOutputType = {
   verificationLevel: string | null
   isSeller: boolean | null
   sellerRating: runtime.Decimal | null
+  reviewCount: number | null
   totalSales: number | null
   totalPurchases: number | null
   passwordHash: string | null
   role: $Enums.MpUserRole | null
+  city: string | null
+  state: string | null
   phone: string | null
   whatsappConsent: boolean | null
   whatsappConsentAt: Date | null
@@ -109,10 +117,13 @@ export type MpUserCountAggregateOutputType = {
   verificationLevel: number
   isSeller: number
   sellerRating: number
+  reviewCount: number
   totalSales: number
   totalPurchases: number
   passwordHash: number
   role: number
+  city: number
+  state: number
   phone: number
   whatsappConsent: number
   whatsappConsentAt: number
@@ -129,12 +140,14 @@ export type MpUserCountAggregateOutputType = {
 
 export type MpUserAvgAggregateInputType = {
   sellerRating?: true
+  reviewCount?: true
   totalSales?: true
   totalPurchases?: true
 }
 
 export type MpUserSumAggregateInputType = {
   sellerRating?: true
+  reviewCount?: true
   totalSales?: true
   totalPurchases?: true
 }
@@ -152,10 +165,13 @@ export type MpUserMinAggregateInputType = {
   verificationLevel?: true
   isSeller?: true
   sellerRating?: true
+  reviewCount?: true
   totalSales?: true
   totalPurchases?: true
   passwordHash?: true
   role?: true
+  city?: true
+  state?: true
   phone?: true
   whatsappConsent?: true
   whatsappConsentAt?: true
@@ -181,10 +197,13 @@ export type MpUserMaxAggregateInputType = {
   verificationLevel?: true
   isSeller?: true
   sellerRating?: true
+  reviewCount?: true
   totalSales?: true
   totalPurchases?: true
   passwordHash?: true
   role?: true
+  city?: true
+  state?: true
   phone?: true
   whatsappConsent?: true
   whatsappConsentAt?: true
@@ -210,10 +229,13 @@ export type MpUserCountAggregateInputType = {
   verificationLevel?: true
   isSeller?: true
   sellerRating?: true
+  reviewCount?: true
   totalSales?: true
   totalPurchases?: true
   passwordHash?: true
   role?: true
+  city?: true
+  state?: true
   phone?: true
   whatsappConsent?: true
   whatsappConsentAt?: true
@@ -326,10 +348,13 @@ export type MpUserGroupByOutputType = {
   verificationLevel: string
   isSeller: boolean
   sellerRating: runtime.Decimal | null
+  reviewCount: number
   totalSales: number
   totalPurchases: number
   passwordHash: string | null
   role: $Enums.MpUserRole
+  city: string | null
+  state: string | null
   phone: string | null
   whatsappConsent: boolean
   whatsappConsentAt: Date | null
@@ -378,10 +403,13 @@ export type MpUserWhereInput = {
   verificationLevel?: Prisma.StringFilter<"MpUser"> | string
   isSeller?: Prisma.BoolFilter<"MpUser"> | boolean
   sellerRating?: Prisma.DecimalNullableFilter<"MpUser"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFilter<"MpUser"> | number
   totalSales?: Prisma.IntFilter<"MpUser"> | number
   totalPurchases?: Prisma.IntFilter<"MpUser"> | number
   passwordHash?: Prisma.StringNullableFilter<"MpUser"> | string | null
   role?: Prisma.EnumMpUserRoleFilter<"MpUser"> | $Enums.MpUserRole
+  city?: Prisma.StringNullableFilter<"MpUser"> | string | null
+  state?: Prisma.StringNullableFilter<"MpUser"> | string | null
   phone?: Prisma.StringNullableFilter<"MpUser"> | string | null
   whatsappConsent?: Prisma.BoolFilter<"MpUser"> | boolean
   whatsappConsentAt?: Prisma.DateTimeNullableFilter<"MpUser"> | Date | string | null
@@ -394,6 +422,7 @@ export type MpUserWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"MpUser"> | Date | string
   listings?: Prisma.MpListingListRelationFilter
   payoutMethods?: Prisma.MpPayoutMethodListRelationFilter
+  buyerOrders?: Prisma.MpOrderListRelationFilter
   buyerTransactions?: Prisma.MpTransactionListRelationFilter
   sellerTransactions?: Prisma.MpTransactionListRelationFilter
   sentMessages?: Prisma.MpMessageListRelationFilter
@@ -402,8 +431,11 @@ export type MpUserWhereInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadListRelationFilter
   disputes?: Prisma.MpDisputeListRelationFilter
   mpPayouts?: Prisma.MpPayoutListRelationFilter
+  writtenReviews?: Prisma.MpReviewListRelationFilter
+  receivedReviews?: Prisma.MpReviewListRelationFilter
   askedQuestions?: Prisma.MpListingQuestionListRelationFilter
   favoriteListings?: Prisma.MpListingListRelationFilter
+  referralsAsReferrer?: Prisma.MpTransactionListRelationFilter
 }
 
 export type MpUserOrderByWithRelationInput = {
@@ -419,10 +451,13 @@ export type MpUserOrderByWithRelationInput = {
   verificationLevel?: Prisma.SortOrder
   isSeller?: Prisma.SortOrder
   sellerRating?: Prisma.SortOrderInput | Prisma.SortOrder
+  reviewCount?: Prisma.SortOrder
   totalSales?: Prisma.SortOrder
   totalPurchases?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrderInput | Prisma.SortOrder
   role?: Prisma.SortOrder
+  city?: Prisma.SortOrderInput | Prisma.SortOrder
+  state?: Prisma.SortOrderInput | Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   whatsappConsent?: Prisma.SortOrder
   whatsappConsentAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -435,6 +470,7 @@ export type MpUserOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   listings?: Prisma.MpListingOrderByRelationAggregateInput
   payoutMethods?: Prisma.MpPayoutMethodOrderByRelationAggregateInput
+  buyerOrders?: Prisma.MpOrderOrderByRelationAggregateInput
   buyerTransactions?: Prisma.MpTransactionOrderByRelationAggregateInput
   sellerTransactions?: Prisma.MpTransactionOrderByRelationAggregateInput
   sentMessages?: Prisma.MpMessageOrderByRelationAggregateInput
@@ -443,8 +479,11 @@ export type MpUserOrderByWithRelationInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadOrderByRelationAggregateInput
   disputes?: Prisma.MpDisputeOrderByRelationAggregateInput
   mpPayouts?: Prisma.MpPayoutOrderByRelationAggregateInput
+  writtenReviews?: Prisma.MpReviewOrderByRelationAggregateInput
+  receivedReviews?: Prisma.MpReviewOrderByRelationAggregateInput
   askedQuestions?: Prisma.MpListingQuestionOrderByRelationAggregateInput
   favoriteListings?: Prisma.MpListingOrderByRelationAggregateInput
+  referralsAsReferrer?: Prisma.MpTransactionOrderByRelationAggregateInput
 }
 
 export type MpUserWhereUniqueInput = Prisma.AtLeast<{
@@ -464,10 +503,13 @@ export type MpUserWhereUniqueInput = Prisma.AtLeast<{
   verificationLevel?: Prisma.StringFilter<"MpUser"> | string
   isSeller?: Prisma.BoolFilter<"MpUser"> | boolean
   sellerRating?: Prisma.DecimalNullableFilter<"MpUser"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFilter<"MpUser"> | number
   totalSales?: Prisma.IntFilter<"MpUser"> | number
   totalPurchases?: Prisma.IntFilter<"MpUser"> | number
   passwordHash?: Prisma.StringNullableFilter<"MpUser"> | string | null
   role?: Prisma.EnumMpUserRoleFilter<"MpUser"> | $Enums.MpUserRole
+  city?: Prisma.StringNullableFilter<"MpUser"> | string | null
+  state?: Prisma.StringNullableFilter<"MpUser"> | string | null
   phone?: Prisma.StringNullableFilter<"MpUser"> | string | null
   whatsappConsent?: Prisma.BoolFilter<"MpUser"> | boolean
   whatsappConsentAt?: Prisma.DateTimeNullableFilter<"MpUser"> | Date | string | null
@@ -479,6 +521,7 @@ export type MpUserWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"MpUser"> | Date | string
   listings?: Prisma.MpListingListRelationFilter
   payoutMethods?: Prisma.MpPayoutMethodListRelationFilter
+  buyerOrders?: Prisma.MpOrderListRelationFilter
   buyerTransactions?: Prisma.MpTransactionListRelationFilter
   sellerTransactions?: Prisma.MpTransactionListRelationFilter
   sentMessages?: Prisma.MpMessageListRelationFilter
@@ -487,8 +530,11 @@ export type MpUserWhereUniqueInput = Prisma.AtLeast<{
   chatThreadsAsSeller?: Prisma.MpChatThreadListRelationFilter
   disputes?: Prisma.MpDisputeListRelationFilter
   mpPayouts?: Prisma.MpPayoutListRelationFilter
+  writtenReviews?: Prisma.MpReviewListRelationFilter
+  receivedReviews?: Prisma.MpReviewListRelationFilter
   askedQuestions?: Prisma.MpListingQuestionListRelationFilter
   favoriteListings?: Prisma.MpListingListRelationFilter
+  referralsAsReferrer?: Prisma.MpTransactionListRelationFilter
 }, "id" | "email" | "passwordResetToken">
 
 export type MpUserOrderByWithAggregationInput = {
@@ -504,10 +550,13 @@ export type MpUserOrderByWithAggregationInput = {
   verificationLevel?: Prisma.SortOrder
   isSeller?: Prisma.SortOrder
   sellerRating?: Prisma.SortOrderInput | Prisma.SortOrder
+  reviewCount?: Prisma.SortOrder
   totalSales?: Prisma.SortOrder
   totalPurchases?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrderInput | Prisma.SortOrder
   role?: Prisma.SortOrder
+  city?: Prisma.SortOrderInput | Prisma.SortOrder
+  state?: Prisma.SortOrderInput | Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   whatsappConsent?: Prisma.SortOrder
   whatsappConsentAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -541,10 +590,13 @@ export type MpUserScalarWhereWithAggregatesInput = {
   verificationLevel?: Prisma.StringWithAggregatesFilter<"MpUser"> | string
   isSeller?: Prisma.BoolWithAggregatesFilter<"MpUser"> | boolean
   sellerRating?: Prisma.DecimalNullableWithAggregatesFilter<"MpUser"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntWithAggregatesFilter<"MpUser"> | number
   totalSales?: Prisma.IntWithAggregatesFilter<"MpUser"> | number
   totalPurchases?: Prisma.IntWithAggregatesFilter<"MpUser"> | number
   passwordHash?: Prisma.StringNullableWithAggregatesFilter<"MpUser"> | string | null
   role?: Prisma.EnumMpUserRoleWithAggregatesFilter<"MpUser"> | $Enums.MpUserRole
+  city?: Prisma.StringNullableWithAggregatesFilter<"MpUser"> | string | null
+  state?: Prisma.StringNullableWithAggregatesFilter<"MpUser"> | string | null
   phone?: Prisma.StringNullableWithAggregatesFilter<"MpUser"> | string | null
   whatsappConsent?: Prisma.BoolWithAggregatesFilter<"MpUser"> | boolean
   whatsappConsentAt?: Prisma.DateTimeNullableWithAggregatesFilter<"MpUser"> | Date | string | null
@@ -570,10 +622,13 @@ export type MpUserCreateInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -586,6 +641,7 @@ export type MpUserCreateInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
@@ -594,8 +650,11 @@ export type MpUserCreateInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateInput = {
@@ -611,10 +670,13 @@ export type MpUserUncheckedCreateInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -627,6 +689,7 @@ export type MpUserUncheckedCreateInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderUncheckedCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -635,8 +698,11 @@ export type MpUserUncheckedCreateInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeUncheckedCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutUncheckedCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUpdateInput = {
@@ -652,10 +718,13 @@ export type MpUserUpdateInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -668,6 +737,7 @@ export type MpUserUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUpdateManyWithoutSenderNestedInput
@@ -676,8 +746,11 @@ export type MpUserUpdateInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateInput = {
@@ -693,10 +766,13 @@ export type MpUserUncheckedUpdateInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -709,6 +785,7 @@ export type MpUserUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUncheckedUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -717,8 +794,11 @@ export type MpUserUncheckedUpdateInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUncheckedUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUncheckedUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserCreateManyInput = {
@@ -734,10 +814,13 @@ export type MpUserCreateManyInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -763,10 +846,13 @@ export type MpUserUpdateManyMutationInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -792,10 +878,13 @@ export type MpUserUncheckedUpdateManyInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -821,10 +910,13 @@ export type MpUserCountOrderByAggregateInput = {
   verificationLevel?: Prisma.SortOrder
   isSeller?: Prisma.SortOrder
   sellerRating?: Prisma.SortOrder
+  reviewCount?: Prisma.SortOrder
   totalSales?: Prisma.SortOrder
   totalPurchases?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  city?: Prisma.SortOrder
+  state?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   whatsappConsent?: Prisma.SortOrder
   whatsappConsentAt?: Prisma.SortOrder
@@ -839,6 +931,7 @@ export type MpUserCountOrderByAggregateInput = {
 
 export type MpUserAvgOrderByAggregateInput = {
   sellerRating?: Prisma.SortOrder
+  reviewCount?: Prisma.SortOrder
   totalSales?: Prisma.SortOrder
   totalPurchases?: Prisma.SortOrder
 }
@@ -856,10 +949,13 @@ export type MpUserMaxOrderByAggregateInput = {
   verificationLevel?: Prisma.SortOrder
   isSeller?: Prisma.SortOrder
   sellerRating?: Prisma.SortOrder
+  reviewCount?: Prisma.SortOrder
   totalSales?: Prisma.SortOrder
   totalPurchases?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  city?: Prisma.SortOrder
+  state?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   whatsappConsent?: Prisma.SortOrder
   whatsappConsentAt?: Prisma.SortOrder
@@ -885,10 +981,13 @@ export type MpUserMinOrderByAggregateInput = {
   verificationLevel?: Prisma.SortOrder
   isSeller?: Prisma.SortOrder
   sellerRating?: Prisma.SortOrder
+  reviewCount?: Prisma.SortOrder
   totalSales?: Prisma.SortOrder
   totalPurchases?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   role?: Prisma.SortOrder
+  city?: Prisma.SortOrder
+  state?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   whatsappConsent?: Prisma.SortOrder
   whatsappConsentAt?: Prisma.SortOrder
@@ -903,6 +1002,7 @@ export type MpUserMinOrderByAggregateInput = {
 
 export type MpUserSumOrderByAggregateInput = {
   sellerRating?: Prisma.SortOrder
+  reviewCount?: Prisma.SortOrder
   totalSales?: Prisma.SortOrder
   totalPurchases?: Prisma.SortOrder
 }
@@ -920,6 +1020,11 @@ export type MpUserListRelationFilter = {
 
 export type MpUserOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type MpUserNullableScalarRelationFilter = {
+  is?: Prisma.MpUserWhereInput | null
+  isNot?: Prisma.MpUserWhereInput | null
 }
 
 export type EnumMpUserRoleFieldUpdateOperationsInput = {
@@ -1074,6 +1179,12 @@ export type MpUserCreateNestedOneWithoutSellerTransactionsInput = {
   connect?: Prisma.MpUserWhereUniqueInput
 }
 
+export type MpUserCreateNestedOneWithoutReferralsAsReferrerInput = {
+  create?: Prisma.XOR<Prisma.MpUserCreateWithoutReferralsAsReferrerInput, Prisma.MpUserUncheckedCreateWithoutReferralsAsReferrerInput>
+  connectOrCreate?: Prisma.MpUserCreateOrConnectWithoutReferralsAsReferrerInput
+  connect?: Prisma.MpUserWhereUniqueInput
+}
+
 export type MpUserUpdateOneRequiredWithoutBuyerTransactionsNestedInput = {
   create?: Prisma.XOR<Prisma.MpUserCreateWithoutBuyerTransactionsInput, Prisma.MpUserUncheckedCreateWithoutBuyerTransactionsInput>
   connectOrCreate?: Prisma.MpUserCreateOrConnectWithoutBuyerTransactionsInput
@@ -1088,6 +1199,16 @@ export type MpUserUpdateOneRequiredWithoutSellerTransactionsNestedInput = {
   upsert?: Prisma.MpUserUpsertWithoutSellerTransactionsInput
   connect?: Prisma.MpUserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.MpUserUpdateToOneWithWhereWithoutSellerTransactionsInput, Prisma.MpUserUpdateWithoutSellerTransactionsInput>, Prisma.MpUserUncheckedUpdateWithoutSellerTransactionsInput>
+}
+
+export type MpUserUpdateOneWithoutReferralsAsReferrerNestedInput = {
+  create?: Prisma.XOR<Prisma.MpUserCreateWithoutReferralsAsReferrerInput, Prisma.MpUserUncheckedCreateWithoutReferralsAsReferrerInput>
+  connectOrCreate?: Prisma.MpUserCreateOrConnectWithoutReferralsAsReferrerInput
+  upsert?: Prisma.MpUserUpsertWithoutReferralsAsReferrerInput
+  disconnect?: Prisma.MpUserWhereInput | boolean
+  delete?: Prisma.MpUserWhereInput | boolean
+  connect?: Prisma.MpUserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.MpUserUpdateToOneWithWhereWithoutReferralsAsReferrerInput, Prisma.MpUserUpdateWithoutReferralsAsReferrerInput>, Prisma.MpUserUncheckedUpdateWithoutReferralsAsReferrerInput>
 }
 
 export type MpUserCreateNestedOneWithoutDisputesInput = {
@@ -1118,6 +1239,48 @@ export type MpUserUpdateOneRequiredWithoutMpPayoutsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.MpUserUpdateToOneWithWhereWithoutMpPayoutsInput, Prisma.MpUserUpdateWithoutMpPayoutsInput>, Prisma.MpUserUncheckedUpdateWithoutMpPayoutsInput>
 }
 
+export type MpUserCreateNestedOneWithoutBuyerOrdersInput = {
+  create?: Prisma.XOR<Prisma.MpUserCreateWithoutBuyerOrdersInput, Prisma.MpUserUncheckedCreateWithoutBuyerOrdersInput>
+  connectOrCreate?: Prisma.MpUserCreateOrConnectWithoutBuyerOrdersInput
+  connect?: Prisma.MpUserWhereUniqueInput
+}
+
+export type MpUserUpdateOneRequiredWithoutBuyerOrdersNestedInput = {
+  create?: Prisma.XOR<Prisma.MpUserCreateWithoutBuyerOrdersInput, Prisma.MpUserUncheckedCreateWithoutBuyerOrdersInput>
+  connectOrCreate?: Prisma.MpUserCreateOrConnectWithoutBuyerOrdersInput
+  upsert?: Prisma.MpUserUpsertWithoutBuyerOrdersInput
+  connect?: Prisma.MpUserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.MpUserUpdateToOneWithWhereWithoutBuyerOrdersInput, Prisma.MpUserUpdateWithoutBuyerOrdersInput>, Prisma.MpUserUncheckedUpdateWithoutBuyerOrdersInput>
+}
+
+export type MpUserCreateNestedOneWithoutWrittenReviewsInput = {
+  create?: Prisma.XOR<Prisma.MpUserCreateWithoutWrittenReviewsInput, Prisma.MpUserUncheckedCreateWithoutWrittenReviewsInput>
+  connectOrCreate?: Prisma.MpUserCreateOrConnectWithoutWrittenReviewsInput
+  connect?: Prisma.MpUserWhereUniqueInput
+}
+
+export type MpUserCreateNestedOneWithoutReceivedReviewsInput = {
+  create?: Prisma.XOR<Prisma.MpUserCreateWithoutReceivedReviewsInput, Prisma.MpUserUncheckedCreateWithoutReceivedReviewsInput>
+  connectOrCreate?: Prisma.MpUserCreateOrConnectWithoutReceivedReviewsInput
+  connect?: Prisma.MpUserWhereUniqueInput
+}
+
+export type MpUserUpdateOneRequiredWithoutWrittenReviewsNestedInput = {
+  create?: Prisma.XOR<Prisma.MpUserCreateWithoutWrittenReviewsInput, Prisma.MpUserUncheckedCreateWithoutWrittenReviewsInput>
+  connectOrCreate?: Prisma.MpUserCreateOrConnectWithoutWrittenReviewsInput
+  upsert?: Prisma.MpUserUpsertWithoutWrittenReviewsInput
+  connect?: Prisma.MpUserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.MpUserUpdateToOneWithWhereWithoutWrittenReviewsInput, Prisma.MpUserUpdateWithoutWrittenReviewsInput>, Prisma.MpUserUncheckedUpdateWithoutWrittenReviewsInput>
+}
+
+export type MpUserUpdateOneRequiredWithoutReceivedReviewsNestedInput = {
+  create?: Prisma.XOR<Prisma.MpUserCreateWithoutReceivedReviewsInput, Prisma.MpUserUncheckedCreateWithoutReceivedReviewsInput>
+  connectOrCreate?: Prisma.MpUserCreateOrConnectWithoutReceivedReviewsInput
+  upsert?: Prisma.MpUserUpsertWithoutReceivedReviewsInput
+  connect?: Prisma.MpUserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.MpUserUpdateToOneWithWhereWithoutReceivedReviewsInput, Prisma.MpUserUpdateWithoutReceivedReviewsInput>, Prisma.MpUserUncheckedUpdateWithoutReceivedReviewsInput>
+}
+
 export type MpUserCreateWithoutPayoutMethodsInput = {
   id?: string
   email: string
@@ -1131,10 +1294,13 @@ export type MpUserCreateWithoutPayoutMethodsInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1146,6 +1312,7 @@ export type MpUserCreateWithoutPayoutMethodsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
+  buyerOrders?: Prisma.MpOrderCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
@@ -1154,8 +1321,11 @@ export type MpUserCreateWithoutPayoutMethodsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutPayoutMethodsInput = {
@@ -1171,10 +1341,13 @@ export type MpUserUncheckedCreateWithoutPayoutMethodsInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1186,6 +1359,7 @@ export type MpUserUncheckedCreateWithoutPayoutMethodsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
+  buyerOrders?: Prisma.MpOrderUncheckedCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -1194,8 +1368,11 @@ export type MpUserUncheckedCreateWithoutPayoutMethodsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeUncheckedCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutUncheckedCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutPayoutMethodsInput = {
@@ -1227,10 +1404,13 @@ export type MpUserUpdateWithoutPayoutMethodsInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1242,6 +1422,7 @@ export type MpUserUpdateWithoutPayoutMethodsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUpdateManyWithoutSellerNestedInput
+  buyerOrders?: Prisma.MpOrderUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUpdateManyWithoutSenderNestedInput
@@ -1250,8 +1431,11 @@ export type MpUserUpdateWithoutPayoutMethodsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutPayoutMethodsInput = {
@@ -1267,10 +1451,13 @@ export type MpUserUncheckedUpdateWithoutPayoutMethodsInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1282,6 +1469,7 @@ export type MpUserUncheckedUpdateWithoutPayoutMethodsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUncheckedUpdateManyWithoutSellerNestedInput
+  buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -1290,8 +1478,11 @@ export type MpUserUncheckedUpdateWithoutPayoutMethodsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUncheckedUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUncheckedUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserCreateWithoutListingsInput = {
@@ -1307,10 +1498,13 @@ export type MpUserCreateWithoutListingsInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1322,6 +1516,7 @@ export type MpUserCreateWithoutListingsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
@@ -1330,8 +1525,11 @@ export type MpUserCreateWithoutListingsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutListingsInput = {
@@ -1347,10 +1545,13 @@ export type MpUserUncheckedCreateWithoutListingsInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1362,6 +1563,7 @@ export type MpUserUncheckedCreateWithoutListingsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderUncheckedCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -1370,8 +1572,11 @@ export type MpUserUncheckedCreateWithoutListingsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeUncheckedCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutUncheckedCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutListingsInput = {
@@ -1392,10 +1597,13 @@ export type MpUserCreateWithoutFavoriteListingsInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1408,6 +1616,7 @@ export type MpUserCreateWithoutFavoriteListingsInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
@@ -1416,7 +1625,10 @@ export type MpUserCreateWithoutFavoriteListingsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutFavoriteListingsInput = {
@@ -1432,10 +1644,13 @@ export type MpUserUncheckedCreateWithoutFavoriteListingsInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1448,6 +1663,7 @@ export type MpUserUncheckedCreateWithoutFavoriteListingsInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderUncheckedCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -1456,7 +1672,10 @@ export type MpUserUncheckedCreateWithoutFavoriteListingsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeUncheckedCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutUncheckedCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutFavoriteListingsInput = {
@@ -1488,10 +1707,13 @@ export type MpUserUpdateWithoutListingsInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1503,6 +1725,7 @@ export type MpUserUpdateWithoutListingsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   payoutMethods?: Prisma.MpPayoutMethodUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUpdateManyWithoutSenderNestedInput
@@ -1511,8 +1734,11 @@ export type MpUserUpdateWithoutListingsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutListingsInput = {
@@ -1528,10 +1754,13 @@ export type MpUserUncheckedUpdateWithoutListingsInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1543,6 +1772,7 @@ export type MpUserUncheckedUpdateWithoutListingsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -1551,8 +1781,11 @@ export type MpUserUncheckedUpdateWithoutListingsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUncheckedUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUncheckedUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUpsertWithWhereUniqueWithoutFavoriteListingsInput = {
@@ -1587,10 +1820,13 @@ export type MpUserScalarWhereInput = {
   verificationLevel?: Prisma.StringFilter<"MpUser"> | string
   isSeller?: Prisma.BoolFilter<"MpUser"> | boolean
   sellerRating?: Prisma.DecimalNullableFilter<"MpUser"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFilter<"MpUser"> | number
   totalSales?: Prisma.IntFilter<"MpUser"> | number
   totalPurchases?: Prisma.IntFilter<"MpUser"> | number
   passwordHash?: Prisma.StringNullableFilter<"MpUser"> | string | null
   role?: Prisma.EnumMpUserRoleFilter<"MpUser"> | $Enums.MpUserRole
+  city?: Prisma.StringNullableFilter<"MpUser"> | string | null
+  state?: Prisma.StringNullableFilter<"MpUser"> | string | null
   phone?: Prisma.StringNullableFilter<"MpUser"> | string | null
   whatsappConsent?: Prisma.BoolFilter<"MpUser"> | boolean
   whatsappConsentAt?: Prisma.DateTimeNullableFilter<"MpUser"> | Date | string | null
@@ -1616,10 +1852,13 @@ export type MpUserCreateWithoutAskedQuestionsInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1632,6 +1871,7 @@ export type MpUserCreateWithoutAskedQuestionsInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
@@ -1640,7 +1880,10 @@ export type MpUserCreateWithoutAskedQuestionsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutAskedQuestionsInput = {
@@ -1656,10 +1899,13 @@ export type MpUserUncheckedCreateWithoutAskedQuestionsInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1672,6 +1918,7 @@ export type MpUserUncheckedCreateWithoutAskedQuestionsInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderUncheckedCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -1680,7 +1927,10 @@ export type MpUserUncheckedCreateWithoutAskedQuestionsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeUncheckedCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutUncheckedCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutAskedQuestionsInput = {
@@ -1712,10 +1962,13 @@ export type MpUserUpdateWithoutAskedQuestionsInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1728,6 +1981,7 @@ export type MpUserUpdateWithoutAskedQuestionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUpdateManyWithoutSenderNestedInput
@@ -1736,7 +1990,10 @@ export type MpUserUpdateWithoutAskedQuestionsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutAskedQuestionsInput = {
@@ -1752,10 +2009,13 @@ export type MpUserUncheckedUpdateWithoutAskedQuestionsInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1768,6 +2028,7 @@ export type MpUserUncheckedUpdateWithoutAskedQuestionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUncheckedUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -1776,7 +2037,10 @@ export type MpUserUncheckedUpdateWithoutAskedQuestionsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUncheckedUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUncheckedUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserCreateWithoutChatThreadsAsBuyerInput = {
@@ -1792,10 +2056,13 @@ export type MpUserCreateWithoutChatThreadsAsBuyerInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1808,6 +2075,7 @@ export type MpUserCreateWithoutChatThreadsAsBuyerInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
@@ -1815,8 +2083,11 @@ export type MpUserCreateWithoutChatThreadsAsBuyerInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutChatThreadsAsBuyerInput = {
@@ -1832,10 +2103,13 @@ export type MpUserUncheckedCreateWithoutChatThreadsAsBuyerInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1848,6 +2122,7 @@ export type MpUserUncheckedCreateWithoutChatThreadsAsBuyerInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderUncheckedCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -1855,8 +2130,11 @@ export type MpUserUncheckedCreateWithoutChatThreadsAsBuyerInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeUncheckedCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutUncheckedCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutChatThreadsAsBuyerInput = {
@@ -1877,10 +2155,13 @@ export type MpUserCreateWithoutChatThreadsAsSellerInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1893,6 +2174,7 @@ export type MpUserCreateWithoutChatThreadsAsSellerInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
@@ -1900,8 +2182,11 @@ export type MpUserCreateWithoutChatThreadsAsSellerInput = {
   chatThreadsAsBuyer?: Prisma.MpChatThreadCreateNestedManyWithoutBuyerInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutChatThreadsAsSellerInput = {
@@ -1917,10 +2202,13 @@ export type MpUserUncheckedCreateWithoutChatThreadsAsSellerInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -1933,6 +2221,7 @@ export type MpUserUncheckedCreateWithoutChatThreadsAsSellerInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderUncheckedCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -1940,8 +2229,11 @@ export type MpUserUncheckedCreateWithoutChatThreadsAsSellerInput = {
   chatThreadsAsBuyer?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutBuyerInput
   disputes?: Prisma.MpDisputeUncheckedCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutUncheckedCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutChatThreadsAsSellerInput = {
@@ -1973,10 +2265,13 @@ export type MpUserUpdateWithoutChatThreadsAsBuyerInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1989,6 +2284,7 @@ export type MpUserUpdateWithoutChatThreadsAsBuyerInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUpdateManyWithoutSenderNestedInput
@@ -1996,8 +2292,11 @@ export type MpUserUpdateWithoutChatThreadsAsBuyerInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutChatThreadsAsBuyerInput = {
@@ -2013,10 +2312,13 @@ export type MpUserUncheckedUpdateWithoutChatThreadsAsBuyerInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2029,6 +2331,7 @@ export type MpUserUncheckedUpdateWithoutChatThreadsAsBuyerInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUncheckedUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -2036,8 +2339,11 @@ export type MpUserUncheckedUpdateWithoutChatThreadsAsBuyerInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUncheckedUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUncheckedUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUpsertWithoutChatThreadsAsSellerInput = {
@@ -2064,10 +2370,13 @@ export type MpUserUpdateWithoutChatThreadsAsSellerInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2080,6 +2389,7 @@ export type MpUserUpdateWithoutChatThreadsAsSellerInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUpdateManyWithoutSenderNestedInput
@@ -2087,8 +2397,11 @@ export type MpUserUpdateWithoutChatThreadsAsSellerInput = {
   chatThreadsAsBuyer?: Prisma.MpChatThreadUpdateManyWithoutBuyerNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutChatThreadsAsSellerInput = {
@@ -2104,10 +2417,13 @@ export type MpUserUncheckedUpdateWithoutChatThreadsAsSellerInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2120,6 +2436,7 @@ export type MpUserUncheckedUpdateWithoutChatThreadsAsSellerInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUncheckedUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -2127,8 +2444,11 @@ export type MpUserUncheckedUpdateWithoutChatThreadsAsSellerInput = {
   chatThreadsAsBuyer?: Prisma.MpChatThreadUncheckedUpdateManyWithoutBuyerNestedInput
   disputes?: Prisma.MpDisputeUncheckedUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUncheckedUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserCreateWithoutSentMessagesInput = {
@@ -2144,10 +2464,13 @@ export type MpUserCreateWithoutSentMessagesInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2160,6 +2483,7 @@ export type MpUserCreateWithoutSentMessagesInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
   receivedMessages?: Prisma.MpMessageCreateNestedManyWithoutReceiverInput
@@ -2167,8 +2491,11 @@ export type MpUserCreateWithoutSentMessagesInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutSentMessagesInput = {
@@ -2184,10 +2511,13 @@ export type MpUserUncheckedCreateWithoutSentMessagesInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2200,6 +2530,7 @@ export type MpUserUncheckedCreateWithoutSentMessagesInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderUncheckedCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
   receivedMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutReceiverInput
@@ -2207,8 +2538,11 @@ export type MpUserUncheckedCreateWithoutSentMessagesInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeUncheckedCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutUncheckedCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutSentMessagesInput = {
@@ -2229,10 +2563,13 @@ export type MpUserCreateWithoutReceivedMessagesInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2245,6 +2582,7 @@ export type MpUserCreateWithoutReceivedMessagesInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
@@ -2252,8 +2590,11 @@ export type MpUserCreateWithoutReceivedMessagesInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutReceivedMessagesInput = {
@@ -2269,10 +2610,13 @@ export type MpUserUncheckedCreateWithoutReceivedMessagesInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2285,6 +2629,7 @@ export type MpUserUncheckedCreateWithoutReceivedMessagesInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderUncheckedCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -2292,8 +2637,11 @@ export type MpUserUncheckedCreateWithoutReceivedMessagesInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeUncheckedCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutUncheckedCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutReceivedMessagesInput = {
@@ -2325,10 +2673,13 @@ export type MpUserUpdateWithoutSentMessagesInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2341,6 +2692,7 @@ export type MpUserUpdateWithoutSentMessagesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUpdateManyWithoutSellerNestedInput
   receivedMessages?: Prisma.MpMessageUpdateManyWithoutReceiverNestedInput
@@ -2348,8 +2700,11 @@ export type MpUserUpdateWithoutSentMessagesInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutSentMessagesInput = {
@@ -2365,10 +2720,13 @@ export type MpUserUncheckedUpdateWithoutSentMessagesInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2381,6 +2739,7 @@ export type MpUserUncheckedUpdateWithoutSentMessagesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUncheckedUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutSellerNestedInput
   receivedMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutReceiverNestedInput
@@ -2388,8 +2747,11 @@ export type MpUserUncheckedUpdateWithoutSentMessagesInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUncheckedUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUncheckedUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUpsertWithoutReceivedMessagesInput = {
@@ -2416,10 +2778,13 @@ export type MpUserUpdateWithoutReceivedMessagesInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2432,6 +2797,7 @@ export type MpUserUpdateWithoutReceivedMessagesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUpdateManyWithoutSenderNestedInput
@@ -2439,8 +2805,11 @@ export type MpUserUpdateWithoutReceivedMessagesInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutReceivedMessagesInput = {
@@ -2456,10 +2825,13 @@ export type MpUserUncheckedUpdateWithoutReceivedMessagesInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2472,6 +2844,7 @@ export type MpUserUncheckedUpdateWithoutReceivedMessagesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUncheckedUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -2479,8 +2852,11 @@ export type MpUserUncheckedUpdateWithoutReceivedMessagesInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUncheckedUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUncheckedUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserCreateWithoutBuyerTransactionsInput = {
@@ -2496,10 +2872,13 @@ export type MpUserCreateWithoutBuyerTransactionsInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2512,6 +2891,7 @@ export type MpUserCreateWithoutBuyerTransactionsInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
   receivedMessages?: Prisma.MpMessageCreateNestedManyWithoutReceiverInput
@@ -2519,8 +2899,11 @@ export type MpUserCreateWithoutBuyerTransactionsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutBuyerTransactionsInput = {
@@ -2536,10 +2919,13 @@ export type MpUserUncheckedCreateWithoutBuyerTransactionsInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2552,6 +2938,7 @@ export type MpUserUncheckedCreateWithoutBuyerTransactionsInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderUncheckedCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
   receivedMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutReceiverInput
@@ -2559,8 +2946,11 @@ export type MpUserUncheckedCreateWithoutBuyerTransactionsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeUncheckedCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutUncheckedCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutBuyerTransactionsInput = {
@@ -2581,10 +2971,13 @@ export type MpUserCreateWithoutSellerTransactionsInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2597,6 +2990,7 @@ export type MpUserCreateWithoutSellerTransactionsInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
   sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
   receivedMessages?: Prisma.MpMessageCreateNestedManyWithoutReceiverInput
@@ -2604,8 +2998,11 @@ export type MpUserCreateWithoutSellerTransactionsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutSellerTransactionsInput = {
@@ -2621,10 +3018,13 @@ export type MpUserUncheckedCreateWithoutSellerTransactionsInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2637,6 +3037,7 @@ export type MpUserUncheckedCreateWithoutSellerTransactionsInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderUncheckedCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
   sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
   receivedMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutReceiverInput
@@ -2644,13 +3045,115 @@ export type MpUserUncheckedCreateWithoutSellerTransactionsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeUncheckedCreateNestedManyWithoutOpenedByInput
   mpPayouts?: Prisma.MpPayoutUncheckedCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutSellerTransactionsInput = {
   where: Prisma.MpUserWhereUniqueInput
   create: Prisma.XOR<Prisma.MpUserCreateWithoutSellerTransactionsInput, Prisma.MpUserUncheckedCreateWithoutSellerTransactionsInput>
+}
+
+export type MpUserCreateWithoutReferralsAsReferrerInput = {
+  id?: string
+  email: string
+  emailVerified?: boolean
+  emailVerifiedAt?: Date | string | null
+  displayName: string
+  bio?: string | null
+  avatarUrl?: string | null
+  isVerified?: boolean
+  verifiedAt?: Date | string | null
+  verificationLevel?: string
+  isSeller?: boolean
+  sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
+  totalSales?: number
+  totalPurchases?: number
+  passwordHash?: string | null
+  role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
+  phone?: string | null
+  whatsappConsent?: boolean
+  whatsappConsentAt?: Date | string | null
+  passwordResetToken?: string | null
+  passwordResetTokenExpiresAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
+  payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderCreateNestedManyWithoutBuyerInput
+  buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
+  sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
+  sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MpMessageCreateNestedManyWithoutReceiverInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadCreateNestedManyWithoutBuyerInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadCreateNestedManyWithoutSellerInput
+  disputes?: Prisma.MpDisputeCreateNestedManyWithoutOpenedByInput
+  mpPayouts?: Prisma.MpPayoutCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
+  askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
+  favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+}
+
+export type MpUserUncheckedCreateWithoutReferralsAsReferrerInput = {
+  id?: string
+  email: string
+  emailVerified?: boolean
+  emailVerifiedAt?: Date | string | null
+  displayName: string
+  bio?: string | null
+  avatarUrl?: string | null
+  isVerified?: boolean
+  verifiedAt?: Date | string | null
+  verificationLevel?: string
+  isSeller?: boolean
+  sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
+  totalSales?: number
+  totalPurchases?: number
+  passwordHash?: string | null
+  role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
+  phone?: string | null
+  whatsappConsent?: boolean
+  whatsappConsentAt?: Date | string | null
+  passwordResetToken?: string | null
+  passwordResetTokenExpiresAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
+  payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderUncheckedCreateNestedManyWithoutBuyerInput
+  buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
+  sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
+  sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutReceiverInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutBuyerInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutSellerInput
+  disputes?: Prisma.MpDisputeUncheckedCreateNestedManyWithoutOpenedByInput
+  mpPayouts?: Prisma.MpPayoutUncheckedCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
+  askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
+  favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+}
+
+export type MpUserCreateOrConnectWithoutReferralsAsReferrerInput = {
+  where: Prisma.MpUserWhereUniqueInput
+  create: Prisma.XOR<Prisma.MpUserCreateWithoutReferralsAsReferrerInput, Prisma.MpUserUncheckedCreateWithoutReferralsAsReferrerInput>
 }
 
 export type MpUserUpsertWithoutBuyerTransactionsInput = {
@@ -2677,10 +3180,13 @@ export type MpUserUpdateWithoutBuyerTransactionsInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2693,6 +3199,7 @@ export type MpUserUpdateWithoutBuyerTransactionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUpdateManyWithoutSenderNestedInput
   receivedMessages?: Prisma.MpMessageUpdateManyWithoutReceiverNestedInput
@@ -2700,8 +3207,11 @@ export type MpUserUpdateWithoutBuyerTransactionsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutBuyerTransactionsInput = {
@@ -2717,10 +3227,13 @@ export type MpUserUncheckedUpdateWithoutBuyerTransactionsInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2733,6 +3246,7 @@ export type MpUserUncheckedUpdateWithoutBuyerTransactionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUncheckedUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput
   receivedMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutReceiverNestedInput
@@ -2740,8 +3254,11 @@ export type MpUserUncheckedUpdateWithoutBuyerTransactionsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUncheckedUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUncheckedUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUpsertWithoutSellerTransactionsInput = {
@@ -2768,10 +3285,13 @@ export type MpUserUpdateWithoutSellerTransactionsInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2784,6 +3304,7 @@ export type MpUserUpdateWithoutSellerTransactionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUpdateManyWithoutBuyerNestedInput
   sentMessages?: Prisma.MpMessageUpdateManyWithoutSenderNestedInput
   receivedMessages?: Prisma.MpMessageUpdateManyWithoutReceiverNestedInput
@@ -2791,8 +3312,11 @@ export type MpUserUpdateWithoutSellerTransactionsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutSellerTransactionsInput = {
@@ -2808,10 +3332,13 @@ export type MpUserUncheckedUpdateWithoutSellerTransactionsInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2824,6 +3351,7 @@ export type MpUserUncheckedUpdateWithoutSellerTransactionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUncheckedUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
   sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput
   receivedMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutReceiverNestedInput
@@ -2831,6 +3359,114 @@ export type MpUserUncheckedUpdateWithoutSellerTransactionsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUncheckedUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUncheckedUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
+  askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
+  favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
+}
+
+export type MpUserUpsertWithoutReferralsAsReferrerInput = {
+  update: Prisma.XOR<Prisma.MpUserUpdateWithoutReferralsAsReferrerInput, Prisma.MpUserUncheckedUpdateWithoutReferralsAsReferrerInput>
+  create: Prisma.XOR<Prisma.MpUserCreateWithoutReferralsAsReferrerInput, Prisma.MpUserUncheckedCreateWithoutReferralsAsReferrerInput>
+  where?: Prisma.MpUserWhereInput
+}
+
+export type MpUserUpdateToOneWithWhereWithoutReferralsAsReferrerInput = {
+  where?: Prisma.MpUserWhereInput
+  data: Prisma.XOR<Prisma.MpUserUpdateWithoutReferralsAsReferrerInput, Prisma.MpUserUncheckedUpdateWithoutReferralsAsReferrerInput>
+}
+
+export type MpUserUpdateWithoutReferralsAsReferrerInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  verifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
+  isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSales?: Prisma.IntFieldUpdateOperationsInput | number
+  totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  listings?: Prisma.MpListingUpdateManyWithoutSellerNestedInput
+  payoutMethods?: Prisma.MpPayoutMethodUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUpdateManyWithoutBuyerNestedInput
+  buyerTransactions?: Prisma.MpTransactionUpdateManyWithoutBuyerNestedInput
+  sellerTransactions?: Prisma.MpTransactionUpdateManyWithoutSellerNestedInput
+  sentMessages?: Prisma.MpMessageUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MpMessageUpdateManyWithoutReceiverNestedInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadUpdateManyWithoutBuyerNestedInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadUpdateManyWithoutSellerNestedInput
+  disputes?: Prisma.MpDisputeUpdateManyWithoutOpenedByNestedInput
+  mpPayouts?: Prisma.MpPayoutUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
+  askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
+  favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+}
+
+export type MpUserUncheckedUpdateWithoutReferralsAsReferrerInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  verifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
+  isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSales?: Prisma.IntFieldUpdateOperationsInput | number
+  totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  listings?: Prisma.MpListingUncheckedUpdateManyWithoutSellerNestedInput
+  payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
+  buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
+  sellerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutSellerNestedInput
+  sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutReceiverNestedInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadUncheckedUpdateManyWithoutBuyerNestedInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedUpdateManyWithoutSellerNestedInput
+  disputes?: Prisma.MpDisputeUncheckedUpdateManyWithoutOpenedByNestedInput
+  mpPayouts?: Prisma.MpPayoutUncheckedUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
 }
@@ -2848,10 +3484,13 @@ export type MpUserCreateWithoutDisputesInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2864,6 +3503,7 @@ export type MpUserCreateWithoutDisputesInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
@@ -2871,8 +3511,11 @@ export type MpUserCreateWithoutDisputesInput = {
   chatThreadsAsBuyer?: Prisma.MpChatThreadCreateNestedManyWithoutBuyerInput
   chatThreadsAsSeller?: Prisma.MpChatThreadCreateNestedManyWithoutSellerInput
   mpPayouts?: Prisma.MpPayoutCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutDisputesInput = {
@@ -2888,10 +3531,13 @@ export type MpUserUncheckedCreateWithoutDisputesInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -2904,6 +3550,7 @@ export type MpUserUncheckedCreateWithoutDisputesInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderUncheckedCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -2911,8 +3558,11 @@ export type MpUserUncheckedCreateWithoutDisputesInput = {
   chatThreadsAsBuyer?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutBuyerInput
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutSellerInput
   mpPayouts?: Prisma.MpPayoutUncheckedCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutDisputesInput = {
@@ -2944,10 +3594,13 @@ export type MpUserUpdateWithoutDisputesInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2960,6 +3613,7 @@ export type MpUserUpdateWithoutDisputesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUpdateManyWithoutSenderNestedInput
@@ -2967,8 +3621,11 @@ export type MpUserUpdateWithoutDisputesInput = {
   chatThreadsAsBuyer?: Prisma.MpChatThreadUpdateManyWithoutBuyerNestedInput
   chatThreadsAsSeller?: Prisma.MpChatThreadUpdateManyWithoutSellerNestedInput
   mpPayouts?: Prisma.MpPayoutUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutDisputesInput = {
@@ -2984,10 +3641,13 @@ export type MpUserUncheckedUpdateWithoutDisputesInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3000,6 +3660,7 @@ export type MpUserUncheckedUpdateWithoutDisputesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUncheckedUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -3007,8 +3668,11 @@ export type MpUserUncheckedUpdateWithoutDisputesInput = {
   chatThreadsAsBuyer?: Prisma.MpChatThreadUncheckedUpdateManyWithoutBuyerNestedInput
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedUpdateManyWithoutSellerNestedInput
   mpPayouts?: Prisma.MpPayoutUncheckedUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserCreateWithoutMpPayoutsInput = {
@@ -3024,10 +3688,13 @@ export type MpUserCreateWithoutMpPayoutsInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -3040,6 +3707,7 @@ export type MpUserCreateWithoutMpPayoutsInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
@@ -3047,8 +3715,11 @@ export type MpUserCreateWithoutMpPayoutsInput = {
   chatThreadsAsBuyer?: Prisma.MpChatThreadCreateNestedManyWithoutBuyerInput
   chatThreadsAsSeller?: Prisma.MpChatThreadCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeCreateNestedManyWithoutOpenedByInput
+  writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserUncheckedCreateWithoutMpPayoutsInput = {
@@ -3064,10 +3735,13 @@ export type MpUserUncheckedCreateWithoutMpPayoutsInput = {
   verificationLevel?: string
   isSeller?: boolean
   sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
   totalSales?: number
   totalPurchases?: number
   passwordHash?: string | null
   role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
   phone?: string | null
   whatsappConsent?: boolean
   whatsappConsentAt?: Date | string | null
@@ -3080,6 +3754,7 @@ export type MpUserUncheckedCreateWithoutMpPayoutsInput = {
   updatedAt?: Date | string
   listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderUncheckedCreateNestedManyWithoutBuyerInput
   buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
   sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
   sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -3087,8 +3762,11 @@ export type MpUserUncheckedCreateWithoutMpPayoutsInput = {
   chatThreadsAsBuyer?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutBuyerInput
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutSellerInput
   disputes?: Prisma.MpDisputeUncheckedCreateNestedManyWithoutOpenedByInput
+  writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
   favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
 }
 
 export type MpUserCreateOrConnectWithoutMpPayoutsInput = {
@@ -3120,10 +3798,13 @@ export type MpUserUpdateWithoutMpPayoutsInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3136,6 +3817,7 @@ export type MpUserUpdateWithoutMpPayoutsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUpdateManyWithoutSenderNestedInput
@@ -3143,8 +3825,11 @@ export type MpUserUpdateWithoutMpPayoutsInput = {
   chatThreadsAsBuyer?: Prisma.MpChatThreadUpdateManyWithoutBuyerNestedInput
   chatThreadsAsSeller?: Prisma.MpChatThreadUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutOpenedByNestedInput
+  writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateWithoutMpPayoutsInput = {
@@ -3160,10 +3845,13 @@ export type MpUserUncheckedUpdateWithoutMpPayoutsInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3176,6 +3864,7 @@ export type MpUserUncheckedUpdateWithoutMpPayoutsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   listings?: Prisma.MpListingUncheckedUpdateManyWithoutSellerNestedInput
   payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
   buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
   sellerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutSellerNestedInput
   sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -3183,11 +3872,124 @@ export type MpUserUncheckedUpdateWithoutMpPayoutsInput = {
   chatThreadsAsBuyer?: Prisma.MpChatThreadUncheckedUpdateManyWithoutBuyerNestedInput
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUncheckedUpdateManyWithoutOpenedByNestedInput
+  writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
   favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
-export type MpUserUpdateWithoutFavoriteListingsInput = {
+export type MpUserCreateWithoutBuyerOrdersInput = {
+  id?: string
+  email: string
+  emailVerified?: boolean
+  emailVerifiedAt?: Date | string | null
+  displayName: string
+  bio?: string | null
+  avatarUrl?: string | null
+  isVerified?: boolean
+  verifiedAt?: Date | string | null
+  verificationLevel?: string
+  isSeller?: boolean
+  sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
+  totalSales?: number
+  totalPurchases?: number
+  passwordHash?: string | null
+  role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
+  phone?: string | null
+  whatsappConsent?: boolean
+  whatsappConsentAt?: Date | string | null
+  passwordResetToken?: string | null
+  passwordResetTokenExpiresAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
+  payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
+  sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
+  sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MpMessageCreateNestedManyWithoutReceiverInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadCreateNestedManyWithoutBuyerInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadCreateNestedManyWithoutSellerInput
+  disputes?: Prisma.MpDisputeCreateNestedManyWithoutOpenedByInput
+  mpPayouts?: Prisma.MpPayoutCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
+  askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
+  favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
+}
+
+export type MpUserUncheckedCreateWithoutBuyerOrdersInput = {
+  id?: string
+  email: string
+  emailVerified?: boolean
+  emailVerifiedAt?: Date | string | null
+  displayName: string
+  bio?: string | null
+  avatarUrl?: string | null
+  isVerified?: boolean
+  verifiedAt?: Date | string | null
+  verificationLevel?: string
+  isSeller?: boolean
+  sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
+  totalSales?: number
+  totalPurchases?: number
+  passwordHash?: string | null
+  role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
+  phone?: string | null
+  whatsappConsent?: boolean
+  whatsappConsentAt?: Date | string | null
+  passwordResetToken?: string | null
+  passwordResetTokenExpiresAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
+  payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
+  sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
+  sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutReceiverInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutBuyerInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutSellerInput
+  disputes?: Prisma.MpDisputeUncheckedCreateNestedManyWithoutOpenedByInput
+  mpPayouts?: Prisma.MpPayoutUncheckedCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
+  receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
+  askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
+  favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
+}
+
+export type MpUserCreateOrConnectWithoutBuyerOrdersInput = {
+  where: Prisma.MpUserWhereUniqueInput
+  create: Prisma.XOR<Prisma.MpUserCreateWithoutBuyerOrdersInput, Prisma.MpUserUncheckedCreateWithoutBuyerOrdersInput>
+}
+
+export type MpUserUpsertWithoutBuyerOrdersInput = {
+  update: Prisma.XOR<Prisma.MpUserUpdateWithoutBuyerOrdersInput, Prisma.MpUserUncheckedUpdateWithoutBuyerOrdersInput>
+  create: Prisma.XOR<Prisma.MpUserCreateWithoutBuyerOrdersInput, Prisma.MpUserUncheckedCreateWithoutBuyerOrdersInput>
+  where?: Prisma.MpUserWhereInput
+}
+
+export type MpUserUpdateToOneWithWhereWithoutBuyerOrdersInput = {
+  where?: Prisma.MpUserWhereInput
+  data: Prisma.XOR<Prisma.MpUserUpdateWithoutBuyerOrdersInput, Prisma.MpUserUncheckedUpdateWithoutBuyerOrdersInput>
+}
+
+export type MpUserUpdateWithoutBuyerOrdersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -3200,10 +4002,13 @@ export type MpUserUpdateWithoutFavoriteListingsInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3224,10 +4029,14 @@ export type MpUserUpdateWithoutFavoriteListingsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
+  favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
 }
 
-export type MpUserUncheckedUpdateWithoutFavoriteListingsInput = {
+export type MpUserUncheckedUpdateWithoutBuyerOrdersInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -3240,10 +4049,13 @@ export type MpUserUncheckedUpdateWithoutFavoriteListingsInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3264,7 +4076,513 @@ export type MpUserUncheckedUpdateWithoutFavoriteListingsInput = {
   chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedUpdateManyWithoutSellerNestedInput
   disputes?: Prisma.MpDisputeUncheckedUpdateManyWithoutOpenedByNestedInput
   mpPayouts?: Prisma.MpPayoutUncheckedUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
   askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
+  favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
+}
+
+export type MpUserCreateWithoutWrittenReviewsInput = {
+  id?: string
+  email: string
+  emailVerified?: boolean
+  emailVerifiedAt?: Date | string | null
+  displayName: string
+  bio?: string | null
+  avatarUrl?: string | null
+  isVerified?: boolean
+  verifiedAt?: Date | string | null
+  verificationLevel?: string
+  isSeller?: boolean
+  sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
+  totalSales?: number
+  totalPurchases?: number
+  passwordHash?: string | null
+  role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
+  phone?: string | null
+  whatsappConsent?: boolean
+  whatsappConsentAt?: Date | string | null
+  passwordResetToken?: string | null
+  passwordResetTokenExpiresAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
+  payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderCreateNestedManyWithoutBuyerInput
+  buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
+  sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
+  sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MpMessageCreateNestedManyWithoutReceiverInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadCreateNestedManyWithoutBuyerInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadCreateNestedManyWithoutSellerInput
+  disputes?: Prisma.MpDisputeCreateNestedManyWithoutOpenedByInput
+  mpPayouts?: Prisma.MpPayoutCreateNestedManyWithoutSellerInput
+  receivedReviews?: Prisma.MpReviewCreateNestedManyWithoutSellerInput
+  askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
+  favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
+}
+
+export type MpUserUncheckedCreateWithoutWrittenReviewsInput = {
+  id?: string
+  email: string
+  emailVerified?: boolean
+  emailVerifiedAt?: Date | string | null
+  displayName: string
+  bio?: string | null
+  avatarUrl?: string | null
+  isVerified?: boolean
+  verifiedAt?: Date | string | null
+  verificationLevel?: string
+  isSeller?: boolean
+  sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
+  totalSales?: number
+  totalPurchases?: number
+  passwordHash?: string | null
+  role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
+  phone?: string | null
+  whatsappConsent?: boolean
+  whatsappConsentAt?: Date | string | null
+  passwordResetToken?: string | null
+  passwordResetTokenExpiresAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
+  payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderUncheckedCreateNestedManyWithoutBuyerInput
+  buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
+  sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
+  sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutReceiverInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutBuyerInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutSellerInput
+  disputes?: Prisma.MpDisputeUncheckedCreateNestedManyWithoutOpenedByInput
+  mpPayouts?: Prisma.MpPayoutUncheckedCreateNestedManyWithoutSellerInput
+  receivedReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutSellerInput
+  askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
+  favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
+}
+
+export type MpUserCreateOrConnectWithoutWrittenReviewsInput = {
+  where: Prisma.MpUserWhereUniqueInput
+  create: Prisma.XOR<Prisma.MpUserCreateWithoutWrittenReviewsInput, Prisma.MpUserUncheckedCreateWithoutWrittenReviewsInput>
+}
+
+export type MpUserCreateWithoutReceivedReviewsInput = {
+  id?: string
+  email: string
+  emailVerified?: boolean
+  emailVerifiedAt?: Date | string | null
+  displayName: string
+  bio?: string | null
+  avatarUrl?: string | null
+  isVerified?: boolean
+  verifiedAt?: Date | string | null
+  verificationLevel?: string
+  isSeller?: boolean
+  sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
+  totalSales?: number
+  totalPurchases?: number
+  passwordHash?: string | null
+  role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
+  phone?: string | null
+  whatsappConsent?: boolean
+  whatsappConsentAt?: Date | string | null
+  passwordResetToken?: string | null
+  passwordResetTokenExpiresAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  listings?: Prisma.MpListingCreateNestedManyWithoutSellerInput
+  payoutMethods?: Prisma.MpPayoutMethodCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderCreateNestedManyWithoutBuyerInput
+  buyerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutBuyerInput
+  sellerTransactions?: Prisma.MpTransactionCreateNestedManyWithoutSellerInput
+  sentMessages?: Prisma.MpMessageCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MpMessageCreateNestedManyWithoutReceiverInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadCreateNestedManyWithoutBuyerInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadCreateNestedManyWithoutSellerInput
+  disputes?: Prisma.MpDisputeCreateNestedManyWithoutOpenedByInput
+  mpPayouts?: Prisma.MpPayoutCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewCreateNestedManyWithoutBuyerInput
+  askedQuestions?: Prisma.MpListingQuestionCreateNestedManyWithoutAskerInput
+  favoriteListings?: Prisma.MpListingCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionCreateNestedManyWithoutReferrerInput
+}
+
+export type MpUserUncheckedCreateWithoutReceivedReviewsInput = {
+  id?: string
+  email: string
+  emailVerified?: boolean
+  emailVerifiedAt?: Date | string | null
+  displayName: string
+  bio?: string | null
+  avatarUrl?: string | null
+  isVerified?: boolean
+  verifiedAt?: Date | string | null
+  verificationLevel?: string
+  isSeller?: boolean
+  sellerRating?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: number
+  totalSales?: number
+  totalPurchases?: number
+  passwordHash?: string | null
+  role?: $Enums.MpUserRole
+  city?: string | null
+  state?: string | null
+  phone?: string | null
+  whatsappConsent?: boolean
+  whatsappConsentAt?: Date | string | null
+  passwordResetToken?: string | null
+  passwordResetTokenExpiresAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedReason?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  listings?: Prisma.MpListingUncheckedCreateNestedManyWithoutSellerInput
+  payoutMethods?: Prisma.MpPayoutMethodUncheckedCreateNestedManyWithoutUserInput
+  buyerOrders?: Prisma.MpOrderUncheckedCreateNestedManyWithoutBuyerInput
+  buyerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutBuyerInput
+  sellerTransactions?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutSellerInput
+  sentMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutSenderInput
+  receivedMessages?: Prisma.MpMessageUncheckedCreateNestedManyWithoutReceiverInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutBuyerInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedCreateNestedManyWithoutSellerInput
+  disputes?: Prisma.MpDisputeUncheckedCreateNestedManyWithoutOpenedByInput
+  mpPayouts?: Prisma.MpPayoutUncheckedCreateNestedManyWithoutSellerInput
+  writtenReviews?: Prisma.MpReviewUncheckedCreateNestedManyWithoutBuyerInput
+  askedQuestions?: Prisma.MpListingQuestionUncheckedCreateNestedManyWithoutAskerInput
+  favoriteListings?: Prisma.MpListingUncheckedCreateNestedManyWithoutFavoritedByInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedCreateNestedManyWithoutReferrerInput
+}
+
+export type MpUserCreateOrConnectWithoutReceivedReviewsInput = {
+  where: Prisma.MpUserWhereUniqueInput
+  create: Prisma.XOR<Prisma.MpUserCreateWithoutReceivedReviewsInput, Prisma.MpUserUncheckedCreateWithoutReceivedReviewsInput>
+}
+
+export type MpUserUpsertWithoutWrittenReviewsInput = {
+  update: Prisma.XOR<Prisma.MpUserUpdateWithoutWrittenReviewsInput, Prisma.MpUserUncheckedUpdateWithoutWrittenReviewsInput>
+  create: Prisma.XOR<Prisma.MpUserCreateWithoutWrittenReviewsInput, Prisma.MpUserUncheckedCreateWithoutWrittenReviewsInput>
+  where?: Prisma.MpUserWhereInput
+}
+
+export type MpUserUpdateToOneWithWhereWithoutWrittenReviewsInput = {
+  where?: Prisma.MpUserWhereInput
+  data: Prisma.XOR<Prisma.MpUserUpdateWithoutWrittenReviewsInput, Prisma.MpUserUncheckedUpdateWithoutWrittenReviewsInput>
+}
+
+export type MpUserUpdateWithoutWrittenReviewsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  verifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
+  isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSales?: Prisma.IntFieldUpdateOperationsInput | number
+  totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  listings?: Prisma.MpListingUpdateManyWithoutSellerNestedInput
+  payoutMethods?: Prisma.MpPayoutMethodUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUpdateManyWithoutBuyerNestedInput
+  buyerTransactions?: Prisma.MpTransactionUpdateManyWithoutBuyerNestedInput
+  sellerTransactions?: Prisma.MpTransactionUpdateManyWithoutSellerNestedInput
+  sentMessages?: Prisma.MpMessageUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MpMessageUpdateManyWithoutReceiverNestedInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadUpdateManyWithoutBuyerNestedInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadUpdateManyWithoutSellerNestedInput
+  disputes?: Prisma.MpDisputeUpdateManyWithoutOpenedByNestedInput
+  mpPayouts?: Prisma.MpPayoutUpdateManyWithoutSellerNestedInput
+  receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
+  askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
+  favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
+}
+
+export type MpUserUncheckedUpdateWithoutWrittenReviewsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  verifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
+  isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSales?: Prisma.IntFieldUpdateOperationsInput | number
+  totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  listings?: Prisma.MpListingUncheckedUpdateManyWithoutSellerNestedInput
+  payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
+  buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
+  sellerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutSellerNestedInput
+  sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutReceiverNestedInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadUncheckedUpdateManyWithoutBuyerNestedInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedUpdateManyWithoutSellerNestedInput
+  disputes?: Prisma.MpDisputeUncheckedUpdateManyWithoutOpenedByNestedInput
+  mpPayouts?: Prisma.MpPayoutUncheckedUpdateManyWithoutSellerNestedInput
+  receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
+  askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
+  favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
+}
+
+export type MpUserUpsertWithoutReceivedReviewsInput = {
+  update: Prisma.XOR<Prisma.MpUserUpdateWithoutReceivedReviewsInput, Prisma.MpUserUncheckedUpdateWithoutReceivedReviewsInput>
+  create: Prisma.XOR<Prisma.MpUserCreateWithoutReceivedReviewsInput, Prisma.MpUserUncheckedCreateWithoutReceivedReviewsInput>
+  where?: Prisma.MpUserWhereInput
+}
+
+export type MpUserUpdateToOneWithWhereWithoutReceivedReviewsInput = {
+  where?: Prisma.MpUserWhereInput
+  data: Prisma.XOR<Prisma.MpUserUpdateWithoutReceivedReviewsInput, Prisma.MpUserUncheckedUpdateWithoutReceivedReviewsInput>
+}
+
+export type MpUserUpdateWithoutReceivedReviewsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  verifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
+  isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSales?: Prisma.IntFieldUpdateOperationsInput | number
+  totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  listings?: Prisma.MpListingUpdateManyWithoutSellerNestedInput
+  payoutMethods?: Prisma.MpPayoutMethodUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUpdateManyWithoutBuyerNestedInput
+  buyerTransactions?: Prisma.MpTransactionUpdateManyWithoutBuyerNestedInput
+  sellerTransactions?: Prisma.MpTransactionUpdateManyWithoutSellerNestedInput
+  sentMessages?: Prisma.MpMessageUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MpMessageUpdateManyWithoutReceiverNestedInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadUpdateManyWithoutBuyerNestedInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadUpdateManyWithoutSellerNestedInput
+  disputes?: Prisma.MpDisputeUpdateManyWithoutOpenedByNestedInput
+  mpPayouts?: Prisma.MpPayoutUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
+  askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
+  favoriteListings?: Prisma.MpListingUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
+}
+
+export type MpUserUncheckedUpdateWithoutReceivedReviewsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  verifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
+  isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSales?: Prisma.IntFieldUpdateOperationsInput | number
+  totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  listings?: Prisma.MpListingUncheckedUpdateManyWithoutSellerNestedInput
+  payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
+  buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
+  sellerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutSellerNestedInput
+  sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutReceiverNestedInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadUncheckedUpdateManyWithoutBuyerNestedInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedUpdateManyWithoutSellerNestedInput
+  disputes?: Prisma.MpDisputeUncheckedUpdateManyWithoutOpenedByNestedInput
+  mpPayouts?: Prisma.MpPayoutUncheckedUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
+  askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
+  favoriteListings?: Prisma.MpListingUncheckedUpdateManyWithoutFavoritedByNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
+}
+
+export type MpUserUpdateWithoutFavoriteListingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  verifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
+  isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSales?: Prisma.IntFieldUpdateOperationsInput | number
+  totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  listings?: Prisma.MpListingUpdateManyWithoutSellerNestedInput
+  payoutMethods?: Prisma.MpPayoutMethodUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUpdateManyWithoutBuyerNestedInput
+  buyerTransactions?: Prisma.MpTransactionUpdateManyWithoutBuyerNestedInput
+  sellerTransactions?: Prisma.MpTransactionUpdateManyWithoutSellerNestedInput
+  sentMessages?: Prisma.MpMessageUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MpMessageUpdateManyWithoutReceiverNestedInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadUpdateManyWithoutBuyerNestedInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadUpdateManyWithoutSellerNestedInput
+  disputes?: Prisma.MpDisputeUpdateManyWithoutOpenedByNestedInput
+  mpPayouts?: Prisma.MpPayoutUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUpdateManyWithoutSellerNestedInput
+  askedQuestions?: Prisma.MpListingQuestionUpdateManyWithoutAskerNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUpdateManyWithoutReferrerNestedInput
+}
+
+export type MpUserUncheckedUpdateWithoutFavoriteListingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  verifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
+  isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSales?: Prisma.IntFieldUpdateOperationsInput | number
+  totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetTokenExpiresAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  listings?: Prisma.MpListingUncheckedUpdateManyWithoutSellerNestedInput
+  payoutMethods?: Prisma.MpPayoutMethodUncheckedUpdateManyWithoutUserNestedInput
+  buyerOrders?: Prisma.MpOrderUncheckedUpdateManyWithoutBuyerNestedInput
+  buyerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutBuyerNestedInput
+  sellerTransactions?: Prisma.MpTransactionUncheckedUpdateManyWithoutSellerNestedInput
+  sentMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutSenderNestedInput
+  receivedMessages?: Prisma.MpMessageUncheckedUpdateManyWithoutReceiverNestedInput
+  chatThreadsAsBuyer?: Prisma.MpChatThreadUncheckedUpdateManyWithoutBuyerNestedInput
+  chatThreadsAsSeller?: Prisma.MpChatThreadUncheckedUpdateManyWithoutSellerNestedInput
+  disputes?: Prisma.MpDisputeUncheckedUpdateManyWithoutOpenedByNestedInput
+  mpPayouts?: Prisma.MpPayoutUncheckedUpdateManyWithoutSellerNestedInput
+  writtenReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutBuyerNestedInput
+  receivedReviews?: Prisma.MpReviewUncheckedUpdateManyWithoutSellerNestedInput
+  askedQuestions?: Prisma.MpListingQuestionUncheckedUpdateManyWithoutAskerNestedInput
+  referralsAsReferrer?: Prisma.MpTransactionUncheckedUpdateManyWithoutReferrerNestedInput
 }
 
 export type MpUserUncheckedUpdateManyWithoutFavoriteListingsInput = {
@@ -3280,10 +4598,13 @@ export type MpUserUncheckedUpdateManyWithoutFavoriteListingsInput = {
   verificationLevel?: Prisma.StringFieldUpdateOperationsInput | string
   isSeller?: Prisma.BoolFieldUpdateOperationsInput | boolean
   sellerRating?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
   totalSales?: Prisma.IntFieldUpdateOperationsInput | number
   totalPurchases?: Prisma.IntFieldUpdateOperationsInput | number
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumMpUserRoleFieldUpdateOperationsInput | $Enums.MpUserRole
+  city?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   whatsappConsent?: Prisma.BoolFieldUpdateOperationsInput | boolean
   whatsappConsentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3304,6 +4625,7 @@ export type MpUserUncheckedUpdateManyWithoutFavoriteListingsInput = {
 export type MpUserCountOutputType = {
   listings: number
   payoutMethods: number
+  buyerOrders: number
   buyerTransactions: number
   sellerTransactions: number
   sentMessages: number
@@ -3312,13 +4634,17 @@ export type MpUserCountOutputType = {
   chatThreadsAsSeller: number
   disputes: number
   mpPayouts: number
+  writtenReviews: number
+  receivedReviews: number
   askedQuestions: number
   favoriteListings: number
+  referralsAsReferrer: number
 }
 
 export type MpUserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   listings?: boolean | MpUserCountOutputTypeCountListingsArgs
   payoutMethods?: boolean | MpUserCountOutputTypeCountPayoutMethodsArgs
+  buyerOrders?: boolean | MpUserCountOutputTypeCountBuyerOrdersArgs
   buyerTransactions?: boolean | MpUserCountOutputTypeCountBuyerTransactionsArgs
   sellerTransactions?: boolean | MpUserCountOutputTypeCountSellerTransactionsArgs
   sentMessages?: boolean | MpUserCountOutputTypeCountSentMessagesArgs
@@ -3327,8 +4653,11 @@ export type MpUserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions
   chatThreadsAsSeller?: boolean | MpUserCountOutputTypeCountChatThreadsAsSellerArgs
   disputes?: boolean | MpUserCountOutputTypeCountDisputesArgs
   mpPayouts?: boolean | MpUserCountOutputTypeCountMpPayoutsArgs
+  writtenReviews?: boolean | MpUserCountOutputTypeCountWrittenReviewsArgs
+  receivedReviews?: boolean | MpUserCountOutputTypeCountReceivedReviewsArgs
   askedQuestions?: boolean | MpUserCountOutputTypeCountAskedQuestionsArgs
   favoriteListings?: boolean | MpUserCountOutputTypeCountFavoriteListingsArgs
+  referralsAsReferrer?: boolean | MpUserCountOutputTypeCountReferralsAsReferrerArgs
 }
 
 /**
@@ -3353,6 +4682,13 @@ export type MpUserCountOutputTypeCountListingsArgs<ExtArgs extends runtime.Types
  */
 export type MpUserCountOutputTypeCountPayoutMethodsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.MpPayoutMethodWhereInput
+}
+
+/**
+ * MpUserCountOutputType without action
+ */
+export type MpUserCountOutputTypeCountBuyerOrdersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MpOrderWhereInput
 }
 
 /**
@@ -3414,6 +4750,20 @@ export type MpUserCountOutputTypeCountMpPayoutsArgs<ExtArgs extends runtime.Type
 /**
  * MpUserCountOutputType without action
  */
+export type MpUserCountOutputTypeCountWrittenReviewsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MpReviewWhereInput
+}
+
+/**
+ * MpUserCountOutputType without action
+ */
+export type MpUserCountOutputTypeCountReceivedReviewsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MpReviewWhereInput
+}
+
+/**
+ * MpUserCountOutputType without action
+ */
 export type MpUserCountOutputTypeCountAskedQuestionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.MpListingQuestionWhereInput
 }
@@ -3423,6 +4773,13 @@ export type MpUserCountOutputTypeCountAskedQuestionsArgs<ExtArgs extends runtime
  */
 export type MpUserCountOutputTypeCountFavoriteListingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.MpListingWhereInput
+}
+
+/**
+ * MpUserCountOutputType without action
+ */
+export type MpUserCountOutputTypeCountReferralsAsReferrerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MpTransactionWhereInput
 }
 
 
@@ -3439,10 +4796,13 @@ export type MpUserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   verificationLevel?: boolean
   isSeller?: boolean
   sellerRating?: boolean
+  reviewCount?: boolean
   totalSales?: boolean
   totalPurchases?: boolean
   passwordHash?: boolean
   role?: boolean
+  city?: boolean
+  state?: boolean
   phone?: boolean
   whatsappConsent?: boolean
   whatsappConsentAt?: boolean
@@ -3455,6 +4815,7 @@ export type MpUserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   updatedAt?: boolean
   listings?: boolean | Prisma.MpUser$listingsArgs<ExtArgs>
   payoutMethods?: boolean | Prisma.MpUser$payoutMethodsArgs<ExtArgs>
+  buyerOrders?: boolean | Prisma.MpUser$buyerOrdersArgs<ExtArgs>
   buyerTransactions?: boolean | Prisma.MpUser$buyerTransactionsArgs<ExtArgs>
   sellerTransactions?: boolean | Prisma.MpUser$sellerTransactionsArgs<ExtArgs>
   sentMessages?: boolean | Prisma.MpUser$sentMessagesArgs<ExtArgs>
@@ -3463,8 +4824,11 @@ export type MpUserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   chatThreadsAsSeller?: boolean | Prisma.MpUser$chatThreadsAsSellerArgs<ExtArgs>
   disputes?: boolean | Prisma.MpUser$disputesArgs<ExtArgs>
   mpPayouts?: boolean | Prisma.MpUser$mpPayoutsArgs<ExtArgs>
+  writtenReviews?: boolean | Prisma.MpUser$writtenReviewsArgs<ExtArgs>
+  receivedReviews?: boolean | Prisma.MpUser$receivedReviewsArgs<ExtArgs>
   askedQuestions?: boolean | Prisma.MpUser$askedQuestionsArgs<ExtArgs>
   favoriteListings?: boolean | Prisma.MpUser$favoriteListingsArgs<ExtArgs>
+  referralsAsReferrer?: boolean | Prisma.MpUser$referralsAsReferrerArgs<ExtArgs>
   _count?: boolean | Prisma.MpUserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["mpUser"]>
 
@@ -3481,10 +4845,13 @@ export type MpUserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   verificationLevel?: boolean
   isSeller?: boolean
   sellerRating?: boolean
+  reviewCount?: boolean
   totalSales?: boolean
   totalPurchases?: boolean
   passwordHash?: boolean
   role?: boolean
+  city?: boolean
+  state?: boolean
   phone?: boolean
   whatsappConsent?: boolean
   whatsappConsentAt?: boolean
@@ -3510,10 +4877,13 @@ export type MpUserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   verificationLevel?: boolean
   isSeller?: boolean
   sellerRating?: boolean
+  reviewCount?: boolean
   totalSales?: boolean
   totalPurchases?: boolean
   passwordHash?: boolean
   role?: boolean
+  city?: boolean
+  state?: boolean
   phone?: boolean
   whatsappConsent?: boolean
   whatsappConsentAt?: boolean
@@ -3539,10 +4909,13 @@ export type MpUserSelectScalar = {
   verificationLevel?: boolean
   isSeller?: boolean
   sellerRating?: boolean
+  reviewCount?: boolean
   totalSales?: boolean
   totalPurchases?: boolean
   passwordHash?: boolean
   role?: boolean
+  city?: boolean
+  state?: boolean
   phone?: boolean
   whatsappConsent?: boolean
   whatsappConsentAt?: boolean
@@ -3555,10 +4928,11 @@ export type MpUserSelectScalar = {
   updatedAt?: boolean
 }
 
-export type MpUserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "emailVerified" | "emailVerifiedAt" | "displayName" | "bio" | "avatarUrl" | "isVerified" | "verifiedAt" | "verificationLevel" | "isSeller" | "sellerRating" | "totalSales" | "totalPurchases" | "passwordHash" | "role" | "phone" | "whatsappConsent" | "whatsappConsentAt" | "passwordResetToken" | "passwordResetTokenExpiresAt" | "isBanned" | "bannedAt" | "bannedReason" | "createdAt" | "updatedAt", ExtArgs["result"]["mpUser"]>
+export type MpUserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "emailVerified" | "emailVerifiedAt" | "displayName" | "bio" | "avatarUrl" | "isVerified" | "verifiedAt" | "verificationLevel" | "isSeller" | "sellerRating" | "reviewCount" | "totalSales" | "totalPurchases" | "passwordHash" | "role" | "city" | "state" | "phone" | "whatsappConsent" | "whatsappConsentAt" | "passwordResetToken" | "passwordResetTokenExpiresAt" | "isBanned" | "bannedAt" | "bannedReason" | "createdAt" | "updatedAt", ExtArgs["result"]["mpUser"]>
 export type MpUserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   listings?: boolean | Prisma.MpUser$listingsArgs<ExtArgs>
   payoutMethods?: boolean | Prisma.MpUser$payoutMethodsArgs<ExtArgs>
+  buyerOrders?: boolean | Prisma.MpUser$buyerOrdersArgs<ExtArgs>
   buyerTransactions?: boolean | Prisma.MpUser$buyerTransactionsArgs<ExtArgs>
   sellerTransactions?: boolean | Prisma.MpUser$sellerTransactionsArgs<ExtArgs>
   sentMessages?: boolean | Prisma.MpUser$sentMessagesArgs<ExtArgs>
@@ -3567,8 +4941,11 @@ export type MpUserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   chatThreadsAsSeller?: boolean | Prisma.MpUser$chatThreadsAsSellerArgs<ExtArgs>
   disputes?: boolean | Prisma.MpUser$disputesArgs<ExtArgs>
   mpPayouts?: boolean | Prisma.MpUser$mpPayoutsArgs<ExtArgs>
+  writtenReviews?: boolean | Prisma.MpUser$writtenReviewsArgs<ExtArgs>
+  receivedReviews?: boolean | Prisma.MpUser$receivedReviewsArgs<ExtArgs>
   askedQuestions?: boolean | Prisma.MpUser$askedQuestionsArgs<ExtArgs>
   favoriteListings?: boolean | Prisma.MpUser$favoriteListingsArgs<ExtArgs>
+  referralsAsReferrer?: boolean | Prisma.MpUser$referralsAsReferrerArgs<ExtArgs>
   _count?: boolean | Prisma.MpUserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type MpUserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -3579,6 +4956,7 @@ export type $MpUserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
   objects: {
     listings: Prisma.$MpListingPayload<ExtArgs>[]
     payoutMethods: Prisma.$MpPayoutMethodPayload<ExtArgs>[]
+    buyerOrders: Prisma.$MpOrderPayload<ExtArgs>[]
     buyerTransactions: Prisma.$MpTransactionPayload<ExtArgs>[]
     sellerTransactions: Prisma.$MpTransactionPayload<ExtArgs>[]
     sentMessages: Prisma.$MpMessagePayload<ExtArgs>[]
@@ -3587,8 +4965,11 @@ export type $MpUserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     chatThreadsAsSeller: Prisma.$MpChatThreadPayload<ExtArgs>[]
     disputes: Prisma.$MpDisputePayload<ExtArgs>[]
     mpPayouts: Prisma.$MpPayoutPayload<ExtArgs>[]
+    writtenReviews: Prisma.$MpReviewPayload<ExtArgs>[]
+    receivedReviews: Prisma.$MpReviewPayload<ExtArgs>[]
     askedQuestions: Prisma.$MpListingQuestionPayload<ExtArgs>[]
     favoriteListings: Prisma.$MpListingPayload<ExtArgs>[]
+    referralsAsReferrer: Prisma.$MpTransactionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -3603,10 +4984,13 @@ export type $MpUserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     verificationLevel: string
     isSeller: boolean
     sellerRating: runtime.Decimal | null
+    reviewCount: number
     totalSales: number
     totalPurchases: number
     passwordHash: string | null
     role: $Enums.MpUserRole
+    city: string | null
+    state: string | null
     phone: string | null
     whatsappConsent: boolean
     whatsappConsentAt: Date | null
@@ -4013,6 +5397,7 @@ export interface Prisma__MpUserClient<T, Null = never, ExtArgs extends runtime.T
   readonly [Symbol.toStringTag]: "PrismaPromise"
   listings<T extends Prisma.MpUser$listingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$listingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpListingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   payoutMethods<T extends Prisma.MpUser$payoutMethodsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$payoutMethodsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpPayoutMethodPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  buyerOrders<T extends Prisma.MpUser$buyerOrdersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$buyerOrdersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpOrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   buyerTransactions<T extends Prisma.MpUser$buyerTransactionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$buyerTransactionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpTransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   sellerTransactions<T extends Prisma.MpUser$sellerTransactionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$sellerTransactionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpTransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   sentMessages<T extends Prisma.MpUser$sentMessagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$sentMessagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -4021,8 +5406,11 @@ export interface Prisma__MpUserClient<T, Null = never, ExtArgs extends runtime.T
   chatThreadsAsSeller<T extends Prisma.MpUser$chatThreadsAsSellerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$chatThreadsAsSellerArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpChatThreadPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   disputes<T extends Prisma.MpUser$disputesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$disputesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpDisputePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   mpPayouts<T extends Prisma.MpUser$mpPayoutsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$mpPayoutsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpPayoutPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  writtenReviews<T extends Prisma.MpUser$writtenReviewsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$writtenReviewsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpReviewPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  receivedReviews<T extends Prisma.MpUser$receivedReviewsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$receivedReviewsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpReviewPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   askedQuestions<T extends Prisma.MpUser$askedQuestionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$askedQuestionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpListingQuestionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   favoriteListings<T extends Prisma.MpUser$favoriteListingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$favoriteListingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpListingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  referralsAsReferrer<T extends Prisma.MpUser$referralsAsReferrerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MpUser$referralsAsReferrerArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MpTransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4064,10 +5452,13 @@ export interface MpUserFieldRefs {
   readonly verificationLevel: Prisma.FieldRef<"MpUser", 'String'>
   readonly isSeller: Prisma.FieldRef<"MpUser", 'Boolean'>
   readonly sellerRating: Prisma.FieldRef<"MpUser", 'Decimal'>
+  readonly reviewCount: Prisma.FieldRef<"MpUser", 'Int'>
   readonly totalSales: Prisma.FieldRef<"MpUser", 'Int'>
   readonly totalPurchases: Prisma.FieldRef<"MpUser", 'Int'>
   readonly passwordHash: Prisma.FieldRef<"MpUser", 'String'>
   readonly role: Prisma.FieldRef<"MpUser", 'MpUserRole'>
+  readonly city: Prisma.FieldRef<"MpUser", 'String'>
+  readonly state: Prisma.FieldRef<"MpUser", 'String'>
   readonly phone: Prisma.FieldRef<"MpUser", 'String'>
   readonly whatsappConsent: Prisma.FieldRef<"MpUser", 'Boolean'>
   readonly whatsappConsentAt: Prisma.FieldRef<"MpUser", 'DateTime'>
@@ -4519,6 +5910,30 @@ export type MpUser$payoutMethodsArgs<ExtArgs extends runtime.Types.Extensions.In
 }
 
 /**
+ * MpUser.buyerOrders
+ */
+export type MpUser$buyerOrdersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MpOrder
+   */
+  select?: Prisma.MpOrderSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the MpOrder
+   */
+  omit?: Prisma.MpOrderOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MpOrderInclude<ExtArgs> | null
+  where?: Prisma.MpOrderWhereInput
+  orderBy?: Prisma.MpOrderOrderByWithRelationInput | Prisma.MpOrderOrderByWithRelationInput[]
+  cursor?: Prisma.MpOrderWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MpOrderScalarFieldEnum | Prisma.MpOrderScalarFieldEnum[]
+}
+
+/**
  * MpUser.buyerTransactions
  */
 export type MpUser$buyerTransactionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -4711,6 +6126,54 @@ export type MpUser$mpPayoutsArgs<ExtArgs extends runtime.Types.Extensions.Intern
 }
 
 /**
+ * MpUser.writtenReviews
+ */
+export type MpUser$writtenReviewsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MpReview
+   */
+  select?: Prisma.MpReviewSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the MpReview
+   */
+  omit?: Prisma.MpReviewOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MpReviewInclude<ExtArgs> | null
+  where?: Prisma.MpReviewWhereInput
+  orderBy?: Prisma.MpReviewOrderByWithRelationInput | Prisma.MpReviewOrderByWithRelationInput[]
+  cursor?: Prisma.MpReviewWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MpReviewScalarFieldEnum | Prisma.MpReviewScalarFieldEnum[]
+}
+
+/**
+ * MpUser.receivedReviews
+ */
+export type MpUser$receivedReviewsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MpReview
+   */
+  select?: Prisma.MpReviewSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the MpReview
+   */
+  omit?: Prisma.MpReviewOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MpReviewInclude<ExtArgs> | null
+  where?: Prisma.MpReviewWhereInput
+  orderBy?: Prisma.MpReviewOrderByWithRelationInput | Prisma.MpReviewOrderByWithRelationInput[]
+  cursor?: Prisma.MpReviewWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MpReviewScalarFieldEnum | Prisma.MpReviewScalarFieldEnum[]
+}
+
+/**
  * MpUser.askedQuestions
  */
 export type MpUser$askedQuestionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -4756,6 +6219,30 @@ export type MpUser$favoriteListingsArgs<ExtArgs extends runtime.Types.Extensions
   take?: number
   skip?: number
   distinct?: Prisma.MpListingScalarFieldEnum | Prisma.MpListingScalarFieldEnum[]
+}
+
+/**
+ * MpUser.referralsAsReferrer
+ */
+export type MpUser$referralsAsReferrerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MpTransaction
+   */
+  select?: Prisma.MpTransactionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the MpTransaction
+   */
+  omit?: Prisma.MpTransactionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MpTransactionInclude<ExtArgs> | null
+  where?: Prisma.MpTransactionWhereInput
+  orderBy?: Prisma.MpTransactionOrderByWithRelationInput | Prisma.MpTransactionOrderByWithRelationInput[]
+  cursor?: Prisma.MpTransactionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MpTransactionScalarFieldEnum | Prisma.MpTransactionScalarFieldEnum[]
 }
 
 /**

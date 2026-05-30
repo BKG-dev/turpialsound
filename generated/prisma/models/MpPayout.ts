@@ -42,6 +42,8 @@ export type MpPayoutMinAggregateOutputType = {
   method: $Enums.MpPayoutMethodType | null
   status: $Enums.MpPayoutStatus | null
   externalPayoutId: string | null
+  reference: string | null
+  auditHash: string | null
   completedAt: Date | null
   failureReason: string | null
   createdAt: Date | null
@@ -56,6 +58,8 @@ export type MpPayoutMaxAggregateOutputType = {
   method: $Enums.MpPayoutMethodType | null
   status: $Enums.MpPayoutStatus | null
   externalPayoutId: string | null
+  reference: string | null
+  auditHash: string | null
   completedAt: Date | null
   failureReason: string | null
   createdAt: Date | null
@@ -71,6 +75,8 @@ export type MpPayoutCountAggregateOutputType = {
   status: number
   transactionIds: number
   externalPayoutId: number
+  reference: number
+  auditHash: number
   completedAt: number
   failureReason: number
   createdAt: number
@@ -95,6 +101,8 @@ export type MpPayoutMinAggregateInputType = {
   method?: true
   status?: true
   externalPayoutId?: true
+  reference?: true
+  auditHash?: true
   completedAt?: true
   failureReason?: true
   createdAt?: true
@@ -109,6 +117,8 @@ export type MpPayoutMaxAggregateInputType = {
   method?: true
   status?: true
   externalPayoutId?: true
+  reference?: true
+  auditHash?: true
   completedAt?: true
   failureReason?: true
   createdAt?: true
@@ -124,6 +134,8 @@ export type MpPayoutCountAggregateInputType = {
   status?: true
   transactionIds?: true
   externalPayoutId?: true
+  reference?: true
+  auditHash?: true
   completedAt?: true
   failureReason?: true
   createdAt?: true
@@ -226,6 +238,8 @@ export type MpPayoutGroupByOutputType = {
   status: $Enums.MpPayoutStatus
   transactionIds: string[]
   externalPayoutId: string | null
+  reference: string | null
+  auditHash: string | null
   completedAt: Date | null
   failureReason: string | null
   createdAt: Date
@@ -264,6 +278,8 @@ export type MpPayoutWhereInput = {
   status?: Prisma.EnumMpPayoutStatusFilter<"MpPayout"> | $Enums.MpPayoutStatus
   transactionIds?: Prisma.StringNullableListFilter<"MpPayout">
   externalPayoutId?: Prisma.StringNullableFilter<"MpPayout"> | string | null
+  reference?: Prisma.StringNullableFilter<"MpPayout"> | string | null
+  auditHash?: Prisma.StringNullableFilter<"MpPayout"> | string | null
   completedAt?: Prisma.DateTimeNullableFilter<"MpPayout"> | Date | string | null
   failureReason?: Prisma.StringNullableFilter<"MpPayout"> | string | null
   createdAt?: Prisma.DateTimeFilter<"MpPayout"> | Date | string
@@ -280,6 +296,8 @@ export type MpPayoutOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   transactionIds?: Prisma.SortOrder
   externalPayoutId?: Prisma.SortOrderInput | Prisma.SortOrder
+  reference?: Prisma.SortOrderInput | Prisma.SortOrder
+  auditHash?: Prisma.SortOrderInput | Prisma.SortOrder
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   failureReason?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -299,6 +317,8 @@ export type MpPayoutWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.EnumMpPayoutStatusFilter<"MpPayout"> | $Enums.MpPayoutStatus
   transactionIds?: Prisma.StringNullableListFilter<"MpPayout">
   externalPayoutId?: Prisma.StringNullableFilter<"MpPayout"> | string | null
+  reference?: Prisma.StringNullableFilter<"MpPayout"> | string | null
+  auditHash?: Prisma.StringNullableFilter<"MpPayout"> | string | null
   completedAt?: Prisma.DateTimeNullableFilter<"MpPayout"> | Date | string | null
   failureReason?: Prisma.StringNullableFilter<"MpPayout"> | string | null
   createdAt?: Prisma.DateTimeFilter<"MpPayout"> | Date | string
@@ -315,6 +335,8 @@ export type MpPayoutOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   transactionIds?: Prisma.SortOrder
   externalPayoutId?: Prisma.SortOrderInput | Prisma.SortOrder
+  reference?: Prisma.SortOrderInput | Prisma.SortOrder
+  auditHash?: Prisma.SortOrderInput | Prisma.SortOrder
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   failureReason?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -338,6 +360,8 @@ export type MpPayoutScalarWhereWithAggregatesInput = {
   status?: Prisma.EnumMpPayoutStatusWithAggregatesFilter<"MpPayout"> | $Enums.MpPayoutStatus
   transactionIds?: Prisma.StringNullableListFilter<"MpPayout">
   externalPayoutId?: Prisma.StringNullableWithAggregatesFilter<"MpPayout"> | string | null
+  reference?: Prisma.StringNullableWithAggregatesFilter<"MpPayout"> | string | null
+  auditHash?: Prisma.StringNullableWithAggregatesFilter<"MpPayout"> | string | null
   completedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"MpPayout"> | Date | string | null
   failureReason?: Prisma.StringNullableWithAggregatesFilter<"MpPayout"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"MpPayout"> | Date | string
@@ -352,6 +376,8 @@ export type MpPayoutCreateInput = {
   status?: $Enums.MpPayoutStatus
   transactionIds?: Prisma.MpPayoutCreatetransactionIdsInput | string[]
   externalPayoutId?: string | null
+  reference?: string | null
+  auditHash?: string | null
   completedAt?: Date | string | null
   failureReason?: string | null
   createdAt?: Date | string
@@ -368,6 +394,8 @@ export type MpPayoutUncheckedCreateInput = {
   status?: $Enums.MpPayoutStatus
   transactionIds?: Prisma.MpPayoutCreatetransactionIdsInput | string[]
   externalPayoutId?: string | null
+  reference?: string | null
+  auditHash?: string | null
   completedAt?: Date | string | null
   failureReason?: string | null
   createdAt?: Date | string
@@ -382,6 +410,8 @@ export type MpPayoutUpdateInput = {
   status?: Prisma.EnumMpPayoutStatusFieldUpdateOperationsInput | $Enums.MpPayoutStatus
   transactionIds?: Prisma.MpPayoutUpdatetransactionIdsInput | string[]
   externalPayoutId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   failureReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -398,6 +428,8 @@ export type MpPayoutUncheckedUpdateInput = {
   status?: Prisma.EnumMpPayoutStatusFieldUpdateOperationsInput | $Enums.MpPayoutStatus
   transactionIds?: Prisma.MpPayoutUpdatetransactionIdsInput | string[]
   externalPayoutId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   failureReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -413,6 +445,8 @@ export type MpPayoutCreateManyInput = {
   status?: $Enums.MpPayoutStatus
   transactionIds?: Prisma.MpPayoutCreatetransactionIdsInput | string[]
   externalPayoutId?: string | null
+  reference?: string | null
+  auditHash?: string | null
   completedAt?: Date | string | null
   failureReason?: string | null
   createdAt?: Date | string
@@ -427,6 +461,8 @@ export type MpPayoutUpdateManyMutationInput = {
   status?: Prisma.EnumMpPayoutStatusFieldUpdateOperationsInput | $Enums.MpPayoutStatus
   transactionIds?: Prisma.MpPayoutUpdatetransactionIdsInput | string[]
   externalPayoutId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   failureReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -442,6 +478,8 @@ export type MpPayoutUncheckedUpdateManyInput = {
   status?: Prisma.EnumMpPayoutStatusFieldUpdateOperationsInput | $Enums.MpPayoutStatus
   transactionIds?: Prisma.MpPayoutUpdatetransactionIdsInput | string[]
   externalPayoutId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   failureReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -467,6 +505,8 @@ export type MpPayoutCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   transactionIds?: Prisma.SortOrder
   externalPayoutId?: Prisma.SortOrder
+  reference?: Prisma.SortOrder
+  auditHash?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
   failureReason?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -485,6 +525,8 @@ export type MpPayoutMaxOrderByAggregateInput = {
   method?: Prisma.SortOrder
   status?: Prisma.SortOrder
   externalPayoutId?: Prisma.SortOrder
+  reference?: Prisma.SortOrder
+  auditHash?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
   failureReason?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -499,6 +541,8 @@ export type MpPayoutMinOrderByAggregateInput = {
   method?: Prisma.SortOrder
   status?: Prisma.SortOrder
   externalPayoutId?: Prisma.SortOrder
+  reference?: Prisma.SortOrder
+  auditHash?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
   failureReason?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -572,6 +616,8 @@ export type MpPayoutCreateWithoutSellerInput = {
   status?: $Enums.MpPayoutStatus
   transactionIds?: Prisma.MpPayoutCreatetransactionIdsInput | string[]
   externalPayoutId?: string | null
+  reference?: string | null
+  auditHash?: string | null
   completedAt?: Date | string | null
   failureReason?: string | null
   createdAt?: Date | string
@@ -586,6 +632,8 @@ export type MpPayoutUncheckedCreateWithoutSellerInput = {
   status?: $Enums.MpPayoutStatus
   transactionIds?: Prisma.MpPayoutCreatetransactionIdsInput | string[]
   externalPayoutId?: string | null
+  reference?: string | null
+  auditHash?: string | null
   completedAt?: Date | string | null
   failureReason?: string | null
   createdAt?: Date | string
@@ -630,6 +678,8 @@ export type MpPayoutScalarWhereInput = {
   status?: Prisma.EnumMpPayoutStatusFilter<"MpPayout"> | $Enums.MpPayoutStatus
   transactionIds?: Prisma.StringNullableListFilter<"MpPayout">
   externalPayoutId?: Prisma.StringNullableFilter<"MpPayout"> | string | null
+  reference?: Prisma.StringNullableFilter<"MpPayout"> | string | null
+  auditHash?: Prisma.StringNullableFilter<"MpPayout"> | string | null
   completedAt?: Prisma.DateTimeNullableFilter<"MpPayout"> | Date | string | null
   failureReason?: Prisma.StringNullableFilter<"MpPayout"> | string | null
   createdAt?: Prisma.DateTimeFilter<"MpPayout"> | Date | string
@@ -644,6 +694,8 @@ export type MpPayoutCreateManySellerInput = {
   status?: $Enums.MpPayoutStatus
   transactionIds?: Prisma.MpPayoutCreatetransactionIdsInput | string[]
   externalPayoutId?: string | null
+  reference?: string | null
+  auditHash?: string | null
   completedAt?: Date | string | null
   failureReason?: string | null
   createdAt?: Date | string
@@ -658,6 +710,8 @@ export type MpPayoutUpdateWithoutSellerInput = {
   status?: Prisma.EnumMpPayoutStatusFieldUpdateOperationsInput | $Enums.MpPayoutStatus
   transactionIds?: Prisma.MpPayoutUpdatetransactionIdsInput | string[]
   externalPayoutId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   failureReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -672,6 +726,8 @@ export type MpPayoutUncheckedUpdateWithoutSellerInput = {
   status?: Prisma.EnumMpPayoutStatusFieldUpdateOperationsInput | $Enums.MpPayoutStatus
   transactionIds?: Prisma.MpPayoutUpdatetransactionIdsInput | string[]
   externalPayoutId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   failureReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -686,6 +742,8 @@ export type MpPayoutUncheckedUpdateManyWithoutSellerInput = {
   status?: Prisma.EnumMpPayoutStatusFieldUpdateOperationsInput | $Enums.MpPayoutStatus
   transactionIds?: Prisma.MpPayoutUpdatetransactionIdsInput | string[]
   externalPayoutId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reference?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  auditHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   failureReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -703,6 +761,8 @@ export type MpPayoutSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   status?: boolean
   transactionIds?: boolean
   externalPayoutId?: boolean
+  reference?: boolean
+  auditHash?: boolean
   completedAt?: boolean
   failureReason?: boolean
   createdAt?: boolean
@@ -719,6 +779,8 @@ export type MpPayoutSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   status?: boolean
   transactionIds?: boolean
   externalPayoutId?: boolean
+  reference?: boolean
+  auditHash?: boolean
   completedAt?: boolean
   failureReason?: boolean
   createdAt?: boolean
@@ -735,6 +797,8 @@ export type MpPayoutSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   status?: boolean
   transactionIds?: boolean
   externalPayoutId?: boolean
+  reference?: boolean
+  auditHash?: boolean
   completedAt?: boolean
   failureReason?: boolean
   createdAt?: boolean
@@ -751,13 +815,15 @@ export type MpPayoutSelectScalar = {
   status?: boolean
   transactionIds?: boolean
   externalPayoutId?: boolean
+  reference?: boolean
+  auditHash?: boolean
   completedAt?: boolean
   failureReason?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type MpPayoutOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sellerId" | "amount" | "currency" | "method" | "status" | "transactionIds" | "externalPayoutId" | "completedAt" | "failureReason" | "createdAt" | "updatedAt", ExtArgs["result"]["mpPayout"]>
+export type MpPayoutOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sellerId" | "amount" | "currency" | "method" | "status" | "transactionIds" | "externalPayoutId" | "reference" | "auditHash" | "completedAt" | "failureReason" | "createdAt" | "updatedAt", ExtArgs["result"]["mpPayout"]>
 export type MpPayoutInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   seller?: boolean | Prisma.MpUserDefaultArgs<ExtArgs>
 }
@@ -782,6 +848,8 @@ export type $MpPayoutPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     status: $Enums.MpPayoutStatus
     transactionIds: string[]
     externalPayoutId: string | null
+    reference: string | null
+    auditHash: string | null
     completedAt: Date | null
     failureReason: string | null
     createdAt: Date
@@ -1218,6 +1286,8 @@ export interface MpPayoutFieldRefs {
   readonly status: Prisma.FieldRef<"MpPayout", 'MpPayoutStatus'>
   readonly transactionIds: Prisma.FieldRef<"MpPayout", 'String[]'>
   readonly externalPayoutId: Prisma.FieldRef<"MpPayout", 'String'>
+  readonly reference: Prisma.FieldRef<"MpPayout", 'String'>
+  readonly auditHash: Prisma.FieldRef<"MpPayout", 'String'>
   readonly completedAt: Prisma.FieldRef<"MpPayout", 'DateTime'>
   readonly failureReason: Prisma.FieldRef<"MpPayout", 'String'>
   readonly createdAt: Prisma.FieldRef<"MpPayout", 'DateTime'>

@@ -75,7 +75,10 @@ export const ModelName = {
   MpBlobObjectMetadata: 'MpBlobObjectMetadata',
   MpBinanceRateSnapshot: 'MpBinanceRateSnapshot',
   MpReferenceRateSnapshot: 'MpReferenceRateSnapshot',
-  MpWebhookLog: 'MpWebhookLog'
+  MpWebhookLog: 'MpWebhookLog',
+  MpOrder: 'MpOrder',
+  MpReview: 'MpReview',
+  MpReferralLink: 'MpReferralLink'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -255,10 +258,13 @@ export const MpUserScalarFieldEnum = {
   verificationLevel: 'verificationLevel',
   isSeller: 'isSeller',
   sellerRating: 'sellerRating',
+  reviewCount: 'reviewCount',
   totalSales: 'totalSales',
   totalPurchases: 'totalPurchases',
   passwordHash: 'passwordHash',
   role: 'role',
+  city: 'city',
+  state: 'state',
   phone: 'phone',
   whatsappConsent: 'whatsappConsent',
   whatsappConsentAt: 'whatsappConsentAt',
@@ -366,10 +372,13 @@ export const MpTransactionScalarFieldEnum = {
   buyerId: 'buyerId',
   sellerId: 'sellerId',
   listingId: 'listingId',
+  orderId: 'orderId',
   paymentMethod: 'paymentMethod',
   status: 'status',
   amount: 'amount',
   currency: 'currency',
+  quantity: 'quantity',
+  unitPrice: 'unitPrice',
   platformFeePercent: 'platformFeePercent',
   platformFeeAmount: 'platformFeeAmount',
   sellerNetAmount: 'sellerNetAmount',
@@ -386,6 +395,7 @@ export const MpTransactionScalarFieldEnum = {
   escrowReleaseAt: 'escrowReleaseAt',
   releasedAt: 'releasedAt',
   buyerConfirmedAt: 'buyerConfirmedAt',
+  referredBy: 'referredBy',
   disputeReason: 'disputeReason',
   disputeOpenedAt: 'disputeOpenedAt',
   adminNotes: 'adminNotes',
@@ -437,6 +447,8 @@ export const MpPayoutScalarFieldEnum = {
   status: 'status',
   transactionIds: 'transactionIds',
   externalPayoutId: 'externalPayoutId',
+  reference: 'reference',
+  auditHash: 'auditHash',
   completedAt: 'completedAt',
   failureReason: 'failureReason',
   createdAt: 'createdAt',
@@ -521,6 +533,55 @@ export const MpWebhookLogScalarFieldEnum = {
 } as const
 
 export type MpWebhookLogScalarFieldEnum = (typeof MpWebhookLogScalarFieldEnum)[keyof typeof MpWebhookLogScalarFieldEnum]
+
+
+export const MpOrderScalarFieldEnum = {
+  id: 'id',
+  buyerId: 'buyerId',
+  paymentMethod: 'paymentMethod',
+  status: 'status',
+  amount: 'amount',
+  currency: 'currency',
+  paymentReference: 'paymentReference',
+  paymentSenderBank: 'paymentSenderBank',
+  paymentPaidAt: 'paymentPaidAt',
+  paymentProofUrl: 'paymentProofUrl',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MpOrderScalarFieldEnum = (typeof MpOrderScalarFieldEnum)[keyof typeof MpOrderScalarFieldEnum]
+
+
+export const MpReviewScalarFieldEnum = {
+  id: 'id',
+  buyerId: 'buyerId',
+  sellerId: 'sellerId',
+  listingId: 'listingId',
+  transactionId: 'transactionId',
+  rating: 'rating',
+  title: 'title',
+  comment: 'comment',
+  createdAt: 'createdAt'
+} as const
+
+export type MpReviewScalarFieldEnum = (typeof MpReviewScalarFieldEnum)[keyof typeof MpReviewScalarFieldEnum]
+
+
+export const MpReferralLinkScalarFieldEnum = {
+  id: 'id',
+  referrerId: 'referrerId',
+  listingId: 'listingId',
+  slug: 'slug',
+  code: 'code',
+  clicks: 'clicks',
+  conversions: 'conversions',
+  totalEarned: 'totalEarned',
+  isActive: 'isActive',
+  createdAt: 'createdAt'
+} as const
+
+export type MpReferralLinkScalarFieldEnum = (typeof MpReferralLinkScalarFieldEnum)[keyof typeof MpReferralLinkScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -408,7 +408,10 @@ export const ModelName = {
   MpBlobObjectMetadata: 'MpBlobObjectMetadata',
   MpBinanceRateSnapshot: 'MpBinanceRateSnapshot',
   MpReferenceRateSnapshot: 'MpReferenceRateSnapshot',
-  MpWebhookLog: 'MpWebhookLog'
+  MpWebhookLog: 'MpWebhookLog',
+  MpOrder: 'MpOrder',
+  MpReview: 'MpReview',
+  MpReferralLink: 'MpReferralLink'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -424,7 +427,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "siteCounter" | "service" | "serviceVariant" | "resource" | "user" | "bookingRequest" | "bookingRequestItem" | "paymentProof" | "approval" | "auditLog" | "mpUser" | "mpPayoutMethod" | "mpListing" | "mpListingQuestion" | "mpChatThread" | "mpMessage" | "mpTransaction" | "mpTransactionStatusHistory" | "mpDispute" | "mpPayout" | "mpAnalyticsEvent" | "mpBlobObjectMetadata" | "mpBinanceRateSnapshot" | "mpReferenceRateSnapshot" | "mpWebhookLog"
+    modelProps: "siteCounter" | "service" | "serviceVariant" | "resource" | "user" | "bookingRequest" | "bookingRequestItem" | "paymentProof" | "approval" | "auditLog" | "mpUser" | "mpPayoutMethod" | "mpListing" | "mpListingQuestion" | "mpChatThread" | "mpMessage" | "mpTransaction" | "mpTransactionStatusHistory" | "mpDispute" | "mpPayout" | "mpAnalyticsEvent" | "mpBlobObjectMetadata" | "mpBinanceRateSnapshot" | "mpReferenceRateSnapshot" | "mpWebhookLog" | "mpOrder" | "mpReview" | "mpReferralLink"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2278,6 +2281,228 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    MpOrder: {
+      payload: Prisma.$MpOrderPayload<ExtArgs>
+      fields: Prisma.MpOrderFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MpOrderFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MpOrderFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>
+        }
+        findFirst: {
+          args: Prisma.MpOrderFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MpOrderFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>
+        }
+        findMany: {
+          args: Prisma.MpOrderFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>[]
+        }
+        create: {
+          args: Prisma.MpOrderCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>
+        }
+        createMany: {
+          args: Prisma.MpOrderCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MpOrderCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>[]
+        }
+        delete: {
+          args: Prisma.MpOrderDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>
+        }
+        update: {
+          args: Prisma.MpOrderUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>
+        }
+        deleteMany: {
+          args: Prisma.MpOrderDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MpOrderUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MpOrderUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>[]
+        }
+        upsert: {
+          args: Prisma.MpOrderUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpOrderPayload>
+        }
+        aggregate: {
+          args: Prisma.MpOrderAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMpOrder>
+        }
+        groupBy: {
+          args: Prisma.MpOrderGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpOrderGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MpOrderCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpOrderCountAggregateOutputType> | number
+        }
+      }
+    }
+    MpReview: {
+      payload: Prisma.$MpReviewPayload<ExtArgs>
+      fields: Prisma.MpReviewFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MpReviewFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReviewPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MpReviewFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReviewPayload>
+        }
+        findFirst: {
+          args: Prisma.MpReviewFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReviewPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MpReviewFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReviewPayload>
+        }
+        findMany: {
+          args: Prisma.MpReviewFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReviewPayload>[]
+        }
+        create: {
+          args: Prisma.MpReviewCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReviewPayload>
+        }
+        createMany: {
+          args: Prisma.MpReviewCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MpReviewCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReviewPayload>[]
+        }
+        delete: {
+          args: Prisma.MpReviewDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReviewPayload>
+        }
+        update: {
+          args: Prisma.MpReviewUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReviewPayload>
+        }
+        deleteMany: {
+          args: Prisma.MpReviewDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MpReviewUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MpReviewUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReviewPayload>[]
+        }
+        upsert: {
+          args: Prisma.MpReviewUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReviewPayload>
+        }
+        aggregate: {
+          args: Prisma.MpReviewAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMpReview>
+        }
+        groupBy: {
+          args: Prisma.MpReviewGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpReviewGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MpReviewCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpReviewCountAggregateOutputType> | number
+        }
+      }
+    }
+    MpReferralLink: {
+      payload: Prisma.$MpReferralLinkPayload<ExtArgs>
+      fields: Prisma.MpReferralLinkFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MpReferralLinkFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MpReferralLinkFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>
+        }
+        findFirst: {
+          args: Prisma.MpReferralLinkFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MpReferralLinkFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>
+        }
+        findMany: {
+          args: Prisma.MpReferralLinkFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>[]
+        }
+        create: {
+          args: Prisma.MpReferralLinkCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>
+        }
+        createMany: {
+          args: Prisma.MpReferralLinkCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MpReferralLinkCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>[]
+        }
+        delete: {
+          args: Prisma.MpReferralLinkDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>
+        }
+        update: {
+          args: Prisma.MpReferralLinkUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>
+        }
+        deleteMany: {
+          args: Prisma.MpReferralLinkDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MpReferralLinkUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MpReferralLinkUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>[]
+        }
+        upsert: {
+          args: Prisma.MpReferralLinkUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MpReferralLinkPayload>
+        }
+        aggregate: {
+          args: Prisma.MpReferralLinkAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMpReferralLink>
+        }
+        groupBy: {
+          args: Prisma.MpReferralLinkGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpReferralLinkGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MpReferralLinkCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MpReferralLinkCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -2478,10 +2703,13 @@ export const MpUserScalarFieldEnum = {
   verificationLevel: 'verificationLevel',
   isSeller: 'isSeller',
   sellerRating: 'sellerRating',
+  reviewCount: 'reviewCount',
   totalSales: 'totalSales',
   totalPurchases: 'totalPurchases',
   passwordHash: 'passwordHash',
   role: 'role',
+  city: 'city',
+  state: 'state',
   phone: 'phone',
   whatsappConsent: 'whatsappConsent',
   whatsappConsentAt: 'whatsappConsentAt',
@@ -2589,10 +2817,13 @@ export const MpTransactionScalarFieldEnum = {
   buyerId: 'buyerId',
   sellerId: 'sellerId',
   listingId: 'listingId',
+  orderId: 'orderId',
   paymentMethod: 'paymentMethod',
   status: 'status',
   amount: 'amount',
   currency: 'currency',
+  quantity: 'quantity',
+  unitPrice: 'unitPrice',
   platformFeePercent: 'platformFeePercent',
   platformFeeAmount: 'platformFeeAmount',
   sellerNetAmount: 'sellerNetAmount',
@@ -2609,6 +2840,7 @@ export const MpTransactionScalarFieldEnum = {
   escrowReleaseAt: 'escrowReleaseAt',
   releasedAt: 'releasedAt',
   buyerConfirmedAt: 'buyerConfirmedAt',
+  referredBy: 'referredBy',
   disputeReason: 'disputeReason',
   disputeOpenedAt: 'disputeOpenedAt',
   adminNotes: 'adminNotes',
@@ -2660,6 +2892,8 @@ export const MpPayoutScalarFieldEnum = {
   status: 'status',
   transactionIds: 'transactionIds',
   externalPayoutId: 'externalPayoutId',
+  reference: 'reference',
+  auditHash: 'auditHash',
   completedAt: 'completedAt',
   failureReason: 'failureReason',
   createdAt: 'createdAt',
@@ -2744,6 +2978,55 @@ export const MpWebhookLogScalarFieldEnum = {
 } as const
 
 export type MpWebhookLogScalarFieldEnum = (typeof MpWebhookLogScalarFieldEnum)[keyof typeof MpWebhookLogScalarFieldEnum]
+
+
+export const MpOrderScalarFieldEnum = {
+  id: 'id',
+  buyerId: 'buyerId',
+  paymentMethod: 'paymentMethod',
+  status: 'status',
+  amount: 'amount',
+  currency: 'currency',
+  paymentReference: 'paymentReference',
+  paymentSenderBank: 'paymentSenderBank',
+  paymentPaidAt: 'paymentPaidAt',
+  paymentProofUrl: 'paymentProofUrl',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MpOrderScalarFieldEnum = (typeof MpOrderScalarFieldEnum)[keyof typeof MpOrderScalarFieldEnum]
+
+
+export const MpReviewScalarFieldEnum = {
+  id: 'id',
+  buyerId: 'buyerId',
+  sellerId: 'sellerId',
+  listingId: 'listingId',
+  transactionId: 'transactionId',
+  rating: 'rating',
+  title: 'title',
+  comment: 'comment',
+  createdAt: 'createdAt'
+} as const
+
+export type MpReviewScalarFieldEnum = (typeof MpReviewScalarFieldEnum)[keyof typeof MpReviewScalarFieldEnum]
+
+
+export const MpReferralLinkScalarFieldEnum = {
+  id: 'id',
+  referrerId: 'referrerId',
+  listingId: 'listingId',
+  slug: 'slug',
+  code: 'code',
+  clicks: 'clicks',
+  conversions: 'conversions',
+  totalEarned: 'totalEarned',
+  isActive: 'isActive',
+  createdAt: 'createdAt'
+} as const
+
+export type MpReferralLinkScalarFieldEnum = (typeof MpReferralLinkScalarFieldEnum)[keyof typeof MpReferralLinkScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -3192,6 +3475,9 @@ export type GlobalOmitConfig = {
   mpBinanceRateSnapshot?: Prisma.MpBinanceRateSnapshotOmit
   mpReferenceRateSnapshot?: Prisma.MpReferenceRateSnapshotOmit
   mpWebhookLog?: Prisma.MpWebhookLogOmit
+  mpOrder?: Prisma.MpOrderOmit
+  mpReview?: Prisma.MpReviewOmit
+  mpReferralLink?: Prisma.MpReferralLinkOmit
 }
 
 /* Types for Logging */
