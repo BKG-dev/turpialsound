@@ -451,7 +451,7 @@ model MpUser {
   // Relations
   listings            MpListing[]
   payoutMethods       MpPayoutMethod[]
-  buyerOrders         MpOrder[]           @relation("MpBuyerOrders")
+  buyerOrders         MpOrder[]          @relation("MpBuyerOrders")
   buyerTransactions   MpTransaction[]     @relation("MpBuyerTransactions")
   sellerTransactions  MpTransaction[]     @relation("MpSellerTransactions")
   sentMessages        MpMessage[]         @relation("MpMessageSender")
@@ -531,8 +531,8 @@ model MpListing {
   status MpListingStatus @default(DRAFT)
 
   // Location (S15)
-  city             String?
-  state            String?
+  city            String?
+  state           String?
   isLocationPublic Boolean @default(true)
 
   // SEO
@@ -643,6 +643,36 @@ model MpMessage {
 // TRANSACTIONS (PAYMENT & ESCROW)
 // ─────────────────────────────────────────────────────────────────
 
+model MpOrder {
+  id String @id @default(cuid())
+
+  buyerId String
+  buyer   MpUser @relation("MpBuyerOrders", fields: [buyerId], references: [id])
+
+  paymentMethod MpPaymentMethodType
+  status        MpTransactionStatus @default(PENDING_PAYMENT)
+  amount        Decimal             @db.Decimal(10, 2)
+  currency      String              @default("USD")
+
+  paymentReference  String?
+  paymentSenderBank String?
+  paymentPaidAt     DateTime?
+  paymentProofUrl   String?
+
+  transactions MpTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([buyerId])
+  @@index([status])
+  @@index([paymentMethod])
+  @@index([paymentReference])
+  @@index([paymentSenderBank])
+  @@index([paymentPaidAt])
+  @@map("mp_orders")
+}
+
 model MpTransaction {
   id String @id @default(cuid())
 
@@ -698,8 +728,8 @@ model MpTransaction {
   buyerConfirmedAt DateTime? // When buyer clicked "I received it"
 
   // Referral Tracking
-  referredBy String?
-  referrer   MpUser? @relation("MpReferredBy", fields: [referredBy], references: [id])
+  referredBy   String?
+  referrer     MpUser?    @relation("MpReferredBy", fields: [referredBy], references: [id])
 
   // Dispute & Notes
   disputeReason   String?
@@ -710,9 +740,8 @@ model MpTransaction {
   statusHistory MpTransactionStatusHistory[]
   disputes      MpDispute[]
 
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  reviews   MpReview[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([buyerId])
   @@index([sellerId])
@@ -727,6 +756,7 @@ model MpTransaction {
   @@index([idempotencyKey])
   @@index([frozenRateSource])
   @@index([rateSnapshotId])
+  reviews      MpReview[]
   @@map("mp_transactions")
 }
 
@@ -944,50 +974,24 @@ model MpWebhookLog {
   @@map("mp_webhook_logs")
 }
 
-model MpOrder {
-  id String @id @default(cuid())
-
-  buyerId String
-  buyer   MpUser @relation("MpBuyerOrders", fields: [buyerId], references: [id])
-
-  paymentMethod MpPaymentMethodType
-  status        MpTransactionStatus @default(PENDING_PAYMENT)
-  amount        Decimal             @db.Decimal(10, 2)
-  currency      String              @default("USD")
-
-  paymentReference  String?
-  paymentSenderBank String?
-  paymentPaidAt     DateTime?
-  paymentProofUrl   String?
-
-  transactions MpTransaction[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([buyerId])
-  @@index([status])
-  @@index([paymentMethod])
-  @@index([paymentReference])
-  @@index([paymentSenderBank])
-  @@index([paymentPaidAt])
-  @@map("mp_orders")
-}
+// ─────────────────────────────────────────────────────────────────
+// REVIEWS & RATINGS (S-REV-01)
+// ─────────────────────────────────────────────────────────────────
 
 model MpReview {
-  id            String         @id @default(cuid())
+  id            String   @id @default(cuid())
   buyerId       String
-  buyer         MpUser         @relation("MpReviewBuyer", fields: [buyerId], references: [id])
+  buyer         MpUser   @relation("MpReviewBuyer", fields: [buyerId], references: [id])
   sellerId      String
-  seller        MpUser         @relation("MpReviewSeller", fields: [sellerId], references: [id])
+  seller        MpUser   @relation("MpReviewSeller", fields: [sellerId], references: [id])
   listingId     String?
-  listing       MpListing?     @relation(fields: [listingId], references: [id])
+  listing       MpListing? @relation(fields: [listingId], references: [id])
   transactionId String?
   transaction   MpTransaction? @relation(fields: [transactionId], references: [id])
-  rating        Int // 1-5
+  rating        Int      // 1-5
   title         String?
   comment       String?
-  createdAt     DateTime       @default(now())
+  createdAt     DateTime @default(now())
 
   @@index([sellerId])
   @@index([buyerId])
@@ -995,6 +999,10 @@ model MpReview {
   @@index([listingId])
   @@map("mp_reviews")
 }
+
+// ─────────────────────────────────────────────────────────────────
+// DROPSOCIAL REFERRAL LINKS (S-DS-01)
+// ─────────────────────────────────────────────────────────────────
 
 model MpReferralLink {
   id          String   @id @default(cuid())

@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import Fuse from 'fuse.js'
 import {
   ShoppingBag,
   Tag,
@@ -19,6 +20,8 @@ import {
   Search,
   SlidersHorizontal,
   X,
+  LayoutGrid,
+  List,
 } from 'lucide-react'
 import type { ModalFlow, ModalState, Listing, MarketplaceUser, MessageThread } from '@/types/marketplace'
 import { MarketplaceModals } from '@/components/marketplace/MarketplaceModals'
@@ -28,6 +31,7 @@ import { useMarketplaceAssistantLauncher } from '@/components/marketplace/Market
 import { CheckoutModal } from '@/components/marketplace/CheckoutModal'
 import { SmartMarketplaceAuthBar, useMarketplaceSession } from '@/components/marketplace/MarketplaceAuthBar'
 import { TurpialWaveShader } from '@/components/marketplace/TurpialWaveShader'
+import { DropSocialInfo } from '@/components/marketplace/DropSocialInfo'
 import { getActiveListings, getOrCreateThread } from '@/actions/marketplace'
 import { toggleFavorite, getMyFavoriteIds } from '@/actions/marketplace/favorites'
 import { trackMarketplaceClientEvent } from '@/lib/marketplace/analytics-client'
@@ -234,6 +238,22 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
   const [priceMax, setPriceMax] = useState('')
   const [hideUnavailable, setHideUnavailable] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [filterCity, setFilterCity] = useState('')
+  const [filterState, setFilterState] = useState('')
+  const [priceRange, setPriceRange] = useState('')
+  const [sortBy, setSortBy] = useState('')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    if (typeof window === 'undefined') return 'grid'
+    return (localStorage.getItem('mp-view-mode') as 'grid' | 'list') ?? 'grid'
+  })
+
+  const toggleViewMode = useCallback(() => {
+    setViewMode(prev => {
+      const next = prev === 'grid' ? 'list' : 'grid'
+      localStorage.setItem('mp-view-mode', next)
+      return next
+    })
+  }, [])
 
   // Auth & Session from global context
   const {
@@ -404,10 +424,18 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
       if (activeTab === 'services' && l.type !== 'service') return false
     }
 
+    // S-SRC: Fuse.js fuzzy search (typo-tolerant) — unico filtro de texto
     if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase()
-      const haystack = [l.title, l.description, l.subcategory, ...l.tags].join(' ').toLowerCase()
-      if (!haystack.includes(q)) return false
+      const q = searchQuery.trim()
+      const fuse = new Fuse([{ title: l.title, description: l.description, tags: l.tags.join(' ') }], {
+        keys: ['title', 'description', 'tags'],
+        threshold: 0.4,
+        distance: 100,
+        ignoreLocation: true,
+        minMatchCharLength: 1,
+        includeScore: false,
+      })
+      if (fuse.search(q).length === 0) return false
     }
 
     if (filterCategory !== 'all' && l.category !== filterCategory) return false
@@ -421,8 +449,20 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
       if (!isAvailable) return false
     }
 
+    // S15: Location filters
+    if (filterState.trim()) {
+      const state = filterState.trim().toLowerCase()
+      const listingState = String(((l as unknown) as Record<string, unknown>).state ?? '').toLowerCase()
+      if (!listingState.includes(state)) return false
+    }
+    if (filterCity.trim()) {
+      const city = filterCity.trim().toLowerCase()
+      const listingCity = String(((l as unknown) as Record<string, unknown>).city ?? '').toLowerCase()
+      if (!listingCity.includes(city)) return false
+    }
+
     return true
-  }, [activeTab, searchQuery, filterCategory, priceMin, priceMax, hideUnavailable])
+  }, [activeTab, searchQuery, filterCategory, priceMin, priceMax, hideUnavailable, filterCity, filterState])
 
   const filteredExtra = extraListings.filter(applyFilters)
   const filteredDb    = dbListings.filter(applyFilters)
@@ -794,7 +834,7 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
               sub="Productos y talentos verificados disponibles ahora mismo."
             />
 
-            {/* Tab filter */}
+            {/* Tab filter + Search bar (visible outside filter panel) */}
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="flex gap-1 p-1 rounded-xl w-fit"
                 style={{ background: 'var(--mp-panel)', border: '1px solid var(--mp-border)' }}>
@@ -820,6 +860,46 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
                   </button>
                 ))}
               </div>
+
+              {/* Search — always visible next to filters */}
+              <div className="relative flex-1 min-w-[220px] max-w-[340px]">
+                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--mp-text-disabled)' }} />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Buscar por titulo, descripcion o etiquetas..."
+                  className="w-full pl-8 pr-8 py-2 rounded-lg text-xs outline-none"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: '#f2f2f2',
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                    style={{ color: 'var(--mp-text-disabled)' }}
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+
+              <button
+                onClick={toggleViewMode}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs transition-all"
+                title={viewMode === 'grid' ? 'Cambiar a vista lista' : 'Cambiar a vista grid'}
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: '#9a9a9a',
+                }}
+              >
+                {viewMode === 'grid' ? <List size={12} /> : <LayoutGrid size={12} />}
+              </button>
+
               <button
                 onClick={() => setShowFilters(p => !p)}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs transition-all"
@@ -852,32 +932,6 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
                 className="rounded-xl p-4 mb-4 space-y-3"
                 style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
               >
-                {/* Search */}
-                <div className="relative">
-                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#5a5a5a' }} />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Buscar por titulo, descripcion o etiquetas..."
-                    className="w-full pl-8 pr-8 py-2 rounded-lg text-xs outline-none"
-                    style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      color: '#f2f2f2',
-                    }}
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2"
-                      style={{ color: '#5a5a5a' }}
-                    >
-                      <X size={12} />
-                    </button>
-                  )}
-                </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                   {/* Category */}
                   <select
@@ -911,6 +965,64 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
                     style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f2f2f2' }}
                   />
 
+                  {/* State filter dropdown */}
+                  <select value={filterState} onChange={e => { setFilterState(e.target.value); setFilterCity('') }}
+                    className="px-3 py-2 rounded-lg text-xs outline-none"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f2f2f2' }}>
+                    <option value="" style={{ background: '#111', color: '#f2f2f2' }}>Todos los estados</option>
+                    <option value="Distrito Capital" style={{ background: '#111', color: '#f2f2f2' }}>Distrito Capital</option>
+                    <option value="Miranda" style={{ background: '#111', color: '#f2f2f2' }}>Miranda</option>
+                    <option value="Zulia" style={{ background: '#111', color: '#f2f2f2' }}>Zulia</option>
+                    <option value="Carabobo" style={{ background: '#111', color: '#f2f2f2' }}>Carabobo</option>
+                    <option value="Lara" style={{ background: '#111', color: '#f2f2f2' }}>Lara</option>
+                    <option value="Aragua" style={{ background: '#111', color: '#f2f2f2' }}>Aragua</option>
+                    <option value="Anzoategui" style={{ background: '#111', color: '#f2f2f2' }}>Anzoategui</option>
+                    <option value="Bolivar" style={{ background: '#111', color: '#f2f2f2' }}>Bolivar</option>
+                    <option value="Tachira" style={{ background: '#111', color: '#f2f2f2' }}>Tachira</option>
+                    <option value="Merida" style={{ background: '#111', color: '#f2f2f2' }}>Merida</option>
+                    <option value="Falcon" style={{ background: '#111', color: '#f2f2f2' }}>Falcon</option>
+                    <option value="Monagas" style={{ background: '#111', color: '#f2f2f2' }}>Monagas</option>
+                    <option value="Sucre" style={{ background: '#111', color: '#f2f2f2' }}>Sucre</option>
+                    <option value="Nueva Esparta" style={{ background: '#111', color: '#f2f2f2' }}>Nueva Esparta</option>
+                  </select>
+
+                  {/* City filter dropdown */}
+                  <select value={filterCity} onChange={e => setFilterCity(e.target.value)}
+                    className="px-3 py-2 rounded-lg text-xs outline-none"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f2f2f2' }}>
+                    <option value="" style={{ background: '#111', color: '#f2f2f2' }}>Todas las ciudades</option>
+                    {(!filterState || filterState === 'Distrito Capital') && <><option style={{ background: '#111', color: '#f2f2f2' }} value="Caracas">Caracas</option><option style={{ background: '#111', color: '#f2f2f2' }} value="El Hatillo">El Hatillo</option></>}
+                    {filterState === 'Miranda' && <><option style={{ background: '#111', color: '#f2f2f2' }} value="Los Teques">Los Teques</option><option style={{ background: '#111', color: '#f2f2f2' }} value="Guarenas">Guarenas</option></>}
+                    {filterState === 'Zulia' && <option style={{ background: '#111', color: '#f2f2f2' }} value="Maracaibo">Maracaibo</option>}
+                    {filterState === 'Carabobo' && <option style={{ background: '#111', color: '#f2f2f2' }} value="Valencia">Valencia</option>}
+                    {filterState === 'Lara' && <option style={{ background: '#111', color: '#f2f2f2' }} value="Barquisimeto">Barquisimeto</option>}
+                    {filterState === 'Aragua' && <option style={{ background: '#111', color: '#f2f2f2' }} value="Maracay">Maracay</option>}
+                    {filterState === 'Anzoategui' && <option style={{ background: '#111', color: '#f2f2f2' }} value="Barcelona">Barcelona</option>}
+                    {filterState === 'Bolivar' && <option style={{ background: '#111', color: '#f2f2f2' }} value="Ciudad Guayana">Ciudad Guayana</option>}
+                  </select>
+
+                  {/* Price range presets */}
+                  <select value={priceRange} onChange={e => { const v = e.target.value; setPriceRange(v); if (v) { const [min, max] = v === '1000+' ? ['1000',''] : v.split('-'); setPriceMin(min); setPriceMax(max || '') } else { setPriceMin(''); setPriceMax('') } }}
+                    className="px-3 py-2 rounded-lg text-xs outline-none"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f2f2f2' }}>
+                    <option value="" style={{ background: '#111', color: '#f2f2f2' }}>Cualquier precio</option>
+                    <option value="0-50" style={{ background: '#111', color: '#f2f2f2' }}>$0 - $50</option>
+                    <option value="50-100" style={{ background: '#111', color: '#f2f2f2' }}>$50 - $100</option>
+                    <option value="100-500" style={{ background: '#111', color: '#f2f2f2' }}>$100 - $500</option>
+                    <option value="500-1000" style={{ background: '#111', color: '#f2f2f2' }}>$500 - $1000</option>
+                    <option value="1000+" style={{ background: '#111', color: '#f2f2f2' }}>$1000 o mas</option>
+                  </select>
+
+                  {/* Sort */}
+                  <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                    className="px-3 py-2 rounded-lg text-xs outline-none"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#f2f2f2' }}>
+                    <option value="" style={{ background: '#111', color: '#f2f2f2' }}>Ordenar por</option>
+                    <option value="price-asc" style={{ background: '#111', color: '#f2f2f2' }}>Menor precio</option>
+                    <option value="price-desc" style={{ background: '#111', color: '#f2f2f2' }}>Mayor precio</option>
+                    <option value="newest" style={{ background: '#111', color: '#f2f2f2' }}>Mas reciente</option>
+                  </select>
+
                   {/* Availability toggle */}
                   <button
                     onClick={() => setHideUnavailable(p => !p)}
@@ -943,65 +1055,118 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
               </div>
             )}
 
-            {/* Grid */}
+            {/* Listing area — grid or list */}
             <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
-              >
-                {listingsLoading ? (
-                  <div className="col-span-full flex flex-col items-center gap-3 py-20 text-center">
-                    <p className="text-sm text-[#b8b8b8]">Cargando listados...</p>
-                  </div>
-                ) : listingsError ? (
-                  <div className="col-span-full flex flex-col items-center gap-3 py-20 text-center">
-                    <p className="text-sm text-[#b8b8b8]">{LISTINGS_LOAD_ERROR_MESSAGE}</p>
-                  </div>
-                ) : listings.length === 0 ? (
-                  <div className="col-span-full flex flex-col items-center gap-3 py-20 text-center">
-                    <p className="text-sm text-[#b8b8b8]">
-                      {emptyStateMessage}
-                    </p>
-                    {hasDiscoveryFiltersActive && (
-                      <button
-                        onClick={resetDiscoveryFilters}
-                        className="text-xs underline"
-                        style={{ color: '#00aeef' }}
-                      >
-                        {hideUnavailable ? 'Mostrar todos los listados' : 'Limpiar filtros'}
-                      </button>
-                    )}
-                    {!hasDiscoveryFiltersActive && (
-                      <button
-                        onClick={() => openFlow('sell')}
-                        className="text-xs underline"
-                        style={{ color: '#00aeef' }}
-                      >
-                        ¿Quieres publicar el primero?
-                      </button>
-                    )}
-                  </div>
-                ) : listings.map((listing, i) => (
-                  <motion.div
-                    key={listing.id}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    <MarketplaceCard
-                      listing={listing}
+              {listingsLoading ? (
+                <div className="flex flex-col items-center gap-3 py-20 text-center">
+                  <p className="text-sm text-[#b8b8b8]">Cargando listados...</p>
+                </div>
+              ) : listingsError ? (
+                <div className="flex flex-col items-center gap-3 py-20 text-center">
+                  <p className="text-sm text-[#b8b8b8]">{LISTINGS_LOAD_ERROR_MESSAGE}</p>
+                </div>
+              ) : listings.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-20 text-center">
+                  <p className="text-sm text-[#b8b8b8]">
+                    {emptyStateMessage}
+                  </p>
+                  {hasDiscoveryFiltersActive && (
+                    <button
+                      onClick={resetDiscoveryFilters}
+                      className="text-xs underline"
+                      style={{ color: '#00aeef' }}
+                    >
+                      {hideUnavailable ? 'Mostrar todos los listados' : 'Limpiar filtros'}
+                    </button>
+                  )}
+                  {!hasDiscoveryFiltersActive && (
+                    <button
+                      onClick={() => openFlow('sell')}
+                      className="text-xs underline"
+                      style={{ color: '#00aeef' }}
+                    >
+                      ¿Quieres publicar el primero?
+                    </button>
+                  )}
+                </div>
+              ) : viewMode === 'grid' ? (
+                <motion.div
+                  key={activeTab + '-grid'}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+                >
+                  {listings.map((listing, i) => (
+                    <motion.div
+                      key={listing.id}
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      <MarketplaceCard
+                        listing={listing}
+                        onClick={() => handleListingClick(listing)}
+                        isFavorited={favoritedIds.has(listing.id)}
+                        onToggleFavorite={handleToggleFavorite}
+                        currentUserId={session?.userId}
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key={activeTab + '-list'}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex flex-col gap-2"
+                >
+                  {listings.map((listing, i) => (
+                    <motion.div
+                      key={listing.id}
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.04, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                      className="flex items-center gap-4 rounded-xl p-3 cursor-pointer transition-all hover:-translate-y-0.5 active:scale-[0.99]"
+                      style={{
+                        background: 'var(--mp-card-subtle)',
+                        border: '1px solid var(--mp-border)',
+                      }}
                       onClick={() => handleListingClick(listing)}
-                      isFavorited={favoritedIds.has(listing.id)}
-                      onToggleFavorite={handleToggleFavorite}
-                      currentUserId={session?.userId}
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
+                    >
+                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#0a0a0a] flex items-center justify-center"
+                        style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+                        {listing.type === 'product' && listing.images?.[0] ? (
+                          <img
+                            src={listing.images[0]}
+                            alt={listing.title}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <Tag size={18} style={{ color: 'var(--mp-text-faint)' }} />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="truncate text-sm font-semibold text-[#f2f2f2]">{listing.title}</h3>
+                        <p className="mt-0.5 truncate text-xs text-[#b8b8b8]">
+                          {listing.description?.slice(0, 100)}{(listing.description?.length ?? 0) > 100 ? '...' : ''}
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-bold text-[#4ade80]">
+                          ${listing.type === 'product' ? listing.price : listing.priceFrom}
+                        </p>
+                        <p className="text-[10px] text-[#6a6a6a]">
+                          {listing.type === 'product' ? 'Producto' : 'Servicio'}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </section>
@@ -1085,6 +1250,11 @@ export default function MarketplacePageClient({ initialListings }: MarketplacePa
             </div>
           </div>
         </section>
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            DROP SOCIAL INFO
+        ═══════════════════════════════════════════════════════════════════ */}
+        <DropSocialInfo />
 
         {/* ═══════════════════════════════════════════════════════════════════
             PUBLIC ASSISTANT

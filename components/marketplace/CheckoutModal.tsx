@@ -200,12 +200,13 @@ function getTodayDate() {
 export interface CheckoutModalProps {
   listing: Listing
   sellerId: string
+  quantity?: number
   onClose: () => void
   onOpenChat: (listing: Listing) => void
   onSuccess?: (status: MpTransactionStatus) => void
 }
 
-export function CheckoutModal({ listing, onClose, onSuccess }: CheckoutModalProps) {
+export function CheckoutModal({ listing, quantity = 1, onClose, onSuccess }: CheckoutModalProps) {
   const router = useRouter()
   const { rate: bcvRate, loading: rateLoading } = useBcvRate()
   const [selectedMethodId, setSelectedMethodId] = useState<ManualMethodId>('PAGO_MOVIL')
@@ -221,7 +222,8 @@ export function CheckoutModal({ listing, onClose, onSuccess }: CheckoutModalProp
     detail: string
   } | null>(null)
 
-  const price = listing.type === 'product' ? listing.price : listing.priceFrom
+  const unitPrice = listing.type === 'product' ? listing.price : listing.priceFrom
+  const price = unitPrice * quantity
   const currency = listing.currency ?? 'USD'
   const selectedMethod =
     MANUAL_METHODS.find((method) => method.id === selectedMethodId) ?? MANUAL_METHODS[0]
@@ -309,7 +311,7 @@ export function CheckoutModal({ listing, onClose, onSuccess }: CheckoutModalProp
     setError(null)
 
     try {
-      const purchase = await initiatePurchase(listing.id, selectedMethod.actionMethod)
+      const purchase = await initiatePurchase(listing.id, selectedMethod.actionMethod, quantity)
       if (!purchase.success || !purchase.data) {
         setError(purchase.message)
         return
@@ -353,7 +355,7 @@ export function CheckoutModal({ listing, onClose, onSuccess }: CheckoutModalProp
 
   if (success) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -367,7 +369,7 @@ export function CheckoutModal({ listing, onClose, onSuccess }: CheckoutModalProp
           className="relative z-10 w-full max-w-md"
         >
           <div
-            className="flex flex-col items-center justify-center gap-5 rounded-2xl px-8 py-16 text-center"
+            className="flex flex-col items-center justify-center gap-5 rounded-t-2xl px-6 py-12 text-center sm:rounded-2xl sm:px-8 sm:py-16"
             style={{
               background: 'var(--mp-panel-solid)',
               border: '1px solid var(--mp-border)',
@@ -425,7 +427,7 @@ export function CheckoutModal({ listing, onClose, onSuccess }: CheckoutModalProp
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -440,12 +442,12 @@ export function CheckoutModal({ listing, onClose, onSuccess }: CheckoutModalProp
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.97, y: 8 }}
         transition={{ duration: 0.3, ease: EXPO }}
-        className="relative z-10 w-full max-w-md"
-        style={{ maxHeight: '92vh' }}
+        className="relative z-10 h-[100dvh] w-full max-w-md sm:h-auto"
+        style={{ maxHeight: '100dvh' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="flex max-h-[92vh] flex-col overflow-hidden rounded-2xl"
+          className="flex h-full max-h-[100dvh] flex-col overflow-hidden rounded-t-2xl sm:h-auto sm:max-h-[92vh] sm:rounded-2xl"
           style={{
             background: 'var(--mp-panel-solid)',
             border: '1px solid var(--mp-border)',
@@ -468,12 +470,17 @@ export function CheckoutModal({ listing, onClose, onSuccess }: CheckoutModalProp
             </button>
           </div>
 
-          <div className="scrollbar-none flex-1 space-y-5 overflow-y-auto p-5">
+          <div className="scrollbar-none flex-1 space-y-5 overflow-y-auto p-4 sm:p-5">
             <div
               className="rounded-xl p-4"
               style={{ background: 'rgba(0,174,239,0.04)', border: '1px solid rgba(0,174,239,0.12)' }}
             >
               <p className="mb-2 text-[10px] uppercase tracking-widest text-[#9a9a9a]">Total a pagar</p>
+              {quantity > 1 && (
+                <p className="mb-2 text-[11px] text-[#b8b8b8]">
+                  {quantity} unidades x ${unitPrice.toLocaleString('es-VE')} {currency}
+                </p>
+              )}
               <div className="flex flex-wrap items-baseline gap-3">
                 <span className="text-2xl font-bold text-[#f2f2f2]">
                   ${price?.toLocaleString('es-VE') ?? '-'}{' '}
@@ -531,7 +538,7 @@ export function CheckoutModal({ listing, onClose, onSuccess }: CheckoutModalProp
 
             <div>
               <p className="mb-3 text-[10px] uppercase tracking-widest text-[#9a9a9a]">Metodo de pago</p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-3">
                 {MANUAL_METHODS.map((method) => {
                   const Icon = method.icon
                   const selected = selectedMethod.id === method.id
@@ -605,7 +612,7 @@ export function CheckoutModal({ listing, onClose, onSuccess }: CheckoutModalProp
                 Reportar pago
               </p>
 
-              <div className="max-h-[55vh] space-y-3 overflow-y-auto pr-2">
+              <div className="space-y-3">
                 <InputField
                   label="Metodo seleccionado"
                   value={selectedMethod.label}

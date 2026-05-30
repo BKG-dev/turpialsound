@@ -39,6 +39,8 @@ interface SheetRateSnapshot {
 const BINANCE_P2P_URL = 'https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search'
 const DEFAULT_TIMEOUT_MS = 5000
 const DEFAULT_SNAPSHOT_MIN_INTERVAL_MINUTES = 15
+const DEFAULT_GOOGLE_SHEETS_BINANCE_URL =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQhM4CaccFvhOqWRfmRj3Cx_0B_oxwq45OT0YnJs6PGKpf60vcPMwshac6Wvk0hzhxPH_nZt4ILSt_i/pub?gid=0&single=true&output=csv'
 
 function parseEnvNumber(value: string | undefined, fallback: number): number {
   if (!value) return fallback
@@ -84,13 +86,13 @@ function median(values: number[]): number {
   return (sorted[middleIndex - 1] + sorted[middleIndex]) / 2
 }
 
-function getGoogleSheetsCsvUrl(): string | null {
+function getGoogleSheetsCsvUrl(): string {
   return (
     process.env.MP_RATES_GOOGLE_SHEETS_CSV_URL?.trim() ||
     process.env.MARKETPLACE_RATES_GOOGLE_SHEETS_CSV_URL?.trim() ||
     process.env.RATE_GOOGLE_SHEETS_CSV_URL?.trim() ||
     process.env.RATE_SHEET_CSV_URL?.trim() ||
-    null
+    DEFAULT_GOOGLE_SHEETS_BINANCE_URL
   )
 }
 

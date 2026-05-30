@@ -7,37 +7,10 @@ import type { Listing, ProductListing, ServiceListing } from '@/types/marketplac
 import { MarketplaceImage } from '@/components/marketplace/MarketplaceImage'
 import { AddToCartButton } from '@/components/marketplace/AddToCartButton'
 import { ShareListingButton } from '@/components/marketplace/ShareListingButton'
+import { DropSocialButton } from '@/components/marketplace/DropSocialButton'
 
-// ─── Category fallback images ─────────────────────────────────────────────────
-// Used when a listing has no uploaded photo.
-// Maps to real images already present in /public/images/.
-
-const CATEGORY_FALLBACK: Record<string, string> = {
-  // Physical products
-  'instrumentos-nuevos':         '/images/artista9.jpg',
-  'instrumentos-usados':         '/images/artista9.jpg',
-  'audio-pro-estudio':           '/images/estudio-grabacion3.jpg',
-  'consumibles':                 '/images/estudio-grabacion8.jpg',
-  'alquiler-equipos':            '/images/estudio-grabacion12.jpg',
-  // Services & talent
-  'musicos-sesion':              '/images/artista2.jpg',
-  'bandas-eventos':              '/images/artista1.jpg',
-  'tecnicos-audio-iluminacion':  '/images/estudio-grabacion5.jpg',
-  'productores-arreglistas':     '/images/artista4.jpg',
-  // Digital
-  'beats':                       '/images/estudio-grabacion15.jpg',
-  'mixing':                      '/images/estudio-grabacion20.jpg',
-  'mastering':                   '/images/estudio-grabacion20.jpg',
-  'vocals':                      '/images/artista7.jpg',
-  'production':                  '/images/artista4.jpg',
-  'arreglos':                    '/images/artista5.jpg',
-  'podcast':                     '/images/estudio-grabacion15.jpg',
-}
-
-function getCoverImage(category: string, images?: string[]): string | null {
-  const firstImage = images?.find(Boolean)
-  if (firstImage) return firstImage
-  return CATEGORY_FALLBACK[category] ?? null
+function getCoverImage(_category: string, images?: string[]): string | null {
+  return images?.find(Boolean) ?? null
 }
 
 function ImageFallback({ tone = 'cyan' }: { tone?: 'cyan' | 'gold' }) {
@@ -328,6 +301,9 @@ function ProductCard({ listing, onClick, isFavorited = false, onToggleFavorite, 
         <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: 'var(--mp-border)' }}>
           <AddToCartButton listing={listing} currentUserId={currentUserId} variant="card" />
           <ShareListingButton listing={listing} variant="card" />
+          {(!currentUserId || currentUserId !== listing.seller.id) && (
+            <DropSocialButton listing={listing} variant="card" currentUserId={currentUserId ?? null} />
+          )}
         </div>
       </div>
     </div>
@@ -492,6 +468,9 @@ function ServiceCard({ listing, onClick, isFavorited = false, onToggleFavorite, 
         <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: 'var(--mp-border)' }}>
           <AddToCartButton listing={listing} currentUserId={currentUserId} variant="card" />
           <ShareListingButton listing={listing} variant="card" />
+          {(!currentUserId || currentUserId !== listing.talent.id) && (
+            <DropSocialButton listing={listing} variant="card" currentUserId={currentUserId ?? null} />
+          )}
         </div>
       </div>
     </div>

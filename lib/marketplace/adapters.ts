@@ -19,6 +19,16 @@ const SERVICE_CATEGORY_IDS = new Set([
   'podcast',
 ])
 
+const ACTIVE_UNAVAILABLE_STATUSES = new Set([
+  'INITIATED',
+  'PENDING_PAYMENT',
+  'PAYMENT_RECEIVED',
+  'VALIDATING',
+  'IN_ESCROW',
+  'DELIVERY_CONFIRMED',
+  'DISPUTED',
+])
+
 function buildMarketplaceUser(
   id: string,
   displayName: string,
@@ -26,7 +36,10 @@ function buildMarketplaceUser(
   sellerRating: number | null,
   createdAt: string,
   isService: boolean,
+  city?: string | null,
+  state?: string | null,
 ): MarketplaceUser {
+  const location = city && state ? `${city}, ${state}` : 'Venezuela'
   return {
     id,
     name: displayName,
@@ -36,7 +49,7 @@ function buildMarketplaceUser(
     rating: sellerRating ?? 0,
     reviewCount: 0,
     joinedAt: createdAt,
-    location: 'Venezuela',
+    location,
   }
 }
 
@@ -58,24 +71,26 @@ export function adaptDbListing(l: any): Listing {
     l.seller.sellerRating ? Number(l.seller.sellerRating) : null,
     sellerCreatedAtStr,
     isService,
+    l.city ?? l.seller?.city,
+    l.state ?? l.seller?.state,
   )
 
   const images: string[] = l.coverImageUrl
     ? [l.coverImageUrl, ...l.mediaUrls]
     : l.mediaUrls
 
-  // Derive active transaction status
-  // We expect l.transactions to be included in the query if we want this to work.
-  const activeTx = (l.transactions as Array<{ status: string }> | undefined)?.find((tx) =>
-    ![
-      'RELEASED',
-      'REFUNDED',
-      'PAYMENT_FAILED',
-      'CANCELLED',
-    ].includes(tx.status),
-  )
-
-  const activeTransactionStatus = activeTx?.status
+  const inventoryTransactions = l.transactions as Array<{ status: string }> | undefined
+  const activeTx = inventoryTransactions?.find((tx) => ACTIVE_UNAVAILABLE_STATUSES.has(tx.status))
+  const hasInventory = Boolean(l.hasInventory && typeof l.inventory === 'number')
+  const remainingInventory = hasInventory
+    ? Math.max(0, Number(l.inventory))
+    : null
+  const isSoldOut = hasInventory
+    ? remainingInventory === 0
+    : l.status === 'SOLD_OUT'
+  const activeTransactionStatus = hasInventory && remainingInventory !== null && remainingInventory > 0
+    ? undefined
+    : activeTx?.status
 
   if (isService) {
     return {
@@ -93,7 +108,7 @@ export function adaptDbListing(l: any): Listing {
       currency: (l.currency as 'USD' | 'VES') ?? 'USD',
       badge: 'NUEVO',
       talent: user,
-      status: l.status === 'SOLD_OUT' ? 'sold' : 'active',
+      status: isSoldOut ? 'sold' : 'active',
       activeTransactionStatus,
       createdAt: createdAtStr,
       tags: l.tags ?? [],
@@ -113,9 +128,11 @@ export function adaptDbListing(l: any): Listing {
     currency: (l.currency as 'USD' | 'VES') ?? 'USD',
     condition: 'used-good',
     images,
+    hasInventory,
+    inventory: remainingInventory ?? undefined,
     badge: 'NUEVO',
     seller: user,
-    status: l.status === 'SOLD_OUT' ? 'sold' : 'active',
+    status: isSoldOut ? 'sold' : 'active',
     activeTransactionStatus,
     createdAt: createdAtStr,
     location: 'Venezuela',

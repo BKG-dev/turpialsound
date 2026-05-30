@@ -23,6 +23,7 @@ type MarketplaceSessionContextType = {
   session: MpSessionPayload | null
   isSessionLoading: boolean
   unreadCount: number
+  firstUnreadThreadId: string | null
   authOpen: boolean
   authTab: 'login' | 'register'
   openLogin: () => void
@@ -39,6 +40,7 @@ export function MarketplaceSessionProvider({ children }: { children: React.React
   const [session, setSession] = useState<MpSessionPayload | null>(null)
   const [isSessionLoading, setIsSessionLoading] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [firstUnreadThreadId, setFirstUnreadThreadId] = useState<string | null>(null)
   const [authOpen, setAuthOpen] = useState(false)
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login')
 
@@ -56,7 +58,10 @@ export function MarketplaceSessionProvider({ children }: { children: React.React
   const fetchUnread = useCallback(async () => {
     if (!session) return
     const r = await getUnreadCount()
-    if (r.success && r.data) setUnreadCount(r.data.count)
+    if (r.success && r.data) {
+      setUnreadCount(r.data.count)
+      setFirstUnreadThreadId(r.data.firstThreadId)
+    }
   }, [session])
 
   useEffect(() => {
@@ -90,6 +95,7 @@ export function MarketplaceSessionProvider({ children }: { children: React.React
         session,
         isSessionLoading,
         unreadCount,
+        firstUnreadThreadId,
         authOpen,
         authTab,
         openLogin,
@@ -122,14 +128,10 @@ export function useMarketplaceSession() {
   return context
 }
 
-type MarketplaceAuthBarSession = {
-  displayName: string
-  role: string
-}
-
 type MarketplaceAuthBarProps = {
-  session: MarketplaceAuthBarSession | null
+  session: MpSessionPayload | null
   unreadCount: number
+  firstUnreadThreadId?: string | null
   isSessionLoading?: boolean
   variant?: 'marketplace' | 'dashboard'
   onLogout?: () => void
@@ -149,6 +151,7 @@ export function SmartMarketplaceAuthBar({
     session,
     isSessionLoading,
     unreadCount,
+    firstUnreadThreadId,
     logout,
     openLogin,
     openRegister,
@@ -159,6 +162,7 @@ export function SmartMarketplaceAuthBar({
       session={session}
       isSessionLoading={isSessionLoading}
       unreadCount={unreadCount}
+      firstUnreadThreadId={firstUnreadThreadId}
       variant={variant}
       onLogout={logout}
       onLogin={openLogin}
@@ -226,6 +230,7 @@ function getRoleBadgeStyle(role?: string) {
 export function MarketplaceAuthBar({
   session,
   unreadCount,
+  firstUnreadThreadId,
   isSessionLoading = false,
   variant = 'marketplace',
   onLogout,
@@ -249,7 +254,7 @@ export function MarketplaceAuthBar({
         boxShadow: '0 6px 22px rgba(0,0,0,0.22)',
       }}
     >
-      <div className="mx-auto flex min-h-[34px] w-full flex-wrap items-center justify-between px-4 py-0 sm:px-6 lg:min-h-[32px] lg:flex-nowrap lg:gap-x-3">
+      <div className="mx-auto flex min-h-[34px] w-full flex-wrap items-center justify-between px-3 py-0 sm:px-6 lg:min-h-[32px] lg:flex-nowrap lg:gap-x-3">
         <div className="mp-authbar-left-rail flex items-center min-w-0 overflow-hidden">
           <div className="flex shrink-0 items-center gap-2.5">
             {isDashboard ? (
@@ -321,11 +326,19 @@ export function MarketplaceAuthBar({
                     Marketplace musical protegido
                   </p>
                 </Link>
+                <Link
+                  href="/turpial-zone"
+                  className="group hidden sm:flex h-6 shrink-0 items-center gap-1 rounded-lg border px-2 text-[10px] font-bold uppercase tracking-widest transition-all hover:bg-white/5"
+                  style={{ borderColor: 'var(--mp-border)', color: 'var(--mp-text-muted)' }}
+                  title="Ir a Turpial Zone"
+                >
+                  <span>Turpial Zone</span>
+                </Link>
               </div>
             )}
           </div>
 
-          <div className="mp-authbar-ticker-slot ml-4 min-w-0 overflow-hidden lg:ml-6">
+          <div className="mp-authbar-ticker-slot ml-2 min-w-0 overflow-hidden hidden sm:block lg:ml-6">
             <BcvTicker />
           </div>
         </div>
@@ -368,7 +381,10 @@ export function MarketplaceAuthBar({
                 </button>
               ) : (
                 <Link
-                  href="/marketplace/dashboard?tab=messages&focus=unread"
+                  href={firstUnreadThreadId
+                    ? `/marketplace/dashboard?tab=messages&threadId=${firstUnreadThreadId}`
+                    : `/marketplace/dashboard?tab=messages&focus=unread`
+                  }
                   className="mp-authbar-blue-pill relative flex h-6 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-[10px] font-bold leading-none transition-all hover:bg-white/5"
                   style={{
                     background: unreadCount > 0 ? 'rgba(0,174,239,0.1)' : 'transparent',

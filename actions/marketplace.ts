@@ -18,7 +18,9 @@ export { getMpSession, registerMpUser, loginMpUser, logoutMpUser } from './marke
 // ─── Transactions ─────────────────────────────────────────────────────────────
 export {
   initiatePurchase,
+  checkoutCart,
   submitPaymentProof,
+  submitOrderPaymentProof,
   validatePayment,
   sellerDeliver,
   confirmDelivery,

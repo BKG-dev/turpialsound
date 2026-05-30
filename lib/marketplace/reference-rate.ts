@@ -8,6 +8,7 @@ export interface RateProviderAttempt {
   name: string
   status: 'ok' | 'error' | 'skipped'
   rate?: number
+  asOf?: string
   error?: string
 }
 
@@ -25,6 +26,8 @@ interface ProviderConfig {
   name: string
   url: string
   path: string
+  format: 'json' | 'csv'
+  asOfPath?: string
 }
 
 interface PersistedRate {
@@ -33,10 +36,14 @@ interface PersistedRate {
   asOf: string
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const DEFAULT_DELTA_PCT = 0.005
 const DEFAULT_MAX_JUMP_PCT = 0.05
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const DEFAULT_STORAGE_FILE = path.join(process.cwd(), '.cache', 'reference-rate.json')
 const DEFAULT_TIMEOUT_MS = 4000
+const DEFAULT_GOOGLE_SHEETS_BCV_URL =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQhM4CaccFvhOqWRfmRj3Cx_0B_oxwq45OT0YnJs6PGKpf60vcPMwshac6Wvk0hzhxPH_nZt4ILSt_i/pub?gid=0&single=true&output=csv'
 
 let inMemoryLastValidRate: PersistedRate | null = null
 
@@ -46,30 +53,49 @@ function parseEnvNumber(value: string | undefined, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function normalizeStorageMode(value: string | undefined): 'memory' | 'file' {
   return value?.toLowerCase() === 'file' ? 'file' : 'memory'
 }
 
 function buildProvidersFromEnv(): ProviderConfig[] {
-  const providerSlots = ['A', 'B', 'C'] as const
   const providers: ProviderConfig[] = []
 
+  // Slots A, B, C — JSON providers via RATE_A_URL/RATE_A_PATH etc.
+  const providerSlots = ['A', 'B', 'C'] as const
   for (const slot of providerSlots) {
     const name = process.env[`RATE_${slot}_NAME`]?.trim()
     const url = process.env[`RATE_${slot}_URL`]?.trim()
     const jsonPath = process.env[`RATE_${slot}_PATH`]?.trim()
+    const asOfPath = process.env[`RATE_${slot}_AS_OF_PATH`]?.trim()
 
     if (!name || !url || !jsonPath) {
       providers.push({
         name: name || `Provider ${slot}`,
         url: url || '',
         path: jsonPath || '',
+        format: 'json',
       })
       continue
     }
 
-    providers.push({ name, url, path: jsonPath })
+    providers.push({ name, url, path: jsonPath, format: 'json', asOfPath: asOfPath || undefined })
   }
+
+  // Google Sheets CSV provider — same URL used by booking & binance-rate
+  const googleSheetsUrl =
+    process.env.RATE_GOOGLE_SHEETS_CSV_URL?.trim() ||
+    process.env.MP_RATES_GOOGLE_SHEETS_CSV_URL?.trim() ||
+    process.env.MARKETPLACE_RATES_GOOGLE_SHEETS_CSV_URL?.trim() ||
+    process.env.RATE_SHEET_CSV_URL?.trim() ||
+    DEFAULT_GOOGLE_SHEETS_BCV_URL
+
+  providers.push({
+    name: 'GoogleSheets-BCV',
+    url: googleSheetsUrl,
+    path: '',
+    format: 'csv',
+  })
 
   return providers
 }
@@ -86,9 +112,72 @@ function parseNumberishRate(value: unknown): number | null {
   const compact = value.trim()
   if (!compact) return null
 
-  const normalized = compact.replace(/\./g, '').replace(',', '.')
+  const cleaned = compact.replace(/[^0-9,.-]/g, '')
+  if (!cleaned) return null
+
+  const lastComma = cleaned.lastIndexOf(',')
+  const lastDot = cleaned.lastIndexOf('.')
+
+  let normalized = cleaned
+  if (lastComma >= 0 && lastDot >= 0) {
+    if (lastComma > lastDot) {
+      normalized = cleaned.replace(/\./g, '').replace(',', '.')
+    } else {
+      normalized = cleaned.replace(/,/g, '')
+    }
+  } else if (lastComma >= 0) {
+    normalized = cleaned.replace(',', '.')
+  }
+
   const parsed = Number.parseFloat(normalized)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
+function parseCaracasDateToIso(value: string): string | null {
+  const normalized = value.trim()
+  const match = normalized.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})$/)
+  if (!match) return null
+  const [, dd, mm, yyyy, hh, min, sec] = match
+  const isoWithOffset = `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}T${hh.padStart(2, '0')}:${min}:${sec}-04:00`
+  const parsed = new Date(isoWithOffset)
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString()
+}
+
+function parseCsvLine(line: string): string[] {
+  const fields: string[] = []
+  let current = ''
+  let inQuotes = false
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i]
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') { current += '"'; i++ }
+      else { inQuotes = !inQuotes }
+      continue
+    }
+    if (char === ',' && !inQuotes) { fields.push(current); current = ''; continue }
+    current += char
+  }
+  fields.push(current)
+  return fields
+}
+
+function parseLatestCsvRate(csvText: string): { rate: number; asOf: string } | null {
+  const rows = csvText.split(/\r?\n/).map((r) => r.trim()).filter((r) => r.length > 0)
+  if (rows.length < 2) return null
+  let latest: { rate: number; asOf: string } | null = null
+  for (let i = 1; i < rows.length; i++) {
+    const fields = parseCsvLine(rows[i])
+    if (fields.length < 2) continue
+    const dateRaw = fields[0]?.trim() ?? ''
+    const bcvRaw = fields[1]?.trim() ?? ''
+    const asOf = parseCaracasDateToIso(dateRaw)
+    const rate = parseNumberishRate(bcvRaw)
+    if (!asOf || !rate) continue
+    if (!latest || new Date(asOf).getTime() > new Date(latest.asOf).getTime()) {
+      latest = { rate, asOf }
+    }
+  }
+  return latest
 }
 
 function getByPath(payload: unknown, dotPath: string): unknown {
@@ -130,6 +219,7 @@ function median(values: number[]): number {
   return (sorted[middleIndex - 1] + sorted[middleIndex]) / 2
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function findConsensus(
   attempts: Array<{ name: string; rate: number }>,
   tolerancePct: number,
@@ -170,6 +260,7 @@ function findConsensus(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function readPersistedRate(storageMode: 'memory' | 'file', storageFile: string): Promise<PersistedRate | null> {
   if (inMemoryLastValidRate) {
     return inMemoryLastValidRate
@@ -192,6 +283,7 @@ async function readPersistedRate(storageMode: 'memory' | 'file', storageFile: st
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function writePersistedRate(
   storageMode: 'memory' | 'file',
   storageFile: string,
@@ -207,10 +299,57 @@ async function writePersistedRate(
   await writeFile(storageFile, JSON.stringify(payload, null, 2), 'utf-8')
 }
 
+async function fetchCsvProviderRate(provider: ProviderConfig): Promise<RateProviderAttempt> {
+  if (!provider.url) {
+    return { name: provider.name, status: 'skipped', error: 'missing_url' }
+  }
+
+  try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS)
+
+    const response = await fetch(provider.url, {
+      method: 'GET',
+      headers: { Accept: 'text/csv,text/plain;q=0.9,*/*;q=0.8' },
+      cache: 'no-store',
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeout)
+
+    if (!response.ok) {
+      throw new Error(`http_${response.status}`)
+    }
+
+    const csvText = await response.text()
+    const latestRow = parseLatestCsvRate(csvText)
+    if (!latestRow) {
+      throw new Error('invalid_csv_payload')
+    }
+
+    return {
+      name: provider.name,
+      status: 'ok',
+      rate: latestRow.rate,
+      asOf: latestRow.asOf,
+    }
+  } catch (error) {
+    return {
+      name: provider.name,
+      status: 'error',
+      error: (error as Error).message,
+    }
+  }
+}
+
 async function fetchProviderRate(
   provider: ProviderConfig,
   adminApiToken: string | null,
 ): Promise<RateProviderAttempt> {
+  if (provider.format === 'csv') {
+    return fetchCsvProviderRate(provider)
+  }
+
   if (!provider.url || !provider.path) {
     return {
       name: provider.name,
@@ -253,10 +392,22 @@ async function fetchProviderRate(
       throw new Error('invalid_rate_value')
     }
 
+    // Extraer asOf: configurado vía RATE_X_AS_OF_PATH, o buscar campos comunes
+    let asOf: string | undefined
+    const asOfPath = provider.asOfPath || 'fechaActualizacion'
+    const rawAsOf = getByPath(payload, asOfPath)
+    if (typeof rawAsOf === 'string') {
+      const d = new Date(rawAsOf)
+      if (!Number.isNaN(d.getTime())) {
+        asOf = d.toISOString()
+      }
+    }
+
     return {
       name: provider.name,
       status: 'ok',
       rate: parsedRate,
+      asOf,
     }
   } catch (error) {
     return {
@@ -298,7 +449,7 @@ interface DbReferenceSnapshot {
   snapshotId: string | null
 }
 
-async function readLastValidReferenceSnapshot(): Promise<DbReferenceSnapshot | null> {
+export async function readLastValidReferenceSnapshot(): Promise<DbReferenceSnapshot | null> {
   const db = await getDb()
   if (!db) return null
 
@@ -328,112 +479,77 @@ async function readLastValidReferenceSnapshot(): Promise<DbReferenceSnapshot | n
 
 export async function resolveReferenceRate(): Promise<ReferenceRateResult> {
   const providers = buildProvidersFromEnv()
-  const deltaPct = parseEnvNumber(process.env.RATE_DELTA_PCT, DEFAULT_DELTA_PCT)
   const maxJumpPct = parseEnvNumber(process.env.RATE_MAX_JUMP_PCT, DEFAULT_MAX_JUMP_PCT)
-  const storageMode = normalizeStorageMode(process.env.RATE_STORAGE)
-  const storageFile = process.env.RATE_STORAGE_FILE || DEFAULT_STORAGE_FILE
   const adminApiToken = process.env.ADMIN_API_TOKEN?.trim() || null
   const nowIso = new Date().toISOString()
+  const lastDbSnapshot = await readLastValidReferenceSnapshot()
 
+  // ── Consultar todos en paralelo ──
   const providersTried = await Promise.all(
-    providers.map((provider) => fetchProviderRate(provider, adminApiToken)),
+    providers.map((p) => fetchProviderRate(p, adminApiToken)),
   )
 
-  const successfulRates = providersTried
-    .filter((attempt): attempt is RateProviderAttempt & { rate: number } => attempt.status === 'ok' && typeof attempt.rate === 'number')
-    .map((attempt) => ({ name: attempt.name, rate: attempt.rate }))
+  // ── Recolectar éxitos con timestamp → elegir el más reciente ──
+  const successes = providersTried.filter(
+    (a): a is RateProviderAttempt & { rate: number } =>
+      a.status === 'ok' && typeof a.rate === 'number',
+  )
 
-  const consensus = findConsensus(successfulRates, deltaPct)
-  const lastValid = await readPersistedRate(storageMode, storageFile)
+  // Ordenar por asOf descendente (más reciente primero)
+  successes.sort((a, b) => {
+    const aTs = a.asOf ? new Date(a.asOf).getTime() : 0
+    const bTs = b.asOf ? new Date(b.asOf).getTime() : 0
+    return bTs - aTs
+  })
 
-  if (consensus) {
-    const jumpVsLastValid =
-      lastValid && lastValid.rate > 0
-        ? Math.abs(consensus.rate - lastValid.rate) / lastValid.rate
-        : 0
+  for (const winner of successes) {
+    // Validar anti-pump: no saltos > maxJumpPct vs último DB,
+    // a menos que el último snapshot tenga > 24h (la tasa pudo moverse legítimamente)
+    if (lastDbSnapshot && lastDbSnapshot.rate > 0) {
+      const lastSnapshotAgeMs = Date.now() - new Date(lastDbSnapshot.fechaValor).getTime()
+      const isLastSnapshotOld = lastSnapshotAgeMs > 24 * 60 * 60 * 1000
 
-    if (!lastValid || jumpVsLastValid <= maxJumpPct) {
-      const livePayload: PersistedRate = {
-        rate: consensus.rate,
-        source: consensus.sources.join(' + '),
-        asOf: nowIso,
-      }
-
-      await writePersistedRate(storageMode, storageFile, livePayload)
-
-      const dbSnapshot = await persistReferenceSnapshot(
-        livePayload.rate,
-        livePayload.source,
-        'live',
-        { providersTried: providersTried.map((p) => ({ name: p.name, status: p.status, rate: p.rate })) },
-      )
-
-      return {
-        rate: livePayload.rate,
-        mode: 'live',
-        source: livePayload.source,
-        asOf: livePayload.asOf,
-        fechaValor: nowIso,
-        snapshotId: dbSnapshot.id,
-        providersTried,
+      if (!isLastSnapshotOld) {
+        const jump = Math.abs(winner.rate - lastDbSnapshot.rate) / lastDbSnapshot.rate
+        if (jump > maxJumpPct) {
+          continue // saltar este, probar el siguiente más reciente
+        }
       }
     }
-  }
 
-  // ── PATH 2: Stale — memory/file persisted rate (no usable consensus) ──
-  if (lastValid) {
-    // Attempt to persist lastValid as DB snapshot so snapshotId matches the rate returned
-    const staleSnapshot = await persistReferenceSnapshot(
-      lastValid.rate,
-      lastValid.source,
-      'stale',
+    // Persistir en DB → alimenta el Fallback 3 para futuras consultas
+    const dbSnapshot = await persistReferenceSnapshot(
+      winner.rate,
+      winner.name,
+      'live',
       { providersTried: providersTried.map((p) => ({ name: p.name, status: p.status, rate: p.rate })) },
     )
 
-    if (staleSnapshot.id) {
-      // Success: return lastValid with its own newly-created snapshotId (fully self-consistent)
-      return {
-        rate: lastValid.rate,
-        mode: 'stale',
-        source: lastValid.source,
-        asOf: lastValid.asOf,
-        fechaValor: nowIso,
-        snapshotId: staleSnapshot.id,
-        providersTried,
-      }
-    }
-
-    // DB persist failed: return lastValid with snapshotId: null (no cross-contamination)
     return {
-      rate: lastValid.rate,
-      mode: 'stale',
-      source: lastValid.source,
-      asOf: lastValid.asOf,
-      fechaValor: lastValid.asOf,
-      snapshotId: null,
+      rate: winner.rate,
+      mode: 'live',
+      source: winner.name,
+      asOf: winner.asOf || nowIso,
+      fechaValor: winner.asOf || nowIso,
+      snapshotId: dbSnapshot.id,
       providersTried,
     }
   }
 
-  // ── PATH 3: DB last valid snapshot (no memory/file persisted rate) ──
-  const dbSnapshot = await readLastValidReferenceSnapshot()
-
-  if (dbSnapshot) {
-    // Return fully self-consistent: rate, source, asOf, fechaValor, snapshotId from same DB row
+  // ── Todos fallaron → último snapshot en DB ──
+  if (lastDbSnapshot) {
     return {
-      rate: dbSnapshot.rate,
+      rate: lastDbSnapshot.rate,
       mode: 'stale',
-      source: dbSnapshot.source,
-      asOf: dbSnapshot.asOf,
-      fechaValor: dbSnapshot.fechaValor,
-      snapshotId: dbSnapshot.snapshotId,
+      source: lastDbSnapshot.source,
+      asOf: lastDbSnapshot.asOf,
+      fechaValor: lastDbSnapshot.fechaValor,
+      snapshotId: lastDbSnapshot.snapshotId,
       providersTried,
     }
   }
 
-  // ── PATH 4: Unavailable — no rate from any source, no DB snapshot ──
-  // Never return hardcoded rate=1 or invented value.
-  // Fase 2 will use this to block transactions with invalid rates.
+  // ── Nada disponible ──
   return {
     rate: null,
     mode: 'unavailable',
