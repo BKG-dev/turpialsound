@@ -9,7 +9,16 @@
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
-    "seed:dev": "npx tsx prisma/seed-dev.ts"
+    "seed:dev": "npx tsx prisma/seed-dev.ts",
+    "rrss:material-request": "node scripts/rrss/rrss-cli.mjs material-request",
+    "rrss:index-assets": "node scripts/rrss/rrss-cli.mjs index-assets",
+    "rrss:build-queue": "node scripts/rrss/rrss-cli.mjs build-queue",
+    "rrss:validate": "node scripts/rrss/rrss-cli.mjs validate",
+    "rrss:generate-drafts": "node scripts/rrss/rrss-cli.mjs generate-drafts",
+    "rrss:dry-run": "node scripts/rrss/rrss-cli.mjs dry-run",
+    "rrss:desk": "node scripts/rrss/rrss-cli.mjs desk",
+    "rrss:secure-setup": "node scripts/rrss/rrss-cli.mjs secure-setup",
+    "rrss:credentials-doctor": "node scripts/rrss/rrss-cli.mjs credentials-doctor"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.64",

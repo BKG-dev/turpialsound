@@ -1,0 +1,25 @@
+[2026-05-30T15:01:05.185Z] [INFO] Starting asset indexing...
+[2026-05-30T15:01:05.192Z] [INFO] Indexing assets...
+[2026-05-30T15:01:05.205Z] [WARN] Skipped 2 sensitive files [{"path":"uploads/marketplace/payment-proofs/2026/04/1776725272618-66f6ea99-cafb-4e09-873e-d69c5e643ab9.webp","reason":"sensitive_keyword"},{"path":"uploads/marketplace/payment-proofs/2026/04/1776794635010-27dad88e-d72f-432e-885f-e4c8090dddf9.webp","reason":"sensitive_keyword"}]
+[2026-05-30T15:01:05.240Z] [INFO] Indexed 304 assets to D:\PROYECTOS\PROYECTOS VISUAL STUDIO\Turpialsound\turpialsound\data\rrss\reports\asset-index.json
+[2026-05-30T15:01:05.247Z] [INFO] Asset report written to D:\PROYECTOS\PROYECTOS VISUAL STUDIO\Turpialsound\turpialsound\data\rrss\reports\asset-index.md
+[2026-05-30T15:01:05.251Z] [INFO] Indexing complete. 304 assets indexed.
+[2026-05-30T15:01:10.350Z] [INFO] Building publication queue...
+[2026-05-30T15:01:10.404Z] [INFO] Built queue with 35 items -> D:\PROYECTOS\PROYECTOS VISUAL STUDIO\Turpialsound\turpialsound\data\rrss\queue\publication-queue.json
+[2026-05-30T15:01:15.531Z] [INFO] Validating 35 items...
+[2026-05-30T15:01:15.539Z] [WARN] fb_post_04: Safety flags: precio
+[2026-05-30T15:01:15.543Z] [WARN] fb_post_05: Safety flags: precio
+[2026-05-30T15:01:15.545Z] [WARN] fb_post_06: Safety flags: comisión
+[2026-05-30T15:01:15.548Z] [WARN] fb_post_07: Safety flags: precio, costo
+[2026-05-30T15:01:15.551Z] [WARN] fb_post_08: Safety flags: dinero, costo
+[2026-05-30T15:01:15.554Z] [WARN] ig_post_04: Safety flags: dinero
+[2026-05-30T15:01:15.556Z] [WARN] ig_post_05: Safety flags: pago
+[2026-05-30T15:01:15.559Z] [WARN] reel_02: Safety flags: precio
+[2026-05-30T15:01:15.562Z] [WARN] story_02: Safety flags: precio
+[2026-05-30T15:01:15.564Z] [WARN] reply_01: Safety flags: precio
+[2026-05-30T15:01:15.566Z] [WARN] reply_03: Safety flags: comisión
+[2026-05-30T15:01:15.568Z] [WARN] reply_05: Safety flags: reclamo
+[2026-05-30T15:01:21.929Z] [INFO] Generating drafts for 35 items...
+[2026-05-30T15:01:22.138Z] [INFO] Generated 35 drafts in D:\PROYECTOS\PROYECTOS VISUAL STUDIO\Turpialsound\turpialsound\data\rrss\drafts
+[2026-05-30T15:01:23.054Z] [INFO] Running credentials doctor...
+[2026-05-30T15:01:55.429Z] [INFO] Dashboard started on http://localhost:4877
