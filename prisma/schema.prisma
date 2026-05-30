@@ -521,6 +521,11 @@ model MpListing {
 
   status MpListingStatus @default(DRAFT)
 
+  // Location (S15)
+  city             String?
+  state            String?
+  isLocationPublic Boolean @default(true)
+
   // SEO
   slug String @unique
 
@@ -540,6 +545,7 @@ model MpListing {
   @@index([status])
   @@index([category])
   @@index([slug])
+  @@index([state, city])
   @@map("mp_listings")
 }
 
