@@ -41,17 +41,17 @@ const artistasDestacados = [
 
 const serviciosConectados = [
   {
-    title: 'GrabaciÃ³n en Caracas',
+    title: 'Grabación en Caracas',
     href: '/salas-de-ensayo/grabacion-en-caracas',
     description: 'Para voces, instrumentos, demos y sesiones musicales.',
   },
   {
-    title: 'ProducciÃ³n musical en Caracas',
+    title: 'Producción musical en Caracas',
     href: '/salas-de-ensayo/produccion-musical-en-caracas',
-    description: 'Para desarrollar una canciÃ³n desde la idea hasta una versiÃ³n mÃ¡s sÃ³lida.',
+    description: 'Para desarrollar una canción desde la idea hasta una versión más sólida.',
   },
   {
-    title: 'Mezcla y masterizaciÃ³n en Caracas',
+    title: 'Mezcla y masterización en Caracas',
     href: '/salas-de-ensayo/mezcla-y-masterizacion-en-caracas',
     description: 'Para dar balance, limpieza y acabado final a tus canciones.',
   },
@@ -61,9 +61,9 @@ const serviciosConectados = [
     description: 'Para grabar conversaciones, entrevistas y episodios con mejor audio.',
   },
   {
-    title: 'LocuciÃ³n en Caracas',
+    title: 'Locución en Caracas',
     href: '/salas-de-ensayo/locucion-en-caracas',
-    description: 'Para voces comerciales, narraciones, cuÃ±as y contenido de marca.',
+    description: 'Para voces comerciales, narraciones, cuñas y contenido de marca.',
   },
   {
     title: 'Video session en Caracas',
@@ -73,12 +73,12 @@ const serviciosConectados = [
   {
     title: 'Arreglos musicales en Caracas',
     href: '/salas-de-ensayo/arreglos-musicales-en-caracas',
-    description: 'Para fortalecer estructura, dinÃ¡mica e instrumentaciÃ³n de una canciÃ³n.',
+    description: 'Para fortalecer estructura, dinámica e instrumentación de una canción.',
   },
   {
-    title: 'ConsultorÃ­a musical en Caracas',
+    title: 'Consultoría musical en Caracas',
     href: '/salas-de-ensayo/consultoria-musical-en-caracas',
-    description: 'Para orientar decisiones creativas, tÃ©cnicas y estratÃ©gicas del proyecto.',
+    description: 'Para orientar decisiones creativas, técnicas y estratégicas del proyecto.',
   },
 ]
 
