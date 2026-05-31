@@ -100,6 +100,8 @@ export default function GrabacionEnCaracasPage() {
         },
         description: 'Grabación desde 35 USD.',
         url: canonicalUrl,
+        availability: 'https://schema.org/InStock',
+        itemOffered: { '@id': `${canonicalUrl}#service` },
       },
       {
         '@type': 'ImageObject',

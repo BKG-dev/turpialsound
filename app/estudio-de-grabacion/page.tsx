@@ -25,7 +25,7 @@ export const metadata: Metadata = generatePageMetadata({
 
 export default function EstudioDeGrabacionPage() {
   const service = getServiceBySlug('estudio-de-grabacion')
-  const serviceSchema = service ? buildServiceSchema(service) : null
+  const serviceSchema = service ? buildServiceSchema(service, { path: '/estudio-de-grabacion' }) : null
   const breadcrumb = buildBreadcrumbSchema([
     { name: 'Inicio', url: siteConfig.url },
     { name: 'Estudio de grabación', url: `${siteConfig.url}/estudio-de-grabacion` },

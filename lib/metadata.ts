@@ -70,7 +70,7 @@ export const rootMetadata: Metadata = {
     ],
     apple: '/apple-touch-icon.png',
   },
-  manifest: '/manifest.json',
+  manifest: '/manifest.webmanifest',
   openGraph: {
     type: 'website',
     locale: siteConfig.locale,

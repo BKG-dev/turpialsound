@@ -98,6 +98,8 @@ export default function PodcastEnCaracasPage() {
         },
         description: 'Línea Podcast / Locución desde 50 USD.',
         url: canonicalUrl,
+        availability: 'https://schema.org/InStock',
+        itemOffered: { '@id': `${canonicalUrl}#service` },
       },
       {
         '@type': 'ImageObject',

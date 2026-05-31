@@ -4,7 +4,7 @@ import { SiteHeader } from '@/components/layout/SiteHeader'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { WhatsAppButton } from '@/components/ui/WhatsAppButton'
 import { rootMetadata } from '@/lib/metadata'
-import { buildOrganizationSchema } from '@/lib/schema'
+import { buildOrganizationSchema, buildWebSiteSchema } from '@/lib/schema'
 import '@/styles/globals.css'
 
 const michroma = Michroma({
@@ -22,6 +22,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   const orgSchema = buildOrganizationSchema()
+  const webSiteSchema = buildWebSiteSchema()
 
   return (
     <html lang="es" className={michroma.variable}>
@@ -29,6 +30,10 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteSchema) }}
         />
       </head>
       <body>

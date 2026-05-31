@@ -17,7 +17,7 @@ export const metadata: Metadata = generatePageMetadata({
 
 export default function VideoSessionPage() {
   const service = getServiceBySlug('video-session')
-  const serviceSchema = service ? buildServiceSchema(service) : null
+  const serviceSchema = service ? buildServiceSchema(service, { path: '/servicios/video-session' }) : null
   const breadcrumb = buildBreadcrumbSchema([
     { name: 'Inicio', url: siteConfig.url },
     { name: 'Servicios', url: `${siteConfig.url}/servicios` },

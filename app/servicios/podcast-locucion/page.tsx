@@ -17,7 +17,7 @@ export const metadata: Metadata = generatePageMetadata({
 
 export default function PodcastLocucionPage() {
   const service = getServiceBySlug('podcast-locucion')
-  const serviceSchema = service ? buildServiceSchema(service) : null
+  const serviceSchema = service ? buildServiceSchema(service, { path: '/servicios/podcast-locucion' }) : null
   const breadcrumb = buildBreadcrumbSchema([
     { name: 'Inicio', url: siteConfig.url },
     { name: 'Servicios', url: `${siteConfig.url}/servicios` },

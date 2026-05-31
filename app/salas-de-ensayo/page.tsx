@@ -111,7 +111,7 @@ const faqItems = [
 
 export default function SalasDeEnsayoPage() {
   const service = getServiceBySlug('salas-de-ensayo')
-  const serviceSchema = service ? buildServiceSchema(service) : null
+  const serviceSchema = service ? buildServiceSchema(service, { path: '/salas-de-ensayo' }) : null
   const faqSchema = buildFAQSchema(faqItems)
   const breadcrumb = buildBreadcrumbSchema([
     { name: 'Inicio', url: siteConfig.url },

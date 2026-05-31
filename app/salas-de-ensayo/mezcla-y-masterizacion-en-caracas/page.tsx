@@ -98,6 +98,8 @@ export default function MezclaMasterizacionEnCaracasPage() {
         },
         description: 'Mezcla y masterización desde 150 USD.',
         url: canonicalUrl,
+        availability: 'https://schema.org/InStock',
+        itemOffered: { '@id': `${canonicalUrl}#service` },
       },
       {
         '@type': 'ImageObject',

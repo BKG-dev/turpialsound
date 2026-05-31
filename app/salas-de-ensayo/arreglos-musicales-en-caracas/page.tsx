@@ -98,6 +98,8 @@ export default function ArreglosMusicalesEnCaracasPage() {
         },
         description: 'Arreglos musicales desde 200 USD.',
         url: canonicalUrl,
+        availability: 'https://schema.org/InStock',
+        itemOffered: { '@id': `${canonicalUrl}#service` },
       },
       {
         '@type': 'ImageObject',

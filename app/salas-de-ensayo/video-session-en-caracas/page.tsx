@@ -98,6 +98,8 @@ export default function VideoSessionEnCaracasPage() {
         },
         description: 'Video session desde 60 USD.',
         url: canonicalUrl,
+        availability: 'https://schema.org/InStock',
+        itemOffered: { '@id': `${canonicalUrl}#service` },
       },
       {
         '@type': 'ImageObject',

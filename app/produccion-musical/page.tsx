@@ -51,7 +51,7 @@ const steps: Array<{ Icon: LucideIcon; title: string; body: string; accent: 'gol
 
 export default function ProduccionMusicalPage() {
   const service = getServiceBySlug('produccion-musical')
-  const serviceSchema = service ? buildServiceSchema(service) : null
+  const serviceSchema = service ? buildServiceSchema(service, { path: '/produccion-musical' }) : null
   const breadcrumb = buildBreadcrumbSchema([
     { name: 'Inicio', url: siteConfig.url },
     { name: 'Producción musical', url: `${siteConfig.url}/produccion-musical` },
