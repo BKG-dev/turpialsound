@@ -9,6 +9,7 @@ import { AnimatedHeading } from '@/components/ui/AnimatedHeading'
 import { NuminousServiceCard } from '@/components/ui/NuminousServiceCard'
 import { StackingSection } from '@/components/home/StackingSection'
 import { Mac3DGallery } from '@/components/media/Mac3DGallery'
+import { CreativeEcosystemSection } from '@/components/sections/CreativeEcosystemSection'
 import { getPublicImages } from '@/lib/getPublicImages'
 
 const instalacionesImages = getPublicImages('instalaciones')
@@ -121,8 +122,14 @@ export default function ServiciosPage() {
         </SectionShell>
       </StackingSection>
 
-      {/* CTA — panoramic strip with instalaciones3.jpg */}
       <StackingSection index={2}>
+        <SectionShell background="none">
+          <CreativeEcosystemSection />
+        </SectionShell>
+      </StackingSection>
+
+      {/* CTA — panoramic strip with instalaciones3.jpg */}
+      <StackingSection index={3}>
         <CTASection
           heading="¿Por dónde empezamos?"
           subheading="Ya sea que necesites grabar, producir o ensayar, tenemos el espacio y el equipo para llevarte al siguiente nivel."

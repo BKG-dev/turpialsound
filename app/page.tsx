@@ -16,6 +16,7 @@ import { HeroSection } from '@/components/home/HeroSection'
 import { StackingSection } from '@/components/home/StackingSection'
 import { ServiceGallery } from '@/components/home/ServiceGallery'
 import { InstalacionesSection } from '@/components/home/InstalacionesSection'
+import { CreativeEcosystemSection } from '@/components/sections/CreativeEcosystemSection'
 
 const CinematicVideo = dynamic(
   () => import('@/components/media/CinematicVideo').then((mod) => mod.CinematicVideo),
@@ -247,8 +248,15 @@ export default function HomePage() {
         </SectionShell>
       </StackingSection>
 
-      {/* ── NUESTRAS INSTALACIONES — stacking section 6 ─────────────── */}
-      <StackingSection index={6} background="surface" waves className="home-belowfold-section">
+      {/* ── ECOSISTEMA CREATIVO — stacking section 6 ─────────────────── */}
+      <StackingSection index={6} waves className="home-belowfold-section">
+        <SectionShell background="none">
+          <CreativeEcosystemSection />
+        </SectionShell>
+      </StackingSection>
+
+      {/* ── NUESTRAS INSTALACIONES — stacking section 7 ─────────────── */}
+      <StackingSection index={7} background="surface" waves className="home-belowfold-section">
         <SectionShell background="none">
           <SectionHeading
             eyebrow="Nuestras instalaciones"
@@ -260,8 +268,8 @@ export default function HomePage() {
         </SectionShell>
       </StackingSection>
 
-      {/* ── CTA — stacking section 7 ─────────────────────────────────── */}
-      <StackingSection index={7} className="home-belowfold-section">
+      {/* ── CTA — stacking section 8 ─────────────────────────────────── */}
+      <StackingSection index={8} className="home-belowfold-section">
         <CTASection
           heading="¿Tienes un proyecto en mente?"
           subheading="Cuéntanos qué necesitas. Revisamos disponibilidad y armamos una propuesta."
