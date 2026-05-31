@@ -179,7 +179,7 @@ export default function HomePage() {
               { src: '/images/odl_800.jpg', name: 'Oscar D\'León' },
               { src: '/images/dq_800.jpg',  name: 'Domingo Quiñones' },
               { src: '/images/dl_800.jpg',  name: 'Dimensión Latina' },
-              { src: '/images/FQ.JPG',      name: 'Frank Quintero' },
+              { src: '/images/FQ.jpg',      name: 'Frank Quintero' },
             ].map(({ src, name }) => (
               <div
                 key={name}

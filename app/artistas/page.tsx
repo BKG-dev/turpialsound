@@ -52,7 +52,7 @@ const confirmedArtists: Array<{
     name: 'Frank Quintero',
     role: 'Artista · Balada · Venezuela',
     bio: 'Cantautor venezolano de balada romántica con más de tres décadas de trayectoria regional. Sus temas han dominado las listas de popularidad del género en Latinoamérica y lo consolidan como una de las voces más sólidas y reconocidas del pop latino venezolano.',
-    imageSrc: '/images/FQ.JPG',
+    imageSrc: '/images/FQ.jpg',
     accent: 'cyan',
   },
 ]
