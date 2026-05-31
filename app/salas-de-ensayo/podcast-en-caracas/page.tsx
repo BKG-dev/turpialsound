@@ -173,9 +173,22 @@ export default function PodcastEnCaracasPage() {
             <h2 className="text-xl font-semibold text-white">Enlaces útiles</h2>
             <div className="mt-4 flex flex-wrap gap-3 text-sm">
               <Link href="/reservas" className="rounded-full border border-white/15 px-4 py-2 text-accent-gold hover:opacity-80">Reservar en Turpial Sound</Link>
-              <Link href="/salas-de-ensayo" className="rounded-full border border-white/15 px-4 py-2 text-accent-gold hover:opacity-80">Volver a salas de ensayo</Link>
+              <Link href="/salas-de-ensayo" className="rounded-full border border-white/15 px-4 py-2 text-accent-gold hover:opacity-80">Salas de ensayo en Caracas</Link>
               <Link href="/recursos/donde-reservar-sala-de-ensayo-en-caracas" className="rounded-full border border-white/15 px-4 py-2 text-accent-gold hover:opacity-80">Guía para reservar en Caracas</Link>
               <Link href="/servicios/podcast-locucion" className="rounded-full border border-white/15 px-4 py-2 text-accent-gold hover:opacity-80">Ver podcast y locución</Link>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-accent-gold/20 bg-white/5 p-6">
+            <h2 className="text-xl font-semibold text-white">Servicios relacionados en Caracas</h2>
+            <div className="mt-4 flex flex-wrap gap-3 text-sm">
+              <Link href="/salas-de-ensayo/grabacion-en-caracas" className="rounded-full border border-white/15 px-4 py-2 text-accent-gold hover:opacity-80">Grabación en Caracas</Link>
+              <Link href="/salas-de-ensayo/produccion-musical-en-caracas" className="rounded-full border border-white/15 px-4 py-2 text-accent-gold hover:opacity-80">Producción musical en Caracas</Link>
+              <Link href="/salas-de-ensayo/mezcla-y-masterizacion-en-caracas" className="rounded-full border border-white/15 px-4 py-2 text-accent-gold hover:opacity-80">Mezcla y masterización en Caracas</Link>
+              <Link href="/salas-de-ensayo/locucion-en-caracas" className="rounded-full border border-white/15 px-4 py-2 text-accent-gold hover:opacity-80">Locución en Caracas</Link>
+              <Link href="/salas-de-ensayo/video-session-en-caracas" className="rounded-full border border-white/15 px-4 py-2 text-accent-gold hover:opacity-80">Video session en Caracas</Link>
+              <Link href="/salas-de-ensayo/arreglos-musicales-en-caracas" className="rounded-full border border-white/15 px-4 py-2 text-accent-gold hover:opacity-80">Arreglos musicales en Caracas</Link>
+              <Link href="/salas-de-ensayo/consultoria-musical-en-caracas" className="rounded-full border border-white/15 px-4 py-2 text-accent-gold hover:opacity-80">Consultoría musical en Caracas</Link>
             </div>
           </section>
 
