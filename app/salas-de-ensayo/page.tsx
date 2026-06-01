@@ -82,6 +82,25 @@ const serviciosConectados = [
   },
 ]
 
+const modalidadesHubLinks = [
+  {
+    label: 'Hub: Sala de ensayo en Caracas',
+    href: '/sala-de-ensayo-en-caracas',
+  },
+  {
+    label: 'Modalidad Flexible',
+    href: '/sala-de-ensayo-en-caracas/flexible',
+  },
+  {
+    label: 'Modalidad Premium',
+    href: '/sala-de-ensayo-en-caracas/premium',
+  },
+  {
+    label: 'Modalidad Prioritaria',
+    href: '/sala-de-ensayo-en-caracas/prioritaria',
+  },
+]
+
 const faqItems = [
   {
     question: '¿Dónde reservar una sala de ensayo en Caracas?',
@@ -253,6 +272,22 @@ export default function SalasDeEnsayoPage() {
                 </p>
               </Link>
             ))}
+          </div>
+
+          <div className="mt-10 rounded-2xl border border-accent-gold/30 bg-accent-gold/10 p-6">
+            <h3 className="font-display text-lg text-text-primary">
+              Modalidades de sala de ensayo en Caracas
+            </h3>
+            <p className="mt-2 text-sm text-text-secondary">
+              Accede al hub principal y a las modalidades de reserva Flexible, Premium y Prioritaria.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              {modalidadesHubLinks.map((item) => (
+                <Button key={item.href} as="link" href={item.href} variant="secondary" size="sm">
+                  {item.label}
+                </Button>
+              ))}
+            </div>
           </div>
         </SectionShell>
       </StackingSection>

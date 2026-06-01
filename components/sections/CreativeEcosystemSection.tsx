@@ -149,6 +149,9 @@ export function CreativeEcosystemSection({ className }: CreativeEcosystemSection
       </div>
 
       <div className="mt-8 flex flex-wrap gap-3">
+        <Button as="link" href="/sala-de-ensayo-en-caracas" variant="secondary" size="sm">
+          Sala en Caracas
+        </Button>
         <Button as="link" href="/reservas" variant="primary" size="sm">
           Reservar ahora
         </Button>
