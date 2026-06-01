@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 
 const canonicalPath = '/salas-de-ensayo/produccion-musical-en-caracas'
 const canonicalUrl = `https://www.turpialsound.com${canonicalPath}`
@@ -144,7 +145,15 @@ export default function ProduccionMusicalEnCaracasPage() {
               Producción musical en Caracas para llevar tu canción más lejos
             </h1>
             <div className="overflow-hidden rounded-2xl border border-white/10">
-              <img src="/images/produccion2.jpg" alt="Producción musical en Turpial Sound" className="h-64 w-full object-cover md:h-80" />
+              <Image
+                src="/images/produccion2.jpg"
+                alt="Producción musical en Turpial Sound"
+                width={1600}
+                height={900}
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                priority
+                className="h-64 w-full object-cover md:h-80"
+              />
             </div>
           </header>
 

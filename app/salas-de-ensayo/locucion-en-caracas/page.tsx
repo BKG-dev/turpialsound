@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 
 const canonicalPath = '/salas-de-ensayo/locucion-en-caracas'
 const canonicalUrl = `https://www.turpialsound.com${canonicalPath}`
@@ -143,7 +144,15 @@ export default function LocucionEnCaracasPage() {
               Locución en Caracas para voces comerciales y creativas
             </h1>
             <div className="overflow-hidden rounded-2xl border border-white/10">
-              <img src="/images/estudio-grabacion4.jpg" alt="Locución en Turpial Sound" className="h-64 w-full object-cover md:h-80" />
+              <Image
+                src="/images/estudio-grabacion4.jpg"
+                alt="Locución en Turpial Sound"
+                width={1600}
+                height={900}
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                priority
+                className="h-64 w-full object-cover md:h-80"
+              />
             </div>
           </header>
 
