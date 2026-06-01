@@ -3,7 +3,11 @@ import type { Route } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { generatePageMetadata } from '@/lib/metadata'
-import { buildBreadcrumbSchema, buildLocalServiceOfferSchema } from '@/lib/schema'
+import {
+  buildBreadcrumbSchema,
+  buildLocalServiceOfferSchema,
+  buildReservableProductOfferSchema,
+} from '@/lib/schema'
 import { SectionShell, SectionHeading } from '@/components/sections/SectionShell'
 import { CTASection } from '@/components/sections/CTASection'
 import { Button } from '@/components/ui/Button'
@@ -17,6 +21,8 @@ import { siteConfig } from '@/content/site'
 type ModalityPageParams = {
   params: { modalidad: string }
 }
+
+const reservableProductSlugs = new Set(['flexible', 'premium', 'prioritaria'])
 
 export function generateStaticParams() {
   return salaEnsayoModalities.map((item) => ({ modalidad: item.slug }))
@@ -64,12 +70,32 @@ export default function SalaDeEnsayoModalityPage({ params }: ModalityPageParams)
     },
   })
 
+  const productSchema = reservableProductSlugs.has(modality.slug)
+    ? buildReservableProductOfferSchema({
+        name: modality.title,
+        description: modality.serviceDescription,
+        path,
+        imagePath: '/images/se1.jpg',
+        offer: {
+          price: modality.price,
+          priceCurrency: modality.priceCurrency,
+          availability: 'https://schema.org/InStock',
+        },
+      })
+    : null
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
       />
+      {productSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+        />
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }}

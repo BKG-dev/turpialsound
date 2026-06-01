@@ -26,6 +26,18 @@ type LocalServiceOfferSchemaInput = {
   }
 }
 
+type ReservableProductOfferSchemaInput = {
+  name: string
+  description: string
+  path: string
+  imagePath: string
+  offer: {
+    price: number
+    priceCurrency?: string
+    availability?: string
+  }
+}
+
 // JSON-LD schema generators — outputs are injected in Server Components via <script>
 
 export function buildOrganizationSchema() {
@@ -169,6 +181,30 @@ export function buildLocalServiceOfferSchema(input: LocalServiceOfferSchemaInput
           }
         : {}),
       ...(input.offer.description ? { description: input.offer.description } : {}),
+    },
+  }
+}
+
+export function buildReservableProductOfferSchema(input: ReservableProductOfferSchemaInput) {
+  const productUrl = `${siteConfig.url}${input.path}`
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    '@id': `${productUrl}#product`,
+    name: input.name,
+    description: input.description,
+    image: `${siteConfig.url}${input.imagePath}`,
+    brand: {
+      '@type': 'Brand',
+      name: siteConfig.name,
+    },
+    offers: {
+      '@type': 'Offer',
+      price: String(input.offer.price),
+      priceCurrency: input.offer.priceCurrency ?? 'USD',
+      availability: input.offer.availability ?? 'https://schema.org/InStock',
+      url: productUrl,
     },
   }
 }
