@@ -22,7 +22,7 @@ export function generatePageMetadata({
     : `${siteConfig.url}/images/og/default.jpg`
 
   return {
-    title: `${title} | ${siteConfig.name}`,
+    title,
     description,
     metadataBase: new URL(siteConfig.url),
     alternates: {

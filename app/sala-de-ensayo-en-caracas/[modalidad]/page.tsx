@@ -27,7 +27,7 @@ export function generateMetadata({ params }: ModalityPageParams): Metadata {
 
   if (!modality) {
     return {
-      title: `Modalidad no encontrada | ${siteConfig.name}`,
+      title: 'Modalidad no encontrada',
       robots: { index: false, follow: false },
     }
   }
