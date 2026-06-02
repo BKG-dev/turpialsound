@@ -15,6 +15,7 @@ import {
   getSalaEnsayoModality,
   salaEnsayoHubPath,
   salaEnsayoModalities,
+  salaEnsayoProductImage,
 } from '@/content/sala-de-ensayo-en-caracas'
 import { siteConfig } from '@/content/site'
 
@@ -38,10 +39,19 @@ export function generateMetadata({ params }: ModalityPageParams): Metadata {
     }
   }
 
+  const isReservableProduct = reservableProductSlugs.has(modality.slug)
+
   return generatePageMetadata({
     title: modality.title,
     description: `${modality.description} Precio publicado: ${modality.priceDisplay}.`,
     path: `${salaEnsayoHubPath}/${modality.slug}`,
+    ...(isReservableProduct
+      ? {
+          ogImagePath: salaEnsayoProductImage.path,
+          ogImageWidth: salaEnsayoProductImage.width,
+          ogImageHeight: salaEnsayoProductImage.height,
+        }
+      : {}),
   })
 }
 
@@ -73,9 +83,12 @@ export default function SalaDeEnsayoModalityPage({ params }: ModalityPageParams)
   const productSchema = reservableProductSlugs.has(modality.slug)
     ? buildReservableProductOfferSchema({
         name: modality.title,
-        description: modality.serviceDescription,
+        description: modality.productDescription ?? modality.serviceDescription,
         path,
-        imagePath: '/images/se1.jpg',
+        imagePath: salaEnsayoProductImage.path,
+        imageWidth: salaEnsayoProductImage.width,
+        imageHeight: salaEnsayoProductImage.height,
+        category: 'Sala de ensayo en Caracas',
         offer: {
           price: modality.price,
           priceCurrency: modality.priceCurrency,

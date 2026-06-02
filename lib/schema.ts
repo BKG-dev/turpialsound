@@ -31,6 +31,9 @@ type ReservableProductOfferSchemaInput = {
   description: string
   path: string
   imagePath: string
+  imageWidth?: number
+  imageHeight?: number
+  category?: string
   offer: {
     price: number
     priceCurrency?: string
@@ -194,7 +197,13 @@ export function buildReservableProductOfferSchema(input: ReservableProductOfferS
     '@id': `${productUrl}#product`,
     name: input.name,
     description: input.description,
-    image: `${siteConfig.url}${input.imagePath}`,
+    image: {
+      '@type': 'ImageObject',
+      url: `${siteConfig.url}${input.imagePath}`,
+      ...(input.imageWidth ? { width: input.imageWidth } : {}),
+      ...(input.imageHeight ? { height: input.imageHeight } : {}),
+    },
+    ...(input.category ? { category: input.category } : {}),
     brand: {
       '@type': 'Brand',
       name: siteConfig.name,

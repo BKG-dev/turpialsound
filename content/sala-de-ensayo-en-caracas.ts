@@ -22,8 +22,15 @@ export type SalaEnsayoModality = {
   priceDisplay: string
   unitText: string
   differential: string
+  productDescription?: string
   relatedExistingPath?: string
 }
+
+export const salaEnsayoProductImage = {
+  path: '/images/seo/sala-de-ensayo-turpial-product.jpg',
+  width: 1200,
+  height: 675,
+} as const
 
 export const salaEnsayoModalities: SalaEnsayoModality[] = [
   {
@@ -40,6 +47,8 @@ export const salaEnsayoModalities: SalaEnsayoModality[] = [
     unitText: 'hora',
     differential:
       'Reserva tu pauta desde la web con precio publicado y opción reprogramable si entra una solicitud prioritaria.',
+    productDescription:
+      'Modalidad flexible de sala de ensayo en Caracas para bandas y musicos que necesitan reservar por hora con opcion de reprogramacion bajo condiciones.',
     relatedExistingPath: '/salas-de-ensayo',
   },
   {
@@ -55,6 +64,8 @@ export const salaEnsayoModalities: SalaEnsayoModality[] = [
     priceDisplay: '20 USD por hora',
     unitText: 'hora',
     differential: 'Horario fijo y garantizado, no sujeto a cambios.',
+    productDescription:
+      'Modalidad premium de sala de ensayo en Caracas con horario fijo y garantizado dentro del ecosistema Turpial Sound.',
     relatedExistingPath: '/salas-de-ensayo',
   },
   {
@@ -71,6 +82,8 @@ export const salaEnsayoModalities: SalaEnsayoModality[] = [
     unitText: 'hora',
     differential:
       'Precio publicado y prioridad de horario para reservar tu pauta desde la web cuando el proyecto necesita mayor urgencia.',
+    productDescription:
+      'Modalidad prioritaria de sala de ensayo en Caracas para solicitudes urgentes o acceso preferente al espacio creativo de Turpial Sound.',
     relatedExistingPath: '/salas-de-ensayo',
   },
   {

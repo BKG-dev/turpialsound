@@ -6,6 +6,8 @@ interface PageMetadataOptions {
   description: string
   path: string
   ogImagePath?: string
+  ogImageWidth?: number
+  ogImageHeight?: number
   noIndex?: boolean
 }
 
@@ -14,6 +16,8 @@ export function generatePageMetadata({
   description,
   path,
   ogImagePath,
+  ogImageWidth = 1200,
+  ogImageHeight = 630,
   noIndex = false,
 }: PageMetadataOptions): Metadata {
   const url = `${siteConfig.url}${path}`
@@ -38,8 +42,8 @@ export function generatePageMetadata({
       images: [
         {
           url: ogImage,
-          width: 1200,
-          height: 630,
+          width: ogImageWidth,
+          height: ogImageHeight,
           alt: `${title} — ${siteConfig.name}`,
         },
       ],
