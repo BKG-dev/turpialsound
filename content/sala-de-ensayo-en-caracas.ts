@@ -30,15 +30,16 @@ export const salaEnsayoModalities: SalaEnsayoModality[] = [
     slug: 'flexible',
     title: 'Sala de ensayo Flexible en Caracas',
     description:
-      'Modalidad flexible para ensayar en Caracas con reprogramación previa en caso de solicitudes prioritarias.',
+      'Sala de ensayo en Caracas desde 15 USD por hora, con reserva online en Turpial Sound, horarios reservables y opción flexible para bandas y músicos.',
     serviceName: 'Sala de ensayo Flexible en Caracas',
     serviceDescription:
-      'Modalidad de sala de ensayo flexible en Turpial Sound para artistas y bandas en Caracas.',
+      'Modalidad disponible en Caracas para reservar tu pauta desde la web en una sala de ensayo y estudio en Caracas con Turpial Sound.',
     price: 15,
     priceCurrency: 'USD',
     priceDisplay: '15 USD por hora',
     unitText: 'hora',
-    differential: 'Sesión reprogramable con aviso previo si entra una solicitud prioritaria.',
+    differential:
+      'Reserva tu pauta desde la web con precio publicado y opción reprogramable si entra una solicitud prioritaria.',
     relatedExistingPath: '/salas-de-ensayo',
   },
   {
@@ -60,135 +61,144 @@ export const salaEnsayoModalities: SalaEnsayoModality[] = [
     slug: 'prioritaria',
     title: 'Sala de ensayo Prioritaria en Caracas',
     description:
-      'Modalidad prioritaria para acceder al espacio creativo de Turpial Sound cuando más lo necesitas.',
+      'Sala de ensayo prioritaria en Caracas desde 25 USD por hora, con reserva online y horarios reservables para proyectos que necesitan mayor prioridad.',
     serviceName: 'Sala de ensayo Prioritaria en Caracas',
     serviceDescription:
-      'Modalidad prioritaria de sala de ensayo para músicos y proyectos en Caracas.',
+      'Modalidad disponible en Caracas para músicos, bandas y equipos que necesitan reservar online una sesión prioritaria en Turpial Sound.',
     price: 25,
     priceCurrency: 'USD',
     priceDisplay: '25 USD por hora',
     unitText: 'hora',
-    differential: 'Acceso prioritario al espacio cuando lo necesitas.',
+    differential:
+      'Precio publicado y prioridad de horario para reservar tu pauta desde la web cuando el proyecto necesita mayor urgencia.',
     relatedExistingPath: '/salas-de-ensayo',
   },
   {
     slug: 'grabacion',
     title: 'Grabación en sala de ensayo y estudio en Caracas',
     description:
-      'Grabación de voces, instrumentos, demos y sesiones dentro del ecosistema creativo Turpial Sound.',
+      'Grabación en sala de ensayo y estudio en Caracas desde 35 USD por hora de estudio, con reserva online de sesión dentro del ecosistema Turpial Sound.',
     serviceName: 'Grabación en sala de ensayo y estudio en Caracas',
     serviceDescription:
-      'Servicio de grabación en Caracas para artistas, bandas y creadores dentro del ecosistema Turpial Sound.',
+      'Modalidad disponible en Caracas para reservar una sesión de grabación de voces, instrumentos, demos y pautas creativas desde la web.',
     price: 35,
     priceCurrency: 'USD',
     priceDisplay: 'Desde 35 USD por hora de estudio',
     unitText: 'hora',
-    differential: 'Pensado para capturar audio profesional de voces, instrumentos y demos.',
+    differential:
+      'Reserva online en Turpial Sound para capturar audio profesional en una sala de ensayo y estudio en Caracas.',
     relatedExistingPath: '/estudio-de-grabacion',
   },
   {
     slug: 'produccion-musical',
     title: 'Producción musical en sala y estudio en Caracas',
     description:
-      'Producción musical integral en Caracas para desarrollar temas desde la idea hasta la entrega final.',
+      'Producción musical en Caracas desde 200 USD por tema, con solicitud o reserva de sesión dentro del ecosistema Turpial Sound.',
     serviceName: 'Producción musical en sala y estudio en Caracas',
     serviceDescription:
-      'Servicio de producción musical en Caracas dentro del ecosistema Turpial Sound.',
+      'Modalidad disponible en Caracas para desarrollar canciones y proyectos con precio publicado dentro de la sala de ensayo y estudio de Turpial Sound.',
     price: 200,
     priceCurrency: 'USD',
     priceDisplay: 'Desde 200 USD por tema',
     unitText: 'tema',
-    differential: 'Acompañamiento creativo y técnico para estructurar y finalizar canciones.',
+    differential:
+      'Sesiones reservables para avanzar arreglos, estructura y dirección creativa con acompañamiento técnico.',
     relatedExistingPath: '/produccion-musical',
   },
   {
     slug: 'mezcla-y-masterizacion',
     title: 'Mezcla y masterización en Caracas',
     description:
-      'Servicio de mezcla y masterización para material musical dentro del ecosistema Turpial Sound.',
+      'Mezcla y masterización en Caracas desde 150 USD por tema, con solicitud o reserva de sesión profesional en Turpial Sound.',
     serviceName: 'Mezcla y masterización en Caracas',
     serviceDescription:
-      'Servicio de mezcla y masterización para artistas y proyectos musicales en Caracas.',
+      'Modalidad disponible en Caracas para proyectos musicales que necesitan mezcla, masterización y precio publicado dentro del ecosistema Turpial Sound.',
     price: 150,
     priceCurrency: 'USD',
     priceDisplay: 'Desde 150 USD por tema',
     unitText: 'tema',
-    differential: 'Enfoque técnico para balance, claridad y entrega final.',
+    differential:
+      'Reserva o solicita tu sesión profesional para mejorar balance, claridad y entrega final.',
     relatedExistingPath: '/servicios/mezcla-masterizacion',
   },
   {
     slug: 'podcast',
     title: 'Podcast en sala de grabación en Caracas',
     description:
-      'Producción de podcast en Caracas con enfoque profesional para episodios de audio claros y listos.',
+      'Podcast en sala de grabación en Caracas por 100 USD por episodio de hasta 4 horas, con reserva online en Turpial Sound.',
     serviceName: 'Podcast en sala de grabación en Caracas',
     serviceDescription:
-      'Servicio de grabación de podcast en Turpial Sound para creadores y marcas en Caracas.',
+      'Modalidad disponible en Caracas para creadores, marcas y equipos que necesitan horarios reservables para grabar podcast desde la web.',
     price: 100,
     priceCurrency: 'USD',
     priceDisplay: '100 USD por episodio (máximo 4 horas)',
     unitText: 'episodio',
-    differential: 'Formato por episodio con máximo de 4 horas de sesión.',
+    differential:
+      'Precio publicado por episodio y reserva online de sesión en sala de grabación y estudio en Caracas.',
     relatedExistingPath: '/servicios/podcast-locucion',
   },
   {
     slug: 'locucion',
     title: 'Locución profesional en Caracas',
     description:
-      'Locución profesional en Caracas para piezas comerciales, narrativas y contenido de marca.',
+      'Locución profesional en Caracas desde 50 USD por hora, con reserva de sesión de voz dentro del ecosistema Turpial Sound.',
     serviceName: 'Locución profesional en Caracas',
     serviceDescription:
-      'Servicio de locución profesional en Turpial Sound para proyectos audiovisuales y comerciales.',
+      'Modalidad disponible en Caracas para reservar online una sesión de locución profesional para piezas comerciales, narrativas y contenido de marca.',
     price: 50,
     priceCurrency: 'USD',
     priceDisplay: 'Desde 50 USD por hora',
     unitText: 'hora',
-    differential: 'Voz grabada con estándar técnico profesional.',
+    differential:
+      'Solicitud o reserva de sesión con precio publicado para grabar voz con estándar técnico profesional.',
     relatedExistingPath: '/servicios/podcast-locucion',
   },
   {
     slug: 'video-session',
     title: 'Video session con sonido profesional en Caracas',
     description:
-      'Video sessions en Caracas con captación de sonido profesional para contenido audiovisual musical.',
+      'Video session con sonido profesional en Caracas desde 60 USD por sesión u hora de sonido para video, con reserva online en Turpial Sound.',
     serviceName: 'Video session con sonido profesional en Caracas',
     serviceDescription:
-      'Servicio de video session en Turpial Sound con soporte de audio para creadores y artistas.',
+      'Modalidad disponible en Caracas para artistas y creadores que necesitan reservar una sesión audiovisual con sonido profesional desde la web.',
     price: 60,
     priceCurrency: 'USD',
     priceDisplay: 'Desde 60 USD por sesión/hora de sonido para video',
     unitText: 'sesión',
-    differential: 'Orientado a contenido audiovisual musical con sonido profesional.',
+    differential:
+      'Horarios reservables para grabar contenido musical con soporte técnico y audio profesional.',
     relatedExistingPath: '/servicios/video-session',
   },
   {
     slug: 'arreglos-musicales',
     title: 'Arreglos musicales en Caracas',
     description:
-      'Servicio de arreglos musicales para fortalecer estructura, instrumentación y dirección creativa.',
+      'Arreglos musicales en Caracas desde 200 USD por tema, con solicitud o reserva de sesión para proyectos musicales en Turpial Sound.',
     serviceName: 'Arreglos musicales en Caracas',
     serviceDescription:
-      'Servicio de arreglos musicales en Caracas para proyectos en desarrollo y producción.',
+      'Modalidad disponible en Caracas para trabajar arreglos, estructura e instrumentación con precio publicado dentro del ecosistema creativo.',
     price: 200,
     priceCurrency: 'USD',
     priceDisplay: 'Desde 200 USD por tema',
     unitText: 'tema',
-    differential: 'Trabajo de arreglo enfocado en potenciar el resultado del tema.',
+    differential:
+      'Reserva o solicita una sesión para fortalecer el tema antes de grabar, producir o lanzar el proyecto.',
     relatedExistingPath: '/servicios/arreglos-musicales',
   },
   {
     slug: 'consultoria-musical',
     title: 'Consultoría musical en Caracas',
     description:
-      'Consultoría musical para tomar decisiones creativas y técnicas dentro del ecosistema Turpial Sound.',
+      'Consultoría musical en Caracas desde 80 USD por hora, con reserva de sesión de orientación profesional en Turpial Sound.',
     serviceName: 'Consultoría musical en Caracas',
     serviceDescription:
-      'Servicio de consultoría musical en Caracas para artistas, productores y proyectos creativos.',
+      'Modalidad disponible en Caracas para artistas, productores y proyectos que necesitan reservar online una sesión de consultoría musical con precio publicado.',
     price: 80,
     priceCurrency: 'USD',
     priceDisplay: 'Desde 80 USD por hora',
     unitText: 'hora',
-    differential: 'Sesión de consultoría para definir enfoque creativo y técnico.',
+    differential:
+      'Solicitud o reserva de sesión para tomar decisiones creativas y técnicas dentro de la sala de ensayo y estudio en Caracas.',
     relatedExistingPath: '/salas-de-ensayo/consultoria-musical-en-caracas',
   },
 ]
