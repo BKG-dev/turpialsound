@@ -17,9 +17,9 @@ export const siteConfig: SiteConfig = {
     country: 'Venezuela',
     countryCode: 'VE',
   },
-  socialLinks: {
+    socialLinks: {
     instagram: "https://www.instagram.com/turpialsound/",
-    youtube: "",   // CLIENT_REQUIRED
+    youtube: "https://www.youtube.com/@turpialsound",
     spotify: "",   // CLIENT_REQUIRED
   },
 }
