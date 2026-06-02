@@ -7,6 +7,7 @@ export const siteConfig: SiteConfig = {
     'Reserva un estudio de grabación en Caracas, Venezuela, con salas de ensayo, producción musical, mezcla, mastering, podcast y servicios creativos en un solo lugar. Turpial Sound conecta artistas, músicos y proyectos con espacio, talento y tecnología para sonar pro.',
   url: 'https://www.turpialsound.com',
   locale: 'es',
+  ogLocale: 'es_VE',
   phoneWhatsApp: '+584168017844',
   phoneDisplay: '+58 416-8017844',
   email: 'contacto@turpialsound.com',

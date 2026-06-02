@@ -55,6 +55,7 @@ export interface SiteConfig {
   description: string
   url: string
   locale: string
+  ogLocale?: string
   phoneWhatsApp: string
   phoneDisplay: string
   email: string

@@ -15,7 +15,7 @@ import { siteConfig } from '@/content/site'
 export const metadata: Metadata = generatePageMetadata({
   title: 'Sala de ensayo en Caracas',
   description:
-    'Reserva sala de ensayo en Caracas desde 15 USD/hora y elige modalidad Flexible, Premium o Prioritaria. También puedes grabar, producir, mezclar, hacer podcast, locución y video sessions en un mismo ecosistema creativo.',
+    'Sala de ensayo en Caracas con modalidades Flexible, Premium y Prioritaria, precios desde 15 USD/h y reserva online en Turpial Sound.',
   path: salaEnsayoHubPath,
 })
 

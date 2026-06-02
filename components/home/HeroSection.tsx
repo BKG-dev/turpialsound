@@ -15,6 +15,7 @@ export function HeroSection({ videoSrc }: HeroSectionProps) {
         src="/images/artista-hero-1280.webp"
         alt="Turpial Sound estudio en Caracas"
         fill
+        priority
         sizes="(max-width: 768px) 100vw, 1280px"
         quality={70}
         className="object-cover object-center opacity-55"

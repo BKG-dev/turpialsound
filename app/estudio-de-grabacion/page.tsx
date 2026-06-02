@@ -48,7 +48,7 @@ export default function EstudioDeGrabacionPage() {
       <NuminousHero
         imageSrc="/images/consola.jpg"
         eyebrow="Estudio de grabación"
-        heading="Sonido de Estudio. Criterio Sin Concesiones."
+        heading="Estudio de grabación en Caracas con criterio sin concesiones."
         subheading="Consola de referencia, microfonía de alto nivel y sala de control tratada acústicamente. El mismo espacio donde grabaron Oscar D'León, Domingo Quiñones y Dimensión Latina. Más de 30 años de criterio técnico al servicio de tu obra."
         ctaLabel="Cotizar sesión"
         ctaHref="/reservas"

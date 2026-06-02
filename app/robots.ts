@@ -10,6 +10,7 @@ export default function robots(): MetadataRoute.Robots {
         '/admin',
         '/ops',
         '/api',
+        '/lab',
         '/payment-proofs',
         '/marketplace/admin',
         '/marketplace/dashboard',

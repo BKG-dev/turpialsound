@@ -33,7 +33,7 @@ export function generatePageMetadata({
       description,
       url,
       siteName: siteConfig.name,
-      locale: siteConfig.locale,
+      locale: siteConfig.ogLocale ?? siteConfig.locale,
       type: 'website',
       images: [
         {
@@ -73,7 +73,7 @@ export const rootMetadata: Metadata = {
   manifest: '/manifest.webmanifest',
   openGraph: {
     type: 'website',
-    locale: siteConfig.locale,
+    locale: siteConfig.ogLocale ?? siteConfig.locale,
     siteName: siteConfig.name,
   },
   robots: {
