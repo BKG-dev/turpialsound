@@ -113,6 +113,7 @@ export function adaptDbListing(l: any): Listing {
       activeTransactionStatus,
       createdAt: createdAtStr,
       tags: l.tags ?? [],
+      portfolio: images,
     } as ServiceListing
   }
 
