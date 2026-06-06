@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import {
   createListingSchema,
+  isProductMarketplaceCategory,
   type CreateListingInput,
   type ActionResult,
 } from '@/lib/validations/marketplace'
@@ -120,7 +121,7 @@ function logDiscoveryDiagnostics(
   console.warn(MARKETPLACE_DISCOVERY_DIAGNOSTICS_PREFIX, payload)
 }
 
-// ─── SLUG GENERATOR ───────────────────────────────────────────────────────────
+// ─── SLUG GENERATOR ──────────────────────────────────────────────────────
 function generateSlug(title: string): string {
   const base = title
     .toLowerCase()
@@ -133,7 +134,7 @@ function generateSlug(title: string): string {
   return `${base}-${Date.now()}`
 }
 
-// ─── GET ACTIVE LISTINGS (UI-compatible) ─────────────────────────────────────
+// ─── GET ACTIVE LISTINGS (UI-compatible) ─────────────────────────────────────────────────────
 export async function getActiveListings(filters?: {
   city?: string
   state?: string
@@ -191,7 +192,7 @@ export async function getActiveListings(filters?: {
   }
 }
 
-// ─── GET LISTING BY ID ────────────────────────────────────────────────────────
+// ─── GET LISTING BY ID ────────────────────────────────────────────────────
 export async function getListingById(id: string): Promise<Listing | null> {
   const db = await getDb()
   if (!db) return null
@@ -210,7 +211,7 @@ export async function getListingById(id: string): Promise<Listing | null> {
   }
 }
 
-// ─── GET LISTING BY SLUG ──────────────────────────────────────────────────────
+// ─── GET LISTING BY SLUG ─────────────────────────────────────────────────────
 export async function getListingBySlug(slug: string): Promise<Listing | null> {
   const db = await getDb()
   if (!db) return null
@@ -229,7 +230,7 @@ export async function getListingBySlug(slug: string): Promise<Listing | null> {
   }
 }
 
-// ─── GET LISTINGS BY CATEGORY ─────────────────────────────────────────────────
+// ─── GET LISTINGS BY CATEGORY ────────────────────────────────────────────────
 export async function getListingsByCategory(
   category: string,
   limit = 20,
@@ -252,7 +253,7 @@ export async function getListingsByCategory(
   }
 }
 
-// ─── GET USER'S OWN LISTINGS (SELLER VIEW) ───────────────────────────────────
+// ─── GET USER'S OWN LISTINGS (SELLER VIEW) ─────────────────────────────────────
 // Returns raw DB records (not adapted) so the dashboard can read the real status enum.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getUserListings(): Promise<ActionResult<any[]>> {
@@ -277,7 +278,7 @@ export async function getUserListings(): Promise<ActionResult<any[]>> {
   }
 }
 
-// ─── UPDATE LISTING STATUS ────────────────────────────────────────────────────
+// ─── UPDATE LISTING STATUS ───────────────────────────────────────────────────
 export async function updateListingStatus(
   id: string,
   status: 'ACTIVE' | 'PAUSED' | 'ARCHIVED',
@@ -308,7 +309,7 @@ export async function updateListingStatus(
   }
 }
 
-// ─── INCREMENT VIEW COUNT ─────────────────────────────────────────────────────
+// ─── INCREMENT VIEW COUNT ──────────────────────────────────────────────────────
 export async function incrementListingView(id: string): Promise<void> {
   const db = await getDb()
   if (!db) return
@@ -320,7 +321,7 @@ export async function incrementListingView(id: string): Promise<void> {
   }
 }
 
-// ─── CREATE LISTING ───────────────────────────────────────────────────────────
+// ─── CREATE LISTING ──────────────────────────────────────────────────────────
 export async function createListing(
   input: CreateListingInput,
 ): Promise<ActionResult<{ id: string; slug: string }>> {
@@ -332,7 +333,7 @@ export async function createListing(
 
   const data = parsed.data
 
-  if (!data.coverImageUrl && data.mediaUrls.length === 0) {
+  if (isProductMarketplaceCategory(data.category) && !data.coverImageUrl && data.mediaUrls.length === 0) {
     return { success: false, message: 'Debes subir al menos 1 imagen del producto' }
   }
 
