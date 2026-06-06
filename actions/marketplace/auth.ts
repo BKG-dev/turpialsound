@@ -25,7 +25,7 @@ const registerSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string().min(8, 'Mínimo 8 caracteres'),
   phone: z.string().optional(),
-  whatsappConsent: z.boolean().default(false),
+  whatsappConsent: z.literal(true).default(true),
 })
 
 // identifier can be an email address or a displayName (username)
@@ -55,7 +55,7 @@ export async function registerMpUser(
     return { success: false, message: 'Datos inválidos', errors }
   }
 
-  const { displayName, email, password, phone, whatsappConsent } = parsed.data
+  const { displayName, email, password, phone } = parsed.data
   const prisma = await getPrisma()
 
   try {
@@ -73,8 +73,8 @@ export async function registerMpUser(
         passwordHash,
         isSeller: true,
         phone: phone ?? null,
-        whatsappConsent: whatsappConsent ?? false,
-        whatsappConsentAt: whatsappConsent ? new Date() : null,
+        whatsappConsent: true,
+        whatsappConsentAt: new Date(),
       },
       select: { id: true, email: true, displayName: true, role: true },
     })

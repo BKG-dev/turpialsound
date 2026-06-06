@@ -96,7 +96,7 @@ function RegisterForm({ onSuccess }: { onSuccess: (s: MpSessionPayload) => void 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [phone, setPhone] = useState('')
-  const [whatsappConsent, setWhatsappConsent] = useState(false)
+  const whatsappConsent = true
   const [showPw, setShowPw] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [globalError, setGlobalError] = useState('')
@@ -188,35 +188,38 @@ function RegisterForm({ onSuccess }: { onSuccess: (s: MpSessionPayload) => void 
       {/* WhatsApp opt-in — low friction, high value */}
       <button
         type="button"
-        onClick={() => setWhatsappConsent(v => !v)}
-        className="flex items-start gap-3 p-3 rounded-xl text-left transition-all w-full"
+        disabled
+        aria-disabled="true"
+        className="flex items-start gap-3 p-3 rounded-xl text-left transition-all w-full cursor-not-allowed"
         style={{
-          background: whatsappConsent ? 'rgba(37,211,102,0.08)' : 'var(--mp-card-subtle)',
-          border: whatsappConsent ? '1px solid rgba(37,211,102,0.3)' : '1px solid var(--mp-border)',
+          background: 'rgba(37,211,102,0.08)',
+          border: '1px solid rgba(37,211,102,0.3)',
+          opacity: 1,
         }}
       >
         <div
           className="mt-0.5 w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all"
           style={{
-            background: whatsappConsent ? 'rgba(37,211,102,0.9)' : 'var(--mp-card)',
-            border: whatsappConsent ? 'none' : '1px solid var(--mp-border-strong)',
+            background: 'rgba(37,211,102,0.9)',
+            border: 'none',
           }}
         >
-          {whatsappConsent && (
-            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-              <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          )}
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none" aria-hidden="true">
+            <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </div>
         <div>
           <div className="flex items-center gap-1.5 mb-0.5">
-            <MessageCircle size={12} style={{ color: whatsappConsent ? '#25D366' : 'var(--mp-text-faint)' }} />
-            <span className="text-xs font-medium" style={{ color: whatsappConsent ? '#25D366' : 'var(--mp-text-muted)' }}>
+            <MessageCircle size={12} style={{ color: '#25D366' }} />
+            <span className="text-xs font-medium" style={{ color: '#25D366' }}>
               Avísame en WhatsApp
             </span>
           </div>
           <p className="text-[11px] leading-relaxed" style={{ color: 'var(--mp-text-faint)' }}>
             Recibe alertas cuando tu pago sea confirmado, tu producto avance de estado o tu cobro quede listo. Solo lo importante, sin spam.
+          </p>
+          <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.14em]" style={{ color: 'rgba(37,211,102,0.75)' }}>
+            Activado por defecto
           </p>
         </div>
       </button>
