@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import {
   createListingSchema,
+  isProductMarketplaceCategory,
   type CreateListingInput,
   type ActionResult,
 } from '@/lib/validations/marketplace'
@@ -332,7 +333,7 @@ export async function createListing(
 
   const data = parsed.data
 
-  if (!data.coverImageUrl && data.mediaUrls.length === 0) {
+  if (isProductMarketplaceCategory(data.category) && !data.coverImageUrl && data.mediaUrls.length === 0) {
     return { success: false, message: 'Debes subir al menos 1 imagen del producto' }
   }
 

@@ -25,6 +25,18 @@ function isMarketplaceStoredUrl(value: string) {
   return value.startsWith('/') || /^https?:\/\//.test(value)
 }
 
+export const PRODUCT_MARKETPLACE_CATEGORIES = [
+  'instrumentos-nuevos',
+  'instrumentos-usados',
+  'audio-pro-estudio',
+  'consumibles',
+  'alquiler-equipos',
+] as const
+
+export function isProductMarketplaceCategory(category: MpCategory) {
+  return PRODUCT_MARKETPLACE_CATEGORIES.includes(category as (typeof PRODUCT_MARKETPLACE_CATEGORIES)[number])
+}
+
 export const createListingSchema = z
   .object({
     title: z
@@ -76,14 +88,7 @@ export const createListingSchema = z
   })
   .refine(
     (data) => {
-      const isProduct = [
-        'instrumentos-nuevos',
-        'instrumentos-usados',
-        'audio-pro-estudio',
-        'consumibles',
-        'alquiler-equipos',
-      ].includes(data.category)
-      if (!isProduct) return true
+      if (!isProductMarketplaceCategory(data.category)) return true
       return !!data.coverImageUrl || data.mediaUrls.length > 0
     },
     { message: 'Debes subir al menos 1 imagen del producto', path: ['coverImageUrl'] },
