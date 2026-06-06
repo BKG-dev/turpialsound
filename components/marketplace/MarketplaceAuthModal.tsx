@@ -218,9 +218,6 @@ function RegisterForm({ onSuccess }: { onSuccess: (s: MpSessionPayload) => void 
           <p className="text-[11px] leading-relaxed" style={{ color: 'var(--mp-text-faint)' }}>
             Recibe alertas cuando tu pago sea confirmado, tu producto avance de estado o tu cobro quede listo. Solo lo importante, sin spam.
           </p>
-          <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.14em]" style={{ color: 'rgba(37,211,102,0.75)' }}>
-            Activado por defecto
-          </p>
         </div>
       </button>
 
