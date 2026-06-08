@@ -4,8 +4,6 @@ import { useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import {
   getRecommendedRecordingAddons,
-  getRecordingAddonFamilyDescription,
-  getRecordingAddonFamilyLabel,
   getRecordingAddonUnitLabel,
   groupRecordingAddons,
   type RecordingAddonDefinition,
