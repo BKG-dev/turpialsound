@@ -1,8 +1,17 @@
 'use client'
 
+import { useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
+import {
+  getRecommendedRecordingAddons,
+  getRecordingAddonFamilyDescription,
+  getRecordingAddonFamilyLabel,
+  getRecordingAddonUnitLabel,
+  groupRecordingAddons,
+  type RecordingAddonDefinition,
+} from '@/lib/bookings/recording-addons'
 
-const EXTRA_OPTIONS = [
+const LEGACY_EXTRA_OPTIONS = [
   {
     key: 'technician' as const,
     label: 'Tecnico de sonido incluido',
@@ -17,24 +26,153 @@ const EXTRA_OPTIONS = [
   },
 ]
 
-type ExtraKey = (typeof EXTRA_OPTIONS)[number]['key']
+type LegacyExtraKey = (typeof LEGACY_EXTRA_OPTIONS)[number]['key']
 
 interface ExtrasStepProps {
+  serviceSlug: string | null
+  variantSlug: string | null
   notes: string
   technician: boolean
   backline: boolean
+  availableRecordingAddons: RecordingAddonDefinition[]
+  selectedRecordingAddonSlugs: string[]
+  onRecordingAddonToggle: (slug: string) => void
   onNotesChange: (value: string) => void
   onTechnicianChange: (value: boolean) => void
   onBacklineChange: (value: boolean) => void
 }
 
-export function ExtrasStep({
+function RecordingAddonCard({
+  addon,
+  selected,
+  onToggle,
+}: {
+  addon: RecordingAddonDefinition
+  selected: boolean
+  onToggle: (slug: string) => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onToggle(addon.slug)}
+      className={cn(
+        'flex h-full w-full flex-col rounded-xl border p-3 text-left transition-colors duration-200',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-gold/40',
+        selected
+          ? 'border-accent-gold bg-accent-gold/10 text-text-primary shadow-[0_0_0_1px_rgba(255,191,0,0.12)]'
+          : 'border-brand-border bg-brand-surface text-text-secondary hover:border-accent-gold/50 hover:text-text-primary',
+      )}
+      aria-pressed={selected}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-display text-sm font-semibold leading-tight text-text-primary md:text-[13px]">
+            {addon.publicName}
+          </p>
+          <p className="mt-1 text-xs leading-snug text-text-secondary md:text-[11px]">
+            {addon.description}
+          </p>
+        </div>
+        <span className="shrink-0 rounded-full border border-accent-gold/25 bg-accent-gold/10 px-2 py-0.5 text-[10px] font-semibold text-accent-gold">
+          {addon.priceUsd} USD
+        </span>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-2 text-[10px] text-text-muted md:text-[9px]">
+        <span>{getRecordingAddonUnitLabel(addon.unit)}</span>
+        {addon.requiresReview ? (
+          <span className="rounded-full border border-amber-300/30 bg-amber-400/10 px-2 py-0.5 text-amber-200">
+            Requiere revision
+          </span>
+        ) : (
+          <span className="rounded-full border border-brand-border/70 bg-brand-bg/30 px-2 py-0.5 text-text-muted">
+            Seleccion opcional
+          </span>
+        )}
+      </div>
+
+      {selected && (
+        <div className="mt-3 inline-flex w-fit items-center rounded-full border border-accent-gold/30 bg-accent-gold/10 px-2 py-0.5 text-[10px] font-medium text-accent-gold">
+          Seleccionado
+        </div>
+      )}
+    </button>
+  )
+}
+
+function RecordingAddonFamilyBlock({
+  title,
+  description,
+  addons,
+  selectedRecordingAddonSlugs,
+  onRecordingAddonToggle,
+}: {
+  title: string
+  description: string
+  addons: RecordingAddonDefinition[]
+  selectedRecordingAddonSlugs: string[]
+  onRecordingAddonToggle: (slug: string) => void
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+  const selectedCount = addons.filter((addon) => selectedRecordingAddonSlugs.includes(addon.slug)).length
+
+  return (
+    <section className="rounded-xl border border-brand-border bg-brand-surface p-3">
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="flex w-full items-start justify-between gap-3 text-left md:cursor-default"
+      >
+        <span className="min-w-0">
+          <span className="block font-medium text-text-primary md:text-[13px]">{title}</span>
+          <span className="mt-0.5 block text-[11px] leading-snug text-text-secondary md:text-[10px]">
+            {description}
+          </span>
+        </span>
+
+        <span className="flex shrink-0 items-center gap-2">
+          {selectedCount > 0 && (
+            <span className="rounded-full border border-accent-gold/30 bg-accent-gold/10 px-2 py-0.5 text-[10px] font-semibold text-accent-gold">
+              {selectedCount}
+            </span>
+          )}
+          <svg
+            className={cn('h-4 w-4 text-text-muted transition-transform md:hidden', isOpen && 'rotate-180')}
+            viewBox="0 0 20 20"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path d="M5 7.5l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </button>
+
+      <div className={cn('mt-3 grid gap-2 sm:grid-cols-2', isOpen ? 'grid' : 'hidden', 'md:grid')}>
+        {addons.map((addon) => (
+          <RecordingAddonCard
+            key={addon.slug}
+            addon={addon}
+            selected={selectedRecordingAddonSlugs.includes(addon.slug)}
+            onToggle={onRecordingAddonToggle}
+          />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function LegacyExtrasPanel({
   notes,
   technician,
   backline,
   onNotesChange,
-}: ExtrasStepProps) {
-  const values: Record<ExtraKey, boolean> = { technician, backline }
+}: {
+  notes: string
+  technician: boolean
+  backline: boolean
+  onNotesChange: (value: string) => void
+}) {
+  const values: Record<LegacyExtraKey, boolean> = { technician, backline }
 
   return (
     <div className="space-y-4 md:space-y-3">
@@ -42,9 +180,9 @@ export function ExtrasStep({
         Esta version incluye tecnico de sonido y backline como cargos fijos dentro del estimado.
       </p>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:gap-3">
+      <div className="space-y-4 md:space-y-3">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-2">
-          {EXTRA_OPTIONS.map((opt) => (
+          {LEGACY_EXTRA_OPTIONS.map((opt) => (
             <div
               key={opt.key}
               aria-pressed={values[opt.key]}
@@ -104,6 +242,192 @@ export function ExtrasStep({
               notes.trim() ? 'border-accent-gold/50' : 'border-brand-border',
             )}
           />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function ExtrasStep({
+  serviceSlug,
+  variantSlug,
+  notes,
+  technician,
+  backline,
+  availableRecordingAddons,
+  selectedRecordingAddonSlugs,
+  onRecordingAddonToggle,
+  onNotesChange,
+}: ExtrasStepProps) {
+  const isRecordingService = serviceSlug === 'grabacion' && availableRecordingAddons.length > 0
+  const recommendedRecordingAddons = useMemo(
+    () => getRecommendedRecordingAddons(availableRecordingAddons).slice(0, 3),
+    [availableRecordingAddons],
+  )
+  const familyGroups = useMemo(
+    () => groupRecordingAddons(availableRecordingAddons),
+    [availableRecordingAddons],
+  )
+  const selectedRecordingAddons = useMemo(
+    () =>
+      availableRecordingAddons.filter((addon) => selectedRecordingAddonSlugs.includes(addon.slug)),
+    [availableRecordingAddons, selectedRecordingAddonSlugs],
+  )
+  const selectedRecordingAddonTotalUsd = selectedRecordingAddons.reduce(
+    (total, addon) => total + addon.priceUsd,
+    0,
+  )
+  const [showFamilies, setShowFamilies] = useState(false)
+
+  if (!isRecordingService) {
+    return (
+      <LegacyExtrasPanel
+        notes={notes}
+        technician={technician}
+        backline={backline}
+        onNotesChange={onNotesChange}
+      />
+    )
+  }
+
+  return (
+    <div className="space-y-4 md:space-y-3">
+      <div className="rounded-xl border border-accent-gold/20 bg-accent-gold/5 px-3 py-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full border border-accent-gold/25 bg-accent-gold/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-gold">
+            Vista experimental
+          </span>
+          <p className="text-sm text-text-secondary md:text-[11px]">
+            Selecciona adicionales de grabacion de forma opcional. Esto solo cambia la vista
+            experimental del wizard, no el flujo real de reserva.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.9fr)]">
+        <div className="space-y-4 md:space-y-3">
+          <section className="rounded-xl border border-brand-border bg-brand-surface p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted md:text-[10px]">
+                  Recomendados
+                </p>
+                <p className="mt-0.5 text-xs text-text-secondary md:text-[10px]">
+                  Tres opciones visibles al inicio para reducir friccion en mobile.
+                </p>
+              </div>
+              <span className="rounded-full border border-brand-border bg-brand-bg/30 px-2 py-0.5 text-[10px] text-text-muted">
+                {recommendedRecordingAddons.length} visibles
+              </span>
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {recommendedRecordingAddons.map((addon) => (
+                <RecordingAddonCard
+                  key={addon.slug}
+                  addon={addon}
+                  selected={selectedRecordingAddonSlugs.includes(addon.slug)}
+                  onToggle={onRecordingAddonToggle}
+                />
+              ))}
+            </div>
+          </section>
+
+          <div className="rounded-xl border border-brand-border bg-brand-surface p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted md:text-[10px]">
+                  Familias
+                </p>
+                <p className="mt-0.5 text-xs text-text-secondary md:text-[10px]">
+                  Usa {variantSlug ? 'el grupo correcto' : 'la familia correcta'} y abre mas opciones
+                  solo si realmente las necesitas.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowFamilies((current) => !current)}
+                className="inline-flex items-center rounded-full border border-brand-border bg-brand-bg/30 px-3 py-1 text-[11px] font-medium text-text-primary transition-colors hover:border-accent-gold/40 hover:text-accent-gold md:hidden"
+              >
+                {showFamilies ? 'Ocultar instrumentos' : 'Ver mas instrumentos'}
+              </button>
+            </div>
+
+            <div className={cn('mt-3 space-y-3', showFamilies ? 'block' : 'hidden', 'md:block')}>
+              {familyGroups.map((group) => (
+                <RecordingAddonFamilyBlock
+                  key={group.category}
+                  title={group.title}
+                  description={group.description}
+                  addons={group.addons}
+                  selectedRecordingAddonSlugs={selectedRecordingAddonSlugs}
+                  onRecordingAddonToggle={onRecordingAddonToggle}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <section className="rounded-xl border border-brand-border bg-brand-surface p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted md:text-[10px]">
+              Seleccion actual
+            </p>
+            {selectedRecordingAddons.length > 0 ? (
+              <div className="mt-3 space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {selectedRecordingAddons.map((addon) => (
+                    <span
+                      key={addon.slug}
+                      className="inline-flex items-center gap-1 rounded-full border border-accent-gold/25 bg-accent-gold/10 px-2.5 py-1 text-[10px] text-accent-gold"
+                    >
+                      <span className="font-medium">{addon.publicName}</span>
+                      <span className="text-accent-gold/80">•</span>
+                      <span>{addon.priceUsd} USD</span>
+                    </span>
+                  ))}
+                </div>
+
+                <div className="rounded-lg border border-accent-gold/20 bg-accent-gold/5 px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-wide text-text-muted">
+                    Subtotal visual experimental
+                  </p>
+                  <p className="mt-0.5 text-sm font-semibold text-text-primary">
+                    {selectedRecordingAddonTotalUsd} USD
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-snug text-text-muted">
+                    Esta cifra no altera todavia el cobro real ni la persistencia.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-text-secondary md:text-[11px]">
+                Aun no seleccionas adicionales. El paso sigue siendo opcional.
+              </p>
+            )}
+          </section>
+
+          <LegacyExtrasPanel
+            notes={notes}
+            technician={technician}
+            backline={backline}
+            onNotesChange={onNotesChange}
+          />
+
+          <div className="rounded-xl border border-brand-border bg-brand-bg/30 px-3 py-2">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-text-muted">Incluidos base</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {LEGACY_EXTRA_OPTIONS.map((opt) => (
+                <span
+                  key={opt.key}
+                  className="rounded-full border border-brand-border bg-brand-surface px-2 py-0.5 text-[10px] text-text-secondary"
+                >
+                  {opt.label}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

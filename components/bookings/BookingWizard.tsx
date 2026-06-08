@@ -19,6 +19,10 @@ import { CATALOG_SERVICES, CATALOG_VARIANTS } from '@/lib/bookings/catalog'
 import { reportBookingPayment, submitBookingRequest } from '@/lib/bookings/actions'
 import { buildBookingEstimate } from '@/lib/bookings/estimate'
 import {
+  getRecordingAddonsForService,
+  getSelectedRecordingAddonTotalUsd,
+} from '@/lib/bookings/recording-addons'
+import {
   formatUsdByCurrency,
   useBcvRate,
 } from '@/lib/bookings/currency-display'
@@ -52,6 +56,7 @@ interface WizardData {
   extrasNotes: string
   extrasTechnician: boolean
   extrasBackline: boolean
+  recordingAddonSlugs: string[]
   requesterName: string
   requesterEmail: string
   requesterPhone: string
@@ -66,6 +71,7 @@ const INITIAL_DATA: WizardData = {
   extrasNotes: '',
   extrasTechnician: true,
   extrasBackline: true,
+  recordingAddonSlugs: [],
   requesterName: '',
   requesterEmail: '',
   requesterPhone: '',
@@ -270,6 +276,19 @@ function formatUsdtAmount(value: number): string {
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2)
 }
 
+function sanitizeRecordingAddonSlugs(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+
+  return Array.from(
+    new Set(
+      value
+        .filter((entry): entry is string => typeof entry === 'string')
+        .map((entry) => entry.trim())
+        .filter(Boolean),
+    ),
+  )
+}
+
 interface BookingWizardProps {
   paymentMethods: BookingPaymentMethodConfig[]
   primaryPaymentMethodSlug: BookingPaymentMethodSlug
@@ -375,6 +394,19 @@ export function BookingWizard({
     CATALOG_VARIANTS.find((variant) => variant.slug === selectedVariantSlug)?.name ??
     selectedVariantSlug ??
     ''
+  const recordingAddonsForCurrentService = useMemo(
+    () => getRecordingAddonsForService(selectedServiceSlug, selectedVariantSlug),
+    [selectedServiceSlug, selectedVariantSlug],
+  )
+  const recordingAddonPreviewTotalUsd = useMemo(
+    () =>
+      getSelectedRecordingAddonTotalUsd(
+        data.recordingAddonSlugs,
+        selectedServiceSlug,
+        selectedVariantSlug,
+      ),
+    [data.recordingAddonSlugs, selectedServiceSlug, selectedVariantSlug],
+  )
   const bookingDateLabel = data.eventDate ? formatBookingDate(data.eventDate) : null
   const bookingEndTime =
     data.startTime && data.durationMinutes !== null
@@ -785,7 +817,12 @@ export function BookingWizard({
         return
       }
 
-      setData(parsed.data ?? INITIAL_DATA)
+      const restoredData = parsed.data ?? INITIAL_DATA
+      setData({
+        ...INITIAL_DATA,
+        ...restoredData,
+        recordingAddonSlugs: sanitizeRecordingAddonSlugs(restoredData.recordingAddonSlugs),
+      })
       setCurrentStep(
         typeof parsed.currentStep === 'number'
           ? Math.max(0, Math.min(parsed.currentStep, totalSteps - 1))
@@ -1053,6 +1090,19 @@ export function BookingWizard({
       return {
         ...currentData,
         selectedItems: nextItem ? [nextItem] : [],
+      }
+    })
+  }
+
+  function toggleRecordingAddon(slug: string) {
+    setData((currentData) => {
+      const nextSlugs = currentData.recordingAddonSlugs.includes(slug)
+        ? currentData.recordingAddonSlugs.filter((currentSlug) => currentSlug !== slug)
+        : [...currentData.recordingAddonSlugs, slug]
+
+      return {
+        ...currentData,
+        recordingAddonSlugs: nextSlugs,
       }
     })
   }
@@ -1952,9 +2002,14 @@ export function BookingWizard({
 
         {currentStep === 3 && (
           <ExtrasStep
+            serviceSlug={selectedServiceSlug}
+            variantSlug={selectedVariantSlug}
             notes={data.extrasNotes}
             technician={data.extrasTechnician}
             backline={data.extrasBackline}
+            availableRecordingAddons={recordingAddonsForCurrentService}
+            selectedRecordingAddonSlugs={data.recordingAddonSlugs}
+            onRecordingAddonToggle={toggleRecordingAddon}
             onNotesChange={(value) => setData((d) => ({ ...d, extrasNotes: value }))}
             onTechnicianChange={(value) => setData((d) => ({ ...d, extrasTechnician: value }))}
             onBacklineChange={(value) => setData((d) => ({ ...d, extrasBackline: value }))}
@@ -2060,6 +2115,9 @@ export function BookingWizard({
               extrasNotes={data.extrasNotes}
               extrasTechnician={data.extrasTechnician}
               extrasBackline={data.extrasBackline}
+              recordingAddonSlugs={data.recordingAddonSlugs}
+              recordingAddonPreviewTotalUsd={recordingAddonPreviewTotalUsd}
+              availableRecordingAddons={recordingAddonsForCurrentService}
               requesterName={data.requesterName}
               requesterEmail={data.requesterEmail}
               requesterPhone={normalizeWhatsappVe(data.requesterPhone)}

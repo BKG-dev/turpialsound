@@ -3,6 +3,10 @@
 import type { ReactNode } from 'react'
 import { CATALOG_SERVICES, CATALOG_VARIANTS } from '@/lib/bookings/catalog'
 import { deriveEndTime } from '@/components/bookings/steps/DateTimeStep'
+import {
+  getRecordingAddonUnitLabel,
+  type RecordingAddonDefinition,
+} from '@/lib/bookings/recording-addons'
 import type { BookingEstimate } from '@/lib/bookings/types'
 
 function formatDate(dateStr: string): string {
@@ -82,6 +86,9 @@ interface SummaryStepProps {
   extrasNotes: string
   extrasTechnician: boolean
   extrasBackline: boolean
+  recordingAddonSlugs: string[]
+  recordingAddonPreviewTotalUsd: number
+  availableRecordingAddons: RecordingAddonDefinition[]
   requesterName: string
   requesterEmail: string
   requesterPhone: string
@@ -97,6 +104,9 @@ export function SummaryStep({
   extrasNotes,
   extrasTechnician,
   extrasBackline,
+  recordingAddonSlugs,
+  recordingAddonPreviewTotalUsd,
+  availableRecordingAddons,
   requesterName,
   requesterEmail,
   requesterPhone,
@@ -105,7 +115,14 @@ export function SummaryStep({
   const service = CATALOG_SERVICES.find((s) => s.slug === serviceSlug)
   const variant = CATALOG_VARIANTS.find((v) => v.slug === variantSlug)
   const endTime = deriveEndTime(startTime, durationMinutes)
-  const hasExtras = extrasTechnician || extrasBackline || extrasNotes.trim().length > 0
+  const selectedRecordingAddons = availableRecordingAddons.filter((addon) =>
+    recordingAddonSlugs.includes(addon.slug),
+  )
+  const hasExtras =
+    extrasTechnician ||
+    extrasBackline ||
+    extrasNotes.trim().length > 0 ||
+    selectedRecordingAddons.length > 0
 
   return (
     <div className="space-y-3 md:space-y-2">
@@ -133,6 +150,20 @@ export function SummaryStep({
                   {extrasTechnician && <SummaryPill>Tecnico incluido</SummaryPill>}
                   {extrasBackline && <SummaryPill>Backline incluido</SummaryPill>}
                 </div>
+                {selectedRecordingAddons.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-[11px] uppercase tracking-wide text-text-muted md:text-[10px]">
+                      Adicionales experimentales
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedRecordingAddons.map((addon) => (
+                        <SummaryPill key={addon.slug}>
+                          {addon.publicName} · {addon.priceUsd} USD · {getRecordingAddonUnitLabel(addon.unit)}
+                        </SummaryPill>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {extrasNotes.trim() && (
                   <div className="space-y-1 rounded-md bg-brand-bg/30 px-2.5 py-2 md:px-2 md:py-1.5">
                     <p className="text-[11px] uppercase tracking-wide text-text-muted md:text-[10px]">Notas</p>
@@ -162,6 +193,13 @@ export function SummaryStep({
           {estimate && estimate.lines.length > 0 && (
             <SummaryCard title="Estimado Preliminar">
               <div className="space-y-0">
+                {selectedRecordingAddons.length > 0 && (
+                  <EstimateLine
+                    label="Adicionales experimentales"
+                    value={`${recordingAddonPreviewTotalUsd} USD`}
+                    detail="Solo visual. No modifica el cobro real."
+                  />
+                )}
                 {estimate.lines.map((line) => {
                   const detail =
                     line.unitPriceUsd !== null && (line.unit === 'hour' || line.label === 'Tecnico' || line.label === 'Backline')
