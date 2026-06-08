@@ -34,6 +34,13 @@ export interface RecordingAddonGroup {
   addons: RecordingAddonDefinition[]
 }
 
+export interface RecordingAddonVisualLine {
+  addon: RecordingAddonDefinition
+  formulaLabel: string
+  lineTotalUsd: number
+  noteLabel: string | null
+}
+
 const RECORDING_ADDONS: RecordingAddonDefinition[] = [
   {
     id: 'recording-addon-percusion-salsa-combo',
@@ -251,6 +258,65 @@ export function getRecordingAddonUnitLabel(unit: RecordingAddonUnit): string {
   if (unit === 'tema') return 'Por tema'
   if (unit === 'unidad') return 'Por unidad'
   return 'Por sesion'
+}
+
+function clampRecordingAddonTopicCount(value: number): number {
+  if (!Number.isFinite(value)) return 1
+  return Math.min(10, Math.max(1, Math.trunc(value)))
+}
+
+export function getRecordingAddonVisualTopicLabel(topicCount: number): string {
+  const safeTopicCount = clampRecordingAddonTopicCount(topicCount)
+  return `${safeTopicCount} ${safeTopicCount === 1 ? 'tema' : 'temas'}`
+}
+
+export function getRecordingAddonVisualLine(
+  addon: RecordingAddonDefinition,
+  topicCount: number,
+): RecordingAddonVisualLine {
+  const safeTopicCount = clampRecordingAddonTopicCount(topicCount)
+
+  if (addon.unit === 'sesion') {
+    return {
+      addon,
+      formulaLabel: `${addon.priceUsd} USD / sesión = ${addon.priceUsd} USD`,
+      lineTotalUsd: addon.priceUsd,
+      noteLabel: addon.requiresReview ? 'Sujeto a revisión operativa' : null,
+    }
+  }
+
+  const lineTotalUsd = addon.priceUsd * safeTopicCount
+  const topicLabel = getRecordingAddonVisualTopicLabel(safeTopicCount)
+
+  return {
+    addon,
+    formulaLabel: `${addon.priceUsd} USD × ${topicLabel} = ${lineTotalUsd} USD`,
+    lineTotalUsd,
+    noteLabel: addon.requiresReview ? 'Sujeto a revisión operativa' : null,
+  }
+}
+
+export function getSelectedRecordingAddonVisualLines(
+  selectedSlugs: string[],
+  serviceSlug: string | null | undefined,
+  variantSlug: string | null | undefined = null,
+  topicCount: number,
+): RecordingAddonVisualLine[] {
+  return getSelectedRecordingAddons(selectedSlugs, serviceSlug, variantSlug).map((addon) =>
+    getRecordingAddonVisualLine(addon, topicCount),
+  )
+}
+
+export function getSelectedRecordingAddonVisualTotalUsd(
+  selectedSlugs: string[],
+  serviceSlug: string | null | undefined,
+  variantSlug: string | null | undefined = null,
+  topicCount: number,
+): number {
+  return getSelectedRecordingAddonVisualLines(selectedSlugs, serviceSlug, variantSlug, topicCount).reduce(
+    (total, line) => total + line.lineTotalUsd,
+    0,
+  )
 }
 
 export function getRecordingAddonsForService(

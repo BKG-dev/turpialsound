@@ -4,7 +4,8 @@ import type { ReactNode } from 'react'
 import { CATALOG_SERVICES, CATALOG_VARIANTS } from '@/lib/bookings/catalog'
 import { deriveEndTime } from '@/components/bookings/steps/DateTimeStep'
 import {
-  getRecordingAddonUnitLabel,
+  getRecordingAddonVisualTopicLabel,
+  getSelectedRecordingAddonVisualLines,
   type RecordingAddonDefinition,
 } from '@/lib/bookings/recording-addons'
 import type { BookingEstimate } from '@/lib/bookings/types'
@@ -61,12 +62,24 @@ function EstimateLine({
   return (
     <div className="flex items-start justify-between gap-3 border-b border-brand-border/70 py-2 last:border-b-0 last:pb-0 first:pt-0 md:gap-2 md:py-1.5">
       <span>
-        <span className={emphasis ? 'text-[11px] font-semibold uppercase tracking-wide text-text-primary md:text-[10px]' : 'text-[12px] text-text-secondary md:text-[11px]'}>
+        <span
+          className={
+            emphasis
+              ? 'text-[11px] font-semibold uppercase tracking-wide text-text-primary md:text-[10px]'
+              : 'text-[12px] text-text-secondary md:text-[11px]'
+          }
+        >
           {label}
         </span>
         {detail && <span className="mt-0.5 block text-[11px] text-text-muted md:text-[10px]">{detail}</span>}
       </span>
-      <span className={emphasis ? 'text-sm font-semibold text-accent-gold md:text-[14px]' : 'text-sm font-medium text-text-primary md:text-[12px]'}>
+      <span
+        className={
+          emphasis
+            ? 'text-sm font-semibold text-accent-gold md:text-[14px]'
+            : 'text-sm font-medium text-text-primary md:text-[12px]'
+        }
+      >
         {value}
       </span>
     </div>
@@ -89,6 +102,7 @@ interface SummaryStepProps {
   recordingAddonSlugs: string[]
   recordingAddonPreviewTotalUsd: number
   availableRecordingAddons: RecordingAddonDefinition[]
+  projectTopicCount: number
   requesterName: string
   requesterEmail: string
   requesterPhone: string
@@ -107,6 +121,7 @@ export function SummaryStep({
   recordingAddonSlugs,
   recordingAddonPreviewTotalUsd,
   availableRecordingAddons,
+  projectTopicCount,
   requesterName,
   requesterEmail,
   requesterPhone,
@@ -117,6 +132,12 @@ export function SummaryStep({
   const endTime = deriveEndTime(startTime, durationMinutes)
   const selectedRecordingAddons = availableRecordingAddons.filter((addon) =>
     recordingAddonSlugs.includes(addon.slug),
+  )
+  const selectedRecordingAddonVisualLines = getSelectedRecordingAddonVisualLines(
+    recordingAddonSlugs,
+    serviceSlug,
+    variantSlug,
+    projectTopicCount,
   )
   const hasExtras =
     extrasTechnician ||
@@ -150,20 +171,6 @@ export function SummaryStep({
                   {extrasTechnician && <SummaryPill>Tecnico incluido</SummaryPill>}
                   {extrasBackline && <SummaryPill>Backline incluido</SummaryPill>}
                 </div>
-                {selectedRecordingAddons.length > 0 && (
-                  <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-wide text-text-muted md:text-[10px]">
-                      Adicionales experimentales
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedRecordingAddons.map((addon) => (
-                        <SummaryPill key={addon.slug}>
-                          {addon.publicName} · {addon.priceUsd} USD · {getRecordingAddonUnitLabel(addon.unit)}
-                        </SummaryPill>
-                      ))}
-                    </div>
-                  </div>
-                )}
                 {extrasNotes.trim() && (
                   <div className="space-y-1 rounded-md bg-brand-bg/30 px-2.5 py-2 md:px-2 md:py-1.5">
                     <p className="text-[11px] uppercase tracking-wide text-text-muted md:text-[10px]">Notas</p>
@@ -190,19 +197,68 @@ export function SummaryStep({
         </div>
 
         <div className="space-y-3 md:space-y-2">
+          {selectedRecordingAddonVisualLines.length > 0 && (
+            <SummaryCard title="Adicionales experimentales">
+              <div className="space-y-2">
+                <div className="rounded-md bg-brand-bg/30 px-2.5 py-2 md:px-2 md:py-1.5">
+                  <p className="text-[10px] uppercase tracking-wide text-text-muted">
+                    Alcance del proyecto
+                  </p>
+                  <p className="mt-0.5 text-sm font-semibold text-text-primary">
+                    {getRecordingAddonVisualTopicLabel(projectTopicCount)}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  {selectedRecordingAddonVisualLines.map((line) => (
+                    <div
+                      key={line.addon.slug}
+                      className="rounded-md border border-accent-gold/20 bg-accent-gold/5 px-2.5 py-2"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-text-primary md:text-[12px]">
+                            {line.addon.publicName}
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-text-muted md:text-[10px]">
+                            {line.formulaLabel}
+                          </p>
+                        </div>
+                        <p className="shrink-0 text-sm font-semibold text-accent-gold">
+                          {line.lineTotalUsd} USD
+                        </p>
+                      </div>
+                      {line.noteLabel && (
+                        <p className="mt-1 text-[11px] text-amber-200 md:text-[10px]">
+                          {line.noteLabel}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-md border border-accent-gold/20 bg-accent-gold/10 px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-wide text-text-muted">
+                    Subtotal visual experimental
+                  </p>
+                  <p className="mt-0.5 text-sm font-semibold text-text-primary">
+                    {recordingAddonPreviewTotalUsd} USD
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-snug text-text-muted">
+                    Este subtotal es experimental y no altera todavia el cobro real ni la persistencia.
+                  </p>
+                </div>
+              </div>
+            </SummaryCard>
+          )}
+
           {estimate && estimate.lines.length > 0 && (
             <SummaryCard title="Estimado Preliminar">
               <div className="space-y-0">
-                {selectedRecordingAddons.length > 0 && (
-                  <EstimateLine
-                    label="Adicionales experimentales"
-                    value={`${recordingAddonPreviewTotalUsd} USD`}
-                    detail="Solo visual. No modifica el cobro real."
-                  />
-                )}
                 {estimate.lines.map((line) => {
                   const detail =
-                    line.unitPriceUsd !== null && (line.unit === 'hour' || line.label === 'Tecnico' || line.label === 'Backline')
+                    line.unitPriceUsd !== null &&
+                    (line.unit === 'hour' || line.label === 'Tecnico' || line.label === 'Backline')
                       ? `${getHourLabel(line.quantity)} x ${line.unitPriceUsd} USD`
                       : undefined
 
@@ -242,8 +298,19 @@ export function SummaryStep({
           {estimate && estimate.blockingIssues.length > 0 && (
             <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2 md:px-2.5 md:py-1.5">
               <div className="flex items-center gap-2">
-                <svg className="h-4 w-4 text-red-400" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <svg
+                  className="h-4 w-4 text-red-400"
+                  aria-hidden="true"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
                 </svg>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-red-300 md:text-[10px]">
                   Requiere ajuste antes de enviar

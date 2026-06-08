@@ -20,7 +20,7 @@ import { reportBookingPayment, submitBookingRequest } from '@/lib/bookings/actio
 import { buildBookingEstimate } from '@/lib/bookings/estimate'
 import {
   getRecordingAddonsForService,
-  getSelectedRecordingAddonTotalUsd,
+  getSelectedRecordingAddonVisualTotalUsd,
 } from '@/lib/bookings/recording-addons'
 import {
   formatUsdByCurrency,
@@ -57,6 +57,7 @@ interface WizardData {
   extrasTechnician: boolean
   extrasBackline: boolean
   recordingAddonSlugs: string[]
+  projectTopicCount: number
   requesterName: string
   requesterEmail: string
   requesterPhone: string
@@ -72,6 +73,7 @@ const INITIAL_DATA: WizardData = {
   extrasTechnician: true,
   extrasBackline: true,
   recordingAddonSlugs: [],
+  projectTopicCount: 1,
   requesterName: '',
   requesterEmail: '',
   requesterPhone: '',
@@ -289,6 +291,12 @@ function sanitizeRecordingAddonSlugs(value: unknown): string[] {
   )
 }
 
+function sanitizeProjectTopicCount(value: unknown): number {
+  const numericValue = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(numericValue)) return 1
+  return Math.min(10, Math.max(1, Math.trunc(numericValue)))
+}
+
 interface BookingWizardProps {
   paymentMethods: BookingPaymentMethodConfig[]
   primaryPaymentMethodSlug: BookingPaymentMethodSlug
@@ -400,12 +408,13 @@ export function BookingWizard({
   )
   const recordingAddonPreviewTotalUsd = useMemo(
     () =>
-      getSelectedRecordingAddonTotalUsd(
+      getSelectedRecordingAddonVisualTotalUsd(
         data.recordingAddonSlugs,
         selectedServiceSlug,
         selectedVariantSlug,
+        data.projectTopicCount,
       ),
-    [data.recordingAddonSlugs, selectedServiceSlug, selectedVariantSlug],
+    [data.recordingAddonSlugs, data.projectTopicCount, selectedServiceSlug, selectedVariantSlug],
   )
   const bookingDateLabel = data.eventDate ? formatBookingDate(data.eventDate) : null
   const bookingEndTime =
@@ -822,6 +831,7 @@ export function BookingWizard({
         ...INITIAL_DATA,
         ...restoredData,
         recordingAddonSlugs: sanitizeRecordingAddonSlugs(restoredData.recordingAddonSlugs),
+        projectTopicCount: sanitizeProjectTopicCount(restoredData.projectTopicCount),
       })
       setCurrentStep(
         typeof parsed.currentStep === 'number'
@@ -1105,6 +1115,13 @@ export function BookingWizard({
         recordingAddonSlugs: nextSlugs,
       }
     })
+  }
+
+  function updateProjectTopicCount(nextValue: number) {
+    setData((currentData) => ({
+      ...currentData,
+      projectTopicCount: sanitizeProjectTopicCount(nextValue),
+    }))
   }
 
   function handleNext() {
@@ -2009,7 +2026,9 @@ export function BookingWizard({
             backline={data.extrasBackline}
             availableRecordingAddons={recordingAddonsForCurrentService}
             selectedRecordingAddonSlugs={data.recordingAddonSlugs}
+            projectTopicCount={data.projectTopicCount}
             onRecordingAddonToggle={toggleRecordingAddon}
+            onProjectTopicCountChange={updateProjectTopicCount}
             onNotesChange={(value) => setData((d) => ({ ...d, extrasNotes: value }))}
             onTechnicianChange={(value) => setData((d) => ({ ...d, extrasTechnician: value }))}
             onBacklineChange={(value) => setData((d) => ({ ...d, extrasBackline: value }))}
@@ -2118,6 +2137,7 @@ export function BookingWizard({
               recordingAddonSlugs={data.recordingAddonSlugs}
               recordingAddonPreviewTotalUsd={recordingAddonPreviewTotalUsd}
               availableRecordingAddons={recordingAddonsForCurrentService}
+              projectTopicCount={data.projectTopicCount}
               requesterName={data.requesterName}
               requesterEmail={data.requesterEmail}
               requesterPhone={normalizeWhatsappVe(data.requesterPhone)}
