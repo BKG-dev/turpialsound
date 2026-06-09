@@ -1204,10 +1204,10 @@ export function MarketplaceModals({
       setSubmitError('Selecciona una categoría primero')
       return
     }
-    if (flow === 'sell' && imageFiles.length === 0) {
-      setSubmitError('Debes subir al menos 1 imagen del producto')
-      return
-    }
+      if (flow === 'sell' && imageFiles.length === 0) {
+        setSubmitError('Debes subir al menos 1 imagen')
+        return
+      }
     setIsSubmitting(true)
     setSubmitError(null)
     setFieldErrors({})
