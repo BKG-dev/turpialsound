@@ -285,6 +285,85 @@ function fieldInputStyle(field: string, fieldErrors?: Record<string, string[]>) 
   }
 }
 
+function ImageUploadSection({
+  label,
+  emptyLabel,
+  hintLabel,
+  addAriaLabel,
+  imageFiles,
+  onAddImages,
+  onRemoveImage,
+}: {
+  label: string
+  emptyLabel: string
+  hintLabel: string
+  addAriaLabel: string
+  imageFiles: PreparedMarketplaceUpload[]
+  onAddImages: (files: FileList) => void
+  onRemoveImage: (index: number) => void
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="text-xs text-[#a0a0a0]">
+        {label} <span className="text-[#9a9a9a]">({imageFiles.length}/5)</span>
+      </label>
+      {imageFiles.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+          {imageFiles.map((upload, i) => (
+            <div key={i} className="relative aspect-square rounded-lg overflow-hidden group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={upload.previewUrl} alt={`Imagen ${i + 1}`} className="w-full h-full object-cover" />
+              <button type="button" onClick={() => onRemoveImage(i)}
+                className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <X size={14} className="text-white" />
+              </button>
+            </div>
+          ))}
+          {imageFiles.length < 5 && (
+            <label className="relative aspect-square rounded-lg flex items-center justify-center cursor-pointer overflow-hidden"
+              style={{ border: '1px dashed var(--mp-input-border)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,193,7,0.3)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--mp-input-border)' }}>
+              <Upload size={14} className="text-[var(--mp-text-faint)]" />
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                multiple
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                aria-label={addAriaLabel}
+                onChange={e => {
+                  if (e.target.files) onAddImages(e.target.files)
+                  e.currentTarget.value = ''
+                }}
+              />
+            </label>
+          )}
+        </div>
+      ) : (
+        <label className="relative rounded-xl flex flex-col items-center justify-center py-8 gap-2 cursor-pointer overflow-hidden transition-colors"
+          style={{ background: 'var(--mp-card-subtle)', border: '1px dashed var(--mp-input-border)' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,193,7,0.3)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--mp-input-border)' }}>
+          <Upload size={20} className="text-[var(--mp-text-faint)]" />
+          <p className="text-xs text-[#b8b8b8]">{emptyLabel}</p>
+          <p className="text-[10px] text-[var(--mp-text-faint)]">{hintLabel}</p>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+            multiple
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+            aria-label={addAriaLabel}
+            onChange={e => {
+              if (e.target.files) onAddImages(e.target.files)
+              e.currentTarget.value = ''
+            }}
+          />
+        </label>
+      )}
+    </div>
+  )
+}
+
 // ─── LISTING Q&A SECTION ─────────────────────────────────────────────────────
 
 function ListingQASection({
@@ -775,65 +854,15 @@ function SellFlow({
               <p className="text-[10px]" style={{ color: 'var(--mp-text-faint)' }}>Se descuenta automaticamente con cada venta hasta agotarse. Minimo 1.</p>
             </div>
 
-            {/* Image upload */}
-            <div className="space-y-2">
-              <label className="text-xs text-[#a0a0a0]">
-                Fotos del equipo <span className="text-[#9a9a9a]">({imageFiles.length}/5)</span>
-              </label>
-              {imageFiles.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {imageFiles.map((upload, i) => (
-                    <div key={i} className="relative aspect-square rounded-lg overflow-hidden group">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={upload.previewUrl} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
-                      <button type="button" onClick={() => onRemoveImage(i)}
-                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <X size={14} className="text-white" />
-                      </button>
-                    </div>
-                  ))}
-                  {imageFiles.length < 5 && (
-                    <label className="relative aspect-square rounded-lg flex items-center justify-center cursor-pointer overflow-hidden"
-                      style={{ border: '1px dashed var(--mp-input-border)' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,193,7,0.3)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--mp-input-border)' }}>
-                      <Upload size={14} className="text-[var(--mp-text-faint)]" />
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-                        multiple
-                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                        aria-label="Agregar fotos del equipo"
-                        onChange={e => {
-                          if (e.target.files) onAddImages(e.target.files)
-                          e.currentTarget.value = ''
-                        }}
-                      />
-                    </label>
-                  )}
-                </div>
-              ) : (
-                <label className="relative rounded-xl flex flex-col items-center justify-center py-8 gap-2 cursor-pointer overflow-hidden transition-colors"
-                  style={{ background: 'var(--mp-card-subtle)', border: '1px dashed var(--mp-input-border)' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,193,7,0.3)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--mp-input-border)' }}>
-                  <Upload size={20} className="text-[var(--mp-text-faint)]" />
-                  <p className="text-xs text-[#b8b8b8]">Subir fotos del equipo (máx. 5)</p>
-                  <p className="text-[10px] text-[var(--mp-text-faint)]">JPG, PNG, WEBP o HEIC</p>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-                    multiple
-                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                    aria-label="Subir fotos del equipo"
-                    onChange={e => {
-                      if (e.target.files) onAddImages(e.target.files)
-                      e.currentTarget.value = ''
-                    }}
-                  />
-                </label>
-              )}
-            </div>
+            <ImageUploadSection
+              label="Fotos del equipo"
+              emptyLabel="Subir fotos del equipo (máx. 5)"
+              hintLabel="JPG, PNG, WEBP o HEIC"
+              addAriaLabel="Agregar fotos del equipo"
+              imageFiles={imageFiles}
+              onAddImages={onAddImages}
+              onRemoveImage={onRemoveImage}
+            />
 
             {/* Commission notice */}
             <div className="rounded-xl p-3 flex items-start gap-2"
@@ -928,7 +957,7 @@ function FindTalentFlow({ step, direction, listings, listingsLoading, listingsEr
 // ─── FLOW: Offer Talent ───────────────────────────────────────────────────────
 
 function OfferTalentFlow({
-  step, direction, onCategory, formValues, onFieldChange, fieldErrors,
+  step, direction, onCategory, formValues, onFieldChange, fieldErrors, imageFiles, onAddImages, onRemoveImage,
 }: {
   step: number
   direction: number
@@ -936,6 +965,9 @@ function OfferTalentFlow({
   formValues: Record<string, string>
   onFieldChange: (key: string, value: string) => void
   fieldErrors?: Record<string, string[]>
+  imageFiles: PreparedMarketplaceUpload[]
+  onAddImages: (files: FileList) => void
+  onRemoveImage: (index: number) => void
 }) {
   const GOLD_FOCUS = 'rgba(255,193,7,0.4)'
   const ERR_COLOR = 'rgba(239,68,68,0.5)'
@@ -1087,6 +1119,24 @@ function OfferTalentFlow({
                 </select>
               </div>
             </div>
+
+            <ImageUploadSection
+              label="Fotos de tu servicio"
+              emptyLabel="Subir imágenes de tu trabajo (máx. 5)"
+              hintLabel="Muestra sesiones, estudio, eventos o tu portafolio"
+              addAriaLabel="Agregar fotos de tu servicio"
+              imageFiles={imageFiles}
+              onAddImages={onAddImages}
+              onRemoveImage={onRemoveImage}
+            />
+
+            <div className="rounded-xl p-3 flex items-start gap-2"
+              style={{ background: 'rgba(255,193,7,0.05)', border: '1px solid rgba(255,193,7,0.12)' }}>
+              <AlertCircle size={13} className="text-[#ffc107] mt-0.5 flex-shrink-0" />
+              <p className="text-[11px] text-[#a0a0a0]">
+                Turpial Market cobra el <span className="text-[#ffc107]">5% de comisión sobre el cobro</span>, descontado cuando el proyecto se completa.
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -1204,8 +1254,12 @@ export function MarketplaceModals({
       setSubmitError('Selecciona una categoría primero')
       return
     }
-    if (flow === 'sell' && imageFiles.length === 0) {
-      setSubmitError('Debes subir al menos 1 imagen del producto')
+    const imageRequiredMessage =
+      flow === 'offer-talent'
+        ? 'Debes subir al menos 1 imagen de tu servicio'
+        : 'Debes subir al menos 1 imagen del producto'
+    if ((flow === 'sell' || flow === 'offer-talent') && imageFiles.length === 0) {
+      setSubmitError(imageRequiredMessage)
       return
     }
     setIsSubmitting(true)
@@ -1286,6 +1340,7 @@ export function MarketplaceModals({
               currency: 'USD',
               badge: 'NUEVO',
               talent: me,
+              portfolio: uploadedImageUrls,
               status: 'active',
               createdAt: now,
               tags: [],
@@ -1435,6 +1490,9 @@ export function MarketplaceModals({
                   formValues={formValues}
                   onFieldChange={handleFieldChange}
                   fieldErrors={fieldErrors}
+                  imageFiles={imageFiles}
+                  onAddImages={handleAddImages}
+                  onRemoveImage={handleRemoveImage}
                 />
               )}
             </AnimatePresence>

@@ -108,6 +108,7 @@ export function adaptDbListing(l: any): Listing {
       currency: (l.currency as 'USD' | 'VES') ?? 'USD',
       badge: 'NUEVO',
       talent: user,
+      portfolio: images,
       status: isSoldOut ? 'sold' : 'active',
       activeTransactionStatus,
       createdAt: createdAtStr,
