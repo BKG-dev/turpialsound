@@ -204,6 +204,23 @@ export interface SubmitBookingInput {
   requesterEmail: string
   requesterPhone: string
   whatsappConsentAccepted?: boolean
+  isProductionMusic?: boolean
+  productionMusicThemeCount?: number
+  productionMusicTotalUsd?: number
+  productionMusicIncludedHours?: number
+  productionMusicBaseTotalUsd?: number
+  productionMusicAddonsTotalUsd?: number
+  productionMusicGenre?: string
+  productionMusicReferences?: string
+  productionMusicTentativeDate?: string
+  productionMusicHasLyrics?: boolean
+  productionMusicHasDemo?: boolean
+  productionMusicNeedsMusicians?: boolean
+  productionMusicNeedsArrangement?: boolean
+  productionMusicNeedsMix?: boolean
+  productionMusicNeedsMaster?: boolean
+  productionMusicAddonIds?: string[]
+  productionMusicAddonQuantities?: Record<string, number>
 }
 
 export interface SubmitBookingResult {
@@ -325,12 +342,15 @@ export async function submitBookingRequest(
   try {
     if (
       !input.serviceSlug ||
-      !input.variantSlug ||
-      !input.eventDate ||
-      !input.startTime ||
-      !input.durationMinutes
+      !input.variantSlug
     ) {
       return { success: false, error: 'Faltan datos obligatorios en la solicitud.' }
+    }
+
+    if (!input.isProductionMusic) {
+      if (!input.eventDate || !input.startTime || !input.durationMinutes) {
+        return { success: false, error: 'Faltan datos de fecha y horario en la solicitud.' }
+      }
     }
 
     const requesterName = input.requesterName.trim()
@@ -398,28 +418,66 @@ export async function submitBookingRequest(
     }
 
     const notesParts: string[] = []
-    if (input.extrasTechnician) notesParts.push('Tecnico de sonido: requerido')
-    if (input.extrasBackline) notesParts.push('Backline / equipamiento adicional: requerido')
-    if (input.extrasNotes.trim()) notesParts.push(input.extrasNotes.trim())
+
+    if (input.isProductionMusic) {
+      notesParts.push('--- PRODUCCION MUSICAL ---')
+      notesParts.push(`Temas: ${input.productionMusicThemeCount ?? 1}`)
+      notesParts.push(`Total estimado USD: ${input.productionMusicTotalUsd ?? 1000}`)
+      notesParts.push(`Base USD: ${input.productionMusicBaseTotalUsd ?? 1000}`)
+      notesParts.push(`Adicionales USD: ${input.productionMusicAddonsTotalUsd ?? 0}`)
+      notesParts.push(`Horas operativas: ${input.productionMusicIncludedHours ?? 12}`)
+      if (input.productionMusicGenre) notesParts.push(`Genero: ${input.productionMusicGenre}`)
+      if (input.productionMusicReferences) notesParts.push(`Referencias: ${input.productionMusicReferences}`)
+      if (input.productionMusicTentativeDate) notesParts.push(`Fecha tentativa: ${input.productionMusicTentativeDate}`)
+      const scopeFlags = [
+        input.productionMusicHasLyrics && 'Tiene letra',
+        input.productionMusicHasDemo && 'Tiene maqueta',
+        input.productionMusicNeedsMusicians && 'Necesita musicos',
+        input.productionMusicNeedsArrangement && 'Necesita arreglos',
+        input.productionMusicNeedsMix && 'Necesita mezcla',
+        input.productionMusicNeedsMaster && 'Necesita master',
+      ].filter(Boolean)
+      if (scopeFlags.length > 0) notesParts.push(`Alcance: ${scopeFlags.join(', ')}`)
+      if (input.productionMusicAddonIds && input.productionMusicAddonIds.length > 0) {
+        const addonDetails = input.productionMusicAddonIds.map((id) => {
+          const qty = input.productionMusicAddonQuantities?.[id] ?? 1
+          return qty > 1 ? `${id} x${qty}` : id
+        })
+        notesParts.push(`Addons seleccionados: ${addonDetails.join(', ')}`)
+      }
+      notesParts.push('Requiere revision manual. No se agenda por calendario.')
+    } else {
+      if (input.extrasTechnician) notesParts.push('Tecnico de sonido: requerido')
+      if (input.extrasBackline) notesParts.push('Backline / equipamiento adicional: requerido')
+      if (input.extrasNotes.trim()) notesParts.push(input.extrasNotes.trim())
+    }
     const notes = notesParts.length > 0 ? notesParts.join('\n') : null
 
     const serviceName =
       CATALOG_SERVICES.find((service) => service.slug === input.serviceSlug)?.name ?? 'Servicio'
-    const eventTitle = `Solicitud - ${serviceName}`
-    const bookingEstimate = buildBookingEstimate({
-      selectedItems: [
-        {
-          serviceSlug: input.serviceSlug,
-          variantSlug: input.variantSlug,
-          quantity: 1,
-        },
-      ],
-      eventDate: input.eventDate,
-      durationMinutes: input.durationMinutes,
-      extrasTechnician: input.extrasTechnician,
-      extrasBackline: input.extrasBackline,
-    })
-    const estimatedTotalUsd = bookingEstimate.estimatedTotalUsd
+    const eventTitle = input.isProductionMusic
+      ? `Produccion Musical - ${input.productionMusicThemeCount ?? 1} tema(s)`
+      : `Solicitud - ${serviceName}`
+
+    let estimatedTotalUsd: number
+    if (input.isProductionMusic) {
+      estimatedTotalUsd = input.productionMusicTotalUsd ?? 1000
+    } else {
+      const bookingEstimate = buildBookingEstimate({
+        selectedItems: [
+          {
+            serviceSlug: input.serviceSlug,
+            variantSlug: input.variantSlug,
+            quantity: 1,
+          },
+        ],
+        eventDate: input.eventDate,
+        durationMinutes: input.durationMinutes,
+        extrasTechnician: input.extrasTechnician,
+        extrasBackline: input.extrasBackline,
+      })
+      estimatedTotalUsd = bookingEstimate.estimatedTotalUsd
+    }
     const internalNotesWithStatus = setOperationalStatusInInternalNotes(null, 'pending_payment')
     const internalNotes = withWhatsappConsentTags(internalNotesWithStatus, new Date())
     // QA bypass list for hold anti-abuse tests (CSV via env); bypasses only active-hold guard.
@@ -467,11 +525,13 @@ export async function submitBookingRequest(
             })
             const publicCode = buildPublicCode(year, existing + 1)
 
-            const resourceAssignment = await assignResourceForRequestedSlot(tx, {
-              serviceSlug: input.serviceSlug,
-              eventDate: eventDateTime,
-              eventEndDate: eventEndDateTime,
-            })
+            const resourceAssignment = input.isProductionMusic
+              ? { available: true as const, assignedResourceId: null, message: null }
+              : await assignResourceForRequestedSlot(tx, {
+                  serviceSlug: input.serviceSlug,
+                  eventDate: eventDateTime,
+                  eventEndDate: eventEndDateTime,
+                })
 
             if (!resourceAssignment.available) {
               return {
@@ -559,38 +619,41 @@ export async function submitBookingRequest(
     }
 
     const paymentDeadline = getPaymentDeadline(submitResult.createdAt)
-    const calendarSync = await syncBookingToGoogleCalendar({
-      publicCode: submitResult.publicCode,
-      serviceName,
-      variantName: serviceVariant.name,
-      resourceName: submitResult.resourceName,
-      requesterName,
-      requesterPhone,
-      eventDate: eventDateTime,
-      eventEndDate: eventEndDateTime,
-      paymentDeadline,
-      operationalStatus: 'pending_payment',
-      existingCalendarEventId: null,
-    })
 
-    if (calendarSync.ok) {
-      await prisma.bookingRequest.update({
-        where: { id: submitResult.bookingId },
-        data: {
-          calendarEventId: calendarSync.eventId,
-        },
+    if (!input.isProductionMusic) {
+      const calendarSync = await syncBookingToGoogleCalendar({
+        publicCode: submitResult.publicCode,
+        serviceName,
+        variantName: serviceVariant.name,
+        resourceName: submitResult.resourceName,
+        requesterName,
+        requesterPhone,
+        eventDate: eventDateTime,
+        eventEndDate: eventEndDateTime,
+        paymentDeadline,
+        operationalStatus: 'pending_payment',
+        existingCalendarEventId: null,
       })
-    } else {
-      await prisma.auditLog.create({
-        data: {
-          bookingRequestId: submitResult.bookingId,
-          action: 'calendar_sync_failed_on_submit',
-          nextState: {
-            operationalStatus: 'pending_payment',
-            reason: calendarSync.reason ?? 'unknown',
+
+      if (calendarSync.ok) {
+        await prisma.bookingRequest.update({
+          where: { id: submitResult.bookingId },
+          data: {
+            calendarEventId: calendarSync.eventId,
           },
-        },
-      })
+        })
+      } else {
+        await prisma.auditLog.create({
+          data: {
+            bookingRequestId: submitResult.bookingId,
+            action: 'calendar_sync_failed_on_submit',
+            nextState: {
+              operationalStatus: 'pending_payment',
+              reason: calendarSync.reason ?? 'unknown',
+            },
+          },
+        })
+      }
     }
 
     await sendBookingNotifications('booking.pending_payment.created', {

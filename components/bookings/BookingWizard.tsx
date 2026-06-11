@@ -32,6 +32,16 @@ import type {
   BookingPaymentMethodSlug,
 } from '@/lib/bookings/payment-settings.types'
 import type { SelectedBookingItem } from '@/lib/bookings/types'
+import { ProductionMusicScopeStep } from '@/components/bookings/steps/ProductionMusicScopeStep'
+import { ProductionMusicAddonsStep } from '@/components/bookings/steps/ProductionMusicAddonsStep'
+import {
+  isProductionMusicService,
+  isProductionMusicVariant,
+  calculateProductionMusicEstimate,
+  getProductionMusicAddonById,
+  type ProductionMusicAddonSelectionInput,
+  type ProductionMusicEstimate,
+} from '@/lib/bookings/production-music'
 
 interface WizardStepDef {
   id: string
@@ -58,6 +68,18 @@ interface WizardData {
   extrasBackline: boolean
   recordingAddonSlugs: string[]
   projectTopicCount: number
+  productionMusicThemeCount: number
+  productionMusicGenre: string
+  productionMusicReferences: string
+  productionMusicTentativeDate: string
+  productionMusicHasLyrics: boolean
+  productionMusicHasDemo: boolean
+  productionMusicNeedsMusicians: boolean
+  productionMusicNeedsArrangement: boolean
+  productionMusicNeedsMix: boolean
+  productionMusicNeedsMaster: boolean
+  productionMusicAddonIds: string[]
+  productionMusicAddonQuantities: Record<string, number>
   requesterName: string
   requesterEmail: string
   requesterPhone: string
@@ -74,6 +96,18 @@ const INITIAL_DATA: WizardData = {
   extrasBackline: true,
   recordingAddonSlugs: [],
   projectTopicCount: 1,
+  productionMusicThemeCount: 1,
+  productionMusicGenre: '',
+  productionMusicReferences: '',
+  productionMusicTentativeDate: '',
+  productionMusicHasLyrics: false,
+  productionMusicHasDemo: false,
+  productionMusicNeedsMusicians: false,
+  productionMusicNeedsArrangement: false,
+  productionMusicNeedsMix: false,
+  productionMusicNeedsMaster: false,
+  productionMusicAddonIds: [],
+  productionMusicAddonQuantities: {},
   requesterName: '',
   requesterEmail: '',
   requesterPhone: '',
@@ -297,6 +331,200 @@ function sanitizeProjectTopicCount(value: unknown): number {
   return Math.min(10, Math.max(1, Math.trunc(numericValue)))
 }
 
+function ProductionMusicSummary({
+  serviceSlug,
+  variantSlug,
+  estimate,
+  genre,
+  references,
+  tentativeDate,
+  hasLyrics,
+  hasDemo,
+  needsMusicians,
+  needsArrangement,
+  needsMix,
+  needsMaster,
+  requesterName,
+  requesterEmail,
+  requesterPhone,
+}: {
+  serviceSlug: string
+  variantSlug: string
+  estimate: ProductionMusicEstimate | null
+  genre: string
+  references: string
+  tentativeDate: string
+  hasLyrics: boolean
+  hasDemo: boolean
+  needsMusicians: boolean
+  needsArrangement: boolean
+  needsMix: boolean
+  needsMaster: boolean
+  requesterName: string
+  requesterEmail: string
+  requesterPhone: string
+}) {
+  const service = CATALOG_SERVICES.find((s) => s.slug === serviceSlug)
+  const variant = CATALOG_VARIANTS.find((v) => v.slug === variantSlug)
+  const scopeFlags = [
+    hasLyrics && 'Tiene letra',
+    hasDemo && 'Tiene maqueta',
+    needsMusicians && 'Necesita musicos',
+    needsArrangement && 'Necesita arreglos',
+    needsMix && 'Necesita mezcla',
+    needsMaster && 'Necesita master',
+  ].filter(Boolean) as string[]
+
+  return (
+    <div className="space-y-3 md:space-y-2">
+      <p className="text-sm text-text-secondary md:text-[10px] md:leading-tight">
+        Revisa los datos antes de enviar. El equipo de Turpial Sound validara el alcance final y se pondra en contacto contigo por WhatsApp.
+      </p>
+
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.15fr)] xl:gap-2">
+        <div className="space-y-3 md:space-y-2">
+          <section className="space-y-1.5 rounded-lg border border-brand-border bg-brand-surface px-3 py-2.5">
+            <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">Servicio y Alcance</h3>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div className="space-y-0.5 rounded-md bg-brand-bg/30 px-2.5 py-2">
+                <p className="text-[11px] uppercase tracking-wide text-text-muted">Servicio</p>
+                <p className="break-words text-sm font-medium text-text-primary">{service?.name ?? serviceSlug}</p>
+              </div>
+              <div className="space-y-0.5 rounded-md bg-brand-bg/30 px-2.5 py-2">
+                <p className="text-[11px] uppercase tracking-wide text-text-muted">Modalidad</p>
+                <p className="break-words text-sm font-medium text-text-primary">{variant?.name ?? variantSlug}</p>
+              </div>
+            </div>
+            {estimate && (
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-0.5 rounded-md bg-brand-bg/30 px-2 py-1.5 text-center">
+                  <p className="text-[10px] uppercase tracking-wide text-text-muted">Temas</p>
+                  <p className="text-sm font-semibold text-text-primary">{estimate.themeCount}</p>
+                </div>
+                <div className="space-y-0.5 rounded-md bg-brand-bg/30 px-2 py-1.5 text-center">
+                  <p className="text-[10px] uppercase tracking-wide text-text-muted">Horas</p>
+                  <p className="text-sm font-semibold text-text-primary">{estimate.includedHours}</p>
+                </div>
+                <div className="space-y-0.5 rounded-md bg-brand-bg/30 px-2 py-1.5 text-center">
+                  <p className="text-[10px] uppercase tracking-wide text-text-muted">Base</p>
+                  <p className="text-sm font-semibold text-text-primary">{estimate.baseTotalUsd} USD</p>
+                </div>
+              </div>
+            )}
+            {estimate && estimate.selectedAddons.length > 0 && (
+              <div className="rounded-md bg-brand-bg/30 px-2.5 py-2">
+                <p className="text-[11px] uppercase tracking-wide text-text-muted">
+                  Adicionales incluidos en el total
+                </p>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {estimate.selectedAddons.map((line) => (
+                    <span
+                      key={line.addonId}
+                      className="rounded-full border border-accent-gold/20 bg-accent-gold/5 px-2 py-0.5 text-[10px] text-text-secondary"
+                    >
+                      {line.label}{line.quantity > 1 ? ` x${line.quantity}` : ''}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
+
+        <div className="space-y-3 md:space-y-2">
+          <section className="space-y-1.5 rounded-lg border border-brand-border bg-brand-surface px-3 py-2.5">
+            <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">Contexto Creativo</h3>
+            {genre && (
+              <div className="space-y-0.5 rounded-md bg-brand-bg/30 px-2.5 py-2">
+                <p className="text-[11px] uppercase tracking-wide text-text-muted">Genero</p>
+                <p className="text-sm text-text-primary">{genre}</p>
+              </div>
+            )}
+            {tentativeDate && (
+              <div className="space-y-0.5 rounded-md bg-brand-bg/30 px-2.5 py-2">
+                <p className="text-[11px] uppercase tracking-wide text-text-muted">Fecha tentativa</p>
+                <p className="text-sm text-text-primary">{tentativeDate}</p>
+              </div>
+            )}
+            {references && (
+              <div className="space-y-0.5 rounded-md bg-brand-bg/30 px-2.5 py-2">
+                <p className="text-[11px] uppercase tracking-wide text-text-muted">Referencias</p>
+                <p className="text-sm text-text-primary">{references}</p>
+              </div>
+            )}
+            {scopeFlags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {scopeFlags.map((flag) => (
+                  <span key={flag} className="rounded-full border border-brand-border px-2 py-0.5 text-[10px] text-text-secondary">
+                    {flag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="space-y-1.5 rounded-lg border border-brand-border bg-brand-surface px-3 py-2.5">
+            <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">Contacto</h3>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div className="space-y-0.5 rounded-md bg-brand-bg/30 px-2.5 py-2">
+                <p className="text-[11px] uppercase tracking-wide text-text-muted">Nombre</p>
+                <p className="break-words text-sm font-medium text-text-primary">{requesterName}</p>
+              </div>
+              <div className="space-y-0.5 rounded-md bg-brand-bg/30 px-2.5 py-2">
+                <p className="text-[11px] uppercase tracking-wide text-text-muted">Correo</p>
+                <p className="break-words text-sm font-medium text-text-primary">{requesterEmail}</p>
+              </div>
+              {requesterPhone && (
+                <div className="space-y-0.5 rounded-md bg-brand-bg/30 px-2.5 py-2 sm:col-span-2">
+                  <p className="text-[11px] uppercase tracking-wide text-text-muted">WhatsApp</p>
+                  <p className="break-words text-sm font-medium text-text-primary">{requesterPhone}</p>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+
+        <div className="space-y-3 md:space-y-2">
+          <section className="space-y-1.5 rounded-lg border border-brand-border bg-brand-surface px-3 py-2.5">
+            <h3 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">Total Estimado</h3>
+            {estimate ? (
+              <>
+                <div className="rounded-md border border-accent-gold/20 bg-accent-gold/10 px-3 py-2.5 text-center">
+                  <p className="text-[10px] uppercase tracking-wide text-text-muted">Total estimado</p>
+                  <p className="mt-0.5 font-display text-xl font-bold text-accent-gold">
+                    {estimate.totalUsd.toLocaleString('en-US')} USD
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-snug text-text-muted">
+                    El equipo validara el alcance final por WhatsApp antes de confirmar.
+                  </p>
+                </div>
+                {estimate.selectedAddons.length > 0 && (
+                  <p className="text-[11px] text-text-muted">
+                    Adicionales seleccionados incluidos en el total estimado.
+                  </p>
+                )}
+              </>
+            ) : (
+              <div className="rounded-md bg-brand-bg/30 px-2.5 py-2">
+                <p className="text-[12px] text-text-secondary">
+                  El total se calculara durante la revision del alcance.
+                </p>
+              </div>
+            )}
+            <div className="rounded-md border border-brand-border bg-brand-bg/20 px-2.5 py-2 text-[11px] leading-snug text-text-muted">
+              Confirmacion final sujeta a revision del alcance. No se agenda automaticamente por calendario.
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <p className="text-xs text-text-muted md:text-[10px] md:leading-tight">
+        Al enviar, tu solicitud quedara pendiente de revision interna. No es una reserva confirmada.
+      </p>
+    </div>
+  )
+}
+
 interface BookingWizardProps {
   paymentMethods: BookingPaymentMethodConfig[]
   primaryPaymentMethodSlug: BookingPaymentMethodSlug
@@ -369,6 +597,26 @@ export function BookingWizard({
   const primaryItem = data.selectedItems[0] ?? null
   const selectedServiceSlug = primaryItem?.serviceSlug ?? null
   const selectedVariantSlug = primaryItem?.variantSlug ?? null
+  const isProductionMusic =
+    isProductionMusicService(selectedServiceSlug) && isProductionMusicVariant(selectedVariantSlug)
+  const productionMusicEstimate = useMemo((): ProductionMusicEstimate | null => {
+    if (!isProductionMusic) return null
+    const addonSelections: ProductionMusicAddonSelectionInput[] = data.productionMusicAddonIds.map(
+      (addonId) => ({
+        addonId,
+        quantity: data.productionMusicAddonQuantities[addonId] ?? 1,
+      }),
+    )
+    return calculateProductionMusicEstimate({
+      themeCount: data.productionMusicThemeCount,
+      selectedAddons: addonSelections,
+    })
+  }, [
+    isProductionMusic,
+    data.productionMusicThemeCount,
+    data.productionMusicAddonIds,
+    data.productionMusicAddonQuantities,
+  ])
   const bookingEstimate = useMemo(
     () =>
       buildBookingEstimate({
@@ -389,8 +637,18 @@ export function BookingWizard({
   const paymentWindowLabel =
     paymentWindowMinutes === 60 ? '1 hora' : `${paymentWindowMinutes} minutos`
   const bcvState = useBcvRate()
-  const estimatedTotalUsdLabel = formatUsdByCurrency(bookingEstimate.estimatedTotalUsd, 'usd', bcvState.rate)
-  const estimatedTotalBsLabel = formatUsdByCurrency(bookingEstimate.estimatedTotalUsd, 'bs', bcvState.rate)
+  const productionMusicTotalUsdLabel = productionMusicEstimate
+    ? formatUsdByCurrency(productionMusicEstimate.totalUsd, 'usd', bcvState.rate)
+    : ''
+  const productionMusicTotalBsLabel = productionMusicEstimate
+    ? formatUsdByCurrency(productionMusicEstimate.totalUsd, 'bs', bcvState.rate)
+    : ''
+  const estimatedTotalUsdLabel = isProductionMusic
+    ? productionMusicTotalUsdLabel
+    : formatUsdByCurrency(bookingEstimate.estimatedTotalUsd, 'usd', bcvState.rate)
+  const estimatedTotalBsLabel = isProductionMusic
+    ? productionMusicTotalBsLabel
+    : formatUsdByCurrency(bookingEstimate.estimatedTotalUsd, 'bs', bcvState.rate)
   const selectedPaymentMethod =
     paymentMethods.find((method) => method.slug === selectedPaymentMethodSlug) ??
     primaryPaymentMethod
@@ -402,6 +660,25 @@ export function BookingWizard({
     CATALOG_VARIANTS.find((variant) => variant.slug === selectedVariantSlug)?.name ??
     selectedVariantSlug ??
     ''
+  const activeAmountLabel = isProductionMusic
+    ? productionMusicTotalBsLabel
+    : estimatedTotalBsLabel
+  const secondaryAmountLabel = isProductionMusic
+    ? productionMusicTotalUsdLabel
+    : estimatedTotalUsdLabel
+  const effectiveTotalUsd = isProductionMusic
+    ? (productionMusicEstimate?.totalUsd ?? bookingEstimate.estimatedTotalUsd)
+    : bookingEstimate.estimatedTotalUsd
+  const bsAmountEstimated = Number.isFinite(effectiveTotalUsd * bcvState.rate)
+    ? Math.round(effectiveTotalUsd * bcvState.rate)
+    : 0
+  const bsAmountCopyValue =
+    bsAmountEstimated > 0 ? String(bsAmountEstimated) : getAmountCopyDigits(activeAmountLabel)
+  const bsAmountVisible =
+    bsAmountCopyValue.length > 0
+      ? `Bs. ${Number(bsAmountCopyValue).toLocaleString('es-VE')}`
+      : formatBsVisibleFromLabel(activeAmountLabel)
+  const usdtAmountValue = formatUsdtAmount(effectiveTotalUsd)
   const recordingAddonsForCurrentService = useMemo(
     () => getRecordingAddonsForService(selectedServiceSlug, selectedVariantSlug),
     [selectedServiceSlug, selectedVariantSlug],
@@ -432,18 +709,6 @@ export function BookingWizard({
     data.extrasBackline ? 'Backline incluido' : null,
   ].filter(Boolean) as string[]
   const hasPurchaseExtras = selectedExtras.length > 0 || data.extrasNotes.trim().length > 0
-  const activeAmountLabel = estimatedTotalBsLabel
-  const secondaryAmountLabel = estimatedTotalUsdLabel
-  const bsAmountEstimated = Number.isFinite(bookingEstimate.estimatedTotalUsd * bcvState.rate)
-    ? Math.round(bookingEstimate.estimatedTotalUsd * bcvState.rate)
-    : 0
-  const bsAmountCopyValue =
-    bsAmountEstimated > 0 ? String(bsAmountEstimated) : getAmountCopyDigits(activeAmountLabel)
-  const bsAmountVisible =
-    bsAmountCopyValue.length > 0
-      ? `Bs. ${Number(bsAmountCopyValue).toLocaleString('es-VE')}`
-      : formatBsVisibleFromLabel(activeAmountLabel)
-  const usdtAmountValue = formatUsdtAmount(bookingEstimate.estimatedTotalUsd)
   const normalizedPaymentReference = publicCode ? normalizePaymentReference(publicCode) : ''
   const normalizedRequesterPhone = normalizeWhatsappVe(data.requesterPhone)
   const isSecureLinkEnabledByConfig = whatsappVerificationConfig.secureLinkEnabled
@@ -945,7 +1210,7 @@ export function BookingWizard({
       paymentDeadlineIso,
       selectedPaymentMethodSlug,
       paymentReference: paymentReportReference.trim() || normalizePaymentReference(publicCode),
-      amountUsd: bookingEstimate.estimatedTotalUsd,
+      amountUsd: effectiveTotalUsd,
       amountBs: bsAmountEstimated,
       amountUsdLabel: secondaryAmountLabel,
       amountBsLabel: activeAmountLabel,
@@ -1036,7 +1301,9 @@ export function BookingWizard({
       : currentStep === 1
         ? selectedVariantSlug !== null
         : currentStep === 2
-          ? data.eventDate !== null && data.startTime !== null && data.durationMinutes !== null
+          ? isProductionMusic
+            ? true
+            : data.eventDate !== null && data.startTime !== null && data.durationMinutes !== null
           : currentStep === 3
             ? true
           : currentStep === 4
@@ -1121,6 +1388,49 @@ export function BookingWizard({
     setData((currentData) => ({
       ...currentData,
       projectTopicCount: sanitizeProjectTopicCount(nextValue),
+    }))
+  }
+
+  function toggleProductionMusicAddon(addonId: string) {
+    setData((currentData) => {
+      const nextAddonIds = currentData.productionMusicAddonIds.includes(addonId)
+        ? currentData.productionMusicAddonIds.filter((id) => id !== addonId)
+        : [...currentData.productionMusicAddonIds, addonId]
+
+      const nextQuantities = { ...currentData.productionMusicAddonQuantities }
+      if (!currentData.productionMusicAddonIds.includes(addonId)) {
+        const addon = getProductionMusicAddonById(addonId)
+        if (addon?.quantityEnabled) {
+          nextQuantities[addonId] = 1
+        } else {
+          delete nextQuantities[addonId]
+        }
+      } else {
+        delete nextQuantities[addonId]
+      }
+
+      return {
+        ...currentData,
+        productionMusicAddonIds: nextAddonIds,
+        productionMusicAddonQuantities: nextQuantities,
+      }
+    })
+  }
+
+  function updateProductionMusicAddonQuantity(addonId: string, quantity: number) {
+    setData((currentData) => ({
+      ...currentData,
+      productionMusicAddonQuantities: {
+        ...currentData.productionMusicAddonQuantities,
+        [addonId]: Math.max(1, Math.trunc(quantity)),
+      },
+    }))
+  }
+
+  function setProductionMusicThemeCount(value: number) {
+    setData((currentData) => ({
+      ...currentData,
+      productionMusicThemeCount: Math.max(1, Math.min(12, Math.trunc(value))),
     }))
   }
 
@@ -1263,14 +1573,18 @@ export function BookingWizard({
   async function handleSubmit() {
     if (submissionState === 'loading') return
 
-    if (
+    if (!isProductionMusic && (
       bookingEstimate.isBlocked ||
-      !selectedServiceSlug ||
-      !selectedVariantSlug ||
       !data.eventDate ||
       !data.startTime ||
       !data.durationMinutes
-    ) {
+    )) {
+      setSubmitError('La solicitud requiere ajustes antes de enviarse.')
+      setSubmissionState('error')
+      return
+    }
+
+    if (!selectedServiceSlug || !selectedVariantSlug) {
       setSubmitError('La solicitud requiere ajustes antes de enviarse.')
       setSubmissionState('error')
       return
@@ -1301,16 +1615,35 @@ export function BookingWizard({
     const result = await submitBookingRequest({
       serviceSlug: selectedServiceSlug,
       variantSlug: selectedVariantSlug,
-      eventDate: data.eventDate,
-      startTime: data.startTime,
-      durationMinutes: data.durationMinutes,
-      extrasNotes: data.extrasNotes,
-      extrasTechnician: data.extrasTechnician,
-      extrasBackline: data.extrasBackline,
+      eventDate: isProductionMusic ? (data.productionMusicTentativeDate || '2026-01-01') : data.eventDate!,
+      startTime: isProductionMusic ? '08:00' : data.startTime!,
+      durationMinutes: isProductionMusic ? 60 : data.durationMinutes!,
+      extrasNotes: isProductionMusic ? '' : data.extrasNotes,
+      extrasTechnician: isProductionMusic ? false : data.extrasTechnician,
+      extrasBackline: isProductionMusic ? false : data.extrasBackline,
       requesterName: data.requesterName,
       requesterEmail: data.requesterEmail,
       requesterPhone: normalizeWhatsappVe(data.requesterPhone),
       whatsappConsentAccepted: data.whatsappConsentAccepted,
+      isProductionMusic,
+      ...(isProductionMusic && {
+        productionMusicThemeCount: data.productionMusicThemeCount,
+        productionMusicTotalUsd: productionMusicEstimate?.totalUsd ?? 1000,
+        productionMusicIncludedHours: productionMusicEstimate?.includedHours ?? 12,
+        productionMusicBaseTotalUsd: productionMusicEstimate?.baseTotalUsd ?? 1000,
+        productionMusicAddonsTotalUsd: productionMusicEstimate?.addonsTotalUsd ?? 0,
+        productionMusicGenre: data.productionMusicGenre,
+        productionMusicReferences: data.productionMusicReferences,
+        productionMusicTentativeDate: data.productionMusicTentativeDate,
+        productionMusicHasLyrics: data.productionMusicHasLyrics,
+        productionMusicHasDemo: data.productionMusicHasDemo,
+        productionMusicNeedsMusicians: data.productionMusicNeedsMusicians,
+        productionMusicNeedsArrangement: data.productionMusicNeedsArrangement,
+        productionMusicNeedsMix: data.productionMusicNeedsMix,
+        productionMusicNeedsMaster: data.productionMusicNeedsMaster,
+        productionMusicAddonIds: data.productionMusicAddonIds,
+        productionMusicAddonQuantities: data.productionMusicAddonQuantities,
+      }),
     })
 
     if (result.success && result.publicCode) {
@@ -2002,7 +2335,7 @@ export function BookingWizard({
           />
         )}
 
-        {currentStep === 2 && (
+        {currentStep === 2 && !isProductionMusic && (
           <DateTimeStep
             serviceSlug={selectedServiceSlug}
             variantSlug={selectedVariantSlug}
@@ -2017,7 +2350,32 @@ export function BookingWizard({
           />
         )}
 
-        {currentStep === 3 && (
+        {currentStep === 2 && isProductionMusic && (
+          <ProductionMusicScopeStep
+            themeCount={data.productionMusicThemeCount}
+            genre={data.productionMusicGenre}
+            references={data.productionMusicReferences}
+            tentativeDate={data.productionMusicTentativeDate}
+            hasLyrics={data.productionMusicHasLyrics}
+            hasDemo={data.productionMusicHasDemo}
+            needsMusicians={data.productionMusicNeedsMusicians}
+            needsArrangement={data.productionMusicNeedsArrangement}
+            needsMix={data.productionMusicNeedsMix}
+            needsMaster={data.productionMusicNeedsMaster}
+            onThemeCountChange={setProductionMusicThemeCount}
+            onGenreChange={(value) => setData((d) => ({ ...d, productionMusicGenre: value }))}
+            onReferencesChange={(value) => setData((d) => ({ ...d, productionMusicReferences: value }))}
+            onTentativeDateChange={(value) => setData((d) => ({ ...d, productionMusicTentativeDate: value }))}
+            onHasLyricsChange={(value) => setData((d) => ({ ...d, productionMusicHasLyrics: value }))}
+            onHasDemoChange={(value) => setData((d) => ({ ...d, productionMusicHasDemo: value }))}
+            onNeedsMusiciansChange={(value) => setData((d) => ({ ...d, productionMusicNeedsMusicians: value }))}
+            onNeedsArrangementChange={(value) => setData((d) => ({ ...d, productionMusicNeedsArrangement: value }))}
+            onNeedsMixChange={(value) => setData((d) => ({ ...d, productionMusicNeedsMix: value }))}
+            onNeedsMasterChange={(value) => setData((d) => ({ ...d, productionMusicNeedsMaster: value }))}
+          />
+        )}
+
+        {currentStep === 3 && !isProductionMusic && (
           <ExtrasStep
             serviceSlug={selectedServiceSlug}
             variantSlug={selectedVariantSlug}
@@ -2032,6 +2390,15 @@ export function BookingWizard({
             onNotesChange={(value) => setData((d) => ({ ...d, extrasNotes: value }))}
             onTechnicianChange={(value) => setData((d) => ({ ...d, extrasTechnician: value }))}
             onBacklineChange={(value) => setData((d) => ({ ...d, extrasBackline: value }))}
+          />
+        )}
+
+        {currentStep === 3 && isProductionMusic && (
+          <ProductionMusicAddonsStep
+            selectedAddonIds={data.productionMusicAddonIds}
+            selectedAddonQuantities={data.productionMusicAddonQuantities}
+            onToggleAddon={toggleProductionMusicAddon}
+            onQuantityChange={updateProductionMusicAddonQuantity}
           />
         )}
 
@@ -2120,6 +2487,7 @@ export function BookingWizard({
         )}
 
         {currentStep === 5 &&
+          !isProductionMusic &&
           selectedServiceSlug &&
           selectedVariantSlug &&
           data.eventDate &&
@@ -2144,6 +2512,26 @@ export function BookingWizard({
               estimate={bookingEstimate}
             />
           )}
+
+        {currentStep === 5 && isProductionMusic && selectedServiceSlug && selectedVariantSlug && (
+          <ProductionMusicSummary
+            serviceSlug={selectedServiceSlug}
+            variantSlug={selectedVariantSlug}
+            estimate={productionMusicEstimate}
+            genre={data.productionMusicGenre}
+            references={data.productionMusicReferences}
+            tentativeDate={data.productionMusicTentativeDate}
+            hasLyrics={data.productionMusicHasLyrics}
+            hasDemo={data.productionMusicHasDemo}
+            needsMusicians={data.productionMusicNeedsMusicians}
+            needsArrangement={data.productionMusicNeedsArrangement}
+            needsMix={data.productionMusicNeedsMix}
+            needsMaster={data.productionMusicNeedsMaster}
+            requesterName={data.requesterName}
+            requesterEmail={data.requesterEmail}
+            requesterPhone={normalizeWhatsappVe(data.requesterPhone)}
+          />
+        )}
       </div>
 
       {submitError && (
@@ -2206,7 +2594,7 @@ export function BookingWizard({
             variant="primary"
             size="sm"
             onClick={handleSubmit}
-            disabled={submissionState === 'loading' || bookingEstimate.isBlocked}
+            disabled={submissionState === 'loading' || (!isProductionMusic && bookingEstimate.isBlocked)}
           >
             {submissionState === 'loading'
               ? 'Enviando solicitud...'
