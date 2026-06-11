@@ -420,7 +420,21 @@ export async function submitBookingRequest(
     const notesParts: string[] = []
 
     if (input.isProductionMusic) {
+      const adminDate = buildCaracasSlotDateTime(input.eventDate, input.startTime)
+      const adminDateLabel = Number.isNaN(adminDate.getTime())
+        ? input.eventDate
+        : new Intl.DateTimeFormat('es-VE', {
+            timeZone: 'America/Caracas',
+            dateStyle: 'medium',
+            timeStyle: 'short',
+          }).format(adminDate)
+
       notesParts.push('--- PRODUCCION MUSICAL ---')
+      notesParts.push(`Fecha administrativa de solicitud: ${adminDateLabel}`)
+      notesParts.push('Servicio sin calendario.')
+      notesParts.push('No bloquea sala.')
+      notesParts.push('No sincroniza Google Calendar.')
+      notesParts.push('Coordinacion manual por WhatsApp.')
       notesParts.push(`Temas: ${input.productionMusicThemeCount ?? 1}`)
       notesParts.push(`Total estimado USD: ${input.productionMusicTotalUsd ?? 1000}`)
       notesParts.push(`Base USD: ${input.productionMusicBaseTotalUsd ?? 1000}`)

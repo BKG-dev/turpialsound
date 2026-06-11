@@ -325,6 +325,41 @@ function sanitizeRecordingAddonSlugs(value: unknown): string[] {
   )
 }
 
+function getCaracasParts(now: Date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Caracas',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(now)
+
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '00'
+
+  return {
+    date: `${get('year')}-${get('month')}-${get('day')}`,
+    hour: get('hour'),
+    minute: get('minute'),
+  }
+}
+
+function buildProductionMusicAdministrativeSchedule() {
+  const now = getCaracasParts()
+  const startTime = `${now.hour}:${now.minute}`
+  const endMinute = String(Number(now.minute) + 1).padStart(2, '0')
+  const endTime = `${now.hour}:${endMinute}`
+
+  return {
+    date: now.date,
+    startTime,
+    endTime,
+    durationMinutes: 1,
+    isAdministrative: true as const,
+  }
+}
+
 function sanitizeProjectTopicCount(value: unknown): number {
   const numericValue = typeof value === 'number' ? value : Number(value)
   if (!Number.isFinite(numericValue)) return 1
@@ -971,15 +1006,21 @@ export function BookingWizard({
 
     const phone = normalizedRequesterPhone
 
-    const bookingEndTime =
-      data.startTime && data.durationMinutes !== null
-        ? deriveEndTime(data.startTime, data.durationMinutes)
-        : null
+    let bookingEndTime: string | null
+    if (isProductionMusic) {
+      const schedule = buildProductionMusicAdministrativeSchedule()
+      bookingEndTime = schedule.endTime
+    } else {
+      bookingEndTime =
+        data.startTime && data.durationMinutes !== null
+          ? deriveEndTime(data.startTime, data.durationMinutes)
+          : null
 
-    if (!data.eventDate || !data.startTime || data.durationMinutes === null || !bookingEndTime) {
-      setSecureLinkRequestError('Debes completar fecha, inicio y finalizacion antes de continuar.')
-      setSecureLinkRequestState('failed')
-      return
+      if (!data.eventDate || !data.startTime || data.durationMinutes === null || !bookingEndTime) {
+        setSecureLinkRequestError('Debes completar fecha, inicio y finalizacion antes de continuar.')
+        setSecureLinkRequestState('failed')
+        return
+      }
     }
 
     setSecureLinkRequestState('loading')
@@ -1612,12 +1653,16 @@ export function BookingWizard({
     setSubmitError(null)
     setPaymentRecoveryNotice(null)
 
+    const productionMusicSchedule = isProductionMusic
+      ? buildProductionMusicAdministrativeSchedule()
+      : null
+
     const result = await submitBookingRequest({
       serviceSlug: selectedServiceSlug,
       variantSlug: selectedVariantSlug,
-      eventDate: isProductionMusic ? (data.productionMusicTentativeDate || '2026-01-01') : data.eventDate!,
-      startTime: isProductionMusic ? '08:00' : data.startTime!,
-      durationMinutes: isProductionMusic ? 60 : data.durationMinutes!,
+      eventDate: isProductionMusic ? productionMusicSchedule!.date : data.eventDate!,
+      startTime: isProductionMusic ? productionMusicSchedule!.startTime : data.startTime!,
+      durationMinutes: isProductionMusic ? productionMusicSchedule!.durationMinutes : data.durationMinutes!,
       extrasNotes: isProductionMusic ? '' : data.extrasNotes,
       extrasTechnician: isProductionMusic ? false : data.extrasTechnician,
       extrasBackline: isProductionMusic ? false : data.extrasBackline,
