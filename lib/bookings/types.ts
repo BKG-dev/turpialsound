@@ -136,6 +136,81 @@ export interface BookingEstimate {
   isBlocked: boolean
 }
 
+export type BookingMode = 'single' | 'custom_bundle'
+
+export type CustomBundleQuantityType = 'hour' | 'track' | 'episode' | 'unit'
+
+export interface CustomBundleCategory {
+  slug: string
+  name: string
+  description: string
+  visualOrder: number
+  active: boolean
+}
+
+export interface CustomBundleItem {
+  slug: string
+  categorySlug: string
+  groupSlug: string | null
+  name: string
+  description: string
+  commercialUnit: string
+  quantityType: CustomBundleQuantityType
+  unitPriceUsd: number
+  minimumQuantity: number
+  maximumQuantity: number | null
+  quantityStep: number
+  consumesCalendar: boolean
+  minutesPerUnit: number | null
+  fixedPrice: boolean
+  requiresSessionDuration: boolean
+  minimumSessionMinutes: number | null
+  maximumSessionMinutes: number | null
+  scheduleOrder: number | null
+  visualOrder: number
+  active: boolean
+  weekendSurchargeUsdPerHour: number | null
+  included: boolean
+}
+
+export interface CustomBundleSelection {
+  itemSlug: string
+  quantity: number
+  sessionDurationMinutes: number | null
+}
+
+export interface CustomBundleEstimateLine {
+  item: CustomBundleItem
+  label: string
+  quantity: number
+  sessionDurationMinutes: number | null
+  durationMinutes: number
+  unitPriceUsd: number
+  lineTotalUsd: number
+  isIncluded: boolean
+}
+
+export interface CustomBundleEstimateAdjustment {
+  label: string
+  amountUsd: number
+}
+
+export interface CustomBundleEstimateIssue {
+  code: string
+  message: string
+}
+
+export interface CustomBundleEstimate {
+  lines: CustomBundleEstimateLine[]
+  adjustments: CustomBundleEstimateAdjustment[]
+  subtotalUsd: number
+  estimatedTotalUsd: number
+  totalDurationMinutes: number
+  selectionCount: number
+  blockingIssues: CustomBundleEstimateIssue[]
+  isBlocked: boolean
+}
+
 // ─────────────────────────────────────────────────────────────────
 // APROBACIONES
 // ─────────────────────────────────────────────────────────────────

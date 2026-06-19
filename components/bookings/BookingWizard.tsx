@@ -7,6 +7,7 @@ import { ServiceSelectStep } from '@/components/bookings/steps/ServiceSelectStep
 import { VariantSelectStep } from '@/components/bookings/steps/VariantSelectStep'
 import { DateTimeStep, deriveEndTime } from '@/components/bookings/steps/DateTimeStep'
 import { ExtrasStep } from '@/components/bookings/steps/ExtrasStep'
+import { CustomBundleStep } from '@/components/bookings/steps/CustomBundleStep'
 import {
   ContactStep,
   isValidEmail,
@@ -19,6 +20,11 @@ import { CATALOG_SERVICES, CATALOG_VARIANTS } from '@/lib/bookings/catalog'
 import { reportBookingPayment, submitBookingRequest } from '@/lib/bookings/actions'
 import { buildBookingEstimate } from '@/lib/bookings/estimate'
 import {
+  buildCustomBundleEstimate,
+  getCustomBundleItemBySlug,
+  normalizeCustomBundleSelections,
+} from '@/lib/bookings/custom-bundle'
+import {
   getRecordingAddonsForService,
   getSelectedRecordingAddonVisualTotalUsd,
 } from '@/lib/bookings/recording-addons'
@@ -28,10 +34,14 @@ import {
 } from '@/lib/bookings/currency-display'
 import type { WhatsappVerificationConfig } from '@/lib/bookings/whatsapp-verify-config'
 import type {
+  BookingMode,
+  CustomBundleSelection,
+  SelectedBookingItem,
+} from '@/lib/bookings/types'
+import type {
   BookingPaymentMethodConfig,
   BookingPaymentMethodSlug,
 } from '@/lib/bookings/payment-settings.types'
-import type { SelectedBookingItem } from '@/lib/bookings/types'
 
 interface WizardStepDef {
   id: string
@@ -39,7 +49,7 @@ interface WizardStepDef {
   title: string
 }
 
-const WIZARD_STEPS: WizardStepDef[] = [
+const SINGLE_SERVICE_STEPS: WizardStepDef[] = [
   { id: 'service', label: 'Servicio', title: 'Que tipo de servicio necesitas?' },
   { id: 'variant', label: 'Modalidad', title: 'Elige la modalidad' },
   { id: 'date', label: 'Fecha', title: 'Fecha y bloque horario' },
@@ -48,8 +58,17 @@ const WIZARD_STEPS: WizardStepDef[] = [
   { id: 'summary', label: 'Resumen', title: 'Revisa tu solicitud' },
 ]
 
+const CUSTOM_BUNDLE_STEPS: WizardStepDef[] = [
+  { id: 'service', label: 'Servicio', title: 'Que tipo de servicio necesitas?' },
+  { id: 'bundle', label: 'Paquete', title: 'Arma tu paquete' },
+  { id: 'contact', label: 'Tus datos', title: 'Datos del solicitante' },
+  { id: 'summary', label: 'Resumen', title: 'Revisa tu simulacion' },
+]
+
 interface WizardData {
+  bookingMode: BookingMode
   selectedItems: SelectedBookingItem[]
+  customBundleSelections: CustomBundleSelection[]
   eventDate: string | null
   startTime: string | null
   durationMinutes: number | null
@@ -65,7 +84,9 @@ interface WizardData {
 }
 
 const INITIAL_DATA: WizardData = {
+  bookingMode: 'single',
   selectedItems: [],
+  customBundleSelections: [],
   eventDate: null,
   startTime: null,
   durationMinutes: null,
@@ -147,6 +168,11 @@ interface BookingPendingPaymentSessionV1 {
 type ContactVerificationFlowMode = 'manual_code' | 'secure_link'
 
 type SecureLinkRequestState = 'idle' | 'loading' | 'sent' | 'failed'
+
+interface CustomBundleSimulationResult {
+  message: string
+  simulatedAt: string
+}
 
 const BOOKING_DRAFT_STORAGE_KEY = 'turpial_booking_draft_v1'
 const BOOKING_PENDING_PAYMENT_STORAGE_KEY = 'turpial_booking_pending_payment_v1'
@@ -363,11 +389,20 @@ export function BookingWizard({
   const [hasRestoredPendingPayment, setHasRestoredPendingPayment] = useState(false)
   const [paymentRecoveryNotice, setPaymentRecoveryNotice] = useState<string | null>(null)
   const [submissionNotice, setSubmissionNotice] = useState<string | null>(null)
+  const [customBundleSimulationResult, setCustomBundleSimulationResult] =
+    useState<CustomBundleSimulationResult | null>(null)
   const pollTimerRef = useRef<number | null>(null)
   const wizardContainerRef = useRef<HTMLDivElement | null>(null)
 
-  const totalSteps = WIZARD_STEPS.length
-  const step = WIZARD_STEPS[currentStep]
+  const isCustomBundleMode = data.bookingMode === 'custom_bundle'
+  const wizardSteps = isCustomBundleMode ? CUSTOM_BUNDLE_STEPS : SINGLE_SERVICE_STEPS
+  const totalSteps = wizardSteps.length
+  const step = wizardSteps[currentStep]
+  const contactStepIndex = isCustomBundleMode ? 2 : 4
+  const summaryStepIndex = totalSteps - 1
+  const bundleStepIndex = isCustomBundleMode ? 1 : null
+  const dateStepIndex = isCustomBundleMode ? null : 2
+  const extrasStepIndex = isCustomBundleMode ? null : 3
   const progressPercentage = ((currentStep + 1) / totalSteps) * 100
   const primaryItem = data.selectedItems[0] ?? null
   const selectedServiceSlug = primaryItem?.serviceSlug ?? null
@@ -389,11 +424,20 @@ export function BookingWizard({
       data.extrasBackline,
     ],
   )
+  const customBundleEstimate = useMemo(
+    () =>
+      buildCustomBundleEstimate({
+        selections: data.customBundleSelections,
+        eventDate: data.eventDate,
+      }),
+    [data.customBundleSelections, data.eventDate],
+  )
+  const activeEstimate = isCustomBundleMode ? customBundleEstimate : bookingEstimate
   const paymentWindowLabel =
     paymentWindowMinutes === 60 ? '1 hora' : `${paymentWindowMinutes} minutos`
   const bcvState = useBcvRate()
-  const estimatedTotalUsdLabel = formatUsdByCurrency(bookingEstimate.estimatedTotalUsd, 'usd', bcvState.rate)
-  const estimatedTotalBsLabel = formatUsdByCurrency(bookingEstimate.estimatedTotalUsd, 'bs', bcvState.rate)
+  const estimatedTotalUsdLabel = formatUsdByCurrency(activeEstimate.estimatedTotalUsd, 'usd', bcvState.rate)
+  const estimatedTotalBsLabel = formatUsdByCurrency(activeEstimate.estimatedTotalUsd, 'bs', bcvState.rate)
   const selectedPaymentMethod =
     paymentMethods.find((method) => method.slug === selectedPaymentMethodSlug) ??
     primaryPaymentMethod
@@ -420,15 +464,18 @@ export function BookingWizard({
     [data.recordingAddonSlugs, data.projectTopicCount, selectedServiceSlug, selectedVariantSlug],
   )
   const bookingDateLabel = data.eventDate ? formatBookingDate(data.eventDate) : null
+  const activeDurationMinutes = isCustomBundleMode
+    ? customBundleEstimate.totalDurationMinutes
+    : data.durationMinutes
   const bookingEndTime =
-    data.startTime && data.durationMinutes !== null
-      ? deriveEndTime(data.startTime, data.durationMinutes)
+    data.startTime && activeDurationMinutes !== null
+      ? deriveEndTime(data.startTime, activeDurationMinutes)
       : null
   const durationLabel =
-    data.durationMinutes !== null
-      ? data.durationMinutes % 60 === 0
-        ? `${data.durationMinutes / 60} hora${data.durationMinutes / 60 === 1 ? '' : 's'}`
-        : `${Math.floor(data.durationMinutes / 60)}h ${String(data.durationMinutes % 60).padStart(2, '0')}m`
+    activeDurationMinutes !== null
+      ? activeDurationMinutes % 60 === 0
+        ? `${activeDurationMinutes / 60} hora${activeDurationMinutes / 60 === 1 ? '' : 's'}`
+        : `${Math.floor(activeDurationMinutes / 60)}h ${String(activeDurationMinutes % 60).padStart(2, '0')}m`
       : null
   const selectedExtras = [
     data.extrasTechnician ? 'Tecnico incluido' : null,
@@ -437,8 +484,8 @@ export function BookingWizard({
   const hasPurchaseExtras = selectedExtras.length > 0 || data.extrasNotes.trim().length > 0
   const activeAmountLabel = estimatedTotalBsLabel
   const secondaryAmountLabel = estimatedTotalUsdLabel
-  const bsAmountEstimated = Number.isFinite(bookingEstimate.estimatedTotalUsd * bcvState.rate)
-    ? Math.round(bookingEstimate.estimatedTotalUsd * bcvState.rate)
+  const bsAmountEstimated = Number.isFinite(activeEstimate.estimatedTotalUsd * bcvState.rate)
+    ? Math.round(activeEstimate.estimatedTotalUsd * bcvState.rate)
     : 0
   const bsAmountCopyValue =
     bsAmountEstimated > 0 ? String(bsAmountEstimated) : getAmountCopyDigits(activeAmountLabel)
@@ -863,6 +910,8 @@ export function BookingWizard({
       setData({
         ...INITIAL_DATA,
         ...restoredData,
+        bookingMode: restoredData.bookingMode === 'custom_bundle' ? 'custom_bundle' : 'single',
+        customBundleSelections: normalizeCustomBundleSelections(restoredData.customBundleSelections ?? []),
         recordingAddonSlugs: sanitizeRecordingAddonSlugs(restoredData.recordingAddonSlugs),
         projectTopicCount: sanitizeProjectTopicCount(restoredData.projectTopicCount),
       })
@@ -1041,16 +1090,16 @@ export function BookingWizard({
   ])
 
   useEffect(() => {
-    if (currentStep !== 4) return
+    if (currentStep !== contactStepIndex) return
     if (!isWhatsappVerificationFresh) return
 
     const timer = window.setTimeout(() => {
-      setCurrentStep((value) => (value === 4 ? 5 : value))
-      setFurthestStep((value) => Math.max(value, 5))
+      setCurrentStep((value) => (value === contactStepIndex ? summaryStepIndex : value))
+      setFurthestStep((value) => Math.max(value, summaryStepIndex))
     }, 450)
 
     return () => window.clearTimeout(timer)
-  }, [currentStep, isWhatsappVerificationFresh])
+  }, [contactStepIndex, currentStep, isWhatsappVerificationFresh, summaryStepIndex])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -1063,8 +1112,25 @@ export function BookingWizard({
     })
   }, [currentStep])
 
-  const canProceed =
-    currentStep === 0
+  const canProceed = isCustomBundleMode
+    ? currentStep === 0
+      ? selectedServiceSlug !== null
+      : currentStep === 1
+        ? data.eventDate !== null &&
+          data.startTime !== null &&
+          customBundleEstimate.totalDurationMinutes > 0 &&
+          customBundleEstimate.selectionCount > 0 &&
+          !customBundleEstimate.isBlocked
+        : currentStep === 2
+          ? data.requesterName.trim() !== '' &&
+            isValidEmail(data.requesterEmail) &&
+            isValidWhatsappVe(data.requesterPhone) &&
+            data.whatsappConsentAccepted &&
+            canUsePreviewVerificationBypass
+          : currentStep === 3
+            ? true
+            : false
+    : currentStep === 0
       ? selectedServiceSlug !== null
       : currentStep === 1
         ? selectedVariantSlug !== null
@@ -1072,13 +1138,13 @@ export function BookingWizard({
           ? data.eventDate !== null && data.startTime !== null && data.durationMinutes !== null
           : currentStep === 3
             ? true
-        : currentStep === 4
-            ? data.requesterName.trim() !== '' &&
+            : currentStep === contactStepIndex
+              ? data.requesterName.trim() !== '' &&
                 isValidEmail(data.requesterEmail) &&
                 isValidWhatsappVe(data.requesterPhone) &&
                 data.whatsappConsentAccepted &&
                 canUsePreviewVerificationBypass
-              : currentStep === 5
+              : currentStep === summaryStepIndex
                 ? true
                 : false
   const contactDataIsComplete =
@@ -1157,8 +1223,130 @@ export function BookingWizard({
     }))
   }
 
+  function clearSubmissionArtifacts() {
+    setSubmissionState('idle')
+    setPublicCode(null)
+    setAssignedResourceName(null)
+    setPaymentDeadlineIso(null)
+    setShowPaymentOptions(false)
+    setSelectedPaymentMethodSlug(defaultSuccessPaymentMethod.slug)
+    setPostSubmitOperationalStatus('pending_payment')
+    setPaymentReportReference('')
+    setPaymentReportProofFile(null)
+    setPaymentReportState('idle')
+    setPaymentReportError(null)
+    setPaymentReportWarning(null)
+    setPaymentReportedAtIso(null)
+    setContactConsentError(null)
+    setCopyStatusKey(null)
+    setSubmitError(null)
+    setSubmissionNotice(null)
+    setCustomBundleSimulationResult(null)
+    setPaymentRecoveryNotice(null)
+  }
+
+  function setBookingMode(nextMode: BookingMode) {
+    setData((currentData) => ({
+      ...currentData,
+      bookingMode: nextMode,
+    }))
+
+    clearSubmissionArtifacts()
+    setCurrentStep(nextMode === 'custom_bundle' ? 1 : 0)
+    setFurthestStep(nextMode === 'custom_bundle' ? 1 : 0)
+  }
+
+  function toggleCustomBundleItem(itemSlug: string) {
+    const item = getCustomBundleItemBySlug(itemSlug)
+    if (!item || item.included) return
+
+    setData((currentData) => {
+      const currentSelections = normalizeCustomBundleSelections(currentData.customBundleSelections)
+      const isAlreadySelected = currentSelections.some((selection) => selection.itemSlug === itemSlug)
+
+      let nextSelections: CustomBundleSelection[]
+      if (isAlreadySelected) {
+        nextSelections = currentSelections.filter((selection) => selection.itemSlug !== itemSlug)
+      } else if (item.groupSlug) {
+        nextSelections = [
+          ...currentSelections.filter((selection) => {
+            const selectedItem = getCustomBundleItemBySlug(selection.itemSlug)
+            return selectedItem?.groupSlug !== item.groupSlug
+          }),
+          {
+            itemSlug: item.slug,
+            quantity: item.minimumQuantity,
+            sessionDurationMinutes: item.requiresSessionDuration ? item.minimumSessionMinutes : null,
+          },
+        ]
+      } else {
+        nextSelections = [
+          ...currentSelections,
+          {
+            itemSlug: item.slug,
+            quantity: item.minimumQuantity,
+            sessionDurationMinutes: item.requiresSessionDuration ? item.minimumSessionMinutes : null,
+          },
+        ]
+      }
+
+      return {
+        ...currentData,
+        customBundleSelections: normalizeCustomBundleSelections(nextSelections),
+      }
+    })
+  }
+
+  function updateCustomBundleQuantity(itemSlug: string, nextQuantity: number) {
+    const item = getCustomBundleItemBySlug(itemSlug)
+    if (!item || item.included) return
+
+    setData((currentData) => {
+      const currentSelections = normalizeCustomBundleSelections(currentData.customBundleSelections)
+      const nextSelections = currentSelections.map((selection) => {
+        if (selection.itemSlug !== itemSlug) return selection
+        return {
+          ...selection,
+          quantity: Math.max(
+            item.minimumQuantity,
+            item.maximumQuantity !== null
+              ? Math.min(item.maximumQuantity, Math.trunc(nextQuantity))
+              : Math.trunc(nextQuantity),
+          ),
+        }
+      })
+
+      return {
+        ...currentData,
+        customBundleSelections: normalizeCustomBundleSelections(nextSelections),
+      }
+    })
+  }
+
+  function updateCustomBundleDuration(itemSlug: string, nextDurationMinutes: number | null) {
+    const item = getCustomBundleItemBySlug(itemSlug)
+    if (!item || item.included || !item.requiresSessionDuration) return
+
+    setData((currentData) => {
+      const currentSelections = normalizeCustomBundleSelections(currentData.customBundleSelections)
+      const nextSelections = currentSelections.map((selection) => {
+        if (selection.itemSlug !== itemSlug) return selection
+        return {
+          ...selection,
+          sessionDurationMinutes:
+            nextDurationMinutes === null ? null : Math.max(0, Math.trunc(nextDurationMinutes)),
+        }
+      })
+
+      return {
+        ...currentData,
+        customBundleSelections: normalizeCustomBundleSelections(nextSelections),
+      }
+    })
+  }
+
   function handleNext() {
-    if (currentStep === 4 && !data.whatsappConsentAccepted) {
+    if (currentStep === contactStepIndex && !data.whatsappConsentAccepted) {
       setContactConsentError(
         'Debes aceptar la comunicacion por WhatsApp para enviarte el enlace seguro de seguimiento.',
       )
@@ -1166,7 +1354,7 @@ export function BookingWizard({
       return
     }
 
-    if (currentStep === 4 && !canUsePreviewVerificationBypass) {
+    if (currentStep === contactStepIndex && !canUsePreviewVerificationBypass) {
       setSubmitError(
         isSecureLinkFlowActive
           ? 'Debes abrir el enlace seguro de WhatsApp antes de continuar al resumen.'
@@ -1210,6 +1398,7 @@ export function BookingWizard({
     setCopyStatusKey(null)
     setSubmitError(null)
     setSubmissionNotice(null)
+    setCustomBundleSimulationResult(null)
     setWhatsappVerification(INITIAL_WHATSAPP_VERIFICATION_STATE)
     setContactVerificationFlowMode(
       whatsappVerificationConfig.mode === 'secure_link' && whatsappVerificationConfig.secureLinkEnabled
@@ -1296,6 +1485,38 @@ export function BookingWizard({
 
   async function handleSubmit() {
     if (submissionState === 'loading') return
+
+    if (isCustomBundleMode) {
+      if (!isPreview) {
+        setSubmitError('El modo paquete solo esta disponible en Preview.')
+        setSubmissionState('error')
+        return
+      }
+
+      if (
+        !data.eventDate ||
+        !data.startTime ||
+        customBundleEstimate.isBlocked ||
+        customBundleEstimate.totalDurationMinutes <= 0 ||
+        customBundleEstimate.selectionCount === 0
+      ) {
+        setSubmitError('El paquete requiere ajustes antes de simularse.')
+        setSubmissionState('error')
+        return
+      }
+
+      setSubmissionState('loading')
+      clearSubmissionArtifacts()
+      setSubmissionState('loading')
+      setSubmitError(null)
+      setSubmissionNotice('Simulacion completada. No se modifico la base de datos.')
+      setCustomBundleSimulationResult({
+        message: 'Simulacion completada. No se modifico la base de datos.',
+        simulatedAt: new Date().toISOString(),
+      })
+      setSubmissionState('success')
+      return
+    }
 
     if (
       bookingEstimate.isBlocked ||
@@ -1440,6 +1661,131 @@ export function BookingWizard({
     setPaymentReportState('success')
     setPaymentReportWarning(result.message ?? result.warning ?? null)
     setPaymentReportedAtIso(result.paymentReportedAtIso ?? new Date().toISOString())
+  }
+
+  if (submissionState === 'success' && isCustomBundleMode && customBundleSimulationResult) {
+    const simulatedEndTime =
+      data.startTime && activeDurationMinutes !== null
+        ? deriveEndTime(data.startTime, activeDurationMinutes)
+        : null
+
+    return (
+      <div className="rounded-2xl border border-brand-border bg-brand-surface p-3">
+        {submissionNotice && (
+          <div className="mb-2 rounded-lg border border-amber-300/40 bg-amber-400/10 px-3 py-2 text-[11px] text-amber-100">
+            {submissionNotice}
+          </div>
+        )}
+        <div className="mb-2.5 rounded-lg border border-brand-border/70 bg-brand-bg/30 px-2.5 py-2">
+          <div className="flex items-start gap-2">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-gold/10">
+              <svg className="h-4 w-4 text-accent-gold" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M5 13l4 4L19 7"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            <div className="min-w-0">
+              <h2 className="font-display text-sm font-bold leading-tight text-text-primary md:text-base">
+                Simulacion completada
+              </h2>
+              <p className="mt-0.5 text-[11px] leading-snug text-text-secondary">
+                No se creo BookingRequest, no se llamo Prisma y no se envio ninguna notificacion real.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2.5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="space-y-2">
+            <div className="rounded-lg border border-brand-border bg-brand-bg/30 px-2 py-1.5">
+              <div className="space-y-1.5 text-[11px] leading-snug">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-text-muted">Fecha</p>
+                  <p className="font-medium text-text-primary">{bookingDateLabel ?? 'Por definir'}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-text-muted">Horario</p>
+                  <p className="font-medium text-text-primary">
+                    {data.startTime}
+                    {simulatedEndTime ? ` - ${simulatedEndTime}` : ''}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-text-muted">Duracion total</p>
+                  <p className="font-medium text-text-primary">{durationLabel ?? '0 min'}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-brand-border bg-brand-bg/40 p-2">
+              <div className="space-y-1.5 text-[11px] leading-snug">
+                {customBundleEstimate.lines.map((line) => (
+                  <div key={`${line.item.slug}-${line.label}`}>
+                    <p className="text-[10px] uppercase tracking-wide text-text-muted">{line.label}</p>
+                    <p className="font-medium text-text-primary">
+                      {line.isIncluded
+                        ? 'Incluido — 0 USD'
+                        : `${line.quantity} ${line.item.commercialUnit} · ${line.lineTotalUsd} USD`}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-brand-border bg-brand-bg/40 p-2">
+            <div className="space-y-1.5 text-[11px] leading-snug">
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-text-muted">Subtotal</p>
+                <p className="font-medium text-text-primary">{customBundleEstimate.subtotalUsd} USD</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-text-muted">Recargo de fin de semana</p>
+                <p className="font-medium text-text-primary">
+                  {customBundleEstimate.adjustments.reduce((total, adjustment) => total + adjustment.amountUsd, 0)} USD
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-text-muted">Total estimado</p>
+                <p className="font-medium text-text-primary">{customBundleEstimate.estimatedTotalUsd} USD</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-text-muted">Estado</p>
+                <p className="font-medium text-text-primary">Preview / simulacion segura</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-text-muted">Simulada</p>
+                <p className="font-medium text-text-primary">
+                  {formatCaracasDateTime(customBundleSimulationResult.simulatedAt)}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSubmissionState('idle')
+                  setCustomBundleSimulationResult(null)
+                  setSubmitError(null)
+                }}
+              >
+                Seguir editando
+              </Button>
+              <Button variant="primary" size="sm" onClick={resetWizard}>
+                Nueva simulacion
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (submissionState === 'success' && publicCode) {
@@ -1935,7 +2281,7 @@ export function BookingWizard({
           className="hidden gap-2 pb-1 md:grid md:grid-cols-3 lg:grid-cols-6 lg:gap-2 xl:gap-3 lg:pb-0"
           aria-label="Pasos del formulario"
         >
-            {WIZARD_STEPS.map((s, index) => {
+            {wizardSteps.map((s, index) => {
               const isCompleted = index < currentStep
               const isCurrent = index === currentStep
               const isVisited = index <= furthestStep
@@ -2005,7 +2351,7 @@ export function BookingWizard({
       <div
         className={cn(
           'p-4 pb-28 md:px-6 md:py-3',
-          currentStep === 5 && 'md:py-2.5 lg:py-2',
+          currentStep === summaryStepIndex && 'md:py-2.5 lg:py-2',
         )}
       >
         {paymentRecoveryNotice && (
@@ -2031,175 +2377,330 @@ export function BookingWizard({
           </div>
         )}
 
-        {currentStep === 0 && (
-          <ServiceSelectStep
-            selected={selectedServiceSlug}
-            onChange={(slug) =>
-              setPrimaryItem((currentItem) => ({
-                serviceSlug: slug,
-                variantSlug: currentItem?.serviceSlug === slug ? currentItem.variantSlug : null,
-                quantity: currentItem?.quantity ?? 1,
-              }))
-            }
-          />
-        )}
+        {isCustomBundleMode ? (
+          <>
+            {currentStep === 0 && (
+              <ServiceSelectStep
+                selected={isCustomBundleMode ? null : selectedServiceSlug}
+                isCustomBundleSelected={isCustomBundleMode}
+                isPreview={isPreview}
+                onChange={(slug) => {
+                  setBookingMode('single')
+                  setPrimaryItem((currentItem) => ({
+                    serviceSlug: slug,
+                    variantSlug: currentItem?.serviceSlug === slug ? currentItem.variantSlug : null,
+                    quantity: currentItem?.quantity ?? 1,
+                  }))
+                }}
+                onSelectCustomBundle={() => setBookingMode('custom_bundle')}
+              />
+            )}
 
-        {currentStep === 1 && selectedServiceSlug && (
-          <VariantSelectStep
-            serviceSlug={selectedServiceSlug}
-            selected={selectedVariantSlug}
-            onChange={(slug) =>
-              setPrimaryItem((currentItem) => ({
-                serviceSlug: currentItem?.serviceSlug ?? selectedServiceSlug,
-                variantSlug: slug,
-                quantity: currentItem?.quantity ?? 1,
-              }))
-            }
-          />
-        )}
-
-        {currentStep === 2 && (
-          <DateTimeStep
-            serviceSlug={selectedServiceSlug}
-            variantSlug={selectedVariantSlug}
-            eventDate={data.eventDate}
-            startTime={data.startTime}
-            durationMinutes={data.durationMinutes}
-            onDateChange={(value) =>
-              setData((d) => ({ ...d, eventDate: value, startTime: null, durationMinutes: null }))
-            }
-            onStartTimeChange={(value) => setData((d) => ({ ...d, startTime: value, durationMinutes: null }))}
-            onDurationChange={(value) => setData((d) => ({ ...d, durationMinutes: value }))}
-          />
-        )}
-
-        {currentStep === 3 && (
-          <ExtrasStep
-            serviceSlug={selectedServiceSlug}
-            variantSlug={selectedVariantSlug}
-            notes={data.extrasNotes}
-            technician={data.extrasTechnician}
-            backline={data.extrasBackline}
-            availableRecordingAddons={recordingAddonsForCurrentService}
-            selectedRecordingAddonSlugs={data.recordingAddonSlugs}
-            projectTopicCount={data.projectTopicCount}
-            onRecordingAddonToggle={toggleRecordingAddon}
-            onProjectTopicCountChange={updateProjectTopicCount}
-            onNotesChange={(value) => setData((d) => ({ ...d, extrasNotes: value }))}
-            onTechnicianChange={(value) => setData((d) => ({ ...d, extrasTechnician: value }))}
-            onBacklineChange={(value) => setData((d) => ({ ...d, extrasBackline: value }))}
-          />
-        )}
-
-        {currentStep === 4 && (
-          <ContactStep
-            name={data.requesterName}
-            email={data.requesterEmail}
-            phone={data.requesterPhone}
-            whatsappConsentAccepted={data.whatsappConsentAccepted}
-            whatsappConsentError={contactConsentError}
-            whatsappVerificationStatus={whatsappVerification.status}
-            whatsappVerificationCode={whatsappVerification.code}
-            whatsappVerificationError={whatsappVerification.error}
-            whatsappVerificationChallengeId={whatsappVerification.challengeId}
-            whatsappVerificationExpiresAt={whatsappVerification.expiresAt}
-            whatsappVerificationVerifiedAt={whatsappVerification.verifiedAt}
-            whatsappVerificationPhone={whatsappVerification.phone}
-            whatsappFlowMode={contactVerificationFlowMode}
-            secureLinkRequestState={secureLinkRequestState}
-            secureLinkExpiresAt={secureLinkRequestExpiresAt}
-            secureLinkError={secureLinkRequestError}
-            onPrimarySecureLinkAction={() => {
-              void handleContactPrimarySecureLinkAction()
-            }}
-            onStartWhatsappVerification={() => {
-              setSubmitError(null)
-              setContactVerificationFlowMode('manual_code')
-              setSecureLinkRequestState('idle')
-              setSecureLinkRequestError(null)
-              void handleStartWhatsappVerification()
-            }}
-            onSendSecureLink={() => {
-              setSubmitError(null)
-              void handleSendSecureLink()
-            }}
-            onUseManualCodeFallback={() => {
-              console.info('[fallback_manual_code_used]', { event: 'fallback_manual_code_used' })
-              setContactVerificationFlowMode('manual_code')
-              setSecureLinkRequestState('idle')
-              setSecureLinkRequestError(null)
-            }}
-            onRetryOpenWhatsapp={handleRetryOpenWhatsapp}
-            onCopyWhatsappCode={() => {
-              void handleCopyWhatsappCode()
-            }}
-            onManualWhatsappStatusCheck={() => {
-              void handleManualWhatsappStatusCheck()
-            }}
-            onNameChange={(value) => setData((d) => ({ ...d, requesterName: value }))}
-            onEmailChange={(value) => setData((d) => ({ ...d, requesterEmail: value }))}
-            onPhoneChange={(value) =>
-              setData((d) => {
-                const normalizedNextPhone = normalizeWhatsappVe(value)
-                const normalizedVerifiedPhone = whatsappVerification.phone
-                  ? normalizeWhatsappVe(whatsappVerification.phone)
-                  : null
-
-                if (
-                  normalizedVerifiedPhone &&
-                  normalizedNextPhone !== normalizedVerifiedPhone &&
-                  whatsappVerification.status !== 'idle'
-                ) {
-                  clearWhatsappPollTimer()
-                  setWhatsappVerification(INITIAL_WHATSAPP_VERIFICATION_STATE)
+            {bundleStepIndex !== null && currentStep === bundleStepIndex && (
+              <CustomBundleStep
+                selections={data.customBundleSelections}
+                eventDate={data.eventDate}
+                startTime={data.startTime}
+                estimate={customBundleEstimate}
+                onEventDateChange={(value) =>
+                  setData((d) => ({
+                    ...d,
+                    eventDate: value,
+                  }))
                 }
+                onStartTimeChange={(value) =>
+                  setData((d) => ({
+                    ...d,
+                    startTime: value,
+                  }))
+                }
+                onToggleItem={toggleCustomBundleItem}
+                onQuantityChange={updateCustomBundleQuantity}
+                onSessionDurationChange={updateCustomBundleDuration}
+              />
+            )}
 
-                if (secureLinkRequestState !== 'idle') {
+            {currentStep === 2 && (
+              <ContactStep
+                name={data.requesterName}
+                email={data.requesterEmail}
+                phone={data.requesterPhone}
+                whatsappConsentAccepted={data.whatsappConsentAccepted}
+                whatsappConsentError={contactConsentError}
+                whatsappVerificationStatus={whatsappVerification.status}
+                whatsappVerificationCode={whatsappVerification.code}
+                whatsappVerificationError={whatsappVerification.error}
+                whatsappVerificationChallengeId={whatsappVerification.challengeId}
+                whatsappVerificationExpiresAt={whatsappVerification.expiresAt}
+                whatsappVerificationVerifiedAt={whatsappVerification.verifiedAt}
+                whatsappVerificationPhone={whatsappVerification.phone}
+                whatsappFlowMode={contactVerificationFlowMode}
+                secureLinkRequestState={secureLinkRequestState}
+                secureLinkExpiresAt={secureLinkRequestExpiresAt}
+                secureLinkError={secureLinkRequestError}
+                onPrimarySecureLinkAction={() => {
+                  void handleContactPrimarySecureLinkAction()
+                }}
+                onStartWhatsappVerification={() => {
+                  setSubmitError(null)
+                  setContactVerificationFlowMode('manual_code')
                   setSecureLinkRequestState('idle')
                   setSecureLinkRequestError(null)
-                  setSecureLinkRequestExpiresAt(null)
-                }
-
-                return { ...d, requesterPhone: value }
-              })
-            }
-            onWhatsappConsentChange={(value) => {
-              setData((d) => ({ ...d, whatsappConsentAccepted: value }))
-              if (value) {
-                setContactConsentError(null)
-                if (secureLinkRequestState === 'failed') {
+                  void handleStartWhatsappVerification()
+                }}
+                onSendSecureLink={() => {
+                  setSubmitError(null)
+                  void handleSendSecureLink()
+                }}
+                onUseManualCodeFallback={() => {
+                  console.info('[fallback_manual_code_used]', { event: 'fallback_manual_code_used' })
+                  setContactVerificationFlowMode('manual_code')
+                  setSecureLinkRequestState('idle')
                   setSecureLinkRequestError(null)
-                }
-              }
-            }}
-          />
-        )}
+                }}
+                onRetryOpenWhatsapp={handleRetryOpenWhatsapp}
+                onCopyWhatsappCode={() => {
+                  void handleCopyWhatsappCode()
+                }}
+                onManualWhatsappStatusCheck={() => {
+                  void handleManualWhatsappStatusCheck()
+                }}
+                onNameChange={(value) => setData((d) => ({ ...d, requesterName: value }))}
+                onEmailChange={(value) => setData((d) => ({ ...d, requesterEmail: value }))}
+                onPhoneChange={(value) =>
+                  setData((d) => {
+                    const normalizedNextPhone = normalizeWhatsappVe(value)
+                    const normalizedVerifiedPhone = whatsappVerification.phone
+                      ? normalizeWhatsappVe(whatsappVerification.phone)
+                      : null
 
-        {currentStep === 5 &&
-          selectedServiceSlug &&
-          selectedVariantSlug &&
-          data.eventDate &&
-          data.startTime &&
-          data.durationMinutes && (
-            <SummaryStep
-              serviceSlug={selectedServiceSlug}
-              variantSlug={selectedVariantSlug}
-              eventDate={data.eventDate}
-              startTime={data.startTime}
-              durationMinutes={data.durationMinutes}
-              extrasNotes={data.extrasNotes}
-              extrasTechnician={data.extrasTechnician}
-              extrasBackline={data.extrasBackline}
-              recordingAddonSlugs={data.recordingAddonSlugs}
-              recordingAddonPreviewTotalUsd={recordingAddonPreviewTotalUsd}
-              availableRecordingAddons={recordingAddonsForCurrentService}
-              projectTopicCount={data.projectTopicCount}
-              requesterName={data.requesterName}
-              requesterEmail={data.requesterEmail}
-              requesterPhone={normalizeWhatsappVe(data.requesterPhone)}
-              estimate={bookingEstimate}
-            />
-          )}
+                    if (
+                      normalizedVerifiedPhone &&
+                      normalizedNextPhone !== normalizedVerifiedPhone &&
+                      whatsappVerification.status !== 'idle'
+                    ) {
+                      clearWhatsappPollTimer()
+                      setWhatsappVerification(INITIAL_WHATSAPP_VERIFICATION_STATE)
+                    }
+
+                    if (secureLinkRequestState !== 'idle') {
+                      setSecureLinkRequestState('idle')
+                      setSecureLinkRequestError(null)
+                      setSecureLinkRequestExpiresAt(null)
+                    }
+
+                    return { ...d, requesterPhone: value }
+                  })
+                }
+                onWhatsappConsentChange={(value) => {
+                  setData((d) => ({ ...d, whatsappConsentAccepted: value }))
+                  if (value) {
+                    setContactConsentError(null)
+                    if (secureLinkRequestState === 'failed') {
+                      setSecureLinkRequestError(null)
+                    }
+                  }
+                }}
+              />
+            )}
+
+            {currentStep === summaryStepIndex && (
+              <SummaryStep
+                bookingMode="custom_bundle"
+                eventDate={data.eventDate ?? ''}
+                startTime={data.startTime ?? ''}
+                durationMinutes={activeDurationMinutes ?? 0}
+                extrasNotes={data.extrasNotes}
+                extrasTechnician={data.extrasTechnician}
+                extrasBackline={data.extrasBackline}
+                recordingAddonSlugs={data.recordingAddonSlugs}
+                recordingAddonPreviewTotalUsd={recordingAddonPreviewTotalUsd}
+                availableRecordingAddons={recordingAddonsForCurrentService}
+                projectTopicCount={data.projectTopicCount}
+                requesterName={data.requesterName}
+                requesterEmail={data.requesterEmail}
+                requesterPhone={normalizeWhatsappVe(data.requesterPhone)}
+                customBundleEstimate={customBundleEstimate}
+              />
+            )}
+          </>
+        ) : (
+          <>
+            {currentStep === 0 && (
+              <ServiceSelectStep
+                selected={selectedServiceSlug}
+                isCustomBundleSelected={false}
+                isPreview={isPreview}
+                onChange={(slug) =>
+                  setPrimaryItem((currentItem) => ({
+                    serviceSlug: slug,
+                    variantSlug: currentItem?.serviceSlug === slug ? currentItem.variantSlug : null,
+                    quantity: currentItem?.quantity ?? 1,
+                  }))
+                }
+                onSelectCustomBundle={() => setBookingMode('custom_bundle')}
+              />
+            )}
+
+            {currentStep === 1 && selectedServiceSlug && (
+              <VariantSelectStep
+                serviceSlug={selectedServiceSlug}
+                selected={selectedVariantSlug}
+                onChange={(slug) =>
+                  setPrimaryItem((currentItem) => ({
+                    serviceSlug: currentItem?.serviceSlug ?? selectedServiceSlug,
+                    variantSlug: slug,
+                    quantity: currentItem?.quantity ?? 1,
+                  }))
+                }
+              />
+            )}
+
+            {dateStepIndex !== null && currentStep === dateStepIndex && (
+              <DateTimeStep
+                serviceSlug={selectedServiceSlug}
+                variantSlug={selectedVariantSlug}
+                eventDate={data.eventDate}
+                startTime={data.startTime}
+                durationMinutes={data.durationMinutes}
+                onDateChange={(value) =>
+                  setData((d) => ({ ...d, eventDate: value, startTime: null, durationMinutes: null }))
+                }
+                onStartTimeChange={(value) => setData((d) => ({ ...d, startTime: value, durationMinutes: null }))}
+                onDurationChange={(value) => setData((d) => ({ ...d, durationMinutes: value }))}
+              />
+            )}
+
+            {extrasStepIndex !== null && currentStep === extrasStepIndex && (
+              <ExtrasStep
+                serviceSlug={selectedServiceSlug}
+                variantSlug={selectedVariantSlug}
+                notes={data.extrasNotes}
+                technician={data.extrasTechnician}
+                backline={data.extrasBackline}
+                availableRecordingAddons={recordingAddonsForCurrentService}
+                selectedRecordingAddonSlugs={data.recordingAddonSlugs}
+                projectTopicCount={data.projectTopicCount}
+                onRecordingAddonToggle={toggleRecordingAddon}
+                onProjectTopicCountChange={updateProjectTopicCount}
+                onNotesChange={(value) => setData((d) => ({ ...d, extrasNotes: value }))}
+                onTechnicianChange={(value) => setData((d) => ({ ...d, extrasTechnician: value }))}
+                onBacklineChange={(value) => setData((d) => ({ ...d, extrasBackline: value }))}
+              />
+            )}
+
+            {currentStep === contactStepIndex && (
+              <ContactStep
+                name={data.requesterName}
+                email={data.requesterEmail}
+                phone={data.requesterPhone}
+                whatsappConsentAccepted={data.whatsappConsentAccepted}
+                whatsappConsentError={contactConsentError}
+                whatsappVerificationStatus={whatsappVerification.status}
+                whatsappVerificationCode={whatsappVerification.code}
+                whatsappVerificationError={whatsappVerification.error}
+                whatsappVerificationChallengeId={whatsappVerification.challengeId}
+                whatsappVerificationExpiresAt={whatsappVerification.expiresAt}
+                whatsappVerificationVerifiedAt={whatsappVerification.verifiedAt}
+                whatsappVerificationPhone={whatsappVerification.phone}
+                whatsappFlowMode={contactVerificationFlowMode}
+                secureLinkRequestState={secureLinkRequestState}
+                secureLinkExpiresAt={secureLinkRequestExpiresAt}
+                secureLinkError={secureLinkRequestError}
+                onPrimarySecureLinkAction={() => {
+                  void handleContactPrimarySecureLinkAction()
+                }}
+                onStartWhatsappVerification={() => {
+                  setSubmitError(null)
+                  setContactVerificationFlowMode('manual_code')
+                  setSecureLinkRequestState('idle')
+                  setSecureLinkRequestError(null)
+                  void handleStartWhatsappVerification()
+                }}
+                onSendSecureLink={() => {
+                  setSubmitError(null)
+                  void handleSendSecureLink()
+                }}
+                onUseManualCodeFallback={() => {
+                  console.info('[fallback_manual_code_used]', { event: 'fallback_manual_code_used' })
+                  setContactVerificationFlowMode('manual_code')
+                  setSecureLinkRequestState('idle')
+                  setSecureLinkRequestError(null)
+                }}
+                onRetryOpenWhatsapp={handleRetryOpenWhatsapp}
+                onCopyWhatsappCode={() => {
+                  void handleCopyWhatsappCode()
+                }}
+                onManualWhatsappStatusCheck={() => {
+                  void handleManualWhatsappStatusCheck()
+                }}
+                onNameChange={(value) => setData((d) => ({ ...d, requesterName: value }))}
+                onEmailChange={(value) => setData((d) => ({ ...d, requesterEmail: value }))}
+                onPhoneChange={(value) =>
+                  setData((d) => {
+                    const normalizedNextPhone = normalizeWhatsappVe(value)
+                    const normalizedVerifiedPhone = whatsappVerification.phone
+                      ? normalizeWhatsappVe(whatsappVerification.phone)
+                      : null
+
+                    if (
+                      normalizedVerifiedPhone &&
+                      normalizedNextPhone !== normalizedVerifiedPhone &&
+                      whatsappVerification.status !== 'idle'
+                    ) {
+                      clearWhatsappPollTimer()
+                      setWhatsappVerification(INITIAL_WHATSAPP_VERIFICATION_STATE)
+                    }
+
+                    if (secureLinkRequestState !== 'idle') {
+                      setSecureLinkRequestState('idle')
+                      setSecureLinkRequestError(null)
+                      setSecureLinkRequestExpiresAt(null)
+                    }
+
+                    return { ...d, requesterPhone: value }
+                  })
+                }
+                onWhatsappConsentChange={(value) => {
+                  setData((d) => ({ ...d, whatsappConsentAccepted: value }))
+                  if (value) {
+                    setContactConsentError(null)
+                    if (secureLinkRequestState === 'failed') {
+                      setSecureLinkRequestError(null)
+                    }
+                  }
+                }}
+              />
+            )}
+
+            {currentStep === summaryStepIndex &&
+              selectedServiceSlug &&
+              selectedVariantSlug &&
+              data.eventDate &&
+              data.startTime &&
+              data.durationMinutes && (
+                <SummaryStep
+                  bookingMode="single"
+                  serviceSlug={selectedServiceSlug}
+                  variantSlug={selectedVariantSlug}
+                  eventDate={data.eventDate}
+                  startTime={data.startTime}
+                  durationMinutes={data.durationMinutes}
+                  extrasNotes={data.extrasNotes}
+                  extrasTechnician={data.extrasTechnician}
+                  extrasBackline={data.extrasBackline}
+                  recordingAddonSlugs={data.recordingAddonSlugs}
+                  recordingAddonPreviewTotalUsd={recordingAddonPreviewTotalUsd}
+                  availableRecordingAddons={recordingAddonsForCurrentService}
+                  projectTopicCount={data.projectTopicCount}
+                  requesterName={data.requesterName}
+                  requesterEmail={data.requesterEmail}
+                  requesterPhone={normalizeWhatsappVe(data.requesterPhone)}
+                  estimate={bookingEstimate}
+                />
+              )}
+          </>
+        )}
       </div>
 
       {submitError && (
@@ -2235,7 +2736,7 @@ export function BookingWizard({
         </span>
 
         {currentStep < totalSteps - 1 ? (
-          currentStep === 4 ? (
+          currentStep === contactStepIndex ? (
             isSecureLinkFlowActive && !canUsePreviewVerificationBypass ? (
               <Button variant="ghost" size="sm" disabled>
                 Completa la verificacion arriba
@@ -2262,13 +2763,19 @@ export function BookingWizard({
             variant="primary"
             size="sm"
             onClick={handleSubmit}
-            disabled={submissionState === 'loading' || bookingEstimate.isBlocked}
+            disabled={submissionState === 'loading' || activeEstimate.isBlocked}
           >
             {submissionState === 'loading'
-              ? 'Enviando solicitud...'
-              : bookingEstimate.isBlocked
-                ? 'Corrige la solicitud'
-                : 'Enviar solicitud'}
+              ? isCustomBundleMode
+                ? 'Simulando reserva...'
+                : 'Enviando solicitud...'
+              : activeEstimate.isBlocked
+                ? isCustomBundleMode
+                  ? 'Corrige el paquete'
+                  : 'Corrige la solicitud'
+                : isCustomBundleMode
+                  ? 'Simular reserva'
+                  : 'Enviar solicitud'}
           </Button>
         )}
       </div>

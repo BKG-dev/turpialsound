@@ -8,7 +8,7 @@ import {
   getSelectedRecordingAddonVisualLines,
   type RecordingAddonDefinition,
 } from '@/lib/bookings/recording-addons'
-import type { BookingEstimate } from '@/lib/bookings/types'
+import type { BookingEstimate, CustomBundleEstimate, BookingMode } from '@/lib/bookings/types'
 
 function formatDate(dateStr: string): string {
   const d = new Date(`${dateStr}T12:00:00`)
@@ -90,9 +90,23 @@ function getHourLabel(quantity: number): string {
   return quantity === 1 ? '1 hora' : `${quantity} horas`
 }
 
+function formatDuration(minutes: number): string {
+  if (minutes <= 0) return '0 min'
+  if (minutes % 60 === 0) {
+    const hours = minutes / 60
+    return hours === 1 ? '1 hora' : `${hours} horas`
+  }
+
+  const hours = Math.floor(minutes / 60)
+  const remaining = minutes % 60
+  if (hours === 0) return `${remaining} min`
+  return `${hours}h ${String(remaining).padStart(2, '0')}m`
+}
+
 interface SummaryStepProps {
-  serviceSlug: string
-  variantSlug: string
+  bookingMode: BookingMode
+  serviceSlug?: string | null
+  variantSlug?: string | null
   eventDate: string
   startTime: string
   durationMinutes: number
@@ -107,9 +121,11 @@ interface SummaryStepProps {
   requesterEmail: string
   requesterPhone: string
   estimate?: BookingEstimate
+  customBundleEstimate?: CustomBundleEstimate
 }
 
 export function SummaryStep({
+  bookingMode,
   serviceSlug,
   variantSlug,
   eventDate,
@@ -126,7 +142,142 @@ export function SummaryStep({
   requesterEmail,
   requesterPhone,
   estimate,
+  customBundleEstimate,
 }: SummaryStepProps) {
+  if (bookingMode === 'custom_bundle' && customBundleEstimate) {
+    const bundleEndTime = deriveEndTime(startTime, customBundleEstimate.totalDurationMinutes)
+    const includedLines = customBundleEstimate.lines.filter((line) => line.isIncluded)
+    const selectedLines = customBundleEstimate.lines.filter((line) => !line.isIncluded)
+    const weekendAdjustmentTotal = customBundleEstimate.adjustments.reduce(
+      (total, adjustment) => total + adjustment.amountUsd,
+      0,
+    )
+
+    return (
+      <div className="space-y-3 md:space-y-2">
+        <p className="text-sm text-text-secondary md:text-[10px] md:leading-tight">
+          Revisa el paquete antes de simular. El equipo de Turpial Sound no recibira una solicitud real en Preview.
+        </p>
+
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.15fr)] xl:gap-2">
+          <div className="space-y-3 md:space-y-2">
+            <SummaryCard title="Agenda del paquete">
+              <div className="grid grid-cols-1 gap-2 md:gap-1.5 sm:grid-cols-2">
+                <SummaryPair label="Fecha" value={formatDate(eventDate)} />
+                <SummaryPair label="Horario" value={`${startTime} - ${bundleEndTime}`} />
+                <SummaryPair label="Duracion" value={formatDuration(durationMinutes)} />
+                <SummaryPair
+                  label="Bloque continuo"
+                  value={formatDuration(customBundleEstimate.totalDurationMinutes)}
+                />
+              </div>
+            </SummaryCard>
+          </div>
+
+          <div className="space-y-3 md:space-y-2">
+            <SummaryCard title="Resumen economico">
+              <div className="space-y-0">
+                {selectedLines.map((line) => {
+                  const detail =
+                    line.unitPriceUsd === 0
+                      ? 'Incluido'
+                      : line.sessionDurationMinutes
+                        ? `${line.quantity} ${line.item.commercialUnit} · ${formatDuration(line.durationMinutes)}`
+                        : line.item.quantityType === 'hour'
+                          ? `${getHourLabel(line.quantity)} x ${line.unitPriceUsd} USD`
+                          : `${line.quantity} x ${line.unitPriceUsd} USD`
+
+                  return (
+                    <EstimateLine
+                      key={`${line.item.slug}-${line.label}`}
+                      label={line.label}
+                      value={`${line.lineTotalUsd} USD`}
+                      detail={detail}
+                    />
+                  )
+                })}
+
+                {customBundleEstimate.adjustments.map((adjustment) => (
+                  <EstimateLine
+                    key={adjustment.label}
+                    label={adjustment.label}
+                    value={`${adjustment.amountUsd} USD`}
+                  />
+                ))}
+
+                <EstimateLine
+                  label="Subtotal"
+                  value={`${customBundleEstimate.subtotalUsd} USD`}
+                />
+                <EstimateLine
+                  label="Total estimado"
+                  value={`${customBundleEstimate.estimatedTotalUsd} USD`}
+                  emphasis
+                />
+              </div>
+            </SummaryCard>
+          </div>
+
+          <div className="space-y-3 md:space-y-2">
+            <SummaryCard title="Incluidos">
+              <div className="flex flex-wrap gap-1.5">
+                {includedLines.map((line) => (
+                  <SummaryPill key={line.item.slug}>
+                    {line.label}: Incluido
+                  </SummaryPill>
+                ))}
+              </div>
+              <div className="mt-2 rounded-md bg-brand-bg/30 px-2.5 py-2 md:px-2 md:py-1.5">
+                <p className="text-[10px] uppercase tracking-wide text-text-muted">Total con recargo</p>
+                <p className="mt-0.5 text-sm font-semibold text-text-primary">
+                  {customBundleEstimate.estimatedTotalUsd} USD
+                </p>
+                <p className="mt-0.5 text-[11px] leading-snug text-text-muted">
+                  {weekendAdjustmentTotal > 0
+                    ? `El recargo de fin de semana suma ${weekendAdjustmentTotal} USD al subtotal.`
+                    : 'No se aplico recargo de fin de semana.'}
+                </p>
+              </div>
+            </SummaryCard>
+          </div>
+        </div>
+
+        {customBundleEstimate.blockingIssues.length > 0 && (
+          <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2 md:px-2.5 md:py-1.5">
+            <div className="flex items-center gap-2">
+              <svg
+                className="h-4 w-4 text-red-400"
+                aria-hidden="true"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-red-300 md:text-[10px]">
+                Requiere ajuste antes de simular
+              </p>
+            </div>
+            <ul className="mt-1 space-y-1 text-[13px] text-red-200 md:text-[12px]">
+              {customBundleEstimate.blockingIssues.map((issue) => (
+                <li key={issue.code}>{issue.message}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <p className="text-xs text-text-muted md:text-[10px] md:leading-tight">
+          La simulacion conserva fecha, hora, lineas, subtotales y total sin crear reservas reales.
+        </p>
+      </div>
+    )
+  }
+
   const service = CATALOG_SERVICES.find((s) => s.slug === serviceSlug)
   const variant = CATALOG_VARIANTS.find((v) => v.slug === variantSlug)
   const endTime = deriveEndTime(startTime, durationMinutes)
@@ -135,8 +286,8 @@ export function SummaryStep({
   )
   const selectedRecordingAddonVisualLines = getSelectedRecordingAddonVisualLines(
     recordingAddonSlugs,
-    serviceSlug,
-    variantSlug,
+    serviceSlug ?? '',
+    variantSlug ?? '',
     projectTopicCount,
   )
   const hasExtras =
@@ -153,14 +304,14 @@ export function SummaryStep({
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.15fr)] xl:gap-2">
         <div className="space-y-3 md:space-y-2">
-          <SummaryCard title="Servicio y Agenda">
-            <div className="grid grid-cols-1 gap-2 md:gap-1.5 sm:grid-cols-2">
-              <SummaryPair label="Servicio" value={service?.name ?? serviceSlug} />
-              <SummaryPair label="Modalidad" value={variant?.name ?? variantSlug} />
+            <SummaryCard title="Servicio y Agenda">
+              <div className="grid grid-cols-1 gap-2 md:gap-1.5 sm:grid-cols-2">
+              <SummaryPair label="Servicio" value={service?.name ?? serviceSlug ?? 'Por definir'} />
+              <SummaryPair label="Modalidad" value={variant?.name ?? variantSlug ?? 'Por definir'} />
               <SummaryPair label="Fecha" value={formatDate(eventDate)} />
               <SummaryPair label="Horario" value={`${startTime} - ${endTime}`} />
-            </div>
-          </SummaryCard>
+              </div>
+            </SummaryCard>
         </div>
 
         <div className="space-y-3 md:space-y-2">
