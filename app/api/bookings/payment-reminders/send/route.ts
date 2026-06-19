@@ -5,6 +5,7 @@ import {
   sendPaymentReminderWhatsapp,
   type PaymentReminderKind,
 } from '@/lib/bookings/payment-reminders'
+import { isPreviewDeployment, PREVIEW_SIMULATION_MESSAGE } from '@/lib/bookings/environment'
 import { validatePaymentRecoveryToken } from '@/lib/bookings/payment-recovery-token'
 
 const REMINDER_SECRET_ENV = 'BOOKINGS_PAYMENT_REMINDER_SECRET'
@@ -45,6 +46,16 @@ export async function POST(request: NextRequest) {
   const tokenValidation = validatePaymentRecoveryToken(token, publicCode)
   if (!tokenValidation.ok) {
     return NextResponse.json({ ok: true, status: 'skipped', reason: tokenValidation.error })
+  }
+
+  if (isPreviewDeployment()) {
+    return NextResponse.json({
+      ok: true,
+      simulated: true,
+      message: PREVIEW_SIMULATION_MESSAGE,
+      status: 'skipped',
+      reason: 'preview_simulated',
+    })
   }
 
   const booking = await prisma.bookingRequest.findUnique({

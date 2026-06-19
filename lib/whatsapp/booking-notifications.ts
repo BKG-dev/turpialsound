@@ -3,6 +3,7 @@ import {
   sendWhatsappMessage,
   type OutboundWhatsappResult,
 } from '@/lib/whatsapp/outbound-provider'
+import { isPreviewDeployment } from '@/lib/bookings/environment'
 
 export type BookingWhatsappEvent =
   | 'verification_code'
@@ -175,6 +176,14 @@ export async function sendBookingWhatsapp(
   booking: BookingContext,
   options?: SendBookingWhatsappOptions,
 ): Promise<BookingWhatsappResult> {
+  if (isPreviewDeployment()) {
+    return {
+      sent: false,
+      provider: 'disabled',
+      reason: 'preview_simulated',
+    }
+  }
+
   const allowManualFallback = options?.allowManualFallback ?? true
   const configuredProvider = process.env.WHATSAPP_OUTBOUND_PROVIDER?.trim() ?? 'disabled'
   const hasPhone = Boolean(customer.phone?.trim())

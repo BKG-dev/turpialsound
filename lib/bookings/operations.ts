@@ -3,6 +3,7 @@ import { syncBookingToGoogleCalendar } from '@/lib/bookings/google-calendar'
 import { sendBookingNotifications } from '@/lib/bookings/notifications'
 import { getPaymentWindowMinutes } from '@/lib/bookings/payment-settings'
 import { sendBookingWhatsapp } from '@/lib/whatsapp/booking-notifications'
+import { isPreviewDeployment } from '@/lib/bookings/environment'
 import { prisma } from '@/lib/db'
 
 export type OperationalBookingStatus =
@@ -203,6 +204,16 @@ export async function expireOverduePendingPayments(options?: {
   now?: Date
   take?: number
 }): Promise<ExpireOverduePendingPaymentsResult> {
+  if (isPreviewDeployment()) {
+    return {
+      scanned: 0,
+      expired: 0,
+      skipped: 0,
+      calendarSynced: 0,
+      calendarFailed: 0,
+    }
+  }
+
   const referenceDate = options?.now ?? new Date()
   const take = Math.max(1, Math.min(options?.take ?? 200, 500))
   const cutoff = new Date(referenceDate.getTime() - PAYMENT_WINDOW_MINUTES * 60 * 1000)

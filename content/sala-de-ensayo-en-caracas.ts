@@ -37,13 +37,13 @@ export const salaEnsayoModalities: SalaEnsayoModality[] = [
     slug: 'flexible',
     title: 'Sala de ensayo Flexible en Caracas',
     description:
-      'Sala de ensayo en Caracas desde 15 USD por hora, con reserva online en Turpial Sound, horarios reservables y opción flexible para bandas y músicos.',
+      'Sala de ensayo en Caracas desde 20 USD por hora, con reserva online en Turpial Sound, horarios reservables y opción flexible para bandas y músicos.',
     serviceName: 'Sala de ensayo Flexible en Caracas',
     serviceDescription:
       'Modalidad disponible en Caracas para reservar tu pauta desde la web en una sala de ensayo y estudio en Caracas con Turpial Sound.',
-    price: 15,
+    price: 20,
     priceCurrency: 'USD',
-    priceDisplay: '15 USD por hora',
+    priceDisplay: '20 USD por hora',
     unitText: 'hora',
     differential:
       'Reserva tu pauta desde la web con precio publicado y opción reprogramable si entra una solicitud prioritaria.',
@@ -59,9 +59,9 @@ export const salaEnsayoModalities: SalaEnsayoModality[] = [
     serviceName: 'Sala de ensayo Premium en Caracas',
     serviceDescription:
       'Modalidad premium de sala de ensayo con horario garantizado en Turpial Sound Caracas.',
-    price: 20,
+    price: 25,
     priceCurrency: 'USD',
-    priceDisplay: '20 USD por hora',
+    priceDisplay: '25 USD por hora',
     unitText: 'hora',
     differential: 'Horario fijo y garantizado, no sujeto a cambios.',
     productDescription:
@@ -72,13 +72,13 @@ export const salaEnsayoModalities: SalaEnsayoModality[] = [
     slug: 'prioritaria',
     title: 'Sala de ensayo Prioritaria en Caracas',
     description:
-      'Sala de ensayo prioritaria en Caracas desde 25 USD por hora, con reserva online y horarios reservables para proyectos que necesitan mayor prioridad.',
+      'Sala de ensayo prioritaria en Caracas desde 30 USD por hora, con reserva online y horarios reservables para proyectos que necesitan mayor prioridad.',
     serviceName: 'Sala de ensayo Prioritaria en Caracas',
     serviceDescription:
       'Modalidad disponible en Caracas para músicos, bandas y equipos que necesitan reservar online una sesión prioritaria en Turpial Sound.',
-    price: 25,
+    price: 30,
     priceCurrency: 'USD',
-    priceDisplay: '25 USD por hora',
+    priceDisplay: '30 USD por hora',
     unitText: 'hora',
     differential:
       'Precio publicado y prioridad de horario para reservar tu pauta desde la web cuando el proyecto necesita mayor urgencia.',

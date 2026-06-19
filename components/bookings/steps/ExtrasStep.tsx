@@ -16,13 +16,13 @@ const LEGACY_EXTRA_OPTIONS = [
     key: 'technician' as const,
     label: 'Tecnico de sonido incluido',
     description: 'Acompanamiento tecnico durante la sesion.',
-    priceLabel: '5 USD',
+    priceLabel: 'Incluido',
   },
   {
     key: 'backline' as const,
     label: 'Backline / equipamiento adicional incluido',
     description: 'Instrumentos, amplificadores u otro equipo del estudio.',
-    priceLabel: '5 USD',
+    priceLabel: 'Incluido',
   },
 ]
 

@@ -2,6 +2,7 @@ import 'server-only'
 
 import { sendWhatsappMessage } from '@/lib/whatsapp/outbound-provider'
 import { buildPaymentRecoveryPath } from '@/lib/bookings/payment-recovery-token'
+import { isPreviewDeployment } from '@/lib/bookings/environment'
 
 export type PaymentReminderKind = 'payment_reminder_10m' | 'payment_reminder_50m'
 
@@ -67,6 +68,10 @@ export async function sendPaymentReminderWhatsapp(input: {
   publicCode: string
   token: string
 }): Promise<PaymentReminderSendResult> {
+  if (isPreviewDeployment()) {
+    return { sent: false, status: 'skipped', reason: 'preview_simulated' }
+  }
+
   const normalizedPhone = normalizePhone(input.phone)
   if (!normalizedPhone) {
     return { sent: false, status: 'failed', reason: 'missing_phone' }

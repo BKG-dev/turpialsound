@@ -21,6 +21,7 @@ import {
 import { sendBookingNotifications } from '@/lib/bookings/notifications'
 import { syncBookingToGoogleCalendar } from '@/lib/bookings/google-calendar'
 import { sendBookingConfirmedWhatsapp } from '@/lib/whatsapp/booking-notifications'
+import { isPreviewDeployment } from '@/lib/bookings/environment'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
 import { validatePaymentReviewAccessToken } from '@/lib/bookings/payment-review-access'
 import {
@@ -172,6 +173,8 @@ function buildResultLabel(result: string | null): string | null {
     return 'El pago fue reportado fuera de la ventana. Requiere revision manual.'
   if (result === 'resource_conflict')
     return 'El recurso o sala ya no esta disponible para ese horario.'
+  if (result === 'preview_simulated')
+    return 'Simulación completada. No se modificó la base de datos.'
   if (result === 'error') return 'No pudimos completar la accion.'
   return null
 }
@@ -196,6 +199,10 @@ async function handlePaymentReviewAction(formData: FormData) {
     action === 'confirm' || action === 'incidence' ? action : null
   if (!reviewAction) {
     redirect(`/ops/payment-review?token=${encodeURIComponent(token)}&result=invalid_action`)
+  }
+
+  if (isPreviewDeployment()) {
+    redirect(`/ops/payment-review?token=${encodeURIComponent(token)}&result=preview_simulated`)
   }
 
   const booking = await prisma.bookingRequest.findUnique({

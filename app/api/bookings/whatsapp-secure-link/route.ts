@@ -10,6 +10,7 @@ import {
   isSecureLinkPhoneAllowedByEnv,
   normalizeWhatsappVeForPolicy,
 } from '@/lib/bookings/whatsapp-verify-config'
+import { isPreviewDeployment, PREVIEW_SIMULATION_MESSAGE } from '@/lib/bookings/environment'
 
 interface SecureLinkRequestPayload {
   requesterName?: string
@@ -90,6 +91,19 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  const config = getWhatsappVerificationConfigFromEnv()
+
+  if (isPreviewDeployment()) {
+    return NextResponse.json({
+      ok: true,
+      simulated: true,
+      message: PREVIEW_SIMULATION_MESSAGE,
+      expiresAt: new Date(
+        Date.now() + config.secureLinkTtlMinutes * 60 * 1000,
+      ).toISOString(),
+    })
+  }
+
   console.info('[secure_link_requested]', {
     event: 'secure_link_requested',
     hasPhone: true,
@@ -97,7 +111,6 @@ export async function POST(request: NextRequest) {
     variantSlug: draft.data.selectedItems[0]?.variantSlug ?? null,
   })
 
-  const config = getWhatsappVerificationConfigFromEnv()
   const requestRecord = await createSecureLinkRequest({
     phoneE164: requesterPhone,
     requesterName,

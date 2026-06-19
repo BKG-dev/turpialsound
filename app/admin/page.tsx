@@ -38,6 +38,7 @@ import {
 import { buildAdminPaymentProofUrl } from '@/lib/bookings/operational-links'
 import { sendBookingConfirmedWhatsapp } from '@/lib/whatsapp/booking-notifications'
 import { buildDashboardRange, getAdminDashboardSnapshot } from '@/lib/bookings/dashboard-queries'
+import { isPreviewDeployment } from '@/lib/bookings/environment'
 import {
   CriticalAlertsPanel,
   OccupancyByRoomPanel,
@@ -154,6 +155,10 @@ async function updateOperationalStatus(formData: FormData) {
   }
   const effectiveNextStatus: OperationalBookingStatus =
     nextStatus === 'payment_verified' ? 'confirmed' : nextStatus
+
+  if (isPreviewDeployment()) {
+    redirect(returnPath)
+  }
 
   const current = await prisma.bookingRequest.findUnique({
     where: { id: bookingRequestId },

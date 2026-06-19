@@ -257,10 +257,14 @@ export function SummaryStep({
               <div className="space-y-0">
                 {estimate.lines.map((line) => {
                   const detail =
-                    line.unitPriceUsd !== null &&
-                    (line.unit === 'hour' || line.label === 'Tecnico' || line.label === 'Backline')
-                      ? `${getHourLabel(line.quantity)} x ${line.unitPriceUsd} USD`
-                      : undefined
+                    line.unitPriceUsd === 0
+                      ? 'Incluido'
+                      : line.unitPriceUsd !== null &&
+                          (line.unit === 'hour' ||
+                            line.label === 'Tecnico de sonido' ||
+                            line.label === 'Backline / equipamiento')
+                        ? `${getHourLabel(line.quantity)} x ${line.unitPriceUsd} USD`
+                        : undefined
 
                   return (
                     <EstimateLine

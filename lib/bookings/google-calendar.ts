@@ -1,5 +1,6 @@
 import type { OperationalBookingStatus } from '@/lib/bookings/operations'
 import { buildAdminPaymentProofUrl } from '@/lib/bookings/operational-links'
+import { isPreviewDeployment } from '@/lib/bookings/environment'
 
 interface GoogleCalendarConfig {
   clientId: string
@@ -210,6 +211,15 @@ function shouldMaintainCalendarEvent(status: OperationalBookingStatus): boolean 
 export async function syncBookingToGoogleCalendar(
   input: BookingCalendarSyncInput,
 ): Promise<BookingCalendarSyncResult> {
+  if (isPreviewDeployment()) {
+    return {
+      ok: true,
+      action: 'noop',
+      eventId: input.existingCalendarEventId,
+      reason: 'preview_simulated',
+    }
+  }
+
   const { config, missing } = readGoogleCalendarConfig()
   if (!config) {
     return {

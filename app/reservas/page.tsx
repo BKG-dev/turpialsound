@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { generatePageMetadata } from '@/lib/metadata'
 import { SectionShell } from '@/components/sections/SectionShell'
 import { BookingRequestModule } from '@/components/bookings/BookingRequestModule'
+import { isPreviewDeployment } from '@/lib/bookings/environment'
 import {
   getEnabledPaymentMethods,
   getPaymentWindowMinutes,
@@ -23,6 +24,7 @@ export default function ReservasPage() {
   const primaryPaymentMethodSlug = getPrimaryPaymentMethod().slug
   const paymentWindowMinutes = getPaymentWindowMinutes()
   const whatsappVerificationConfig = getWhatsappVerificationConfigFromEnv()
+  const isPreview = isPreviewDeployment()
 
   return (
     <SectionShell background="surface" size="sm" className="pt-6 pb-4 md:py-5 lg:py-6">
@@ -32,6 +34,7 @@ export default function ReservasPage() {
           primaryPaymentMethodSlug={primaryPaymentMethodSlug}
           paymentWindowMinutes={paymentWindowMinutes}
           whatsappVerificationConfig={whatsappVerificationConfig}
+          isPreview={isPreview}
         />
       </div>
     </SectionShell>

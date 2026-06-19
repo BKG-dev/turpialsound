@@ -15,7 +15,7 @@ import { siteConfig } from '@/content/site'
 export const metadata: Metadata = generatePageMetadata({
   title: 'Sala de ensayo en Caracas',
   description:
-    'Sala de ensayo en Caracas con modalidades Flexible, Premium y Prioritaria, precios desde 15 USD/h y reserva online en Turpial Sound.',
+    'Sala de ensayo en Caracas con modalidades Flexible, Premium y Prioritaria, precios desde 20 USD/h y reserva online en Turpial Sound.',
   path: salaEnsayoHubPath,
 })
 
@@ -39,11 +39,11 @@ export default function SalaDeEnsayoEnCaracasHubPage() {
       'Hub de modalidades de ensayo, grabación, producción y contenido profesional en Turpial Sound Caracas.',
     path: salaEnsayoHubPath,
     offer: {
-      price: 15,
+      price: 20,
       priceCurrency: 'USD',
       availability: 'https://schema.org/InStock',
       unitText: 'hora',
-      description: 'Tarifa publicada desde 15 USD por hora para modalidad Flexible.',
+      description: 'Tarifa publicada desde 20 USD por hora para modalidad Flexible.',
     },
   })
 
@@ -67,7 +67,7 @@ export default function SalaDeEnsayoEnCaracasHubPage() {
 
         <div className="mt-8 rounded-2xl border border-accent-gold/30 bg-accent-gold/10 p-6">
           <p className="text-sm text-text-primary">
-            Tarifa base publicada: <strong>desde 15 USD por hora</strong>.
+            Tarifa base publicada: <strong>desde 20 USD por hora</strong>.
           </p>
           <p className="mt-2 text-sm text-text-secondary">
             Todas las modalidades listadas se encuentran disponibles para reserva o contratación.

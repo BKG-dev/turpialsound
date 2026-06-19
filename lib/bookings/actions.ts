@@ -26,6 +26,7 @@ import {
   buildPaymentRecoveryToken,
 } from '@/lib/bookings/payment-recovery-token'
 import { buildScheduledPaymentReminderJobs } from '@/lib/bookings/payment-reminders'
+import { isPreviewDeployment, PREVIEW_SIMULATION_MESSAGE } from '@/lib/bookings/environment'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
 import { sendBookingWhatsappNotification } from '@/lib/bookings/whatsapp-notifications'
 import { isLabPhoneVerifiedRecently } from '@/lib/whatsapp/lab-token-store'
@@ -191,6 +192,10 @@ function getPaymentProofDuplicateWarning(
   return 'Advertencia: este comprobante coincide con uno ya registrado en otra solicitud.'
 }
 
+function buildPreviewPublicCode(): string {
+  return `PREVIEW-${Date.now().toString(36).toUpperCase()}`
+}
+
 export interface SubmitBookingInput {
   serviceSlug: string
   variantSlug: string
@@ -212,6 +217,8 @@ export interface SubmitBookingResult {
   assignedResourceName?: string | null
   paymentDeadlineIso?: string
   paymentRecoveryPath?: string | null
+  simulated?: boolean
+  message?: string
   error?: string
 }
 
@@ -356,19 +363,21 @@ export async function submitBookingRequest(
       }
     }
 
-    const whatsappLabVerification = await isLabPhoneVerifiedRecently(requesterPhone)
-    const whatsappSecureLinkVerification = whatsappLabVerification.ok
-      ? { ok: true, reason: null as 'not_found' | 'not_verified' | 'expired' | null }
-      : await isSecureLinkPhoneVerifiedRecently(requesterPhone)
+    if (!isPreviewDeployment()) {
+      const whatsappLabVerification = await isLabPhoneVerifiedRecently(requesterPhone)
+      const whatsappSecureLinkVerification = whatsappLabVerification.ok
+        ? { ok: true, reason: null as 'not_found' | 'not_verified' | 'expired' | null }
+        : await isSecureLinkPhoneVerifiedRecently(requesterPhone)
 
-    if (!whatsappLabVerification.ok && !whatsappSecureLinkVerification.ok) {
-      return {
-        success: false,
-        error:
-          whatsappLabVerification.reason === 'expired' ||
-          whatsappSecureLinkVerification.reason === 'expired'
-            ? 'Tu verificacion de WhatsApp vencio. Verifica nuevamente antes de crear la reserva.'
-            : 'Debes verificar tu WhatsApp antes de crear la solicitud de reserva.',
+      if (!whatsappLabVerification.ok && !whatsappSecureLinkVerification.ok) {
+        return {
+          success: false,
+          error:
+            whatsappLabVerification.reason === 'expired' ||
+            whatsappSecureLinkVerification.reason === 'expired'
+              ? 'Tu verificacion de WhatsApp vencio. Verifica nuevamente antes de crear la reserva.'
+              : 'Debes verificar tu WhatsApp antes de crear la solicitud de reserva.',
+        }
       }
     }
 
@@ -395,6 +404,19 @@ export async function submitBookingRequest(
 
     if (Number.isNaN(eventDateTime.getTime()) || Number.isNaN(eventEndDateTime.getTime())) {
       return { success: false, error: 'La fecha u hora seleccionada no es valida.' }
+    }
+
+    if (isPreviewDeployment()) {
+      const previewCreatedAt = new Date()
+      return {
+        success: true,
+        simulated: true,
+        message: PREVIEW_SIMULATION_MESSAGE,
+        publicCode: buildPreviewPublicCode(),
+        assignedResourceName: null,
+        paymentDeadlineIso: getPaymentDeadline(previewCreatedAt).toISOString(),
+        paymentRecoveryPath: null,
+      }
     }
 
     const notesParts: string[] = []
@@ -664,6 +686,8 @@ export interface ReportBookingPaymentResult {
   paymentProofId?: string
   duplicateStatus?: PaymentProofDuplicateStatus
   warning?: string
+  simulated?: boolean
+  message?: string
   error?: string
 }
 
@@ -690,6 +714,19 @@ export async function reportBookingPayment(
 
     if (!paymentReference) {
       return { success: false, error: 'La referencia de pago es obligatoria.' }
+    }
+
+    if (isPreviewDeployment()) {
+      return {
+        success: true,
+        simulated: true,
+        message: PREVIEW_SIMULATION_MESSAGE,
+        operationalStatus: 'payment_reported',
+        bookingStatus: 'under_review',
+        paymentReportedAtIso: new Date().toISOString(),
+        duplicateStatus: 'none',
+        warning: PREVIEW_SIMULATION_MESSAGE,
+      }
     }
 
     const requiresPaymentProofFile = paymentMethod !== 'efectivo'

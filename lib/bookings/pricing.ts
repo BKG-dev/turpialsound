@@ -47,7 +47,7 @@ export const BOOKING_CATALOG_ADDONS: BookingCatalogAddonDefinition[] = [
     description: 'Acompanamiento tecnico durante la sesion.',
     serviceSlugs: ['sala-ensayo', 'grabacion', 'podcast-locucion', 'video-session'],
     pricing: {
-      amountUsd: 5,
+      amountUsd: 0,
       unit: 'fixed',
       showPriceToClient: true,
     },
@@ -59,7 +59,7 @@ export const BOOKING_CATALOG_ADDONS: BookingCatalogAddonDefinition[] = [
     description: 'Instrumentos y equipamiento adicional segun disponibilidad.',
     serviceSlugs: ['sala-ensayo', 'grabacion', 'video-session'],
     pricing: {
-      amountUsd: 5,
+      amountUsd: 0,
       unit: 'fixed',
       showPriceToClient: true,
     },
@@ -80,7 +80,7 @@ export const BOOKING_CATALOG_SERVICES: BookingCatalogServiceDefinition[] = [
         description:
           'Tarifa flexible; la sesion puede reprogramarse con aviso previo si entra una solicitud prioritaria.',
         pricing: {
-          amountUsd: 15,
+          amountUsd: 20,
           unit: 'hour',
           showPriceToClient: true,
           weekendSurchargeUsd: 5,
@@ -95,7 +95,7 @@ export const BOOKING_CATALOG_SERVICES: BookingCatalogServiceDefinition[] = [
         name: 'Premium',
         description: 'Horario fijo y garantizado, no sujeto a cambios.',
         pricing: {
-          amountUsd: 20,
+          amountUsd: 25,
           unit: 'hour',
           showPriceToClient: true,
           weekendSurchargeUsd: 5,
@@ -110,7 +110,7 @@ export const BOOKING_CATALOG_SERVICES: BookingCatalogServiceDefinition[] = [
         name: 'Prioritaria',
         description: 'Acceso prioritario al espacio cuando lo necesitas.',
         pricing: {
-          amountUsd: 25,
+          amountUsd: 30,
           unit: 'hour',
           showPriceToClient: true,
           weekendSurchargeUsd: 5,

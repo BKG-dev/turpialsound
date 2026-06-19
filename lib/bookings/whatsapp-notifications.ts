@@ -1,4 +1,5 @@
 import { sendWhatsappMessage } from '@/lib/whatsapp/outbound-provider'
+import { isPreviewDeployment } from '@/lib/bookings/environment'
 
 export type BookingWhatsappBridgeEvent = 'payment_reported'
 
@@ -32,6 +33,10 @@ function mapOutboundFailureToStatus(reason?: string): 'skipped' | 'failed' {
 export async function sendBookingWhatsappNotification(
   input: SendBookingWhatsappNotificationInput,
 ): Promise<SendBookingWhatsappNotificationResult> {
+  if (isPreviewDeployment()) {
+    return { status: 'skipped', reason: 'preview_simulated' }
+  }
+
   const normalizedPhone = input.phone.replace(/[+\s\-()]/g, '').replace(/[^\d]/g, '')
   if (!normalizedPhone) {
     return { status: 'failed', reason: 'missing_phone' }

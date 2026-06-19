@@ -1,4 +1,5 @@
 import { getEnabledPaymentMethods } from '@/lib/bookings/payment-settings'
+import { isPreviewDeployment } from '@/lib/bookings/environment'
 import type { OperationalBookingStatus } from '@/lib/bookings/operations'
 import { Resend } from 'resend'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
@@ -574,6 +575,10 @@ export async function sendBookingNotifications(
   event: BookingNotificationEvent,
   payload: BookingNotificationPayload,
 ): Promise<void> {
+  if (isPreviewDeployment()) {
+    return
+  }
+
   const enrichedPayload = await enrichPayloadWithReferenceRate(event, payload)
   const messages = buildMessages(event, enrichedPayload)
   if (messages.length === 0) {

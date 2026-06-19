@@ -302,6 +302,7 @@ interface BookingWizardProps {
   primaryPaymentMethodSlug: BookingPaymentMethodSlug
   paymentWindowMinutes: number
   whatsappVerificationConfig: WhatsappVerificationConfig
+  isPreview: boolean
   onSubmissionStateChange?: (state: 'idle' | 'loading' | 'success' | 'error') => void
 }
 
@@ -310,6 +311,7 @@ export function BookingWizard({
   primaryPaymentMethodSlug,
   paymentWindowMinutes,
   whatsappVerificationConfig,
+  isPreview,
   onSubmissionStateChange,
 }: BookingWizardProps) {
   const primaryPaymentMethod =
@@ -360,6 +362,7 @@ export function BookingWizard({
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false)
   const [hasRestoredPendingPayment, setHasRestoredPendingPayment] = useState(false)
   const [paymentRecoveryNotice, setPaymentRecoveryNotice] = useState<string | null>(null)
+  const [submissionNotice, setSubmissionNotice] = useState<string | null>(null)
   const pollTimerRef = useRef<number | null>(null)
   const wizardContainerRef = useRef<HTMLDivElement | null>(null)
 
@@ -455,6 +458,7 @@ export function BookingWizard({
     whatsappVerification.status === 'verified' &&
     Number.isFinite(whatsappVerifiedAtMs) &&
     Date.now() - whatsappVerifiedAtMs <= WHATSAPP_VERIFICATION_TTL_MS
+  const canUsePreviewVerificationBypass = isPreview || isWhatsappVerificationFresh
   const paymentMethodNameForButton =
     selectedPaymentMethod.slug === 'efectivo' ? 'Notificar pago en efectivo' : 'Reportar pago'
 
@@ -603,6 +607,20 @@ export function BookingWizard({
       return
     }
 
+    if (isPreview) {
+      const nowIso = new Date().toISOString()
+      setWhatsappVerification({
+        status: 'verified',
+        challengeId: null,
+        code: 'PREVIEW-WA',
+        expiresAt: nowIso,
+        verifiedAt: nowIso,
+        phone,
+        error: null,
+      })
+      return
+    }
+
     setWhatsappVerification({
       status: 'loading',
       challengeId: null,
@@ -704,6 +722,17 @@ export function BookingWizard({
       return
     }
 
+    if (isPreview) {
+      setSecureLinkRequestState('sent')
+      setSecureLinkRequestError(null)
+      setSecureLinkRequestExpiresAt(
+        new Date(
+          Date.now() + whatsappVerificationConfig.secureLinkTtlMinutes * 60 * 1000,
+        ).toISOString(),
+      )
+      return
+    }
+
     const phone = normalizedRequesterPhone
 
     const bookingEndTime =
@@ -776,6 +805,10 @@ export function BookingWizard({
   }
 
   function handleRetryOpenWhatsapp() {
+    if (isPreview) {
+      return
+    }
+
     if (!whatsappVerification.code) return
     const whatsappText = encodeURIComponent(whatsappVerification.code)
     const whatsappUrl = `https://wa.me/${TURPIAL_WHATSAPP_BOOKING_NUMBER}?text=${whatsappText}`
@@ -1039,12 +1072,12 @@ export function BookingWizard({
           ? data.eventDate !== null && data.startTime !== null && data.durationMinutes !== null
           : currentStep === 3
             ? true
-          : currentStep === 4
-              ? data.requesterName.trim() !== '' &&
+        : currentStep === 4
+            ? data.requesterName.trim() !== '' &&
                 isValidEmail(data.requesterEmail) &&
                 isValidWhatsappVe(data.requesterPhone) &&
                 data.whatsappConsentAccepted &&
-                isWhatsappVerificationFresh
+                canUsePreviewVerificationBypass
               : currentStep === 5
                 ? true
                 : false
@@ -1058,7 +1091,7 @@ export function BookingWizard({
     whatsappVerification.status === 'pending' ||
     secureLinkRequestState === 'loading'
 
-  const contactPrimaryCtaLabel = isWhatsappVerificationFresh
+  const contactPrimaryCtaLabel = canUsePreviewVerificationBypass
     ? 'Continuar al resumen'
     : isSecureLinkFlowActive
       ? secureLinkRequestState === 'loading'
@@ -1133,7 +1166,7 @@ export function BookingWizard({
       return
     }
 
-    if (currentStep === 4 && whatsappVerification.status !== 'verified') {
+    if (currentStep === 4 && !canUsePreviewVerificationBypass) {
       setSubmitError(
         isSecureLinkFlowActive
           ? 'Debes abrir el enlace seguro de WhatsApp antes de continuar al resumen.'
@@ -1176,6 +1209,7 @@ export function BookingWizard({
     setContactConsentError(null)
     setCopyStatusKey(null)
     setSubmitError(null)
+    setSubmissionNotice(null)
     setWhatsappVerification(INITIAL_WHATSAPP_VERIFICATION_STATE)
     setContactVerificationFlowMode(
       whatsappVerificationConfig.mode === 'secure_link' && whatsappVerificationConfig.secureLinkEnabled
@@ -1202,7 +1236,7 @@ export function BookingWizard({
       return
     }
 
-    if (isWhatsappVerificationFresh) {
+    if (canUsePreviewVerificationBypass) {
       handleNext()
       return
     }
@@ -1225,7 +1259,7 @@ export function BookingWizard({
   async function handleContactPrimarySecureLinkAction() {
     setSubmitError(null)
 
-    if (isSecureLinkFlowActive && !isWhatsappVerificationFresh) {
+    if (isSecureLinkFlowActive && !canUsePreviewVerificationBypass) {
       if (secureLinkRequestState !== 'loading') {
         await handleSendSecureLink()
       }
@@ -1276,7 +1310,7 @@ export function BookingWizard({
       return
     }
 
-    if (!isWhatsappVerificationFresh) {
+    if (!canUsePreviewVerificationBypass) {
       setSubmitError('Debes verificar tu WhatsApp antes de crear la solicitud de reserva.')
       setSubmissionState('error')
       return
@@ -1296,6 +1330,7 @@ export function BookingWizard({
     setPaymentReportWarning(null)
     setPaymentReportedAtIso(null)
     setSubmitError(null)
+    setSubmissionNotice(null)
     setPaymentRecoveryNotice(null)
 
     const result = await submitBookingRequest({
@@ -1317,6 +1352,7 @@ export function BookingWizard({
       setPublicCode(result.publicCode)
       setAssignedResourceName(result.assignedResourceName ?? null)
       setPaymentDeadlineIso(result.paymentDeadlineIso ?? null)
+      setSubmissionNotice(result.message ?? null)
       setShowPaymentOptions(true)
       setSelectedPaymentMethodSlug(defaultSuccessPaymentMethod.slug)
       setPostSubmitOperationalStatus('pending_payment')
@@ -1353,27 +1389,29 @@ export function BookingWizard({
       return
     }
 
-    if (requiresProofFile && !paymentReportProofFile) {
-      setPaymentReportError('Sube tu comprobante en JPG, PNG, WEBP o AVIF.')
-      setPaymentReportState('error')
-      setPaymentReportWarning(null)
-      return
-    }
-
-    if (paymentReportProofFile) {
-      const proofType = paymentReportProofFile.type.toLowerCase()
-      if (!isAllowedPaymentProofMimeType(proofType)) {
-        setPaymentReportError('Formato no soportado. Sube una imagen JPG, PNG, WEBP o AVIF.')
+    if (!isPreview) {
+      if (requiresProofFile && !paymentReportProofFile) {
+        setPaymentReportError('Sube tu comprobante en JPG, PNG, WEBP o AVIF.')
         setPaymentReportState('error')
         setPaymentReportWarning(null)
         return
       }
 
-      if (paymentReportProofFile.size > PAYMENT_PROOF_MAX_SIZE_BYTES) {
-        setPaymentReportError('El comprobante supera el maximo permitido de 4.5 MB.')
-        setPaymentReportState('error')
-        setPaymentReportWarning(null)
-        return
+      if (paymentReportProofFile) {
+        const proofType = paymentReportProofFile.type.toLowerCase()
+        if (!isAllowedPaymentProofMimeType(proofType)) {
+          setPaymentReportError('Formato no soportado. Sube una imagen JPG, PNG, WEBP o AVIF.')
+          setPaymentReportState('error')
+          setPaymentReportWarning(null)
+          return
+        }
+
+        if (paymentReportProofFile.size > PAYMENT_PROOF_MAX_SIZE_BYTES) {
+          setPaymentReportError('El comprobante supera el maximo permitido de 4.5 MB.')
+          setPaymentReportState('error')
+          setPaymentReportWarning(null)
+          return
+        }
       }
     }
 
@@ -1400,13 +1438,35 @@ export function BookingWizard({
 
     setPostSubmitOperationalStatus('payment_reported')
     setPaymentReportState('success')
-    setPaymentReportWarning(result.warning ?? null)
+    setPaymentReportWarning(result.message ?? result.warning ?? null)
     setPaymentReportedAtIso(result.paymentReportedAtIso ?? new Date().toISOString())
   }
 
   if (submissionState === 'success' && publicCode) {
+    const successTitle =
+      postSubmitOperationalStatus === 'payment_reported'
+        ? isPreview
+          ? 'Pago simulado'
+          : 'Pago reportado'
+        : isPreview
+          ? 'Simulacion completada'
+          : 'Solicitud enviada'
+    const successDescription =
+      postSubmitOperationalStatus === 'payment_reported'
+        ? isPreview
+          ? 'La prueba quedo simulada. No se modifico la base de datos.'
+          : 'Tu comprobante fue recibido y el pago quedo en revision por el equipo de Turpial Sound.'
+        : isPreview
+          ? 'Simulamos el flujo completo sin escribir en la base de datos compartida.'
+          : `Tu solicitud quedo en estado pendiente de pago. El bloque quedo apartado por ${paymentWindowLabel} mientras confirmamos el pago.`
+
     return (
       <div className="rounded-2xl border border-brand-border bg-brand-surface p-3">
+        {submissionNotice && (
+          <div className="mb-2 rounded-lg border border-amber-300/40 bg-amber-400/10 px-3 py-2 text-[11px] text-amber-100">
+            {submissionNotice}
+          </div>
+        )}
         <div className="mb-2.5 rounded-lg border border-brand-border/70 bg-brand-bg/30 px-2.5 py-2">
           <div className="flex items-start gap-2">
             <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-gold/10">
@@ -1422,14 +1482,10 @@ export function BookingWizard({
             </span>
             <div className="min-w-0">
               <h2 className="font-display text-sm font-bold leading-tight text-text-primary md:text-base">
-                {postSubmitOperationalStatus === 'payment_reported'
-                  ? 'Pago reportado'
-                  : 'Solicitud enviada'}
+                {successTitle}
               </h2>
               <p className="mt-0.5 text-[11px] leading-snug text-text-secondary">
-                {postSubmitOperationalStatus === 'payment_reported'
-                  ? 'Tu comprobante fue recibido y el pago quedo en revision por el equipo de Turpial Sound.'
-                  : `Tu solicitud quedo en estado pendiente de pago. El bloque quedo apartado por ${paymentWindowLabel} mientras confirmamos el pago.`}
+                {successDescription}
               </p>
             </div>
           </div>
@@ -2180,7 +2236,7 @@ export function BookingWizard({
 
         {currentStep < totalSteps - 1 ? (
           currentStep === 4 ? (
-            isSecureLinkFlowActive && !isWhatsappVerificationFresh ? (
+            isSecureLinkFlowActive && !canUsePreviewVerificationBypass ? (
               <Button variant="ghost" size="sm" disabled>
                 Completa la verificacion arriba
               </Button>

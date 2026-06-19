@@ -16,6 +16,7 @@ interface BookingRequestModuleProps {
   primaryPaymentMethodSlug: BookingPaymentMethodSlug
   paymentWindowMinutes: number
   whatsappVerificationConfig: WhatsappVerificationConfig
+  isPreview: boolean
 }
 
 export function BookingRequestModule({
@@ -23,12 +24,19 @@ export function BookingRequestModule({
   primaryPaymentMethodSlug,
   paymentWindowMinutes,
   whatsappVerificationConfig,
+  isPreview,
 }: BookingRequestModuleProps) {
   const [submissionState, setSubmissionState] = useState<SubmissionState>('idle')
   const isSuccess = submissionState === 'success'
 
   return (
     <>
+      {isPreview && (
+        <div className="mb-3 rounded-lg border border-amber-300/60 bg-amber-400/10 px-3 py-2 text-[11px] leading-snug text-amber-100 md:text-xs">
+          MODO PREVIEW — Las reservas, pagos y notificaciones están desactivadas. Esta prueba no
+          modifica producción.
+        </div>
+      )}
       <div className={isSuccess ? 'mb-1 md:mb-1' : 'mb-2 md:mb-1.5'}>
         <SectionHeading
           eyebrow="Formulario de solicitud"
@@ -45,6 +53,7 @@ export function BookingRequestModule({
         primaryPaymentMethodSlug={primaryPaymentMethodSlug}
         paymentWindowMinutes={paymentWindowMinutes}
         whatsappVerificationConfig={whatsappVerificationConfig}
+        isPreview={isPreview}
         onSubmissionStateChange={setSubmissionState}
       />
     </>

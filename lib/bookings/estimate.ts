@@ -107,7 +107,10 @@ export function buildBookingEstimate(input: BuildBookingEstimateInput): BookingE
   const addons = getVisibleSelectedAddons(input, primaryItem.serviceSlug)
   for (const addon of addons) {
     const priceUsd = addon.pricing?.amountUsd ?? 0
-    const label = addon.slug === 'tecnico-sonido' ? 'Tecnico' : 'Backline'
+    const label =
+      addon.slug === 'tecnico-sonido'
+        ? 'Tecnico de sonido'
+        : 'Backline / equipamiento'
     const quantity = durationHours > 0 ? durationHours : 1
 
     lines.push({
