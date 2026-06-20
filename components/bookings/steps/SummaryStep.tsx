@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 import { CATALOG_SERVICES, CATALOG_VARIANTS } from '@/lib/bookings/catalog'
 import { deriveEndTime } from '@/components/bookings/steps/DateTimeStep'
+import { splitCustomBundleEstimateLines } from '@/lib/bookings/custom-bundle'
 import {
   getRecordingAddonVisualTopicLabel,
   getSelectedRecordingAddonVisualLines,
@@ -146,8 +147,10 @@ export function SummaryStep({
 }: SummaryStepProps) {
   if (bookingMode === 'custom_bundle' && customBundleEstimate) {
     const bundleEndTime = deriveEndTime(startTime, customBundleEstimate.totalDurationMinutes)
-    const includedLines = customBundleEstimate.lines.filter((line) => line.isIncluded)
-    const selectedLines = customBundleEstimate.lines.filter((line) => !line.isIncluded)
+    const { itemizedLines, aggregateOnlyLines, includedLines } = splitCustomBundleEstimateLines(
+      customBundleEstimate.lines,
+    )
+    const aggregateOnlyQuantity = aggregateOnlyLines.reduce((total, line) => total + line.quantity, 0)
     const weekendAdjustmentTotal = customBundleEstimate.adjustments.reduce(
       (total, adjustment) => total + adjustment.amountUsd,
       0,
@@ -177,7 +180,7 @@ export function SummaryStep({
           <div className="space-y-3 md:space-y-2">
             <SummaryCard title="Resumen economico">
               <div className="space-y-0">
-                {selectedLines.map((line) => {
+                {itemizedLines.map((line) => {
                   const detail =
                     line.unitPriceUsd === 0
                       ? 'Incluido'
@@ -196,6 +199,14 @@ export function SummaryStep({
                     />
                   )
                 })}
+
+                {aggregateOnlyLines.length > 0 && (
+                  <EstimateLine
+                    label="Adicionales del paquete"
+                    value={`${customBundleEstimate.additionalSubtotalUsd} USD`}
+                    detail={`${aggregateOnlyQuantity} adicionales seleccionados`}
+                  />
+                )}
 
                 {customBundleEstimate.adjustments.map((adjustment) => (
                   <EstimateLine

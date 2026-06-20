@@ -22,6 +22,7 @@ import { buildBookingEstimate } from '@/lib/bookings/estimate'
 import {
   buildCustomBundleEstimate,
   getCustomBundleItemBySlug,
+  splitCustomBundleEstimateLines,
   normalizeCustomBundleSelections,
 } from '@/lib/bookings/custom-bundle'
 import {
@@ -1668,6 +1669,10 @@ export function BookingWizard({
       data.startTime && activeDurationMinutes !== null
         ? deriveEndTime(data.startTime, activeDurationMinutes)
         : null
+    const { itemizedLines, aggregateOnlyLines, includedLines } = splitCustomBundleEstimateLines(
+      customBundleEstimate.lines,
+    )
+    const aggregateOnlyQuantity = aggregateOnlyLines.reduce((total, line) => total + line.quantity, 0)
 
     return (
       <div className="rounded-2xl border border-brand-border bg-brand-surface p-3">
@@ -1724,14 +1729,27 @@ export function BookingWizard({
 
             <div className="rounded-lg border border-brand-border bg-brand-bg/40 p-2">
               <div className="space-y-1.5 text-[11px] leading-snug">
-                {customBundleEstimate.lines.map((line) => (
+                {itemizedLines.map((line) => (
                   <div key={`${line.item.slug}-${line.label}`}>
                     <p className="text-[10px] uppercase tracking-wide text-text-muted">{line.label}</p>
                     <p className="font-medium text-text-primary">
-                      {line.isIncluded
-                        ? 'Incluido — 0 USD'
-                        : `${line.quantity} ${line.item.commercialUnit} · ${line.lineTotalUsd} USD`}
+                      {`${line.quantity} ${line.item.commercialUnit} · ${line.lineTotalUsd} USD`}
                     </p>
+                  </div>
+                ))}
+                {aggregateOnlyLines.length > 0 && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-text-muted">Adicionales del paquete</p>
+                    <p className="font-medium text-text-primary">{customBundleEstimate.additionalSubtotalUsd} USD</p>
+                    <p className="text-[10px] text-text-muted">
+                      {aggregateOnlyQuantity} adicionales seleccionados
+                    </p>
+                  </div>
+                )}
+                {includedLines.map((line) => (
+                  <div key={`${line.item.slug}-${line.label}`}>
+                    <p className="text-[10px] uppercase tracking-wide text-text-muted">{line.label}</p>
+                    <p className="font-medium text-text-primary">Incluido — 0 USD</p>
                   </div>
                 ))}
               </div>

@@ -131,6 +131,10 @@ export function CustomBundleStep({
       : null
   const hasBlockingIssues = estimate.blockingIssues.length > 0
   const includedItems = getCustomBundleIncludedItems()
+  const aggregateOnlyLines = estimate.lines.filter(
+    (line) => line.item.clientPriceDisplay === 'aggregate_only',
+  )
+  const aggregateOnlyQuantity = aggregateOnlyLines.reduce((total, line) => total + line.quantity, 0)
 
   return (
     <div className="space-y-4 md:space-y-3">
@@ -220,9 +224,12 @@ export function CustomBundleStep({
                       const isSelected = Boolean(selection)
                       const line = estimate.lines.find((entry) => entry.item.slug === item.slug)
                       const isExclusiveSala = item.groupSlug === 'sala-de-ensayo'
-                      const lineLabel = line
-                        ? `${formatQuantityLabel(item, line.quantity)} · ${line.lineTotalUsd} USD`
-                        : `${item.unitPriceUsd} USD / ${item.commercialUnit}`
+                      const isAggregateOnly = item.clientPriceDisplay === 'aggregate_only'
+                      const lineLabel = isAggregateOnly
+                        ? 'Se incluira en el total consolidado del paquete.'
+                        : line
+                          ? `${formatQuantityLabel(item, line.quantity)} · ${line.lineTotalUsd} USD`
+                          : `${item.unitPriceUsd} USD / ${item.commercialUnit}`
                       const durationLabel =
                         line && line.durationMinutes > 0 ? formatDuration(line.durationMinutes) : null
                       const disableQuantity = !isSelected || item.maximumQuantity === 1 || item.fixedPrice
@@ -379,6 +386,13 @@ export function CustomBundleStep({
               />
               <SummaryLine label="Duracion total" value={formatDuration(estimate.totalDurationMinutes)} />
               <SummaryLine label="Subtotal" value={`${estimate.subtotalUsd} USD`} />
+              {aggregateOnlyLines.length > 0 && (
+                <SummaryLine
+                  label="Adicionales del paquete"
+                  value={`${estimate.additionalSubtotalUsd} USD`}
+                  detail={`${aggregateOnlyQuantity} adicionales seleccionados`}
+                />
+              )}
               <SummaryLine
                 label="Recargo de fin de semana"
                 value={`${estimate.adjustments.reduce((total, adjustment) => total + adjustment.amountUsd, 0)} USD`}

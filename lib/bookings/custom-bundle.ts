@@ -83,6 +83,7 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'sala-flexible',
     categorySlug: 'sala-de-ensayo',
     groupSlug: 'sala-de-ensayo',
+    clientPriceDisplay: 'itemized',
     name: 'Flexible',
     description: '20 USD por hora. Recargo de fin de semana de 5 USD por hora.',
     commercialUnit: 'hora',
@@ -107,6 +108,7 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'sala-premium',
     categorySlug: 'sala-de-ensayo',
     groupSlug: 'sala-de-ensayo',
+    clientPriceDisplay: 'itemized',
     name: 'Premium',
     description: '25 USD por hora. Recargo de fin de semana de 5 USD por hora.',
     commercialUnit: 'hora',
@@ -131,6 +133,7 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'sala-prioritaria',
     categorySlug: 'sala-de-ensayo',
     groupSlug: 'sala-de-ensayo',
+    clientPriceDisplay: 'itemized',
     name: 'Prioritaria',
     description: '30 USD por hora. Recargo de fin de semana de 5 USD por hora.',
     commercialUnit: 'hora',
@@ -155,6 +158,7 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'grabacion-ensayo',
     categorySlug: 'grabacion',
     groupSlug: null,
+    clientPriceDisplay: 'itemized',
     name: 'Grabacion de ensayo',
     description: '35 USD por hora. Consume tiempo de calendario.',
     commercialUnit: 'hora',
@@ -179,6 +183,7 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'grabacion-estudio',
     categorySlug: 'grabacion',
     groupSlug: null,
+    clientPriceDisplay: 'itemized',
     name: 'Grabacion en estudio',
     description: '40 USD por hora. Consume tiempo de calendario.',
     commercialUnit: 'hora',
@@ -203,6 +208,7 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'mezcla',
     categorySlug: 'mezcla-masterizacion',
     groupSlug: null,
+    clientPriceDisplay: 'itemized',
     name: 'Mezcla',
     description: '150 USD por tema. No consume tiempo de calendario.',
     commercialUnit: 'tema',
@@ -227,6 +233,7 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'master',
     categorySlug: 'mezcla-masterizacion',
     groupSlug: null,
+    clientPriceDisplay: 'itemized',
     name: 'Master',
     description: '150 USD por tema. No consume tiempo de calendario.',
     commercialUnit: 'tema',
@@ -251,6 +258,7 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'podcast',
     categorySlug: 'podcast-locucion',
     groupSlug: null,
+    clientPriceDisplay: 'itemized',
     name: 'Podcast',
     description: '100 USD por episodio. La sesion debe reservarse entre 1 y 4 horas.',
     commercialUnit: 'episodio',
@@ -275,6 +283,7 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'locucion',
     categorySlug: 'podcast-locucion',
     groupSlug: null,
+    clientPriceDisplay: 'itemized',
     name: 'Locucion',
     description: '50 USD por hora. Consume tiempo de calendario.',
     commercialUnit: 'hora',
@@ -299,6 +308,7 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'studio-session',
     categorySlug: 'video-session',
     groupSlug: null,
+    clientPriceDisplay: 'itemized',
     name: 'Studio Session',
     description: '500 USD por servicio fijo. La sesion debe reservarse entre 1 y 4 horas.',
     commercialUnit: 'servicio',
@@ -323,6 +333,7 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'arreglo-musical',
     categorySlug: 'arreglos-musicales',
     groupSlug: null,
+    clientPriceDisplay: 'itemized',
     name: 'Arreglo musical',
     description: '200 USD por tema. No consume tiempo de calendario.',
     commercialUnit: 'tema',
@@ -347,8 +358,9 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'combo-percusion',
     categorySlug: 'adicionales',
     groupSlug: null,
+    clientPriceDisplay: 'aggregate_only',
     name: 'Combo de percusion',
-    description: '150 USD por tema. No consume tiempo de calendario.',
+    description: 'Apoyo de percusion para enriquecer la produccion.',
     commercialUnit: 'tema',
     quantityType: 'track',
     unitPriceUsd: 150,
@@ -371,8 +383,9 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'instrumentos-adicionales',
     categorySlug: 'adicionales',
     groupSlug: null,
+    clientPriceDisplay: 'aggregate_only',
     name: 'Instrumentos adicionales',
-    description: '20 USD por tema. No consume tiempo de calendario.',
+    description: 'Incorpora instrumentos adicionales segun las necesidades del tema.',
     commercialUnit: 'tema',
     quantityType: 'track',
     unitPriceUsd: 20,
@@ -395,11 +408,12 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'grabacion-piano',
     categorySlug: 'adicionales',
     groupSlug: null,
+    clientPriceDisplay: 'aggregate_only',
     name: 'Grabacion de piano',
-    description: '50 USD por tema. No consume tiempo de calendario.',
+    description: 'Grabacion de piano para complementar el tema.',
     commercialUnit: 'tema',
     quantityType: 'track',
-    unitPriceUsd: 50,
+    unitPriceUsd: 80,
     minimumQuantity: 1,
     maximumQuantity: null,
     quantityStep: 1,
@@ -419,11 +433,12 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'grabacion-bajo',
     categorySlug: 'adicionales',
     groupSlug: null,
+    clientPriceDisplay: 'aggregate_only',
     name: 'Grabacion de bajo',
-    description: '50 USD por tema. No consume tiempo de calendario.',
+    description: 'Grabacion de bajo para complementar el tema.',
     commercialUnit: 'tema',
     quantityType: 'track',
-    unitPriceUsd: 50,
+    unitPriceUsd: 80,
     minimumQuantity: 1,
     maximumQuantity: null,
     quantityStep: 1,
@@ -443,11 +458,12 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'grabacion-trombones',
     categorySlug: 'adicionales',
     groupSlug: null,
+    clientPriceDisplay: 'aggregate_only',
     name: 'Grabacion de trombones',
-    description: '50 USD por unidad. No consume tiempo de calendario.',
+    description: 'Grabacion de trombones adicionales para la produccion.',
     commercialUnit: 'unidad',
     quantityType: 'unit',
-    unitPriceUsd: 50,
+    unitPriceUsd: 80,
     minimumQuantity: 1,
     maximumQuantity: null,
     quantityStep: 1,
@@ -467,11 +483,12 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'grabacion-trompetas',
     categorySlug: 'adicionales',
     groupSlug: null,
+    clientPriceDisplay: 'aggregate_only',
     name: 'Grabacion de trompetas',
-    description: '50 USD por unidad. No consume tiempo de calendario.',
+    description: 'Grabacion de trompetas adicionales para la produccion.',
     commercialUnit: 'unidad',
     quantityType: 'unit',
-    unitPriceUsd: 50,
+    unitPriceUsd: 80,
     minimumQuantity: 1,
     maximumQuantity: null,
     quantityStep: 1,
@@ -491,11 +508,12 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'grabacion-saxo',
     categorySlug: 'adicionales',
     groupSlug: null,
+    clientPriceDisplay: 'aggregate_only',
     name: 'Grabacion de saxo',
-    description: '50 USD por tema. No consume tiempo de calendario.',
+    description: 'Grabacion de saxo para complementar el tema.',
     commercialUnit: 'tema',
     quantityType: 'track',
-    unitPriceUsd: 50,
+    unitPriceUsd: 80,
     minimumQuantity: 1,
     maximumQuantity: null,
     quantityStep: 1,
@@ -515,11 +533,12 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'cuerdas-sesion-completa',
     categorySlug: 'adicionales',
     groupSlug: null,
+    clientPriceDisplay: 'aggregate_only',
     name: 'Grabacion de cuerdas - sesion completa',
-    description: '300 USD por sesion. No consume tiempo de calendario.',
+    description: 'Sesion completa de grabacion de cuerdas para la produccion.',
     commercialUnit: 'sesion',
     quantityType: 'unit',
-    unitPriceUsd: 300,
+    unitPriceUsd: 480,
     minimumQuantity: 1,
     maximumQuantity: 1,
     quantityStep: 1,
@@ -539,11 +558,12 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'cuerdas-por-instrumento',
     categorySlug: 'adicionales',
     groupSlug: null,
+    clientPriceDisplay: 'aggregate_only',
     name: 'Grabacion de cuerdas por instrumento',
-    description: '50 USD por tema. No consume tiempo de calendario.',
+    description: 'Grabacion individual de instrumentos de cuerda.',
     commercialUnit: 'tema',
     quantityType: 'track',
-    unitPriceUsd: 50,
+    unitPriceUsd: 80,
     minimumQuantity: 1,
     maximumQuantity: null,
     quantityStep: 1,
@@ -563,8 +583,9 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'grabaciones-voces',
     categorySlug: 'adicionales',
     groupSlug: null,
+    clientPriceDisplay: 'aggregate_only',
     name: 'Grabaciones de voces',
-    description: '40 USD por tema. No consume tiempo de calendario.',
+    description: 'Grabacion de voces adicionales para el tema.',
     commercialUnit: 'tema',
     quantityType: 'track',
     unitPriceUsd: 40,
@@ -587,6 +608,7 @@ export const CUSTOM_BUNDLE_ITEMS: CustomBundleItem[] = [
     slug: 'consultoria-produccion',
     categorySlug: 'consultoria',
     groupSlug: null,
+    clientPriceDisplay: 'itemized',
     name: 'Clase / consultoria de produccion',
     description: '80 USD por hora. Consume tiempo de calendario.',
     commercialUnit: 'hora',
@@ -614,6 +636,7 @@ export const CUSTOM_BUNDLE_INCLUDED_ITEMS: CustomBundleItem[] = [
     slug: 'tecnico-sonido',
     categorySlug: INCLUDED_ITEM_CATEGORY_SLUG,
     groupSlug: null,
+    clientPriceDisplay: 'included',
     name: 'Tecnico de sonido',
     description: 'Activado automaticamente e incluido a 0 USD.',
     commercialUnit: 'servicio',
@@ -638,6 +661,7 @@ export const CUSTOM_BUNDLE_INCLUDED_ITEMS: CustomBundleItem[] = [
     slug: 'backline-equipamiento',
     categorySlug: INCLUDED_ITEM_CATEGORY_SLUG,
     groupSlug: null,
+    clientPriceDisplay: 'included',
     name: 'Backline / equipamiento',
     description: 'Activado automaticamente e incluido a 0 USD.',
     commercialUnit: 'servicio',
@@ -694,6 +718,51 @@ export function getCustomBundleCategoryBySlug(slug: string): CustomBundleCategor
   return CUSTOM_BUNDLE_CATEGORY_INDEX.get(slug) ?? null
 }
 
+function isAggregateOnlyCustomBundleItem(item: CustomBundleItem): boolean {
+  return item.clientPriceDisplay === 'aggregate_only'
+}
+
+function isIncludedCustomBundleItem(item: CustomBundleItem): boolean {
+  return item.clientPriceDisplay === 'included'
+}
+
+export function splitCustomBundleEstimateLines(lines: CustomBundleEstimateLine[]): {
+  itemizedLines: CustomBundleEstimateLine[]
+  aggregateOnlyLines: CustomBundleEstimateLine[]
+  includedLines: CustomBundleEstimateLine[]
+} {
+  return lines.reduce(
+    (accumulator, line) => {
+      if (isIncludedCustomBundleItem(line.item) || line.isIncluded) {
+        accumulator.includedLines.push(line)
+        return accumulator
+      }
+
+      if (isAggregateOnlyCustomBundleItem(line.item)) {
+        accumulator.aggregateOnlyLines.push(line)
+        return accumulator
+      }
+
+      accumulator.itemizedLines.push(line)
+      return accumulator
+    },
+    {
+      itemizedLines: [] as CustomBundleEstimateLine[],
+      aggregateOnlyLines: [] as CustomBundleEstimateLine[],
+      includedLines: [] as CustomBundleEstimateLine[],
+    },
+  )
+}
+
+export function calculateCustomBundleAdditionalSubtotal(
+  lines: CustomBundleEstimateLine[],
+): number {
+  return lines.reduce((total, line) => {
+    if (!isAggregateOnlyCustomBundleItem(line.item)) return total
+    return total + line.lineTotalUsd
+  }, 0)
+}
+
 export function normalizeCustomBundleSelections(
   selections: CustomBundleSelection[],
 ): CustomBundleSelection[] {
@@ -701,7 +770,7 @@ export function normalizeCustomBundleSelections(
 
   for (const selection of selections) {
     const item = getCustomBundleItemBySlug(selection.itemSlug)
-    if (!item || !item.active || item.included) continue
+    if (!item || !item.active || isIncludedCustomBundleItem(item)) continue
 
     const quantity = Math.max(
       item.minimumQuantity,
@@ -868,7 +937,7 @@ function buildEstimateLine(
     durationMinutes,
     unitPriceUsd,
     lineTotalUsd,
-    isIncluded: item.included,
+    isIncluded: isIncludedCustomBundleItem(item),
   }
 }
 
@@ -1027,6 +1096,7 @@ export function buildCustomBundleEstimate(input: {
   const orderedLines = orderTemporalComponents([...selectedLines, ...includedLines])
   const adjustments = applyWeekendSurcharge(orderedLines, input.eventDate)
   const subtotalUsd = calculateCustomBundleSubtotal(orderedLines)
+  const additionalSubtotalUsd = calculateCustomBundleAdditionalSubtotal(orderedLines)
   const estimatedTotalUsd =
     subtotalUsd + adjustments.reduce((total, adjustment) => total + adjustment.amountUsd, 0)
   const totalDurationMinutes = calculateCustomBundleDurationTotal(orderedLines)
@@ -1035,6 +1105,7 @@ export function buildCustomBundleEstimate(input: {
   return {
     lines: orderedLines,
     adjustments,
+    additionalSubtotalUsd,
     subtotalUsd,
     estimatedTotalUsd,
     totalDurationMinutes,

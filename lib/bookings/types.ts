@@ -139,6 +139,7 @@ export interface BookingEstimate {
 export type BookingMode = 'single' | 'custom_bundle'
 
 export type CustomBundleQuantityType = 'hour' | 'track' | 'episode' | 'unit'
+export type CustomBundleClientPriceDisplay = 'itemized' | 'aggregate_only' | 'included'
 
 export interface CustomBundleCategory {
   slug: string
@@ -152,6 +153,7 @@ export interface CustomBundleItem {
   slug: string
   categorySlug: string
   groupSlug: string | null
+  clientPriceDisplay: CustomBundleClientPriceDisplay
   name: string
   description: string
   commercialUnit: string
@@ -203,6 +205,7 @@ export interface CustomBundleEstimateIssue {
 export interface CustomBundleEstimate {
   lines: CustomBundleEstimateLine[]
   adjustments: CustomBundleEstimateAdjustment[]
+  additionalSubtotalUsd: number
   subtotalUsd: number
   estimatedTotalUsd: number
   totalDurationMinutes: number
