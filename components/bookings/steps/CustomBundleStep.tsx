@@ -259,9 +259,11 @@ export function CustomBundleStep({
                                 {item.description}
                               </p>
                               <p className="mt-1 text-[10px] uppercase tracking-wide text-text-muted">
-                                {item.unitPriceUsd === 0
-                                  ? 'Incluido'
-                                  : `${item.unitPriceUsd} USD / ${item.commercialUnit}`}
+                                {item.clientPriceDisplay === 'aggregate_only'
+                                  ? `Unidad: ${item.commercialUnit}`
+                                  : item.clientPriceDisplay === 'included'
+                                    ? 'Incluido'
+                                    : `${item.unitPriceUsd} USD / ${item.commercialUnit}`}
                               </p>
                             </div>
 
