@@ -21,6 +21,7 @@ import { reportBookingPayment, submitBookingRequest } from '@/lib/bookings/actio
 import { buildBookingEstimate } from '@/lib/bookings/estimate'
 import {
   buildCustomBundleEstimate,
+  countCustomBundleAggregateOnlySelections,
   getCustomBundleItemBySlug,
   splitCustomBundleEstimateLines,
   normalizeCustomBundleSelections,
@@ -1672,7 +1673,7 @@ export function BookingWizard({
     const { itemizedLines, aggregateOnlyLines, includedLines } = splitCustomBundleEstimateLines(
       customBundleEstimate.lines,
     )
-    const aggregateOnlyQuantity = aggregateOnlyLines.reduce((total, line) => total + line.quantity, 0)
+    const aggregateOnlyCount = countCustomBundleAggregateOnlySelections(customBundleEstimate.lines)
 
     return (
       <div className="rounded-2xl border border-brand-border bg-brand-surface p-3">
@@ -1742,7 +1743,7 @@ export function BookingWizard({
                     <p className="text-[10px] uppercase tracking-wide text-text-muted">Adicionales del paquete</p>
                     <p className="font-medium text-text-primary">{customBundleEstimate.additionalSubtotalUsd} USD</p>
                     <p className="text-[10px] text-text-muted">
-                      {aggregateOnlyQuantity} adicionales seleccionados
+                      {aggregateOnlyCount} adicionales seleccionados
                     </p>
                   </div>
                 )}

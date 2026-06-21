@@ -1,4 +1,4 @@
-﻿{
+{
   "version": 1,
   "updated_at": "2026-05-14",
   "description": "Mapa de zonas archivo→sprint para deteccion de colisiones. Cada zona lista los sprints que pueden tocarla y el lock requerido.",

@@ -638,7 +638,7 @@ export const CUSTOM_BUNDLE_INCLUDED_ITEMS: CustomBundleItem[] = [
     groupSlug: null,
     clientPriceDisplay: 'included',
     name: 'Tecnico de sonido',
-    description: 'Activado automaticamente e incluido a 0 USD.',
+    description: 'Activado automaticamente e incluido.',
     commercialUnit: 'servicio',
     quantityType: 'unit',
     unitPriceUsd: 0,
@@ -663,7 +663,7 @@ export const CUSTOM_BUNDLE_INCLUDED_ITEMS: CustomBundleItem[] = [
     groupSlug: null,
     clientPriceDisplay: 'included',
     name: 'Backline / equipamiento',
-    description: 'Activado automaticamente e incluido a 0 USD.',
+    description: 'Activado automaticamente e incluido.',
     commercialUnit: 'servicio',
     quantityType: 'unit',
     unitPriceUsd: 0,
@@ -724,6 +724,24 @@ function isAggregateOnlyCustomBundleItem(item: CustomBundleItem): boolean {
 
 function isIncludedCustomBundleItem(item: CustomBundleItem): boolean {
   return item.clientPriceDisplay === 'included'
+}
+
+export function formatCustomBundlePriceDisplay(item: CustomBundleItem): string {
+  if (item.clientPriceDisplay === 'aggregate_only') {
+    return `Unidad: ${item.commercialUnit}`
+  }
+
+  if (item.clientPriceDisplay === 'included') {
+    return 'Incluido'
+  }
+
+  return `${item.unitPriceUsd} USD / ${item.commercialUnit}`
+}
+
+export function countCustomBundleAggregateOnlySelections(
+  lines: CustomBundleEstimateLine[],
+): number {
+  return splitCustomBundleEstimateLines(lines).aggregateOnlyLines.length
 }
 
 export function splitCustomBundleEstimateLines(lines: CustomBundleEstimateLine[]): {

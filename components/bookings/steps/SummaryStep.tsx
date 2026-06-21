@@ -3,7 +3,11 @@
 import type { ReactNode } from 'react'
 import { CATALOG_SERVICES, CATALOG_VARIANTS } from '@/lib/bookings/catalog'
 import { deriveEndTime } from '@/components/bookings/steps/DateTimeStep'
-import { splitCustomBundleEstimateLines } from '@/lib/bookings/custom-bundle'
+import {
+  countCustomBundleAggregateOnlySelections,
+  formatCustomBundlePriceDisplay,
+  splitCustomBundleEstimateLines,
+} from '@/lib/bookings/custom-bundle'
 import {
   getRecordingAddonVisualTopicLabel,
   getSelectedRecordingAddonVisualLines,
@@ -147,10 +151,10 @@ export function SummaryStep({
 }: SummaryStepProps) {
   if (bookingMode === 'custom_bundle' && customBundleEstimate) {
     const bundleEndTime = deriveEndTime(startTime, customBundleEstimate.totalDurationMinutes)
-    const { itemizedLines, aggregateOnlyLines, includedLines } = splitCustomBundleEstimateLines(
+    const { itemizedLines, includedLines } = splitCustomBundleEstimateLines(
       customBundleEstimate.lines,
     )
-    const aggregateOnlyQuantity = aggregateOnlyLines.reduce((total, line) => total + line.quantity, 0)
+    const aggregateOnlyCount = countCustomBundleAggregateOnlySelections(customBundleEstimate.lines)
     const weekendAdjustmentTotal = customBundleEstimate.adjustments.reduce(
       (total, adjustment) => total + adjustment.amountUsd,
       0,
@@ -181,14 +185,15 @@ export function SummaryStep({
             <SummaryCard title="Resumen economico">
               <div className="space-y-0">
                 {itemizedLines.map((line) => {
+                  const priceLabel = formatCustomBundlePriceDisplay(line.item)
                   const detail =
                     line.unitPriceUsd === 0
-                      ? 'Incluido'
+                      ? priceLabel
                       : line.sessionDurationMinutes
-                        ? `${line.quantity} ${line.item.commercialUnit} · ${formatDuration(line.durationMinutes)}`
+                        ? `${priceLabel} · ${formatDuration(line.durationMinutes)}`
                         : line.item.quantityType === 'hour'
-                          ? `${getHourLabel(line.quantity)} x ${line.unitPriceUsd} USD`
-                          : `${line.quantity} x ${line.unitPriceUsd} USD`
+                          ? `${getHourLabel(line.quantity)} · ${priceLabel}`
+                          : `${line.quantity} x ${priceLabel}`
 
                   return (
                     <EstimateLine
@@ -200,11 +205,11 @@ export function SummaryStep({
                   )
                 })}
 
-                {aggregateOnlyLines.length > 0 && (
+                {aggregateOnlyCount > 0 && (
                   <EstimateLine
                     label="Adicionales del paquete"
                     value={`${customBundleEstimate.additionalSubtotalUsd} USD`}
-                    detail={`${aggregateOnlyQuantity} adicionales seleccionados`}
+                    detail={`${aggregateOnlyCount} adicionales seleccionados`}
                   />
                 )}
 
@@ -234,7 +239,7 @@ export function SummaryStep({
               <div className="flex flex-wrap gap-1.5">
                 {includedLines.map((line) => (
                   <SummaryPill key={line.item.slug}>
-                    {line.label}: Incluido
+                    {line.label}: {formatCustomBundlePriceDisplay(line.item)} · 0 USD
                   </SummaryPill>
                 ))}
               </div>

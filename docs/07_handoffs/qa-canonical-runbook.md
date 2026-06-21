@@ -216,3 +216,28 @@ Estado:
 - frente validado manualmente.
 - no existe script canonico.
 - mantener prohibidos CDP improvisado, server actions reverse engineered y HTTP ad hoc.
+
+## Booking custom bundle contract
+
+Objetivo:
+- validar el contrato tecnico del configurador Preview de `Arma tu paquete`
+  sin navegador, sin HTTP, sin Prisma y sin escrituras.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-contract.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar precios internos, presentacion declarativa, conteo semantico de ad
+  icionales y validaciones deterministas del catalogo.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no im
+  provisar CDP, HTTP ad hoc ni reverse engineering.

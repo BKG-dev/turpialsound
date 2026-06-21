@@ -1,28 +1,31 @@
 # Current Sprint
 
-- Sprint: `ORCH-00`
-- Name: Bootstrap del protocolo Director-Codex
-- Objective: Create the shared memory and operating rules without changing functional code.
+- Sprint: `BKG-01`
+- Name: Cierre tecnico del contrato Preview de Arma tu paquete
+- Objective: Close the Preview custom bundle configurator technically with centralized price presentation, semantic additional counting, deterministic validation, and orchestration tracking.
 - State: `TECHNICALLY_VALIDATED`
-- Base: `656ec6d7dd1c90babb42dfc7d6247b106b3ed8e0`
+- Base: `5f3757fff95109b245c338f84dfe27e75d530d03`
 
 ## Scope
 
-- documentation;
-- state;
-- roadmap;
-- handoff;
-- reference from `AGENTS.md`.
+- documentation updates;
+- custom bundle presentation helper;
+- custom bundle aggregate-only count helper;
+- deterministic contract QA script;
+- QA dispatcher entry;
+- orchestration state and handoff updates.
 
 ## Out of Scope
 
-- functional changes;
-- manual QA;
-- backend mult-item;
-- database;
-- Musical Production;
-- production.
+- backend mult-item persistence;
+- database writes;
+- Prisma schema changes;
+- payments;
+- notifications;
+- Calendar;
+- production changes;
+- manual QA.
 
 ## Next Action
 
-ChatGPT must review the commit and decide the next sprint.
+ChatGPT must review BKG-01 and decide whether to start the backend mult-item contract sprint.

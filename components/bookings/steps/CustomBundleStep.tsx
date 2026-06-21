@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils'
 import { deriveEndTime } from '@/components/bookings/steps/DateTimeStep'
 import {
   CUSTOM_BUNDLE_CATEGORIES,
+  countCustomBundleAggregateOnlySelections,
+  formatCustomBundlePriceDisplay,
   getCustomBundleIncludedItems,
   getCustomBundleItemsForCategory,
 } from '@/lib/bookings/custom-bundle'
@@ -131,10 +133,7 @@ export function CustomBundleStep({
       : null
   const hasBlockingIssues = estimate.blockingIssues.length > 0
   const includedItems = getCustomBundleIncludedItems()
-  const aggregateOnlyLines = estimate.lines.filter(
-    (line) => line.item.clientPriceDisplay === 'aggregate_only',
-  )
-  const aggregateOnlyQuantity = aggregateOnlyLines.reduce((total, line) => total + line.quantity, 0)
+  const aggregateOnlyCount = countCustomBundleAggregateOnlySelections(estimate.lines)
 
   return (
     <div className="space-y-4 md:space-y-3">
@@ -225,11 +224,12 @@ export function CustomBundleStep({
                       const line = estimate.lines.find((entry) => entry.item.slug === item.slug)
                       const isExclusiveSala = item.groupSlug === 'sala-de-ensayo'
                       const isAggregateOnly = item.clientPriceDisplay === 'aggregate_only'
+                      const priceLabel = formatCustomBundlePriceDisplay(item)
                       const lineLabel = isAggregateOnly
-                        ? 'Se incluira en el total consolidado del paquete.'
+                        ? priceLabel
                         : line
                           ? `${formatQuantityLabel(item, line.quantity)} · ${line.lineTotalUsd} USD`
-                          : `${item.unitPriceUsd} USD / ${item.commercialUnit}`
+                          : priceLabel
                       const durationLabel =
                         line && line.durationMinutes > 0 ? formatDuration(line.durationMinutes) : null
                       const disableQuantity = !isSelected || item.maximumQuantity === 1 || item.fixedPrice
@@ -259,11 +259,7 @@ export function CustomBundleStep({
                                 {item.description}
                               </p>
                               <p className="mt-1 text-[10px] uppercase tracking-wide text-text-muted">
-                                {item.clientPriceDisplay === 'aggregate_only'
-                                  ? `Unidad: ${item.commercialUnit}`
-                                  : item.clientPriceDisplay === 'included'
-                                    ? 'Incluido'
-                                    : `${item.unitPriceUsd} USD / ${item.commercialUnit}`}
+                                {formatCustomBundlePriceDisplay(item)}
                               </p>
                             </div>
 
@@ -388,11 +384,11 @@ export function CustomBundleStep({
               />
               <SummaryLine label="Duracion total" value={formatDuration(estimate.totalDurationMinutes)} />
               <SummaryLine label="Subtotal" value={`${estimate.subtotalUsd} USD`} />
-              {aggregateOnlyLines.length > 0 && (
+              {aggregateOnlyCount > 0 && (
                 <SummaryLine
                   label="Adicionales del paquete"
                   value={`${estimate.additionalSubtotalUsd} USD`}
-                  detail={`${aggregateOnlyQuantity} adicionales seleccionados`}
+                  detail={`${aggregateOnlyCount} adicionales seleccionados`}
                 />
               )}
               <SummaryLine

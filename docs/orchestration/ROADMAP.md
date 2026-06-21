@@ -9,7 +9,7 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Technical exit criteria: orchestration docs exist, are referenced from `AGENTS.md`, and describe the operating loop and safety rules.
 - Main risks: stale instructions, contradictory state, and accidental scope drift.
 - Prohibitions: no functional code changes, no database writes, no production promotion.
-- Status: `PLANNED`
+- Status: `DONE`
 
 ## 1. Close the `Arma tu paquete` Configurator Technically
 
@@ -18,7 +18,7 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Technical exit criteria: bundle selection works in Preview, validations pass, and no production behavior regresses.
 - Main risks: hidden pricing duplication, inconsistent timing rules, and accidental persistence.
 - Prohibitions: no mult-item persistence yet, no schema changes, no production writes.
-- Status: `PLANNED`
+- Status: `TECHNICALLY_VALIDATED`
 
 ## 2. Backend Mult-Item Contract
 
