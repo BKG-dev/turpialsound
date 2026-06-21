@@ -726,6 +726,9 @@ function isIncludedCustomBundleItem(item: CustomBundleItem): boolean {
   return item.clientPriceDisplay === 'included'
 }
 
+export const CUSTOM_BUNDLE_AGGREGATE_ONLY_NOTICE =
+  'Se incluira en el total consolidado del paquete.' as const
+
 export function formatCustomBundlePriceDisplay(item: CustomBundleItem): string {
   if (item.clientPriceDisplay === 'aggregate_only') {
     return `Unidad: ${item.commercialUnit}`

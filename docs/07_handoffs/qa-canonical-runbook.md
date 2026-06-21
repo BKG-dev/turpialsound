@@ -235,9 +235,7 @@ Precondiciones:
 - no requiere red.
 
 Criterio de evidencia:
-- confirmar precios internos, presentacion declarativa, conteo semantico de ad
-  icionales y validaciones deterministas del catalogo.
+- confirmar precios internos, presentacion declarativa, conteo semantico de adicionales y validaciones deterministas del catalogo.
 
 Regla:
-- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no im
-  provisar CDP, HTTP ad hoc ni reverse engineering.
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.

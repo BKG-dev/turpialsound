@@ -1,19 +1,18 @@
 # Current Sprint
 
-- Sprint: `BKG-01`
-- Name: Cierre tecnico del contrato Preview de Arma tu paquete
-- Objective: Close the Preview custom bundle configurator technically with centralized price presentation, semantic additional counting, deterministic validation, and orchestration tracking.
+- Sprint: `BKG-01A`
+- Name: Restaurar aviso comercial de adicionales agregados
+- Objective: Restore the aggregate-only commercial notice and remove the duplicated unit label in the Preview custom bundle cards.
 - State: `TECHNICALLY_VALIDATED`
-- Base: `5f3757fff95109b245c338f84dfe27e75d530d03`
+- Base: `70e2e46644ea961bc78f1f90412147f825044714`
 
 ## Scope
 
-- documentation updates;
-- custom bundle presentation helper;
-- custom bundle aggregate-only count helper;
-- deterministic contract QA script;
-- QA dispatcher entry;
-- orchestration state and handoff updates.
+- card copy fix for aggregate-only items;
+- shared aggregate-only notice constant;
+- deterministic contract QA script assertions;
+- orchestration decision and handoff updates;
+- runbook wording cleanup.
 
 ## Out of Scope
 
@@ -28,4 +27,4 @@
 
 ## Next Action
 
-ChatGPT must review BKG-01 and decide whether to start the backend mult-item contract sprint.
+ChatGPT must review BKG-01A and decide whether to start the backend mult-item contract sprint.

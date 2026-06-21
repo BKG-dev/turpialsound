@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { deriveEndTime } from '@/components/bookings/steps/DateTimeStep'
 import {
   CUSTOM_BUNDLE_CATEGORIES,
+  CUSTOM_BUNDLE_AGGREGATE_ONLY_NOTICE,
   countCustomBundleAggregateOnlySelections,
   formatCustomBundlePriceDisplay,
   getCustomBundleIncludedItems,
@@ -226,7 +227,7 @@ export function CustomBundleStep({
                       const isAggregateOnly = item.clientPriceDisplay === 'aggregate_only'
                       const priceLabel = formatCustomBundlePriceDisplay(item)
                       const lineLabel = isAggregateOnly
-                        ? priceLabel
+                        ? CUSTOM_BUNDLE_AGGREGATE_ONLY_NOTICE
                         : line
                           ? `${formatQuantityLabel(item, line.quantity)} · ${line.lineTotalUsd} USD`
                           : priceLabel

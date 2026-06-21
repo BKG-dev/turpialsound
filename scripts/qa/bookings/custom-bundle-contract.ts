@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import {
+  CUSTOM_BUNDLE_AGGREGATE_ONLY_NOTICE,
   buildCustomBundleEstimate,
   countCustomBundleAggregateOnlySelections,
   formatCustomBundlePriceDisplay,
@@ -42,6 +43,12 @@ function assertIssueCodes(
 }
 
 function run(): void {
+  assert.equal(
+    CUSTOM_BUNDLE_AGGREGATE_ONLY_NOTICE,
+    'Se incluira en el total consolidado del paquete.',
+  )
+  assertNoMoneyMarkers('aggregate-only notice', CUSTOM_BUNDLE_AGGREGATE_ONLY_NOTICE)
+
   const aggregateOnlyPrices: Record<string, { price: number; unit: string }> = {
     'combo-percusion': { price: 150, unit: 'tema' },
     'instrumentos-adicionales': { price: 20, unit: 'tema' },
@@ -61,6 +68,11 @@ function run(): void {
     assert.equal(item.unitPriceUsd, expected.price, `${slug} internal price mismatch`)
     assert.equal(item.clientPriceDisplay, 'aggregate_only', `${slug} must be aggregate_only`)
     assert.equal(formatCustomBundlePriceDisplay(item), `Unidad: ${expected.unit}`)
+    assert.notEqual(
+      CUSTOM_BUNDLE_AGGREGATE_ONLY_NOTICE,
+      formatCustomBundlePriceDisplay(item),
+      `${slug} notice must differ from its unit label`,
+    )
     assertNoMoneyMarkers(`${slug} description`, item.description)
   }
 
