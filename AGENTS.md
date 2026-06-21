@@ -56,6 +56,20 @@ El agente debe seguir la sugerencia o informar al usuario si decide continuar co
 - `protocolo HTTP ad hoc para UI flows`
 - redescubrir scripts o metodos fuera de cobertura cuando falta ruta exacta en el dispatcher
 
+## Director-Codex Orchestration Protocol
+
+Before starting each sprint, Codex must read:
+
+- `docs/orchestration/CONTROL.md`
+- `docs/orchestration/STATE.json`
+- `docs/orchestration/CURRENT_SPRINT.md`
+- `docs/orchestration/ROADMAP.md`
+- the latest file in `docs/orchestration/handoffs/`
+
+The existing preflight rules and QA dispatcher rules keep priority and must continue to be satisfied.
+
+Codex may not start the next sprint without an instruction emitted by the Director.
+
 - Fuente de despacho por objetivo: `docs/07_handoffs/qa-dispatcher.json`.
 - Antes de ejecutar cualquier QA, resolver primero el `task_id` exacto en el dispatcher.
 - Si existe ruta canonica exacta para el `task_id`, usarla.

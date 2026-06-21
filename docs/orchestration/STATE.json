@@ -1,0 +1,17 @@
+{
+  "project": "TurpialSound Booking Evolution",
+  "repository": "BKG-dev/turpialsound",
+  "productionSha": "d123e730807cdacf5bf96089b915506aeef20932",
+  "integrationBranch": "codex/preview-arma-tu-paquete-2026-06-19",
+  "orchestrationStartSha": "656ec6d7dd1c90babb42dfc7d6247b106b3ed8e0",
+  "currentSprint": "ORCH-00",
+  "status": "TECHNICALLY_VALIDATED",
+  "directorDecision": "PENDING_REVIEW",
+  "manualQaRequiredNow": false,
+  "manualQaApproved": false,
+  "productionAuthorized": false,
+  "releaseCandidateSha": null,
+  "previewUrl": null,
+  "lastHandoff": "docs/orchestration/handoffs/ORCH-00.md",
+  "nextAction": "ChatGPT reviews the orchestration bootstrap commit"
+}
