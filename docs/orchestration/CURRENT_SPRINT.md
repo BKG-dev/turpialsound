@@ -1,33 +1,34 @@
 # Current Sprint
 
-- Sprint: `BKG-04EV`
-- Name: Verificacion remota del PostgreSQL efimero
-- Objective: verify the GitHub Actions ephemeral PostgreSQL gate, version the evidence, and unlock the isolated persistence gate for BKG-04.
-- State: `TECHNICALLY_VALIDATED`
-- Base: `1d04e09055be3c4a707981b6a7b6320e8c82b45d`
+- Sprint: `BKG-04A`
+- Name: Propuesta aditiva de esquema snapshot-backed
+- Objective: validate an additive snapshot-backed schema proposal in isolated PostgreSQL before touching the Prisma schema used by the app.
+- State: `DIRECTOR_REVIEW`
+- Base: `2d64bbff87f4f844378bc93c3e0395fc6b73ba92`
 
 ## Scope
 
-- verify the remote GitHub Actions run and logs;
-- version the run ID, conclusion, and safety evidence;
-- update the persistence gate state and orchestration docs;
-- keep production blocked until the Director reviews the gate.
+- draft and validate the additive SQL proposal;
+- confirm compatibility with historical rows;
+- confirm the new `service`, `addon`, and `included` line shapes;
+- keep the application schema untouched for now;
+- wait for remote workflow validation.
 
 ## Out of Scope
 
-- functional code changes;
-- Prisma schema changes;
+- `schema.prisma` changes;
+- generated Prisma client changes;
+- booking wizard wiring;
+- production changes;
 - migrations;
 - seeds;
 - `prisma db push`;
-- booking wizard wiring;
-- production changes;
 - QA manual.
 
-## Result
+## Expected Result
 
-`READY_FOR_BKG_04`
+`SCHEMA_PROPOSAL_PENDING_CI`
 
 ## Next Action
 
-ChatGPT reviews the validated ephemeral PostgreSQL gate and defines BKG-04 isolated persistence.
+ChatGPT verifies the isolated snapshot schema workflow before authorizing the persistence adapter.

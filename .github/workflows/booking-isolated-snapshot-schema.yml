@@ -1,0 +1,78 @@
+name: Booking Isolated Snapshot Schema
+
+"on":
+  push:
+    branches:
+      - codex/preview-arma-tu-paquete-2026-06-19
+    paths:
+      - .github/workflows/booking-isolated-snapshot-schema.yml
+      - scripts/qa/bookings/isolated-snapshot-schema-gate.mjs
+      - prisma/proposed/**
+      - prisma/schema.prisma
+      - prisma.config.ts
+      - package.json
+      - pnpm-lock.yaml
+      - docs/orchestration/PERSISTENCE_GATE.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: booking-isolated-snapshot-schema-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CI: 'true'
+      TURPIAL_ALLOW_ISOLATED_DB_TESTS: 'true'
+      TURPIAL_ISOLATED_DATABASE_URL: 'postgresql://turpial_ci:turpial_ci_only@127.0.0.1:5432/turpial_booking_ci'
+      DIRECT_URL: 'postgresql://turpial_ci:turpial_ci_only@127.0.0.1:5432/turpial_booking_ci'
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: turpial_ci
+          POSTGRES_PASSWORD: turpial_ci_only
+          POSTGRES_DB: turpial_booking_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U turpial_ci -d turpial_booking_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable pnpm 10.18.1
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.18.1 --activate
+          pnpm --version
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Show Prisma migrate diff help
+        run: pnpm exec prisma migrate diff --help
+
+      - name: Generate isolated baseline SQL
+        run: pnpm exec prisma migrate diff --config prisma.config.ts --from-empty --to-schema prisma/schema.prisma --script > /tmp/turpial-current-baseline.sql
+
+      - name: Run isolated snapshot schema gate
+        run: node scripts/qa/bookings/isolated-snapshot-schema-gate.mjs /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql
+
+      - name: Confirm no repository changes
+        run: git diff --exit-code

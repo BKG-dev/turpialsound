@@ -36,6 +36,17 @@
     "temporaryTableVerified": true,
     "repositoryCleanVerified": true
   },
+  "schemaProposalValidation": {
+    "workflow": "booking-isolated-snapshot-schema.yml",
+    "status": "PENDING",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
+    "legacyCompatibilityVerified": false,
+    "snapshotItemsVerified": false,
+    "cleanupVerified": false
+  },
   "readyForBkg04": true,
+  "readyForPersistenceAdapter": false,
   "blockers": []
 }
