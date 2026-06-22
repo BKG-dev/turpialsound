@@ -670,14 +670,15 @@ function assertBundle(
 }
 
 function assertResultIsPriced(
+  label: string,
   result: Awaited<ReturnType<typeof persistCustomBundleSubmissionWithSql>>,
 ): asserts result is Extract<
   Awaited<ReturnType<typeof persistCustomBundleSubmissionWithSql>>,
   { ok: true }
 > {
-  assert.equal(result.ok, true)
+  assert.equal(result.ok, true, `${label} must be priced`)
   if (!result.ok) {
-    throw new Error('expected priced result')
+    throw new Error(`${label} expected priced result`)
   }
 }
 
@@ -740,7 +741,7 @@ async function main(): Promise<void> {
       publicCode: 'TUR-2099-001',
       submittedAt: new Date('2099-01-01T12:00:00.000Z'),
     })
-    assertResultIsPriced(case1)
+    assertResultIsPriced('case1', case1)
     assert.equal(case1.stage, 'persisted')
     assert.equal(case1.publicCode, 'TUR-2099-001')
     assert.equal(case1.estimatedTotalUsd, 280)
@@ -837,7 +838,7 @@ async function main(): Promise<void> {
       publicCode: 'TUR-2099-002',
       submittedAt: new Date('2099-01-02T12:00:00.000Z'),
     })
-    assertResultIsPriced(case2)
+    assertResultIsPriced('case2', case2)
     assert.equal(case2.stage, 'persisted')
     assert.equal(case2.estimatedTotalUsd, 70)
     assert.equal(case2.totalDurationMinutes, 120)
@@ -961,7 +962,7 @@ async function main(): Promise<void> {
       publicCode: 'TUR-2099-006',
       submittedAt: new Date('2099-01-06T12:00:00.000Z'),
     })
-    assertResultIsPriced(firstDuplicateResult)
+    assertResultIsPriced('case6-first-duplicate', firstDuplicateResult)
     const secondDuplicateResult = await persistCustomBundleSubmissionWithSql(executor, {
       submission: caseSubmission({
         items: [
@@ -1107,7 +1108,7 @@ async function main(): Promise<void> {
       publicCode: 'TUR-2099-009',
       submittedAt: new Date('2099-01-09T12:00:00.000Z'),
     })
-    assertResultIsPriced(isolationFirst)
+    assertResultIsPriced('case9-first-isolation', isolationFirst)
     const isolationSecond = await persistCustomBundleSubmissionWithSql(executor, {
       submission: caseSubmission({
         eventDate: '2026-06-25',
@@ -1122,7 +1123,7 @@ async function main(): Promise<void> {
       publicCode: 'TUR-2099-010',
       submittedAt: new Date('2099-01-10T12:00:00.000Z'),
     })
-    assertResultIsPriced(isolationSecond)
+    assertResultIsPriced('case9-second-isolation', isolationSecond)
 
     const masterRows = await queryRows<{
       request_count: number
