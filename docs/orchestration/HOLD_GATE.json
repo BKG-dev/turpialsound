@@ -9,19 +9,19 @@
   },
   "validation": {
     "workflow": "booking-isolated-custom-bundle-hold-schema.yml",
-    "status": "PENDING",
-    "runId": null,
-    "validatedHeadSha": null,
-    "conclusion": null,
-    "legacyCompatibilityVerified": false,
-    "holdWindowVerified": false,
-    "fingerprintVerified": false,
-    "idempotencyUniquenessVerified": false,
-    "replayClassificationVerified": false,
-    "constraintsVerified": false,
-    "cleanupVerified": false
+    "status": "SUCCESS",
+    "runId": 27991301451,
+    "validatedHeadSha": "48b19e9c0122ff80d67d35ce9a485be1c1099ac0",
+    "conclusion": "success",
+    "legacyCompatibilityVerified": true,
+    "holdWindowVerified": true,
+    "fingerprintVerified": true,
+    "idempotencyUniquenessVerified": true,
+    "replayClassificationVerified": true,
+    "constraintsVerified": true,
+    "cleanupVerified": true
   },
-  "readyForHoldAcquisitionAdapter": false,
+  "readyForHoldAcquisitionAdapter": true,
   "readyForPaymentSprint": false,
   "blockers": []
 }

@@ -4,7 +4,7 @@
 - Objective: `Contrato y esquema aislado de holds e idempotencia`
 - Branch: `codex/preview-arma-tu-paquete-2026-06-19`
 - Base SHA: `4e2b597471347e572121ce61b876f6fb68c7fcd6`
-- Final SHA: `SELF — el commit que contiene este handoff.`
+- Final SHA: `48b19e9c0122ff80d67d35ce9a485be1c1099ac0`
 
 ## Files Modified
 
@@ -26,7 +26,7 @@
 
 ## Changes Made
 
-- added the additive hold/idempotency SQL proposal for `booking_requests`;
+- added the additive hold and idempotency SQL proposal for `booking_requests`;
 - added the pure hold contract, fingerprint builder, replay classifier, and hold window helpers;
 - added the pure hold contract QA script;
 - added the isolated PostgreSQL schema gate script for the hold proposal;
@@ -55,21 +55,31 @@
 
 ## Technical Validations
 
-- pending
+- Run ID `27991301451`
+- Workflow `Booking Isolated Custom Bundle Hold Schema`
+- Job `gate`
+- Conclusion `success`
+- `booking_isolated_custom_bundle_hold_schema OK`
+- `legacy compatibility: verified`
+- `idempotency uniqueness: verified`
+- `idempotency pair: verified`
+- `fingerprint format: verified`
+- `hold window constraint: verified`
+- `indexes: verified`
+- `cleanup: verified`
 
 ## Automated Tests
 
-- pending GitHub Actions validation of `Booking Isolated Custom Bundle Hold Schema`
+- GitHub Actions validation succeeded for `Booking Isolated Custom Bundle Hold Schema`
 
 ## Risks
 
-- the SQL proposal still needs remote validation in GitHub Actions;
-- the hold adapter is intentionally not implemented yet;
+- the hold acquisition adapter is intentionally not implemented yet;
 - production remains blocked until later Director approval.
 
 ## Blockers
 
-- none at this documentation bootstrap stage
+- none
 
 ## Vercel Status
 
@@ -81,8 +91,8 @@
 
 ## Recommended State
 
-- `DIRECTOR_REVIEW`
+- `TECHNICALLY_VALIDATED`
 
 ## Director Next Action
 
-- ChatGPT verifies the isolated hold schema and contract before `BKG-07B`.
+- ChatGPT reviews BKG-07A and defines isolated transactional hold acquisition.
