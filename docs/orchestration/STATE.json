@@ -4,14 +4,14 @@
   "productionSha": "d123e730807cdacf5bf96089b915506aeef20932",
   "integrationBranch": "codex/preview-arma-tu-paquete-2026-06-19",
   "orchestrationStartSha": "656ec6d7dd1c90babb42dfc7d6247b106b3ed8e0",
-  "currentSprint": "BKG-04G",
-  "status": "BLOCKED",
+  "currentSprint": "BKG-04E",
+  "status": "DIRECTOR_REVIEW",
   "directorDecision": "PENDING_REVIEW",
   "manualQaRequiredNow": false,
   "manualQaApproved": false,
   "productionAuthorized": false,
   "releaseCandidateSha": null,
   "previewUrl": null,
-  "lastHandoff": "docs/orchestration/handoffs/BKG-04G.md",
-  "nextAction": "ChatGPT reviews the persistence blocker and defines the isolated database setup step"
+  "lastHandoff": "docs/orchestration/handoffs/BKG-04E.md",
+  "nextAction": "ChatGPT verifies the ephemeral PostgreSQL workflow and decides whether BKG-04 can start"
 }

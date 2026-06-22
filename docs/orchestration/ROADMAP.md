@@ -46,7 +46,7 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Main risks: partial writes, duplicate items, and recovery edge cases.
 - Prohibitions: no production migrations, no production seeds, no production `db push`.
 - Status: `PLANNED`
-- Persistence gate: `BLOCKED` (`docs/orchestration/PERSISTENCE_GATE.json`)
+- Persistence gate: `PENDING_EPHEMERAL_CI` (`docs/orchestration/PERSISTENCE_GATE.json`)
 
 ## 5. Availability and Continuous Time Block
 

@@ -15,8 +15,9 @@
   },
   "isolatedDatabase": {
     "availableNow": false,
-    "strategy": null
+    "strategy": "github_actions_postgres_service"
   },
+  "candidateIsolatedStrategy": "github_actions_postgres_service",
   "catalogStrategy": {
     "approved": true,
     "strategy": "snapshot_backed_booking_request_items"
@@ -25,13 +26,12 @@
     "approved": true,
     "strategy": "two_phase_additive_migration"
   },
+  "ciValidation": {
+    "workflow": "booking-isolated-postgres-gate.yml",
+    "status": "PENDING"
+  },
   "readyForBkg04": false,
   "blockers": [
-    "DOCKER_CLI_UNAVAILABLE",
-    "DOCKER_DAEMON_UNAVAILABLE",
-    "DOCKER_COMPOSE_UNAVAILABLE",
-    "PSQL_UNAVAILABLE",
-    "PG_DUMP_UNAVAILABLE",
-    "ISOLATED_DATABASE_NOT_CREATED"
+    "EPHEMERAL_POSTGRES_CI_NOT_VALIDATED"
   ]
 }

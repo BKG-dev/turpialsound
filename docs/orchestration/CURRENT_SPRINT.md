@@ -1,48 +1,34 @@
 # Current Sprint
 
-- Sprint: `BKG-04G`
-- Name: Gate de persistencia aislada y arquitectura de `BookingRequestItem`
-- Objective: Audit the local environment for an isolated persistence path, freeze the future snapshot-backed item architecture, and produce a machine-readable readiness gate without touching the database.
-- State: `BLOCKED`
-- Base: `7f5167daa3e0d353e2a6d7385f41cbd103da6be3`
+- Sprint: `BKG-04E`
+- Name: PostgreSQL efimero aislado en GitHub Actions
+- Objective: Prove that an ephemeral PostgreSQL service container in GitHub Actions can execute a reversible mutative probe without touching production or requiring local Docker.
+- State: `DIRECTOR_REVIEW`
+- Base: `3cbaf93922221f3d0e33c74dd1b5504fc51cb176`
 
 ## Scope
 
-- read-only environment audit for Docker and PostgreSQL tools;
-- machine-readable persistence gate output;
-- snapshot-backed `BookingRequestItem` architecture;
-- safe runbook for the next persistence sprint;
-- orchestration decision and handoff updates.
+- create the GitHub Actions gate workflow;
+- create the isolated PostgreSQL probe script;
+- keep anti-production controls explicit;
+- update persistence gate state and orchestration docs;
+- wait for remote workflow validation.
 
 ## Out of Scope
 
 - functional code changes;
-- database connections;
-- database writes;
 - Prisma schema changes;
 - migrations;
 - seeds;
-- payments;
-- notifications;
-- Calendar;
+- `prisma db push`;
+- booking wizard wiring;
 - production changes;
 - QA manual.
 
-## Audit
+## Expected Result
 
-- Docker CLI unavailable.
-- Docker daemon unavailable.
-- Docker Compose unavailable.
-- `psql` unavailable.
-- `pg_dump` unavailable.
-- No versioned isolated database evidence found in the repository.
-
-## Architecture
-
-- Approved target: `snapshot_backed_booking_request_items`.
-- Future migration direction: additive and compatible first, then backfill and harden.
-- The current sprint does not implement persistence.
+The remote workflow is pending and must be verified by the Director before `BKG-04` can start.
 
 ## Next Action
 
-ChatGPT must review the persistence blocker and define the isolated database setup step before `BKG-04`.
+ChatGPT verifies the ephemeral PostgreSQL workflow and decides whether `BKG-04` can start.

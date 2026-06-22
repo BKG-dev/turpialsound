@@ -9,5 +9,6 @@
   - client money rejected
   - `tecnico-sonido` and `backline-equipamiento` derived by the server
   - Vercel success
+- Alternative route: GitHub Actions PostgreSQL service container
 - Next sprint: `BKG-04G`
 - Production: not authorized

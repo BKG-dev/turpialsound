@@ -46,8 +46,22 @@ Do not invent an instance.
 Do not reuse production Neon.
 Do not assume Preview equals isolated database.
 
+## Route C - GitHub Actions Ephemeral PostgreSQL
+
+Eligible only if the GitHub Actions workflow is available and validates successfully.
+
+Future plan:
+
+- GitHub Actions runner on Ubuntu
+- PostgreSQL service container
+- the database is destroyed when the job ends
+- no secrets required
+- no production connection
+- suitable for migration and persistence testing
+- not a replacement for backup and rollback planning
+
 ## Selected Next Route
 
-Selected next route: `BLOCKED`
+Selected next route: `GITHUB_ACTIONS_EPHEMERAL_POSTGRES_PENDING_VALIDATION`
 
-Reason: there is no usable Docker toolchain and no isolated PostgreSQL evidence yet.
+Reason: local Docker and PostgreSQL CLI are unavailable, so the next proof point is the ephemeral CI gate.
