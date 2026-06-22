@@ -31,6 +31,7 @@
 - Added the canonical resource policy QA script and isolated SQL conflict gate.
 - Registered the resource conflict gate in orchestration docs.
 - Normalized the persistence milestone handoff text for the previous sprint.
+- Validated the isolated resource conflict gate in GitHub Actions.
 
 ## Out of Scope
 
@@ -44,19 +45,40 @@
 ## Decisions Applied
 
 - BKG-05 remains technically validated.
-- BKG-06 starts with resource policy gaps still open for `video-session` and `consultoria`.
+- BKG-06 keeps policy gaps open for `video-session` and `consultoria`.
 
 ## Technical Validations
 
-- pending
+- `pnpm lint`
+- `pnpm exec tsc --noEmit`
+- `pnpm build`
+- `git diff --check`
 
 ## Automated Tests
 
-- pending
+- Booking Isolated Custom Bundle Resource Conflicts
+  - Run ID: `27978551492`
+  - Head SHA: `e5b0dad3a40b38435a375c814221ecbb15f604d9`
+  - Workflow: `Booking Isolated Custom Bundle Resource Conflicts`
+  - Job: `gate`
+  - Conclusion: `success`
+  - Messages:
+    - `booking_isolated_custom_bundle_resource_conflicts OK`
+    - `fallback assignment: verified`
+    - `rollback: verified`
+    - `cleanup: verified`
+- Booking Custom Bundle Resource Policy
+  - Validated locally with:
+    - `booking_custom_bundle_resource_policy OK`
+    - `managed resource policy: verified`
+    - `candidate priority: verified`
+    - `unmapped services blocked: verified`
+    - `schedule order: verified`
+    - `immutability: verified`
 
 ## Risks
 
-- policy coverage for Studio Session and Consultoria remains undefined.
+- policy coverage for Studio Session and Consultoria remains a deliberate business-decision gap.
 - resource assignment must remain deterministic across future catalog updates.
 
 ## Blockers
@@ -74,8 +96,8 @@
 
 ## Recommended State
 
-- `DIRECTOR_REVIEW`
+- `TECHNICALLY_VALIDATED`
 
 ## Director Next Action
 
-- ChatGPT verifies the isolated resource conflict workflow and resolves the remaining resource policy gaps.
+- ChatGPT reviews BKG-06 and decides whether to start BKG-07 after resolving the remaining resource policy gaps.
