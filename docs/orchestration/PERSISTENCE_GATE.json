@@ -48,20 +48,20 @@
   },
   "persistenceAdapterValidation": {
     "workflow": "booking-isolated-custom-bundle-persistence.yml",
-    "status": "PENDING_CORRECTION",
-    "runId": null,
-    "validatedHeadSha": null,
-    "conclusion": null,
+    "status": "SUCCESS",
+    "runId": "27969872300",
+    "validatedHeadSha": "8359feac81a20b3e8cee2d7899632389a61028a0",
+    "conclusion": "success",
     "authoritativeRepricingVerified": true,
     "bookingRequestVerified": true,
-    "snapshotItemsVerified": false,
+    "snapshotItemsVerified": true,
     "rollbackVerified": true,
     "cleanupVerified": true,
-    "temporalSnapshotSemanticsVerified": false,
-    "singleConnectionTransactionVerified": false
+    "temporalSnapshotSemanticsVerified": true,
+    "singleConnectionTransactionVerified": true
   },
   "readyForBkg04": true,
   "readyForPersistenceAdapter": true,
-  "readyForAvailabilitySprint": false,
+  "readyForAvailabilitySprint": true,
   "blockers": []
 }

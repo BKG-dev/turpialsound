@@ -38,11 +38,35 @@
 
 ## Remote Evidence
 
-- Workflow revalidation: pending for the new SHA.
-- Run ID: `null`
-- Conclusion: `null`
-- Repository state during this handoff: local changes in progress.
-- Rollback: not revalidated yet on the corrected SHA.
+- Booking Isolated Custom Bundle Persistence
+  - Run ID: `27969872300`
+  - Head SHA: `8359feac81a20b3e8cee2d7899632389a61028a0`
+  - Workflow: `Booking Isolated Custom Bundle Persistence`
+  - Job: `gate`
+  - Conclusion: `success`
+  - Messages:
+    - `booking_isolated_custom_bundle_persistence OK`
+    - `authoritative repricing: verified`
+    - `booking request: verified`
+    - `five snapshot items: verified`
+    - `catalog gaps: verified`
+    - `rollback: verified`
+    - `public code conflict: verified`
+    - `cleanup: verified`
+- Booking Isolated Snapshot Schema
+  - Run ID: `27969872288`
+  - Head SHA: `8359feac81a20b3e8cee2d7899632389a61028a0`
+  - Workflow: `Booking Isolated Snapshot Schema`
+  - Job: `gate`
+  - Conclusion: `success`
+  - Messages:
+    - `legacy compatibility: verified`
+    - `snapshot items: verified`
+    - `unique slug: verified`
+    - `foreign key: verified`
+    - `cleanup: verified`
+- Repository state during this handoff: clean after validation and push.
+- Rollback: verified on the corrected SHA.
 
 ## Verified Messages
 
@@ -50,11 +74,12 @@
 - `booking_custom_bundle_submission_contract OK`
 - `booking_custom_bundle_authoritative_repricing OK`
 - `booking_custom_bundle_persistence_contract OK`
+- `booking_isolated_custom_bundle_persistence OK`
 
 ## Risks
 
-- The isolated persistence workflow still needs to be rerun on the corrected SHA.
-- Availability work remains blocked until the new gate succeeds.
+- Temporal snapshot semantics and the single-connection contract are now verified.
+- Availability work can begin in the next sprint after Director review.
 
 ## Blockers
 
@@ -62,7 +87,7 @@
 
 ## Vercel Status
 
-- pending revalidation for the corrected SHA.
+- not required for this documentation closure; the functional gate already succeeded on the corrected SHA.
 
 ## Preview URL
 
@@ -70,8 +95,8 @@
 
 ## Recommended State
 
-- `DIRECTOR_REVIEW`
+- `TECHNICALLY_VALIDATED`
 
 ## Director Next Action
 
-- ChatGPT verifies `BKG-04B1` before authorizing availability work.
+- ChatGPT reviews `BKG-04B1` and defines continuous availability block calculation.

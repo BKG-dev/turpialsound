@@ -45,12 +45,12 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Technical exit criteria: request and item records persist correctly in a non-production environment.
 - Main risks: partial writes, duplicate items, and recovery edge cases.
 - Prohibitions: no production migrations, no production seeds, no production `db push`.
-- Status: `IN_PROGRESS`
+- Status: `TECHNICALLY_VALIDATED`
 - Persistence gate: `READY_EPHEMERAL_CI` (`docs/orchestration/PERSISTENCE_GATE.json`)
 - Schema proposal: `TECHNICALLY_VALIDATED`
-- Persistence adapter: `FIX_REQUIRED`
-- Temporal snapshot semantics: `PENDING_CI`
-- Single-connection transaction: `PENDING_CI`
+- Persistence adapter: `TECHNICALLY_VALIDATED`
+- Temporal snapshot semantics: `TECHNICALLY_VALIDATED`
+- Single-connection transaction: `TECHNICALLY_VALIDATED`
 
 ## 5. Availability and Continuous Time Block
 

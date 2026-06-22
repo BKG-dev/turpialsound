@@ -10,7 +10,7 @@ Base:
 18d0b609c5c02256d66cfcfc690ff813d1ed5ea2
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
@@ -31,8 +31,8 @@ Out of Scope:
 
 Result:
 
-PERSISTENCE_CORRECTION_PENDING_CI
+READY_FOR_BKG_05
 
 Next Action:
 
-Director verifies the workflow before approving availability work.
+ChatGPT reviews BKG-04B1 and defines continuous availability block calculation.
