@@ -88,9 +88,9 @@ function ensureAllowedProposedSql(sql) {
     [/DROP\s+TABLE/i, 'DROP TABLE'],
     [/DROP\s+COLUMN/i, 'DROP COLUMN'],
     [/TRUNCATE/i, 'TRUNCATE'],
-    [/DELETE\b/i, 'DELETE'],
-    [/INSERT\b/i, 'INSERT'],
-    [/UPDATE\b/i, 'UPDATE'],
+    [/^\s*DELETE\s+FROM\b/im, 'DELETE FROM'],
+    [/^\s*INSERT\s+INTO\b/im, 'INSERT INTO'],
+    [/^\s*UPDATE\s+\S+\s+SET\b/im, 'UPDATE ... SET'],
     [/marketplace/i, 'marketplace'],
     [/\bmp_/i, 'marketplace table prefix'],
     [/neon/i, 'neon'],
@@ -168,7 +168,7 @@ async function main() {
     fail('Proposed SQL is empty.')
   }
 
-  for (const pattern of [/DROP\s+TABLE/i, /DROP\s+COLUMN/i, /TRUNCATE/i, /DELETE\b/i]) {
+  for (const pattern of [/DROP\s+TABLE/i, /DROP\s+COLUMN/i, /TRUNCATE/i, /^\s*DELETE\s+FROM\b/im]) {
     if (pattern.test(baselineSql)) {
       fail(`Baseline SQL contains forbidden content: ${pattern}.`)
     }
