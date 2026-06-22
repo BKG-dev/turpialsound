@@ -6,19 +6,19 @@
   "utcOffset": "-04:00",
   "validation": {
     "workflow": "booking-custom-bundle-continuous-schedule.yml",
-    "status": "PENDING",
-    "runId": null,
-    "validatedHeadSha": null,
-    "conclusion": null,
-    "authoritativeRepricingVerified": false,
-    "temporalOrderVerified": false,
-    "continuityVerified": false,
-    "durationParityVerified": false,
-    "excludedLinesVerified": false,
-    "dateRolloverVerified": false,
-    "immutabilityVerified": false,
-    "persistenceRegressionVerified": false
+    "status": "SUCCESS",
+    "runId": 27972910461,
+    "validatedHeadSha": "155a8e6f60b7584158aa658576285d3c0a8dcce7",
+    "conclusion": "success",
+    "authoritativeRepricingVerified": true,
+    "temporalOrderVerified": true,
+    "continuityVerified": true,
+    "durationParityVerified": true,
+    "excludedLinesVerified": true,
+    "dateRolloverVerified": true,
+    "immutabilityVerified": true,
+    "persistenceRegressionVerified": true
   },
-  "readyForResourceConflictSprint": false,
+  "readyForResourceConflictSprint": true,
   "blockers": []
 }

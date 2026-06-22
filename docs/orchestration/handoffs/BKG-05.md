@@ -41,6 +41,40 @@
 - `pnpm build`
 - `git diff --check`
 
+## Remote Evidence
+
+- Booking Custom Bundle Continuous Schedule
+  - Run ID: `27972910461`
+  - Head SHA: `155a8e6f60b7584158aa658576285d3c0a8dcce7`
+  - Workflow: `Booking Custom Bundle Continuous Schedule`
+  - Job: `gate`
+  - Conclusion: `success`
+  - Messages:
+    - `booking_custom_bundle_continuous_schedule OK`
+    - `authoritative repricing: verified`
+    - `temporal order: verified`
+    - `continuous offsets: verified`
+    - `excluded lines: verified`
+    - `date rollover: verified`
+    - `duration parity: verified`
+    - `immutability: verified`
+- Booking Isolated Custom Bundle Persistence
+  - Run ID: `27972910446`
+  - Head SHA: `155a8e6f60b7584158aa658576285d3c0a8dcce7`
+  - Workflow: `Booking Isolated Custom Bundle Persistence`
+  - Job: `gate`
+  - Conclusion: `success`
+  - Messages:
+    - `booking_custom_bundle_persistence_contract OK`
+    - `booking_isolated_custom_bundle_persistence OK`
+    - `authoritative repricing: verified`
+    - `booking request: verified`
+    - `five snapshot items: verified`
+    - `catalog gaps: verified`
+    - `rollback: verified`
+    - `public code conflict: verified`
+    - `cleanup: verified`
+
 ## Risks
 
 - schedule order and continuity must remain deterministic across future catalog edits.
@@ -60,8 +94,8 @@
 
 ## Recommended State
 
-- `DIRECTOR_REVIEW`
+- `TECHNICALLY_VALIDATED`
 
 ## Director Next Action
 
-- ChatGPT verifies the continuous schedule and persistence regression workflows.
+- ChatGPT reviews `BKG-05` and defines resource assignment and collision detection.
