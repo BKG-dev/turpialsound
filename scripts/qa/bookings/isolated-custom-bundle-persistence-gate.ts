@@ -259,6 +259,59 @@ async function queryRows<Row = Record<string, unknown>>(
   return result.rows
 }
 
+function buildTracingExecutor(client: Client): CustomBundleSqlExecutor {
+  return {
+    async query<Row = Record<string, unknown>>(
+      sql: string,
+      params: readonly unknown[] = [],
+    ): Promise<{ rows: Row[]; rowCount: number | null }> {
+      try {
+        const result = (await client.query<Row>(sql, [...params])) as {
+          rows: Row[]
+          rowCount: number | null
+        }
+        return {
+          rows: result.rows,
+          rowCount: result.rowCount,
+        }
+      } catch (error) {
+        const summary = error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              code: (error as { code?: unknown }).code ?? null,
+              constraint: (error as { constraint?: unknown }).constraint ?? null,
+              table: (error as { table?: unknown }).table ?? null,
+              column: (error as { column?: unknown }).column ?? null,
+              detail: (error as { detail?: unknown }).detail ?? null,
+            }
+          : {
+              name: 'UnknownError',
+              message: String(error),
+              code: null,
+              constraint: null,
+              table: null,
+              column: null,
+              detail: null,
+            }
+
+        console.log(
+          'executor query failed',
+          JSON.stringify(
+            {
+              sql: sql.trim().slice(0, 120),
+              summary,
+            },
+            null,
+            2,
+          ),
+        )
+        throw error
+      }
+    },
+  }
+}
+
 async function collectMarketplaceColumns(client: Client): Promise<Array<Record<string, unknown>>> {
   return queryRows(
     client,
@@ -736,7 +789,7 @@ async function main(): Promise<void> {
     await assertSchemaShape(client)
     console.log('checkpoint schema validated')
 
-    const executor = client as unknown as CustomBundleSqlExecutor
+    const executor = buildTracingExecutor(client)
 
     let case1: Awaited<ReturnType<typeof persistCustomBundleSubmissionWithSql>>
     try {
