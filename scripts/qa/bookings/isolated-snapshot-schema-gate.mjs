@@ -206,16 +206,16 @@ async function main() {
 
     await client.query(
       `
-      INSERT INTO "services" ("id", "slug", "name", "description", "isActive")
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO "services" ("id", "slug", "name", "description", "isActive", "createdAt", "updatedAt")
+      VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       `,
       [ids.serviceId, 'sala-ensayo', 'Sala de ensayo', 'Servicio base para pruebas', true],
     )
 
     await client.query(
       `
-      INSERT INTO "service_variants" ("id", "slug", "name", "description", "isActive", "serviceId")
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO "service_variants" ("id", "slug", "name", "description", "isActive", "serviceId", "createdAt", "updatedAt")
+      VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       `,
       [
         ids.serviceVariantId,
@@ -246,9 +246,11 @@ async function main() {
         "estimatedTotal",
         "currency",
         "calendarEventId",
-        "submittedAt"
+        "submittedAt",
+        "createdAt",
+        "updatedAt"
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
       )
       `,
       [
@@ -279,8 +281,10 @@ async function main() {
         "bookingRequestId",
         "serviceVariantId",
         "quantity",
-        "notes"
-      ) VALUES ($1, $2, $3, $4, $5)
+        "notes",
+        "createdAt",
+        "updatedAt"
+      ) VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       `,
       [ids.oldRequestItemId, ids.oldRequestId, ids.serviceVariantId, 1, 'legacy item'],
     )
@@ -456,9 +460,11 @@ async function main() {
         "estimatedTotal",
         "currency",
         "calendarEventId",
-        "submittedAt"
+        "submittedAt",
+        "createdAt",
+        "updatedAt"
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
       )
       `,
       [
@@ -572,9 +578,11 @@ async function main() {
           "durationMinutes",
           "unitPriceUsdSnapshot",
           "lineTotalUsdSnapshot",
-          "clientPriceDisplay"
+          "clientPriceDisplay",
+          "createdAt",
+          "updatedAt"
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
         )
         `,
         [
@@ -700,9 +708,11 @@ async function main() {
         "estimatedTotal",
         "currency",
         "calendarEventId",
-        "submittedAt"
+        "submittedAt",
+        "createdAt",
+        "updatedAt"
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
       )
       `,
       [
@@ -742,9 +752,11 @@ async function main() {
         "durationMinutes",
         "unitPriceUsdSnapshot",
         "lineTotalUsdSnapshot",
-        "clientPriceDisplay"
+        "clientPriceDisplay",
+        "createdAt",
+        "updatedAt"
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
       )
       `,
       [
@@ -777,9 +789,11 @@ async function main() {
         "durationMinutes",
         "unitPriceUsdSnapshot",
         "lineTotalUsdSnapshot",
-        "clientPriceDisplay"
+        "clientPriceDisplay",
+        "createdAt",
+        "updatedAt"
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
       )
       `,
       [
@@ -826,9 +840,11 @@ async function main() {
           "durationMinutes",
           "unitPriceUsdSnapshot",
           "lineTotalUsdSnapshot",
-          "clientPriceDisplay"
+          "clientPriceDisplay",
+          "createdAt",
+          "updatedAt"
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
         )
         `,
         [
@@ -890,9 +906,11 @@ async function main() {
           "durationMinutes",
           "unitPriceUsdSnapshot",
           "lineTotalUsdSnapshot",
-          "clientPriceDisplay"
+          "clientPriceDisplay",
+          "createdAt",
+          "updatedAt"
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
         )
         `,
         [
