@@ -69,7 +69,7 @@ jobs:
         run: pnpm exec prisma migrate diff --help
 
       - name: Generate isolated baseline SQL
-        run: pnpm exec prisma migrate diff --config prisma.config.ts --from-empty --to-schema prisma/schema.prisma --script > /tmp/turpial-current-baseline.sql
+        run: pnpm exec prisma migrate diff --config prisma.config.ts --from-empty --to-schema prisma/schema.prisma --script | sed -n '/^-- CreateSchema/,$p' > /tmp/turpial-current-baseline.sql
 
       - name: Run isolated snapshot schema gate
         run: node scripts/qa/bookings/isolated-snapshot-schema-gate.mjs /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql
