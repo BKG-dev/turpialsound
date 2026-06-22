@@ -6,6 +6,10 @@ import {
   type CustomBundleAuthoritativeQuote,
 } from '@/lib/bookings/custom-bundle-repricing'
 import {
+  addMinutesToDate,
+  parseCaracasLocalDateTime,
+} from '@/lib/bookings/caracas-time'
+import {
   getCustomBundlePersistenceTarget,
   getCustomBundleServerIncludedItemSlugs,
   type CustomBundleServerIncludedItemSlug,
@@ -151,7 +155,6 @@ interface ServiceVariantTargetDescriptor {
 }
 
 const BOOKING_PUBLIC_CODE_REGEX = /^TUR-\d{4}-\d{3,}$/
-const CARACAS_UTC_OFFSET_MINUTES = -4 * 60
 const BOOKING_REQUEST_EVENT_TITLE = 'Solicitud - Arma tu paquete'
 const BOOKING_REQUEST_STATUS = 'under_review'
 const BOOKING_REQUEST_PRIORITY_LEVEL = 'normal'
@@ -206,46 +209,6 @@ function buildPersistenceIssue(
     code,
     message,
   }
-}
-
-function buildCaracasDateTime(eventDate: string, startTime: string): Date {
-  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(eventDate)
-  const timeMatch = /^(\d{2}):(\d{2})$/.exec(startTime)
-
-  if (!dateMatch || !timeMatch) {
-    return new Date(Number.NaN)
-  }
-
-  const year = Number(dateMatch[1])
-  const month = Number(dateMatch[2])
-  const day = Number(dateMatch[3])
-  const hours = Number(timeMatch[1])
-  const minutes = Number(timeMatch[2])
-
-  const invalidDateParts =
-    !Number.isInteger(year) ||
-    !Number.isInteger(month) ||
-    !Number.isInteger(day) ||
-    !Number.isInteger(hours) ||
-    !Number.isInteger(minutes) ||
-    month < 1 ||
-    month > 12 ||
-    day < 1 ||
-    day > 31 ||
-    hours < 0 ||
-    hours > 23 ||
-    minutes < 0 ||
-    minutes > 59
-
-  if (invalidDateParts) {
-    return new Date(Number.NaN)
-  }
-
-  const utcEpochMs =
-    Date.UTC(year, month - 1, day, hours, minutes, 0, 0) -
-    CARACAS_UTC_OFFSET_MINUTES * 60 * 1000
-
-  return new Date(utcEpochMs)
 }
 
 function formatMoneySnapshot(value: number): string {
@@ -805,15 +768,19 @@ export async function persistCustomBundleSubmissionWithSql(
   // persistenceReady en BKG-03 significaba completitud de ServiceVariant antes de existir
   // la estrategia snapshot-backed. Con snapshot-backed validado, los catalog gaps siguen
   // persistiendo como addons con serviceVariantId null.
-  const eventDateTime = buildCaracasDateTime(quote.submission.eventDate, quote.submission.startTime)
-  const eventEndDateTime = new Date(
-    eventDateTime.getTime() + quote.estimate.totalDurationMinutes * 60 * 1000,
+  const eventDateTime = parseCaracasLocalDateTime(
+    quote.submission.eventDate,
+    quote.submission.startTime,
   )
-  const bookingRequestId = generatePersistentId()
-
-  if (Number.isNaN(eventDateTime.getTime()) || Number.isNaN(eventEndDateTime.getTime())) {
+  if (!eventDateTime) {
     return buildPersistenceWriteFailure('No se pudo construir la fecha autoritativa del evento.')
   }
+
+  const eventEndDateTime = addMinutesToDate(eventDateTime, quote.estimate.totalDurationMinutes)
+  if (!eventEndDateTime) {
+    return buildPersistenceWriteFailure('No se pudo construir la fecha autoritativa del evento.')
+  }
+  const bookingRequestId = generatePersistentId()
 
   const transactionState = {
     started: false,

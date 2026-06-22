@@ -7,6 +7,7 @@ on:
     paths:
       - .github/workflows/booking-isolated-custom-bundle-persistence.yml
       - lib/bookings/custom-bundle-persistence.ts
+      - lib/bookings/caracas-time.ts
       - lib/bookings/custom-bundle-repricing.ts
       - lib/bookings/custom-bundle-submission.ts
       - lib/bookings/custom-bundle.ts

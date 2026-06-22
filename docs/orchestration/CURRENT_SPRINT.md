@@ -1,38 +1,38 @@
 # Current Sprint
 
 Sprint:
-BKG-04B1
+BKG-05
 
 Name:
-Correct temporal snapshots and transactional contract
+Cálculo autoritativo del bloque continuo
 
 Base:
-18d0b609c5c02256d66cfcfc690ff813d1ed5ea2
+b3e4b184555d465ce8561fd51589033f6b133949
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* correct temporal snapshot semantics;
-* require a single-connection SQL session;
-* harden persistence invariants;
-* keep the isolated PostgreSQL workflow as the gate.
+* validate and recompute the bundle through the authoritative quote;
+* build a continuous block from temporal components only;
+* exclude non-temporal lines from the schedule;
+* keep persistence and resource assignment out of scope.
 
 Out of Scope:
 
-* availability;
+* resource assignment;
+* collision detection;
+* holds;
 * wizard wiring;
-* schema.prisma;
-* generated Prisma;
-* production;
+* production writes;
 * manual QA;
 * Vercel config.
 
 Result:
 
-READY_FOR_BKG_05
+CONTINUOUS_SCHEDULE_PENDING_CI
 
 Next Action:
 
-ChatGPT reviews BKG-04B1 and defines continuous availability block calculation.
+ChatGPT verifies the continuous schedule and persistence regression workflows.

@@ -329,3 +329,25 @@ Criterio de evidencia:
 
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
+
+## Booking custom bundle continuous schedule
+
+Objetivo:
+- validar el bloque continuo determinista de `Arma tu paquete` usando solo las líneas temporales autoritativas.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-continuous-schedule.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar orden temporal canónico, continuidad, exclusiones, rollover de fecha y paridad de duraciones.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.

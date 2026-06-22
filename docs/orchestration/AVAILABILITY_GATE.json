@@ -1,0 +1,24 @@
+{
+  "sprint": "BKG-05",
+  "baseSha": "b3e4b184555d465ce8561fd51589033f6b133949",
+  "scheduleMode": "continuous_sequential",
+  "timezone": "America/Caracas",
+  "utcOffset": "-04:00",
+  "validation": {
+    "workflow": "booking-custom-bundle-continuous-schedule.yml",
+    "status": "PENDING",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
+    "authoritativeRepricingVerified": false,
+    "temporalOrderVerified": false,
+    "continuityVerified": false,
+    "durationParityVerified": false,
+    "excludedLinesVerified": false,
+    "dateRolloverVerified": false,
+    "immutabilityVerified": false,
+    "persistenceRegressionVerified": false
+  },
+  "readyForResourceConflictSprint": false,
+  "blockers": []
+}

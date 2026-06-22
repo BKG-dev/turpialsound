@@ -1,28 +1,22 @@
 # BKG-04B1 Director Review
 
-- SHA reviewed: `18d0b609c5c02256d66cfcfc690ff813d1ed5ea2`
-- Decision: `FIX_REQUIRED`
+- SHA reviewed: `b3e4b184555d465ce8561fd51589033f6b133949`
+- Decision: `CONTINUE`
 
 ## Approved Result
 
-- authoritative repricing;
-- isolated `BookingRequest`;
-- multiple `BookingRequestItem`;
-- rollback;
-- publicCode conflict;
-- cleanup;
-- workflow success.
-
-## Defects
-
-- `sessionDurationMinutes` received `durationMinutes`.
-- tests collapsed `null` into `0` or a calculated duration.
-- one invariant could throw outside the discriminated result.
-- the SQL contract did not require a single fixed connection.
+- snapshots temporales corregidos;
+- duraciÃ³n explÃ­cita preservada;
+- duraciÃ³n calculada preservada;
+- conexiÃ³n Ãºnica obligatoria;
+- invariantes controladas;
+- rollback validado;
+- persistencia aislada validada;
+- Vercel success.
 
 ## Action
 
-- execute `BKG-04B1` before availability.
+- execute `BKG-05` before resource assignment.
 
 ## Production
 

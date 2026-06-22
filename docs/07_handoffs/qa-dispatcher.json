@@ -1,5 +1,5 @@
 {
-  "version": 9,
+  "version": 10,
   "updated_at": "2026-06-22",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
@@ -719,6 +719,38 @@
       ],
       "last_validated_at": "2026-06-22",
       "notes": "Isolated PostgreSQL gate for snapshot-backed mult-item persistence."
+    },
+    "booking_custom_bundle_continuous_schedule": {
+      "task_id": "booking_custom_bundle_continuous_schedule",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/custom-bundle-continuous-schedule.ts",
+      "preconditions": [
+        "Node and pnpm available",
+        "Dependencies installed",
+        "No application server required",
+        "No DATABASE_URL required",
+        "No browser required",
+        "No network required"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "Prisma",
+        "HTTP ad hoc",
+        "CDP",
+        "browser improvisado",
+        "base productiva",
+        "alterar el orden desde el cliente",
+        "calculo alternativo de precios o duracion"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-05.md"
+      ],
+      "last_validated_at": "2026-06-22",
+      "notes": "Canonical QA route for the continuous schedule planner and continuous block builder."
     }
   }
 }

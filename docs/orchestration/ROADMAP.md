@@ -59,7 +59,10 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Technical exit criteria: block calculation respects service order, durations, and excluded categories.
 - Main risks: overlapping reservations and incorrect block composition.
 - Prohibitions: no real holds in production from Preview.
-- Status: `PLANNED`
+- Status: `IN_PROGRESS`
+- Continuous schedule engine: `PENDING_CI`
+- Resource assignment: `NOT_STARTED`
+- Collision detection: `NOT_STARTED`
 
 ## 6. Resources and Conflict Resolution
 
