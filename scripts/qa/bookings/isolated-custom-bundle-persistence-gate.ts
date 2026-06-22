@@ -740,6 +740,7 @@ async function main(): Promise<void> {
       publicCode: 'TUR-2099-001',
       submittedAt: new Date('2099-01-01T12:00:00.000Z'),
     })
+    console.log('case1 result', JSON.stringify(case1))
     assertResultIsPriced('case1', case1)
     assert.equal(case1.stage, 'persisted')
     assert.equal(case1.publicCode, 'TUR-2099-001')
