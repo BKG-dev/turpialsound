@@ -74,8 +74,11 @@
 
 ## Risks
 
-- The proposal is not yet validated in GitHub Actions.
-- `schema.prisma` must remain untouched until the gate passes.
+- The schema proposal passed the isolated GitHub Actions gate.
+- The application persistence adapter is not implemented yet.
+- `schema.prisma` and `generated/prisma` remain intentionally unchanged.
+- The proposed SQL is not an authorized production migration.
+- A future application migration still requires explicit Director review.
 
 ## Blockers
 
@@ -95,4 +98,4 @@
 
 ## Director Next Action
 
-- ChatGPT verifies the isolated snapshot schema workflow before authorizing the persistence adapter.
+- ChatGPT reviews the corrected BKG-04A state and defines BKG-04B isolated mult-item persistence planning.

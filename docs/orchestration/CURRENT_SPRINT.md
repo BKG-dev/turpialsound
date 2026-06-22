@@ -1,34 +1,40 @@
 # Current Sprint
 
-- Sprint: `BKG-04A`
-- Name: Propuesta aditiva de esquema snapshot-backed
-- Objective: validate an additive snapshot-backed schema proposal in isolated PostgreSQL before touching the Prisma schema used by the app.
-- State: `TECHNICALLY_VALIDATED`
-- Base: `2d64bbff87f4f844378bc93c3e0395fc6b73ba92`
+Sprint:
+BKG-04A1
 
-## Scope
+Name:
+Normalización del estado de persistencia
 
-- draft and validate the additive SQL proposal;
-- confirm compatibility with historical rows;
-- confirm the new `service`, `addon`, and `included` line shapes;
-- keep the application schema untouched for now;
-- wait for remote workflow validation.
+Base:
+f599841bf3ff5542bc7cc574edfbbc137d8b173e
 
-## Out of Scope
+State:
+TECHNICALLY_VALIDATED
 
-- `schema.prisma` changes;
-- generated Prisma client changes;
-- booking wizard wiring;
-- production changes;
-- migrations;
-- seeds;
-- `prisma db push`;
-- QA manual.
+Scope:
 
-## Expected Result
+* corregir roadmap;
+* corregir handoff;
+* registrar decisión del Director;
+* conservar intacta la evidencia del workflow.
 
-`READY_FOR_BKG_04B`
+Out of Scope:
 
-## Next Action
+* persistence adapter;
+* schema.prisma;
+* generated Prisma;
+* SQL;
+* workflows;
+* aplicación;
+* base de datos;
+* QA manual;
+* producción.
 
-ChatGPT reviews BKG-04A and defines the isolated mult-item persistence adapter.
+Result:
+
+ORCHESTRATION_STATE_NORMALIZED
+
+Next Action:
+
+ChatGPT reviews BKG-04A1 and defines BKG-04B isolated mult-item persistence planning.
