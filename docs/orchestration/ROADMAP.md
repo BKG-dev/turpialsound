@@ -18,7 +18,7 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Technical exit criteria: bundle selection works in Preview, validations pass, and no production behavior regresses.
 - Main risks: hidden pricing duplication, inconsistent timing rules, and accidental persistence.
 - Prohibitions: no mult-item persistence yet, no schema changes, no production writes.
-- Status: `TECHNICALLY_VALIDATED`
+- Status: `DONE`
 
 ## 2. Backend Mult-Item Contract
 
@@ -27,7 +27,7 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Technical exit criteria: explicit types, payload contract, and server-side validation rules exist.
 - Main risks: premature coupling to persistence and ambiguous item semantics.
 - Prohibitions: no database writes, no `schema.prisma` changes, no migrations.
-- Status: `PLANNED`
+- Status: `TECHNICALLY_VALIDATED`
 
 ## 3. Authoritative Server Repricing
 

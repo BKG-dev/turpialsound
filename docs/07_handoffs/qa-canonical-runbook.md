@@ -239,3 +239,26 @@ Criterio de evidencia:
 
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
+
+## Booking custom bundle submission contract
+
+Objetivo:
+- validar el contrato puro de submission mult-item para `Arma tu paquete`
+  sin persistencia, sin navegador, sin HTTP, sin Prisma y sin escrituras.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-submission-contract.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar parsing estricto, normalizacion de requester, rechazo de dinero cliente, mappings SERVICE_VARIANT y gaps de catalogo.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.

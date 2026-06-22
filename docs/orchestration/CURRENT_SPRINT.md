@@ -1,30 +1,33 @@
 # Current Sprint
 
-- Sprint: `BKG-01A`
-- Name: Restaurar aviso comercial de adicionales agregados
-- Objective: Restore the aggregate-only commercial notice and remove the duplicated unit label in the Preview custom bundle cards.
+- Sprint: `BKG-02`
+- Name: Contrato backend multítem de Arma tu paquete
+- Objective: Define the pure, strict, versioned submission contract for the Preview mult-item booking payload.
 - State: `TECHNICALLY_VALIDATED`
-- Base: `70e2e46644ea961bc78f1f90412147f825044714`
+- Base: `da0d0d20329a723834f9b902752b248c59e8859c`
 
 ## Scope
 
-- card copy fix for aggregate-only items;
-- shared aggregate-only notice constant;
-- deterministic contract QA script assertions;
+- pure submission contract;
+- strict parser and normalization;
+- persistence target mapping registry;
+- catalog gap detection;
+- canonical QA script;
 - orchestration decision and handoff updates;
-- runbook wording cleanup.
+- runbook and dispatcher registration.
 
 ## Out of Scope
 
-- backend mult-item persistence;
+- backend persistence;
 - database writes;
 - Prisma schema changes;
 - payments;
 - notifications;
 - Calendar;
 - production changes;
-- manual QA.
+- connecting the wizard to the new contract;
+- authoritative repricing.
 
 ## Next Action
 
-ChatGPT must review BKG-01A and decide whether to start the backend mult-item contract sprint.
+ChatGPT must review BKG-02 and decide whether to start the authoritative server repricing sprint.
