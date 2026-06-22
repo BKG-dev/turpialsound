@@ -724,14 +724,17 @@ async function main(): Promise<void> {
     const before = await collectMarketplaceColumns(client)
     await client.query(baselineSql)
     await client.query(proposedSql)
+    console.log('checkpoint baseline applied')
     return before
   })()
 
   try {
     const seedResult = await seedCatalog(client)
     void seedResult
+    console.log('checkpoint catalog seeded')
 
     await assertSchemaShape(client)
+    console.log('checkpoint schema validated')
 
     const executor = client as unknown as CustomBundleSqlExecutor
 
