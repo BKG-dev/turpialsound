@@ -1,37 +1,38 @@
 # Current Sprint
 
 Sprint:
-BKG-04B
+BKG-04B1
 
 Name:
-Persistence adapter mult-item isolated
+Correct temporal snapshots and transactional contract
 
 Base:
-145d2307e91ba93e6681a7a587c3c50a3f5c3373
+18d0b609c5c02256d66cfcfc690ff813d1ed5ea2
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* implementar el persistence adapter aislado;
-* persistir BookingRequest y BookingRequestItem snapshot-backed;
-* mantener la transaccionalidad y el rollback obligatorio;
-* validar el flujo con GitHub Actions y PostgreSQL efimero.
+* correct temporal snapshot semantics;
+* require a single-connection SQL session;
+* harden persistence invariants;
+* keep the isolated PostgreSQL workflow as the gate.
 
 Out of Scope:
 
+* availability;
+* wizard wiring;
 * schema.prisma;
 * generated Prisma;
-* Preview wiring;
-* application Preview integration;
 * production;
-* QA manual.
+* manual QA;
+* Vercel config.
 
 Result:
 
-READY_FOR_BKG_05
+PERSISTENCE_CORRECTION_PENDING_CI
 
 Next Action:
 
-ChatGPT reviews BKG-04B and defines continuous availability block calculation.
+Director verifies the workflow before approving availability work.

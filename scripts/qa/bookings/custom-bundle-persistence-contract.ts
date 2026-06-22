@@ -4,7 +4,8 @@ import { resolve } from 'node:path'
 
 import {
   persistCustomBundleSubmissionWithSql,
-  type CustomBundleSqlExecutor,
+  validateCustomBundlePersistenceQuote,
+  type CustomBundleSqlSession,
 } from '@/lib/bookings/custom-bundle-persistence'
 import {
   CUSTOM_BUNDLE_AUTHORITATIVE_PRICING_SOURCE,
@@ -79,8 +80,21 @@ type MemoryState = {
 
 type MemorySnapshot = MemoryState
 
-class MemorySqlExecutor implements CustomBundleSqlExecutor {
+type PersistedItemExpectation = {
+  itemSlug: string
+  itemKind: 'service' | 'addon' | 'included'
+  serviceVariantId: string | null
+  quantity: number
+  sessionDurationMinutes: number | null
+  durationMinutes: number
+  unitPriceUsdSnapshot: number
+  lineTotalUsdSnapshot: number
+  clientPriceDisplay: 'itemized' | 'aggregate_only' | 'included'
+}
+
+class MemorySqlExecutor implements CustomBundleSqlSession {
   public readonly calls: Array<{ sql: string; params: readonly unknown[] }> = []
+  public readonly transactionScope = 'single_connection' as const
 
   public state: MemoryState = {
     services: [],
@@ -545,6 +559,7 @@ function assertPersistedBundle(
     estimatedTotalUsd: number
     bookingMode?: string
     pricingSource?: string
+    itemExpectations?: PersistedItemExpectation[]
   },
 ): void {
   const bookingRequest = executor.state.bookingRequests.find(
@@ -573,6 +588,46 @@ function assertPersistedBundle(
   assert.equal(serviceItemCount, expected.serviceItemCount)
   assert.equal(addonItemCount, expected.addonItemCount)
   assert.equal(includedItemCount, expected.includedItemCount)
+
+  if (expected.itemExpectations) {
+    const itemsBySlug = new Map(items.map((row) => [row.itemSlug ?? '', row]))
+    for (const itemExpectation of expected.itemExpectations) {
+      const item = itemsBySlug.get(itemExpectation.itemSlug)
+      assert.ok(item, `expected persisted item ${itemExpectation.itemSlug} to exist`)
+      assert.equal(item?.itemKind, itemExpectation.itemKind, `${itemExpectation.itemSlug} itemKind`)
+      assert.equal(
+        item?.serviceVariantId,
+        itemExpectation.serviceVariantId,
+        `${itemExpectation.itemSlug} serviceVariantId`,
+      )
+      assert.equal(item?.quantity, itemExpectation.quantity, `${itemExpectation.itemSlug} quantity`)
+      assert.equal(
+        item?.sessionDurationMinutes,
+        itemExpectation.sessionDurationMinutes,
+        `${itemExpectation.itemSlug} sessionDurationMinutes`,
+      )
+      assert.equal(
+        item?.durationMinutes,
+        itemExpectation.durationMinutes,
+        `${itemExpectation.itemSlug} durationMinutes`,
+      )
+      assert.equal(
+        Number(item?.unitPriceUsdSnapshot),
+        itemExpectation.unitPriceUsdSnapshot,
+        `${itemExpectation.itemSlug} unitPriceUsdSnapshot`,
+      )
+      assert.equal(
+        Number(item?.lineTotalUsdSnapshot),
+        itemExpectation.lineTotalUsdSnapshot,
+        `${itemExpectation.itemSlug} lineTotalUsdSnapshot`,
+      )
+      assert.equal(
+        item?.clientPriceDisplay,
+        itemExpectation.clientPriceDisplay,
+        `${itemExpectation.itemSlug} clientPriceDisplay`,
+      )
+    }
+  }
 }
 
 function assertNoForbiddenSourcePatterns(source: string): void {
@@ -597,6 +652,14 @@ function assertAdapterSource(pathname: string): void {
   assert.ok(
     source.includes('CUSTOM_BUNDLE_AUTHORITATIVE_PRICING_SOURCE'),
     'adapter must use the authoritative pricing source constant',
+  )
+  assert.ok(
+    source.includes("transactionScope: 'single_connection'"),
+    'adapter must require a single SQL connection session',
+  )
+  assert.ok(
+    source.includes('validateCustomBundlePersistenceQuote'),
+    'adapter must validate quotes through the pure persistence validator',
   )
 }
 
@@ -701,6 +764,91 @@ async function run(): Promise<void> {
   assert.equal(invalidSubmittedAtResult.code, 'INVALID_SUBMITTED_AT')
   assertNoSQL(invalidSubmittedAtExecutor, 'invalid submittedAt')
 
+  const podcastExecutor = createSeededExecutor()
+  const podcastResult = await persistCustomBundleSubmissionWithSql(podcastExecutor, {
+    submission: caseSubmission({
+      items: [
+        {
+          itemSlug: 'podcast',
+          quantity: 1,
+          sessionDurationMinutes: 120,
+        },
+      ],
+    }),
+    publicCode: 'TUR-2099-103',
+    submittedAt: new Date('2099-01-03T12:00:00.000Z'),
+  })
+  assert.equal(podcastResult.ok, true)
+  if (!podcastResult.ok) {
+    throw new Error('podcast payload should persist')
+  }
+  assert.equal(podcastResult.stage, 'persisted')
+  assert.equal(podcastResult.estimatedTotalUsd, 100)
+  assert.equal(podcastResult.totalDurationMinutes, 120)
+  assertPersistedBundle(podcastExecutor, {
+    publicCode: 'TUR-2099-103',
+    itemCount: 3,
+    serviceItemCount: 1,
+    addonItemCount: 0,
+    includedItemCount: 2,
+    estimatedTotalUsd: 100,
+    itemExpectations: [
+      {
+        itemSlug: 'podcast',
+        itemKind: 'service',
+        serviceVariantId: 'svc_var_podcast',
+        quantity: 1,
+        sessionDurationMinutes: 120,
+        durationMinutes: 120,
+        unitPriceUsdSnapshot: 100,
+        lineTotalUsdSnapshot: 100,
+        clientPriceDisplay: 'itemized',
+      },
+      {
+        itemSlug: 'tecnico-sonido',
+        itemKind: 'included',
+        serviceVariantId: null,
+        quantity: 1,
+        sessionDurationMinutes: null,
+        durationMinutes: 0,
+        unitPriceUsdSnapshot: 0,
+        lineTotalUsdSnapshot: 0,
+        clientPriceDisplay: 'included',
+      },
+      {
+        itemSlug: 'backline-equipamiento',
+        itemKind: 'included',
+        serviceVariantId: null,
+        quantity: 1,
+        sessionDurationMinutes: null,
+        durationMinutes: 0,
+        unitPriceUsdSnapshot: 0,
+        lineTotalUsdSnapshot: 0,
+        clientPriceDisplay: 'included',
+      },
+    ],
+  })
+
+  const invalidSessionCalls: Array<{ sql: string; params: readonly unknown[] }> = []
+  const invalidSessionExecutor = {
+    async query<Row = Record<string, unknown>>(
+      sql: string,
+      params: readonly unknown[] = [],
+    ): Promise<{ rows: Row[]; rowCount: number | null }> {
+      invalidSessionCalls.push({ sql, params })
+      throw new Error('SQL should not execute for an invalid session')
+    },
+  } as unknown as CustomBundleSqlSession
+  const invalidSessionResult = await persistCustomBundleSubmissionWithSql(invalidSessionExecutor, {
+    submission: caseSubmission(),
+    publicCode: 'TUR-2099-104',
+    submittedAt: new Date('2099-01-04T12:00:00.000Z'),
+  })
+  assert.equal(invalidSessionResult.ok, false)
+  assert.equal(invalidSessionResult.stage, 'server_context')
+  assert.equal(invalidSessionResult.code, 'INVALID_SQL_SESSION')
+  assert.equal(invalidSessionCalls.length, 0)
+
   const successfulExecutor = createSeededExecutor()
   const successfulResult = await persistCustomBundleSubmissionWithSql(successfulExecutor, {
     submission: caseSubmission(),
@@ -718,6 +866,63 @@ async function run(): Promise<void> {
     addonItemCount: 2,
     includedItemCount: 2,
     estimatedTotalUsd: 280,
+    itemExpectations: [
+      {
+        itemSlug: 'sala-premium',
+        itemKind: 'service',
+        serviceVariantId: 'svc_var_sala_premium',
+        quantity: 2,
+        sessionDurationMinutes: null,
+        durationMinutes: 120,
+        unitPriceUsdSnapshot: 25,
+        lineTotalUsdSnapshot: 50,
+        clientPriceDisplay: 'itemized',
+      },
+      {
+        itemSlug: 'combo-percusion',
+        itemKind: 'addon',
+        serviceVariantId: null,
+        quantity: 1,
+        sessionDurationMinutes: null,
+        durationMinutes: 0,
+        unitPriceUsdSnapshot: 150,
+        lineTotalUsdSnapshot: 150,
+        clientPriceDisplay: 'aggregate_only',
+      },
+      {
+        itemSlug: 'grabaciones-voces',
+        itemKind: 'addon',
+        serviceVariantId: null,
+        quantity: 2,
+        sessionDurationMinutes: null,
+        durationMinutes: 0,
+        unitPriceUsdSnapshot: 40,
+        lineTotalUsdSnapshot: 80,
+        clientPriceDisplay: 'aggregate_only',
+      },
+      {
+        itemSlug: 'tecnico-sonido',
+        itemKind: 'included',
+        serviceVariantId: null,
+        quantity: 1,
+        sessionDurationMinutes: null,
+        durationMinutes: 0,
+        unitPriceUsdSnapshot: 0,
+        lineTotalUsdSnapshot: 0,
+        clientPriceDisplay: 'included',
+      },
+      {
+        itemSlug: 'backline-equipamiento',
+        itemKind: 'included',
+        serviceVariantId: null,
+        quantity: 1,
+        sessionDurationMinutes: null,
+        durationMinutes: 0,
+        unitPriceUsdSnapshot: 0,
+        lineTotalUsdSnapshot: 0,
+        clientPriceDisplay: 'included',
+      },
+    ],
   })
   assert.equal(successfulResult.eventEndDateIso, '2026-06-24T16:00:00.000Z')
   assert.equal(successfulResult.totalDurationMinutes, 120)
@@ -757,6 +962,41 @@ async function run(): Promise<void> {
     addonItemCount: 0,
     includedItemCount: 2,
     estimatedTotalUsd: 70,
+    itemExpectations: [
+      {
+        itemSlug: 'sala-prioritaria',
+        itemKind: 'service',
+        serviceVariantId: 'svc_var_sala_prioritaria',
+        quantity: 2,
+        sessionDurationMinutes: null,
+        durationMinutes: 120,
+        unitPriceUsdSnapshot: 30,
+        lineTotalUsdSnapshot: 60,
+        clientPriceDisplay: 'itemized',
+      },
+      {
+        itemSlug: 'tecnico-sonido',
+        itemKind: 'included',
+        serviceVariantId: null,
+        quantity: 1,
+        sessionDurationMinutes: null,
+        durationMinutes: 0,
+        unitPriceUsdSnapshot: 0,
+        lineTotalUsdSnapshot: 0,
+        clientPriceDisplay: 'included',
+      },
+      {
+        itemSlug: 'backline-equipamiento',
+        itemKind: 'included',
+        serviceVariantId: null,
+        quantity: 1,
+        sessionDurationMinutes: null,
+        durationMinutes: 0,
+        unitPriceUsdSnapshot: 0,
+        lineTotalUsdSnapshot: 0,
+        clientPriceDisplay: 'included',
+      },
+    ],
   })
 
   const missingVariantExecutor = createSeededExecutor()
@@ -922,6 +1162,33 @@ async function run(): Promise<void> {
     CUSTOM_BUNDLE_PERSISTENCE_TARGETS['combo-percusion'].kind,
     'catalog_gap',
   )
+
+  const repricedQuoteResult = repriceCustomBundleSubmission(caseSubmission())
+  assert.equal(repricedQuoteResult.ok, true)
+  if (!repricedQuoteResult.ok || repricedQuoteResult.stage !== 'priced') {
+    throw new Error('repriced quote must be priced')
+  }
+
+  const validQuoteIssues = validateCustomBundlePersistenceQuote(repricedQuoteResult.quote)
+  assert.deepStrictEqual(validQuoteIssues, [])
+
+  const duplicateSlugQuote = JSON.parse(JSON.stringify(repricedQuoteResult.quote)) as typeof repricedQuoteResult.quote
+  duplicateSlugQuote.estimate.lines[1].item.slug = duplicateSlugQuote.estimate.lines[0].item.slug
+  const duplicateSlugIssues = validateCustomBundlePersistenceQuote(duplicateSlugQuote)
+  assert.ok(duplicateSlugIssues.some((issue) => issue.code === 'DUPLICATE_QUOTE_ITEM_SLUG'))
+  assert.equal(
+    duplicateSlugIssues.some((issue) => issue.code === 'NEGATIVE_UNIT_PRICE'),
+    false,
+  )
+
+  const includedPriceQuote = JSON.parse(JSON.stringify(repricedQuoteResult.quote)) as typeof repricedQuoteResult.quote
+  const includedLine = includedPriceQuote.estimate.lines.find((line) => line.item.slug === 'tecnico-sonido')
+  assert.ok(includedLine)
+  if (includedLine) {
+    includedLine.unitPriceUsd = 1
+  }
+  const includedPriceIssues = validateCustomBundlePersistenceQuote(includedPriceQuote)
+  assert.ok(includedPriceIssues.some((issue) => issue.code === 'INCLUDED_UNIT_PRICE_MISMATCH'))
 
   console.log('booking_custom_bundle_persistence_contract OK')
 }

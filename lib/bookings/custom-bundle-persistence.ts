@@ -8,6 +8,7 @@ import {
 import {
   getCustomBundlePersistenceTarget,
   getCustomBundleServerIncludedItemSlugs,
+  type CustomBundleServerIncludedItemSlug,
   type CustomBundleSubmissionContractIssue,
 } from '@/lib/bookings/custom-bundle-submission'
 import type { CustomBundleEstimateIssue } from '@/lib/bookings/types'
@@ -23,6 +24,10 @@ export interface CustomBundleSqlExecutor {
     sql: string,
     params?: readonly unknown[],
   ): Promise<CustomBundleSqlQueryResult<Row>>
+}
+
+export interface CustomBundleSqlSession extends CustomBundleSqlExecutor {
+  readonly transactionScope: 'single_connection'
 }
 
 export interface PersistCustomBundleSubmissionInput {
@@ -55,7 +60,7 @@ export type PersistCustomBundleSubmissionResult =
   | {
       ok: false
       stage: 'server_context'
-      code: 'INVALID_PUBLIC_CODE' | 'INVALID_SUBMITTED_AT'
+      code: 'INVALID_PUBLIC_CODE' | 'INVALID_SUBMITTED_AT' | 'INVALID_SQL_SESSION'
       message: string
     }
   | {
@@ -126,11 +131,17 @@ interface PersistableLineDescriptor {
   itemKind: 'service' | 'addon' | 'included'
   serviceVariantId: string | null
   quantity: number
-  sessionDurationMinutes: number
+  sessionDurationMinutes: number | null
   durationMinutes: number
   unitPriceUsdSnapshot: string
   lineTotalUsdSnapshot: string
   clientPriceDisplay: string
+}
+
+export interface CustomBundlePersistenceQuoteIssue {
+  code: string
+  message: string
+  itemSlug?: string
 }
 
 interface ServiceVariantTargetDescriptor {
@@ -158,7 +169,7 @@ function isValidPublicCode(value: string): boolean {
 }
 
 function buildServerContextIssue(
-  code: 'INVALID_PUBLIC_CODE' | 'INVALID_SUBMITTED_AT',
+  code: 'INVALID_PUBLIC_CODE' | 'INVALID_SUBMITTED_AT' | 'INVALID_SQL_SESSION',
   message: string,
 ): Extract<PersistCustomBundleSubmissionResult, { stage: 'server_context' }> {
   return {
@@ -241,6 +252,18 @@ function formatMoneySnapshot(value: number): string {
   return value.toFixed(2)
 }
 
+function makePersistenceQuoteIssue(
+  code: string,
+  message: string,
+  itemSlug?: string,
+): CustomBundlePersistenceQuoteIssue {
+  return itemSlug ? { code, message, itemSlug } : { code, message }
+}
+
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100
+}
+
 function generatePersistentId(): string {
   return randomUUID().replace(/-/g, '')
 }
@@ -264,6 +287,185 @@ function isSameMoneyValue(value: string | number | null | undefined, expected: n
 
 function isQuoteLineIncluded(line: CustomBundleEstimateLine): boolean {
   return line.isIncluded === true
+}
+
+export function validateCustomBundlePersistenceQuote(
+  quote: CustomBundleAuthoritativeQuote,
+): CustomBundlePersistenceQuoteIssue[] {
+  const issues: CustomBundlePersistenceQuoteIssue[] = []
+  const seenItemSlugs = new Set<string>()
+  const serverIncludedItemSlugs = new Set<CustomBundleServerIncludedItemSlug>(
+    getCustomBundleServerIncludedItemSlugs(),
+  )
+
+  if (quote.pricingSource !== CUSTOM_BUNDLE_AUTHORITATIVE_PRICING_SOURCE) {
+    issues.push(
+      makePersistenceQuoteIssue(
+        'INVALID_PRICING_SOURCE',
+        'La cotización no usa la fuente autoritativa del servidor.',
+      ),
+    )
+  }
+
+  if (quote.estimate.lines.length < 1) {
+    issues.push(
+      makePersistenceQuoteIssue('EMPTY_QUOTE', 'La cotización no contiene líneas persistibles.'),
+    )
+  }
+
+  if (quote.estimate.selectionCount !== quote.submission.items.length) {
+    issues.push(
+      makePersistenceQuoteIssue(
+        'SELECTION_COUNT_MISMATCH',
+        'La cantidad de selecciones no coincide con la solicitud validada.',
+      ),
+    )
+  }
+
+  const expectedLineCount = quote.submission.items.length + quote.serverIncludedItemSlugs.length
+  if (quote.estimate.lines.length !== expectedLineCount) {
+    issues.push(
+      makePersistenceQuoteIssue(
+        'LINE_COUNT_MISMATCH',
+        'La cantidad de líneas autoritativas no coincide con la solicitud validada.',
+      ),
+    )
+  }
+
+  const lineTotalUsd = quote.estimate.lines.reduce((total, line) => total + line.lineTotalUsd, 0)
+  const adjustmentTotalUsd = quote.estimate.adjustments.reduce(
+    (total, adjustment) => total + adjustment.amountUsd,
+    0,
+  )
+  if (roundMoney(lineTotalUsd + adjustmentTotalUsd) !== quote.estimate.estimatedTotalUsd) {
+    issues.push(
+      makePersistenceQuoteIssue(
+        'TOTAL_MISMATCH',
+        'El total autoritativo no coincide con las líneas y ajustes calculados.',
+      ),
+    )
+  }
+
+  for (const line of quote.estimate.lines) {
+    if (seenItemSlugs.has(line.item.slug)) {
+      issues.push(
+        makePersistenceQuoteIssue(
+          'DUPLICATE_QUOTE_ITEM_SLUG',
+          `La línea ${line.item.slug} aparece más de una vez en la cotización.`,
+          line.item.slug,
+        ),
+      )
+    } else {
+      seenItemSlugs.add(line.item.slug)
+    }
+
+    if (line.unitPriceUsd < 0) {
+      issues.push(
+        makePersistenceQuoteIssue(
+          'NEGATIVE_UNIT_PRICE',
+          `La línea ${line.item.slug} no puede tener precio unitario negativo.`,
+          line.item.slug,
+        ),
+      )
+    }
+
+    if (line.lineTotalUsd < 0) {
+      issues.push(
+        makePersistenceQuoteIssue(
+          'NEGATIVE_LINE_TOTAL',
+          `La línea ${line.item.slug} no puede tener total negativo.`,
+          line.item.slug,
+        ),
+      )
+    }
+
+    if (line.durationMinutes < 0) {
+      issues.push(
+        makePersistenceQuoteIssue(
+          'NEGATIVE_DURATION',
+          `La línea ${line.item.slug} no puede tener duración negativa.`,
+          line.item.slug,
+        ),
+      )
+    }
+
+    if (line.sessionDurationMinutes !== null && line.sessionDurationMinutes < 0) {
+      issues.push(
+        makePersistenceQuoteIssue(
+          'NEGATIVE_SESSION_DURATION',
+          `La línea ${line.item.slug} no puede tener sessionDurationMinutes negativa.`,
+          line.item.slug,
+        ),
+      )
+    }
+
+    if (isQuoteLineIncluded(line)) {
+      if (!serverIncludedItemSlugs.has(line.item.slug as CustomBundleServerIncludedItemSlug)) {
+        issues.push(
+          makePersistenceQuoteIssue(
+            'INCLUDED_ITEM_NOT_SERVER_DERIVED',
+            `La línea ${line.item.slug} debe ser derivada por el servidor.`,
+            line.item.slug,
+          ),
+        )
+      }
+
+      if (line.unitPriceUsd !== 0) {
+        issues.push(
+          makePersistenceQuoteIssue(
+            'INCLUDED_UNIT_PRICE_MISMATCH',
+            `La línea ${line.item.slug} debe tener precio unitario 0.`,
+            line.item.slug,
+          ),
+        )
+      }
+
+      if (line.lineTotalUsd !== 0) {
+        issues.push(
+          makePersistenceQuoteIssue(
+            'INCLUDED_LINE_TOTAL_MISMATCH',
+            `La línea ${line.item.slug} debe tener total 0.`,
+            line.item.slug,
+          ),
+        )
+      }
+
+      if (line.durationMinutes !== 0) {
+        issues.push(
+          makePersistenceQuoteIssue(
+            'INCLUDED_DURATION_MISMATCH',
+            `La línea ${line.item.slug} debe tener duración 0.`,
+            line.item.slug,
+          ),
+        )
+      }
+
+      if (line.sessionDurationMinutes !== null) {
+        issues.push(
+          makePersistenceQuoteIssue(
+            'INCLUDED_SESSION_DURATION_MISMATCH',
+            `La línea ${line.item.slug} debe conservar sessionDurationMinutes null.`,
+            line.item.slug,
+          ),
+        )
+      }
+
+      continue
+    }
+
+    const persistenceTarget = getCustomBundlePersistenceTarget(line.item.slug)
+    if (!persistenceTarget) {
+      issues.push(
+        makePersistenceQuoteIssue(
+          'MISSING_PERSISTENCE_TARGET',
+          `La línea ${line.item.slug} no tiene estrategia de persistencia.`,
+          line.item.slug,
+        ),
+      )
+    }
+  }
+
+  return issues
 }
 
 function getServiceVariantTargets(
@@ -298,7 +500,7 @@ function mapLineToPersistenceDescriptor(
       itemKind: 'included',
       serviceVariantId: null,
       quantity: line.quantity,
-      sessionDurationMinutes: line.durationMinutes,
+      sessionDurationMinutes: line.sessionDurationMinutes,
       durationMinutes: line.durationMinutes,
       unitPriceUsdSnapshot: formatMoneySnapshot(line.unitPriceUsd),
       lineTotalUsdSnapshot: formatMoneySnapshot(line.lineTotalUsd),
@@ -323,7 +525,7 @@ function mapLineToPersistenceDescriptor(
       itemKind: 'addon',
       serviceVariantId: null,
       quantity: line.quantity,
-      sessionDurationMinutes: line.durationMinutes,
+      sessionDurationMinutes: line.sessionDurationMinutes,
       durationMinutes: line.durationMinutes,
       unitPriceUsdSnapshot: formatMoneySnapshot(line.unitPriceUsd),
       lineTotalUsdSnapshot: formatMoneySnapshot(line.lineTotalUsd),
@@ -374,7 +576,7 @@ function mapLineToPersistenceDescriptor(
     itemKind: 'service',
     serviceVariantId: resolvedServiceVariant.variantId,
     quantity: line.quantity,
-    sessionDurationMinutes: line.durationMinutes,
+    sessionDurationMinutes: line.sessionDurationMinutes,
     durationMinutes: line.durationMinutes,
     unitPriceUsdSnapshot: formatMoneySnapshot(line.unitPriceUsd),
     lineTotalUsdSnapshot: formatMoneySnapshot(line.lineTotalUsd),
@@ -470,16 +672,6 @@ function buildBookingRequestNotes(extrasNotes: string): string | null {
   return normalized.length > 0 ? normalized : null
 }
 
-function assertQuoteLineIntegrity(quote: CustomBundleAuthoritativeQuote): void {
-  const seenItemSlugs = new Set<string>()
-  for (const line of quote.estimate.lines) {
-    if (seenItemSlugs.has(line.item.slug)) {
-      throw new Error(`Duplicate quote item slug detected: ${line.item.slug}`)
-    }
-    seenItemSlugs.add(line.item.slug)
-  }
-}
-
 function buildPersistableLineDescriptors(
   quote: CustomBundleAuthoritativeQuote,
   resolvedServiceVariants: Map<string, ResolvedServiceVariantRow>,
@@ -560,7 +752,7 @@ function isPublicCodeConflictError(error: unknown): boolean {
 }
 
 export async function persistCustomBundleSubmissionWithSql(
-  executor: CustomBundleSqlExecutor,
+  executor: CustomBundleSqlSession,
   input: PersistCustomBundleSubmissionInput,
 ): Promise<PersistCustomBundleSubmissionResult> {
   if (!isValidPublicCode(input.publicCode)) {
@@ -596,11 +788,23 @@ export async function persistCustomBundleSubmissionWithSql(
 
   const quote = repricingResult.quote
 
+  if (executor.transactionScope !== 'single_connection') {
+    return buildServerContextIssue(
+      'INVALID_SQL_SESSION',
+      'La persistencia requiere una conexión SQL transaccional dedicada.',
+    )
+  }
+
+  const quoteIssues = validateCustomBundlePersistenceQuote(quote)
+  if (quoteIssues.length > 0) {
+    return buildPersistenceWriteFailure(
+      'La cotización autoritativa no cumple las invariantes de persistencia.',
+    )
+  }
+
   // persistenceReady en BKG-03 significaba completitud de ServiceVariant antes de existir
   // la estrategia snapshot-backed. Con snapshot-backed validado, los catalog gaps siguen
   // persistiendo como addons con serviceVariantId null.
-  assertQuoteLineIntegrity(quote)
-
   const eventDateTime = buildCaracasDateTime(quote.submission.eventDate, quote.submission.startTime)
   const eventEndDateTime = new Date(
     eventDateTime.getTime() + quote.estimate.totalDurationMinutes * 60 * 1000,

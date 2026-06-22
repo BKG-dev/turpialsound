@@ -7,7 +7,7 @@ import { Client } from 'pg'
 
 import {
   persistCustomBundleSubmissionWithSql,
-  type CustomBundleSqlExecutor,
+  type CustomBundleSqlSession,
 } from '@/lib/bookings/custom-bundle-persistence'
 import { CUSTOM_BUNDLE_AUTHORITATIVE_PRICING_SOURCE } from '@/lib/bookings/custom-bundle-repricing'
 import type {
@@ -80,7 +80,7 @@ type BundleExpectation = {
   itemKind: 'service' | 'addon' | 'included'
   serviceVariantId: string | null
   quantity: number
-  sessionDurationMinutes: number
+  sessionDurationMinutes: number | null
   durationMinutes: number
   unitPriceUsdSnapshot: number
   lineTotalUsdSnapshot: number
@@ -259,8 +259,9 @@ async function queryRows<Row = Record<string, unknown>>(
   return result.rows
 }
 
-function buildTracingExecutor(client: Client): CustomBundleSqlExecutor {
+function buildTracingExecutor(client: Client): CustomBundleSqlSession {
   return {
+    transactionScope: 'single_connection' as const,
     async query<Row = Record<string, unknown>>(
       sql: string,
       params: readonly unknown[] = [],
@@ -839,7 +840,7 @@ async function main(): Promise<void> {
           itemKind: 'service',
           serviceVariantId: 'svc_var_sala_premium',
           quantity: 2,
-          sessionDurationMinutes: 120,
+          sessionDurationMinutes: null,
           durationMinutes: 120,
           unitPriceUsdSnapshot: 25,
           lineTotalUsdSnapshot: 50,
@@ -850,7 +851,7 @@ async function main(): Promise<void> {
           itemKind: 'addon',
           serviceVariantId: null,
           quantity: 1,
-          sessionDurationMinutes: 0,
+          sessionDurationMinutes: null,
           durationMinutes: 0,
           unitPriceUsdSnapshot: 150,
           lineTotalUsdSnapshot: 150,
@@ -861,7 +862,7 @@ async function main(): Promise<void> {
           itemKind: 'addon',
           serviceVariantId: null,
           quantity: 2,
-          sessionDurationMinutes: 0,
+          sessionDurationMinutes: null,
           durationMinutes: 0,
           unitPriceUsdSnapshot: 40,
           lineTotalUsdSnapshot: 80,
@@ -872,7 +873,7 @@ async function main(): Promise<void> {
           itemKind: 'included',
           serviceVariantId: null,
           quantity: 1,
-          sessionDurationMinutes: 0,
+          sessionDurationMinutes: null,
           durationMinutes: 0,
           unitPriceUsdSnapshot: 0,
           lineTotalUsdSnapshot: 0,
@@ -883,7 +884,7 @@ async function main(): Promise<void> {
           itemKind: 'included',
           serviceVariantId: null,
           quantity: 1,
-          sessionDurationMinutes: 0,
+          sessionDurationMinutes: null,
           durationMinutes: 0,
           unitPriceUsdSnapshot: 0,
           lineTotalUsdSnapshot: 0,
@@ -934,7 +935,7 @@ async function main(): Promise<void> {
           itemKind: 'service',
           serviceVariantId: 'svc_var_sala_prioritaria',
           quantity: 2,
-          sessionDurationMinutes: 120,
+          sessionDurationMinutes: null,
           durationMinutes: 120,
           unitPriceUsdSnapshot: 30,
           lineTotalUsdSnapshot: 60,
@@ -945,7 +946,7 @@ async function main(): Promise<void> {
           itemKind: 'included',
           serviceVariantId: null,
           quantity: 1,
-          sessionDurationMinutes: 0,
+          sessionDurationMinutes: null,
           durationMinutes: 0,
           unitPriceUsdSnapshot: 0,
           lineTotalUsdSnapshot: 0,
@@ -956,7 +957,79 @@ async function main(): Promise<void> {
           itemKind: 'included',
           serviceVariantId: null,
           quantity: 1,
-          sessionDurationMinutes: 0,
+          sessionDurationMinutes: null,
+          durationMinutes: 0,
+          unitPriceUsdSnapshot: 0,
+          lineTotalUsdSnapshot: 0,
+          clientPriceDisplay: 'included',
+        },
+      ],
+    })
+
+    const podcastResult = await persistCustomBundleSubmissionWithSql(executor, {
+      submission: caseSubmission({
+        items: [
+          {
+            itemSlug: 'podcast',
+            quantity: 1,
+            sessionDurationMinutes: 120,
+          },
+        ],
+      }),
+      publicCode: 'TUR-2099-011',
+      submittedAt: new Date('2099-01-02T12:30:00.000Z'),
+    })
+    assertResultIsPriced('casePodcast', podcastResult)
+    assert.equal(podcastResult.stage, 'persisted')
+    assert.equal(podcastResult.estimatedTotalUsd, 100)
+    assert.equal(podcastResult.totalDurationMinutes, 120)
+    assert.equal(podcastResult.serviceItemCount, 1)
+    assert.equal(podcastResult.addonItemCount, 0)
+    assert.equal(podcastResult.includedItemCount, 2)
+    assert.equal(
+      new Date(podcastResult.eventEndDateIso).getTime() - new Date(podcastResult.eventDateIso).getTime(),
+      120 * 60 * 1000,
+    )
+    assertBundle(await fetchBundleByPublicCode(client, 'TUR-2099-011'), 'TUR-2099-011', {
+      bookingMode: 'custom_bundle',
+      pricingSource: CUSTOM_BUNDLE_AUTHORITATIVE_PRICING_SOURCE,
+      status: 'under_review',
+      estimatedTotalUsd: 100,
+      currency: 'USD',
+      requesterName: 'Ana Perez',
+      requesterEmail: 'ana@example.com',
+      requesterPhone: '+584121234567',
+      eventTitle: 'Solicitud - Arma tu paquete',
+      notes: 'Observaciones del cliente',
+      itemExpectations: [
+        {
+          itemSlug: 'podcast',
+          itemKind: 'service',
+          serviceVariantId: 'svc_var_podcast',
+          quantity: 1,
+          sessionDurationMinutes: 120,
+          durationMinutes: 120,
+          unitPriceUsdSnapshot: 100,
+          lineTotalUsdSnapshot: 100,
+          clientPriceDisplay: 'itemized',
+        },
+        {
+          itemSlug: 'tecnico-sonido',
+          itemKind: 'included',
+          serviceVariantId: null,
+          quantity: 1,
+          sessionDurationMinutes: null,
+          durationMinutes: 0,
+          unitPriceUsdSnapshot: 0,
+          lineTotalUsdSnapshot: 0,
+          clientPriceDisplay: 'included',
+        },
+        {
+          itemSlug: 'backline-equipamiento',
+          itemKind: 'included',
+          serviceVariantId: null,
+          quantity: 1,
+          sessionDurationMinutes: null,
           durationMinutes: 0,
           unitPriceUsdSnapshot: 0,
           lineTotalUsdSnapshot: 0,
@@ -1064,7 +1137,7 @@ async function main(): Promise<void> {
           itemKind: 'service',
           serviceVariantId: 'svc_var_sala_premium',
           quantity: 1,
-          sessionDurationMinutes: 60,
+          sessionDurationMinutes: null,
           durationMinutes: 60,
           unitPriceUsdSnapshot: 25,
           lineTotalUsdSnapshot: 25,
@@ -1075,7 +1148,7 @@ async function main(): Promise<void> {
           itemKind: 'included',
           serviceVariantId: null,
           quantity: 1,
-          sessionDurationMinutes: 0,
+          sessionDurationMinutes: null,
           durationMinutes: 0,
           unitPriceUsdSnapshot: 0,
           lineTotalUsdSnapshot: 0,
@@ -1086,7 +1159,7 @@ async function main(): Promise<void> {
           itemKind: 'included',
           serviceVariantId: null,
           quantity: 1,
-          sessionDurationMinutes: 0,
+          sessionDurationMinutes: null,
           durationMinutes: 0,
           unitPriceUsdSnapshot: 0,
           lineTotalUsdSnapshot: 0,
@@ -1212,6 +1285,22 @@ async function main(): Promise<void> {
     assert.ok(bundle9Second.bookingRequest)
     assert.equal(bundle9First.items.length, 3)
     assert.equal(bundle9Second.items.length, 3)
+    assert.equal(
+      bundle9First.items.find((item) => item.itemSlug === 'sala-flexible')?.sessionDurationMinutes,
+      null,
+    )
+    assert.equal(
+      bundle9First.items.find((item) => item.itemSlug === 'sala-flexible')?.durationMinutes,
+      60,
+    )
+    assert.equal(
+      bundle9Second.items.find((item) => item.itemSlug === 'sala-flexible')?.sessionDurationMinutes,
+      null,
+    )
+    assert.equal(
+      bundle9Second.items.find((item) => item.itemSlug === 'sala-flexible')?.durationMinutes,
+      60,
+    )
 
     const expectedMarketplaceColumnsAfter = await collectMarketplaceColumns(client)
     assert.deepStrictEqual(expectedMarketplaceColumnsAfter, marketplaceColumnsBefore)
