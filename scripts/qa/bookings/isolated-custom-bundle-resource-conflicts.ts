@@ -5,6 +5,7 @@ import { URL } from 'node:url'
 
 import { Client } from 'pg'
 
+import { parseCaracasLocalDateTime } from '@/lib/bookings/caracas-time'
 import {
   checkCustomBundleResourceAvailabilityWithSql,
   type CheckCustomBundleResourceAvailabilityResult,
@@ -173,6 +174,17 @@ function fail(message: string): never {
 
 function deepClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
+}
+
+const CARACAS_FIXTURE_DATE = '2026-06-24'
+
+function caracasIso(time: string): string {
+  const instant = parseCaracasLocalDateTime(CARACAS_FIXTURE_DATE, time)
+  if (!instant) {
+    fail(`Invalid Caracas fixture time: ${time}`)
+  }
+
+  return instant.toISOString()
 }
 
 function isRemoteIpHost(hostname: string): boolean {
@@ -881,8 +893,8 @@ async function main(): Promise<void> {
       bookingRequestId: premiumCollisionBookingId,
       publicCode: 'TUR-6000-001',
       status: 'confirmed',
-      eventDate: '2026-06-24T10:00:00.000Z',
-      eventEndDate: '2026-06-24T12:00:00.000Z',
+      eventDate: caracasIso('10:00'),
+      eventEndDate: caracasIso('12:00'),
       resourceId: 'bkg06-resource-sala-3',
       serviceVariantId: 'bkg06-variant-sala-premium',
     })
@@ -903,8 +915,8 @@ async function main(): Promise<void> {
       bookingRequestId: premiumAllBusyBookingId,
       publicCode: 'TUR-6000-002',
       status: 'approved',
-      eventDate: '2026-06-24T10:00:00.000Z',
-      eventEndDate: '2026-06-24T12:00:00.000Z',
+      eventDate: caracasIso('10:00'),
+      eventEndDate: caracasIso('12:00'),
       resourceId: 'bkg06-resource-sala-1',
       serviceVariantId: 'bkg06-variant-sala-premium',
     })
@@ -921,8 +933,8 @@ async function main(): Promise<void> {
       bookingRequestId: grabacionCollisionBookingId,
       publicCode: 'TUR-6000-003',
       status: 'approved',
-      eventDate: '2026-06-24T10:00:00.000Z',
-      eventEndDate: '2026-06-24T11:00:00.000Z',
+      eventDate: caracasIso('10:00'),
+      eventEndDate: caracasIso('11:00'),
       resourceId: 'bkg06-resource-sala-1',
       serviceVariantId: 'bkg06-variant-grabacion-estudio',
     })
@@ -944,8 +956,8 @@ async function main(): Promise<void> {
       bookingRequestId: halfOpenEndBoundaryBookingId,
       publicCode: 'TUR-6000-004',
       status: 'confirmed',
-      eventDate: '2026-06-24T11:00:00.000Z',
-      eventEndDate: '2026-06-24T12:00:00.000Z',
+      eventDate: caracasIso('11:00'),
+      eventEndDate: caracasIso('12:00'),
       resourceId: 'bkg06-resource-sala-1',
       serviceVariantId: 'bkg06-variant-grabacion-estudio',
     })
@@ -958,8 +970,8 @@ async function main(): Promise<void> {
       bookingRequestId: halfOpenStartBoundaryBookingId,
       publicCode: 'TUR-6000-005',
       status: 'confirmed',
-      eventDate: '2026-06-24T13:00:00.000Z',
-      eventEndDate: '2026-06-24T14:00:00.000Z',
+      eventDate: caracasIso('13:00'),
+      eventEndDate: caracasIso('14:00'),
       resourceId: 'bkg06-resource-sala-1',
       serviceVariantId: 'bkg06-variant-grabacion-estudio',
     })
@@ -972,8 +984,8 @@ async function main(): Promise<void> {
       bookingRequestId: halfOpenCollisionEndBookingId,
       publicCode: 'TUR-6000-006',
       status: 'approved',
-      eventDate: '2026-06-24T11:01:00.000Z',
-      eventEndDate: '2026-06-24T12:01:00.000Z',
+      eventDate: caracasIso('11:01'),
+      eventEndDate: caracasIso('12:01'),
       resourceId: 'bkg06-resource-sala-1',
       serviceVariantId: 'bkg06-variant-grabacion-estudio',
     })
@@ -986,8 +998,8 @@ async function main(): Promise<void> {
       bookingRequestId: halfOpenCollisionStartBookingId,
       publicCode: 'TUR-6000-007',
       status: 'approved',
-      eventDate: '2026-06-24T12:59:00.000Z',
-      eventEndDate: '2026-06-24T13:59:00.000Z',
+      eventDate: caracasIso('12:59'),
+      eventEndDate: caracasIso('13:59'),
       resourceId: 'bkg06-resource-sala-1',
       serviceVariantId: 'bkg06-variant-grabacion-estudio',
     })
@@ -1041,8 +1053,8 @@ async function main(): Promise<void> {
         bookingRequestId: bookingId,
         publicCode: `TUR-6000-1${String(index).padStart(2, '0')}`,
         status: statusCase.status,
-        eventDate: '2026-06-24T10:00:00.000Z',
-        eventEndDate: '2026-06-24T11:00:00.000Z',
+        eventDate: caracasIso('10:00'),
+        eventEndDate: caracasIso('11:00'),
         resourceId: 'bkg06-resource-sala-1',
         serviceVariantId: 'bkg06-variant-grabacion-estudio',
         internalNotes: statusCase.internalNotes ?? null,
@@ -1063,8 +1075,8 @@ async function main(): Promise<void> {
       bookingRequestId: excludeBookingId,
       publicCode: 'TUR-6000-020',
       status: 'confirmed',
-      eventDate: '2026-06-24T10:00:00.000Z',
-      eventEndDate: '2026-06-24T11:00:00.000Z',
+      eventDate: caracasIso('10:00'),
+      eventEndDate: caracasIso('11:00'),
       resourceId: 'bkg06-resource-sala-1',
       serviceVariantId: 'bkg06-variant-grabacion-estudio',
     })
