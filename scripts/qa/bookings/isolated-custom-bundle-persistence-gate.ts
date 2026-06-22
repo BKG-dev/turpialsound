@@ -780,8 +780,8 @@ async function main(): Promise<void> {
     }>(client, 'SELECT current_database() AS database_name, current_user AS user_name')
     assert.equal(identityRows[0]?.database_name, EXPECTED_DATABASE)
     assert.equal(identityRows[0]?.user_name, EXPECTED_USER)
-    const before = await collectMarketplaceColumns(client)
     await client.query(baselineSql)
+    const before = await collectMarketplaceColumns(client)
     await client.query(proposedSql)
     console.log('checkpoint baseline applied')
     return before
