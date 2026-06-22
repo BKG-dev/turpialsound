@@ -59,6 +59,8 @@ type BookingRequestFixture = {
   requestFingerprint: string | null
   holdAcquiredAt: Date | null
   holdExpiresAt: Date | null
+  createdAt: Date
+  updatedAt: Date
 }
 
 function fail(message: string): never {
@@ -216,6 +218,8 @@ function buildBookingRequestFixture(overrides: Partial<BookingRequestFixture> = 
     requestFingerprint: null,
     holdAcquiredAt: null,
     holdExpiresAt: null,
+    createdAt: new Date('2026-06-22T16:00:00.000Z'),
+    updatedAt: new Date('2026-06-22T16:00:00.000Z'),
     ...overrides,
   }
 }
@@ -243,6 +247,8 @@ const BOOKING_REQUEST_COLUMNS = [
   'requestFingerprint',
   'holdAcquiredAt',
   'holdExpiresAt',
+  'createdAt',
+  'updatedAt',
 ] as const
 
 async function insertBookingRequest(client: Client, fixture: BookingRequestFixture): Promise<void> {
