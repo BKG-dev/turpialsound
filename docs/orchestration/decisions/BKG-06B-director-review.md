@@ -1,0 +1,13 @@
+- SHA reviewed: `4e2b597471347e572121ce61b876f6fb68c7fcd6`
+- Decision: `CONTINUE`
+- Result:
+  - physical resource policies completed;
+  - non-physical resource policies completed;
+  - mixed packages validated;
+  - physical query isolation validated;
+  - workflow `27982875599` succeeded;
+  - `readyForHoldsSprint` is `true`;
+  - no blockers remain;
+  - Vercel succeeded.
+- Next sprint: `BKG-07A`
+- Production: not authorized

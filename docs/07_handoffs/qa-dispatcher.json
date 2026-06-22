@@ -1,5 +1,5 @@
 {
-  "version": 11,
+  "version": 12,
   "updated_at": "2026-06-22",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
@@ -816,6 +816,78 @@
         "docs/orchestration/handoffs/BKG-06.md"
       ],
       "notes": "Isolated PostgreSQL gate for resource conflict detection and fallback assignment."
+    },
+    "booking_custom_bundle_hold_contract": {
+      "task_id": "booking_custom_bundle_hold_contract",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/custom-bundle-hold-contract.ts",
+      "preconditions": [
+        "Node and pnpm available",
+        "Dependencies installed",
+        "No application server required",
+        "No DATABASE_URL required",
+        "No browser required",
+        "No network required"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "base productiva",
+        "Neon",
+        "Supabase",
+        "Vercel DB",
+        "db push",
+        "migrate deploy",
+        "seeds",
+        "HTTP ad hoc",
+        "navegador",
+        "reverse engineering de server actions",
+        "guardar fingerprint suministrada por cliente",
+        "usar publicCode como sustituto de idempotencyKey"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-07A.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Canonical hold contract QA for the expiring BookingRequest hold and canonical fingerprint."
+    },
+    "booking_isolated_custom_bundle_hold_schema": {
+      "task_id": "booking_isolated_custom_bundle_hold_schema",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-hold-schema.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql",
+      "preconditions": [
+        "GitHub Actions available",
+        "PostgreSQL service container available",
+        "Baseline SQL generated",
+        "BKG-04 proposal validated",
+        "BKG-07 proposal validated",
+        "URL exclusively local",
+        "Isolated opt-in enabled"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "DATABASE_URL productiva",
+        "Neon",
+        "Supabase",
+        "Vercel DB",
+        "db push",
+        "migrate deploy",
+        "seeds",
+        "HTTP ad hoc",
+        "Prisma contra produccion"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-07A.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Isolated PostgreSQL gate for the hold schema and idempotency constraints."
     }
   }
 }

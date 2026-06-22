@@ -1,0 +1,27 @@
+{
+  "sprint": "BKG-07A",
+  "baseSha": "4e2b597471347e572121ce61b876f6fb68c7fcd6",
+  "model": "booking_request_as_expiring_hold",
+  "idempotency": {
+    "keySource": "trusted_server_context",
+    "fingerprintAlgorithm": "sha256",
+    "fingerprintVersion": "custom_bundle_hold_v1"
+  },
+  "validation": {
+    "workflow": "booking-isolated-custom-bundle-hold-schema.yml",
+    "status": "PENDING",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
+    "legacyCompatibilityVerified": false,
+    "holdWindowVerified": false,
+    "fingerprintVerified": false,
+    "idempotencyUniquenessVerified": false,
+    "replayClassificationVerified": false,
+    "constraintsVerified": false,
+    "cleanupVerified": false
+  },
+  "readyForHoldAcquisitionAdapter": false,
+  "readyForPaymentSprint": false,
+  "blockers": []
+}

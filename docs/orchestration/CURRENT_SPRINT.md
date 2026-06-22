@@ -1,41 +1,39 @@
 # Current Sprint
 
 Sprint:
-BKG-06B
+BKG-07A
 
 Name:
-Aplicar política de servicios sin recurso físico
+Contrato y esquema aislado de holds e idempotencia
 
 Base:
-ee15463c0737134add006b4f663ccccd7c7e6a2d
+4e2b597471347e572121ce61b876f6fb68c7fcd6
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* incorporate the explicit no_physical_resource mode;
-* eliminate the blockers for video-session and consultoria;
-* keep the validated physical policies intact;
-* validate mixed physical and non-physical packages.
+* additive hold schema proposal;
+* pure hold contract;
+* canonical fingerprint;
+* replay classification;
+* isolated PostgreSQL schema gate;
+* orchestration state bootstrap.
 
 Out of Scope:
 
-* modify the physical policy model;
-* invent generic resources;
-* map no-physical services to real rooms;
-* holds;
-* idempotency;
-* Prisma;
-* database;
-* wizard;
-* manual QA;
-* production.
+* hold acquisition;
+* resource assignment;
+* wizard wiring;
+* Prisma schema changes;
+* production;
+* manual QA.
 
 Result:
 
-READY_FOR_BKG_07
+HOLD_SCHEMA_AND_CONTRACT_PENDING_CI
 
 Next Action:
 
-ChatGPT reviews BKG-06B and defines isolated holds, expiration and idempotency.
+ChatGPT verifies the isolated hold schema and contract before BKG-07B.

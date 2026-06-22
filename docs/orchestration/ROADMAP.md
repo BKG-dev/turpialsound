@@ -87,7 +87,13 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Technical exit criteria: holds expire, retries do not duplicate work, and outcomes are predictable.
 - Main risks: orphaned holds and duplicate submissions.
 - Prohibitions: no real booking holds in Preview.
-- Status: `PLANNED`
+- Status: `IN_PROGRESS`
+- Hold schema proposal: `PENDING_CI`
+- Hold contract: `PENDING_CI`
+- Hold acquisition: `NOT_STARTED`
+- Expiration writer: `NOT_STARTED`
+- Idempotent replay: `PENDING_CI`
+- Wizard integration: `NOT_STARTED`
 
 ## 8. Consolidated Payment
 

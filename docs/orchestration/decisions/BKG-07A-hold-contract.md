@@ -1,0 +1,10 @@
+- BookingRequest will act as an expiring hold during the active window.
+- The idempotency key comes from trusted server context.
+- The fingerprint is built from authoritative, deterministic data.
+- The client does not control the hold window.
+- `holdExpiresAt` equal to `now` means the hold is expired.
+- Reusing the same key with a different fingerprint is a conflict.
+- An expired key does not create a new reservation automatically.
+- `BKG-07A` does not acquire resources.
+- `BKG-07B` will implement transactional hold acquisition.
+- No production migration is authorized.

@@ -1,6 +1,6 @@
 # QA Canonical Runbook
 
-> Fecha de actualizacion: 2026-05-09
+> Fecha de actualizacion: 2026-06-22
 > Alcance: marketplace no-booking
 > Objetivo: dejar una golden path operativa para QA/CLI sin redescubrir scripts
 
@@ -393,6 +393,51 @@ Precondiciones:
 
 Criterio de evidencia:
 - confirmar orden temporal canónico, continuidad, exclusiones, rollover de fecha y paridad de duraciones.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
+
+## Booking custom bundle hold contract
+
+Objetivo:
+- validar el contrato puro del hold expirante y la fingerprint canonica de `Arma tu paquete` sin DB, sin Prisma y sin escrituras.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-hold-contract.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar ventana de hold, fingerprint canonica, replay activo/expirado e independencia del orden.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
+
+## Booking isolated custom bundle hold schema
+
+Objetivo:
+- validar en PostgreSQL efimero el esquema aditivo de holds e idempotencia.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-hold-schema.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql`
+
+Precondiciones:
+- GitHub Actions disponible;
+- PostgreSQL service container disponible;
+- baseline SQL generado;
+- BKG-04 proposal validated;
+- BKG-07 proposal validated;
+- URL exclusivamente local;
+- opt-in aislado habilitado.
+
+Criterio de evidencia:
+- confirmar compatibilidad legacy, unicidad de idempotency, formato de fingerprint, restricciones de ventana, indices y limpieza final.
 
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
