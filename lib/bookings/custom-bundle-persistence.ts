@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto'
+
 import {
   CUSTOM_BUNDLE_AUTHORITATIVE_PRICING_SOURCE,
   repriceCustomBundleSubmission,
@@ -237,6 +239,10 @@ function buildCaracasDateTime(eventDate: string, startTime: string): Date {
 
 function formatMoneySnapshot(value: number): string {
   return value.toFixed(2)
+}
+
+function generatePersistentId(): string {
+  return randomUUID().replace(/-/g, '')
 }
 
 function toNumber(value: string | number | null | undefined): number {
@@ -599,6 +605,7 @@ export async function persistCustomBundleSubmissionWithSql(
   const eventEndDateTime = new Date(
     eventDateTime.getTime() + quote.estimate.totalDurationMinutes * 60 * 1000,
   )
+  const bookingRequestId = generatePersistentId()
 
   if (Number.isNaN(eventDateTime.getTime()) || Number.isNaN(eventEndDateTime.getTime())) {
     return buildPersistenceWriteFailure('No se pudo construir la fecha autoritativa del evento.')
@@ -653,6 +660,7 @@ export async function persistCustomBundleSubmissionWithSql(
     const bookingRequestInsert = await executor.query<BookingRequestRow>(
       `
         INSERT INTO "booking_requests" (
+          "id",
           "publicCode",
           "status",
           "priorityLevel",
@@ -673,7 +681,7 @@ export async function persistCustomBundleSubmissionWithSql(
           "createdAt",
           "updatedAt"
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW(), NOW()
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW(), NOW()
         )
         RETURNING
           "id",
@@ -684,6 +692,7 @@ export async function persistCustomBundleSubmissionWithSql(
           "currency"
       `,
       [
+        bookingRequestId,
         input.publicCode,
         BOOKING_REQUEST_STATUS,
         BOOKING_REQUEST_PRIORITY_LEVEL,
@@ -713,15 +722,20 @@ export async function persistCustomBundleSubmissionWithSql(
       throw buildPersistenceWriteFailure('No se pudo crear la solicitud de reserva.')
     })
 
-    const bookingRequestId = bookingRequestInsert.rows[0]?.id
-    if (!bookingRequestId) {
+    const persistedBookingRequestId = bookingRequestInsert.rows[0]?.id
+    if (!persistedBookingRequestId) {
       throw buildPersistenceWriteFailure('No se pudo recuperar el bookingRequest persistido.')
+    }
+    if (persistedBookingRequestId !== bookingRequestId) {
+      throw buildPersistenceWriteFailure('La solicitud persistida no coincide con el id autoritativo.')
     }
 
     for (const descriptor of descriptors) {
+      const bookingRequestItemId = generatePersistentId()
       await executor.query(
         `
           INSERT INTO "booking_request_items" (
+            "id",
             "bookingRequestId",
             "serviceVariantId",
             "resourceId",
@@ -735,13 +749,14 @@ export async function persistCustomBundleSubmissionWithSql(
           "lineTotalUsdSnapshot",
           "clientPriceDisplay",
           "notes",
-          "createdAt",
-          "updatedAt"
+            "createdAt",
+            "updatedAt"
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW()
         )
         `,
         [
+          bookingRequestItemId,
           bookingRequestId,
           descriptor.serviceVariantId,
           null,
