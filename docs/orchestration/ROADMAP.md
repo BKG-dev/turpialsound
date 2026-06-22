@@ -48,7 +48,7 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Status: `IN_PROGRESS`
 - Persistence gate: `READY_EPHEMERAL_CI` (`docs/orchestration/PERSISTENCE_GATE.json`)
 - Schema proposal: `TECHNICALLY_VALIDATED`
-- Persistence adapter: `NOT_STARTED`
+- Persistence adapter: `PENDING_CI`
 
 ## 5. Availability and Continuous Time Block
 

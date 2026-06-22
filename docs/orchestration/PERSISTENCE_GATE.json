@@ -1,6 +1,6 @@
 {
-  "sprint": "BKG-04EV",
-  "auditedSha": "1d04e09055be3c4a707981b6a7b6320e8c82b45d",
+  "sprint": "BKG-04B",
+  "auditedSha": "145d2307e91ba93e6681a7a587c3c50a3f5c3373",
   "docker": {
     "cliAvailable": false,
     "daemonAvailable": false,
@@ -46,7 +46,20 @@
     "snapshotItemsVerified": true,
     "cleanupVerified": true
   },
+  "persistenceAdapterValidation": {
+    "workflow": "booking-isolated-custom-bundle-persistence.yml",
+    "status": "PENDING",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
+    "authoritativeRepricingVerified": false,
+    "bookingRequestVerified": false,
+    "snapshotItemsVerified": false,
+    "rollbackVerified": false,
+    "cleanupVerified": false
+  },
   "readyForBkg04": true,
   "readyForPersistenceAdapter": true,
+  "readyForAvailabilitySprint": false,
   "blockers": []
 }

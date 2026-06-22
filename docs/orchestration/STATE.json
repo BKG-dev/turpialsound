@@ -4,14 +4,14 @@
   "productionSha": "d123e730807cdacf5bf96089b915506aeef20932",
   "integrationBranch": "codex/preview-arma-tu-paquete-2026-06-19",
   "orchestrationStartSha": "656ec6d7dd1c90babb42dfc7d6247b106b3ed8e0",
-  "currentSprint": "BKG-04A1",
-  "status": "TECHNICALLY_VALIDATED",
+  "currentSprint": "BKG-04B",
+  "status": "DIRECTOR_REVIEW",
   "directorDecision": "PENDING_REVIEW",
   "manualQaRequiredNow": false,
   "manualQaApproved": false,
   "productionAuthorized": false,
   "releaseCandidateSha": null,
   "previewUrl": null,
-  "lastHandoff": "docs/orchestration/handoffs/BKG-04A1.md",
-  "nextAction": "ChatGPT reviews BKG-04A1 and defines BKG-04B isolated mult-item persistence planning"
+  "lastHandoff": "docs/orchestration/handoffs/BKG-04B.md",
+  "nextAction": "ChatGPT verifies the isolated mult-item persistence workflow before starting availability work"
 }

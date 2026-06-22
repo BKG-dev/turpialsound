@@ -285,3 +285,47 @@ Criterio de evidencia:
 
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
+
+## Booking custom bundle persistence contract
+
+Objetivo:
+- validar el adaptador de persistencia mult-item aislado sin Prisma, sin red y sin escrituras reales fuera del gate efimero.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-persistence-contract.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar contract/business/server_context/catalog_resolution/persistence, rollback controlado y persistencia snapshot-backed en memoria.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
+
+## Booking isolated custom bundle persistence
+
+Objetivo:
+- validar en PostgreSQL efimero el adapter autoritativo y la persistencia snapshot-backed mult-item.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-persistence-gate.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql`
+
+Precondiciones:
+- GitHub Actions disponible;
+- PostgreSQL service container disponible;
+- baseline SQL generado;
+- propuesta SQL validada;
+- URL exclusivamente local;
+- opt-in aislado habilitado.
+
+Criterio de evidencia:
+- confirmar booking request, cinco snapshot items, catalog gaps, rollback, conflicto de publicCode y limpieza final.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
