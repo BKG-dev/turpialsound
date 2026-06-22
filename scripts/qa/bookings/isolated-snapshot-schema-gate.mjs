@@ -420,7 +420,7 @@ async function main() {
       FROM "booking_requests" br
       JOIN "booking_request_items" bri ON bri."bookingRequestId" = br.id
       WHERE br.id = $1
-      ORDER BY bri.createdAt ASC
+      ORDER BY bri."createdAt" ASC
       `,
       [ids.oldRequestId],
     )
