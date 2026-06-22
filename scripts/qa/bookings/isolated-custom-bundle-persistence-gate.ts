@@ -738,11 +738,17 @@ async function main(): Promise<void> {
 
     const executor = client as unknown as CustomBundleSqlExecutor
 
-    const case1 = await persistCustomBundleSubmissionWithSql(executor, {
-      submission: caseSubmission(),
-      publicCode: 'TUR-2099-001',
-      submittedAt: new Date('2099-01-01T12:00:00.000Z'),
-    })
+    let case1: Awaited<ReturnType<typeof persistCustomBundleSubmissionWithSql>>
+    try {
+      case1 = await persistCustomBundleSubmissionWithSql(executor, {
+        submission: caseSubmission(),
+        publicCode: 'TUR-2099-001',
+        submittedAt: new Date('2099-01-01T12:00:00.000Z'),
+      })
+    } catch (error) {
+      console.log('case1 threw', JSON.stringify(error, null, 2))
+      throw error
+    }
     console.log('case1 result', JSON.stringify(case1))
     assertResultIsPriced('case1', case1)
     assert.equal(case1.stage, 'persisted')
