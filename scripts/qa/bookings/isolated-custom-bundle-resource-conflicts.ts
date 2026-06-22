@@ -1221,12 +1221,10 @@ async function main(): Promise<void> {
   }
 }
 
-try {
-  await main()
-} catch (error) {
+void main().catch((error: unknown) => {
   if (error instanceof Error) {
     fail(error.message)
   }
 
   fail(String(error))
-}
+})
