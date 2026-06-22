@@ -93,9 +93,6 @@ class MemorySqlExecutor implements CustomBundleSqlExecutor {
 
   public failOnItemSlug: string | null = null
 
-  private bookingRequestSequence = 1
-  private bookingRequestItemSequence = 1
-
   public seedService(input: ServiceRow): void {
     this.state.services.push(input)
   }
@@ -153,7 +150,7 @@ class MemorySqlExecutor implements CustomBundleSqlExecutor {
   }
 
   private createBookingRequest(params: readonly unknown[]): BookingRequestRow {
-    const [publicCode] = params as [string]
+    const [id, publicCode] = params as [string, string]
     const existing = this.state.bookingRequests.find((row) => row.publicCode === publicCode)
     if (existing) {
       const error = new Error('duplicate public code')
@@ -164,7 +161,9 @@ class MemorySqlExecutor implements CustomBundleSqlExecutor {
       throw error
     }
 
-    const [,
+    const [
+      ,
+      ,
       status,
       priorityLevel,
       source,
@@ -184,7 +183,7 @@ class MemorySqlExecutor implements CustomBundleSqlExecutor {
     ] = params
 
     const row: BookingRequestRow = {
-      id: `br_${this.bookingRequestSequence.toString().padStart(4, '0')}`,
+      id,
       publicCode,
       bookingMode: String(bookingMode),
       pricingSource: pricingSource == null ? null : String(pricingSource),
@@ -203,14 +202,13 @@ class MemorySqlExecutor implements CustomBundleSqlExecutor {
     void eventDate
     void eventEndDate
     void priorityLevel
-
-    this.bookingRequestSequence += 1
     this.state.bookingRequests.push(row)
     return row
   }
 
   private createBookingRequestItem(params: readonly unknown[]): BookingRequestItemRow {
     const [
+      bookingRequestItemId,
       bookingRequestId,
       serviceVariantId,
       resourceId,
@@ -225,6 +223,7 @@ class MemorySqlExecutor implements CustomBundleSqlExecutor {
       clientPriceDisplay,
       notes,
     ] = params
+    void bookingRequestItemId
 
     const slug = typeof itemSlug === 'string' ? itemSlug : null
     if (this.failOnItemSlug && slug === this.failOnItemSlug) {
@@ -266,7 +265,6 @@ class MemorySqlExecutor implements CustomBundleSqlExecutor {
       notes: notes == null ? null : String(notes),
     }
 
-    this.bookingRequestItemSequence += 1
     this.state.bookingRequestItems.push(row)
     return row
   }
@@ -709,6 +707,7 @@ async function run(): Promise<void> {
     publicCode: 'TUR-2099-001',
     submittedAt: new Date('2099-01-01T12:00:00.000Z'),
   })
+  console.log('successfulResult', JSON.stringify(successfulResult))
   assert.equal(successfulResult.ok, true)
   assert.equal(successfulResult.stage, 'persisted')
   assertHasQuery(successfulExecutor, /BEGIN ISOLATION LEVEL SERIALIZABLE/i, 'successful persist')
