@@ -1,33 +1,33 @@
 # Current Sprint
 
-- Sprint: `BKG-02`
-- Name: Contrato backend multítem de Arma tu paquete
-- Objective: Define the pure, strict, versioned submission contract for the Preview mult-item booking payload.
+- Sprint: `BKG-02A`
+- Name: Endurecer el contrato backend multitem de Arma tu paquete
+- Objective: Harden the strict submission contract with isolated errors, strict session duration handling, Venezuelan phone normalization, and real catalog exhaustiveness checks.
 - State: `TECHNICALLY_VALIDATED`
-- Base: `da0d0d20329a723834f9b902752b248c59e8859c`
+- Base: `1105064abd0d2c87a8b3e40ad0bcbec54e263e65`
 
 ## Scope
 
-- pure submission contract;
-- strict parser and normalization;
-- persistence target mapping registry;
-- catalog gap detection;
-- canonical QA script;
-- orchestration decision and handoff updates;
-- runbook and dispatcher registration.
+- submission parser hardening;
+- strict requester and item validation;
+- phone normalization for Venezuelan WhatsApp numbers;
+- real catalog exhaustiveness checks in the canonical QA script;
+- orchestration decision and handoff updates.
 
 ## Out of Scope
 
 - backend persistence;
 - database writes;
 - Prisma schema changes;
+- migrations;
+- seeds;
 - payments;
 - notifications;
 - Calendar;
 - production changes;
-- connecting the wizard to the new contract;
+- connecting the wizard to the contract;
 - authoritative repricing.
 
 ## Next Action
 
-ChatGPT must review BKG-02 and decide whether to start the authoritative server repricing sprint.
+ChatGPT must review BKG-02A and decide whether to start the authoritative server repricing sprint.

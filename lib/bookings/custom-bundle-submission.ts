@@ -296,8 +296,28 @@ function isValidTime(value: string): boolean {
   return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)
 }
 
-function normalizePhoneInput(value: string): string {
-  return value.trim().replace(/[\s().-]+/g, '')
+const VENEZUELAN_WHATSAPP_PHONE_REGEX = /^\+58(412|414|416|424|426)\d{7}$/
+
+function normalizeVenezuelanWhatsappPhoneInput(value: string): string {
+  const compactValue = value.trim().replace(/[\s().-]+/g, '')
+
+  if (compactValue.startsWith('+')) {
+    return compactValue
+  }
+
+  if (compactValue.startsWith('58')) {
+    return `+${compactValue}`
+  }
+
+  if (compactValue.startsWith('0')) {
+    return `+58${compactValue.slice(1)}`
+  }
+
+  return compactValue
+}
+
+function isValidVenezuelanWhatsappPhone(value: string): boolean {
+  return VENEZUELAN_WHATSAPP_PHONE_REGEX.test(value)
 }
 
 function collectUnknownAndForbiddenFieldIssues(
@@ -344,7 +364,8 @@ function validateRequesterInput(
     return null
   }
 
-  issues.push(
+  const localIssues: CustomBundleSubmissionContractIssue[] = []
+  localIssues.push(
     ...collectUnknownAndForbiddenFieldIssues(value, CUSTOM_BUNDLE_ALLOWED_REQUESTER_FIELDS, [
       'requester',
     ]),
@@ -354,9 +375,11 @@ function validateRequesterInput(
   const emailValue = value.email
   const phoneValue = value.phone
   const consentValue = value.whatsappConsentAccepted
+  const normalizedPhone =
+    typeof phoneValue === 'string' ? normalizeVenezuelanWhatsappPhoneInput(phoneValue) : ''
 
   if (typeof nameValue !== 'string' || nameValue.trim().length === 0) {
-    issues.push(
+    localIssues.push(
       makeIssue('INVALID_STRING', ['requester', 'name'], 'name es obligatorio.'),
     )
   }
@@ -366,19 +389,27 @@ function validateRequesterInput(
     emailValue.trim().length === 0 ||
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue.trim())
   ) {
-    issues.push(
+    localIssues.push(
       makeIssue('INVALID_EMAIL', ['requester', 'email'], 'email no tiene un formato válido.'),
     )
   }
 
   if (typeof phoneValue !== 'string' || phoneValue.trim().length === 0) {
-    issues.push(
+    localIssues.push(
       makeIssue('INVALID_STRING', ['requester', 'phone'], 'phone es obligatorio.'),
+    )
+  } else if (!isValidVenezuelanWhatsappPhone(normalizedPhone)) {
+    localIssues.push(
+      makeIssue(
+        'INVALID_WHATSAPP_PHONE',
+        ['requester', 'phone'],
+        'phone debe tener formato de WhatsApp venezolano.',
+      ),
     )
   }
 
   if (consentValue !== true) {
-    issues.push(
+    localIssues.push(
       makeIssue(
         'WHATSAPP_CONSENT_REQUIRED',
         ['requester', 'whatsappConsentAccepted'],
@@ -387,29 +418,15 @@ function validateRequesterInput(
     )
   }
 
-  if (issues.length > 0) {
-    return null
-  }
-
-  const normalizedName = nameValue as string
-  const normalizedEmail = emailValue as string
-  const normalizedPhoneValue = phoneValue as string
-  const normalizedPhone = normalizePhoneInput(normalizedPhoneValue)
-  if (!/^\+?[0-9]+$/.test(normalizedPhone)) {
-    issues.push(
-      makeIssue(
-        'INVALID_STRING',
-        ['requester', 'phone'],
-        'phone sólo puede contener dígitos y un prefijo + opcional.',
-      ),
-    )
+  if (localIssues.length > 0) {
+    issues.push(...localIssues)
     return null
   }
 
   return {
-    name: normalizedName.trim(),
-    email: normalizedEmail.trim().toLowerCase(),
-    phone: normalizedPhone,
+    name: (nameValue as string).trim(),
+    email: (emailValue as string).trim().toLowerCase(),
+    phone: normalizedPhone as string,
     whatsappConsentAccepted: true,
   }
 }
@@ -427,7 +444,8 @@ function validateSubmissionItem(
     return null
   }
 
-  issues.push(
+  const localIssues: CustomBundleSubmissionContractIssue[] = []
+  localIssues.push(
     ...collectUnknownAndForbiddenFieldIssues(value, CUSTOM_BUNDLE_ALLOWED_ITEM_FIELDS, [
       'items',
       index,
@@ -436,102 +454,121 @@ function validateSubmissionItem(
 
   const itemSlugValue = value.itemSlug
   const quantityValue = value.quantity
+  const hasSessionDurationMinutes = Object.prototype.hasOwnProperty.call(
+    value,
+    'sessionDurationMinutes',
+  )
   const sessionDurationValue = value.sessionDurationMinutes
 
   if (typeof itemSlugValue !== 'string' || itemSlugValue.trim().length === 0) {
-    issues.push(
+    localIssues.push(
       makeIssue('INVALID_STRING', ['items', index, 'itemSlug'], 'itemSlug es obligatorio.'),
     )
+    issues.push(...localIssues)
     return null
   }
 
   const itemSlug = itemSlugValue
   const catalogItem = getCustomBundleItemBySlug(itemSlug)
   if (!catalogItem) {
-    issues.push(
+    localIssues.push(
       makeIssue('ITEM_NOT_FOUND', ['items', index, 'itemSlug'], `itemSlug desconocido: ${itemSlug}.`),
     )
+    issues.push(...localIssues)
     return null
   }
 
   if (!catalogItem.active) {
-    issues.push(
+    localIssues.push(
       makeIssue('ITEM_INACTIVE', ['items', index, 'itemSlug'], `itemSlug inactivo: ${itemSlug}.`),
     )
+    issues.push(...localIssues)
     return null
   }
 
   if (seenItemSlugs.has(itemSlug)) {
-    issues.push(
+    localIssues.push(
       makeIssue(
         'DUPLICATE_ITEM_SLUG',
         ['items', index, 'itemSlug'],
         `itemSlug duplicado: ${itemSlug}.`,
       ),
     )
+    issues.push(...localIssues)
     return null
   }
 
+  seenItemSlugs.add(itemSlug)
+
+  let normalizedQuantity: number | null = null
   if (!isFiniteInteger(quantityValue)) {
-    issues.push(
+    localIssues.push(
       makeIssue(
         'INVALID_QUANTITY',
         ['items', index, 'quantity'],
         'quantity debe ser un entero.',
       ),
     )
-    return null
-  }
+  } else {
+    normalizedQuantity = quantityValue
 
-  if (quantityValue < catalogItem.minimumQuantity) {
-    issues.push(
-      makeIssue(
-        'QUANTITY_BELOW_MINIMUM',
-        ['items', index, 'quantity'],
-        `quantity debe ser al menos ${catalogItem.minimumQuantity}.`,
-      ),
-    )
-  }
-
-  if (catalogItem.maximumQuantity !== null && quantityValue > catalogItem.maximumQuantity) {
-    issues.push(
-      makeIssue(
-        'QUANTITY_ABOVE_MAXIMUM',
-        ['items', index, 'quantity'],
-        `quantity no puede superar ${catalogItem.maximumQuantity}.`,
-      ),
-    )
-  }
-
-  if (catalogItem.quantityStep > 1) {
-    const alignedQuantity = quantityValue - catalogItem.minimumQuantity
-    if (alignedQuantity % catalogItem.quantityStep !== 0) {
-      issues.push(
+    if (quantityValue < catalogItem.minimumQuantity) {
+      localIssues.push(
         makeIssue(
-          'QUANTITY_STEP_INVALID',
+          'QUANTITY_BELOW_MINIMUM',
           ['items', index, 'quantity'],
-          `quantity debe avanzar en pasos de ${catalogItem.quantityStep}.`,
+          `quantity debe ser al menos ${catalogItem.minimumQuantity}.`,
         ),
       )
+    }
+
+    if (catalogItem.maximumQuantity !== null && quantityValue > catalogItem.maximumQuantity) {
+      localIssues.push(
+        makeIssue(
+          'QUANTITY_ABOVE_MAXIMUM',
+          ['items', index, 'quantity'],
+          `quantity no puede superar ${catalogItem.maximumQuantity}.`,
+        ),
+      )
+    }
+
+    if (catalogItem.quantityStep > 1) {
+      const alignedQuantity = quantityValue - catalogItem.minimumQuantity
+      if (alignedQuantity % catalogItem.quantityStep !== 0) {
+        localIssues.push(
+          makeIssue(
+            'QUANTITY_STEP_INVALID',
+            ['items', index, 'quantity'],
+            `quantity debe avanzar en pasos de ${catalogItem.quantityStep}.`,
+          ),
+        )
+      }
     }
   }
 
   if (catalogItem.included || CUSTOM_BUNDLE_SERVER_INCLUDED_ITEM_SLUG_SET.has(itemSlug)) {
-    issues.push(
+    localIssues.push(
       makeIssue(
         'ITEM_NOT_ALLOWED',
         ['items', index, 'itemSlug'],
         `itemSlug no puede ser enviado por el cliente: ${itemSlug}.`,
       ),
     )
-    return null
   }
 
   let normalizedSessionDurationMinutes: number | null = null
 
-  if (catalogItem.requiresSessionDuration) {
-    if (sessionDurationValue === null || sessionDurationValue === undefined) {
-      issues.push(
+  if (!hasSessionDurationMinutes) {
+    localIssues.push(
+      makeIssue(
+        'REQUIRED_FIELD_MISSING',
+        ['items', index, 'sessionDurationMinutes'],
+        'sessionDurationMinutes es obligatorio.',
+      ),
+    )
+  } else if (catalogItem.requiresSessionDuration) {
+    if (sessionDurationValue === null) {
+      localIssues.push(
         makeIssue(
           'SESSION_DURATION_REQUIRED',
           ['items', index, 'sessionDurationMinutes'],
@@ -539,7 +576,7 @@ function validateSubmissionItem(
         ),
       )
     } else if (!isFiniteInteger(sessionDurationValue) || sessionDurationValue <= 0) {
-      issues.push(
+      localIssues.push(
         makeIssue(
           'INVALID_SESSION_DURATION',
           ['items', index, 'sessionDurationMinutes'],
@@ -551,7 +588,7 @@ function validateSubmissionItem(
         catalogItem.minimumSessionMinutes !== null &&
         sessionDurationValue < catalogItem.minimumSessionMinutes
       ) {
-        issues.push(
+        localIssues.push(
           makeIssue(
             'SESSION_DURATION_BELOW_MINIMUM',
             ['items', index, 'sessionDurationMinutes'],
@@ -564,7 +601,7 @@ function validateSubmissionItem(
         catalogItem.maximumSessionMinutes !== null &&
         sessionDurationValue > catalogItem.maximumSessionMinutes
       ) {
-        issues.push(
+        localIssues.push(
           makeIssue(
             'SESSION_DURATION_ABOVE_MAXIMUM',
             ['items', index, 'sessionDurationMinutes'],
@@ -575,17 +612,28 @@ function validateSubmissionItem(
 
       normalizedSessionDurationMinutes = sessionDurationValue
     }
+  } else if (sessionDurationValue === null) {
+    normalizedSessionDurationMinutes = null
+  } else if (isFiniteInteger(sessionDurationValue) && sessionDurationValue > 0) {
+    normalizedSessionDurationMinutes = null
+  } else {
+    localIssues.push(
+      makeIssue(
+        'INVALID_SESSION_DURATION',
+        ['items', index, 'sessionDurationMinutes'],
+        'sessionDurationMinutes debe ser null o un entero positivo.',
+      ),
+    )
   }
 
-  if (issues.length > 0) {
+  if (localIssues.length > 0) {
+    issues.push(...localIssues)
     return null
   }
 
-  seenItemSlugs.add(itemSlug)
-
   return {
     itemSlug,
-    quantity: quantityValue,
+    quantity: normalizedQuantity as number,
     sessionDurationMinutes: normalizedSessionDurationMinutes,
   }
 }

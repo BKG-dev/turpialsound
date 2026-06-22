@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { CATALOG_VARIANTS } from '@/lib/bookings/catalog'
-import { getCustomBundleItemBySlug } from '@/lib/bookings/custom-bundle'
+import { CUSTOM_BUNDLE_ITEMS, getCustomBundleItemBySlug } from '@/lib/bookings/custom-bundle'
 import {
   CUSTOM_BUNDLE_PERSISTENCE_TARGETS,
   CUSTOM_BUNDLE_SELECTABLE_ITEM_SLUGS,
@@ -40,6 +40,20 @@ const submissionSource = readFileSync(submissionSourcePath, 'utf8')
 
 function assertNoForbiddenSourcePattern(pattern: RegExp, label: string): void {
   assert.equal(pattern.test(submissionSource), false, label)
+}
+
+function sortUniqueStrings(values: readonly string[]): string[] {
+  return [...new Set(values)].sort()
+}
+
+function assertSameStringSet(
+  left: readonly string[],
+  right: readonly string[],
+  label: string,
+): void {
+  assert.equal(new Set(left).size, left.length, `${label}: left side contains duplicates`)
+  assert.equal(new Set(right).size, right.length, `${label}: right side contains duplicates`)
+  assert.deepStrictEqual(sortUniqueStrings(left), sortUniqueStrings(right), label)
 }
 
 function createBasePayload() {
@@ -542,13 +556,250 @@ function main(): void {
     'unknown item key must be rejected',
   )
 
-  const allSelectableSlugs = [...CUSTOM_BUNDLE_SELECTABLE_ITEM_SLUGS]
+  assertParseFailure(
+    {
+      ...createBasePayload(),
+      unexpectedRootField: true,
+      items: [
+        {
+          itemSlug: 'sala-premium',
+          quantity: 1,
+          sessionDurationMinutes: null,
+        },
+        {
+          itemSlug: 'sala-premium',
+          quantity: 1,
+          sessionDurationMinutes: null,
+        },
+      ],
+    },
+    ['UNKNOWN_FIELD', 'DUPLICATE_ITEM_SLUG'],
+    'independent root and duplicate item errors must both surface',
+  )
+
+  const independentErrorsResult = parseCustomBundleSubmissionInput({
+    ...createBasePayload(),
+    unexpectedRootField: true,
+    items: [
+      {
+        itemSlug: 'sala-premium',
+        quantity: 1,
+        sessionDurationMinutes: null,
+      },
+      {
+        itemSlug: 'sala-premium',
+        quantity: 1,
+        sessionDurationMinutes: null,
+      },
+    ],
+  })
+  assert.equal(independentErrorsResult.ok, false, 'independent errors payload must fail')
+  if (independentErrorsResult.ok) {
+    throw new Error('independent errors payload must fail')
+  }
+  assertIssuePath(independentErrorsResult.issues, 'UNKNOWN_FIELD', ['unexpectedRootField'], 'independent errors payload')
+  assertIssuePath(
+    independentErrorsResult.issues,
+    'DUPLICATE_ITEM_SLUG',
+    ['items', 1, 'itemSlug'],
+    'independent errors payload',
+  )
+
+  assertParseFailure(
+    {
+      ...createBasePayload(),
+      items: [
+        {
+          itemSlug: 'sala-premium',
+          quantity: 0,
+          sessionDurationMinutes: null,
+        },
+        {
+          itemSlug: 'sala-premium',
+          quantity: 1,
+          sessionDurationMinutes: null,
+        },
+      ],
+    },
+    ['QUANTITY_BELOW_MINIMUM', 'DUPLICATE_ITEM_SLUG'],
+    'invalid first item must still reserve its slug',
+  )
+
+  const invalidFirstItemResult = parseCustomBundleSubmissionInput({
+    ...createBasePayload(),
+    items: [
+      {
+        itemSlug: 'sala-premium',
+        quantity: 0,
+        sessionDurationMinutes: null,
+      },
+      {
+        itemSlug: 'sala-premium',
+        quantity: 1,
+        sessionDurationMinutes: null,
+      },
+    ],
+  })
+  assert.equal(invalidFirstItemResult.ok, false, 'invalid first item payload must fail')
+  if (invalidFirstItemResult.ok) {
+    throw new Error('invalid first item payload must fail')
+  }
+  assertIssuePath(
+    invalidFirstItemResult.issues,
+    'QUANTITY_BELOW_MINIMUM',
+    ['items', 0, 'quantity'],
+    'invalid first item payload',
+  )
+  assertIssuePath(
+    invalidFirstItemResult.issues,
+    'DUPLICATE_ITEM_SLUG',
+    ['items', 1, 'itemSlug'],
+    'invalid first item payload',
+  )
+
+  assertParseFailure(
+    {
+      ...createBasePayload(),
+      items: [
+        {
+          itemSlug: 'sala-premium',
+          quantity: 1,
+        },
+      ],
+    },
+    ['REQUIRED_FIELD_MISSING'],
+    'missing sessionDurationMinutes must be rejected',
+  )
+
+  const missingSessionDurationResult = parseCustomBundleSubmissionInput({
+    ...createBasePayload(),
+    items: [
+      {
+        itemSlug: 'sala-premium',
+        quantity: 1,
+      },
+    ],
+  })
+  assert.equal(
+    missingSessionDurationResult.ok,
+    false,
+    'missing sessionDurationMinutes payload must fail',
+  )
+  if (missingSessionDurationResult.ok) {
+    throw new Error('missing sessionDurationMinutes payload must fail')
+  }
+  assertIssuePath(
+    missingSessionDurationResult.issues,
+    'REQUIRED_FIELD_MISSING',
+    ['items', 0, 'sessionDurationMinutes'],
+    'missing sessionDurationMinutes payload',
+  )
+
+  for (const invalidSessionDuration of ['60', 60.5, 0, -60, true] as const) {
+    assertParseFailure(
+      {
+        ...createBasePayload(),
+        items: [
+          {
+            itemSlug: 'sala-premium',
+            quantity: 1,
+            sessionDurationMinutes: invalidSessionDuration,
+          },
+        ],
+      },
+      ['INVALID_SESSION_DURATION'],
+      `non-temporal item duration ${String(invalidSessionDuration)} must be rejected`,
+    )
+  }
+
+  const nonTemporalDurationResult = parseCustomBundleSubmissionInput({
+    ...createBasePayload(),
+    items: [
+      {
+        itemSlug: 'sala-premium',
+        quantity: 1,
+        sessionDurationMinutes: 60,
+      },
+    ],
+  })
+  assert.equal(nonTemporalDurationResult.ok, true, 'non-temporal duration payload should parse')
+  if (!nonTemporalDurationResult.ok) {
+    throw new Error('non-temporal duration payload should parse')
+  }
+  assert.equal(
+    nonTemporalDurationResult.value.items[0]?.sessionDurationMinutes,
+    null,
+    'non-temporal duration must normalize to null',
+  )
+
+  const phoneNormalizationCases = [
+    {
+      rawPhone: '04121234567',
+      expectedPhone: '+584121234567',
+    },
+    {
+      rawPhone: '584121234567',
+      expectedPhone: '+584121234567',
+    },
+    {
+      rawPhone: '+58 412-123-4567',
+      expectedPhone: '+584121234567',
+    },
+  ] as const
+
+  for (const { rawPhone, expectedPhone } of phoneNormalizationCases) {
+    const result = parseCustomBundleSubmissionInput({
+      ...createBasePayload(),
+      requester: {
+        ...createBasePayload().requester,
+        phone: rawPhone,
+      },
+    })
+    assert.equal(result.ok, true, `phone normalization case ${rawPhone} should parse`)
+    if (!result.ok) {
+      throw new Error(`phone normalization case ${rawPhone} should parse`)
+    }
+    assert.equal(
+      result.value.requester.phone,
+      expectedPhone,
+      `phone normalization case ${rawPhone} should normalize to ${expectedPhone}`,
+    )
+  }
+
+  for (const invalidPhone of ['+14121234567', '+58412123', 'abc', '++584121234567'] as const) {
+    assertParseFailure(
+      {
+        ...createBasePayload(),
+        requester: {
+          ...createBasePayload().requester,
+          phone: invalidPhone,
+        },
+      },
+      ['INVALID_WHATSAPP_PHONE'],
+      `invalid phone ${invalidPhone} must be rejected`,
+    )
+  }
+
+  const activeSelectableSlugs = CUSTOM_BUNDLE_ITEMS.filter(
+    (item) => item.active && !item.included,
+  ).map((item) => item.slug)
+  const selectableItemSlugs = [...CUSTOM_BUNDLE_SELECTABLE_ITEM_SLUGS]
   const persistenceTargetKeys = Object.keys(CUSTOM_BUNDLE_PERSISTENCE_TARGETS)
 
-  assert.deepStrictEqual(
-    [...persistenceTargetKeys].sort(),
-    [...allSelectableSlugs].sort(),
-    'persistence target keys must match the selectable catalog',
+  assertSameStringSet(
+    activeSelectableSlugs,
+    selectableItemSlugs,
+    'active catalog slugs must match the selectable contract slugs',
+  )
+  assertSameStringSet(
+    activeSelectableSlugs,
+    persistenceTargetKeys,
+    'active catalog slugs must match the persistence target registry',
+  )
+  assertSameStringSet(
+    selectableItemSlugs,
+    persistenceTargetKeys,
+    'selectable contract slugs must match the persistence target registry',
   )
 
   const persistenceTargets = Object.entries(CUSTOM_BUNDLE_PERSISTENCE_TARGETS) as Array<

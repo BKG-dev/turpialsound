@@ -4,7 +4,7 @@
   "productionSha": "d123e730807cdacf5bf96089b915506aeef20932",
   "integrationBranch": "codex/preview-arma-tu-paquete-2026-06-19",
   "orchestrationStartSha": "656ec6d7dd1c90babb42dfc7d6247b106b3ed8e0",
-  "currentSprint": "BKG-02",
+  "currentSprint": "BKG-02A",
   "status": "TECHNICALLY_VALIDATED",
   "directorDecision": "PENDING_REVIEW",
   "manualQaRequiredNow": false,
@@ -12,6 +12,6 @@
   "productionAuthorized": false,
   "releaseCandidateSha": null,
   "previewUrl": null,
-  "lastHandoff": "docs/orchestration/handoffs/BKG-02.md",
-  "nextAction": "ChatGPT reviews BKG-02 and decides whether to start authoritative server repricing"
+  "lastHandoff": "docs/orchestration/handoffs/BKG-02A.md",
+  "nextAction": "ChatGPT reviews BKG-02A and decides whether to start authoritative server repricing"
 }
