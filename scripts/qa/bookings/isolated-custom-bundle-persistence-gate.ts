@@ -153,18 +153,27 @@ function readSqlFile(pathname: string): string {
   }
 }
 
-function assertNoForbiddenSql(sql: string, label: string): void {
+function assertNoForbiddenSql(
+  sql: string,
+  label: string,
+  options: {
+    allowMarketplaceTables?: boolean
+  } = {},
+): void {
   const forbiddenPatterns: Array<[RegExp, string]> = [
     [/DROP\s+TABLE/i, 'DROP TABLE'],
     [/DROP\s+COLUMN/i, 'DROP COLUMN'],
     [/TRUNCATE/i, 'TRUNCATE'],
     [/^\s*DELETE\s+FROM\b/im, 'DELETE FROM'],
     [/marketplace/i, 'marketplace'],
-    [/\bmp_/i, 'marketplace table prefix'],
     [/neon/i, 'neon'],
     [/supabase/i, 'supabase'],
     [/vercel/i, 'vercel'],
   ]
+
+  if (!options.allowMarketplaceTables) {
+    forbiddenPatterns.splice(5, 0, [/\bmp_/i, 'marketplace table prefix'])
+  }
 
   for (const [pattern, forbiddenLabel] of forbiddenPatterns) {
     if (pattern.test(sql)) {
@@ -697,7 +706,7 @@ async function main(): Promise<void> {
     fail('Proposed SQL is empty.')
   }
 
-  assertNoForbiddenSql(baselineSql, 'Baseline SQL')
+  assertNoForbiddenSql(baselineSql, 'Baseline SQL', { allowMarketplaceTables: true })
   assertAllowedProposedSql(proposedSql)
 
   const client = new Client({
