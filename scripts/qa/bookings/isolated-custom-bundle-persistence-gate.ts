@@ -676,9 +676,8 @@ function assertResultIsPriced(
   Awaited<ReturnType<typeof persistCustomBundleSubmissionWithSql>>,
   { ok: true }
 > {
-  assert.equal(result.ok, true, `${label} must be priced`)
   if (!result.ok) {
-    throw new Error(`${label} expected priced result`)
+    throw new Error(`${label} returned stage ${result.stage}`)
   }
 }
 
