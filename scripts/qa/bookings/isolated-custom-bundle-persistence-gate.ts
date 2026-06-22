@@ -528,6 +528,12 @@ async function seedCatalog(client: Client): Promise<{
 
   const variants: ServiceVariantSeed[] = [
     {
+      id: 'svc_var_sala_flexible',
+      slug: 'sala-ensayo-flexible',
+      name: 'Sala Flexible',
+      serviceId: 'svc_sala',
+    },
+    {
       id: 'svc_var_sala_premium',
       slug: 'sala-ensayo-premium',
       name: 'Sala Premium',
@@ -1228,6 +1234,7 @@ async function main(): Promise<void> {
       `
         DELETE FROM "service_variants"
         WHERE slug IN (
+          'sala-ensayo-flexible',
           'sala-ensayo-premium',
           'sala-ensayo-prioritaria',
           'grabacion-hora-estudio',
@@ -1269,6 +1276,7 @@ async function main(): Promise<void> {
           )) AS item_count,
           (SELECT COUNT(*)::int FROM "booking_requests" WHERE "publicCode" LIKE 'TUR-2099-%') AS request_count,
           (SELECT COUNT(*)::int FROM "service_variants" WHERE slug IN (
+            'sala-ensayo-flexible',
             'sala-ensayo-premium',
             'sala-ensayo-prioritaria',
             'grabacion-hora-estudio',
