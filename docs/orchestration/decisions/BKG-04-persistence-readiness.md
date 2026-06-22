@@ -1,0 +1,22 @@
+# BKG-04 Persistence Readiness
+
+- Gate audited SHA: `7f5167daa3e0d353e2a6d7385f41cbd103da6be3`
+- Docker CLI: unavailable
+- Docker daemon: unavailable
+- Docker Compose: unavailable
+- PostgreSQL CLI: unavailable
+- `pg_dump`: unavailable
+- Selected strategy: `snapshot_backed_booking_request_items`
+- Architecture approved: yes
+- Migration strategy: `two_phase_additive_migration`
+- Isolated database available now: no
+- `readyForBkg04`: false
+- Blockers:
+  - `DOCKER_CLI_UNAVAILABLE`
+  - `DOCKER_DAEMON_UNAVAILABLE`
+  - `DOCKER_COMPOSE_UNAVAILABLE`
+  - `PSQL_UNAVAILABLE`
+  - `PG_DUMP_UNAVAILABLE`
+  - `ISOLATED_DATABASE_NOT_CREATED`
+- Next action: create the isolated database setup step before `BKG-04`
+- Production: not authorized

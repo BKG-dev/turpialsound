@@ -36,7 +36,7 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Technical exit criteria: server recomputes totals, durations, surcharges, and incompatibilities deterministically.
 - Main risks: divergence between client and server calculations.
 - Prohibitions: no mutative tests against production data.
-- Status: `TECHNICALLY_VALIDATED`
+- Status: `DONE`
 
 ## 4. Persist `BookingRequest` with Multiple `BookingRequestItem`
 
@@ -46,6 +46,7 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Main risks: partial writes, duplicate items, and recovery edge cases.
 - Prohibitions: no production migrations, no production seeds, no production `db push`.
 - Status: `PLANNED`
+- Persistence gate: `BLOCKED` (`docs/orchestration/PERSISTENCE_GATE.json`)
 
 ## 5. Availability and Continuous Time Block
 
