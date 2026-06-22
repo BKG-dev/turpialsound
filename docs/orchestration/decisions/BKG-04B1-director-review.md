@@ -6,9 +6,9 @@
 ## Approved Result
 
 - snapshots temporales corregidos;
-- duraciÃ³n explÃ­cita preservada;
-- duraciÃ³n calculada preservada;
-- conexiÃ³n Ãºnica obligatoria;
+- duración explícita preservada;
+- duración calculada preservada;
+- conexión única obligatoria;
 - invariantes controladas;
 - rollback validado;
 - persistencia aislada validada;

@@ -1,5 +1,5 @@
 {
-  "version": 10,
+  "version": 11,
   "updated_at": "2026-06-22",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
@@ -751,6 +751,71 @@
       ],
       "last_validated_at": "2026-06-22",
       "notes": "Canonical QA route for the continuous schedule planner and continuous block builder."
+    },
+    "booking_custom_bundle_resource_policy": {
+      "task_id": "booking_custom_bundle_resource_policy",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/custom-bundle-resource-policy.ts",
+      "preconditions": [
+        "Node and pnpm available",
+        "Dependencies installed",
+        "No application server required",
+        "No DATABASE_URL required",
+        "No browser required",
+        "No network required"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "CDP improvisado",
+        "Reverse engineering de server actions",
+        "HTTP ad hoc",
+        "Pruebas contra base productiva",
+        "Usar scripts experimentales como sustitucion"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-06.md"
+      ],
+      "notes": "Canonical QA route for the resource policy map and managed service candidate priority."
+    },
+    "booking_isolated_custom_bundle_resource_conflicts": {
+      "task_id": "booking_isolated_custom_bundle_resource_conflicts",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-resource-conflicts.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql",
+      "preconditions": [
+        "GitHub Actions available",
+        "PostgreSQL service container available",
+        "Baseline SQL generated",
+        "Proposed SQL validated",
+        "URL exclusively local",
+        "Isolated opt-in enabled",
+        "Single-connection SQL session available"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "DATABASE_URL productiva",
+        "Neon",
+        "Supabase",
+        "Vercel DB",
+        "db push",
+        "migrate deploy",
+        "seeds",
+        "HTTP ad hoc",
+        "Prisma contra produccion",
+        "browser",
+        "asumir disponibilidad para un servicio sin politica"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-06.md"
+      ],
+      "notes": "Isolated PostgreSQL gate for resource conflict detection and fallback assignment."
     }
   }
 }

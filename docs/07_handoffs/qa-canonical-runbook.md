@@ -240,6 +240,51 @@ Criterio de evidencia:
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
 
+## Booking custom bundle resource policy
+
+Objetivo:
+- validar la politica canonica de recursos fisicos para las lineas temporales del paquete.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-resource-policy.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar la politica de recursos para servicios gestionados, la prioridad de candidatos y la exclusion de servicios sin politica.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
+
+## Booking isolated custom bundle resource conflicts
+
+Objetivo:
+- validar en PostgreSQL efimero la asignacion de recursos y la deteccion aislada de colisiones.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-resource-conflicts.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql`
+
+Precondiciones:
+- GitHub Actions disponible;
+- PostgreSQL service container disponible;
+- baseline SQL generado;
+- propuesta SQL validada;
+- URL exclusivamente local;
+- opt-in aislado habilitado;
+- single-connection SQL session disponible.
+
+Criterio de evidencia:
+- confirmar catalogo de recursos, prioridad de candidatos, intervalos half-open, estados de bloqueo, asignacion de fallback, adapter de solo lectura, rollback y limpieza final.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
+
 ## Booking custom bundle submission contract
 
 Objetivo:

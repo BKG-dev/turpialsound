@@ -1,0 +1,37 @@
+{
+  "sprint": "BKG-06",
+  "baseSha": "262e2adc77b7f25b66ca8cfa58b5a171da51720d",
+  "resourcePolicy": {
+    "managedServiceSlugs": [
+      "sala-ensayo",
+      "grabacion",
+      "podcast-locucion"
+    ],
+    "unmappedServiceSlugs": [
+      "video-session",
+      "consultoria"
+    ]
+  },
+  "validation": {
+    "workflow": "booking-isolated-custom-bundle-resource-conflicts.yml",
+    "status": "PENDING",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
+    "resourceCatalogVerified": false,
+    "candidatePriorityVerified": false,
+    "halfOpenIntervalsVerified": false,
+    "blockingStatusesVerified": false,
+    "fallbackAssignmentVerified": false,
+    "readOnlyVerified": false,
+    "rollbackVerified": false,
+    "cleanupVerified": false
+  },
+  "resourceEngineTechnicallyValidated": false,
+  "readyForResourcePolicyDecision": false,
+  "readyForHoldsSprint": false,
+  "blockers": [
+    "VIDEO_SESSION_RESOURCE_POLICY_UNDEFINED",
+    "CONSULTORIA_RESOURCE_POLICY_UNDEFINED"
+  ]
+}

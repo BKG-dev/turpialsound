@@ -1,29 +1,28 @@
 # Current Sprint
 
 Sprint:
-BKG-05
+BKG-06
 
 Name:
-Cálculo autoritativo del bloque continuo
+Asignacion de recursos y deteccion aislada de colisiones
 
 Base:
-b3e4b184555d465ce8561fd51589033f6b133949
+262e2adc77b7f25b66ca8cfa58b5a171da51720d
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* validate and recompute the bundle through the authoritative quote;
-* build a continuous block from temporal components only;
-* exclude non-temporal lines from the schedule;
-* keep persistence and resource assignment out of scope.
+* build the canonical resource policy for managed services;
+* resolve candidate physical resources from the authoritative schedule;
+* detect isolated conflicts with read-only SQL;
+* keep resourceId out of persistence and out of the wizard.
 
 Out of Scope:
 
-* resource assignment;
-* collision detection;
 * holds;
+* resource persistence;
 * wizard wiring;
 * production writes;
 * manual QA;
@@ -31,8 +30,8 @@ Out of Scope:
 
 Result:
 
-READY_FOR_BKG_06
+RESOURCE_CONFLICT_GATE_PENDING_CI
 
 Next Action:
 
-ChatGPT reviews BKG-05 and defines resource assignment and collision detection.
+ChatGPT verifies the isolated resource conflict workflow and resolves the remaining resource policy gaps.
