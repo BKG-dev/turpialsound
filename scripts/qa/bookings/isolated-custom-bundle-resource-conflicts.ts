@@ -370,22 +370,6 @@ function assertResourceCatalogIssue(
   assert.equal(result.resourceSlug, resourceSlug)
 }
 
-function assertPolicyIssue(
-  result: CheckCustomBundleResourceAvailabilityResult,
-  expectedServiceSlug: string,
-): void {
-  assert.equal(result.ok, false)
-  assert.equal(result.stage, 'resource_policy')
-  if (result.ok || result.stage !== 'resource_policy') {
-    throw new Error('Expected a resource policy issue.')
-  }
-
-  assert.ok(
-    result.policyIssues.some((issue) => issue.serviceSlug === expectedServiceSlug),
-    `Expected resource policy issue for ${expectedServiceSlug}.`,
-  )
-}
-
 function assertServerContextIssue(
   result: CheckCustomBundleResourceAvailabilityResult,
   code: 'INVALID_SQL_SESSION' | 'INVALID_EXCLUDED_BOOKING_ID',
@@ -397,6 +381,13 @@ function assertServerContextIssue(
   }
 
   assert.equal(result.code, code)
+}
+
+function assertNoPhysicalSqlCalls(calls: TracedCall[]): void {
+  assert.equal(calls.length, 2)
+  assert.equal(/^\s*BEGIN\b/i.test(calls[0]?.sql ?? ''), true)
+  assert.equal(/^\s*ROLLBACK\b/i.test(calls[1]?.sql ?? ''), true)
+  assertReadOnlyAdapterCalls(calls)
 }
 
 function assertReadOnlyAdapterCalls(calls: TracedCall[]): void {
@@ -789,10 +780,18 @@ async function runAvailabilityCase(
 
 function assertPlanAllocations(
   plan: CustomBundleResourceAvailabilityPlan,
-  expectedAssignments: Array<[string, string]>,
+  expectedAssignments: Array<{
+    itemSlug: string
+    mode: 'physical' | 'no_physical_resource'
+    resourceSlug: string | null
+  }>,
 ): void {
   assert.deepStrictEqual(
-    plan.allocations.map((allocation) => [allocation.itemSlug, allocation.assignedResource.resourceSlug]),
+    plan.allocations.map((allocation) => ({
+      itemSlug: allocation.itemSlug,
+      mode: allocation.mode,
+      resourceSlug: allocation.assignedResource?.resourceSlug ?? null,
+    })),
     expectedAssignments,
   )
 }
@@ -882,10 +881,73 @@ async function main(): Promise<void> {
       'locucion',
     ])
     assertPlanAllocations(salaPremiumAvailable.result.plan, [
-      ['sala-premium', 'sala-3-ensayo'],
-      ['grabacion-estudio', 'sala-1-grande'],
-      ['podcast', 'sala-2-podcast-locucion'],
-      ['locucion', 'sala-2-podcast-locucion'],
+      {
+        itemSlug: 'sala-premium',
+        mode: 'physical',
+        resourceSlug: 'sala-3-ensayo',
+      },
+      {
+        itemSlug: 'grabacion-estudio',
+        mode: 'physical',
+        resourceSlug: 'sala-1-grande',
+      },
+      {
+        itemSlug: 'podcast',
+        mode: 'physical',
+        resourceSlug: 'sala-2-podcast-locucion',
+      },
+      {
+        itemSlug: 'locucion',
+        mode: 'physical',
+        resourceSlug: 'sala-2-podcast-locucion',
+      },
+    ])
+
+    const mixedModesPayload = buildPayload([
+      { itemSlug: 'sala-premium', quantity: 2, sessionDurationMinutes: null },
+      { itemSlug: 'podcast', quantity: 1, sessionDurationMinutes: 120 },
+      { itemSlug: 'studio-session', quantity: 1, sessionDurationMinutes: 180 },
+      { itemSlug: 'consultoria-produccion', quantity: 1, sessionDurationMinutes: null },
+    ])
+    const mixedModesResult = await runAvailabilityCase(client, mixedModesPayload)
+    assertAvailabilityOk(mixedModesResult.result)
+    assertReadOnlyCallsOrFail(mixedModesResult.calls)
+    assertScheduleMatches(mixedModesResult.result.plan, [
+      'sala-premium',
+      'podcast',
+      'studio-session',
+      'consultoria-produccion',
+    ])
+    assertPlanAllocations(mixedModesResult.result.plan, [
+      {
+        itemSlug: 'sala-premium',
+        mode: 'physical',
+        resourceSlug: 'sala-3-ensayo',
+      },
+      {
+        itemSlug: 'podcast',
+        mode: 'physical',
+        resourceSlug: 'sala-2-podcast-locucion',
+      },
+      {
+        itemSlug: 'studio-session',
+        mode: 'no_physical_resource',
+        resourceSlug: null,
+      },
+      {
+        itemSlug: 'consultoria-produccion',
+        mode: 'no_physical_resource',
+        resourceSlug: null,
+      },
+    ])
+    const mixedModesResourceQuery = mixedModesResult.calls.find((call) =>
+      /FROM resources/i.test(call.sql),
+    )
+    assert.ok(mixedModesResourceQuery)
+    assert.deepStrictEqual(mixedModesResourceQuery?.params?.[0], [
+      'sala-3-ensayo',
+      'sala-1-grande',
+      'sala-2-podcast-locucion',
     ])
 
     const premiumCollisionBookingId = 'bkg06-booking-premium-collision'
@@ -905,7 +967,7 @@ async function main(): Promise<void> {
     const premiumFallbackResult = await runAvailabilityCase(client, premiumFallbackPayload)
     assertAvailabilityOk(premiumFallbackResult.result)
     assert.equal(
-      premiumFallbackResult.result.plan.allocations[0]?.assignedResource.resourceSlug,
+      premiumFallbackResult.result.plan.allocations[0]?.assignedResource?.resourceSlug,
       'sala-1-grande',
     )
     assertReadOnlyCallsOrFail(premiumFallbackResult.calls)
@@ -945,11 +1007,12 @@ async function main(): Promise<void> {
     assertCollision(grabacionOnlyResult.result, 'grabacion-estudio', ['sala-1-grande'])
     await deleteBookingFixture(client, grabacionCollisionBookingId)
 
-    const halfOpenPayload = buildPayload([
-      { itemSlug: 'grabacion-estudio', quantity: 1, sessionDurationMinutes: null },
-    ], {
-      startTime: '12:00',
-    })
+    const halfOpenPayload = buildPayload(
+      [{ itemSlug: 'grabacion-estudio', quantity: 1, sessionDurationMinutes: null }],
+      {
+        startTime: '12:00',
+      },
+    )
 
     const halfOpenEndBoundaryBookingId = 'bkg06-booking-half-open-end'
     await insertBookingFixture(client, {
@@ -1006,6 +1069,79 @@ async function main(): Promise<void> {
     const halfOpenCollisionStartResult = await runAvailabilityCase(client, halfOpenPayload)
     assertCollision(halfOpenCollisionStartResult.result, 'grabacion-estudio', ['sala-1-grande'])
     await deleteBookingFixture(client, halfOpenCollisionStartBookingId)
+
+    const studioSessionOnlyPayload = buildPayload([
+      { itemSlug: 'studio-session', quantity: 1, sessionDurationMinutes: 180 },
+    ])
+    const studioSessionOnlyResult = await runAvailabilityCase(client, studioSessionOnlyPayload)
+    assertAvailabilityOk(studioSessionOnlyResult.result)
+    assertNoPhysicalSqlCalls(studioSessionOnlyResult.calls)
+    assertPlanAllocations(studioSessionOnlyResult.result.plan, [
+      {
+        itemSlug: 'studio-session',
+        mode: 'no_physical_resource',
+        resourceSlug: null,
+      },
+    ])
+
+    const consultoriaOnlyPayload = buildPayload([
+      { itemSlug: 'consultoria-produccion', quantity: 1, sessionDurationMinutes: null },
+    ])
+    const consultoriaOnlyResult = await runAvailabilityCase(client, consultoriaOnlyPayload)
+    assertAvailabilityOk(consultoriaOnlyResult.result)
+    assertNoPhysicalSqlCalls(consultoriaOnlyResult.calls)
+    assertPlanAllocations(consultoriaOnlyResult.result.plan, [
+      {
+        itemSlug: 'consultoria-produccion',
+        mode: 'no_physical_resource',
+        resourceSlug: null,
+      },
+    ])
+
+    const bothNoPhysicalPayload = buildPayload([
+      { itemSlug: 'studio-session', quantity: 1, sessionDurationMinutes: 180 },
+      { itemSlug: 'consultoria-produccion', quantity: 1, sessionDurationMinutes: null },
+    ])
+    const bothNoPhysicalResult = await runAvailabilityCase(client, bothNoPhysicalPayload)
+    assertAvailabilityOk(bothNoPhysicalResult.result)
+    assertNoPhysicalSqlCalls(bothNoPhysicalResult.calls)
+    assertPlanAllocations(bothNoPhysicalResult.result.plan, [
+      {
+        itemSlug: 'studio-session',
+        mode: 'no_physical_resource',
+        resourceSlug: null,
+      },
+      {
+        itemSlug: 'consultoria-produccion',
+        mode: 'no_physical_resource',
+        resourceSlug: null,
+      },
+    ])
+
+    const blockedPhysicalResources = [
+      { bookingId: 'bkg06-booking-blocked-sala-3', resourceId: 'bkg06-resource-sala-3', resourceSlug: 'sala-3-ensayo' },
+      { bookingId: 'bkg06-booking-blocked-sala-1', resourceId: 'bkg06-resource-sala-1', resourceSlug: 'sala-1-grande' },
+      { bookingId: 'bkg06-booking-blocked-sala-2', resourceId: 'bkg06-resource-sala-2', resourceSlug: 'sala-2-podcast-locucion' },
+    ] as const
+    for (const blockedResource of blockedPhysicalResources) {
+      await insertBookingFixture(client, {
+        bookingRequestId: blockedResource.bookingId,
+        publicCode: `TUR-6000-${blockedResource.resourceSlug.replace(/[^0-9]/g, '').slice(-3).padStart(3, '0')}`,
+        status: 'confirmed',
+        eventDate: caracasIso('10:00'),
+        eventEndDate: caracasIso('12:00'),
+        resourceId: blockedResource.resourceId,
+        serviceVariantId: 'bkg06-variant-sala-premium',
+      })
+    }
+
+    const noPhysicalWithBusyRoomsResult = await runAvailabilityCase(client, bothNoPhysicalPayload)
+    assertAvailabilityOk(noPhysicalWithBusyRoomsResult.result)
+    assertNoPhysicalSqlCalls(noPhysicalWithBusyRoomsResult.calls)
+
+    for (const blockedResource of blockedPhysicalResources) {
+      await deleteBookingFixture(client, blockedResource.bookingId)
+    }
 
     const statusMatrixCases: Array<{
       status: string
@@ -1102,20 +1238,6 @@ async function main(): Promise<void> {
     assertResourceCatalogIssue(missingResourceResult.result, 'RESOURCE_NOT_FOUND', 'sala-2-podcast-locucion')
     await insertResource(client, catalog.resources['sala-2-podcast-locucion'])
 
-    const policyBlockedPayload = buildPayload([
-      { itemSlug: 'studio-session', quantity: 1, sessionDurationMinutes: 180 },
-      { itemSlug: 'consultoria-produccion', quantity: 1, sessionDurationMinutes: null },
-    ])
-    const policyBlockedTraced = new TracedSqlSession(client)
-    const policyBlockedResult = await checkCustomBundleResourceAvailabilityWithSql(
-      policyBlockedTraced,
-      {
-        submission: policyBlockedPayload,
-      },
-    )
-    assertPolicyIssue(policyBlockedResult, 'video-session')
-    assert.equal(policyBlockedTraced.calls.length, 0)
-
     const invalidSessionResult = await checkCustomBundleResourceAvailabilityWithSql(
       {
         transactionScope: 'different_scope' as never,
@@ -1161,7 +1283,7 @@ async function main(): Promise<void> {
 
     const interactivePlan = readOnlyResult.plan
     assert.deepStrictEqual(
-      interactivePlan.allocations.map((allocation) => allocation.assignedResource.resourceSlug),
+      interactivePlan.allocations.map((allocation) => allocation.assignedResource?.resourceSlug),
       ['sala-3-ensayo', 'sala-1-grande', 'sala-2-podcast-locucion', 'sala-2-podcast-locucion'],
     )
 
@@ -1220,10 +1342,13 @@ async function main(): Promise<void> {
     console.log('booking_isolated_custom_bundle_resource_conflicts OK')
     console.log('resource catalog: verified')
     console.log('candidate priority: verified')
+    console.log('no physical allocations: verified')
+    console.log('mixed resource allocation: verified')
+    console.log('physical query isolation: verified')
     console.log('half-open intervals: verified')
     console.log('blocking statuses: verified')
     console.log('fallback assignment: verified')
-    console.log('unmapped policies blocked: verified')
+    console.log('unknown policies blocked: verified')
     console.log('read-only adapter: verified')
     console.log('rollback: verified')
     console.log('cleanup: verified')

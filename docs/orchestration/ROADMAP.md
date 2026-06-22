@@ -72,12 +72,12 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Main risks: hidden resource collisions and incomplete exclusion rules.
 - Prohibitions: no reverse-engineered server-action flows for QA.
 - Status: `IN_PROGRESS`
-- Resource engine: `TECHNICALLY_VALIDATED_FOR_MANAGED_SERVICES`
-- Resource assignment: `TECHNICALLY_VALIDATED_FOR_MANAGED_SERVICES`
-- Resource policy: `TECHNICALLY_VALIDATED_FOR_MANAGED_SERVICES`
+- Resource engine: `PENDING_POLICY_CI`
+- Resource assignment: `PENDING_POLICY_CI`
+- Resource policy: `OWNER_DECISION_RECORDED`
 - Resource catalog resolution: `TECHNICALLY_VALIDATED`
-- Collision detection: `TECHNICALLY_VALIDATED`
-- Policy coverage: `BLOCKED_PENDING_BUSINESS_DECISION`
+- Collision detection: `TECHNICALLY_VALIDATED_PENDING_POLICY_REGRESSION`
+- Policy coverage: `COMPLETE_PENDING_CI`
 - Holds: `NOT_STARTED`
 
 ## 7. Holds, Expiration, and Idempotency

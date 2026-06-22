@@ -1,32 +1,31 @@
 # Current Sprint
 
 Sprint:
-BKG-06A
+BKG-06B
 
 Name:
-Normalización de cobertura de políticas de recursos
+Aplicar política de servicios sin recurso físico
 
 Base:
 ee15463c0737134add006b4f663ccccd7c7e6a2d
 
 State:
-BLOCKED
+DIRECTOR_REVIEW
 
 Scope:
 
-* correct the Hito 6 state;
-* preserve the technical evidence of the workflow;
-* document the managed policies;
-* request the two pending business decisions.
+* incorporate the explicit no_physical_resource mode;
+* eliminate the blockers for video-session and consultoria;
+* keep the validated physical policies intact;
+* validate mixed physical and non-physical packages.
 
 Out of Scope:
 
-* modify the functional policy;
-* choose resources for Studio Session;
-* choose resources for Consultoria;
+* modify the physical policy model;
+* invent generic resources;
+* map no-physical services to real rooms;
 * holds;
 * idempotency;
-* resourceId persistence;
 * Prisma;
 * database;
 * wizard;
@@ -35,8 +34,8 @@ Out of Scope:
 
 Result:
 
-OWNER_RESOURCE_POLICY_REQUIRED
+NO_PHYSICAL_RESOURCE_POLICY_PENDING_CI
 
 Next Action:
 
-Jean defines the physical resource policy for Studio Session and Consultoria before BKG-07.
+ChatGPT verifies the owner resource policy implementation before BKG-07.

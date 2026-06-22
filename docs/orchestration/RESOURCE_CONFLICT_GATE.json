@@ -1,37 +1,47 @@
 {
-  "sprint": "BKG-06",
-  "baseSha": "262e2adc77b7f25b66ca8cfa58b5a171da51720d",
+  "sprint": "BKG-06B",
+  "baseSha": "ee15463c0737134add006b4f663ccccd7c7e6a2d",
   "resourcePolicy": {
     "managedServiceSlugs": [
       "sala-ensayo",
       "grabacion",
-      "podcast-locucion"
-    ],
-    "unmappedServiceSlugs": [
+      "podcast-locucion",
       "video-session",
       "consultoria"
-    ]
+    ],
+    "physicalServiceSlugs": [
+      "sala-ensayo",
+      "grabacion",
+      "podcast-locucion"
+    ],
+    "noPhysicalResourceServiceSlugs": [
+      "video-session",
+      "consultoria"
+    ],
+    "unmappedServiceSlugs": []
   },
   "validation": {
     "workflow": "booking-isolated-custom-bundle-resource-conflicts.yml",
-    "status": "SUCCESS",
-    "runId": 27978551492,
-    "validatedHeadSha": "e5b0dad3a40b38435a375c814221ecbb15f604d9",
-    "conclusion": "success",
-    "resourceCatalogVerified": true,
-    "candidatePriorityVerified": true,
-    "halfOpenIntervalsVerified": true,
-    "blockingStatusesVerified": true,
-    "fallbackAssignmentVerified": true,
-    "readOnlyVerified": true,
-    "rollbackVerified": true,
-    "cleanupVerified": true
+    "status": "PENDING_POLICY_UPDATE",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
+    "resourceCatalogVerified": false,
+    "candidatePriorityVerified": false,
+    "halfOpenIntervalsVerified": false,
+    "blockingStatusesVerified": false,
+    "fallbackAssignmentVerified": false,
+    "readOnlyVerified": false,
+    "rollbackVerified": false,
+    "cleanupVerified": false
   },
-  "resourceEngineTechnicallyValidated": true,
-  "readyForResourcePolicyDecision": true,
+  "resourceEngineTechnicallyValidated": false,
+  "readyForResourcePolicyDecision": false,
   "readyForHoldsSprint": false,
+  "noPhysicalPolicyVerified": false,
+  "mixedResourceModesVerified": false,
+  "physicalQueryIsolationVerified": false,
   "blockers": [
-    "VIDEO_SESSION_RESOURCE_POLICY_UNDEFINED",
-    "CONSULTORIA_RESOURCE_POLICY_UNDEFINED"
+    "RESOURCE_POLICY_UPDATE_NOT_VALIDATED"
   ]
 }

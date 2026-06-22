@@ -5,6 +5,7 @@ import { resolve } from 'node:path'
 import {
   buildCustomBundleResourceRequirements,
   getCustomBundleResourcePolicyCandidates,
+  getCustomBundleResourcePolicy,
 } from '@/lib/bookings/custom-bundle-resource-policy'
 import { planCustomBundleContinuousSchedule } from '@/lib/bookings/custom-bundle-schedule'
 import { repriceCustomBundleSubmission } from '@/lib/bookings/custom-bundle-repricing'
@@ -121,25 +122,28 @@ function assertRequirements(
   }
 }
 
-function assertPolicyIssues(
+function assertResourceRequirementsMode(
   scheduleResult: Extract<ReturnType<typeof planCustomBundleContinuousSchedule>, { ok: true }>['schedule'],
   quoteResult: Extract<ReturnType<typeof planCustomBundleContinuousSchedule>, { ok: true }>['quote'],
-  expectedCodes: string[],
-  expectedServiceSlug: string,
+  expectedRequirements: Array<{
+    itemSlug: string
+    mode: 'physical' | 'no_physical_resource'
+    candidateResourceSlugs: string[]
+  }>,
 ): void {
   const requirementsResult = buildCustomBundleResourceRequirements(quoteResult, scheduleResult)
-  assert.equal(requirementsResult.ok, false)
-  if (requirementsResult.ok) {
-    throw new Error('Resource requirements must fail.')
+  assert.equal(requirementsResult.ok, true)
+  if (!requirementsResult.ok) {
+    throw new Error('Resource requirements must be valid.')
   }
 
   assert.deepStrictEqual(
-    requirementsResult.issues.map((issue) => issue.code),
-    expectedCodes,
-  )
-  assert.ok(
-    requirementsResult.issues.some((issue) => issue.serviceSlug === expectedServiceSlug),
-    `Expected service slug ${expectedServiceSlug} to be blocked.`,
+    requirementsResult.requirements.map((requirement) => ({
+      itemSlug: requirement.itemSlug,
+      mode: requirement.mode,
+      candidateResourceSlugs: requirement.candidateResourceSlugs,
+    })),
+    expectedRequirements,
   )
 }
 
@@ -187,6 +191,16 @@ function main(): void {
     locucion: ['sala-2-podcast-locucion'],
   })
 
+  const videoSessionPolicy = getCustomBundleResourcePolicy('video-session')
+  assert.ok(videoSessionPolicy)
+  assert.equal(videoSessionPolicy?.mode, 'no_physical_resource')
+  assert.deepStrictEqual(videoSessionPolicy?.candidateResourceSlugs, [])
+
+  const consultoriaPolicy = getCustomBundleResourcePolicy('consultoria')
+  assert.ok(consultoriaPolicy)
+  assert.equal(consultoriaPolicy?.mode, 'no_physical_resource')
+  assert.deepStrictEqual(consultoriaPolicy?.candidateResourceSlugs, [])
+
   const mixedPayload = buildPayload([
     { itemSlug: 'locucion', quantity: 1, sessionDurationMinutes: null },
     { itemSlug: 'grabacion-estudio', quantity: 1, sessionDurationMinutes: null },
@@ -211,17 +225,40 @@ function main(): void {
     locucion: ['sala-2-podcast-locucion'],
   })
 
-  const studioSessionPlan = planCustomBundleContinuousSchedule(
-    buildPayload([{ itemSlug: 'studio-session', quantity: 1, sessionDurationMinutes: 180 }]),
+  const mixedModesPayload = buildPayload([
+    { itemSlug: 'consultoria-produccion', quantity: 1, sessionDurationMinutes: null },
+    { itemSlug: 'studio-session', quantity: 1, sessionDurationMinutes: 180 },
+    { itemSlug: 'podcast', quantity: 1, sessionDurationMinutes: 120 },
+    { itemSlug: 'sala-premium', quantity: 2, sessionDurationMinutes: null },
+  ])
+  const mixedModesPlan = planCustomBundleContinuousSchedule(deepClone(mixedModesPayload))
+  assertPlanScheduled(mixedModesPlan)
+  assert.deepStrictEqual(
+    mixedModesPlan.schedule.components.map((component) => component.itemSlug),
+    ['sala-premium', 'podcast', 'studio-session', 'consultoria-produccion'],
   )
-  assertPlanScheduled(studioSessionPlan)
-  assertPolicyIssues(studioSessionPlan.schedule, studioSessionPlan.quote, ['RESOURCE_POLICY_MISSING'], 'video-session')
-
-  const consultoriaPlan = planCustomBundleContinuousSchedule(
-    buildPayload([{ itemSlug: 'consultoria-produccion', quantity: 1, sessionDurationMinutes: null }]),
-  )
-  assertPlanScheduled(consultoriaPlan)
-  assertPolicyIssues(consultoriaPlan.schedule, consultoriaPlan.quote, ['RESOURCE_POLICY_MISSING'], 'consultoria')
+  assertResourceRequirementsMode(mixedModesPlan.schedule, mixedModesPlan.quote, [
+    {
+      itemSlug: 'sala-premium',
+      mode: 'physical',
+      candidateResourceSlugs: ['sala-3-ensayo', 'sala-1-grande'],
+    },
+    {
+      itemSlug: 'podcast',
+      mode: 'physical',
+      candidateResourceSlugs: ['sala-2-podcast-locucion'],
+    },
+    {
+      itemSlug: 'studio-session',
+      mode: 'no_physical_resource',
+      candidateResourceSlugs: [],
+    },
+    {
+      itemSlug: 'consultoria-produccion',
+      mode: 'no_physical_resource',
+      candidateResourceSlugs: [],
+    },
+  ])
 
   const excludedPayload = buildPayload([
     { itemSlug: 'sala-premium', quantity: 1, sessionDurationMinutes: null },
@@ -269,10 +306,16 @@ function main(): void {
   const policyCandidates = getCustomBundleResourcePolicyCandidates('sala-ensayo')
   assert.deepStrictEqual(policyCandidates, ['sala-3-ensayo', 'sala-1-grande'])
 
+  const unknownPolicy = getCustomBundleResourcePolicy('future-service')
+  assert.equal(unknownPolicy, null)
+  assert.equal(getCustomBundleResourcePolicyCandidates('future-service'), null)
+
   console.log('booking_custom_bundle_resource_policy OK')
   console.log('managed resource policy: verified')
   console.log('candidate priority: verified')
-  console.log('unmapped services blocked: verified')
+  console.log('no physical resource policy: verified')
+  console.log('mixed resource modes: verified')
+  console.log('unknown policies blocked: verified')
   console.log('schedule order: verified')
   console.log('immutability: verified')
 }

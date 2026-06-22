@@ -1,5 +1,8 @@
 import {
   buildCustomBundleResourceRequirements,
+  type CustomBundleCanonicalResourceSlug,
+  type CustomBundlePhysicalResourceRequirement,
+  type CustomBundleResourceRequirement,
   type CustomBundleResourcePolicyIssue,
 } from '@/lib/bookings/custom-bundle-resource-policy'
 import type { CustomBundleAuthoritativeQuote } from '@/lib/bookings/custom-bundle-repricing'
@@ -36,15 +39,31 @@ export interface CustomBundleResolvedResource {
   resourceName: string
 }
 
-export interface CustomBundleResourceAllocation {
+export interface CustomBundlePhysicalResourceAllocation {
+  mode: 'physical'
   itemSlug: string
   itemName: string
   serviceSlug: string
   startsAtIso: string
   endsAtIso: string
-  candidateResourceSlugs: readonly string[]
+  candidateResourceSlugs: readonly CustomBundleCanonicalResourceSlug[]
   assignedResource: CustomBundleResolvedResource
 }
+
+export interface CustomBundleNoPhysicalResourceAllocation {
+  mode: 'no_physical_resource'
+  itemSlug: string
+  itemName: string
+  serviceSlug: string
+  startsAtIso: string
+  endsAtIso: string
+  candidateResourceSlugs: readonly []
+  assignedResource: null
+}
+
+export type CustomBundleResourceAllocation =
+  | CustomBundlePhysicalResourceAllocation
+  | CustomBundleNoPhysicalResourceAllocation
 
 export interface CustomBundleResourceAvailabilityPlan {
   quote: CustomBundleAuthoritativeQuote
@@ -199,13 +218,21 @@ function normalizeExcludedBookingRequestId(
   return normalized
 }
 
-function collectCandidateResourceSlugs(
-  requirements: ReadonlyArray<{ candidateResourceSlugs: readonly string[] }>,
-): string[] {
+function isPhysicalRequirement(
+  requirement: CustomBundleResourceRequirement,
+): requirement is CustomBundlePhysicalResourceRequirement {
+  return requirement.mode === 'physical'
+}
+
+function collectCandidateResourceSlugs(requirements: ReadonlyArray<CustomBundleResourceRequirement>): string[] {
   const collected: string[] = []
   const seen = new Set<string>()
 
   for (const requirement of requirements) {
+    if (!isPhysicalRequirement(requirement)) {
+      continue
+    }
+
     for (const candidateResourceSlug of requirement.candidateResourceSlugs) {
       if (seen.has(candidateResourceSlug)) {
         continue
@@ -220,13 +247,17 @@ function collectCandidateResourceSlugs(
 }
 
 function collectCandidateResourceIds(
-  requirements: ReadonlyArray<{ candidateResourceSlugs: readonly string[] }>,
+  requirements: ReadonlyArray<CustomBundleResourceRequirement>,
   resourcesBySlug: ReadonlyMap<string, ResourceCatalogRow>,
 ): string[] {
   const collected: string[] = []
   const seen = new Set<string>()
 
   for (const requirement of requirements) {
+    if (!isPhysicalRequirement(requirement)) {
+      continue
+    }
+
     for (const candidateResourceSlug of requirement.candidateResourceSlugs) {
       const resource = resourcesBySlug.get(candidateResourceSlug)
       if (!resource || seen.has(resource.id)) {
@@ -398,21 +429,31 @@ async function findCollidingResourceIds(
 }
 
 function buildResourceAllocationPlan(
-  requirements: Array<{
-    itemSlug: string
-    itemName: string
-    serviceSlug: string
-    startsAtIso: string
-    endsAtIso: string
-    candidateResourceSlugs: readonly string[]
-  }>,
+  requirements: CustomBundleResourceRequirement[],
   catalog: ResourceCatalogResolution,
   collidingResourceIdsByRequirement: Array<Set<string>>,
 ): CustomBundleResourceAllocation[] {
   const allocations: CustomBundleResourceAllocation[] = []
+  let physicalIndex = 0
 
-  requirements.forEach((requirement, index) => {
-    const collidingResourceIds = collidingResourceIdsByRequirement[index] ?? new Set<string>()
+  for (const requirement of requirements) {
+    if (requirement.mode === 'no_physical_resource') {
+      allocations.push({
+        mode: 'no_physical_resource',
+        itemSlug: requirement.itemSlug,
+        itemName: requirement.itemName,
+        serviceSlug: requirement.serviceSlug,
+        startsAtIso: requirement.startsAtIso,
+        endsAtIso: requirement.endsAtIso,
+        candidateResourceSlugs: [],
+        assignedResource: null,
+      })
+      continue
+    }
+
+    const collidingResourceIds = collidingResourceIdsByRequirement[physicalIndex] ?? new Set<string>()
+    physicalIndex += 1
+
     const assignedResource = requirement.candidateResourceSlugs
       .map((resourceSlug) => catalog.resourcesBySlug.get(resourceSlug))
       .find((resource): resource is ResourceCatalogRow => {
@@ -424,10 +465,11 @@ function buildResourceAllocationPlan(
       })
 
     if (!assignedResource) {
-      return
+      continue
     }
 
     allocations.push({
+      mode: 'physical',
       itemSlug: requirement.itemSlug,
       itemName: requirement.itemName,
       serviceSlug: requirement.serviceSlug,
@@ -440,7 +482,7 @@ function buildResourceAllocationPlan(
         resourceName: assignedResource.name,
       },
     })
-  })
+  }
 
   return allocations
 }
@@ -505,69 +547,70 @@ export async function checkCustomBundleResourceAvailabilityWithSql(
   }
 
   const requirements = requirementsResult.requirements
-  const candidateResourceSlugs = collectCandidateResourceSlugs(requirements)
+  const physicalRequirements = requirements.filter(isPhysicalRequirement)
+  const candidateResourceSlugs = collectCandidateResourceSlugs(physicalRequirements)
 
   let transactionStarted = false
   try {
     await session.query('BEGIN ISOLATION LEVEL SERIALIZABLE')
     transactionStarted = true
 
-    const catalogResult = await resolveResourceCatalog(session, candidateResourceSlugs)
-    if (!catalogResult.ok) {
-      await rollbackSilently(session)
-      transactionStarted = false
-      return catalogResult
-    }
+    let catalogResult: Awaited<ReturnType<typeof resolveResourceCatalog>> | null = null
 
-    const candidateResourceIds = collectCandidateResourceIds(
-      requirements,
-      catalogResult.catalog.resourcesBySlug,
-    )
-    await lockResourceRows(session, candidateResourceIds)
-
-    const collidingResourceIdsByRequirement: Array<Set<string>> = []
-
-    for (const requirement of requirements) {
-      const resourceIds = requirement.candidateResourceSlugs
-        .map((resourceSlug) => catalogResult.catalog.resourcesBySlug.get(resourceSlug)?.id)
-        .filter((resourceId): resourceId is string => Boolean(resourceId))
-
-      const collidingResourceIds = await findCollidingResourceIds(
-        session,
-        resourceIds,
-        requirement.startsAtIso,
-        requirement.endsAtIso,
-        normalizedExcludeBookingRequestId,
-      )
-      collidingResourceIdsByRequirement.push(collidingResourceIds)
-
-      const assignedResource = requirement.candidateResourceSlugs
-        .map((resourceSlug) => catalogResult.catalog.resourcesBySlug.get(resourceSlug))
-        .find((resource): resource is ResourceCatalogRow => {
-          if (!resource) {
-            return false
-          }
-
-          return !collidingResourceIds.has(resource.id)
-        })
-
-      if (!assignedResource) {
+    if (physicalRequirements.length > 0) {
+      catalogResult = await resolveResourceCatalog(session, candidateResourceSlugs)
+      if (!catalogResult.ok) {
         await rollbackSilently(session)
         transactionStarted = false
-        return buildCollisionIssue(
-          requirement.itemSlug,
-          requirement.startsAtIso,
-          requirement.endsAtIso,
-          [...requirement.candidateResourceSlugs],
-        )
+        return catalogResult
       }
     }
 
-    const allocations = buildResourceAllocationPlan(
-      requirements,
-      catalogResult.catalog,
-      collidingResourceIdsByRequirement,
-    )
+    const collidingResourceIdsByRequirement: Array<Set<string>> = []
+    const catalog = catalogResult?.ok ? catalogResult.catalog : { resourcesBySlug: new Map() }
+
+    if (physicalRequirements.length > 0 && catalogResult?.ok) {
+      const candidateResourceIds = collectCandidateResourceIds(physicalRequirements, catalog.resourcesBySlug)
+      await lockResourceRows(session, candidateResourceIds)
+
+      for (const requirement of physicalRequirements) {
+        const resourceIds = requirement.candidateResourceSlugs
+          .map((resourceSlug) => catalog.resourcesBySlug.get(resourceSlug)?.id)
+          .filter((resourceId): resourceId is string => Boolean(resourceId))
+
+        const collidingResourceIds = await findCollidingResourceIds(
+          session,
+          resourceIds,
+          requirement.startsAtIso,
+          requirement.endsAtIso,
+          normalizedExcludeBookingRequestId,
+        )
+        collidingResourceIdsByRequirement.push(collidingResourceIds)
+
+        const assignedResource = requirement.candidateResourceSlugs
+          .map((resourceSlug) => catalog.resourcesBySlug.get(resourceSlug))
+          .find((resource): resource is ResourceCatalogRow => {
+            if (!resource) {
+              return false
+            }
+
+            return !collidingResourceIds.has(resource.id)
+          })
+
+        if (!assignedResource) {
+          await rollbackSilently(session)
+          transactionStarted = false
+          return buildCollisionIssue(
+            requirement.itemSlug,
+            requirement.startsAtIso,
+            requirement.endsAtIso,
+            [...requirement.candidateResourceSlugs],
+          )
+        }
+      }
+    }
+
+    const allocations = buildResourceAllocationPlan(requirements, catalog, collidingResourceIdsByRequirement)
 
     await rollbackSilently(session)
     transactionStarted = false

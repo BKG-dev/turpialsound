@@ -18,13 +18,47 @@ export const CUSTOM_BUNDLE_CANONICAL_RESOURCE_SLUGS = [
 export type CustomBundleCanonicalResourceSlug =
   (typeof CUSTOM_BUNDLE_CANONICAL_RESOURCE_SLUGS)[number]
 
-const CUSTOM_BUNDLE_RESOURCE_POLICY_BY_SERVICE = {
-  'sala-ensayo': ['sala-3-ensayo', 'sala-1-grande'],
-  grabacion: ['sala-1-grande'],
-  'podcast-locucion': ['sala-2-podcast-locucion'],
-} as const satisfies Record<string, readonly CustomBundleCanonicalResourceSlug[]>
+export type CustomBundleResourcePolicyMode = 'physical' | 'no_physical_resource'
 
-export interface CustomBundleResourceRequirement {
+export interface CustomBundlePhysicalResourcePolicy {
+  mode: 'physical'
+  candidateResourceSlugs: readonly CustomBundleCanonicalResourceSlug[]
+}
+
+export interface CustomBundleNoPhysicalResourcePolicy {
+  mode: 'no_physical_resource'
+  candidateResourceSlugs: readonly []
+}
+
+export type CustomBundleResourcePolicy =
+  | CustomBundlePhysicalResourcePolicy
+  | CustomBundleNoPhysicalResourcePolicy
+
+const CUSTOM_BUNDLE_RESOURCE_POLICY_BY_SERVICE = {
+  'sala-ensayo': {
+    mode: 'physical',
+    candidateResourceSlugs: ['sala-3-ensayo', 'sala-1-grande'],
+  },
+  grabacion: {
+    mode: 'physical',
+    candidateResourceSlugs: ['sala-1-grande'],
+  },
+  'podcast-locucion': {
+    mode: 'physical',
+    candidateResourceSlugs: ['sala-2-podcast-locucion'],
+  },
+  'video-session': {
+    mode: 'no_physical_resource',
+    candidateResourceSlugs: [],
+  },
+  consultoria: {
+    mode: 'no_physical_resource',
+    candidateResourceSlugs: [],
+  },
+} as const satisfies Record<string, CustomBundleResourcePolicy>
+
+export interface CustomBundlePhysicalResourceRequirement {
+  mode: 'physical'
   itemSlug: string
   itemName: string
   serviceSlug: string
@@ -34,6 +68,22 @@ export interface CustomBundleResourceRequirement {
   endOffsetMinutes: number
   candidateResourceSlugs: readonly CustomBundleCanonicalResourceSlug[]
 }
+
+export interface CustomBundleNoPhysicalResourceRequirement {
+  mode: 'no_physical_resource'
+  itemSlug: string
+  itemName: string
+  serviceSlug: string
+  startsAtIso: string
+  endsAtIso: string
+  startOffsetMinutes: number
+  endOffsetMinutes: number
+  candidateResourceSlugs: readonly []
+}
+
+export type CustomBundleResourceRequirement =
+  | CustomBundlePhysicalResourceRequirement
+  | CustomBundleNoPhysicalResourceRequirement
 
 export interface CustomBundleResourcePolicyIssue {
   code:
@@ -65,7 +115,7 @@ function makePolicyIssue(
   return serviceSlug ? { code, message, itemSlug, serviceSlug } : { code, message, itemSlug }
 }
 
-function getResourcePolicy(serviceSlug: string): readonly CustomBundleCanonicalResourceSlug[] | null {
+function getResourcePolicy(serviceSlug: string): CustomBundleResourcePolicy | null {
   return CUSTOM_BUNDLE_RESOURCE_POLICY_BY_SERVICE[
     serviceSlug as keyof typeof CUSTOM_BUNDLE_RESOURCE_POLICY_BY_SERVICE
   ] ?? null
@@ -170,8 +220,8 @@ export function buildCustomBundleResourceRequirements(
       continue
     }
 
-    const candidateResourceSlugs = getResourcePolicy(persistenceTarget.serviceSlug)
-    if (!candidateResourceSlugs) {
+    const resourcePolicy = getResourcePolicy(persistenceTarget.serviceSlug)
+    if (!resourcePolicy) {
       issues.push(
         makePolicyIssue(
           'RESOURCE_POLICY_MISSING',
@@ -201,17 +251,32 @@ export function buildCustomBundleResourceRequirements(
       continue
     }
 
-    requirements.push({
-      itemSlug: component.itemSlug,
-      itemName: component.itemName,
-      serviceSlug: persistenceTarget.serviceSlug,
-      startsAtIso: component.startsAtIso,
-      endsAtIso: component.endsAtIso,
-      startOffsetMinutes: component.startOffsetMinutes,
-      endOffsetMinutes: component.endOffsetMinutes,
-      candidateResourceSlugs: [...candidateResourceSlugs],
-    })
-  }
+      if (resourcePolicy.mode === 'physical') {
+        requirements.push({
+          mode: 'physical',
+          itemSlug: component.itemSlug,
+          itemName: component.itemName,
+          serviceSlug: persistenceTarget.serviceSlug,
+          startsAtIso: component.startsAtIso,
+          endsAtIso: component.endsAtIso,
+          startOffsetMinutes: component.startOffsetMinutes,
+          endOffsetMinutes: component.endOffsetMinutes,
+          candidateResourceSlugs: [...resourcePolicy.candidateResourceSlugs],
+        })
+      } else {
+        requirements.push({
+          mode: 'no_physical_resource',
+          itemSlug: component.itemSlug,
+          itemName: component.itemName,
+          serviceSlug: persistenceTarget.serviceSlug,
+          startsAtIso: component.startsAtIso,
+          endsAtIso: component.endsAtIso,
+          startOffsetMinutes: component.startOffsetMinutes,
+          endOffsetMinutes: component.endOffsetMinutes,
+          candidateResourceSlugs: [],
+        })
+      }
+    }
 
   if (issues.length > 0) {
     return {
@@ -230,7 +295,21 @@ export function getCustomBundleResourcePolicyCandidates(
   serviceSlug: string,
 ): readonly CustomBundleCanonicalResourceSlug[] | null {
   const policy = getResourcePolicy(serviceSlug)
-  return policy ? [...policy] : null
+  return policy ? [...policy.candidateResourceSlugs] : null
+}
+
+export function getCustomBundleResourcePolicy(
+  serviceSlug: string,
+): CustomBundleResourcePolicy | null {
+  const policy = getResourcePolicy(serviceSlug)
+  if (!policy) {
+    return null
+  }
+
+  return {
+    mode: policy.mode,
+    candidateResourceSlugs: [...policy.candidateResourceSlugs] as readonly CustomBundleCanonicalResourceSlug[],
+  } as CustomBundleResourcePolicy
 }
 
 export function getCustomBundleTemporalResourceOrder(
