@@ -78,8 +78,11 @@
 
 ## Risks
 
-- policy coverage for Studio Session and Consultoria remains a deliberate business-decision gap.
-- resource assignment must remain deterministic across future catalog updates.
+- managed resource policies passed;
+- resource catalog and collision detection passed;
+- Studio Session policy remains undefined;
+- Consultoria policy remains undefined;
+- holds cannot begin until both decisions are explicit.
 
 ## Blockers
 
@@ -96,8 +99,8 @@
 
 ## Recommended State
 
-- `TECHNICALLY_VALIDATED`
+- `TECHNICALLY_VALIDATED_FOR_MANAGED_SERVICES`
 
 ## Director Next Action
 
-- ChatGPT reviews BKG-06 and decides whether to start BKG-07 after resolving the remaining resource policy gaps.
+- Jean defines the physical resource policy for Studio Session and Consultoria before BKG-07.

@@ -71,9 +71,10 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Technical exit criteria: conflicts are detected before any write and surfaced clearly to the user.
 - Main risks: hidden resource collisions and incomplete exclusion rules.
 - Prohibitions: no reverse-engineered server-action flows for QA.
-- Status: `TECHNICALLY_VALIDATED`
-- Resource assignment: `TECHNICALLY_VALIDATED`
-- Resource policy: `TECHNICALLY_VALIDATED`
+- Status: `IN_PROGRESS`
+- Resource engine: `TECHNICALLY_VALIDATED_FOR_MANAGED_SERVICES`
+- Resource assignment: `TECHNICALLY_VALIDATED_FOR_MANAGED_SERVICES`
+- Resource policy: `TECHNICALLY_VALIDATED_FOR_MANAGED_SERVICES`
 - Resource catalog resolution: `TECHNICALLY_VALIDATED`
 - Collision detection: `TECHNICALLY_VALIDATED`
 - Policy coverage: `BLOCKED_PENDING_BUSINESS_DECISION`

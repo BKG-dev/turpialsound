@@ -1,37 +1,42 @@
 # Current Sprint
 
 Sprint:
-BKG-06
+BKG-06A
 
 Name:
-Asignacion de recursos y deteccion aislada de colisiones
+Normalización de cobertura de políticas de recursos
 
 Base:
-262e2adc77b7f25b66ca8cfa58b5a171da51720d
+ee15463c0737134add006b4f663ccccd7c7e6a2d
 
 State:
-TECHNICALLY_VALIDATED
+BLOCKED
 
 Scope:
 
-* build the canonical resource policy for managed services;
-* resolve candidate physical resources from the authoritative schedule;
-* detect isolated conflicts with read-only SQL;
-* keep resourceId out of persistence and out of the wizard.
+* correct the Hito 6 state;
+* preserve the technical evidence of the workflow;
+* document the managed policies;
+* request the two pending business decisions.
 
 Out of Scope:
 
+* modify the functional policy;
+* choose resources for Studio Session;
+* choose resources for Consultoria;
 * holds;
-* resource persistence;
-* wizard wiring;
-* production writes;
+* idempotency;
+* resourceId persistence;
+* Prisma;
+* database;
+* wizard;
 * manual QA;
-* Vercel config.
+* production.
 
 Result:
 
-TECHNICALLY_VALIDATED
+OWNER_RESOURCE_POLICY_REQUIRED
 
 Next Action:
 
-ChatGPT reviews BKG-06 and decides whether to start BKG-07 after resolving the remaining resource policy gaps.
+Jean defines the physical resource policy for Studio Session and Consultoria before BKG-07.
