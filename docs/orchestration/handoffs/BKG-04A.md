@@ -54,7 +54,23 @@
 
 ## Automated Tests
 
-- pending remote workflow validation
+- `gh run view 27948828220 --json databaseId,headSha,status,conclusion,event,workflowName,url,jobs`
+- `gh run view 27948828220 --log`
+- `booking_isolated_snapshot_schema_gate OK`
+- `legacy compatibility: verified`
+- `snapshot items: verified`
+- `unique slug: verified`
+- `foreign key: verified`
+- `cleanup: verified`
+
+## Remote Validation
+
+- Run ID: `27948828220`
+- Workflow: `Booking Isolated Snapshot Schema`
+- Head SHA: `c45ca6470ea2fd5092af1b5b739e3fa213c584d6`
+- Job: `gate`
+- Conclusion: `success`
+- Repository clean: verified
 
 ## Risks
 
@@ -63,7 +79,7 @@
 
 ## Blockers
 
-- remote workflow pending
+- none
 
 ## Vercel Status
 
@@ -75,7 +91,7 @@
 
 ## Recommended State
 
-- `DIRECTOR_REVIEW`
+- `TECHNICALLY_VALIDATED`
 
 ## Director Next Action
 

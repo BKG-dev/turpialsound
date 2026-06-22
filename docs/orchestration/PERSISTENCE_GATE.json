@@ -38,15 +38,15 @@
   },
   "schemaProposalValidation": {
     "workflow": "booking-isolated-snapshot-schema.yml",
-    "status": "PENDING",
-    "runId": null,
-    "validatedHeadSha": null,
-    "conclusion": null,
-    "legacyCompatibilityVerified": false,
-    "snapshotItemsVerified": false,
-    "cleanupVerified": false
+    "status": "SUCCESS",
+    "runId": "27948828220",
+    "validatedHeadSha": "c45ca6470ea2fd5092af1b5b739e3fa213c584d6",
+    "conclusion": "success",
+    "legacyCompatibilityVerified": true,
+    "snapshotItemsVerified": true,
+    "cleanupVerified": true
   },
   "readyForBkg04": true,
-  "readyForPersistenceAdapter": false,
+  "readyForPersistenceAdapter": true,
   "blockers": []
 }
