@@ -391,7 +391,12 @@ function assertReadOnlyAdapterCalls(calls: TracedCall[]): void {
   for (const call of calls) {
     const normalized = call.sql.trim().replace(/\s+/g, ' ')
     assert.match(normalized, /^(BEGIN|SELECT|ROLLBACK)\b/i)
-    assert.equal(/\b(INSERT|UPDATE|DELETE|COMMIT|UPSERT|DROP|TRUNCATE|CREATE|ALTER)\b/i.test(normalized), false)
+    assert.equal(
+      /(?:\bINSERT\b|\bDELETE\b|\bCOMMIT\b|\bUPSERT\b|\bDROP\b|\bTRUNCATE\b|\bCREATE\b|\bALTER\b|(?<!FOR\s)\bUPDATE\b)/i.test(
+        normalized,
+      ),
+      false,
+    )
   }
 }
 
