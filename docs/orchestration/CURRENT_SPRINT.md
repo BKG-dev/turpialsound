@@ -1,18 +1,17 @@
 # Current Sprint
 
-- Sprint: `BKG-04E`
-- Name: PostgreSQL efimero aislado en GitHub Actions
-- Objective: Prove that an ephemeral PostgreSQL service container in GitHub Actions can execute a reversible mutative probe without touching production or requiring local Docker.
-- State: `DIRECTOR_REVIEW`
-- Base: `3cbaf93922221f3d0e33c74dd1b5504fc51cb176`
+- Sprint: `BKG-04EV`
+- Name: Verificacion remota del PostgreSQL efimero
+- Objective: verify the GitHub Actions ephemeral PostgreSQL gate, version the evidence, and unlock the isolated persistence gate for BKG-04.
+- State: `TECHNICALLY_VALIDATED`
+- Base: `1d04e09055be3c4a707981b6a7b6320e8c82b45d`
 
 ## Scope
 
-- create the GitHub Actions gate workflow;
-- create the isolated PostgreSQL probe script;
-- keep anti-production controls explicit;
-- update persistence gate state and orchestration docs;
-- wait for remote workflow validation.
+- verify the remote GitHub Actions run and logs;
+- version the run ID, conclusion, and safety evidence;
+- update the persistence gate state and orchestration docs;
+- keep production blocked until the Director reviews the gate.
 
 ## Out of Scope
 
@@ -25,10 +24,10 @@
 - production changes;
 - QA manual.
 
-## Expected Result
+## Result
 
-The remote workflow is pending and must be verified by the Director before `BKG-04` can start.
+`READY_FOR_BKG_04`
 
 ## Next Action
 
-ChatGPT verifies the ephemeral PostgreSQL workflow and decides whether `BKG-04` can start.
+ChatGPT reviews the validated ephemeral PostgreSQL gate and defines BKG-04 isolated persistence.
