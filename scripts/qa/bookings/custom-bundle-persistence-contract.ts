@@ -707,7 +707,6 @@ async function run(): Promise<void> {
     publicCode: 'TUR-2099-001',
     submittedAt: new Date('2099-01-01T12:00:00.000Z'),
   })
-  console.log('successfulResult', JSON.stringify(successfulResult))
   assert.equal(successfulResult.ok, true)
   assert.equal(successfulResult.stage, 'persisted')
   assertHasQuery(successfulExecutor, /BEGIN ISOLATION LEVEL SERIALIZABLE/i, 'successful persist')

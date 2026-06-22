@@ -1015,7 +1015,7 @@ async function main(): Promise<void> {
       submission: caseSubmission({
         items: [
           {
-            itemSlug: 'mezcla',
+            itemSlug: 'sala-premium',
             quantity: 1,
             sessionDurationMinutes: null,
           },
@@ -1029,7 +1029,7 @@ async function main(): Promise<void> {
       submission: caseSubmission({
         items: [
           {
-            itemSlug: 'master',
+            itemSlug: 'sala-premium',
             quantity: 1,
             sessionDurationMinutes: null,
           },
@@ -1045,7 +1045,7 @@ async function main(): Promise<void> {
       bookingMode: 'custom_bundle',
       pricingSource: CUSTOM_BUNDLE_AUTHORITATIVE_PRICING_SOURCE,
       status: 'under_review',
-      estimatedTotalUsd: 240,
+      estimatedTotalUsd: 25,
       currency: 'USD',
       requesterName: 'Ana Perez',
       requesterEmail: 'ana@example.com',
@@ -1054,14 +1054,14 @@ async function main(): Promise<void> {
       notes: 'Observaciones del cliente',
       itemExpectations: [
         {
-          itemSlug: 'mezcla',
+          itemSlug: 'sala-premium',
           itemKind: 'service',
-          serviceVariantId: 'svc_var_mezcla',
+          serviceVariantId: 'svc_var_sala_premium',
           quantity: 1,
-          sessionDurationMinutes: 0,
-          durationMinutes: 0,
-          unitPriceUsdSnapshot: 150,
-          lineTotalUsdSnapshot: 150,
+          sessionDurationMinutes: 60,
+          durationMinutes: 60,
+          unitPriceUsdSnapshot: 25,
+          lineTotalUsdSnapshot: 25,
           clientPriceDisplay: 'itemized',
         },
         {
@@ -1161,7 +1161,7 @@ async function main(): Promise<void> {
       submission: caseSubmission({
         items: [
           {
-            itemSlug: 'master',
+            itemSlug: 'sala-flexible',
             quantity: 1,
             sessionDurationMinutes: null,
           },
@@ -1176,7 +1176,7 @@ async function main(): Promise<void> {
         eventDate: '2026-06-25',
         items: [
           {
-            itemSlug: 'master',
+            itemSlug: 'sala-flexible',
             quantity: 1,
             sessionDurationMinutes: null,
           },
@@ -1195,7 +1195,7 @@ async function main(): Promise<void> {
         SELECT COUNT(DISTINCT br.id)::int AS request_count
         FROM "booking_request_items" bi
         INNER JOIN "booking_requests" br ON br.id = bi."bookingRequestId"
-        WHERE bi."itemSlug" = 'master'
+        WHERE bi."itemSlug" = 'sala-flexible'
       `,
     )
     assert.equal(masterRows[0]?.request_count, 2)
