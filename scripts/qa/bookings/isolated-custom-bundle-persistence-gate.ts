@@ -466,8 +466,8 @@ async function seedCatalog(client: Client): Promise<{
   for (const service of services) {
     await client.query(
       `
-        INSERT INTO "services" ("id", "slug", "name", "description", "isActive")
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO "services" ("id", "slug", "name", "description", "isActive", "createdAt", "updatedAt")
+        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
       `,
       [service.id, service.slug, service.name, `${service.name} de prueba`, service.isActive ?? true],
     )
@@ -533,8 +533,8 @@ async function seedCatalog(client: Client): Promise<{
   for (const variant of variants) {
     await client.query(
       `
-        INSERT INTO "service_variants" ("id", "slug", "name", "description", "isActive", "serviceId")
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO "service_variants" ("id", "slug", "name", "description", "isActive", "serviceId", "createdAt", "updatedAt")
+        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
       `,
       [variant.id, variant.slug, variant.name, `${variant.name} de prueba`, variant.isActive ?? true, variant.serviceId],
     )
