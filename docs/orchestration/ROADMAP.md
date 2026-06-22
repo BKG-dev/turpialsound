@@ -27,7 +27,7 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Technical exit criteria: explicit types, payload contract, and server-side validation rules exist.
 - Main risks: premature coupling to persistence and ambiguous item semantics.
 - Prohibitions: no database writes, no `schema.prisma` changes, no migrations.
-- Status: `TECHNICALLY_VALIDATED`
+- Status: `DONE`
 
 ## 3. Authoritative Server Repricing
 
@@ -36,7 +36,7 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Technical exit criteria: server recomputes totals, durations, surcharges, and incompatibilities deterministically.
 - Main risks: divergence between client and server calculations.
 - Prohibitions: no mutative tests against production data.
-- Status: `PLANNED`
+- Status: `TECHNICALLY_VALIDATED`
 
 ## 4. Persist `BookingRequest` with Multiple `BookingRequestItem`
 

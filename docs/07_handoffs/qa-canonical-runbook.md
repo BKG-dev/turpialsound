@@ -262,3 +262,26 @@ Criterio de evidencia:
 
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
+
+## Booking custom bundle authoritative repricing
+
+Objetivo:
+- validar el recálculo autoritativo del paquete desde el catálogo interno
+  sin confiar en dinero del cliente, sin Prisma, sin HTTP y sin escrituras.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-authoritative-repricing.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar que el servidor reconstruye el quote, detecta `catalogGaps`, deriva incluidos y preserva la paridad con el motor canónico.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.

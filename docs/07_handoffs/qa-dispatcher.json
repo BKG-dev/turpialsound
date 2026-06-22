@@ -1,5 +1,5 @@
 {
-  "version": 7,
+  "version": 8,
   "updated_at": "2026-06-21",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
@@ -625,6 +625,36 @@
       ],
       "last_validated_at": "2026-06-21",
       "notes": "Strict contract QA for the mult-item Arma tu paquete submission payload."
+    },
+    "booking_custom_bundle_authoritative_repricing": {
+      "task_id": "booking_custom_bundle_authoritative_repricing",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/custom-bundle-authoritative-repricing.ts",
+      "preconditions": [
+        "Node and pnpm available",
+        "Dependencies installed",
+        "No application server required",
+        "No DATABASE_URL required",
+        "No browser required",
+        "No network required"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "CDP improvisado",
+        "Reverse engineering de server actions",
+        "HTTP ad hoc",
+        "Pruebas contra base productiva",
+        "Usar scripts experimentales como sustitucion"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-03.md"
+      ],
+      "last_validated_at": "2026-06-21",
+      "notes": "Authoritative server repricing QA for the Preview custom bundle contract."
     }
   }
 }
