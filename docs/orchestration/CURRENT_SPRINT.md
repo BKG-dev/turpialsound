@@ -10,7 +10,7 @@ Base:
 145d2307e91ba93e6681a7a587c3c50a3f5c3373
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
@@ -30,8 +30,8 @@ Out of Scope:
 
 Result:
 
-PERSISTENCE_ADAPTER_PENDING_CI
+READY_FOR_BKG_05
 
 Next Action:
 
-ChatGPT verifies the isolated mult-item persistence workflow before starting availability work.
+ChatGPT reviews BKG-04B and defines continuous availability block calculation.

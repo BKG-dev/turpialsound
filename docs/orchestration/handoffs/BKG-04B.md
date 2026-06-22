@@ -23,19 +23,12 @@
 
 ## Changes Made
 
-- Added the isolated persistence adapter and its contract checks.
-- Added the isolated PostgreSQL gate script and workflow.
-- Registered canonical QA routes in the dispatcher and runbook.
-- Updated orchestration state for the BKG-04B sprint.
-
-## Out of Scope
-
-- `schema.prisma`;
-- generated Prisma;
-- Preview wiring;
-- application integration;
-- production;
-- QA manual.
+- Added the isolated persistence adapter for custom bundle submissions.
+- Added contract-level checks for the persistence adapter.
+- Added the isolated PostgreSQL gate workflow.
+- Seeded the snapshot-backed fixture catalog required by the gate.
+- Registered the canonical QA route in the dispatcher and runbook.
+- Normalized orchestration state for the BKG-04B sprint.
 
 ## Validation
 
@@ -44,11 +37,33 @@
 - `pnpm exec tsc --noEmit`
 - `pnpm build`
 - `git diff --check`
+- GitHub Actions workflow `Booking Isolated Custom Bundle Persistence`
+
+## Remote Evidence
+
+- Run ID: `27955681908`
+- Workflow: `Booking Isolated Custom Bundle Persistence`
+- Job: `gate`
+- Head SHA: `dc9ab6f1f7070977d34553ed4e0e7253cc4ee708`
+- Conclusion: `success`
+- Repository state during run: clean
+- Rollback: `verified`
+
+## Verified Messages
+
+- `booking_isolated_custom_bundle_persistence OK`
+- `authoritative repricing: verified`
+- `booking request: verified`
+- `five snapshot items: verified`
+- `catalog gaps: verified`
+- `rollback: verified`
+- `public code conflict: verified`
+- `cleanup: verified`
 
 ## Risks
 
-- The adapter is isolated and reversible, but it is still not wired into Preview.
-- The workflow must validate successfully before any availability work starts.
+- The adapter is still not wired into Preview.
+- Availability and resource work remain ahead.
 
 ## Blockers
 
@@ -64,8 +79,8 @@
 
 ## Recommended State
 
-- `DIRECTOR_REVIEW`
+- `TECHNICALLY_VALIDATED`
 
 ## Director Next Action
 
-- ChatGPT verifies the isolated mult-item persistence workflow before starting availability work.
+- ChatGPT reviews BKG-04B and defines continuous availability block calculation.
