@@ -27,6 +27,7 @@
 - preserved the validated physical policies for `sala-ensayo`, `grabacion`, and `podcast-locucion`;
 - prepared mixed physical and non-physical validation routes;
 - recorded the policy gate reset for the next isolated validation pass;
+- validated the policy gate in GitHub Actions and closed the local policy gap;
 - kept the read-only adapter and rollback boundary intact.
 
 ## Out of Scope
@@ -53,8 +54,24 @@
 
 ## Automated Tests
 
-- `booking_custom_bundle_resource_policy OK`
-- isolated resource conflict gate attempted locally, but the local PostgreSQL service rejected the `turpial_ci` credentials in this environment
+- Booking Isolated Custom Bundle Resource Conflicts
+  - Run ID: `27982875599`
+  - Head SHA: `c3da4dfce1a5cdbf589a9830141aa3421876bc9c`
+  - Workflow: `Booking Isolated Custom Bundle Resource Conflicts`
+  - Job: `gate`
+  - Conclusion: `success`
+  - Messages:
+    - `booking_custom_bundle_resource_policy OK`
+    - `no physical resource policy: verified`
+    - `mixed resource modes: verified`
+    - `unknown policies blocked: verified`
+    - `booking_isolated_custom_bundle_resource_conflicts OK`
+    - `no physical allocations: verified`
+    - `mixed resource allocation: verified`
+    - `physical query isolation: verified`
+    - `fallback assignment: verified`
+    - `rollback: verified`
+    - `cleanup: verified`
 
 ## Risks
 
@@ -64,7 +81,7 @@
 
 ## Blockers
 
-- `LOCAL_ISOLATED_DB_AUTH_MISMATCH`
+- none
 
 ## Vercel Status
 
@@ -76,8 +93,8 @@
 
 ## Recommended State
 
-- `DIRECTOR_REVIEW`
+- `TECHNICALLY_VALIDATED`
 
 ## Director Next Action
 
-- ChatGPT verifies the owner resource policy implementation before BKG-07.
+- ChatGPT reviews BKG-06B and defines isolated holds, expiration and idempotency.

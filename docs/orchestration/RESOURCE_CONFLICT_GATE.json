@@ -22,26 +22,24 @@
   },
   "validation": {
     "workflow": "booking-isolated-custom-bundle-resource-conflicts.yml",
-    "status": "PENDING_POLICY_UPDATE",
-    "runId": null,
-    "validatedHeadSha": null,
-    "conclusion": null,
-    "resourceCatalogVerified": false,
-    "candidatePriorityVerified": false,
-    "halfOpenIntervalsVerified": false,
-    "blockingStatusesVerified": false,
-    "fallbackAssignmentVerified": false,
-    "readOnlyVerified": false,
-    "rollbackVerified": false,
-    "cleanupVerified": false
+    "status": "SUCCESS",
+    "runId": 27982875599,
+    "validatedHeadSha": "c3da4dfce1a5cdbf589a9830141aa3421876bc9c",
+    "conclusion": "success",
+    "resourceCatalogVerified": true,
+    "candidatePriorityVerified": true,
+    "halfOpenIntervalsVerified": true,
+    "blockingStatusesVerified": true,
+    "fallbackAssignmentVerified": true,
+    "readOnlyVerified": true,
+    "rollbackVerified": true,
+    "cleanupVerified": true
   },
-  "resourceEngineTechnicallyValidated": false,
-  "readyForResourcePolicyDecision": false,
-  "readyForHoldsSprint": false,
-  "noPhysicalPolicyVerified": false,
-  "mixedResourceModesVerified": false,
-  "physicalQueryIsolationVerified": false,
-  "blockers": [
-    "RESOURCE_POLICY_UPDATE_NOT_VALIDATED"
-  ]
+  "resourceEngineTechnicallyValidated": true,
+  "readyForResourcePolicyDecision": true,
+  "readyForHoldsSprint": true,
+  "noPhysicalPolicyVerified": true,
+  "mixedResourceModesVerified": true,
+  "physicalQueryIsolationVerified": true,
+  "blockers": []
 }

@@ -10,7 +10,7 @@ Base:
 ee15463c0737134add006b4f663ccccd7c7e6a2d
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
@@ -34,8 +34,8 @@ Out of Scope:
 
 Result:
 
-NO_PHYSICAL_RESOURCE_POLICY_PENDING_CI
+READY_FOR_BKG_07
 
 Next Action:
 
-ChatGPT verifies the owner resource policy implementation before BKG-07.
+ChatGPT reviews BKG-06B and defines isolated holds, expiration and idempotency.

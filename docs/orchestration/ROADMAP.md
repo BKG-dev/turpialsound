@@ -71,13 +71,13 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Technical exit criteria: conflicts are detected before any write and surfaced clearly to the user.
 - Main risks: hidden resource collisions and incomplete exclusion rules.
 - Prohibitions: no reverse-engineered server-action flows for QA.
-- Status: `IN_PROGRESS`
-- Resource engine: `PENDING_POLICY_CI`
-- Resource assignment: `PENDING_POLICY_CI`
-- Resource policy: `OWNER_DECISION_RECORDED`
+- Status: `TECHNICALLY_VALIDATED`
+- Resource engine: `TECHNICALLY_VALIDATED`
+- Resource assignment: `TECHNICALLY_VALIDATED`
+- Resource policy: `TECHNICALLY_VALIDATED`
 - Resource catalog resolution: `TECHNICALLY_VALIDATED`
-- Collision detection: `TECHNICALLY_VALIDATED_PENDING_POLICY_REGRESSION`
-- Policy coverage: `COMPLETE_PENDING_CI`
+- Collision detection: `TECHNICALLY_VALIDATED`
+- Policy coverage: `COMPLETE`
 - Holds: `NOT_STARTED`
 
 ## 7. Holds, Expiration, and Idempotency
