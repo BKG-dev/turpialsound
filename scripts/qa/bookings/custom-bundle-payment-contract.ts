@@ -368,7 +368,8 @@ function main(): void {
     proofMetadata,
   })
 
-  const bookingWithPayment = makeBookingSnapshot({
+  const bookingWithReplay = makeBookingSnapshot({
+    internalNotes: '[ops_status:payment_reported]',
     existingPaymentReport: {
       paymentMethod: 'pago_movil',
       paymentReference: 'REF001',
@@ -381,30 +382,45 @@ function main(): void {
   })
   assert.deepStrictEqual(
     classifyCustomBundlePaymentReplay({
+      booking: bookingWithReplay,
       requestedIdempotencyKey: 'PAYMENT_2026:06:23-0002',
       requestedFingerprint: canonicalPaymentFingerprint,
-      existingReport: bookingWithPayment.existingPaymentReport,
+      existingReport: bookingWithReplay.existingPaymentReport,
     }),
     'exact_replay',
   )
   assert.deepStrictEqual(
     classifyCustomBundlePaymentReplay({
+      booking: bookingWithReplay,
       requestedIdempotencyKey: 'PAYMENT_2026:06:23-0002',
       requestedFingerprint: 'c'.repeat(64),
-      existingReport: bookingWithPayment.existingPaymentReport,
+      existingReport: bookingWithReplay.existingPaymentReport,
     }),
     'idempotency_key_conflict',
   )
   assert.deepStrictEqual(
     classifyCustomBundlePaymentReplay({
+      booking: bookingWithReplay,
       requestedIdempotencyKey: 'PAYMENT_2026:06:23-0003',
       requestedFingerprint: canonicalPaymentFingerprint,
-      existingReport: bookingWithPayment.existingPaymentReport,
+      existingReport: bookingWithReplay.existingPaymentReport,
     }),
     'already_reported_by_other_attempt',
   )
   assert.deepStrictEqual(
     classifyCustomBundlePaymentReplay({
+      booking: makeBookingSnapshot({
+        internalNotes: '[ops_status:payment_reported]',
+        existingPaymentReport: {
+          paymentMethod: null,
+          paymentReference: null,
+          paymentNormalizedReference: null,
+          paymentReportedAt: null,
+          paymentExpectedTotalUsdSnapshot: null,
+          paymentReportIdempotencyKey: null,
+          paymentReportFingerprint: null,
+        },
+      }),
       requestedIdempotencyKey: 'PAYMENT_2026:06:23-0003',
       requestedFingerprint: 'd'.repeat(64),
       existingReport: {
@@ -426,12 +442,47 @@ function main(): void {
       paymentReportIdempotencyKey: 'PAYMENT_2026:06:23-0002',
       proofMetadata,
     }),
-    booking: bookingWithPayment,
+    booking: bookingWithReplay,
   })
   assert.equal(exactReplayResult.ok, true)
   assertPreparedStage(exactReplayResult, 'replay')
   if (exactReplayResult.ok && exactReplayResult.stage === 'replay') {
     assert.equal(exactReplayResult.replayClassification, 'exact_replay')
+    assert.equal(exactReplayResult.value.paymentReportedAtIso, '2026-06-23T14:30:00.000Z')
+    assert.equal(exactReplayResult.value.paymentReportIdempotencyKey, 'PAYMENT_2026:06:23-0002')
+    assert.equal(exactReplayResult.value.paymentReportFingerprint, canonicalPaymentFingerprint)
+  }
+
+  const boundaryReplayResult = prepareCustomBundlePaymentReport({
+    submission: makeSubmission({ paymentMethod: 'pago_movil' }),
+    serverContext: makeServerContext({
+      now: new Date('2026-06-23T15:00:00.000Z'),
+      paymentReportIdempotencyKey: 'PAYMENT_2026:06:23-0002',
+      proofMetadata,
+    }),
+    booking: bookingWithReplay,
+  })
+  assert.equal(boundaryReplayResult.ok, true)
+  assertPreparedStage(boundaryReplayResult, 'replay')
+  if (boundaryReplayResult.ok && boundaryReplayResult.stage === 'replay') {
+    assert.equal(boundaryReplayResult.replayClassification, 'exact_replay')
+    assert.equal(boundaryReplayResult.value.paymentReportedAtIso, '2026-06-23T14:30:00.000Z')
+  }
+
+  const expiredReplayResult = prepareCustomBundlePaymentReport({
+    submission: makeSubmission({ paymentMethod: 'pago_movil' }),
+    serverContext: makeServerContext({
+      now: new Date('2026-06-23T15:00:01.000Z'),
+      paymentReportIdempotencyKey: 'PAYMENT_2026:06:23-0002',
+      proofMetadata,
+    }),
+    booking: bookingWithReplay,
+  })
+  assert.equal(expiredReplayResult.ok, true)
+  assertPreparedStage(expiredReplayResult, 'replay')
+  if (expiredReplayResult.ok && expiredReplayResult.stage === 'replay') {
+    assert.equal(expiredReplayResult.replayClassification, 'exact_replay')
+    assert.equal(expiredReplayResult.value.paymentReportedAtIso, '2026-06-23T14:30:00.000Z')
   }
 
   const replayConflictResult = prepareCustomBundlePaymentReport({
@@ -441,6 +492,7 @@ function main(): void {
       proofMetadata,
     }),
     booking: makeBookingSnapshot({
+      internalNotes: '[ops_status:payment_reported]',
       existingPaymentReport: {
         paymentMethod: 'pago_movil',
         paymentReference: 'REF001',
@@ -464,7 +516,7 @@ function main(): void {
       paymentReportIdempotencyKey: 'PAYMENT_2026:06:23-0003',
       proofMetadata,
     }),
-    booking: bookingWithPayment,
+    booking: bookingWithReplay,
   })
   assert.equal(alreadyReportedResult.ok, false)
   assertPreparedStage(alreadyReportedResult, 'replay')
@@ -472,28 +524,125 @@ function main(): void {
     assert.equal(alreadyReportedResult.replayClassification, 'already_reported_by_other_attempt')
   }
 
-  const malformedReplayResult = prepareCustomBundlePaymentReport({
+  const malformedPendingReplayResult = prepareCustomBundlePaymentReport({
     submission: makeSubmission({ paymentMethod: 'pago_movil' }),
     serverContext: makeServerContext({
       paymentReportIdempotencyKey: 'PAYMENT_2026:06:23-0004',
       proofMetadata,
     }),
     booking: makeBookingSnapshot({
+      internalNotes: '[ops_status:pending_payment]',
       existingPaymentReport: {
-        paymentMethod: null,
-        paymentReference: null,
-        paymentNormalizedReference: null,
-        paymentReportedAt: null,
-        paymentExpectedTotalUsdSnapshot: null,
-        paymentReportIdempotencyKey: null,
-        paymentReportFingerprint: null,
+        paymentMethod: 'pago_movil',
+        paymentReference: 'REF001',
+        paymentNormalizedReference: 'REF001',
+        paymentReportedAt: new Date('2026-06-23T14:30:00.000Z'),
+        paymentExpectedTotalUsdSnapshot: 280,
+        paymentReportIdempotencyKey: 'PAYMENT_2026:06:23-0002',
+        paymentReportFingerprint: canonicalPaymentFingerprint,
       },
     }),
   })
-  assert.equal(malformedReplayResult.ok, false)
-  assertPreparedStage(malformedReplayResult, 'booking_eligibility')
-  if (!malformedReplayResult.ok && malformedReplayResult.stage === 'booking_eligibility') {
-    assert.ok(malformedReplayResult.bookingEligibilityIssues.some((issue) => issue.code === 'PAYMENT_REPORT_RECORD_INCOMPLETE'))
+  assert.equal(malformedPendingReplayResult.ok, false)
+  assertPreparedStage(malformedPendingReplayResult, 'replay')
+  if (!malformedPendingReplayResult.ok && malformedPendingReplayResult.stage === 'replay') {
+    assert.equal(malformedPendingReplayResult.replayClassification, 'malformed_existing_report')
+  }
+
+  const malformedZeroTagsReplayResult = prepareCustomBundlePaymentReport({
+    submission: makeSubmission({ paymentMethod: 'pago_movil' }),
+    serverContext: makeServerContext({
+      paymentReportIdempotencyKey: 'PAYMENT_2026:06:23-0004B',
+      proofMetadata,
+    }),
+    booking: makeBookingSnapshot({
+      internalNotes: '',
+      existingPaymentReport: {
+        paymentMethod: 'pago_movil',
+        paymentReference: 'REF001',
+        paymentNormalizedReference: 'REF001',
+        paymentReportedAt: new Date('2026-06-23T14:30:00.000Z'),
+        paymentExpectedTotalUsdSnapshot: 280,
+        paymentReportIdempotencyKey: 'PAYMENT_2026:06:23-0002',
+        paymentReportFingerprint: canonicalPaymentFingerprint,
+      },
+    }),
+  })
+  assert.equal(malformedZeroTagsReplayResult.ok, false)
+  assertPreparedStage(malformedZeroTagsReplayResult, 'replay')
+  if (!malformedZeroTagsReplayResult.ok && malformedZeroTagsReplayResult.stage === 'replay') {
+    assert.equal(malformedZeroTagsReplayResult.replayClassification, 'malformed_existing_report')
+  }
+
+  const malformedDuplicateTagsReplayResult = prepareCustomBundlePaymentReport({
+    submission: makeSubmission({ paymentMethod: 'pago_movil' }),
+    serverContext: makeServerContext({
+      paymentReportIdempotencyKey: 'PAYMENT_2026:06:23-0004C',
+      proofMetadata,
+    }),
+    booking: makeBookingSnapshot({
+      internalNotes: '[ops_status:payment_reported]\n[ops_status:payment_reported]',
+      existingPaymentReport: {
+        paymentMethod: 'pago_movil',
+        paymentReference: 'REF001',
+        paymentNormalizedReference: 'REF001',
+        paymentReportedAt: new Date('2026-06-23T14:30:00.000Z'),
+        paymentExpectedTotalUsdSnapshot: 280,
+        paymentReportIdempotencyKey: 'PAYMENT_2026:06:23-0002',
+        paymentReportFingerprint: canonicalPaymentFingerprint,
+      },
+    }),
+  })
+  assert.equal(malformedDuplicateTagsReplayResult.ok, false)
+  assertPreparedStage(malformedDuplicateTagsReplayResult, 'replay')
+  if (!malformedDuplicateTagsReplayResult.ok && malformedDuplicateTagsReplayResult.stage === 'replay') {
+    assert.equal(malformedDuplicateTagsReplayResult.replayClassification, 'malformed_existing_report')
+  }
+
+  const malformedExpiredReplayResult = prepareCustomBundlePaymentReport({
+    submission: makeSubmission({ paymentMethod: 'pago_movil' }),
+    serverContext: makeServerContext({
+      paymentReportIdempotencyKey: 'PAYMENT_2026:06:23-0004D',
+      proofMetadata,
+    }),
+    booking: makeBookingSnapshot({
+      internalNotes: '[ops_status:expired]',
+      status: 'rejected',
+      existingPaymentReport: {
+        paymentMethod: 'pago_movil',
+        paymentReference: 'REF001',
+        paymentNormalizedReference: 'REF001',
+        paymentReportedAt: new Date('2026-06-23T14:30:00.000Z'),
+        paymentExpectedTotalUsdSnapshot: 280,
+        paymentReportIdempotencyKey: 'PAYMENT_2026:06:23-0002',
+        paymentReportFingerprint: canonicalPaymentFingerprint,
+      },
+    }),
+  })
+  assert.equal(malformedExpiredReplayResult.ok, false)
+  assertPreparedStage(malformedExpiredReplayResult, 'replay')
+  if (!malformedExpiredReplayResult.ok && malformedExpiredReplayResult.stage === 'replay') {
+    assert.equal(malformedExpiredReplayResult.replayClassification, 'malformed_existing_report')
+  }
+
+  const noReportPaymentReportedResult = prepareCustomBundlePaymentReport({
+    submission: makeSubmission({ paymentMethod: 'pago_movil' }),
+    serverContext: makeServerContext({
+      paymentReportIdempotencyKey: 'PAYMENT_2026:06:23-0005',
+      proofMetadata,
+    }),
+    booking: makeBookingSnapshot({
+      internalNotes: '[ops_status:payment_reported]',
+    }),
+  })
+  assert.equal(noReportPaymentReportedResult.ok, false)
+  assertPreparedStage(noReportPaymentReportedResult, 'booking_eligibility')
+  if (!noReportPaymentReportedResult.ok && noReportPaymentReportedResult.stage === 'booking_eligibility') {
+    assert.ok(
+      noReportPaymentReportedResult.bookingEligibilityIssues.some(
+        (issue) => issue.code === 'INVALID_OPERATIONAL_STATUS',
+      ),
+    )
   }
 
   const sameFingerprint = canonicalPaymentFingerprint
@@ -540,6 +689,32 @@ function main(): void {
   assert.notEqual(sameFingerprint, differentReferenceFingerprint)
   assert.notEqual(sameFingerprint, differentProofFingerprint)
 
+  const readyPaymentReport = prepareCustomBundlePaymentReport({
+    submission: makeSubmission({ paymentMethod: 'efectivo' }),
+    serverContext: makeServerContext({
+      paymentReportIdempotencyKey: 'PAYMENT_2026:06:23-0006',
+    }),
+    booking: makeBookingSnapshot(),
+  })
+  assert.equal(readyPaymentReport.ok, true)
+  assertPreparedStage(readyPaymentReport, 'ready')
+
+  const boundaryHoldExpiredResult = prepareCustomBundlePaymentReport({
+    submission: makeSubmission({ paymentMethod: 'efectivo' }),
+    serverContext: makeServerContext({
+      now: new Date('2026-06-23T15:00:00.000Z'),
+      paymentReportIdempotencyKey: 'PAYMENT_2026:06:23-0007',
+    }),
+    booking: makeBookingSnapshot({
+      holdExpiresAt: new Date('2026-06-23T15:00:00.000Z'),
+    }),
+  })
+  assert.equal(boundaryHoldExpiredResult.ok, false)
+  assertPreparedStage(boundaryHoldExpiredResult, 'booking_eligibility')
+  if (!boundaryHoldExpiredResult.ok && boundaryHoldExpiredResult.stage === 'booking_eligibility') {
+    assert.ok(boundaryHoldExpiredResult.bookingEligibilityIssues.some((issue) => issue.code === 'HOLD_EXPIRED'))
+  }
+
   const mutatedSubmission = clone(makeSubmission({ paymentMethod: 'transferencia' }))
   const submissionSnapshot = clone(mutatedSubmission)
   const mutatedBooking = clone(validBooking)
@@ -554,6 +729,7 @@ function main(): void {
   void validateCustomBundlePaymentServerContext(mutatedContext)
   void evaluateCustomBundlePaymentEligibility({ booking: mutatedBooking, now: mutatedContext.now })
   void classifyCustomBundlePaymentReplay({
+    booking: mutatedBooking,
     requestedIdempotencyKey: mutatedContext.paymentReportIdempotencyKey,
     requestedFingerprint: sameFingerprint,
     existingReport: mutatedBooking.existingPaymentReport,

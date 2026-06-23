@@ -242,6 +242,10 @@ function isValidDate(value: Date): boolean {
   return value instanceof Date && Number.isFinite(value.getTime())
 }
 
+function isValidUsdSnapshotAmount(value: number): boolean {
+  return Number.isFinite(value) && value > 0 && Math.abs(value * 100 - Math.round(value * 100)) < 1e-8
+}
+
 function isValidPublicCode(value: string): boolean {
   return /^TUR-\d{4}-\d{3,}$/.test(value)
 }
@@ -501,11 +505,112 @@ export function validateCustomBundlePaymentServerContext(
   return issues
 }
 
+function validateCustomBundlePaymentBaseBooking(
+  booking: CustomBundlePaymentBookingSnapshot,
+): CustomBundlePaymentEligibilityIssue[] {
+  if (
+    !isPlainObject(booking) ||
+    typeof booking.id !== 'string' ||
+    booking.id.trim().length === 0 ||
+    typeof booking.publicCode !== 'string' ||
+    !isValidPublicCode(booking.publicCode.trim().toUpperCase()) ||
+    typeof booking.status !== 'string' ||
+    typeof booking.bookingMode !== 'string' ||
+    typeof booking.estimatedTotalUsd !== 'number' ||
+    !Number.isFinite(booking.estimatedTotalUsd) ||
+    typeof booking.currency !== 'string'
+  ) {
+    return [
+      makeEligibilityIssue('BOOKING_RECORD_INVALID', 'La solicitud base no es valida.'),
+    ]
+  }
+
+  const issues: CustomBundlePaymentEligibilityIssue[] = []
+
+  if (booking.bookingMode !== 'custom_bundle' || booking.pricingSource !== 'server_catalog_v1') {
+    issues.push(
+      makeEligibilityIssue(
+        'NOT_CUSTOM_BUNDLE',
+        'La solicitud no corresponde a una cotizacion custom_bundle autoritativa.',
+      ),
+    )
+  }
+
+  if (
+    !(booking.holdAcquiredAt instanceof Date) ||
+    !isValidDate(booking.holdAcquiredAt) ||
+    !(booking.holdExpiresAt instanceof Date) ||
+    !isValidDate(booking.holdExpiresAt) ||
+    booking.holdExpiresAt.getTime() <= booking.holdAcquiredAt.getTime()
+  ) {
+    issues.push(
+      makeEligibilityIssue(
+        'BOOKING_RECORD_INVALID',
+        'La ventana de hold de la solicitud no es valida.',
+      ),
+    )
+  }
+
+  if (!isValidUsdSnapshotAmount(booking.estimatedTotalUsd)) {
+    issues.push(
+      makeEligibilityIssue(
+        'INVALID_EXPECTED_TOTAL',
+        'El total esperado de la solicitud debe ser mayor que cero.',
+      ),
+    )
+  }
+
+  if (booking.currency !== 'USD') {
+    issues.push(makeEligibilityIssue('INVALID_CURRENCY', 'La solicitud debe estar en USD.'))
+  }
+
+  return issues
+}
+
+function validateCustomBundlePaymentNewReportEligibility(
+  booking: CustomBundlePaymentBookingSnapshot,
+  now: Date,
+): CustomBundlePaymentEligibilityIssue[] {
+  const issues: CustomBundlePaymentEligibilityIssue[] = []
+  const tags = extractCustomBundleOperationalTags(booking.internalNotes)
+
+  if (booking.status !== 'under_review' || tags.length !== 1 || tags[0] !== 'pending_payment') {
+    issues.push(
+      makeEligibilityIssue(
+        'INVALID_OPERATIONAL_STATUS',
+        'La solicitud no esta en estado pending_payment.',
+      ),
+    )
+  }
+
+  const holdExpiresAt = booking.holdExpiresAt
+  if (!(holdExpiresAt instanceof Date) || !isValidDate(holdExpiresAt)) {
+    issues.push(makeEligibilityIssue('HOLD_EXPIRED', 'La ventana del hold ya expiro.'))
+  } else if (!isCustomBundleHoldActive(holdExpiresAt, now)) {
+    issues.push(makeEligibilityIssue('HOLD_EXPIRED', 'La ventana del hold ya expiro.'))
+  }
+
+  return issues
+}
+
 function validateExistingPaymentReportSnapshot(
+  booking: CustomBundlePaymentBookingSnapshot,
   existing: CustomBundleExistingPaymentReportSnapshot | null,
 ): CustomBundlePaymentEligibilityIssue[] {
   if (!existing) {
     return []
+  }
+
+  const issues: CustomBundlePaymentEligibilityIssue[] = []
+  const tags = extractCustomBundleOperationalTags(booking.internalNotes)
+
+  if (booking.status !== 'under_review' || tags.length !== 1 || tags[0] !== 'payment_reported') {
+    issues.push(
+      makeEligibilityIssue(
+        'PAYMENT_REPORT_RECORD_INCOMPLETE',
+        'El reporte de pago existente no es consistente.',
+      ),
+    )
   }
 
   const hasValidMethod =
@@ -527,8 +632,30 @@ function validateExistingPaymentReportSnapshot(
     existing.paymentReportedAt instanceof Date && isValidDate(existing.paymentReportedAt)
   const hasValidExpectedTotal =
     typeof existing.paymentExpectedTotalUsdSnapshot === 'number' &&
-    Number.isFinite(existing.paymentExpectedTotalUsdSnapshot) &&
-    existing.paymentExpectedTotalUsdSnapshot > 0
+    isValidUsdSnapshotAmount(existing.paymentExpectedTotalUsdSnapshot)
+  const paymentReference = existing.paymentReference
+  const paymentNormalizedReference = existing.paymentNormalizedReference
+  const paymentReportedAt = existing.paymentReportedAt
+  const holdAcquiredAt = booking.holdAcquiredAt
+  const holdExpiresAt = booking.holdExpiresAt
+  const hasMatchingExpectedTotal =
+    hasValidExpectedTotal && existing.paymentExpectedTotalUsdSnapshot === booking.estimatedTotalUsd
+  const hasMatchingNormalizedReference =
+    hasValidReference &&
+    hasValidNormalizedReference &&
+    typeof paymentNormalizedReference === 'string' &&
+    typeof paymentReference === 'string' &&
+    normalizeCustomBundlePaymentReference(paymentReference) === paymentNormalizedReference.trim()
+  const hasValidHistoricalWindow =
+    hasValidReportedAt &&
+    holdAcquiredAt instanceof Date &&
+    isValidDate(holdAcquiredAt) &&
+    holdExpiresAt instanceof Date &&
+    isValidDate(holdExpiresAt) &&
+    paymentReportedAt instanceof Date &&
+    isValidDate(paymentReportedAt) &&
+    paymentReportedAt.getTime() >= holdAcquiredAt.getTime() &&
+    paymentReportedAt.getTime() < holdExpiresAt.getTime()
 
   if (
     !hasValidMethod ||
@@ -537,96 +664,28 @@ function validateExistingPaymentReportSnapshot(
     !hasValidReference ||
     !hasValidNormalizedReference ||
     !hasValidReportedAt ||
-    !hasValidExpectedTotal
+    !hasValidExpectedTotal ||
+    !hasMatchingExpectedTotal ||
+    !hasMatchingNormalizedReference ||
+    !hasValidHistoricalWindow
   ) {
-    return [
+    issues.push(
       makeEligibilityIssue(
         'PAYMENT_REPORT_RECORD_INCOMPLETE',
         'El reporte de pago existente no es consistente.',
       ),
-    ]
+    )
   }
 
-  return []
+  return issues
 }
 
 export function evaluateCustomBundlePaymentEligibility(input: {
   booking: CustomBundlePaymentBookingSnapshot
   now: Date
 }): CustomBundlePaymentEligibilityIssue[] {
-  const issues: CustomBundlePaymentEligibilityIssue[] = []
-  const booking = input.booking
-
-  if (
-    !isPlainObject(booking) ||
-    typeof booking.id !== 'string' ||
-    booking.id.trim().length === 0 ||
-    typeof booking.publicCode !== 'string' ||
-    !isValidPublicCode(booking.publicCode.trim().toUpperCase()) ||
-    typeof booking.status !== 'string' ||
-    typeof booking.bookingMode !== 'string' ||
-    typeof booking.estimatedTotalUsd !== 'number' ||
-    !Number.isFinite(booking.estimatedTotalUsd) ||
-    typeof booking.currency !== 'string'
-  ) {
-    return [
-      makeEligibilityIssue('BOOKING_RECORD_INVALID', 'La solicitud base no es valida.'),
-    ]
-  }
-
-  if (booking.bookingMode !== 'custom_bundle' || booking.pricingSource !== 'server_catalog_v1') {
-    issues.push(
-      makeEligibilityIssue(
-        'NOT_CUSTOM_BUNDLE',
-        'La solicitud no corresponde a una cotizacion custom_bundle autoritativa.',
-      ),
-    )
-  }
-
-  const tags = extractCustomBundleOperationalTags(booking.internalNotes)
-  if (booking.status !== 'under_review' || tags.length !== 1 || tags[0] !== 'pending_payment') {
-    issues.push(
-      makeEligibilityIssue(
-        'INVALID_OPERATIONAL_STATUS',
-        'La solicitud no esta en estado pending_payment.',
-      ),
-    )
-  }
-
-  if (
-    !(booking.holdAcquiredAt instanceof Date) ||
-    !isValidDate(booking.holdAcquiredAt) ||
-    !(booking.holdExpiresAt instanceof Date) ||
-    !isValidDate(booking.holdExpiresAt) ||
-    booking.holdExpiresAt.getTime() <= booking.holdAcquiredAt.getTime()
-  ) {
-    issues.push(
-      makeEligibilityIssue(
-        'BOOKING_RECORD_INVALID',
-        'La ventana de hold de la solicitud no es valida.',
-      ),
-    )
-  } else if (!isCustomBundleHoldActive(booking.holdExpiresAt, input.now)) {
-    issues.push(
-      makeEligibilityIssue('HOLD_EXPIRED', 'La ventana del hold ya expiro.'),
-    )
-  }
-
-  if (booking.estimatedTotalUsd <= 0) {
-    issues.push(
-      makeEligibilityIssue(
-        'INVALID_EXPECTED_TOTAL',
-        'El total esperado de la solicitud debe ser mayor que cero.',
-      ),
-    )
-  }
-
-  if (booking.currency !== 'USD') {
-    issues.push(makeEligibilityIssue('INVALID_CURRENCY', 'La solicitud debe estar en USD.'))
-  }
-
-  issues.push(...validateExistingPaymentReportSnapshot(booking.existingPaymentReport))
-
+  const issues = validateCustomBundlePaymentBaseBooking(input.booking)
+  issues.push(...validateCustomBundlePaymentNewReportEligibility(input.booking, input.now))
   return issues
 }
 
@@ -662,6 +721,7 @@ export function buildCustomBundlePaymentReportFingerprint(input: {
 }
 
 export function classifyCustomBundlePaymentReplay(input: {
+  booking: CustomBundlePaymentBookingSnapshot
   requestedIdempotencyKey: string
   requestedFingerprint: string
   existingReport: CustomBundlePaymentBookingSnapshot['existingPaymentReport']
@@ -673,7 +733,7 @@ export function classifyCustomBundlePaymentReplay(input: {
     return 'no_existing_report'
   }
 
-  if (validateExistingPaymentReportSnapshot(existingReport).length > 0) {
+  if (validateExistingPaymentReportSnapshot(input.booking, existingReport).length > 0) {
     return 'malformed_existing_report'
   }
 
@@ -746,15 +806,12 @@ export function prepareCustomBundlePaymentReport(input: {
     }
   }
 
-  const bookingEligibilityIssues = evaluateCustomBundlePaymentEligibility({
-    booking: input.booking,
-    now: input.serverContext.now,
-  })
-  if (bookingEligibilityIssues.length > 0) {
+  const baseBookingIssues = validateCustomBundlePaymentBaseBooking(input.booking)
+  if (baseBookingIssues.length > 0) {
     return {
       ok: false,
       stage: 'booking_eligibility',
-      bookingEligibilityIssues,
+      bookingEligibilityIssues: baseBookingIssues,
     }
   }
 
@@ -772,11 +829,57 @@ export function prepareCustomBundlePaymentReport(input: {
     proofMetadata,
   })
 
-  const replayClassification = classifyCustomBundlePaymentReplay({
-    requestedIdempotencyKey: input.serverContext.paymentReportIdempotencyKey.trim(),
-    requestedFingerprint: paymentReportFingerprint,
-    existingReport: input.booking.existingPaymentReport,
-  })
+  if (input.booking.existingPaymentReport) {
+    const replayClassification = classifyCustomBundlePaymentReplay({
+      booking: input.booking,
+      requestedIdempotencyKey: input.serverContext.paymentReportIdempotencyKey.trim(),
+      requestedFingerprint: paymentReportFingerprint,
+      existingReport: input.booking.existingPaymentReport,
+    })
+
+    if (replayClassification === 'exact_replay') {
+      const existingReport = input.booking.existingPaymentReport
+      return {
+        ok: true,
+        stage: 'replay',
+        replayClassification,
+        value: {
+          bookingRequestId: input.booking.id,
+          publicCode: parsedSubmission.value.publicCode,
+          paymentMethod: existingReport.paymentMethod!.trim() as BookingPaymentMethodSlug,
+          paymentReference: existingReport.paymentReference!,
+          normalizedReference: existingReport.paymentNormalizedReference!,
+          paymentReportedAtIso: existingReport.paymentReportedAt!.toISOString(),
+          expectedTotalUsd: existingReport.paymentExpectedTotalUsdSnapshot!,
+          currency: 'USD',
+          paymentReportIdempotencyKey: existingReport.paymentReportIdempotencyKey!.trim(),
+          paymentReportFingerprint: existingReport.paymentReportFingerprint!.trim(),
+          proofMetadata: cloneProofMetadata(proofMetadata),
+        },
+      }
+    }
+
+    if (replayClassification !== 'no_existing_report') {
+      return {
+        ok: false,
+        stage: 'replay',
+        replayClassification,
+        message: 'El reporte de pago no puede reutilizarse para esta solicitud.',
+      }
+    }
+  }
+
+  const bookingEligibilityIssues = validateCustomBundlePaymentNewReportEligibility(
+    input.booking,
+    input.serverContext.now,
+  )
+  if (bookingEligibilityIssues.length > 0) {
+    return {
+      ok: false,
+      stage: 'booking_eligibility',
+      bookingEligibilityIssues,
+    }
+  }
 
   const preparedValue: CustomBundlePaymentPreparedValue = {
     bookingRequestId: input.booking.id,
@@ -790,24 +893,6 @@ export function prepareCustomBundlePaymentReport(input: {
     paymentReportIdempotencyKey: input.serverContext.paymentReportIdempotencyKey.trim(),
     paymentReportFingerprint,
     proofMetadata: cloneProofMetadata(proofMetadata),
-  }
-
-  if (replayClassification === 'exact_replay') {
-    return {
-      ok: true,
-      stage: 'replay',
-      replayClassification,
-      value: preparedValue,
-    }
-  }
-
-  if (replayClassification !== 'no_existing_report') {
-    return {
-      ok: false,
-      stage: 'replay',
-      replayClassification,
-      message: 'El reporte de pago no puede reutilizarse para esta solicitud.',
-    }
   }
 
   return {

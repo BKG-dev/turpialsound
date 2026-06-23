@@ -1,23 +1,23 @@
 # Current Sprint
 
 Sprint:
-BKG-08A
+BKG-08A1
 
 Name:
-Contrato y esquema aislado de pago consolidado
+Corregir semántica operacional del replay de pago consolidado
 
 Base:
-33bf4fb91f3a17cd26ebd1cf0952194aefae2f74
+7c9c1ce82b7bc3f5e829acd531db347d179e8c15
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* define the consolidated payment contract as a pure module;
-* validate the additive payment schema proposal in isolated PostgreSQL;
-* register canonical QA routes for the payment contract and schema gate;
-* preserve the booking, hold, and expiration contracts already validated.
+* correct the operational semantics of consolidated payment replay;
+* keep the payment schema proposal evidence intact;
+* keep hold and expiration contracts intact;
+* prepare the sprint for a corrected CI validation.
 
 Out of Scope:
 
@@ -26,12 +26,13 @@ Out of Scope:
 * notifications;
 * wizard integration;
 * production;
-* manual QA.
+* manual QA;
+* BKG-08B.
 
 Result:
 
-READY_FOR_BKG_08B
+PAYMENT_REPLAY_CORRECTION_PENDING_CI
 
 Next Action:
 
-ChatGPT reviews BKG-08A and defines transactional payment reporting.
+ChatGPT verifies realistic payment replay semantics before BKG-08B.

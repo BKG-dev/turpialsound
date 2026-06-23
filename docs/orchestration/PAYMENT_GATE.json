@@ -4,24 +4,31 @@
   "model": "single_consolidated_manual_payment_report",
   "validation": {
     "workflow": "booking-isolated-custom-bundle-payment-contract.yml",
-    "status": "SUCCESS",
-    "runId": 28056718242,
-    "validatedHeadSha": "329f07efaa5612c62ddaa16334ac52c72935de45",
-    "conclusion": "success",
+    "status": "PENDING_CORRECTION",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
     "legacyCompatibilityVerified": true,
     "paymentMethodsVerified": true,
     "proofPolicyVerified": true,
     "activeHoldEligibilityVerified": true,
     "exactExpirationBoundaryVerified": true,
     "paymentFingerprintVerified": true,
-    "paymentReplayVerified": true,
+    "paymentReplayVerified": false,
     "idempotencyUniquenessVerified": true,
     "constraintsVerified": true,
-    "cleanupVerified": true
+    "cleanupVerified": true,
+    "realisticReplayVerified": false,
+    "persistedTimestampVerified": false,
+    "historicalWindowVerified": false,
+    "operationalConsistencyVerified": false,
+    "totalSnapshotIntegrityVerified": false
   },
-  "readyForPaymentReportingAdapter": true,
+  "readyForPaymentReportingAdapter": false,
   "readyForBlobBoundary": false,
   "readyForWizardIntegration": false,
   "readyForProduction": false,
-  "blockers": []
+  "blockers": [
+    "PAYMENT_REPLAY_OPERATIONAL_SEMANTICS_NOT_VALIDATED"
+  ]
 }
