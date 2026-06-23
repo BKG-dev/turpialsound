@@ -224,7 +224,6 @@ async function hasMoreExpirationCandidates(
         SELECT 1
         ${buildExpirationWhereClause()}
         LIMIT 1
-        FOR UPDATE SKIP LOCKED
       ) AS "hasMore"
     `,
     [BOOKING_REQUEST_BOOKING_MODE, BOOKING_REQUEST_PRICING_SOURCE, BOOKING_REQUEST_STATUS, now],
