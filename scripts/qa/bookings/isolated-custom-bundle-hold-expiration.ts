@@ -761,6 +761,10 @@ async function main(): Promise<void> {
       now,
       batchSize: 2,
     })
+    if (!firstRun.result.ok) {
+      console.error('first batch result:', JSON.stringify(firstRun.result, null, 2))
+      console.error('first batch last sql:', firstRun.trace.at(-1)?.sql ?? '(none)')
+    }
     assertExpirationSuccess('first batch', firstRun.result)
     assert.equal(firstRun.result.selected, 2)
     assert.equal(firstRun.result.expired, 2)
