@@ -1516,7 +1516,7 @@ async function main(): Promise<void> {
     assertTraceContains(allTraceCalls, /INSERT INTO "booking_request_items"/i, 'adapter must insert booking request items')
     assertTraceContains(allTraceCalls, /FROM "booking_requests"/i, 'adapter must read booking requests during replay and verification')
     assertTraceContains(allTraceCalls, /FROM "booking_request_items"/i, 'adapter must read booking request items during verification')
-    assertTraceContains(allTraceCalls, /FROM "resources"/i, 'adapter must consult resources for physical allocations')
+    assertTraceContains(allTraceCalls, /FROM\s+"?resources"?/i, 'adapter must consult resources for physical allocations')
     assertTraceContains(allTraceCalls, /COMMIT/i, 'adapter must commit successful acquisitions')
     assertTraceContains(allTraceCalls, /ROLLBACK/i, 'adapter must rollback replay, conflict or failure paths')
 
