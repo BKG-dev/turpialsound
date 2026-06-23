@@ -675,7 +675,7 @@ export function buildCustomBundleBookingRequestNotes(extrasNotes: string): strin
 }
 
 function countItemsByKind(
-  descriptors: PersistableLineDescriptor[],
+  descriptors: readonly PersistableLineDescriptor[],
 ): {
   serviceItemCount: number
   addonItemCount: number
@@ -702,7 +702,7 @@ function countItemsByKind(
 }
 
 export function countCustomBundlePersistableItemsByKind(
-  descriptors: PersistableLineDescriptor[],
+  descriptors: readonly PersistableLineDescriptor[],
 ): ReturnType<typeof countItemsByKind> {
   return countItemsByKind(descriptors)
 }

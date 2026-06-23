@@ -27,6 +27,7 @@ import type {
 } from '@/lib/bookings/types'
 import type {
   CustomBundleResourcePolicyIssue,
+  CustomBundleResourceRequirement,
 } from '@/lib/bookings/custom-bundle-resource-policy'
 import type {
   CustomBundleScheduleIssue,
@@ -65,8 +66,43 @@ interface HoldReplayCountsRow {
   serviceItemCount: number | string
   addonItemCount: number | string
   includedItemCount: number | string
-  physicalAllocationCount: number | string
-  noPhysicalAllocationCount: number | string
+}
+
+export interface CustomBundlePersistedReplayItem {
+  itemSlug: string | null
+  itemName: string | null
+  itemKind: string | null
+  serviceVariantId: string | null
+  resourceId: string | null
+  quantity: number | string | null
+  sessionDurationMinutes: number | string | null
+  durationMinutes: number | string | null
+  unitPriceUsdSnapshot: number | string | null
+  lineTotalUsdSnapshot: number | string | null
+  clientPriceDisplay: string | null
+}
+
+export interface CustomBundleReplayIntegrityIssue {
+  code:
+    | 'REPLAY_ITEM_COUNT_MISMATCH'
+    | 'REPLAY_ITEM_SLUG_DUPLICATED'
+    | 'REPLAY_ITEM_SLUG_MISSING'
+    | 'REPLAY_ITEM_SLUG_ADDITIONAL'
+    | 'REPLAY_ITEM_NAME_MISMATCH'
+    | 'REPLAY_ITEM_KIND_MISMATCH'
+    | 'REPLAY_ITEM_QUANTITY_MISMATCH'
+    | 'REPLAY_ITEM_SESSION_DURATION_MISMATCH'
+    | 'REPLAY_ITEM_DURATION_MISMATCH'
+    | 'REPLAY_ITEM_UNIT_PRICE_MISMATCH'
+    | 'REPLAY_ITEM_LINE_TOTAL_MISMATCH'
+    | 'REPLAY_ITEM_CLIENT_PRICE_DISPLAY_MISMATCH'
+    | 'REPLAY_ITEM_SERVICE_VARIANT_MISMATCH'
+    | 'REPLAY_ITEM_RESOURCE_MISSING'
+    | 'REPLAY_ITEM_RESOURCE_PRESENT'
+    | 'REPLAY_ITEM_RESOURCE_FORBIDDEN'
+    | 'REPLAY_ITEM_RESOURCE_INCONCLUSIVE'
+  message: string
+  itemSlug?: string
 }
 
 interface AcquireCustomBundleHoldSuccessBase {
@@ -363,7 +399,32 @@ function makePersistenceIssue(
   }
 }
 
-function countSuccessAllocations(allocations: CustomBundleResourceAllocation[]): {
+export function countCustomBundleRequirementsByMode(
+  requirements: readonly CustomBundleResourceRequirement[],
+): {
+  physicalAllocationCount: number
+  noPhysicalAllocationCount: number
+} {
+  return requirements.reduce(
+    (accumulator, requirement) => {
+      if (requirement.mode === 'physical') {
+        accumulator.physicalAllocationCount += 1
+      } else {
+        accumulator.noPhysicalAllocationCount += 1
+      }
+
+      return accumulator
+    },
+    {
+      physicalAllocationCount: 0,
+      noPhysicalAllocationCount: 0,
+    },
+  )
+}
+
+function countSuccessAllocations(
+  allocations: readonly { mode: 'physical' | 'no_physical_resource' }[],
+): {
   physicalAllocationCount: number
   noPhysicalAllocationCount: number
 } {
@@ -382,24 +443,6 @@ function countSuccessAllocations(allocations: CustomBundleResourceAllocation[]):
       noPhysicalAllocationCount: 0,
     },
   )
-}
-
-function countPersistedAllocations(rows: HoldReplayCountsRow): {
-  itemCount: number
-  serviceItemCount: number
-  addonItemCount: number
-  includedItemCount: number
-  physicalAllocationCount: number
-  noPhysicalAllocationCount: number
-} {
-  return {
-    itemCount: Number(rows.itemCount),
-    serviceItemCount: Number(rows.serviceItemCount),
-    addonItemCount: Number(rows.addonItemCount),
-    includedItemCount: Number(rows.includedItemCount),
-    physicalAllocationCount: Number(rows.physicalAllocationCount),
-    noPhysicalAllocationCount: Number(rows.noPhysicalAllocationCount),
-  }
 }
 
 async function rollbackSilently(session: CustomBundleSqlSession): Promise<void> {
@@ -474,9 +517,7 @@ async function readPersistedCounts(
         COUNT(*)::int AS "itemCount",
         COUNT(*) FILTER (WHERE "itemKind" = 'service')::int AS "serviceItemCount",
         COUNT(*) FILTER (WHERE "itemKind" = 'addon')::int AS "addonItemCount",
-        COUNT(*) FILTER (WHERE "itemKind" = 'included')::int AS "includedItemCount",
-        COUNT(*) FILTER (WHERE "itemKind" = 'service' AND "resourceId" IS NOT NULL)::int AS "physicalAllocationCount",
-        COUNT(*) FILTER (WHERE "itemKind" = 'service' AND "resourceId" IS NULL)::int AS "noPhysicalAllocationCount"
+        COUNT(*) FILTER (WHERE "itemKind" = 'included')::int AS "includedItemCount"
       FROM "booking_request_items"
       WHERE "bookingRequestId" = $1
     `,
@@ -490,12 +531,296 @@ async function readPersistedCounts(
       serviceItemCount: 0,
       addonItemCount: 0,
       includedItemCount: 0,
-      physicalAllocationCount: 0,
-      noPhysicalAllocationCount: 0,
     }
   }
 
   return row
+}
+
+async function readPersistedReplayItems(
+  session: CustomBundleSqlSession,
+  bookingRequestId: string,
+): Promise<CustomBundlePersistedReplayItem[]> {
+  const result = await session.query<CustomBundlePersistedReplayItem>(
+    `
+      SELECT
+        "itemSlug",
+        "itemName",
+        "itemKind",
+        "serviceVariantId",
+        "resourceId",
+        "quantity",
+        "sessionDurationMinutes",
+        "durationMinutes",
+        "unitPriceUsdSnapshot",
+        "lineTotalUsdSnapshot",
+        "clientPriceDisplay"
+      FROM "booking_request_items"
+      WHERE "bookingRequestId" = $1
+      ORDER BY "createdAt", id
+    `,
+    [bookingRequestId],
+  )
+
+  return result.rows
+}
+
+function toFiniteNumber(value: string | number | null | undefined): number | null {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+
+  return null
+}
+
+function isSameMoneyValue(value: string | number | null | undefined, expected: number): boolean {
+  const numericValue = toFiniteNumber(value)
+  return numericValue !== null && numericValue === expected
+}
+
+function isSameNullableNumber(
+  value: string | number | null | undefined,
+  expected: number | null,
+): boolean {
+  if (expected === null) {
+    return value === null || value === undefined || value === ''
+  }
+
+  const numericValue = toFiniteNumber(value)
+  return numericValue !== null && numericValue === expected
+}
+
+function buildReplayIntegrityIssue(
+  code: CustomBundleReplayIntegrityIssue['code'],
+  message: string,
+  itemSlug?: string,
+): CustomBundleReplayIntegrityIssue {
+  return itemSlug ? { code, message, itemSlug } : { code, message }
+}
+
+export function validateCustomBundlePersistedReplayItems(input: {
+  descriptors: readonly CustomBundlePersistableLineDescriptor[]
+  requirements: readonly CustomBundleResourceRequirement[]
+  persistedItems: readonly CustomBundlePersistedReplayItem[]
+}): CustomBundleReplayIntegrityIssue[] {
+  const issues: CustomBundleReplayIntegrityIssue[] = []
+  const descriptorBySlug = new Map<string, CustomBundlePersistableLineDescriptor>()
+  const requirementBySlug = new Map<string, CustomBundleResourceRequirement>()
+  const persistedBySlug = new Map<string, CustomBundlePersistedReplayItem>()
+
+  for (const requirement of input.requirements) {
+    requirementBySlug.set(requirement.itemSlug, requirement)
+  }
+
+  for (const descriptor of input.descriptors) {
+    if (descriptorBySlug.has(descriptor.itemSlug)) {
+      issues.push(
+        buildReplayIntegrityIssue(
+          'REPLAY_ITEM_SLUG_DUPLICATED',
+          `La linea ${descriptor.itemSlug} aparece mas de una vez en los descriptores autoritativos.`,
+          descriptor.itemSlug,
+        ),
+      )
+      continue
+    }
+
+    descriptorBySlug.set(descriptor.itemSlug, descriptor)
+  }
+
+  if (input.persistedItems.length !== input.descriptors.length) {
+    issues.push(
+      buildReplayIntegrityIssue(
+        'REPLAY_ITEM_COUNT_MISMATCH',
+        'El numero de items persistidos no coincide con la semantica autoritativa del replay.',
+      ),
+    )
+  }
+
+  for (const persistedItem of input.persistedItems) {
+    const itemSlug = persistedItem.itemSlug?.trim() ?? ''
+    if (itemSlug.length === 0) {
+      issues.push(
+        buildReplayIntegrityIssue(
+          'REPLAY_ITEM_SLUG_MISSING',
+          'Un item persistido del replay no tiene itemSlug valido.',
+        ),
+      )
+      continue
+    }
+
+    if (persistedBySlug.has(itemSlug)) {
+      issues.push(
+        buildReplayIntegrityIssue(
+          'REPLAY_ITEM_SLUG_DUPLICATED',
+          `La linea ${itemSlug} aparece mas de una vez en los items persistidos.`,
+          itemSlug,
+        ),
+      )
+      continue
+    }
+
+    persistedBySlug.set(itemSlug, persistedItem)
+
+    if (!descriptorBySlug.has(itemSlug)) {
+      issues.push(
+        buildReplayIntegrityIssue(
+          'REPLAY_ITEM_SLUG_ADDITIONAL',
+          `La linea ${itemSlug} no forma parte del quote autoritativo del replay.`,
+          itemSlug,
+        ),
+      )
+    }
+  }
+
+  for (const descriptor of input.descriptors) {
+    const persistedItem = persistedBySlug.get(descriptor.itemSlug)
+    if (!persistedItem) {
+      issues.push(
+        buildReplayIntegrityIssue(
+          'REPLAY_ITEM_SLUG_MISSING',
+          `Falta la linea persistida ${descriptor.itemSlug}.`,
+          descriptor.itemSlug,
+        ),
+      )
+      continue
+    }
+
+    const requirement = requirementBySlug.get(descriptor.itemSlug)
+    const persistedQuantity = toFiniteNumber(persistedItem.quantity)
+    const persistedSessionDurationMinutes = toFiniteNumber(persistedItem.sessionDurationMinutes)
+    const persistedDurationMinutes = toFiniteNumber(persistedItem.durationMinutes)
+    const persistedItemKind = persistedItem.itemKind?.trim() ?? ''
+    const persistedServiceVariantId = persistedItem.serviceVariantId?.trim() ?? null
+    const persistedResourceId = persistedItem.resourceId?.trim() ?? null
+    const persistedClientPriceDisplay = persistedItem.clientPriceDisplay?.trim() ?? ''
+
+    if (persistedItem.itemName !== descriptor.itemName) {
+      issues.push(
+        buildReplayIntegrityIssue(
+          'REPLAY_ITEM_NAME_MISMATCH',
+          `El nombre de la linea ${descriptor.itemSlug} no coincide con el quote autoritativo.`,
+          descriptor.itemSlug,
+        ),
+      )
+    }
+
+    if (persistedItemKind !== descriptor.itemKind) {
+      issues.push(
+        buildReplayIntegrityIssue(
+          'REPLAY_ITEM_KIND_MISMATCH',
+          `El tipo de la linea ${descriptor.itemSlug} no coincide con el quote autoritativo.`,
+          descriptor.itemSlug,
+        ),
+      )
+    }
+
+    if (persistedQuantity === null || persistedQuantity !== descriptor.quantity) {
+      issues.push(
+        buildReplayIntegrityIssue(
+          'REPLAY_ITEM_QUANTITY_MISMATCH',
+          `La cantidad de la linea ${descriptor.itemSlug} no coincide con el quote autoritativo.`,
+          descriptor.itemSlug,
+        ),
+      )
+    }
+
+    if (!isSameNullableNumber(persistedSessionDurationMinutes, descriptor.sessionDurationMinutes)) {
+      issues.push(
+        buildReplayIntegrityIssue(
+          'REPLAY_ITEM_SESSION_DURATION_MISMATCH',
+          `La sessionDurationMinutes de ${descriptor.itemSlug} no coincide con el quote autoritativo.`,
+          descriptor.itemSlug,
+        ),
+      )
+    }
+
+    if (persistedDurationMinutes === null || persistedDurationMinutes !== descriptor.durationMinutes) {
+      issues.push(
+        buildReplayIntegrityIssue(
+          'REPLAY_ITEM_DURATION_MISMATCH',
+          `La durationMinutes de ${descriptor.itemSlug} no coincide con el quote autoritativo.`,
+          descriptor.itemSlug,
+        ),
+      )
+    }
+
+    if (!isSameMoneyValue(persistedItem.unitPriceUsdSnapshot, Number(descriptor.unitPriceUsdSnapshot))) {
+      issues.push(
+        buildReplayIntegrityIssue(
+          'REPLAY_ITEM_UNIT_PRICE_MISMATCH',
+          `El precio unitario de ${descriptor.itemSlug} no coincide con el quote autoritativo.`,
+          descriptor.itemSlug,
+        ),
+      )
+    }
+
+    if (!isSameMoneyValue(persistedItem.lineTotalUsdSnapshot, Number(descriptor.lineTotalUsdSnapshot))) {
+      issues.push(
+        buildReplayIntegrityIssue(
+          'REPLAY_ITEM_LINE_TOTAL_MISMATCH',
+          `El total de linea de ${descriptor.itemSlug} no coincide con el quote autoritativo.`,
+          descriptor.itemSlug,
+        ),
+      )
+    }
+
+    if (persistedClientPriceDisplay !== descriptor.clientPriceDisplay) {
+      issues.push(
+        buildReplayIntegrityIssue(
+          'REPLAY_ITEM_CLIENT_PRICE_DISPLAY_MISMATCH',
+          `La presentacion de ${descriptor.itemSlug} no coincide con el quote autoritativo.`,
+          descriptor.itemSlug,
+        ),
+      )
+    }
+
+    if (descriptor.itemKind === 'service') {
+      if (persistedServiceVariantId !== descriptor.serviceVariantId) {
+        issues.push(
+          buildReplayIntegrityIssue(
+            'REPLAY_ITEM_SERVICE_VARIANT_MISMATCH',
+            `La serviceVariantId de ${descriptor.itemSlug} no coincide con el quote autoritativo.`,
+            descriptor.itemSlug,
+          ),
+        )
+      }
+    } else if (persistedServiceVariantId !== null) {
+      issues.push(
+        buildReplayIntegrityIssue(
+          'REPLAY_ITEM_SERVICE_VARIANT_MISMATCH',
+          `La linea ${descriptor.itemSlug} no debe conservar serviceVariantId.`,
+          descriptor.itemSlug,
+        ),
+      )
+    }
+
+    if (requirement?.mode === 'physical') {
+      if (persistedResourceId === null) {
+        issues.push(
+          buildReplayIntegrityIssue(
+            'REPLAY_ITEM_RESOURCE_MISSING',
+            `La linea fisica ${descriptor.itemSlug} debe conservar resourceId.`,
+            descriptor.itemSlug,
+          ),
+        )
+      }
+    } else if (persistedResourceId !== null) {
+      issues.push(
+        buildReplayIntegrityIssue(
+          'REPLAY_ITEM_RESOURCE_FORBIDDEN',
+          `La linea ${descriptor.itemSlug} no debe conservar resourceId.`,
+          descriptor.itemSlug,
+        ),
+      )
+    }
+  }
+
+  return issues
 }
 
 function buildAcquiredSuccessResult(input: {
@@ -541,9 +866,11 @@ function buildReplayedSuccessResult(input: {
   holdAcquiredAtIso: string
   holdExpiresAtIso: string
   quote: CustomBundleHoldPreparedQuote
-  persistedCounts: HoldReplayCountsRow
+  descriptors: readonly CustomBundlePersistableLineDescriptor[]
+  requirements: readonly CustomBundleResourceRequirement[]
 }): Extract<AcquireCustomBundleHoldResult, { ok: true; stage: 'replayed' }> {
-  const counts = countPersistedAllocations(input.persistedCounts)
+  const itemCounts = countCustomBundlePersistableItemsByKind(input.descriptors)
+  const allocationCounts = countCustomBundleRequirementsByMode(input.requirements)
 
   return {
     ok: true,
@@ -557,13 +884,82 @@ function buildReplayedSuccessResult(input: {
     holdExpiresAtIso: input.holdExpiresAtIso,
     estimatedTotalUsd: input.quote.estimate.estimatedTotalUsd,
     totalDurationMinutes: input.quote.estimate.totalDurationMinutes,
-    itemCount: counts.itemCount,
-    serviceItemCount: counts.serviceItemCount,
-    addonItemCount: counts.addonItemCount,
-    includedItemCount: counts.includedItemCount,
-    physicalAllocationCount: counts.physicalAllocationCount,
-    noPhysicalAllocationCount: counts.noPhysicalAllocationCount,
+    itemCount: input.descriptors.length,
+    serviceItemCount: itemCounts.serviceItemCount,
+    addonItemCount: itemCounts.addonItemCount,
+    includedItemCount: itemCounts.includedItemCount,
+    physicalAllocationCount: allocationCounts.physicalAllocationCount,
+    noPhysicalAllocationCount: allocationCounts.noPhysicalAllocationCount,
   }
+}
+
+async function buildValidatedReplaySuccessResult(input: {
+  session: CustomBundleSqlSession
+  parsedReplayRecord: {
+    id: string
+    publicCode: string
+    idempotencyKey: string
+    requestFingerprint: string
+    holdAcquiredAt: Date
+    holdExpiresAt: Date
+  }
+  preparedValue: CustomBundleHoldPreparationReady
+}): Promise<AcquireCustomBundleHoldResult> {
+  const serviceVariantResolution = await resolveCustomBundleServiceVariantsWithSql(
+    input.session,
+    input.preparedValue.quote,
+  )
+
+  if (!serviceVariantResolution.ok) {
+    await rollbackSilently(input.session)
+    if (serviceVariantResolution.stage === 'catalog_resolution') {
+      return serviceVariantResolution
+    }
+
+    return makePersistenceIssue(
+      'DATABASE_WRITE_FAILED',
+      'No se pudieron resolver las variantes persistibles del replay.',
+    )
+  }
+
+  const descriptorsResult = buildCustomBundlePersistableLineDescriptors(
+    input.preparedValue.quote,
+    serviceVariantResolution.rows as Map<string, CustomBundleResolvedServiceVariantRow>,
+  )
+
+  if (!Array.isArray(descriptorsResult)) {
+    await rollbackSilently(input.session)
+    return descriptorsResult
+  }
+
+  const persistedItems = await readPersistedReplayItems(input.session, input.parsedReplayRecord.id)
+  const replayIssues = validateCustomBundlePersistedReplayItems({
+    descriptors: descriptorsResult,
+    requirements: input.preparedValue.requirements,
+    persistedItems,
+  })
+
+  if (replayIssues.length > 0) {
+    await rollbackSilently(input.session)
+    return makeIdempotencyIssue(
+      'IDEMPOTENCY_RECORD_INVALID',
+      'El registro de idempotencia existente no es valido.',
+    )
+  }
+
+  await rollbackSilently(input.session)
+
+  return buildReplayedSuccessResult({
+    bookingRequestId: input.parsedReplayRecord.id,
+    publicCode: input.parsedReplayRecord.publicCode,
+    idempotencyKey: input.parsedReplayRecord.idempotencyKey,
+    requestFingerprint: input.parsedReplayRecord.requestFingerprint,
+    holdAcquiredAtIso: input.parsedReplayRecord.holdAcquiredAt.toISOString(),
+    holdExpiresAtIso: input.parsedReplayRecord.holdExpiresAt.toISOString(),
+    quote: input.preparedValue.quote,
+    descriptors: descriptorsResult,
+    requirements: input.preparedValue.requirements,
+  })
 }
 
 function getPreparedHoldValue(
@@ -712,17 +1108,17 @@ export async function acquireCustomBundleHoldWithSql(
         })
 
         if (replayClassification === 'active_replay') {
-          const persistedCounts = await readPersistedCounts(session, parsedExisting.id)
-          await rollbackSilently(session)
-          return buildReplayedSuccessResult({
-            bookingRequestId: parsedExisting.id,
-            publicCode: parsedExisting.publicCode,
-            idempotencyKey: parsedExisting.idempotencyKey,
-            requestFingerprint: parsedExisting.requestFingerprint,
-            holdAcquiredAtIso: parsedExisting.holdAcquiredAt.toISOString(),
-            holdExpiresAtIso: parsedExisting.holdExpiresAt.toISOString(),
-            quote: preparedValue.quote,
-            persistedCounts,
+          return buildValidatedReplaySuccessResult({
+            session,
+            parsedReplayRecord: {
+              id: parsedExisting.id,
+              publicCode: parsedExisting.publicCode,
+              idempotencyKey: parsedExisting.idempotencyKey,
+              requestFingerprint: parsedExisting.requestFingerprint,
+              holdAcquiredAt: parsedExisting.holdAcquiredAt,
+              holdExpiresAt: parsedExisting.holdExpiresAt,
+            },
+            preparedValue,
           })
         }
 
@@ -1034,16 +1430,17 @@ export async function acquireCustomBundleHoldWithSql(
           })
 
           if (replayClassification === 'active_replay') {
-            const persistedCounts = await readPersistedCounts(session, parsedReplayRecord.id)
-            return buildReplayedSuccessResult({
-              bookingRequestId: parsedReplayRecord.id,
-              publicCode: parsedReplayRecord.publicCode,
-              idempotencyKey: parsedReplayRecord.idempotencyKey,
-              requestFingerprint: parsedReplayRecord.requestFingerprint,
-              holdAcquiredAtIso: parsedReplayRecord.holdAcquiredAt.toISOString(),
-              holdExpiresAtIso: parsedReplayRecord.holdExpiresAt.toISOString(),
-              quote: preparedValue.quote,
-              persistedCounts,
+            return buildValidatedReplaySuccessResult({
+              session,
+              parsedReplayRecord: {
+                id: parsedReplayRecord.id,
+                publicCode: parsedReplayRecord.publicCode,
+                idempotencyKey: parsedReplayRecord.idempotencyKey,
+                requestFingerprint: parsedReplayRecord.requestFingerprint,
+                holdAcquiredAt: parsedReplayRecord.holdAcquiredAt,
+                holdExpiresAt: parsedReplayRecord.holdExpiresAt,
+              },
+              preparedValue,
             })
           }
 

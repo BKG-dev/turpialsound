@@ -1,39 +1,36 @@
 # Current Sprint
 
 Sprint:
-BKG-07B
+BKG-07B1
 
 Name:
-Adquisicion transaccional aislada del hold
+Corregir semántica de allocations en replay idempotente
 
 Base:
-ef76f340513cff0aa3802b5c5add3a80ea20001a
+c37fb1cc3b33142c5e656217bb8b4d17499f8c22
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* isolated hold acquisition;
-* replay classification;
-* concurrent acquisition safety;
-* transactional persistence;
-* isolated PostgreSQL acquisition gate;
-* orchestration state bootstrap.
+* preserve acquired versus replayed allocation semantics;
+* validate persisted replay integrity;
+* reject corrupt replay rows;
+* keep replay idempotent;
+* keep the hold acquisition isolated.
 
 Out of Scope:
 
 * expiration writer;
-* resource assignment changes;
 * wizard wiring;
-* Prisma schema changes;
 * production;
 * manual QA.
 
 Result:
 
-READY_FOR_BKG_07C
+REPLAY_ALLOCATION_CORRECTION_PENDING_CI
 
 Next Action:
 
-ChatGPT reviews BKG-07B and defines isolated expiration and release processing.
+ChatGPT verifies replay allocation parity before BKG-07C.

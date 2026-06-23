@@ -90,7 +90,9 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Status: `IN_PROGRESS`
 - Hold schema proposal: `TECHNICALLY_VALIDATED`
 - Hold contract: `TECHNICALLY_VALIDATED`
-- Hold acquisition: `TECHNICALLY_VALIDATED`
+- Hold acquisition: `FIX_REQUIRED`
+- Replay allocation parity: `PENDING_CI`
+- Corrupt replay rejection: `PENDING_CI`
 - Expiration writer: `NOT_STARTED`
 - Idempotent replay: `TECHNICALLY_VALIDATED`
 - Wizard integration: `NOT_STARTED`

@@ -342,6 +342,40 @@ function buildNoPhysicalSubmission(
   }
 }
 
+function buildReplayParitySubmission(
+  overrides: Partial<CustomBundleSubmissionInputV1> = {},
+): CustomBundleSubmissionInputV1 {
+  const base: CustomBundleSubmissionInputV1 = {
+    contractVersion: 1,
+    bookingMode: 'custom_bundle',
+    eventDate: '2026-06-24',
+    startTime: '14:00',
+    extrasNotes: '  Replay allocation parity  ',
+    requester: {
+      name: '  Ana Perez  ',
+      email: ' ANA@Example.COM ',
+      phone: '+58 412-123-4567',
+      whatsappConsentAccepted: true,
+    },
+    items: [
+      { itemSlug: 'sala-premium', quantity: 2, sessionDurationMinutes: null },
+      { itemSlug: 'studio-session', quantity: 1, sessionDurationMinutes: 180 },
+      { itemSlug: 'mezcla', quantity: 1, sessionDurationMinutes: null },
+      { itemSlug: 'master', quantity: 1, sessionDurationMinutes: null },
+    ],
+  }
+
+  return {
+    ...base,
+    ...overrides,
+    requester: {
+      ...base.requester,
+      ...(overrides.requester ?? {}),
+    },
+    items: overrides.items ?? base.items,
+  }
+}
+
 function buildPluginSubmission(
   overrides: Partial<CustomBundleSubmissionInputV1> = {},
 ): CustomBundleSubmissionInputV1 {
@@ -1173,6 +1207,130 @@ async function main(): Promise<void> {
       assertTraceContains(replay.trace, /FOR UPDATE/i, 'active replay must lock idempotency row')
     }
 
+    // Case 3 - replay allocation parity.
+    {
+      const acquired = await runAcquisition(
+        client,
+        buildReplayParitySubmission(),
+        buildServerContext({ publicCode: 'TUR-0707-092', idempotencyKey: 'HOLD_2026:06:24-0092' }),
+      )
+      allTraceCalls.push(...acquired.trace)
+      assertResultIsSuccess('replay allocation parity acquired', acquired.result)
+      assert.equal(acquired.result.stage, 'acquired')
+      assert.equal(acquired.result.replayed, false)
+      assert.equal(acquired.result.itemCount, 6)
+      assert.equal(acquired.result.serviceItemCount, 4)
+      assert.equal(acquired.result.addonItemCount, 0)
+      assert.equal(acquired.result.includedItemCount, 2)
+      assert.equal(acquired.result.physicalAllocationCount, 1)
+      assert.equal(acquired.result.noPhysicalAllocationCount, 1)
+
+      const replayed = await runAcquisition(
+        client,
+        buildReplayParitySubmission(),
+        buildServerContext({ publicCode: 'TUR-0707-093', idempotencyKey: 'HOLD_2026:06:24-0092' }),
+      )
+      allTraceCalls.push(...replayed.trace)
+      assertResultIsSuccess('replay allocation parity replayed', replayed.result)
+      assert.equal(replayed.result.stage, 'replayed')
+      assert.equal(replayed.result.replayed, true)
+      assert.equal(replayed.result.bookingRequestId, acquired.result.bookingRequestId)
+      assert.equal(replayed.result.publicCode, 'TUR-0707-092')
+      assert.equal(replayed.result.requestFingerprint, acquired.result.requestFingerprint)
+      assert.equal(replayed.result.holdAcquiredAtIso, acquired.result.holdAcquiredAtIso)
+      assert.equal(replayed.result.holdExpiresAtIso, acquired.result.holdExpiresAtIso)
+      assert.equal(replayed.result.estimatedTotalUsd, acquired.result.estimatedTotalUsd)
+      assert.equal(replayed.result.totalDurationMinutes, acquired.result.totalDurationMinutes)
+      assert.equal(replayed.result.itemCount, acquired.result.itemCount)
+      assert.equal(replayed.result.serviceItemCount, acquired.result.serviceItemCount)
+      assert.equal(replayed.result.addonItemCount, acquired.result.addonItemCount)
+      assert.equal(replayed.result.includedItemCount, acquired.result.includedItemCount)
+      assert.equal(replayed.result.physicalAllocationCount, acquired.result.physicalAllocationCount)
+      assert.equal(replayed.result.noPhysicalAllocationCount, acquired.result.noPhysicalAllocationCount)
+
+      const replayBundle = await fetchBundleByPublicCode(client, 'TUR-0707-092')
+      assert.ok(replayBundle.bookingRequest)
+      const replayBundleRows = await queryRows<{ publicCode: string }>(
+        client,
+        `SELECT "publicCode" FROM "booking_requests" WHERE "publicCode" IN ('TUR-0707-092', 'TUR-0707-093')`,
+      )
+      assert.equal(replayBundleRows.length, 1)
+      assert.equal(replayBundle.items.length, 6)
+
+      const replayItemsBySlug = new Map(replayBundle.items.map((row) => [row.itemSlug ?? '', row]))
+      const salaPremium = replayItemsBySlug.get('sala-premium')
+      const studioSession = replayItemsBySlug.get('studio-session')
+      const mezcla = replayItemsBySlug.get('mezcla')
+      const master = replayItemsBySlug.get('master')
+      const tecnico = replayItemsBySlug.get('tecnico-sonido')
+      const backline = replayItemsBySlug.get('backline-equipamiento')
+
+      assert.ok(salaPremium)
+      assert.ok(studioSession)
+      assert.ok(mezcla)
+      assert.ok(master)
+      assert.ok(tecnico)
+      assert.ok(backline)
+
+      assert.equal(salaPremium?.itemKind, 'service')
+      assert.equal(salaPremium?.resourceId, 'bkg07b_resource_sala_3')
+      assert.ok(salaPremium?.serviceVariantId)
+
+      assert.equal(studioSession?.itemKind, 'service')
+      assert.equal(studioSession?.resourceId, null)
+      assert.ok(studioSession?.serviceVariantId)
+
+      assert.equal(mezcla?.itemKind, 'service')
+      assert.equal(mezcla?.resourceId, null)
+      assert.ok(mezcla?.serviceVariantId)
+
+      assert.equal(master?.itemKind, 'service')
+      assert.equal(master?.resourceId, null)
+      assert.ok(master?.serviceVariantId)
+
+      assert.equal(tecnico?.itemKind, 'included')
+      assert.equal(tecnico?.resourceId, null)
+      assert.equal(tecnico?.serviceVariantId, null)
+
+      assert.equal(backline?.itemKind, 'included')
+      assert.equal(backline?.resourceId, null)
+      assert.equal(backline?.serviceVariantId, null)
+
+      assert.equal(acquired.result.requestFingerprint, replayed.result.requestFingerprint)
+      assert.equal(acquired.result.holdAcquiredAtIso, replayed.result.holdAcquiredAtIso)
+      assert.equal(acquired.result.holdExpiresAtIso, replayed.result.holdExpiresAtIso)
+      assert.equal(acquired.result.physicalAllocationCount, 1)
+      assert.equal(acquired.result.noPhysicalAllocationCount, 1)
+    }
+
+    // Case 4 - corrupt replay rejected.
+    {
+      const replayBundle = await fetchBundleByPublicCode(client, 'TUR-0707-092')
+      assert.ok(replayBundle.bookingRequest)
+      await client.query(
+        `
+          UPDATE "booking_request_items"
+          SET "resourceId" = NULL
+          WHERE "bookingRequestId" = $1 AND "itemSlug" = $2
+        `,
+        [replayBundle.bookingRequest!.id, 'sala-premium'],
+      )
+
+      const corruptedReplay = await runAcquisition(
+        client,
+        buildReplayParitySubmission(),
+        buildServerContext({ publicCode: 'TUR-0707-094', idempotencyKey: 'HOLD_2026:06:24-0092' }),
+      )
+      allTraceCalls.push(...corruptedReplay.trace)
+      assert.equal(corruptedReplay.result.ok, false)
+      if (!corruptedReplay.result.ok) {
+        assert.equal(corruptedReplay.result.stage, 'idempotency')
+        assert.equal(corruptedReplay.result.code, 'IDEMPOTENCY_RECORD_INVALID')
+      }
+      assertTraceDoesNotContain(corruptedReplay.trace, /INSERT\s+INTO/i, 'corrupt replay must not insert')
+      assertTraceDoesNotContain(corruptedReplay.trace, /COMMIT/i, 'corrupt replay must not commit')
+    }
+
     // Case 3 - key conflict.
     {
       const conflictSubmission = buildMixedSubmission({
@@ -1515,6 +1673,7 @@ async function main(): Promise<void> {
     assertTraceContains(allTraceCalls, /INSERT INTO "booking_requests"/i, 'adapter must insert booking requests')
     assertTraceContains(allTraceCalls, /INSERT INTO "booking_request_items"/i, 'adapter must insert booking request items')
     assertTraceContains(allTraceCalls, /FROM "booking_requests"/i, 'adapter must read booking requests during replay and verification')
+    assertTraceContains(allTraceCalls, /FROM "service_variants"/i, 'adapter must resolve service variants during replay validation')
     assertTraceContains(allTraceCalls, /FROM "booking_request_items"/i, 'adapter must read booking request items during verification')
     assertTraceContains(allTraceCalls, /FROM\s+"?resources"?/i, 'adapter must consult resources for physical allocations')
     assertTraceContains(allTraceCalls, /COMMIT/i, 'adapter must commit successful acquisitions')
@@ -1559,6 +1718,8 @@ async function main(): Promise<void> {
     console.log('booking_isolated_custom_bundle_hold_acquisition OK')
     console.log('mixed hold: verified')
     console.log('active replay: verified')
+    console.log('replay allocation parity: verified')
+    console.log('corrupt replay rejected: verified')
     console.log('expired replay: verified')
     console.log('idempotency conflict: verified')
     console.log('active hold collision: verified')

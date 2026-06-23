@@ -2,13 +2,18 @@ import assert from 'node:assert/strict'
 
 import {
   acquireCustomBundleHoldWithSql,
+  countCustomBundleRequirementsByMode,
   type AcquireCustomBundleHoldInput,
 } from '@/lib/bookings/custom-bundle-hold-acquisition'
 import {
   prepareCustomBundleHoldContract,
   type CustomBundleHoldServerContext,
 } from '@/lib/bookings/custom-bundle-hold-contract'
-import type { CustomBundleSqlSession } from '@/lib/bookings/custom-bundle-persistence'
+import {
+  buildCustomBundlePersistableLineDescriptors,
+  type CustomBundlePersistableLineDescriptor,
+  type CustomBundleSqlSession,
+} from '@/lib/bookings/custom-bundle-persistence'
 import type { CustomBundleSubmissionInputV1 } from '@/lib/bookings/custom-bundle-submission'
 
 type ScriptedQueryStep = {
@@ -76,6 +81,67 @@ function buildServerContext(
     now: new Date('2026-06-22T16:00:00.000Z'),
     holdDurationMinutes: 60,
     ...overrides,
+  }
+}
+
+function buildReplayFixture(input: {
+  prepared: ReturnType<typeof buildCanonicalPreparedHold>['prepared']
+  serviceVariantRows: Array<{
+    variantId: string
+    variantSlug: string
+    variantIsActive?: boolean
+    serviceSlug: string
+    serviceIsActive?: boolean
+  }>
+  resourceIdsBySlug: Record<string, string | null>
+}): {
+  serviceVariantRows: Array<{
+    variantId: string
+    variantSlug: string
+    variantIsActive: boolean
+    serviceSlug: string
+    serviceIsActive: boolean
+  }>
+  descriptors: readonly CustomBundlePersistableLineDescriptor[]
+  persistedItems: Array<Record<string, unknown>>
+} {
+  const serviceVariantRows = input.serviceVariantRows.map((row) => ({
+    variantId: row.variantId,
+    variantSlug: row.variantSlug,
+    variantIsActive: row.variantIsActive ?? true,
+    serviceSlug: row.serviceSlug,
+    serviceIsActive: row.serviceIsActive ?? true,
+  }))
+
+  const resolvedServiceVariants = new Map(
+    serviceVariantRows.map((row) => [row.variantSlug, row] as const),
+  )
+
+  const descriptorsResult = buildCustomBundlePersistableLineDescriptors(
+    input.prepared.quote,
+    resolvedServiceVariants,
+  )
+
+  if (!Array.isArray(descriptorsResult)) {
+    throw new Error(`Unable to build replay fixture descriptors: ${descriptorsResult.stage}`)
+  }
+
+  return {
+    serviceVariantRows,
+    descriptors: descriptorsResult,
+    persistedItems: descriptorsResult.map((descriptor) => ({
+      itemSlug: descriptor.itemSlug,
+      itemName: descriptor.itemName,
+      itemKind: descriptor.itemKind,
+      serviceVariantId: descriptor.serviceVariantId,
+      resourceId: input.resourceIdsBySlug[descriptor.itemSlug] ?? null,
+      quantity: descriptor.quantity,
+      sessionDurationMinutes: descriptor.sessionDurationMinutes,
+      durationMinutes: descriptor.durationMinutes,
+      unitPriceUsdSnapshot: descriptor.unitPriceUsdSnapshot,
+      lineTotalUsdSnapshot: descriptor.lineTotalUsdSnapshot,
+      clientPriceDisplay: descriptor.clientPriceDisplay,
+    })),
   }
 }
 
@@ -171,6 +237,17 @@ function buildAcquireInput(
   }
 }
 
+function buildReplayParitySubmission(): CustomBundleSubmissionInputV1 {
+  return buildSubmission({
+    items: [
+      { itemSlug: 'sala-premium', quantity: 2, sessionDurationMinutes: null },
+      { itemSlug: 'studio-session', quantity: 1, sessionDurationMinutes: 180 },
+      { itemSlug: 'mezcla', quantity: 1, sessionDurationMinutes: null },
+      { itemSlug: 'master', quantity: 1, sessionDurationMinutes: null },
+    ],
+  })
+}
+
 function assertSafeMessage(message: string): void {
   assert.ok(message.length > 0, 'Expected a safe error message.')
   assert.ok(!/postgres|connection|string|host|sql/i.test(message), 'Message leaked infrastructure details.')
@@ -179,6 +256,87 @@ function assertSafeMessage(message: string): void {
 async function main(): Promise<void> {
   const canonical = buildCanonicalPreparedHold()
   const canonicalInput = buildAcquireInput(canonical.submission, canonical.serverContext)
+  const canonicalReplayFixture = buildReplayFixture({
+    prepared: canonical.prepared,
+    serviceVariantRows: [
+      {
+        variantId: 'bkg07b_variant_sala_premium',
+        variantSlug: 'sala-ensayo-premium',
+        serviceSlug: 'sala-ensayo',
+      },
+      {
+        variantId: 'bkg07b_variant_studio_session',
+        variantSlug: 'studio-session-fija',
+        serviceSlug: 'video-session',
+      },
+      {
+        variantId: 'bkg07b_variant_consultoria',
+        variantSlug: 'consultoria-produccion',
+        serviceSlug: 'consultoria',
+      },
+      {
+        variantId: 'bkg07b_variant_podcast',
+        variantSlug: 'podcast-por-episodio',
+        serviceSlug: 'podcast-locucion',
+      },
+    ],
+    resourceIdsBySlug: {
+      'sala-premium': 'bkg07b_resource_sala_3',
+      'studio-session': null,
+      'consultoria-produccion': null,
+      podcast: 'bkg07b_resource_sala_2',
+      'combo-percusion': null,
+      'grabaciones-voces': null,
+      'tecnico-sonido': null,
+      'backline-equipamiento': null,
+    },
+  })
+  const replayParitySubmission = buildReplayParitySubmission()
+  const replayParityPrepared = prepareCustomBundleHoldContract({
+    submission: replayParitySubmission,
+    serverContext: canonical.serverContext,
+  })
+
+  if (!replayParityPrepared.ok || replayParityPrepared.stage !== 'ready') {
+    throw new Error('Replay parity hold preparation failed in the contract harness.')
+  }
+
+  const replayParityFixture = buildReplayFixture({
+    prepared: replayParityPrepared.value,
+    serviceVariantRows: [
+      {
+        variantId: 'bkg07b_variant_sala_premium',
+        variantSlug: 'sala-ensayo-premium',
+        serviceSlug: 'sala-ensayo',
+      },
+      {
+        variantId: 'bkg07b_variant_studio_session',
+        variantSlug: 'studio-session-fija',
+        serviceSlug: 'video-session',
+      },
+      {
+        variantId: 'bkg07b_variant_mezcla',
+        variantSlug: 'mezcla-por-tema',
+        serviceSlug: 'mezcla-masterizacion',
+      },
+      {
+        variantId: 'bkg07b_variant_master',
+        variantSlug: 'master-por-tema',
+        serviceSlug: 'mezcla-masterizacion',
+      },
+    ],
+    resourceIdsBySlug: {
+      'sala-premium': 'bkg07b_resource_sala_3',
+      'studio-session': null,
+      mezcla: null,
+      master: null,
+      'tecnico-sonido': null,
+      'backline-equipamiento': null,
+    },
+  })
+  const replayParityAllocationCounts = countCustomBundleRequirementsByMode(
+    replayParityPrepared.value.requirements,
+  )
 
   // Case 1: invalid SQL session.
   {
@@ -279,20 +437,20 @@ async function main(): Promise<void> {
       },
       {
         assert(sql) {
+          assert.match(sql, /FROM "service_variants"/i)
+        },
+        result: {
+          rows: canonicalReplayFixture.serviceVariantRows,
+          rowCount: canonicalReplayFixture.serviceVariantRows.length,
+        },
+      },
+      {
+        assert(sql) {
           assert.match(sql, /FROM "booking_request_items"/i)
         },
         result: {
-          rows: [
-            {
-              itemCount: 8,
-              serviceItemCount: 4,
-              addonItemCount: 2,
-              includedItemCount: 2,
-              physicalAllocationCount: 2,
-              noPhysicalAllocationCount: 2,
-            },
-          ],
-          rowCount: 1,
+          rows: canonicalReplayFixture.persistedItems,
+          rowCount: canonicalReplayFixture.persistedItems.length,
         },
       },
       {
@@ -322,7 +480,90 @@ async function main(): Promise<void> {
     assertNoCallIncludes(session, /COMMIT/i)
   }
 
-  // Case 6: expired replay.
+  // Case 6: replay allocation parity.
+  {
+    const session = createScriptedSession([
+      {
+        assert(sql) {
+          assert.match(sql, /^BEGIN ISOLATION LEVEL SERIALIZABLE/i)
+        },
+      },
+      {
+        result: {
+          rows: [
+            {
+              id: 'hold-replay-parity-001',
+              publicCode: 'TUR-0707-092',
+              idempotencyKey: replayParityPrepared.value.idempotencyKey,
+              requestFingerprint: replayParityPrepared.value.requestFingerprint,
+              holdAcquiredAt: new Date(replayParityPrepared.value.holdAcquiredAtIso),
+              holdExpiresAt: new Date(replayParityPrepared.value.holdExpiresAtIso),
+              eventDate: new Date('2026-06-24T14:00:00.000Z'),
+              eventEndDate: new Date('2026-06-24T16:00:00.000Z'),
+              estimatedTotal: replayParityPrepared.value.quote.estimate.estimatedTotalUsd,
+              status: 'under_review',
+              bookingMode: 'custom_bundle',
+              pricingSource: 'server_catalog_v1',
+            },
+          ],
+          rowCount: 1,
+        },
+      },
+      {
+        assert(sql) {
+          assert.match(sql, /FROM "service_variants"/i)
+        },
+        result: {
+          rows: replayParityFixture.serviceVariantRows,
+          rowCount: replayParityFixture.serviceVariantRows.length,
+        },
+      },
+      {
+        assert(sql) {
+          assert.match(sql, /FROM "booking_request_items"/i)
+        },
+        result: {
+          rows: replayParityFixture.persistedItems,
+          rowCount: replayParityFixture.persistedItems.length,
+        },
+      },
+      {
+        assert(sql) {
+          assert.equal(sql.trim().toUpperCase(), 'ROLLBACK')
+        },
+      },
+    ])
+
+    const result = await acquireCustomBundleHoldWithSql(
+      session,
+      buildAcquireInput(
+        replayParitySubmission,
+        buildServerContext({
+          publicCode: 'TUR-0707-093',
+          idempotencyKey: replayParityPrepared.value.idempotencyKey,
+          now: canonical.serverContext.now,
+        }),
+      ),
+    )
+
+    expectResultStage(result, 'replayed', 'expected replay allocation parity')
+    assert.ok(result.ok)
+    assert.equal(result.replayed, true)
+    assert.equal(result.publicCode, 'TUR-0707-092')
+    assert.equal(result.bookingRequestId, 'hold-replay-parity-001')
+    assert.equal(result.itemCount, 6)
+    assert.equal(result.serviceItemCount, 4)
+    assert.equal(result.addonItemCount, 0)
+    assert.equal(result.includedItemCount, 2)
+    assert.equal(result.physicalAllocationCount, 1)
+    assert.equal(result.noPhysicalAllocationCount, 1)
+    assert.equal(replayParityAllocationCounts.physicalAllocationCount, 1)
+    assert.equal(replayParityAllocationCounts.noPhysicalAllocationCount, 1)
+    assertNoCallIncludes(session, /INSERT\s+INTO/i)
+    assertNoCallIncludes(session, /COMMIT/i)
+  }
+
+  // Case 7: expired replay.
   {
     const session = createScriptedSession([
       {
@@ -370,7 +611,7 @@ async function main(): Promise<void> {
     assertNoCallIncludes(session, /INSERT\s+INTO/i)
   }
 
-  // Case 7: key conflict.
+  // Case 8: key conflict.
   {
     const session = createScriptedSession([
       {
@@ -418,7 +659,7 @@ async function main(): Promise<void> {
     assertNoCallIncludes(session, /INSERT\s+INTO/i)
   }
 
-  // Case 8: error after BEGIN.
+  // Case 9: error after BEGIN.
   {
     const session = createScriptedSession([
       {
@@ -448,7 +689,7 @@ async function main(): Promise<void> {
     }
   }
 
-  // Case 9: retryable 40001.
+  // Case 10: retryable 40001.
   {
     const session = createScriptedSession([
       {
@@ -492,17 +733,14 @@ async function main(): Promise<void> {
       },
       {
         result: {
-          rows: [
-            {
-              itemCount: 8,
-              serviceItemCount: 4,
-              addonItemCount: 2,
-              includedItemCount: 2,
-              physicalAllocationCount: 2,
-              noPhysicalAllocationCount: 2,
-            },
-          ],
-          rowCount: 1,
+          rows: canonicalReplayFixture.serviceVariantRows,
+          rowCount: canonicalReplayFixture.serviceVariantRows.length,
+        },
+      },
+      {
+        result: {
+          rows: canonicalReplayFixture.persistedItems,
+          rowCount: canonicalReplayFixture.persistedItems.length,
         },
       },
       {
@@ -522,7 +760,7 @@ async function main(): Promise<void> {
     assert.equal(session.calls.filter((call) => /^ROLLBACK$/i.test(call.sql.trim())).length, 2)
   }
 
-  // Case 10: maximum retries exhausted.
+  // Case 11: maximum retries exhausted.
   {
     const session = createScriptedSession([
       {
@@ -567,6 +805,7 @@ async function main(): Promise<void> {
   console.log('booking_custom_bundle_hold_acquisition_contract OK')
   console.log('server context: verified')
   console.log('active replay: verified')
+  console.log('replay allocation parity: verified')
   console.log('expired replay: verified')
   console.log('idempotency conflict: verified')
   console.log('safe rollback: verified')
