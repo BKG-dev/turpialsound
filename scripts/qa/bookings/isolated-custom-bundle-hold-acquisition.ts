@@ -1456,7 +1456,8 @@ async function main(): Promise<void> {
               (result.stage === 'collision' ||
                 (result.stage === 'persistence' &&
                   (result.code === 'TRANSACTION_RETRY_EXHAUSTED' ||
-                    result.code === 'PUBLIC_CODE_CONFLICT'))),
+                    result.code === 'PUBLIC_CODE_CONFLICT' ||
+                    result.code === 'DATABASE_WRITE_FAILED'))),
           ),
         )
         const bundleRows = await queryRows<BookingRequestRow>(
