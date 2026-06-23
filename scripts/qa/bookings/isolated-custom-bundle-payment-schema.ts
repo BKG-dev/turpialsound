@@ -516,8 +516,8 @@ async function main(): Promise<void> {
 
     await withTransaction(client, async () => {
       const serviceRows = await client.query<{ id: string }>(`
-        INSERT INTO "services" ("slug", "name", "description", "isActive", "createdAt", "updatedAt")
-        VALUES ('sala-ensayo', 'Sala de ensayo', 'Servicio legacy de sala', true, now(), now())
+        INSERT INTO "services" ("id", "slug", "name", "description", "isActive", "createdAt", "updatedAt")
+        VALUES ('payment-fixture-service-001', 'sala-ensayo', 'Sala de ensayo', 'Servicio legacy de sala', true, now(), now())
         RETURNING id
       `)
 
