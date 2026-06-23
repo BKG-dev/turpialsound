@@ -1446,6 +1446,8 @@ async function main(): Promise<void> {
           acquireCustomBundleHoldWithSql(createTracingSession(firstClient), inputA),
           acquireCustomBundleHoldWithSql(createTracingSession(secondClient), inputB),
         ])
+        console.log('case13 resultA:', describeHoldAcquisitionResult(resultA))
+        console.log('case13 resultB:', describeHoldAcquisitionResult(resultB))
         assert.ok([resultA, resultB].some((result) => result.ok && result.stage === 'acquired'))
         assert.ok([resultA, resultB].some((result) => !result.ok && (result.stage === 'collision' || (result.stage === 'persistence' && result.code === 'TRANSACTION_RETRY_EXHAUSTED'))))
         const bundleRows = await queryRows<BookingRequestRow>(
