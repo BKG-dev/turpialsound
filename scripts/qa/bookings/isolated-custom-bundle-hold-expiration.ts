@@ -770,6 +770,20 @@ async function main(): Promise<void> {
       console.error('first batch trace tail:', JSON.stringify(failingTrace, null, 2))
     }
     assertExpirationSuccess('first batch', firstRun.result)
+    console.error(
+      'first batch summary:',
+      JSON.stringify(
+        {
+          selected: firstRun.result.selected,
+          expired: firstRun.result.expired,
+          skipped: firstRun.result.skipped,
+          hasMore: firstRun.result.hasMore,
+          expiredBookings: firstRun.result.expiredBookings.length,
+        },
+        null,
+        2,
+      ),
+    )
     assert.equal(firstRun.result.selected, 2)
     assert.equal(firstRun.result.expired, 2)
     assert.equal(firstRun.result.skipped, 0)
@@ -794,6 +808,20 @@ async function main(): Promise<void> {
       batchSize: 2,
     })
     assertExpirationSuccess('second batch', secondRun.result)
+    console.error(
+      'second batch summary:',
+      JSON.stringify(
+        {
+          selected: secondRun.result.selected,
+          expired: secondRun.result.expired,
+          skipped: secondRun.result.skipped,
+          hasMore: secondRun.result.hasMore,
+          expiredBookings: secondRun.result.expiredBookings.length,
+        },
+        null,
+        2,
+      ),
+    )
     assert.equal(secondRun.result.selected, 1)
     assert.equal(secondRun.result.expired, 1)
     assert.equal(secondRun.result.hasMore, false)
