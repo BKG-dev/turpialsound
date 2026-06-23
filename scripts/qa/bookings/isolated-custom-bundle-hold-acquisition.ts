@@ -484,26 +484,97 @@ async function assertSchemaShape(client: Client): Promise<void> {
   )
 
   const columnMap = new Map(columnRows.map((row) => [`${row.table_name}.${row.column_name}`, row]))
-  for (const key of [
-    'booking_requests.bookingMode',
-    'booking_requests.pricingSource',
-    'booking_requests.idempotencyKey',
-    'booking_requests.requestFingerprint',
-    'booking_requests.holdAcquiredAt',
-    'booking_requests.holdExpiresAt',
-    'booking_request_items.serviceVariantId',
-    'booking_request_items.itemSlug',
-    'booking_request_items.itemName',
-    'booking_request_items.itemKind',
-    'booking_request_items.sessionDurationMinutes',
-    'booking_request_items.durationMinutes',
-    'booking_request_items.unitPriceUsdSnapshot',
-    'booking_request_items.lineTotalUsdSnapshot',
-    'booking_request_items.clientPriceDisplay',
-  ]) {
-    assert.ok(columnMap.has(key), `Missing expected column: ${key}`)
-    assert.equal(columnMap.get(key)?.is_nullable, 'YES', `${key} should be nullable`)
-    assert.equal(columnMap.get(key)?.column_default, null, `${key} should not have a default`)
+  const columnExpectations: Array<{
+    key: string
+    nullable: 'YES' | 'NO'
+    defaultValue: RegExp | null
+  }> = [
+    {
+      key: 'booking_requests.bookingMode',
+      nullable: 'NO',
+      defaultValue: /single/i,
+    },
+    {
+      key: 'booking_requests.pricingSource',
+      nullable: 'YES',
+      defaultValue: null,
+    },
+    {
+      key: 'booking_requests.idempotencyKey',
+      nullable: 'YES',
+      defaultValue: null,
+    },
+    {
+      key: 'booking_requests.requestFingerprint',
+      nullable: 'YES',
+      defaultValue: null,
+    },
+    {
+      key: 'booking_requests.holdAcquiredAt',
+      nullable: 'YES',
+      defaultValue: null,
+    },
+    {
+      key: 'booking_requests.holdExpiresAt',
+      nullable: 'YES',
+      defaultValue: null,
+    },
+    {
+      key: 'booking_request_items.serviceVariantId',
+      nullable: 'YES',
+      defaultValue: null,
+    },
+    {
+      key: 'booking_request_items.itemSlug',
+      nullable: 'YES',
+      defaultValue: null,
+    },
+    {
+      key: 'booking_request_items.itemName',
+      nullable: 'YES',
+      defaultValue: null,
+    },
+    {
+      key: 'booking_request_items.itemKind',
+      nullable: 'YES',
+      defaultValue: null,
+    },
+    {
+      key: 'booking_request_items.sessionDurationMinutes',
+      nullable: 'YES',
+      defaultValue: null,
+    },
+    {
+      key: 'booking_request_items.durationMinutes',
+      nullable: 'YES',
+      defaultValue: null,
+    },
+    {
+      key: 'booking_request_items.unitPriceUsdSnapshot',
+      nullable: 'YES',
+      defaultValue: null,
+    },
+    {
+      key: 'booking_request_items.lineTotalUsdSnapshot',
+      nullable: 'YES',
+      defaultValue: null,
+    },
+    {
+      key: 'booking_request_items.clientPriceDisplay',
+      nullable: 'YES',
+      defaultValue: null,
+    },
+  ]
+
+  for (const expectation of columnExpectations) {
+    const column = columnMap.get(expectation.key)
+    assert.ok(column, `Missing expected column: ${expectation.key}`)
+    assert.equal(column?.is_nullable, expectation.nullable, `${expectation.key} nullability`)
+    if (expectation.defaultValue) {
+      assert.match(column?.column_default ?? '', expectation.defaultValue, `${expectation.key} default`)
+    } else {
+      assert.equal(column?.column_default, null, `${expectation.key} should not have a default`)
+    }
   }
 
   const constraintRows = await queryRows<{ conname: string }>(
