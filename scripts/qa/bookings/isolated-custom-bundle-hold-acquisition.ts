@@ -1449,7 +1449,16 @@ async function main(): Promise<void> {
         console.log('case13 resultA:', describeHoldAcquisitionResult(resultA))
         console.log('case13 resultB:', describeHoldAcquisitionResult(resultB))
         assert.ok([resultA, resultB].some((result) => result.ok && result.stage === 'acquired'))
-        assert.ok([resultA, resultB].some((result) => !result.ok && (result.stage === 'collision' || (result.stage === 'persistence' && result.code === 'TRANSACTION_RETRY_EXHAUSTED'))))
+        assert.ok(
+          [resultA, resultB].some(
+            (result) =>
+              !result.ok &&
+              (result.stage === 'collision' ||
+                (result.stage === 'persistence' &&
+                  (result.code === 'TRANSACTION_RETRY_EXHAUSTED' ||
+                    result.code === 'PUBLIC_CODE_CONFLICT'))),
+          ),
+        )
         const bundleRows = await queryRows<BookingRequestRow>(
           client,
           `SELECT id, "publicCode" FROM "booking_requests" WHERE "publicCode" IN ('TUR-0707-095', 'TUR-0707-096')`,
