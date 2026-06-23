@@ -658,6 +658,7 @@ async function seedCatalog(client: Client): Promise<DomainIds> {
   const services: ServiceSeed[] = [
     { id: 'bkg07b_service_sala', slug: 'sala-ensayo', name: 'Sala de ensayo' },
     { id: 'bkg07b_service_grabacion', slug: 'grabacion', name: 'Grabacion' },
+    { id: 'bkg07b_service_mezcla', slug: 'mezcla-masterizacion', name: 'Mezcla / masterizacion' },
     { id: 'bkg07b_service_podcast', slug: 'podcast-locucion', name: 'Podcast / locucion' },
     { id: 'bkg07b_service_video', slug: 'video-session', name: 'Video Session' },
     { id: 'bkg07b_service_consultoria', slug: 'consultoria', name: 'Consultoria' },
@@ -705,6 +706,18 @@ async function seedCatalog(client: Client): Promise<DomainIds> {
       slug: 'locucion-por-hora',
       name: 'Locucion',
       serviceId: 'bkg07b_service_podcast',
+    },
+    {
+      id: 'bkg07b_variant_mezcla',
+      slug: 'mezcla-por-tema',
+      name: 'Mezcla por tema',
+      serviceId: 'bkg07b_service_mezcla',
+    },
+    {
+      id: 'bkg07b_variant_master',
+      slug: 'master-por-tema',
+      name: 'Master por tema',
+      serviceId: 'bkg07b_service_mezcla',
     },
     {
       id: 'bkg07b_variant_studio_session',
