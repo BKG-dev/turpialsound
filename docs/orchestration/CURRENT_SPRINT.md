@@ -4,13 +4,13 @@ Sprint:
 BKG-07B1
 
 Name:
-Corregir semántica de allocations en replay idempotente
+Corregir semantica de allocations en replay idempotente
 
 Base:
-c37fb1cc3b33142c5e656217bb8b4d17499f8c22
+b7fecf05592310556f70d153413dd09f3fab6afc
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
@@ -29,8 +29,8 @@ Out of Scope:
 
 Result:
 
-REPLAY_ALLOCATION_CORRECTION_PENDING_CI
+READY_FOR_BKG_07C
 
 Next Action:
 
-ChatGPT verifies replay allocation parity before BKG-07C.
+ChatGPT reviews BKG-07B1 and defines isolated expiration and release processing.

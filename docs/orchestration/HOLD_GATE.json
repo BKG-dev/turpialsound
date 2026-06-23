@@ -23,14 +23,14 @@
   },
   "acquisitionValidation": {
     "workflow": "booking-isolated-custom-bundle-hold-acquisition.yml",
-    "status": "PENDING_CORRECTION",
-    "runId": null,
-    "validatedHeadSha": null,
-    "conclusion": null,
+    "status": "SUCCESS",
+    "runId": 28036759818,
+    "validatedHeadSha": "b7fecf05592310556f70d153413dd09f3fab6afc",
+    "conclusion": "success",
     "mixedHoldVerified": true,
-    "activeReplayVerified": false,
-    "replayAllocationParityVerified": false,
-    "corruptReplayRejected": false,
+    "activeReplayVerified": true,
+    "replayAllocationParityVerified": true,
+    "corruptReplayRejected": true,
     "expiredReplayVerified": true,
     "idempotencyConflictVerified": true,
     "activeHoldCollisionVerified": true,
@@ -44,10 +44,8 @@
     "cleanupVerified": true
   },
   "readyForHoldAcquisitionAdapter": true,
-  "holdAcquisitionTechnicallyValidated": false,
-  "readyForExpirationWriter": false,
+  "holdAcquisitionTechnicallyValidated": true,
+  "readyForExpirationWriter": true,
   "readyForPaymentSprint": false,
-  "blockers": [
-    "REPLAY_ALLOCATION_SEMANTICS_NOT_VALIDATED"
-  ]
+  "blockers": []
 }
