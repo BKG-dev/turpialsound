@@ -289,6 +289,7 @@ function main(): void {
       idempotencyKey: ready.idempotencyKey,
       requestFingerprint: ready.requestFingerprint,
       holdExpiresAt: new Date('2026-06-22T17:00:00.000Z'),
+      operationalState: 'pending_hold',
     },
     now: new Date('2026-06-22T16:30:00.000Z'),
   })
@@ -301,6 +302,7 @@ function main(): void {
       idempotencyKey: ready.idempotencyKey,
       requestFingerprint: ready.requestFingerprint,
       holdExpiresAt: new Date('2026-06-22T15:59:59.000Z'),
+      operationalState: 'pending_hold',
     },
     now: new Date('2026-06-22T16:00:00.000Z'),
   })
@@ -313,6 +315,7 @@ function main(): void {
       idempotencyKey: ready.idempotencyKey,
       requestFingerprint: ready.requestFingerprint,
       holdExpiresAt: new Date('2026-06-22T16:00:00.000Z'),
+      operationalState: 'expired_hold',
     },
     now: new Date('2026-06-22T16:00:00.000Z'),
   })
@@ -340,6 +343,7 @@ function main(): void {
       idempotencyKey: ready.idempotencyKey,
       requestFingerprint: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
       holdExpiresAt: new Date('2026-06-22T17:00:00.000Z'),
+      operationalState: 'pending_hold',
     },
     now: new Date('2026-06-22T16:00:00.000Z'),
   })

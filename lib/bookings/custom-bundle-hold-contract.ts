@@ -101,6 +101,8 @@ export type CustomBundleIdempotencyReplayClassification =
   | 'expired_replay'
   | 'key_reused_for_different_request'
 
+export type CustomBundleHoldReplayOperationalState = 'pending_hold' | 'expired_hold'
+
 interface CustomBundleHoldFingerprintLine {
   itemSlug: string
   quantity: number
@@ -422,6 +424,7 @@ export function classifyCustomBundleIdempotencyReplay(input: {
         idempotencyKey: string
         requestFingerprint: string
         holdExpiresAt: Date
+        operationalState: CustomBundleHoldReplayOperationalState
       }
   now: Date
 }): CustomBundleIdempotencyReplayClassification {
@@ -437,6 +440,10 @@ export function classifyCustomBundleIdempotencyReplay(input: {
 
   if (input.existing.requestFingerprint !== input.requestedFingerprint) {
     return 'key_reused_for_different_request'
+  }
+
+  if (input.existing.operationalState === 'expired_hold') {
+    return 'expired_replay'
   }
 
   return isCustomBundleHoldActive(input.existing.holdExpiresAt, input.now)

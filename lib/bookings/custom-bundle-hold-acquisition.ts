@@ -57,9 +57,12 @@ interface HoldReplayRecordRow {
   eventEndDate: Date | string | null
   estimatedTotal: string | number | null
   status: string | null
+  internalNotes: string | null
   bookingMode: string | null
   pricingSource: string | null
 }
+
+type HoldReplayOperationalState = 'pending_hold' | 'expired_hold'
 
 interface HoldReplayCountsRow {
   itemCount: number | string
@@ -296,13 +299,33 @@ function isHoldReplayRecordRow(row: HoldReplayRecordRow): boolean {
     eventEndDate !== null &&
     eventEndDate.getTime() > eventDate.getTime() &&
     Number.isFinite(estimatedTotal) &&
-    row.status === BOOKING_REQUEST_STATUS &&
     row.bookingMode === BOOKING_REQUEST_BOOKING_MODE &&
     row.pricingSource === BOOKING_REQUEST_PRICING_SOURCE
   )
 }
 
-function parseHoldReplayRecord(row: HoldReplayRecordRow): {
+function hasExpiredOperationalTag(internalNotes: string | null | undefined): boolean {
+  return (internalNotes ?? '').includes('[ops_status:expired]')
+}
+
+function getHoldReplayOperationalState(
+  row: HoldReplayRecordRow,
+): HoldReplayOperationalState | null {
+  if (row.status === BOOKING_REQUEST_STATUS && !hasExpiredOperationalTag(row.internalNotes)) {
+    return 'pending_hold'
+  }
+
+  if (row.status === 'rejected' && hasExpiredOperationalTag(row.internalNotes)) {
+    return 'expired_hold'
+  }
+
+  return null
+}
+
+function parseHoldReplayRecord(
+  row: HoldReplayRecordRow,
+  now: Date,
+): {
   id: string
   publicCode: string
   idempotencyKey: string
@@ -315,6 +338,7 @@ function parseHoldReplayRecord(row: HoldReplayRecordRow): {
   status: string
   bookingMode: string
   pricingSource: string
+  operationalState: HoldReplayOperationalState
 } | null {
   if (!isHoldReplayRecordRow(row)) {
     return null
@@ -327,6 +351,15 @@ function parseHoldReplayRecord(row: HoldReplayRecordRow): {
   const estimatedTotal = Number(row.estimatedTotal)
 
   if (!holdAcquiredAt || !holdExpiresAt || !eventDate || !eventEndDate) {
+    return null
+  }
+
+  const operationalState = getHoldReplayOperationalState(row)
+  if (!operationalState) {
+    return null
+  }
+
+  if (operationalState === 'expired_hold' && holdExpiresAt.getTime() > now.getTime()) {
     return null
   }
 
@@ -343,6 +376,7 @@ function parseHoldReplayRecord(row: HoldReplayRecordRow): {
     status: row.status!,
     bookingMode: row.bookingMode!,
     pricingSource: row.pricingSource!,
+    operationalState,
   }
 }
 
@@ -467,6 +501,7 @@ async function readHoldReplayRecord(
         "eventEndDate",
         "estimatedTotal",
         status,
+        "internalNotes",
         "bookingMode",
         "pricingSource"
       FROM "booking_requests"
@@ -496,6 +531,7 @@ async function readPublicCodeReplayRecord(
         "eventEndDate",
         "estimatedTotal",
         status,
+        "internalNotes",
         "bookingMode",
         "pricingSource"
       FROM "booking_requests"
@@ -1087,7 +1123,7 @@ export async function acquireCustomBundleHoldWithSql(
 
       const existingReplayRow = await readHoldReplayRecord(session, preparedContext.idempotencyKey, true)
       if (existingReplayRow) {
-        const parsedExisting = parseHoldReplayRecord(existingReplayRow)
+        const parsedExisting = parseHoldReplayRecord(existingReplayRow, input.serverContext.now)
         if (!parsedExisting) {
           await rollbackSilently(session)
           return makeIdempotencyIssue(
@@ -1103,6 +1139,7 @@ export async function acquireCustomBundleHoldWithSql(
             idempotencyKey: parsedExisting.idempotencyKey,
             requestFingerprint: parsedExisting.requestFingerprint,
             holdExpiresAt: parsedExisting.holdExpiresAt,
+            operationalState: parsedExisting.operationalState,
           },
           now: input.serverContext.now,
         })
@@ -1344,7 +1381,10 @@ export async function acquireCustomBundleHoldWithSql(
         [persistedBookingRequestId],
       )
 
-      const persistedBooking = parseHoldReplayRecord(persistedBookingRows.rows[0] ?? null)
+      const persistedBooking = parseHoldReplayRecord(
+        persistedBookingRows.rows[0] ?? null,
+        input.serverContext.now,
+      )
       if (
         !persistedBooking ||
         persistedBooking.publicCode !== normalizedPublicCode ||
@@ -1413,7 +1453,7 @@ export async function acquireCustomBundleHoldWithSql(
       if (isUniqueViolation(error)) {
         const replayRecord = await readHoldReplayRecord(session, preparedContext.idempotencyKey, false)
         if (replayRecord) {
-          const parsedReplayRecord = parseHoldReplayRecord(replayRecord)
+          const parsedReplayRecord = parseHoldReplayRecord(replayRecord, input.serverContext.now)
           if (!parsedReplayRecord) {
             return makeIdempotencyIssue(
               'IDEMPOTENCY_RECORD_INVALID',
@@ -1428,6 +1468,7 @@ export async function acquireCustomBundleHoldWithSql(
               idempotencyKey: parsedReplayRecord.idempotencyKey,
               requestFingerprint: parsedReplayRecord.requestFingerprint,
               holdExpiresAt: parsedReplayRecord.holdExpiresAt,
+              operationalState: parsedReplayRecord.operationalState,
             },
             now: input.serverContext.now,
           })

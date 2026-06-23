@@ -1,5 +1,5 @@
 {
-  "sprint": "BKG-07B",
+  "sprint": "BKG-07B1",
   "baseSha": "4e2b597471347e572121ce61b876f6fb68c7fcd6",
   "model": "booking_request_as_expiring_hold",
   "idempotency": {
