@@ -1079,7 +1079,7 @@ async function main(): Promise<void> {
           serviceVariantId: 'bkg07b_variant_consultoria',
           resourceId: null,
           quantity: 1,
-          sessionDurationMinutes: 60,
+          sessionDurationMinutes: null,
           durationMinutes: 60,
           unitPriceUsdSnapshot: canonicalPrepared.value.quote.estimate.lines.find((line) => line.item.slug === 'consultoria-produccion')?.unitPriceUsd ?? 0,
           lineTotalUsdSnapshot: canonicalPrepared.value.quote.estimate.lines.find((line) => line.item.slug === 'consultoria-produccion')?.lineTotalUsd ?? 0,
