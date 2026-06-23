@@ -1436,11 +1436,11 @@ async function main(): Promise<void> {
       try {
         const inputA = buildAcquireInput(
           buildRoomOnlySubmission({ startTime: '22:00' }),
-          buildServerContext({ publicCode: 'TUR-0707-095', idempotencyKey: 'HOLD_2026:06:24-0095' }),
+          buildServerContext({ publicCode: 'TUR-0707-100', idempotencyKey: 'HOLD_2026:06:24-0100' }),
         )
         const inputB = buildAcquireInput(
           buildRoomOnlySubmission({ startTime: '22:00' }),
-          buildServerContext({ publicCode: 'TUR-0707-096', idempotencyKey: 'HOLD_2026:06:24-0096' }),
+          buildServerContext({ publicCode: 'TUR-0707-101', idempotencyKey: 'HOLD_2026:06:24-0101' }),
         )
         const [resultA, resultB] = await Promise.all([
           acquireCustomBundleHoldWithSql(createTracingSession(firstClient), inputA),
@@ -1462,7 +1462,7 @@ async function main(): Promise<void> {
         )
         const bundleRows = await queryRows<BookingRequestRow>(
           client,
-          `SELECT id, "publicCode" FROM "booking_requests" WHERE "publicCode" IN ('TUR-0707-095', 'TUR-0707-096')`,
+          `SELECT id, "publicCode" FROM "booking_requests" WHERE "publicCode" IN ('TUR-0707-100', 'TUR-0707-101')`,
         )
         assert.equal(bundleRows.length, 1)
       } finally {
