@@ -10,7 +10,7 @@ Base:
 33bf4fb91f3a17cd26ebd1cf0952194aefae2f74
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
@@ -30,8 +30,8 @@ Out of Scope:
 
 Result:
 
-PAYMENT_CONTRACT_AND_SCHEMA_PENDING_CI
+READY_FOR_BKG_08B
 
 Next Action:
 
-ChatGPT verifies the consolidated payment contract and schema before BKG-08B.
+ChatGPT reviews BKG-08A and defines transactional payment reporting.

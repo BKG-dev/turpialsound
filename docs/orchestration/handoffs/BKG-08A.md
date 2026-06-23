@@ -28,6 +28,7 @@
 - introduced a pure consolidated payment contract for `Arma tu paquete`;
 - proposed additive PostgreSQL fields for payment reporting on `booking_requests`;
 - registered canonical QA routes for the contract script and isolated schema gate;
+- kept the legacy payment fixture compatible across the additive proposals by separating payment fixture idempotency keys;
 - normalized orchestration to point at BKG-08A pending CI validation.
 
 ## Out of Scope
@@ -47,16 +48,21 @@
 
 ## Technical Validations
 
-- pending isolated workflow validation
+- remote run `28056718242` / job `83060803906` succeeded;
+- booking payment contract gate succeeded;
+- isolated payment schema gate succeeded.
 
 ## Automated Tests
 
-- pending
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-contract.ts` ✅
+- `pnpm lint` ✅
+- `pnpm exec tsc --noEmit` ✅
+- `git diff --check` ✅
 
 ## Risks
 
 - payment reporting must remain isolated from production deployment and from any direct client-controlled monetary input;
-- schema and contract must remain aligned with the prior booking, hold, expiration, and persistence gates.
+- transactional reporting, blob boundary, and production promotion remain out of scope for the next sprint.
 
 ## Blockers
 
@@ -64,16 +70,17 @@
 
 ## Vercel Status
 
-- not required for this documentation-only state
+- success
 
 ## Preview URL
 
-- not available
+- `Vercel – turpialsound`: `https://vercel.com/bkgs-projects-829c67c1/turpialsound/BQdajWkAdqTvXTFX7vuC2LTyo2HV`
+- `Vercel – turpialsong-merge-clean-20260516-220435`: `https://vercel.com/bkgs-projects-829c67c1/turpialsong-merge-clean-20260516-220435/6t4k4V6bavCebvxrJdGRAWM1vPyJ`
 
 ## Recommended State
 
-- `DIRECTOR_REVIEW`
+- `TECHNICALLY_VALIDATED`
 
 ## Director Next Action
 
-- ChatGPT verifies the consolidated payment contract and schema before BKG-08B.
+- ChatGPT reviews BKG-08A and defines transactional payment reporting.
