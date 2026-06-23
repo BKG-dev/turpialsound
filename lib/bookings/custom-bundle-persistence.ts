@@ -142,6 +142,9 @@ interface PersistableLineDescriptor {
   clientPriceDisplay: string
 }
 
+export type CustomBundleResolvedServiceVariantRow = ResolvedServiceVariantRow
+export type CustomBundlePersistableLineDescriptor = PersistableLineDescriptor
+
 export interface CustomBundlePersistenceQuoteIssue {
   code: string
   message: string
@@ -630,6 +633,13 @@ async function resolveServiceVariants(
   }
 }
 
+export function resolveCustomBundleServiceVariantsWithSql(
+  executor: CustomBundleSqlExecutor,
+  quote: CustomBundleAuthoritativeQuote,
+): ReturnType<typeof resolveServiceVariants> {
+  return resolveServiceVariants(executor, quote)
+}
+
 function buildBookingRequestNotes(extrasNotes: string): string | null {
   const normalized = extrasNotes.trim()
   return normalized.length > 0 ? normalized : null
@@ -651,6 +661,17 @@ function buildPersistableLineDescriptors(
   }
 
   return descriptors
+}
+
+export function buildCustomBundlePersistableLineDescriptors(
+  quote: CustomBundleAuthoritativeQuote,
+  resolvedServiceVariants: Map<string, ResolvedServiceVariantRow>,
+): ReturnType<typeof buildPersistableLineDescriptors> {
+  return buildPersistableLineDescriptors(quote, resolvedServiceVariants)
+}
+
+export function buildCustomBundleBookingRequestNotes(extrasNotes: string): string | null {
+  return buildBookingRequestNotes(extrasNotes)
 }
 
 function countItemsByKind(
@@ -678,6 +699,12 @@ function countItemsByKind(
       includedItemCount: 0,
     },
   )
+}
+
+export function countCustomBundlePersistableItemsByKind(
+  descriptors: PersistableLineDescriptor[],
+): ReturnType<typeof countItemsByKind> {
+  return countItemsByKind(descriptors)
 }
 
 function buildPersistenceWriteFailure(message: string): Extract<
@@ -790,14 +817,17 @@ export async function persistCustomBundleSubmissionWithSql(
     await executor.query('BEGIN ISOLATION LEVEL SERIALIZABLE')
     transactionState.started = true
 
-    const serviceVariantResolution = await resolveServiceVariants(executor, quote)
+    const serviceVariantResolution = await resolveCustomBundleServiceVariantsWithSql(executor, quote)
     if (!serviceVariantResolution.ok) {
       await rollbackSilently(executor)
       transactionState.started = false
       return serviceVariantResolution
     }
 
-    const descriptorsOrResolution = buildPersistableLineDescriptors(quote, serviceVariantResolution.rows)
+    const descriptorsOrResolution = buildCustomBundlePersistableLineDescriptors(
+      quote,
+      serviceVariantResolution.rows,
+    )
 
     if (!Array.isArray(descriptorsOrResolution)) {
       await rollbackSilently(executor)
@@ -806,7 +836,7 @@ export async function persistCustomBundleSubmissionWithSql(
     }
 
     const descriptors = descriptorsOrResolution
-    const kindCounts = countItemsByKind(descriptors)
+    const kindCounts = countCustomBundlePersistableItemsByKind(descriptors)
     const itemCount = descriptors.length
     const lineSnapshotTotal = descriptors.reduce(
       (total, descriptor) => total + Number(descriptor.lineTotalUsdSnapshot),
@@ -874,7 +904,7 @@ export async function persistCustomBundleSubmissionWithSql(
         BOOKING_REQUEST_EVENT_TITLE,
         eventDateTime,
         eventEndDateTime,
-        buildBookingRequestNotes(quote.submission.extrasNotes),
+        buildCustomBundleBookingRequestNotes(quote.submission.extrasNotes),
         null,
         formatMoneySnapshot(quote.estimate.estimatedTotalUsd),
         BOOKING_REQUEST_CURRENCY,

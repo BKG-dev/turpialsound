@@ -441,3 +441,49 @@ Criterio de evidencia:
 
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
+
+## Booking custom bundle hold acquisition
+
+Objetivo:
+- validar el contrato transaccional de adquisicion del hold con reintentos, replay e inmutabilidad de la clave de idempotencia.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-hold-acquisition-contract.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar contexto de servidor, replay activo/expirado, conflicto de idempotencia, rollback seguro y reintentos serializables.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
+
+## Booking isolated custom bundle hold acquisition
+
+Objetivo:
+- validar en PostgreSQL efimero la adquisicion transaccional del hold, incluyendo replay, concurrencia y limpieza final.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-hold-acquisition.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql`
+
+Precondiciones:
+- GitHub Actions disponible;
+- PostgreSQL service container disponible;
+- baseline SQL generado;
+- BKG-04 proposal validated;
+- BKG-07 proposal validated;
+- URL exclusivamente local;
+- opt-in aislado habilitado;
+- session SQL con una sola conexion disponible.
+
+Criterio de evidencia:
+- confirmar adquisicion mixta, replay activo/expirado, conflicto de idempotencia, colisiones, rollback, aislamiento y limpieza final.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.

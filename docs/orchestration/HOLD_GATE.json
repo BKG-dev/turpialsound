@@ -1,5 +1,5 @@
 {
-  "sprint": "BKG-07A",
+  "sprint": "BKG-07B",
   "baseSha": "4e2b597471347e572121ce61b876f6fb68c7fcd6",
   "model": "booking_request_as_expiring_hold",
   "idempotency": {
@@ -21,7 +21,29 @@
     "constraintsVerified": true,
     "cleanupVerified": true
   },
+  "acquisitionValidation": {
+    "workflow": "booking-isolated-custom-bundle-hold-acquisition.yml",
+    "status": "PENDING",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
+    "mixedHoldVerified": false,
+    "activeReplayVerified": false,
+    "expiredReplayVerified": false,
+    "idempotencyConflictVerified": false,
+    "activeHoldCollisionVerified": false,
+    "expiredHoldReleaseVerified": false,
+    "noPhysicalHoldVerified": false,
+    "concurrentSameKeyVerified": false,
+    "concurrentSlotVerified": false,
+    "partialRollbackVerified": false,
+    "persistenceRegressionVerified": false,
+    "resourceRegressionVerified": false,
+    "cleanupVerified": false
+  },
   "readyForHoldAcquisitionAdapter": true,
+  "holdAcquisitionTechnicallyValidated": false,
+  "readyForExpirationWriter": false,
   "readyForPaymentSprint": false,
   "blockers": []
 }

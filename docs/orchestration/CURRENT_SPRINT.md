@@ -1,30 +1,30 @@
 # Current Sprint
 
 Sprint:
-BKG-07A
+BKG-07B
 
 Name:
-Contrato y esquema aislado de holds e idempotencia
+Adquisición transaccional aislada del hold
 
 Base:
-4e2b597471347e572121ce61b876f6fb68c7fcd6
+ef76f340513cff0aa3802b5c5add3a80ea20001a
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* additive hold schema proposal;
-* pure hold contract;
-* canonical fingerprint;
+* isolated hold acquisition;
 * replay classification;
-* isolated PostgreSQL schema gate;
+* concurrent acquisition safety;
+* transactional persistence;
+* isolated PostgreSQL acquisition gate;
 * orchestration state bootstrap.
 
 Out of Scope:
 
-* hold acquisition;
-* resource assignment;
+* expiration writer;
+* resource assignment changes;
 * wizard wiring;
 * Prisma schema changes;
 * production;
@@ -32,8 +32,8 @@ Out of Scope:
 
 Result:
 
-READY_FOR_BKG_07B
+TRANSACTIONAL_HOLD_ACQUISITION_PENDING_CI
 
 Next Action:
 
-ChatGPT reviews BKG-07A and defines isolated transactional hold acquisition.
+ChatGPT verifies the isolated transactional hold acquisition before BKG-07C.

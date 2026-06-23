@@ -28,10 +28,18 @@ interface ResourceCatalogResolution {
   resourcesBySlug: Map<string, ResourceCatalogRow>
 }
 
+function isValidDate(value: Date): boolean {
+  return value instanceof Date && Number.isFinite(value.getTime())
+}
+
 export interface CheckCustomBundleResourceAvailabilityInput {
   submission: unknown
   excludeBookingRequestId?: string | null
 }
+
+export type CustomBundleResourceConflictMode =
+  | 'established_bookings'
+  | 'established_bookings_and_active_holds'
 
 export interface CustomBundleResolvedResource {
   resourceId: string
@@ -65,6 +73,48 @@ export type CustomBundleResourceAllocation =
   | CustomBundlePhysicalResourceAllocation
   | CustomBundleNoPhysicalResourceAllocation
 
+export interface CustomBundleResourceAllocationPlan {
+  quote: CustomBundleAuthoritativeQuote
+  schedule: CustomBundleContinuousSchedule
+  allocations: CustomBundleResourceAllocation[]
+}
+
+export type CustomBundleResourceAllocationTransactionResult =
+  | {
+      ok: false
+      stage: 'server_context'
+      code: 'INVALID_SQL_SESSION' | 'INVALID_EXCLUDED_BOOKING_ID' | 'INVALID_NOW'
+      message: string
+    }
+  | {
+      ok: false
+      stage: 'resource_catalog'
+      code: 'RESOURCE_NOT_FOUND' | 'RESOURCE_INACTIVE' | 'RESOURCE_SLUG_DUPLICATED'
+      resourceSlug: string
+      message: string
+    }
+  | {
+      ok: false
+      stage: 'collision'
+      code: 'RESOURCE_UNAVAILABLE'
+      itemSlug: string
+      startsAtIso: string
+      endsAtIso: string
+      attemptedResourceSlugs: string[]
+      message: string
+    }
+  | {
+      ok: false
+      stage: 'database'
+      code: 'RESOURCE_CHECK_FAILED'
+      message: string
+    }
+  | {
+      ok: true
+      stage: 'available'
+      plan: CustomBundleResourceAllocationPlan
+    }
+
 export interface CustomBundleResourceAvailabilityPlan {
   quote: CustomBundleAuthoritativeQuote
   schedule: CustomBundleContinuousSchedule
@@ -95,7 +145,7 @@ export type CheckCustomBundleResourceAvailabilityResult =
   | {
       ok: false
       stage: 'server_context'
-      code: 'INVALID_SQL_SESSION' | 'INVALID_EXCLUDED_BOOKING_ID'
+      code: 'INVALID_SQL_SESSION' | 'INVALID_EXCLUDED_BOOKING_ID' | 'INVALID_NOW'
       message: string
     }
   | {
@@ -132,9 +182,9 @@ interface SqlCollisionRow {
 }
 
 function buildServerContextIssue(
-  code: 'INVALID_SQL_SESSION' | 'INVALID_EXCLUDED_BOOKING_ID',
+  code: 'INVALID_SQL_SESSION' | 'INVALID_EXCLUDED_BOOKING_ID' | 'INVALID_NOW',
   message: string,
-): Extract<CheckCustomBundleResourceAvailabilityResult, { stage: 'server_context' }> {
+): Extract<CustomBundleResourceAllocationTransactionResult, { stage: 'server_context' }> {
   return {
     ok: false,
     stage: 'server_context',
@@ -382,10 +432,23 @@ async function findCollidingResourceIds(
   requestedStartIso: string,
   requestedEndIso: string,
   excludeBookingRequestId: string | null,
+  conflictMode: CustomBundleResourceConflictMode,
+  now: Date | null,
 ): Promise<Set<string>> {
   if (resourceIds.length === 0) {
     return new Set()
   }
+
+  const holdBlockingClause =
+    conflictMode === 'established_bookings_and_active_holds'
+      ? `
+          OR (
+            br."status" = 'under_review'
+            AND br."holdAcquiredAt" IS NOT NULL
+            AND br."holdExpiresAt" > ${excludeBookingRequestId ? '$5' : '$4'}::timestamptz
+          )
+        `
+      : ''
 
   const sql = `
     SELECT DISTINCT
@@ -397,8 +460,8 @@ async function findCollidingResourceIds(
       AND (
         (br."eventEndDate" IS NOT NULL AND br."eventEndDate" > $3::timestamptz)
         OR (
-          br."eventEndDate" IS NULL
-          AND br."eventDate" >= $3::timestamptz
+        br."eventEndDate" IS NULL
+        AND br."eventDate" >= $3::timestamptz
         )
       )
       AND (
@@ -413,6 +476,7 @@ async function findCollidingResourceIds(
               WHERE pp."bookingRequestId" = br.id
                 AND pp."isActive" = TRUE
             )
+            ${holdBlockingClause}
           )
         )
       )
@@ -422,6 +486,9 @@ async function findCollidingResourceIds(
   const values: unknown[] = [resourceIds, requestedEndIso, requestedStartIso]
   if (excludeBookingRequestId) {
     values.push(excludeBookingRequestId)
+  }
+  if (conflictMode === 'established_bookings_and_active_holds') {
+    values.push(now?.toISOString())
   }
 
   const result = await session.query<SqlCollisionRow>(sql, values)
@@ -487,6 +554,126 @@ function buildResourceAllocationPlan(
   return allocations
 }
 
+export async function resolveCustomBundleResourceAllocationsInTransaction(
+  session: CustomBundleSqlSession,
+  input: {
+    quote: CustomBundleAuthoritativeQuote
+    schedule: CustomBundleContinuousSchedule
+    requirements: CustomBundleResourceRequirement[]
+    excludeBookingRequestId?: string | null
+    conflictMode: CustomBundleResourceConflictMode
+    now?: Date
+  },
+): Promise<CustomBundleResourceAllocationTransactionResult> {
+  if (session.transactionScope !== 'single_connection') {
+    return buildServerContextIssue(
+      'INVALID_SQL_SESSION',
+      'La verificacion de recursos requiere una conexion SQL transaccional dedicada.',
+    )
+  }
+
+  const normalizedExcludeBookingRequestId = normalizeExcludedBookingRequestId(
+    input.excludeBookingRequestId,
+  )
+  if (
+    typeof normalizedExcludeBookingRequestId === 'object' &&
+    normalizedExcludeBookingRequestId !== null &&
+    'stage' in normalizedExcludeBookingRequestId
+  ) {
+    return normalizedExcludeBookingRequestId
+  }
+
+  if (input.conflictMode === 'established_bookings_and_active_holds') {
+    if (!input.now || !isValidDate(input.now)) {
+      return buildServerContextIssue(
+        'INVALID_NOW',
+        'Se requiere un instante valido para evaluar holds activos.',
+      )
+    }
+  }
+
+  const physicalRequirements = input.requirements.filter(isPhysicalRequirement)
+  const candidateResourceSlugs = collectCandidateResourceSlugs(physicalRequirements)
+
+  try {
+    const catalogResult =
+      physicalRequirements.length > 0
+        ? await resolveResourceCatalog(session, candidateResourceSlugs)
+        : {
+            ok: true as const,
+            catalog: {
+              resourcesBySlug: new Map<string, ResourceCatalogRow>(),
+            },
+          }
+
+    if (!catalogResult.ok) {
+      return catalogResult
+    }
+
+    const collidingResourceIdsByRequirement: Array<Set<string>> = []
+
+    if (physicalRequirements.length > 0) {
+      const candidateResourceIds = collectCandidateResourceIds(
+        physicalRequirements,
+        catalogResult.catalog.resourcesBySlug,
+      )
+      await lockResourceRows(session, candidateResourceIds)
+
+      for (const requirement of physicalRequirements) {
+        const resourceIds = requirement.candidateResourceSlugs
+          .map((resourceSlug) => catalogResult.catalog.resourcesBySlug.get(resourceSlug)?.id)
+          .filter((resourceId): resourceId is string => Boolean(resourceId))
+
+        const collidingResourceIds = await findCollidingResourceIds(
+          session,
+          resourceIds,
+          requirement.startsAtIso,
+          requirement.endsAtIso,
+          normalizedExcludeBookingRequestId,
+          input.conflictMode,
+          input.now ?? null,
+        )
+        collidingResourceIdsByRequirement.push(collidingResourceIds)
+
+        const assignedResource = requirement.candidateResourceSlugs
+          .map((resourceSlug) => catalogResult.catalog.resourcesBySlug.get(resourceSlug))
+          .find((resource): resource is ResourceCatalogRow => {
+            if (!resource) {
+              return false
+            }
+
+            return !collidingResourceIds.has(resource.id)
+          })
+
+        if (!assignedResource) {
+          return buildCollisionIssue(
+            requirement.itemSlug,
+            requirement.startsAtIso,
+            requirement.endsAtIso,
+            [...requirement.candidateResourceSlugs],
+          )
+        }
+      }
+    }
+
+    return {
+      ok: true,
+      stage: 'available',
+      plan: {
+        quote: input.quote,
+        schedule: input.schedule,
+        allocations: buildResourceAllocationPlan(
+          input.requirements,
+          catalogResult.catalog,
+          collidingResourceIdsByRequirement,
+        ),
+      },
+    }
+  } catch {
+    return buildDatabaseIssue('No se pudo verificar la disponibilidad de recursos.')
+  }
+}
+
 export async function checkCustomBundleResourceAvailabilityWithSql(
   session: CustomBundleSqlSession,
   input: CheckCustomBundleResourceAvailabilityInput,
@@ -546,88 +733,19 @@ export async function checkCustomBundleResourceAvailabilityWithSql(
     }
   }
 
-  const requirements = requirementsResult.requirements
-  const physicalRequirements = requirements.filter(isPhysicalRequirement)
-  const candidateResourceSlugs = collectCandidateResourceSlugs(physicalRequirements)
-
-  let transactionStarted = false
   try {
     await session.query('BEGIN ISOLATION LEVEL SERIALIZABLE')
-    transactionStarted = true
-
-    let catalogResult: Awaited<ReturnType<typeof resolveResourceCatalog>> | null = null
-
-    if (physicalRequirements.length > 0) {
-      catalogResult = await resolveResourceCatalog(session, candidateResourceSlugs)
-      if (!catalogResult.ok) {
-        await rollbackSilently(session)
-        transactionStarted = false
-        return catalogResult
-      }
-    }
-
-    const collidingResourceIdsByRequirement: Array<Set<string>> = []
-    const catalog = catalogResult?.ok ? catalogResult.catalog : { resourcesBySlug: new Map() }
-
-    if (physicalRequirements.length > 0 && catalogResult?.ok) {
-      const candidateResourceIds = collectCandidateResourceIds(physicalRequirements, catalog.resourcesBySlug)
-      await lockResourceRows(session, candidateResourceIds)
-
-      for (const requirement of physicalRequirements) {
-        const resourceIds = requirement.candidateResourceSlugs
-          .map((resourceSlug) => catalog.resourcesBySlug.get(resourceSlug)?.id)
-          .filter((resourceId): resourceId is string => Boolean(resourceId))
-
-        const collidingResourceIds = await findCollidingResourceIds(
-          session,
-          resourceIds,
-          requirement.startsAtIso,
-          requirement.endsAtIso,
-          normalizedExcludeBookingRequestId,
-        )
-        collidingResourceIdsByRequirement.push(collidingResourceIds)
-
-        const assignedResource = requirement.candidateResourceSlugs
-          .map((resourceSlug) => catalog.resourcesBySlug.get(resourceSlug))
-          .find((resource): resource is ResourceCatalogRow => {
-            if (!resource) {
-              return false
-            }
-
-            return !collidingResourceIds.has(resource.id)
-          })
-
-        if (!assignedResource) {
-          await rollbackSilently(session)
-          transactionStarted = false
-          return buildCollisionIssue(
-            requirement.itemSlug,
-            requirement.startsAtIso,
-            requirement.endsAtIso,
-            [...requirement.candidateResourceSlugs],
-          )
-        }
-      }
-    }
-
-    const allocations = buildResourceAllocationPlan(requirements, catalog, collidingResourceIdsByRequirement)
-
+    const result = await resolveCustomBundleResourceAllocationsInTransaction(session, {
+      quote: planResult.quote,
+      schedule: planResult.schedule,
+      requirements: requirementsResult.requirements,
+      excludeBookingRequestId: normalizedExcludeBookingRequestId,
+      conflictMode: 'established_bookings',
+    })
     await rollbackSilently(session)
-    transactionStarted = false
-
-    return {
-      ok: true,
-      stage: 'available',
-      plan: {
-        quote: planResult.quote,
-        schedule: planResult.schedule,
-        allocations,
-      },
-    }
+    return result
   } catch (error) {
-    if (transactionStarted) {
-      await rollbackSilently(session)
-    }
+    await rollbackSilently(session)
 
     return buildDatabaseIssue(
       error instanceof Error
