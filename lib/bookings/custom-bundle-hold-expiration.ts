@@ -297,6 +297,7 @@ async function expireSelectedBookingRequest(
   await session.query(
     `
       INSERT INTO "audit_log" (
+        id,
         "bookingRequestId",
         action,
         "previousState",
@@ -305,12 +306,14 @@ async function expireSelectedBookingRequest(
       ) VALUES (
         $1,
         $2,
-        $3::jsonb,
+        $3,
         $4::jsonb,
-        $5
+        $5::jsonb,
+        $6
       )
     `,
     [
+      `${row.id}_hold_expired`,
       row.id,
       CUSTOM_BUNDLE_HOLD_EXPIRATION_ACTION,
       JSON.stringify(previousState),
