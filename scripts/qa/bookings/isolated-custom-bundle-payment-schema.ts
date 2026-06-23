@@ -301,6 +301,11 @@ const BOOKING_REQUEST_ITEM_COLUMNS = [
   'updatedAt',
 ] as const
 
+const LEGACY_FIXTURE_SERVICE_ID = 'payment-fixture-service-001'
+const LEGACY_FIXTURE_SERVICE_VARIANT_ID = 'payment-fixture-variant-001'
+const LEGACY_FIXTURE_BOOKING_REQUEST_ID = 'payment-fixture-legacy-001'
+const LEGACY_FIXTURE_BOOKING_REQUEST_ITEM_ID = 'payment-fixture-item-001'
+
 async function insertRow(
   client: Client,
   tableName: string,
@@ -365,6 +370,35 @@ async function withTransaction(client: Client, run: () => Promise<void>): Promis
   } finally {
     await client.query('ROLLBACK').catch(() => {})
   }
+}
+
+async function withCommittedTransaction(
+  client: Client,
+  run: () => Promise<void>,
+): Promise<void> {
+  await client.query('BEGIN')
+  try {
+    await run()
+    await client.query('COMMIT')
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {})
+    throw error
+  }
+}
+
+async function cleanupPersistedLegacyFixture(client: Client): Promise<void> {
+  await withCommittedTransaction(client, async () => {
+    await client.query(`DELETE FROM "booking_request_items" WHERE id = $1`, [
+      LEGACY_FIXTURE_BOOKING_REQUEST_ITEM_ID,
+    ])
+    await client.query(`DELETE FROM "booking_requests" WHERE id = $1`, [
+      LEGACY_FIXTURE_BOOKING_REQUEST_ID,
+    ])
+    await client.query(`DELETE FROM "service_variants" WHERE id = $1`, [
+      LEGACY_FIXTURE_SERVICE_VARIANT_ID,
+    ])
+    await client.query(`DELETE FROM "services" WHERE id = $1`, [LEGACY_FIXTURE_SERVICE_ID])
+  })
 }
 
 async function assertColumnMetadata(client: Client): Promise<void> {
@@ -514,27 +548,27 @@ async function main(): Promise<void> {
 
     await client.query(baselineSql)
 
-    await withTransaction(client, async () => {
+    await withCommittedTransaction(client, async () => {
       const serviceRows = await client.query<{ id: string }>(`
         INSERT INTO "services" ("id", "slug", "name", "description", "isActive", "createdAt", "updatedAt")
-        VALUES ('payment-fixture-service-001', 'sala-ensayo', 'Sala de ensayo', 'Servicio legacy de sala', true, now(), now())
+        VALUES ($1, 'sala-ensayo', 'Sala de ensayo', 'Servicio legacy de sala', true, now(), now())
         RETURNING id
-      `)
+      `, [LEGACY_FIXTURE_SERVICE_ID])
 
       const serviceVariantRows = await client.query<{ id: string }>(`
         INSERT INTO "service_variants" ("id", "slug", "name", "description", "isActive", "serviceId", "createdAt", "updatedAt")
-        VALUES ('payment-fixture-variant-001', 'sala-ensayo-premium', 'Sala Premium', 'Variante legacy de sala', true, $1, now(), now())
+        VALUES ($1, 'sala-ensayo-premium', 'Sala Premium', 'Variante legacy de sala', true, $2, now(), now())
         RETURNING id
-      `, [serviceRows.rows[0].id])
+      `, [LEGACY_FIXTURE_SERVICE_VARIANT_ID, serviceRows.rows[0].id])
 
       const legacyBookingRequest = buildLegacyBookingRequestFixture({
-        id: 'payment-fixture-legacy-001',
+        id: LEGACY_FIXTURE_BOOKING_REQUEST_ID,
         publicCode: 'TUR-0808-001',
       })
       await insertLegacyBookingRequest(client, legacyBookingRequest)
 
       await insertBookingRequestItem(client, {
-        id: 'payment-fixture-item-001',
+        id: LEGACY_FIXTURE_BOOKING_REQUEST_ITEM_ID,
         bookingRequestId: legacyBookingRequest.id,
         serviceVariantId: serviceVariantRows.rows[0].id,
         resourceId: null,
@@ -543,7 +577,15 @@ async function main(): Promise<void> {
         createdAt: new Date('2026-06-23T16:00:00.000Z'),
         updatedAt: new Date('2026-06-23T16:00:00.000Z'),
       })
+    })
 
+    await client.query(bkg04Sql)
+    await client.query(bkg07Sql)
+    await client.query(bkg08Sql)
+
+    await assertColumnMetadata(client)
+
+    await withTransaction(client, async () => {
       const rows = await client.query<{
         bookingMode: string | null
         pricingSource: string | null
@@ -577,7 +619,11 @@ async function main(): Promise<void> {
         WHERE "publicCode" = $1
       `, ['TUR-0808-001'])
 
-      assert.equal(rows.rows.length, 1)
+      assert.equal(
+        rows.rows.length,
+        1,
+        'legacy booking must survive the additive proposals',
+      )
       const legacyRow = rows.rows[0]
       assert.equal(legacyRow.bookingMode, 'single')
       assert.equal(legacyRow.pricingSource, null)
@@ -592,13 +638,44 @@ async function main(): Promise<void> {
       assert.equal(legacyRow.paymentExpectedTotalUsdSnapshot, null)
       assert.equal(legacyRow.paymentReportIdempotencyKey, null)
       assert.equal(legacyRow.paymentReportFingerprint, null)
+
+      const itemRows = await client.query<{
+        id: string
+        bookingRequestId: string
+        serviceVariantId: string
+        itemSlug: string | null
+        itemName: string | null
+        itemKind: string | null
+        unitPriceUsdSnapshot: string | number | null
+        lineTotalUsdSnapshot: string | number | null
+      }>(`
+        SELECT
+          id,
+          "bookingRequestId",
+          "serviceVariantId",
+          "itemSlug",
+          "itemName",
+          "itemKind",
+          "unitPriceUsdSnapshot",
+          "lineTotalUsdSnapshot"
+        FROM "booking_request_items"
+        WHERE id = $1
+      `, [LEGACY_FIXTURE_BOOKING_REQUEST_ITEM_ID])
+
+      assert.equal(
+        itemRows.rows.length,
+        1,
+        'legacy booking request item must survive the additive proposals',
+      )
+      const legacyItem = itemRows.rows[0]
+      assert.equal(legacyItem.bookingRequestId, LEGACY_FIXTURE_BOOKING_REQUEST_ID)
+      assert.equal(legacyItem.serviceVariantId, LEGACY_FIXTURE_SERVICE_VARIANT_ID)
+      assert.equal(legacyItem.itemSlug, null)
+      assert.equal(legacyItem.itemName, null)
+      assert.equal(legacyItem.itemKind, null)
+      assert.equal(legacyItem.unitPriceUsdSnapshot, null)
+      assert.equal(legacyItem.lineTotalUsdSnapshot, null)
     })
-
-    await client.query(bkg04Sql)
-    await client.query(bkg07Sql)
-    await client.query(bkg08Sql)
-
-    await assertColumnMetadata(client)
 
     await withTransaction(client, async () => {
       const paymentFixture = buildPaymentBookingRequestFixture()
@@ -915,12 +992,36 @@ async function main(): Promise<void> {
 
     await assertConstraintAndIndexNames(client)
 
-    const cleanupCount = await client.query<{ count: string }>(`
+    await cleanupPersistedLegacyFixture(client)
+
+    const bookingRequestCount = await client.query<{ count: string }>(`
       SELECT COUNT(*)::text AS count
       FROM "booking_requests"
-      WHERE "publicCode" LIKE 'TUR-0808-%'
+      WHERE id LIKE 'payment-fixture-%'
+         OR "publicCode" LIKE 'TUR-0808-%'
     `)
-    assert.equal(cleanupCount.rows[0].count, '0')
+    assert.equal(bookingRequestCount.rows[0].count, '0')
+
+    const bookingRequestItemCount = await client.query<{ count: string }>(`
+      SELECT COUNT(*)::text AS count
+      FROM "booking_request_items"
+      WHERE id = $1
+    `, [LEGACY_FIXTURE_BOOKING_REQUEST_ITEM_ID])
+    assert.equal(bookingRequestItemCount.rows[0].count, '0')
+
+    const serviceVariantCount = await client.query<{ count: string }>(`
+      SELECT COUNT(*)::text AS count
+      FROM "service_variants"
+      WHERE id = $1
+    `, [LEGACY_FIXTURE_SERVICE_VARIANT_ID])
+    assert.equal(serviceVariantCount.rows[0].count, '0')
+
+    const serviceCount = await client.query<{ count: string }>(`
+      SELECT COUNT(*)::text AS count
+      FROM "services"
+      WHERE id = $1
+    `, [LEGACY_FIXTURE_SERVICE_ID])
+    assert.equal(serviceCount.rows[0].count, '0')
 
     console.log('booking_isolated_custom_bundle_payment_schema OK')
     console.log('legacy compatibility: verified')
@@ -935,6 +1036,7 @@ async function main(): Promise<void> {
 
     fail('Unexpected failure while validating the isolated payment schema.')
   } finally {
+    await cleanupPersistedLegacyFixture(client).catch(() => {})
     await client.end().catch(() => {})
   }
 }
