@@ -987,6 +987,50 @@ async function main(): Promise<void> {
     assertTraceContains(workerA.trace, /FOR UPDATE SKIP LOCKED/i, 'worker A must use skip locked')
     assertTraceContains(workerB.trace, /FOR UPDATE SKIP LOCKED/i, 'worker B must use skip locked')
 
+    const concurrentDrain = await runExpiration(client, {
+      now,
+      batchSize: 100,
+    })
+    assertExpirationSuccess('concurrent drain', concurrentDrain.result)
+    assert.equal(concurrentDrain.result.selected, 0)
+    assert.equal(concurrentDrain.result.expired, 0)
+    assert.equal(concurrentDrain.result.skipped, 0)
+    assert.equal(concurrentDrain.result.hasMore, false)
+
+    const concurrentSlowBooking = await fetchBooking(client, 'TUR-0707-720')
+    const concurrentFastBooking = await fetchBooking(client, 'TUR-0707-721')
+    assert.equal(concurrentSlowBooking?.status, 'rejected')
+    assert.equal(concurrentFastBooking?.status, 'rejected')
+
+    const concurrentAuditRows = await queryRows<{ count: string }>(
+      client,
+      `
+        SELECT COUNT(*)::text AS count
+        FROM "audit_log"
+        WHERE action = $1
+          AND "bookingRequestId" IN ($2, $3)
+      `,
+      [CUSTOM_BUNDLE_HOLD_EXPIRATION_ACTION, 'bkg07c_concurrent_slow', 'bkg07c_concurrent_fast'],
+    )
+    assert.equal(Number(concurrentAuditRows[0]?.count ?? 0), 2)
+
+    const duplicateConcurrentAuditRows = await queryRows<{ count: string }>(
+      client,
+      `
+        SELECT COUNT(*)::text AS count
+        FROM (
+          SELECT "bookingRequestId"
+          FROM "audit_log"
+          WHERE action = $1
+            AND "bookingRequestId" IN ($2, $3)
+          GROUP BY "bookingRequestId"
+          HAVING COUNT(*) > 1
+        ) duplicate_audits
+      `,
+      [CUSTOM_BUNDLE_HOLD_EXPIRATION_ACTION, 'bkg07c_concurrent_slow', 'bkg07c_concurrent_fast'],
+    )
+    assert.equal(Number(duplicateConcurrentAuditRows[0]?.count ?? 0), 0)
+
     await client.query('DROP TRIGGER IF EXISTS bkg07c_delay_expiration_update_trigger ON "booking_requests"')
     await client.query('DROP FUNCTION IF EXISTS bkg07c_delay_expiration_update()')
 
