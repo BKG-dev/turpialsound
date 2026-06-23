@@ -211,14 +211,15 @@ async function main(): Promise<void> {
       {
         assert(sql, params) {
           assert.match(sql, /INSERT INTO "audit_log"/i)
-          assert.equal(params[1], CUSTOM_BUNDLE_HOLD_EXPIRATION_ACTION)
-          assert.equal(params[2], JSON.stringify({
+          assert.equal(params[0], 'booking-request-expire-001_hold_expired')
+          assert.equal(params[2], CUSTOM_BUNDLE_HOLD_EXPIRATION_ACTION)
+          assert.equal(params[3], JSON.stringify({
             bookingStatus: 'under_review',
             operationalStatus: 'pending_payment',
             holdAcquiredAtIso: '2026-06-22T15:00:00.000Z',
             holdExpiresAtIso: '2026-06-22T16:00:00.000Z',
           }))
-          assert.equal(params[3], JSON.stringify({
+          assert.equal(params[4], JSON.stringify({
             bookingStatus: 'rejected',
             operationalStatus: 'expired',
             holdAcquiredAtIso: '2026-06-22T15:00:00.000Z',
@@ -226,6 +227,7 @@ async function main(): Promise<void> {
             expiredAtIso: '2026-06-22T16:00:00.000Z',
             reason: CUSTOM_BUNDLE_HOLD_EXPIRATION_REASON,
           }))
+          assert.ok(params[5] instanceof Date)
         },
         result: {
           rows: [],
