@@ -10,6 +10,11 @@ import {
   prepareCustomBundleHoldContract,
   validateCustomBundleHoldServerContext,
 } from '@/lib/bookings/custom-bundle-hold-contract'
+import {
+  extractCustomBundleOperationalTags,
+  setCustomBundleExpiredOperationalStatus,
+  validateCustomBundleHoldReplayOperationalNotes,
+} from '@/lib/bookings/custom-bundle-hold-operational-notes'
 import type { CustomBundleSubmissionInputV1 } from '@/lib/bookings/custom-bundle-submission'
 
 function fail(message: string): never {
@@ -229,6 +234,72 @@ function main(): void {
   }
   assert.notEqual(requesterChangedResult.value.requestFingerprint, ready.requestFingerprint)
 
+  assert.deepStrictEqual(extractCustomBundleOperationalTags('[ops_status:expired]'), ['expired'])
+  assert.deepStrictEqual(
+    extractCustomBundleOperationalTags('  [ops_status:expired]\nNotas extra  '),
+    ['expired'],
+  )
+  assert.equal(
+    setCustomBundleExpiredOperationalStatus('[ops_status:pending_payment]\nNotas internas'),
+    '[ops_status:expired]\nNotas internas',
+  )
+  assert.equal(
+    setCustomBundleExpiredOperationalStatus('[ops_status:expired]\nNotas internas'),
+    '[ops_status:expired]\nNotas internas',
+  )
+
+  const expiredTagValid = validateCustomBundleHoldReplayOperationalNotes({
+    status: 'rejected',
+    internalNotes: '[ops_status:expired]',
+    holdExpiresAt: new Date('2026-06-22T15:59:59.000Z'),
+    now: new Date('2026-06-22T16:00:00.000Z'),
+  })
+  assert.equal(expiredTagValid.ok, true)
+  if (!expiredTagValid.ok) {
+    throw new Error('Expected expired operational tag to be valid.')
+  }
+  assert.equal(expiredTagValid.state, 'expired_hold')
+
+  const expiredDuplicated = validateCustomBundleHoldReplayOperationalNotes({
+    status: 'rejected',
+    internalNotes: '[ops_status:expired]\n[ops_status:expired]',
+    holdExpiresAt: new Date('2026-06-22T15:59:59.000Z'),
+    now: new Date('2026-06-22T16:00:00.000Z'),
+  })
+  assert.equal(expiredDuplicated.ok, false)
+
+  const expiredWithPaymentReported = validateCustomBundleHoldReplayOperationalNotes({
+    status: 'rejected',
+    internalNotes: '[ops_status:expired]\n[ops_status:payment_reported]',
+    holdExpiresAt: new Date('2026-06-22T15:59:59.000Z'),
+    now: new Date('2026-06-22T16:00:00.000Z'),
+  })
+  assert.equal(expiredWithPaymentReported.ok, false)
+
+  const rejectedWithoutTag = validateCustomBundleHoldReplayOperationalNotes({
+    status: 'rejected',
+    internalNotes: 'Rechazada sin tag',
+    holdExpiresAt: new Date('2026-06-22T15:59:59.000Z'),
+    now: new Date('2026-06-22T16:00:00.000Z'),
+  })
+  assert.equal(rejectedWithoutTag.ok, false)
+
+  const underReviewWithExpiredTag = validateCustomBundleHoldReplayOperationalNotes({
+    status: 'under_review',
+    internalNotes: '[ops_status:expired]',
+    holdExpiresAt: new Date('2026-06-22T15:59:59.000Z'),
+    now: new Date('2026-06-22T16:00:00.000Z'),
+  })
+  assert.equal(underReviewWithExpiredTag.ok, false)
+
+  const futureExpiredTag = validateCustomBundleHoldReplayOperationalNotes({
+    status: 'rejected',
+    internalNotes: '[ops_status:expired]',
+    holdExpiresAt: new Date('2026-06-22T17:00:00.000Z'),
+    now: new Date('2026-06-22T16:00:00.000Z'),
+  })
+  assert.equal(futureExpiredTag.ok, false)
+
   const invalidContextCodes = (key: string) =>
     validateCustomBundleHoldServerContext(makeServerContext({ idempotencyKey: key }))
   assertHoldContextIssueCodes(invalidContextCodes('short'), ['INVALID_IDEMPOTENCY_KEY'])
@@ -377,6 +448,8 @@ function main(): void {
   console.log('hold window: verified')
   console.log('canonical fingerprint: verified')
   console.log('input order independence: verified')
+  console.log('operational tag parsing: verified')
+  console.log('expired operational tag: verified')
   console.log('active replay: verified')
   console.log('expired replay: verified')
   console.log('idempotency conflict: verified')

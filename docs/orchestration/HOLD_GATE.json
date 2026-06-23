@@ -1,6 +1,6 @@
 {
-  "sprint": "BKG-07B1",
-  "baseSha": "4e2b597471347e572121ce61b876f6fb68c7fcd6",
+  "sprint": "BKG-07C",
+  "baseSha": "711b8eca90c8a2d018c26c1cc89ffacb72efaece",
   "model": "booking_request_as_expiring_hold",
   "idempotency": {
     "keySource": "trusted_server_context",
@@ -43,9 +43,33 @@
     "resourceRegressionVerified": true,
     "cleanupVerified": true
   },
+  "expirationValidation": {
+    "workflow": "booking-isolated-custom-bundle-hold-expiration.yml",
+    "status": "PENDING",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
+    "dueHoldExpiredVerified": false,
+    "exactBoundaryExpiredVerified": false,
+    "futureHoldPreserved": false,
+    "paymentReportedProtected": false,
+    "paymentProofProtected": false,
+    "expiredReplayClassificationVerified": false,
+    "idempotentRerunVerified": false,
+    "concurrentWorkersVerified": false,
+    "batchProcessingVerified": false,
+    "resourceHistoryPreserved": false,
+    "releasedSlotReusable": false,
+    "paymentReportedStillBlocks": false,
+    "partialRollbackVerified": false,
+    "acquisitionRegressionVerified": false,
+    "cleanupVerified": false
+  },
   "readyForHoldAcquisitionAdapter": true,
   "holdAcquisitionTechnicallyValidated": true,
   "readyForExpirationWriter": true,
+  "holdExpirationTechnicallyValidated": false,
+  "readyForOperationalScheduler": false,
   "readyForPaymentSprint": false,
   "blockers": []
 }

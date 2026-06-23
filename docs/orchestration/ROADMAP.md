@@ -93,7 +93,8 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Hold acquisition: `TECHNICALLY_VALIDATED`
 - Replay allocation parity: `TECHNICALLY_VALIDATED`
 - Corrupt replay rejection: `TECHNICALLY_VALIDATED`
-- Expiration writer: `NOT_STARTED`
+- Expiration writer: `PENDING_CI`
+- Scheduler wiring: `NOT_STARTED`
 - Idempotent replay: `TECHNICALLY_VALIDATED`
 - Wizard integration: `NOT_STARTED`
 

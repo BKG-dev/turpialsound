@@ -1,36 +1,34 @@
 # Current Sprint
 
 Sprint:
-BKG-07B1
+BKG-07C
 
 Name:
-Corregir semantica de allocations en replay idempotente
+Aislamiento de expiracion y release de hold
 
 Base:
-b7fecf05592310556f70d153413dd09f3fab6afc
+711b8eca90c8a2d018c26c1cc89ffacb72efaece
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* preserve acquired versus replayed allocation semantics;
-* validate persisted replay integrity;
-* reject corrupt replay rows;
-* keep replay idempotent;
-* keep the hold acquisition isolated.
+* implement isolated hold expiration and release processing;
+* validate due hold release and replay safety;
+* preserve acquisition regression evidence.
 
 Out of Scope:
 
-* expiration writer;
+* BKG-08A;
 * wizard wiring;
 * production;
 * manual QA.
 
 Result:
 
-READY_FOR_BKG_07C
+HOLD_EXPIRATION_PENDING_CI
 
 Next Action:
 
-ChatGPT reviews BKG-07B1 and defines isolated expiration and release processing.
+ChatGPT verifies isolated expiration processing and acquisition regression before BKG-08A.

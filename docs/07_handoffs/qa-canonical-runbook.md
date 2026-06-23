@@ -240,6 +240,52 @@ Criterio de evidencia:
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
 
+## Booking custom bundle hold expiration
+
+Objetivo:
+- validar el writer de expiracion y release de holds de `Arma tu paquete` sin browser, sin red y sin DB fuera del gate.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-hold-expiration-contract.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar expiracion de hold vencido, frontera exacta, proteccion de payment reportado y proof activo, replay clasificado, reintento idempotente, procesamiento por lotes, rollback, limpieza y proteccion de slots liberados.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
+
+## Booking isolated custom bundle hold expiration
+
+Objetivo:
+- validar en PostgreSQL efimero la expiracion y liberacion de holds, junto con la regresion de adquisicion.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-hold-expiration.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql`
+
+Precondiciones:
+- GitHub Actions disponible;
+- PostgreSQL service container disponible;
+- baseline SQL generado;
+- BKG-04 proposal validated;
+- BKG-07 proposal validated;
+- URL exclusivamente local;
+- opt-in aislado habilitado;
+- session SQL con una sola conexion disponible.
+
+Criterio de evidencia:
+- confirmar expiracion por lote, frontera exacta, proteccion de payment reported y payment proof, replay activo/expirado, slots liberados reutilizables, concurrencia, rollback, regresion de adquisicion y limpieza final.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
+
 ## Booking custom bundle resource policy
 
 Objetivo:

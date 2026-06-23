@@ -9,6 +9,9 @@ import {
   type CustomBundleHoldServerContext,
 } from '@/lib/bookings/custom-bundle-hold-contract'
 import {
+  validateCustomBundleHoldReplayOperationalNotes,
+} from '@/lib/bookings/custom-bundle-hold-operational-notes'
+import {
   buildCustomBundleBookingRequestNotes,
   buildCustomBundlePersistableLineDescriptors,
   countCustomBundlePersistableItemsByKind,
@@ -304,24 +307,6 @@ function isHoldReplayRecordRow(row: HoldReplayRecordRow): boolean {
   )
 }
 
-function hasExpiredOperationalTag(internalNotes: string | null | undefined): boolean {
-  return (internalNotes ?? '').includes('[ops_status:expired]')
-}
-
-function getHoldReplayOperationalState(
-  row: HoldReplayRecordRow,
-): HoldReplayOperationalState | null {
-  if (row.status === BOOKING_REQUEST_STATUS && !hasExpiredOperationalTag(row.internalNotes)) {
-    return 'pending_hold'
-  }
-
-  if (row.status === 'rejected' && hasExpiredOperationalTag(row.internalNotes)) {
-    return 'expired_hold'
-  }
-
-  return null
-}
-
 function parseHoldReplayRecord(
   row: HoldReplayRecordRow,
   now: Date,
@@ -354,14 +339,18 @@ function parseHoldReplayRecord(
     return null
   }
 
-  const operationalState = getHoldReplayOperationalState(row)
-  if (!operationalState) {
+  const operationalStateResult = validateCustomBundleHoldReplayOperationalNotes({
+    status: row.status,
+    internalNotes: row.internalNotes,
+    holdExpiresAt,
+    now,
+  })
+
+  if (!operationalStateResult.ok) {
     return null
   }
 
-  if (operationalState === 'expired_hold' && holdExpiresAt.getTime() > now.getTime()) {
-    return null
-  }
+  const operationalState = operationalStateResult.state
 
   return {
     id: row.id,
