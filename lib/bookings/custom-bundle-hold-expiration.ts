@@ -381,6 +381,9 @@ export async function expireCustomBundleHoldsWithSql(
       }
     } catch (error) {
       await rollbackSilently(session)
+      if (error instanceof Error) {
+        console.error('hold expiration failure detail:', error.message)
+      }
 
       if (isRetryableTransactionError(error)) {
         if (attempt < MAX_TRANSACTION_ATTEMPTS) {
