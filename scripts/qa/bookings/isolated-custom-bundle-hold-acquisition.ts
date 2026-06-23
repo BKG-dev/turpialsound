@@ -1229,6 +1229,12 @@ async function main(): Promise<void> {
         buildServerContext({ publicCode: 'TUR-0707-092', idempotencyKey: 'HOLD_2026:06:24-0092' }),
       )
       allTraceCalls.push(...acquired.trace)
+      if (!acquired.result.ok) {
+        console.error(
+          'replay allocation parity acquired trace:',
+          acquired.trace.map((call) => call.sql.trim().replace(/\s+/g, ' ').slice(0, 120)),
+        )
+      }
       assertResultIsSuccess('replay allocation parity acquired', acquired.result)
       assert.equal(acquired.result.stage, 'acquired')
       assert.equal(acquired.result.replayed, false)
