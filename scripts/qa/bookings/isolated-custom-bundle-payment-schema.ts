@@ -578,14 +578,17 @@ async function main(): Promise<void> {
         updatedAt: new Date('2026-06-23T16:00:00.000Z'),
       })
     })
+    console.log('legacy fixture committed')
 
     await client.query(bkg04Sql)
     await client.query(bkg07Sql)
     await client.query(bkg08Sql)
+    console.log('proposals applied')
 
     await assertColumnMetadata(client)
 
     await withTransaction(client, async () => {
+      console.log('legacy compatibility check')
       const rows = await client.query<{
         bookingMode: string | null
         pricingSource: string | null
@@ -678,6 +681,7 @@ async function main(): Promise<void> {
     })
 
     await withTransaction(client, async () => {
+      console.log('payment report check')
       const paymentFixture = buildPaymentBookingRequestFixture()
       await insertPaymentBookingRequest(client, paymentFixture)
 
@@ -740,6 +744,7 @@ async function main(): Promise<void> {
     })
 
     await withTransaction(client, async () => {
+      console.log('null payment fixtures check')
       const firstFixture = buildPaymentBookingRequestFixture({
         id: 'payment-fixture-null-001',
         publicCode: 'TUR-0808-020',
@@ -776,6 +781,7 @@ async function main(): Promise<void> {
     })
 
     await withTransaction(client, async () => {
+      console.log('invalid payment method check')
       await assert.rejects(
         insertPaymentBookingRequest(
           client,
@@ -795,6 +801,7 @@ async function main(): Promise<void> {
     })
 
     await withTransaction(client, async () => {
+      console.log('invalid payment reference check')
       await assert.rejects(
         insertPaymentBookingRequest(
           client,
@@ -814,6 +821,7 @@ async function main(): Promise<void> {
     })
 
     await withTransaction(client, async () => {
+      console.log('all-or-none payment check')
       await assert.rejects(
         insertPaymentBookingRequest(
           client,
@@ -839,6 +847,7 @@ async function main(): Promise<void> {
     })
 
     await withTransaction(client, async () => {
+      console.log('normalized reference check')
       await assert.rejects(
         insertPaymentBookingRequest(
           client,
@@ -864,6 +873,7 @@ async function main(): Promise<void> {
     })
 
     await withTransaction(client, async () => {
+      console.log('idempotency format check')
       await assert.rejects(
         insertPaymentBookingRequest(
           client,
@@ -889,6 +899,7 @@ async function main(): Promise<void> {
     })
 
     await withTransaction(client, async () => {
+      console.log('fingerprint format check')
       await assert.rejects(
         insertPaymentBookingRequest(
           client,
@@ -914,6 +925,7 @@ async function main(): Promise<void> {
     })
 
     await withTransaction(client, async () => {
+      console.log('expected total check')
       await assert.rejects(
         insertPaymentBookingRequest(
           client,
@@ -939,6 +951,7 @@ async function main(): Promise<void> {
     })
 
     await withTransaction(client, async () => {
+      console.log('hold window check')
       await assert.rejects(
         insertPaymentBookingRequest(
           client,
@@ -964,6 +977,7 @@ async function main(): Promise<void> {
     })
 
     await withTransaction(client, async () => {
+      console.log('duplicate idempotency check')
       const firstFixture = buildPaymentBookingRequestFixture({
         id: 'payment-fixture-dup-001',
         publicCode: 'TUR-0808-040',
@@ -991,8 +1005,10 @@ async function main(): Promise<void> {
     })
 
     await assertConstraintAndIndexNames(client)
+    console.log('constraints and indexes verified')
 
     await cleanupPersistedLegacyFixture(client)
+    console.log('legacy fixture cleanup committed')
 
     const bookingRequestCount = await client.query<{ count: string }>(`
       SELECT COUNT(*)::text AS count
