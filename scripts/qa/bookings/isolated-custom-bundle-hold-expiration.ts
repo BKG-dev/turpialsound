@@ -493,11 +493,9 @@ async function insertBookingRequest(client: Client, input: {
           "reportedReference",
           "normalizedReference",
           "duplicateStatus",
-          "isActive",
-          "createdAt",
-          "updatedAt"
+          "isActive"
         ) VALUES (
-          $1, $2, $3, $4, 'image/png', 12345, NULL, NOW(), NULL, NULL, 'none', true, NOW(), NOW()
+          $1, $2, $3, $4, 'image/png', 12345, NULL, NOW(), NULL, NULL, 'none', true
         )
       `,
       [
