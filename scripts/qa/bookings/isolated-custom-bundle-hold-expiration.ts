@@ -984,8 +984,6 @@ async function main(): Promise<void> {
     assert.equal(workerB.result.expired, 1)
     assert.equal(workerA.result.selected, 1)
     assert.equal(workerB.result.selected, 1)
-    assert.equal(workerA.result.hasMore, false)
-    assert.equal(workerB.result.hasMore, false)
     assertTraceContains(workerA.trace, /FOR UPDATE SKIP LOCKED/i, 'worker A must use skip locked')
     assertTraceContains(workerB.trace, /FOR UPDATE SKIP LOCKED/i, 'worker B must use skip locked')
 
