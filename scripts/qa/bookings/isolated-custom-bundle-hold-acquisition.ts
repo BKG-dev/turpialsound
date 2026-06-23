@@ -1567,7 +1567,7 @@ async function main(): Promise<void> {
       const rollback = await runAcquisition(
         client,
         buildMixedSubmission({ startTime: '20:00' }),
-        buildServerContext({ publicCode: 'TUR-0707-092', idempotencyKey: 'HOLD_2026:06:24-0093' }),
+        buildServerContext({ publicCode: 'TUR-0707-095', idempotencyKey: 'HOLD_2026:06:24-0093' }),
       )
       allTraceCalls.push(...rollback.trace)
       assert.equal(rollback.result.ok, false)
@@ -1575,7 +1575,7 @@ async function main(): Promise<void> {
         assert.equal(rollback.result.stage, 'persistence')
         assert.equal(rollback.result.code, 'DATABASE_WRITE_FAILED')
       }
-      await assertNoBundleByPublicCode(client, 'TUR-0707-092', 'rollback case')
+      await assertNoBundleByPublicCode(client, 'TUR-0707-095', 'rollback case')
       await client.query(`DROP TRIGGER IF EXISTS bkg07b_fail_grabaciones_voces_trigger ON "booking_request_items"`)
       await client.query(`DROP FUNCTION IF EXISTS bkg07b_fail_grabaciones_voces()`)
       temporaryTriggerCreated = false
