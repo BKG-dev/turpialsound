@@ -841,6 +841,19 @@ async function main(): Promise<void> {
       batchSize: 100,
     })
     assertExpirationSuccess('idempotent rerun', idempotentRerun.result)
+    console.error(
+      'idempotent rerun summary:',
+      JSON.stringify(
+        {
+          selected: idempotentRerun.result.selected,
+          expired: idempotentRerun.result.expired,
+          skipped: idempotentRerun.result.skipped,
+          hasMore: idempotentRerun.result.hasMore,
+        },
+        null,
+        2,
+      ),
+    )
     assert.equal(idempotentRerun.result.selected, 0)
     assert.equal(idempotentRerun.result.expired, 0)
     assert.equal(idempotentRerun.result.hasMore, false)
@@ -865,6 +878,19 @@ async function main(): Promise<void> {
       batchSize: 1,
     })
     assertExpirationSuccess('released slot', releasedSlotReusable.result)
+    console.error(
+      'released slot summary:',
+      JSON.stringify(
+        {
+          selected: releasedSlotReusable.result.selected,
+          expired: releasedSlotReusable.result.expired,
+          skipped: releasedSlotReusable.result.skipped,
+          hasMore: releasedSlotReusable.result.hasMore,
+        },
+        null,
+        2,
+      ),
+    )
     assert.equal(releasedSlotReusable.result.selected, 1)
     assert.equal(releasedSlotReusable.result.expired, 1)
     assert.equal(releasedSlotReusable.result.expiredBookings[0]?.publicCode, 'TUR-0707-710')
@@ -933,6 +959,27 @@ async function main(): Promise<void> {
     ])
     assertExpirationSuccess('worker A', workerA.result)
     assertExpirationSuccess('worker B', workerB.result)
+    console.error(
+      'worker summaries:',
+      JSON.stringify(
+        {
+          workerA: {
+            selected: workerA.result.selected,
+            expired: workerA.result.expired,
+            skipped: workerA.result.skipped,
+            hasMore: workerA.result.hasMore,
+          },
+          workerB: {
+            selected: workerB.result.selected,
+            expired: workerB.result.expired,
+            skipped: workerB.result.skipped,
+            hasMore: workerB.result.hasMore,
+          },
+        },
+        null,
+        2,
+      ),
+    )
     assert.equal(workerA.result.expired, 1)
     assert.equal(workerB.result.expired, 1)
     assert.equal(workerA.result.selected, 1)
