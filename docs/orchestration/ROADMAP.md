@@ -107,7 +107,14 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Technical exit criteria: payment intent creation and confirmation are consistent with the booking total.
 - Main risks: mismatch between payment amount and final booking total.
 - Prohibitions: no real payments from Preview.
-- Status: `PLANNED`
+- Status: `IN_PROGRESS`
+- Payment schema proposal: `PENDING_CI`
+- Payment contract: `PENDING_CI`
+- Payment eligibility: `PENDING_CI`
+- Transactional reporting: `NOT_STARTED`
+- Blob boundary: `NOT_STARTED`
+- Notifications: `NOT_STARTED`
+- Wizard integration: `NOT_STARTED`
 
 ## 9. Payment Recovery and Reporting
 

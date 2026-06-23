@@ -1,0 +1,18 @@
+{
+  "sprint": "BKG-08A",
+  "baseSha": "33bf4fb91f3a17cd26ebd1cf0952194aefae2f74",
+  "model": "single_consolidated_manual_payment_report",
+  "validation": {
+    "workflow": "booking-isolated-custom-bundle-payment-contract.yml",
+    "status": "PENDING",
+    "runId": null,
+    "validatedHeadSha": null,
+    "constraintsVerified": false,
+    "cleanupVerified": false
+  },
+  "readyForPaymentReportingAdapter": false,
+  "readyForBlobBoundary": false,
+  "readyForWizardIntegration": false,
+  "readyForProduction": false,
+  "blockers": []
+}

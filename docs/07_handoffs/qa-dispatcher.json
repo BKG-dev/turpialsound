@@ -1,6 +1,6 @@
 {
-  "version": 14,
-  "updated_at": "2026-06-22",
+  "version": 15,
+  "updated_at": "2026-06-23",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
     "layers": {
@@ -1032,6 +1032,83 @@
       ],
       "last_validated_at": null,
       "notes": "Isolated PostgreSQL gate for expiration, release and replay protection."
+    },
+    "booking_custom_bundle_payment_contract": {
+      "task_id": "booking_custom_bundle_payment_contract",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-contract.ts",
+      "preconditions": [
+        "Node and pnpm available",
+        "Dependencies installed",
+        "No application server required",
+        "No DATABASE_URL required",
+        "No browser required",
+        "No network required"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "base productiva",
+        "Neon",
+        "Supabase",
+        "Vercel DB",
+        "db push",
+        "migrate deploy",
+        "seeds",
+        "HTTP ad hoc",
+        "navegador",
+        "reverse engineering de server actions",
+        "accept client amount",
+        "accept paymentReportedAt from the client",
+        "accept payment fingerprint from the client",
+        "accept idempotencyKey from submission"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-08A.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Canonical consolidated payment contract QA for payment methods, proof policy, replay classification, and pure source safety."
+    },
+    "booking_isolated_custom_bundle_payment_schema": {
+      "task_id": "booking_isolated_custom_bundle_payment_schema",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-schema.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql",
+      "preconditions": [
+        "GitHub Actions available",
+        "PostgreSQL service container available",
+        "Baseline SQL generated",
+        "BKG-04 proposal validated",
+        "BKG-07 proposal validated",
+        "BKG-08 proposal validated",
+        "URL exclusively local",
+        "Isolated opt-in enabled",
+        "Single-connection SQL session available"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "DATABASE_URL productiva",
+        "Neon",
+        "Supabase",
+        "Vercel DB",
+        "db push",
+        "migrate deploy",
+        "seeds",
+        "HTTP ad hoc",
+        "navegador",
+        "Prisma contra produccion"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-08A.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Isolated PostgreSQL gate for the consolidated payment schema proposal and legacy compatibility."
     }
   }
 }

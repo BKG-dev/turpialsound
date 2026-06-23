@@ -1,6 +1,6 @@
 # QA Canonical Runbook
 
-> Fecha de actualizacion: 2026-06-22
+> Fecha de actualizacion: 2026-06-23
 > Alcance: marketplace no-booking
 > Objetivo: dejar una golden path operativa para QA/CLI sin redescubrir scripts
 
@@ -258,6 +258,51 @@ Precondiciones:
 
 Criterio de evidencia:
 - confirmar expiracion de hold vencido, frontera exacta, proteccion de payment reportado y proof activo, replay clasificado, reintento idempotente, procesamiento por lotes, rollback, limpieza y proteccion de slots liberados.
+
+## Booking custom bundle payment contract
+
+Objetivo:
+- validar el contrato tecnico del reporte consolidado de pago de `Arma tu paquete` sin navegador, sin HTTP, sin Prisma y sin escrituras.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-contract.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar metodos de pago, politica de comprobante, elegibilidad de hold, fingerprint canonica, clasificacion de replay e inmutabilidad del contrato.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
+
+## Booking custom bundle payment schema
+
+Objetivo:
+- validar la propuesta SQL aditiva del reporte consolidado de pago en PostgreSQL efimero.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-schema.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql`
+
+Precondiciones:
+- GitHub Actions disponible;
+- PostgreSQL service container disponible;
+- baseline SQL generado;
+- propuestas BKG-04, BKG-07 y BKG-08 validadas;
+- URL exclusivamente local;
+- opt-in aislado habilitado;
+- sesion SQL de una sola conexion disponible.
+
+Criterio de evidencia:
+- confirmar compatibilidad legacy, columnas de pago, constraints, indices y limpieza.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar rutas alternativas.
 
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.

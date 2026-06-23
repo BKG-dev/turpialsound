@@ -1,34 +1,37 @@
 # Current Sprint
 
 Sprint:
-BKG-07C1
+BKG-08A
 
 Name:
-Aislamiento de expiracion y release de hold
+Contrato y esquema aislado de pago consolidado
 
 Base:
-d88498fbecc8320f5516090bfb3f971e8822e1b7
+33bf4fb91f3a17cd26ebd1cf0952194aefae2f74
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* verify the local commit and preserve stable concurrency invariants;
-* publish the corrected hold expiration gate;
-* repeat the remote gate and preserve acquisition regression evidence.
+* define the consolidated payment contract as a pure module;
+* validate the additive payment schema proposal in isolated PostgreSQL;
+* register canonical QA routes for the payment contract and schema gate;
+* preserve the booking, hold, and expiration contracts already validated.
 
 Out of Scope:
 
-* BKG-08A;
-* wizard wiring;
+* transactional payment reporting;
+* blob boundary;
+* notifications;
+* wizard integration;
 * production;
 * manual QA.
 
 Result:
 
-READY_FOR_BKG_08A
+PAYMENT_CONTRACT_AND_SCHEMA_PENDING_CI
 
 Next Action:
 
-ChatGPT reviews BKG-07C1 and defines isolated consolidated payment eligibility and reporting.
+ChatGPT verifies the consolidated payment contract and schema before BKG-08B.
