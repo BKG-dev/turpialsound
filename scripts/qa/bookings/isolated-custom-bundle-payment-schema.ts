@@ -543,15 +543,7 @@ async function main(): Promise<void> {
         createdAt: new Date('2026-06-23T16:00:00.000Z'),
         updatedAt: new Date('2026-06-23T16:00:00.000Z'),
       })
-    })
 
-    await client.query(bkg04Sql)
-    await client.query(bkg07Sql)
-    await client.query(bkg08Sql)
-
-    await assertColumnMetadata(client)
-
-    await withTransaction(client, async () => {
       const rows = await client.query<{
         bookingMode: string | null
         pricingSource: string | null
@@ -601,6 +593,12 @@ async function main(): Promise<void> {
       assert.equal(legacyRow.paymentReportIdempotencyKey, null)
       assert.equal(legacyRow.paymentReportFingerprint, null)
     })
+
+    await client.query(bkg04Sql)
+    await client.query(bkg07Sql)
+    await client.query(bkg08Sql)
+
+    await assertColumnMetadata(client)
 
     await withTransaction(client, async () => {
       const paymentFixture = buildPaymentBookingRequestFixture()
