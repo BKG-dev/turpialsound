@@ -239,6 +239,12 @@ function assertMoneyValue(
   assert.equal(normalizeMoney(value), expected, label)
 }
 
+function describeHoldAcquisitionResult(
+  result: Awaited<ReturnType<typeof acquireCustomBundleHoldWithSql>>,
+): string {
+  return result.ok ? result.stage : 'code' in result ? `${result.stage}:${result.code}` : result.stage
+}
+
 function buildMixedSubmission(
   overrides: Partial<CustomBundleSubmissionInputV1> = {},
 ): CustomBundleSubmissionInputV1 {
@@ -1407,6 +1413,8 @@ async function main(): Promise<void> {
           acquireCustomBundleHoldWithSql(createTracingSession(firstClient), inputA),
           acquireCustomBundleHoldWithSql(createTracingSession(secondClient), inputB),
         ])
+        console.log('case12 resultA:', describeHoldAcquisitionResult(resultA))
+        console.log('case12 resultB:', describeHoldAcquisitionResult(resultB))
         assert.ok([resultA, resultB].some((result) => result.ok && result.stage === 'acquired'))
         assert.ok([resultA, resultB].some((result) => result.ok && result.stage === 'replayed'))
         const bundleRows = await queryRows<BookingRequestRow>(
