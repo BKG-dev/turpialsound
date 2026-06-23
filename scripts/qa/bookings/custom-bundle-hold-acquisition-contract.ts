@@ -94,6 +94,10 @@ function createScriptedSession(
       params: readonly unknown[] = [],
     ): Promise<{ rows: Row[]; rowCount: number | null }> {
       calls.push({ sql, params: [...params] })
+      if (/^SELECT\s+pg_advisory_xact_lock\(hashtext\(\$1\)\)/i.test(sql.trim())) {
+        return { rows: [], rowCount: 0 } as { rows: Row[]; rowCount: number | null }
+      }
+
       const step = steps[index++]
       if (!step) {
         throw new Error(`Unexpected query at step ${index}: ${sql}`)

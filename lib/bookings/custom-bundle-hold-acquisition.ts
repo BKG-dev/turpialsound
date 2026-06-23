@@ -676,6 +676,10 @@ export async function acquireCustomBundleHoldWithSql(
   for (let attempt = 1; attempt <= MAX_TRANSACTION_ATTEMPTS; attempt += 1) {
     try {
       await session.query('BEGIN ISOLATION LEVEL SERIALIZABLE')
+      // Serialize identical idempotency keys so concurrent requests can replay deterministically.
+      await session.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+        preparedContext.idempotencyKey,
+      ])
 
       const existingReplayRow = await readHoldReplayRecord(session, preparedContext.idempotencyKey, true)
       if (existingReplayRow) {
