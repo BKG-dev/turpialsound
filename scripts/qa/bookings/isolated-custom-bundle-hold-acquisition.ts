@@ -1226,7 +1226,11 @@ async function main(): Promise<void> {
       const acquired = await runAcquisition(
         client,
         buildReplayParitySubmission(),
-        buildServerContext({ publicCode: 'TUR-0707-092', idempotencyKey: 'HOLD_2026:06:24-0092' }),
+        buildServerContext({
+          publicCode: 'TUR-0707-092',
+          idempotencyKey: 'HOLD_2026:06:24-0092',
+          now: new Date('2026-06-24T16:00:00.000Z'),
+        }),
       )
       allTraceCalls.push(...acquired.trace)
       if (!acquired.result.ok) {
@@ -1248,7 +1252,11 @@ async function main(): Promise<void> {
       const replayed = await runAcquisition(
         client,
         buildReplayParitySubmission(),
-        buildServerContext({ publicCode: 'TUR-0707-093', idempotencyKey: 'HOLD_2026:06:24-0092' }),
+        buildServerContext({
+          publicCode: 'TUR-0707-093',
+          idempotencyKey: 'HOLD_2026:06:24-0092',
+          now: new Date('2026-06-24T16:00:00.000Z'),
+        }),
       )
       allTraceCalls.push(...replayed.trace)
       assertResultIsSuccess('replay allocation parity replayed', replayed.result)
