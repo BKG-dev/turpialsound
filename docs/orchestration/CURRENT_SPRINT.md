@@ -1,22 +1,22 @@
 # Current Sprint
 
 Sprint:
-BKG-07C
+BKG-07C1
 
 Name:
 Aislamiento de expiracion y release de hold
 
 Base:
-711b8eca90c8a2d018c26c1cc89ffacb72efaece
+d88498fbecc8320f5516090bfb3f971e8822e1b7
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
-* implement isolated hold expiration and release processing;
-* validate due hold release and replay safety;
-* preserve acquisition regression evidence.
+* verify the local commit and preserve stable concurrency invariants;
+* publish the corrected hold expiration gate;
+* repeat the remote gate and preserve acquisition regression evidence.
 
 Out of Scope:
 
@@ -27,8 +27,8 @@ Out of Scope:
 
 Result:
 
-HOLD_EXPIRATION_PENDING_CI
+READY_FOR_BKG_08A
 
 Next Action:
 
-ChatGPT verifies isolated expiration processing and acquisition regression before BKG-08A.
+ChatGPT reviews BKG-07C1 and defines isolated consolidated payment eligibility and reporting.

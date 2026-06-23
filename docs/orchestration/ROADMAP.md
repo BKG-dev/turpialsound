@@ -93,7 +93,9 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Hold acquisition: `TECHNICALLY_VALIDATED`
 - Replay allocation parity: `TECHNICALLY_VALIDATED`
 - Corrupt replay rejection: `TECHNICALLY_VALIDATED`
-- Expiration writer: `PENDING_CI`
+- Expiration processor: `TECHNICALLY_VALIDATED`
+- Expiration eligibility: `TECHNICALLY_VALIDATED`
+- Concurrent processing: `TECHNICALLY_VALIDATED`
 - Scheduler wiring: `NOT_STARTED`
 - Idempotent replay: `TECHNICALLY_VALIDATED`
 - Wizard integration: `NOT_STARTED`
