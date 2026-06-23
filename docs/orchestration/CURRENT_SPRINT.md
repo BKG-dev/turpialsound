@@ -4,20 +4,20 @@ Sprint:
 BKG-08A1
 
 Name:
-Corregir semántica operacional del replay de pago consolidado
+Corregir semantica operacional del replay de pago consolidado
 
 Base:
 7c9c1ce82b7bc3f5e829acd531db347d179e8c15
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
 * correct the operational semantics of consolidated payment replay;
 * keep the payment schema proposal evidence intact;
 * keep hold and expiration contracts intact;
-* prepare the sprint for a corrected CI validation.
+* prepare the sprint for isolated transactional payment reporting.
 
 Out of Scope:
 
@@ -31,8 +31,8 @@ Out of Scope:
 
 Result:
 
-PAYMENT_REPLAY_CORRECTION_PENDING_CI
+READY_FOR_BKG_08B
 
 Next Action:
 
-ChatGPT verifies realistic payment replay semantics before BKG-08B.
+ChatGPT reviews BKG-08A1 and defines isolated transactional payment reporting.
