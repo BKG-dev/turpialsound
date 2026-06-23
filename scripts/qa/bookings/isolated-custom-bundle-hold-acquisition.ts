@@ -1486,10 +1486,15 @@ async function main(): Promise<void> {
         `
           UPDATE "booking_requests"
           SET "internalNotes" = '[ops_status:payment_reported]',
-              "holdExpiresAt" = $2
+              "holdAcquiredAt" = $2,
+              "holdExpiresAt" = $3
           WHERE id = $1
         `,
-        [seededBundle.bookingRequest!.id, new Date('2026-06-24T13:30:00.000Z')],
+        [
+          seededBundle.bookingRequest!.id,
+          new Date('2026-06-24T13:00:00.000Z'),
+          new Date('2026-06-24T13:30:00.000Z'),
+        ],
       )
 
       const blocked = await runAcquisition(
