@@ -4,13 +4,13 @@ Sprint:
 BKG-07B
 
 Name:
-Adquisición transaccional aislada del hold
+Adquisicion transaccional aislada del hold
 
 Base:
 ef76f340513cff0aa3802b5c5add3a80ea20001a
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
@@ -32,8 +32,8 @@ Out of Scope:
 
 Result:
 
-TRANSACTIONAL_HOLD_ACQUISITION_PENDING_CI
+READY_FOR_BKG_07C
 
 Next Action:
 
-ChatGPT verifies the isolated transactional hold acquisition before BKG-07C.
+ChatGPT reviews BKG-07B and defines isolated expiration and release processing.

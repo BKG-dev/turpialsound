@@ -90,9 +90,9 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Status: `IN_PROGRESS`
 - Hold schema proposal: `TECHNICALLY_VALIDATED`
 - Hold contract: `TECHNICALLY_VALIDATED`
-- Hold acquisition: `PENDING_CI`
+- Hold acquisition: `TECHNICALLY_VALIDATED`
 - Expiration writer: `NOT_STARTED`
-- Idempotent replay: `PENDING_ACQUISITION_CI`
+- Idempotent replay: `TECHNICALLY_VALIDATED`
 - Wizard integration: `NOT_STARTED`
 
 ## 8. Consolidated Payment
