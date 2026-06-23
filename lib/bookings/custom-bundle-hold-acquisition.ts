@@ -675,11 +675,17 @@ export async function acquireCustomBundleHoldWithSql(
 
   for (let attempt = 1; attempt <= MAX_TRANSACTION_ATTEMPTS; attempt += 1) {
     let idempotencyLockAcquired = false
+    let fingerprintLockAcquired = false
     try {
       await session.query('SELECT pg_advisory_lock(hashtext($1))', [
         preparedContext.idempotencyKey,
       ])
       idempotencyLockAcquired = true
+
+      await session.query('SELECT pg_advisory_lock(hashtext($1))', [
+        preparedContext.requestFingerprint,
+      ])
+      fingerprintLockAcquired = true
 
       await session.query('BEGIN ISOLATION LEVEL SERIALIZABLE')
 
@@ -1073,6 +1079,11 @@ export async function acquireCustomBundleHoldWithSql(
         error instanceof Error ? 'No se pudo persistir la solicitud de hold.' : 'No se pudo persistir la solicitud de hold.',
       )
     } finally {
+      if (fingerprintLockAcquired) {
+        await session
+          .query('SELECT pg_advisory_unlock(hashtext($1))', [preparedContext.requestFingerprint])
+          .catch(() => {})
+      }
       if (idempotencyLockAcquired) {
         await session
           .query('SELECT pg_advisory_unlock(hashtext($1))', [preparedContext.idempotencyKey])
