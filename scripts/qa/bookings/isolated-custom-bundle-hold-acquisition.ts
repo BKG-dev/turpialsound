@@ -1530,7 +1530,7 @@ async function main(): Promise<void> {
       const missing = await runAcquisition(
         client,
         buildPluginSubmission(),
-        buildServerContext({ publicCode: 'TUR-0707-091', idempotencyKey: 'HOLD_2026:06:24-0092' }),
+        buildServerContext({ publicCode: 'TUR-0707-091', idempotencyKey: 'HOLD_2026:06:24-0095' }),
       )
       allTraceCalls.push(...missing.trace)
       assert.equal(missing.result.ok, false)
