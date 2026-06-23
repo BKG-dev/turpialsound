@@ -784,7 +784,7 @@ async function main(): Promise<void> {
     const due2 = await fetchBooking(client, 'TUR-0707-702')
     assert.equal(due1?.status, 'rejected')
     assert.equal(due2?.status, 'rejected')
-    assert.equal(due1?.internalNotes, '[ops_status:expired]')
+    assert.equal(due1?.internalNotes, '[ops_status:expired]\nNotas del cliente')
     assert.equal(due2?.internalNotes, '[ops_status:expired]')
     assert.equal((await fetchBookingItems(client, 'bkg07c_due_1')).at(0)?.resourceId, catalog.resourceId)
     assert.equal((await fetchBookingItems(client, 'bkg07c_due_2')).at(0)?.resourceId, catalog.resourceId)
