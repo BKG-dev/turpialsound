@@ -1266,14 +1266,17 @@ export async function acquireCustomBundleHoldWithSql(
       const persistedBookingRequestId = bookingRequestInsertResult.rows[0]?.id ?? bookingRequestId
 
       for (const descriptor of descriptors) {
-        const allocation = resourceAllocationResult.plan.allocations.find(
-          (candidate) => candidate.itemSlug === descriptor.itemSlug,
-        )
-        if (descriptor.itemKind === 'service' && !allocation) {
+        const requiresAllocation = descriptor.itemKind === 'service' && descriptor.durationMinutes > 0
+        const allocation = requiresAllocation
+          ? resourceAllocationResult.plan.allocations.find(
+              (candidate) => candidate.itemSlug === descriptor.itemSlug,
+            )
+          : null
+        if (requiresAllocation && !allocation) {
           throw new Error(`No se encontro la asignacion de recurso para ${descriptor.itemSlug}.`)
         }
 
-        const resourceId = descriptor.itemKind === 'service' && allocation?.mode === 'physical'
+        const resourceId = requiresAllocation && allocation?.mode === 'physical'
           ? allocation.assignedResource.resourceId
           : null
 
