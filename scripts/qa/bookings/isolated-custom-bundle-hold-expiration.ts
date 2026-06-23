@@ -763,7 +763,11 @@ async function main(): Promise<void> {
     })
     if (!firstRun.result.ok) {
       console.error('first batch result:', JSON.stringify(firstRun.result, null, 2))
-      console.error('first batch last sql:', firstRun.trace.at(-1)?.sql ?? '(none)')
+      const failingTrace = firstRun.trace.slice(-5).map((call, index) => ({
+        step: firstRun.trace.length - 4 + index,
+        sql: call.sql,
+      }))
+      console.error('first batch trace tail:', JSON.stringify(failingTrace, null, 2))
     }
     assertExpirationSuccess('first batch', firstRun.result)
     assert.equal(firstRun.result.selected, 2)
