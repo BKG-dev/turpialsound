@@ -961,7 +961,8 @@ function assertResultIsSuccess(
   { ok: true }
 > {
   if (!result.ok) {
-    throw new Error(`${label} returned stage ${result.stage}`)
+    const code = 'code' in result && typeof result.code === 'string' ? ` code ${result.code}` : ''
+    throw new Error(`${label} returned stage ${result.stage}${code}`)
   }
 }
 
