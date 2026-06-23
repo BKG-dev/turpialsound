@@ -522,8 +522,8 @@ async function main(): Promise<void> {
       `)
 
       const serviceVariantRows = await client.query<{ id: string }>(`
-        INSERT INTO "service_variants" ("slug", "name", "description", "isActive", "serviceId", "createdAt", "updatedAt")
-        VALUES ('sala-ensayo-premium', 'Sala Premium', 'Variante legacy de sala', true, $1, now(), now())
+        INSERT INTO "service_variants" ("id", "slug", "name", "description", "isActive", "serviceId", "createdAt", "updatedAt")
+        VALUES ('payment-fixture-variant-001', 'sala-ensayo-premium', 'Sala Premium', 'Variante legacy de sala', true, $1, now(), now())
         RETURNING id
       `, [serviceRows.rows[0].id])
 
