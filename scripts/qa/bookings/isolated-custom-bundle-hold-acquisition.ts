@@ -1321,7 +1321,7 @@ async function main(): Promise<void> {
 
       const conflict = await runAcquisition(
         client,
-        buildRoomOnlySubmission({ startTime: '18:30' }),
+        buildRoomOnlySubmission({ startTime: '20:00' }),
         buildServerContext({ publicCode: 'TUR-0707-090', idempotencyKey: 'HOLD_2026:06:24-0091' }),
       )
       allTraceCalls.push(...conflict.trace)
