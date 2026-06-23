@@ -748,6 +748,7 @@ async function main(): Promise<void> {
       const firstFixture = buildPaymentBookingRequestFixture({
         id: 'payment-fixture-null-001',
         publicCode: 'TUR-0808-020',
+        idempotencyKey: 'HOLD_2026:06:23-0002',
         paymentReportIdempotencyKey: null,
         paymentReportFingerprint: null,
         paymentMethod: null,
@@ -759,6 +760,7 @@ async function main(): Promise<void> {
       const secondFixture = buildPaymentBookingRequestFixture({
         id: 'payment-fixture-null-002',
         publicCode: 'TUR-0808-021',
+        idempotencyKey: 'HOLD_2026:06:23-0003',
         paymentReportIdempotencyKey: null,
         paymentReportFingerprint: null,
         paymentMethod: null,
@@ -981,12 +983,14 @@ async function main(): Promise<void> {
       const firstFixture = buildPaymentBookingRequestFixture({
         id: 'payment-fixture-dup-001',
         publicCode: 'TUR-0808-040',
+        idempotencyKey: 'HOLD_2026:06:23-0004',
         paymentReportIdempotencyKey: 'PAYMENT_2026:06:23-0006',
         paymentReportFingerprint: 'f'.repeat(64),
       })
       const secondFixture = buildPaymentBookingRequestFixture({
         id: 'payment-fixture-dup-002',
         publicCode: 'TUR-0808-041',
+        idempotencyKey: 'HOLD_2026:06:23-0005',
         paymentReportIdempotencyKey: firstFixture.paymentReportIdempotencyKey,
         paymentReportFingerprint: '9'.repeat(64),
       })
