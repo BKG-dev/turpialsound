@@ -1,0 +1,22 @@
+# BKG-08C Handoff
+
+- Sprint: `BKG-08C`
+- Base SHA: `c69581622cbf13459b1ffbde4c5bb6c9ec293bd8`
+- Estado inicial: `DIRECTOR_REVIEW`
+- Objetivo:
+  - implementar una frontera privada, aislada e inyectable para comprobantes de pago;
+  - integrar esa frontera con el adapter transaccional de BKG-08B;
+  - validar limpieza compensatoria, reutilización segura y ausencia de Blob real.
+- Alcance:
+  - `lib/bookings/custom-bundle-payment-proof-boundary.ts`;
+  - `lib/bookings/custom-bundle-payment-proof-flow.ts`;
+  - scripts QA de boundary y flow;
+  - workflow aislado de CI;
+  - documentación de orquestación.
+- Fuera de alcance:
+  - `lib/bookings/payment-proof-upload.ts`;
+  - Blob real;
+  - server actions;
+  - wizard;
+  - producción.
+- Estado remoto: pendiente de validación.

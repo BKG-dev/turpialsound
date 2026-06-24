@@ -623,3 +623,48 @@ Criterio de evidencia:
 
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
+
+## Booking custom bundle payment proof boundary
+
+Objetivo:
+- validar la frontera privada de comprobantes de pago: bytes reales, firmas binarias, pathname determinista, reuse seguro y cleanup compensatorio.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-proof-boundary-contract.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar JPEG/PNG/WEBP/AVIF, sha256 desde bytes, pathname privado sin clave de idempotencia, access private, reuse idempotente, race recovery y cleanup seguro.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar Blob real, URL publica, HTTP ad hoc ni reverse engineering.
+
+## Booking isolated custom bundle payment proof flow
+
+Objetivo:
+- validar en PostgreSQL efimero el flow aislado que conecta la frontera privada de comprobantes con el reporte transaccional de BKG-08B.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-proof-flow.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql`
+
+Precondiciones:
+- GitHub Actions disponible;
+- PostgreSQL service container disponible;
+- baseline SQL generado;
+- propuestas BKG-04, BKG-07 y BKG-08 validadas;
+- URL exclusivamente local;
+- opt-in aislado habilitado;
+- session SQL con una sola conexion disponible.
+
+Criterio de evidencia:
+- confirmar proof privado creado o reutilizado, reporte transaccional exitoso o fallido, replay exacto sin reupload, cleanup de objetos creados, preservacion de objetos reutilizados y ausencia de Blob real.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar Blob real, token real, URL publica ni reverse engineering.

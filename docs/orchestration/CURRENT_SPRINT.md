@@ -1,37 +1,37 @@
 # Current Sprint
 
 Sprint:
-BKG-08B
+BKG-08C
 
 Name:
-Adapter transaccional aislado de reporte de pago consolidado
+Frontera privada aislada para comprobantes de pago consolidado
 
 Base:
-632faaa777793df9f2f1dd56a62b4e346eece3b8
+c69581622cbf13459b1ffbde4c5bb6c9ec293bd8
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* implement the isolated transactional payment reporting adapter;
-* keep the additive payment schema proposal intact;
-* keep hold acquisition and expiration gates compatible;
-* validate replay, proof persistence, rollback, and payment-versus-expiration races in ephemeral PostgreSQL.
+* implement the isolated private payment proof boundary;
+* keep the transactional payment reporting adapter intact;
+* validate binary signatures, deterministic private paths, trusted metadata, and cleanup behavior;
+* integrate the boundary only through the isolated proof flow gate.
 
 Out of Scope:
 
-* blob upload wiring;
+* production Blob wiring;
 * notifications;
 * wizard integration;
 * production;
 * manual QA;
-* BKG-08C.
+* BKG-08D.
 
 Result:
 
-READY_FOR_BKG_08C
+PRIVATE_PAYMENT_PROOF_BOUNDARY_PENDING_CI
 
 Next Action:
 
-ChatGPT reviews BKG-08B and defines the isolated private Blob boundary.
+ChatGPT verifies the isolated private payment proof boundary before BKG-08D.

@@ -1,6 +1,6 @@
 {
-  "sprint": "BKG-08B",
-  "baseSha": "632faaa777793df9f2f1dd56a62b4e346eece3b8",
+  "sprint": "BKG-08C",
+  "baseSha": "c69581622cbf13459b1ffbde4c5bb6c9ec293bd8",
   "model": "single_consolidated_manual_payment_report",
   "validation": {
     "workflow": "booking-isolated-custom-bundle-payment-contract.yml",
@@ -46,6 +46,29 @@
   "transactionalReportingTechnicallyValidated": true,
   "readyForPaymentReportingAdapter": true,
   "readyForBlobBoundary": true,
+  "blobBoundaryValidation": {
+    "workflow": "booking-isolated-custom-bundle-payment-proof-boundary.yml",
+    "status": "PENDING",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
+    "binarySignatureVerified": false,
+    "actualByteSizeVerified": false,
+    "sha256Verified": false,
+    "deterministicPathVerified": false,
+    "privateAccessVerified": false,
+    "idempotentReuseVerified": false,
+    "uploadRaceVerified": false,
+    "reportingIntegrationVerified": false,
+    "exactReplayNoReuploadVerified": false,
+    "failureCleanupVerified": false,
+    "reusedObjectPreserved": false,
+    "noPublicUrlVerified": false,
+    "databaseCleanupVerified": false,
+    "storageCleanupVerified": false
+  },
+  "privateBlobBoundaryTechnicallyValidated": false,
+  "readyForPaymentServerAction": false,
   "readyForWizardIntegration": false,
   "readyForProduction": false,
   "blockers": []
