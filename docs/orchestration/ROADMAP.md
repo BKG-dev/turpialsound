@@ -112,7 +112,7 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Payment contract: `TECHNICALLY_VALIDATED`
 - Payment eligibility: `TECHNICALLY_VALIDATED`
 - Payment replay semantics: `TECHNICALLY_VALIDATED`
-- Transactional reporting: `PENDING_CI`
+- Transactional reporting: `TECHNICALLY_VALIDATED`
 - Blob boundary: `NOT_STARTED`
 - Notifications: `NOT_STARTED`
 - Wizard integration: `NOT_STARTED`

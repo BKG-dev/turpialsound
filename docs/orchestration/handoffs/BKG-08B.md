@@ -2,14 +2,28 @@
 
 - Sprint: `BKG-08B`
 - Base SHA: `632faaa777793df9f2f1dd56a62b4e346eece3b8`
-- Scope:
-  - isolated transactional payment reporting adapter;
-  - pure reporting contract harness;
-  - isolated PostgreSQL reporting gate;
-  - orchestration and QA routing updates.
-- Initial status: `DIRECTOR_REVIEW`
-- Workflow pending:
+- Functional SHA validated: `5c10a5d0620315997cdbcbc761c71cae2d7f76a7`
+- Workflow:
   - `Booking Isolated Custom Bundle Payment Reporting`
+- Run ID: `28113239110`
+- Job ID: `83245917137`
+- Conclusion: `success`
+- Reporting evidence:
+  - `booking_custom_bundle_payment_reporting_contract OK`
+  - `booking_isolated_custom_bundle_payment_reporting OK`
+  - booking row lock verified;
+  - authoritative total snapshot verified;
+  - seven payment fields written atomically;
+  - booking operational state transitioned to `payment_reported`;
+  - payment proof persistence verified;
+  - exact replay returned without writes;
+  - global idempotency key verified;
+  - duplicate proof classification verified;
+  - payment-wins expiration race verified;
+  - expiration-wins payment race verified;
+  - total rollback verified;
+  - resource history preserved;
+  - cleanup verified.
 - Guardrails preserved:
   - `schema.prisma` unchanged;
   - proposed SQL files unchanged;
@@ -17,10 +31,12 @@
   - no server actions;
   - wizard still disconnected;
   - production not authorized.
-- Expected evidence:
-  - row lock on `booking_requests`;
-  - authoritative total snapshot preserved;
-  - exact replay without writes;
-  - proof duplicate classification;
-  - payment-versus-expiration race coverage;
-  - total rollback and cleanup.
+- Corrective sequence completed:
+  - fixture hold fingerprint normalized to lowercase hex;
+  - PostgreSQL `regexp_count` guard aligned with real function signature;
+  - proof `sha256` fixtures normalized to lowercase hex;
+  - malformed partial report isolated inside the ephemeral gate;
+  - expired-hold fixture kept inside a valid hold window.
+- Result: `READY_FOR_BKG_08C`
+- Next action:
+  - ChatGPT reviews BKG-08B and defines the isolated private Blob boundary.

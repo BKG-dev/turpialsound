@@ -10,7 +10,7 @@ Base:
 632faaa777793df9f2f1dd56a62b4e346eece3b8
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
@@ -30,8 +30,8 @@ Out of Scope:
 
 Result:
 
-TRANSACTIONAL_PAYMENT_REPORTING_PENDING_CI
+READY_FOR_BKG_08C
 
 Next Action:
 
-ChatGPT verifies isolated transactional payment reporting before BKG-08C.
+ChatGPT reviews BKG-08B and defines the isolated private Blob boundary.
