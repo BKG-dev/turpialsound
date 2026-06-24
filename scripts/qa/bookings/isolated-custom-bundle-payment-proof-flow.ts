@@ -434,7 +434,7 @@ async function insertFixtureBooking(
 ): Promise<void> {
   const eventDate = new Date('2026-06-24T14:00:00.000Z')
   const eventEndDate = new Date('2026-06-24T16:00:00.000Z')
-  const holdAcquiredAt = input.holdAcquiredAt ?? new Date('2026-06-23T14:00:00.000Z')
+  const holdAcquiredAt = input.holdAcquiredAt ?? new Date('2026-06-23T13:00:00.000Z')
   const holdExpiresAt = input.holdExpiresAt ?? new Date('2026-06-23T15:00:00.000Z')
 
   await client.query(
