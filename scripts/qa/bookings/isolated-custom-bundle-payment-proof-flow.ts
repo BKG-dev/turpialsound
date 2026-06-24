@@ -160,9 +160,15 @@ function makeClock(...values: Date[]): { now(): Date } {
   }
 }
 
-function makeThrowingClock(error: Error): { now(): Date } {
+function makeThrowingClock(firstNow: Date, error: Error): { now(): Date } {
+  let calls = 0
   return {
     now(): Date {
+      calls += 1
+      if (calls === 1) {
+        return new Date(firstNow.getTime())
+      }
+
       throw error
     },
   }
@@ -1416,7 +1422,10 @@ async function main(): Promise<void> {
           type: 'image/png',
           bytes: reusedThrowBytes,
         }),
-        clock: makeThrowingClock(new Error('clock exploded')),
+        clock: makeThrowingClock(
+          new Date('2026-06-23T14:30:00.000Z'),
+          new Error('clock exploded'),
+        ),
       }),
     )
     assertPostUploadFailure(
