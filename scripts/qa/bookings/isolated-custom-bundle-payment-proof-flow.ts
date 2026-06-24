@@ -1270,6 +1270,12 @@ async function main(): Promise<void> {
         }),
       }),
     )
+    if (!raceResult.result.ok) {
+      console.error(
+        'race recovery trace',
+        raceResult.trace.map((call) => call.sql),
+      )
+    }
     assertResultStage(raceResult.result, 'reported', 'race recovery')
     assert.equal(raceStore.calls.head.length >= 2, true)
     assert.equal(raceStore.calls.put.length, 1)
