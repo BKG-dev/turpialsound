@@ -825,7 +825,7 @@ async function updateBookingRequestForPayment(
         AND "paymentExpectedTotalUsdSnapshot" IS NULL
         AND "paymentReportIdempotencyKey" IS NULL
         AND "paymentReportFingerprint" IS NULL
-        AND regexp_count(COALESCE("internalNotes", ''), '\\[ops_status:[^\\]]+\\]', 'i') = 1
+        AND regexp_count(COALESCE("internalNotes", ''), '\\[ops_status:[^\\]]+\\]', 1, 'i') = 1
         AND COALESCE("internalNotes", '') ~* '\\[ops_status:pending_payment\\]'
       RETURNING id
     `,
