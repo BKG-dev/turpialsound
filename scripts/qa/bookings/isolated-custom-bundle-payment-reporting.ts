@@ -873,6 +873,7 @@ async function main(): Promise<void> {
       publicCode: 'TUR-0808-108',
       serviceVariantId: catalog.variantId,
       resourceId: catalog.resourceId,
+      holdAcquiredAt: new Date('2026-06-23T13:00:00.000Z'),
       holdExpiresAt: new Date('2026-06-23T14:00:00.000Z'),
     })
     const expired = await runPayment(
