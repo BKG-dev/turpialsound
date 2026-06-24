@@ -10,7 +10,7 @@ Base:
 c47fb56b05d2f904d9c29d71c6aed374d706a267
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
@@ -29,8 +29,8 @@ Out of Scope:
 
 Result:
 
-POST_UPLOAD_COMPENSATION_PENDING_CI
+READY_FOR_BKG_08D
 
 Next Action:
 
-ChatGPT verifies post-upload failure compensation before BKG-08D.
+ChatGPT reviews BKG-08C1 and defines the safe server-only payment reporting entrypoint.

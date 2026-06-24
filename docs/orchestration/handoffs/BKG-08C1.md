@@ -3,9 +3,10 @@
 - Sprint: `BKG-08C1`
 - Base SHA: `c47fb56b05d2f904d9c29d71c6aed374d706a267`
 - Estado inicial: `DIRECTOR_REVIEW`
+- Estado final: `TECHNICALLY_VALIDATED`
 - Objetivo:
-  - cerrar la compensación post-upload en el flow de comprobantes de pago;
-  - evitar objetos privados huérfanos si el segundo reloj falla o si reporting lanza inesperadamente;
+  - cerrar la compensacion post-upload en el flow de comprobantes de pago;
+  - evitar objetos privados huerfanos si el segundo reloj falla o si reporting lanza inesperadamente;
   - preservar objetos reutilizados.
 - Alcance:
   - `lib/bookings/custom-bundle-payment-proof-flow.ts`;
@@ -17,7 +18,28 @@
   - server actions;
   - wizard;
   - producción.
-- Riesgo a corregir:
-  - un fallo posterior al upload podía dejar un objeto privado sin cleanup.
-- Estado remoto:
-  - pendiente de validación.
+- Evidencia remota:
+  - workflow: `Booking Isolated Custom Bundle Payment Proof Boundary`;
+  - run: `28132909189`;
+  - job: `83313153874`;
+  - head SHA validado: `69286bc47f9154bcf47cd1cc74022e92a600629a`;
+  - conclusion: `success`;
+  - mensajes seguros:
+    - `booking_isolated_custom_bundle_payment_proof_flow OK`;
+    - `invalid report clock cleanup: verified`;
+    - `reporting exception compensation: verified`;
+    - `reused object preserved after post-upload failure: verified`;
+    - `original failure preserved: verified`;
+    - `private upload: verified`;
+    - `trusted metadata: verified`;
+    - `transactional reporting integration: verified`;
+    - `exact replay without reupload: verified`;
+    - `upload race: verified`;
+    - `database cleanup: verified`;
+    - `storage cleanup: verified`.
+- Riesgos cerrados:
+  - el flow limpia el objeto privado owned si falla el reloj posterior al upload;
+  - el flow limpia el objeto privado owned si reporting lanza inesperadamente;
+  - los objetos reutilizados no se eliminan.
+- Siguiente accion:
+  - ChatGPT reviews BKG-08C1 and defines the safe server-only payment reporting entrypoint.
