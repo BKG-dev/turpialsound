@@ -1199,16 +1199,17 @@ async function main(): Promise<void> {
       resourceId: catalog.resourceId,
     })
     const reusedFailureStore = createProofStore()
+    const reusedFailureBytes = new Uint8Array([...makeBytes('png'), 0x21])
     const reusedFailurePath = buildCustomBundlePaymentProofPrivatePathname({
       publicCode: 'TUR-0808-213',
       paymentReportIdempotencyKey: 'PAYMENT_0808_REUSED_213',
-      sha256: createHash('sha256').update(makeBytes('png')).digest('hex'),
+      sha256: createHash('sha256').update(reusedFailureBytes).digest('hex'),
       mimeType: 'image/png',
     })
     reusedFailureStore.seedObject({
       pathname: reusedFailurePath,
       contentType: 'image/png',
-      sizeBytes: makeBytes('png').byteLength,
+      sizeBytes: reusedFailureBytes.byteLength,
       uploadedAt: new Date('2026-06-23T13:59:00.000Z'),
       access: 'private',
     })
@@ -1221,9 +1222,9 @@ async function main(): Promise<void> {
         paymentReference: 'reused-213',
         paymentReportIdempotencyKey: 'PAYMENT_0808_REUSED_213',
         paymentProofFile: makeFileLike({
-          name: 'seed.webp',
+          name: 'seed.png',
           type: 'image/png',
-          bytes: makeBytes('png'),
+          bytes: reusedFailureBytes,
         }),
       }),
     )
@@ -1238,17 +1239,18 @@ async function main(): Promise<void> {
       resourceId: catalog.resourceId,
     })
     const raceStore = createProofStore()
+    const raceBytes = new Uint8Array([...makeBytes('png'), 0x22])
     const racePath = buildCustomBundlePaymentProofPrivatePathname({
       publicCode: 'TUR-0808-214',
       paymentReportIdempotencyKey: 'PAYMENT_0808_RACE_214',
-      sha256: createHash('sha256').update(makeBytes('png')).digest('hex'),
+      sha256: createHash('sha256').update(raceBytes).digest('hex'),
       mimeType: 'image/png',
     })
     raceStore.queueHeadResponse(null)
     raceStore.queueHeadResponse({
       pathname: racePath,
       contentType: 'image/png',
-      sizeBytes: makeBytes('png').byteLength,
+      sizeBytes: raceBytes.byteLength,
       uploadedAt: new Date('2026-06-23T14:29:30.000Z'),
       access: 'private',
     })
@@ -1264,7 +1266,7 @@ async function main(): Promise<void> {
         paymentProofFile: makeFileLike({
           name: 'race.png',
           type: 'image/png',
-          bytes: makeBytes('png'),
+          bytes: raceBytes,
         }),
       }),
     )
