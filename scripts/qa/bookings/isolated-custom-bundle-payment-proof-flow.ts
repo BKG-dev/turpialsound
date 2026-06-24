@@ -28,7 +28,11 @@ const EXPECTED_PASSWORD = 'turpial_ci_only'
 const EXPECTED_OPT_IN = 'true'
 
 type TracingSession = CustomBundleSqlSession & {
-  calls: Array<{ sql: string; params: readonly unknown[] }>
+  calls: Array<{
+    sql: string
+    params: readonly unknown[]
+    error?: { code: string | null; message: string }
+  }>
 }
 
 type ProofStoreControls = CustomBundlePrivateBlobStore & {
@@ -165,7 +169,11 @@ function createTracingSession(
     }
   } = {},
 ): TracingSession {
-  const calls: Array<{ sql: string; params: readonly unknown[] }> = []
+  const calls: Array<{
+    sql: string
+    params: readonly unknown[]
+    error?: { code: string | null; message: string }
+  }> = []
   const injectError = options.injectError
 
   return {
@@ -175,7 +183,8 @@ function createTracingSession(
       sql: string,
       params: readonly unknown[] = [],
     ): Promise<{ rows: Row[]; rowCount: number | null }> {
-      calls.push({ sql, params: [...params] })
+      const call: (typeof calls)[number] = { sql, params: [...params] }
+      calls.push(call)
       if (
         injectError &&
         injectError.remainingHits > 0 &&
@@ -185,13 +194,26 @@ function createTracingSession(
         throw injectError.error
       }
 
-      const result = (await client.query<Row>(sql, [...params])) as {
-        rows: Row[]
-        rowCount: number | null
-      }
-      return {
-        rows: result.rows,
-        rowCount: result.rowCount,
+      try {
+        const result = (await client.query<Row>(sql, [...params])) as {
+          rows: Row[]
+          rowCount: number | null
+        }
+        return {
+          rows: result.rows,
+          rowCount: result.rowCount,
+        }
+      } catch (error) {
+        call.error = {
+          code:
+            typeof error === 'object' && error !== null && 'code' in error
+              ? typeof (error as { code?: unknown }).code === 'string'
+                ? (error as { code: string }).code
+                : null
+              : null,
+          message: error instanceof Error ? error.message : String(error),
+        }
+        throw error
       }
     },
   }
@@ -1271,10 +1293,7 @@ async function main(): Promise<void> {
       }),
     )
     if (!raceResult.result.ok) {
-      console.error(
-        'race recovery trace',
-        raceResult.trace.map((call) => call.sql),
-      )
+      console.error('race recovery trace', JSON.stringify(raceResult.trace, null, 2))
     }
     assertResultStage(raceResult.result, 'reported', 'race recovery')
     assert.equal(raceStore.calls.head.length >= 2, true)
