@@ -10,7 +10,7 @@ Base:
 c69581622cbf13459b1ffbde4c5bb6c9ec293bd8
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
@@ -30,8 +30,8 @@ Out of Scope:
 
 Result:
 
-PRIVATE_PAYMENT_PROOF_BOUNDARY_PENDING_CI
+READY_FOR_BKG_08D
 
 Next Action:
 
-ChatGPT verifies the isolated private payment proof boundary before BKG-08D.
+ChatGPT reviews BKG-08C and defines the safe server-only payment reporting entrypoint.

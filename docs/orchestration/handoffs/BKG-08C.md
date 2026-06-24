@@ -3,10 +3,11 @@
 - Sprint: `BKG-08C`
 - Base SHA: `c69581622cbf13459b1ffbde4c5bb6c9ec293bd8`
 - Estado inicial: `DIRECTOR_REVIEW`
+- Estado final: `TECHNICALLY_VALIDATED`
 - Objetivo:
   - implementar una frontera privada, aislada e inyectable para comprobantes de pago;
   - integrar esa frontera con el adapter transaccional de BKG-08B;
-  - validar limpieza compensatoria, reutilización segura y ausencia de Blob real.
+  - validar limpieza compensatoria, reutilización segura, metadata confiable y ausencia de Blob real.
 - Alcance:
   - `lib/bookings/custom-bundle-payment-proof-boundary.ts`;
   - `lib/bookings/custom-bundle-payment-proof-flow.ts`;
@@ -19,4 +20,24 @@
   - server actions;
   - wizard;
   - producción.
-- Estado remoto: pendiente de validación.
+- Evidencia remota:
+  - workflow: `Booking Isolated Custom Bundle Payment Proof Boundary`;
+  - run: `28130410654`;
+  - job: `83304916296`;
+  - head SHA validado: `7000698f7111acaf3119c645ec7f3b414f75e7be`;
+  - conclusion: `success`;
+  - mensajes seguros:
+    - `booking_isolated_custom_bundle_payment_proof_flow OK`;
+    - `private upload: verified`;
+    - `trusted metadata: verified`;
+    - `transactional reporting integration: verified`;
+    - `exact replay without reupload: verified`;
+    - `upload race: verified`;
+    - `database cleanup: verified`;
+    - `storage cleanup: verified`.
+- Riesgos cerrados:
+  - la frontera valida bytes reales y no expone URL publica;
+  - la subida privada es reutilizable de forma segura;
+  - el flow aislado conserva la transaccion y ejecuta cleanup compensatorio.
+- Siguiente accion:
+  - ChatGPT reviews BKG-08C and defines the safe server-only payment reporting entrypoint.

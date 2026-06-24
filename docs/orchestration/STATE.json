@@ -5,7 +5,7 @@
   "integrationBranch": "codex/preview-arma-tu-paquete-2026-06-19",
   "orchestrationStartSha": "656ec6d7dd1c90babb42dfc7d6247b106b3ed8e0",
   "currentSprint": "BKG-08C",
-  "status": "DIRECTOR_REVIEW",
+  "status": "TECHNICALLY_VALIDATED",
   "directorDecision": "PENDING_REVIEW",
   "manualQaRequiredNow": false,
   "manualQaApproved": false,
@@ -13,5 +13,5 @@
   "releaseCandidateSha": null,
   "previewUrl": null,
   "lastHandoff": "docs/orchestration/handoffs/BKG-08C.md",
-  "nextAction": "ChatGPT verifies the isolated private payment proof boundary before BKG-08D"
+  "nextAction": "ChatGPT reviews BKG-08C and defines the safe server-only payment reporting entrypoint"
 }

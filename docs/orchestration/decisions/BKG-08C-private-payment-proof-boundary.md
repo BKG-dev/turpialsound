@@ -1,8 +1,15 @@
 # BKG-08C Private Payment Proof Boundary
 
-- La frontera privada de comprobantes de pago debe validar bytes reales y no confiar en rutas, URLs o MIME declarados sin verificación.
-- El pathname privado debe ser determinista y no revelar la clave de idempotencia original.
-- La metadata confiable debe surgir únicamente de la frontera inyectable y del objeto privado confirmado por el store.
-- La subida privada debe ser reutilizable de forma segura y permitir cleanup compensatorio sólo cuando la llamada creó el objeto.
-- El flow aislado debe conectar la frontera privada con el adapter transaccional de BKG-08B sin Blob real, sin server actions y sin wizard.
-- No hay wiring de producción en este sprint.
+- SHA revisado: `c69581622cbf13459b1ffbde4c5bb6c9ec293bd8`
+- Decision: `CONTINUE`
+- Resultado:
+  - boundary privada validada;
+  - metadata confiable validada;
+  - cleanup compensatorio validado;
+  - workflow `Booking Isolated Custom Bundle Payment Proof Boundary` en `success`;
+  - functional SHA validado: `7000698f7111acaf3119c645ec7f3b414f75e7be`;
+  - run validado: `28130410654`;
+  - job validado: `83304916296`;
+  - Vercel: success.
+- Siguiente sprint: `BKG-08D`.
+- Producción: no autorizada.
