@@ -539,6 +539,15 @@ async function runExpiration(
   return { result, trace: session.calls }
 }
 
+function assertPaymentStage(
+  result: Awaited<ReturnType<typeof reportCustomBundlePaymentWithSql>>,
+  expectedStage: 'reported' | 'replayed',
+  label: string,
+): void {
+  assert.equal(result.ok, true, `${label}: ${JSON.stringify(result)}`)
+  assert.equal(result.stage, expectedStage, `${label}: ${JSON.stringify(result)}`)
+}
+
 function assertTraceContains(calls: TracingSession['calls'], pattern: RegExp, message: string): void {
   assert.ok(calls.some((call) => pattern.test(call.sql)), message)
 }
@@ -627,8 +636,7 @@ async function main(): Promise<void> {
       proofMetadata: makeProofMetadata('TUR-0808-101', 'pm101'),
     })
     const pagoMovil = await runPayment(client, pagoMovilInput)
-    assert.equal(pagoMovil.result.ok, true)
-    assert.equal(pagoMovil.result.stage, 'reported')
+    assertPaymentStage(pagoMovil.result, 'reported', 'pago movil with proof')
     assertTraceContains(pagoMovil.trace, /FOR UPDATE/i, 'payment adapter must lock the booking row')
     assertTraceContains(pagoMovil.trace, /INSERT INTO "payment_proofs"/i, 'payment adapter must persist the proof')
     assertTraceContains(pagoMovil.trace, /INSERT INTO "audit_log"/i, 'payment adapter must write an audit log')
@@ -675,8 +683,7 @@ async function main(): Promise<void> {
           proofMetadata: makeProofMetadata(publicCode, suffix),
         }),
       )
-      assert.equal(result.result.ok, true)
-      assert.equal(result.result.stage, 'reported')
+      assertPaymentStage(result.result, 'reported', `${method} with proof`)
     }
 
     // Case 4: efectivo without proof.
@@ -695,8 +702,7 @@ async function main(): Promise<void> {
         paymentReportIdempotencyKey: 'PAYMENT_CASH_001',
       }),
     )
-    assert.equal(cashResult.result.ok, true)
-    assert.equal(cashResult.result.stage, 'reported')
+    assertPaymentStage(cashResult.result, 'reported', 'cash without proof')
     if (cashResult.result.ok && cashResult.result.stage === 'reported') {
       assert.equal(cashResult.result.paymentProofId, null)
       assert.equal(cashResult.result.duplicateStatus, null)
@@ -707,8 +713,7 @@ async function main(): Promise<void> {
     const auditCountBeforeReplay = await fetchAuditCount(client, bookingPmId)
     const proofCountBeforeReplay = (await fetchActiveProofs(client, bookingPmId)).length
     const replayResult = await runPayment(client, pagoMovilInput)
-    assert.equal(replayResult.result.ok, true)
-    assert.equal(replayResult.result.stage, 'replayed')
+    assertPaymentStage(replayResult.result, 'replayed', 'exact replay')
     if (replayResult.result.ok && replayResult.result.stage === 'replayed') {
       assert.equal(replayResult.result.paymentReportedAtIso, (bookingPm?.paymentReportedAt as Date).toISOString())
       assert.equal(replayResult.result.paymentProofId, bookingPmProofs[0]?.id)
@@ -937,8 +942,7 @@ async function main(): Promise<void> {
         }),
       }),
     )
-    assert.equal(otherSha.result.ok, true)
-    assert.equal(otherSha.result.stage, 'reported')
+    assertPaymentStage(otherSha.result, 'reported', 'duplicate proof other booking')
     if (otherSha.result.ok && otherSha.result.stage === 'reported') {
       assert.equal(otherSha.result.duplicateStatus, 'other_booking')
     }
@@ -960,8 +964,7 @@ async function main(): Promise<void> {
         proofMetadata: makeProofMetadata('TUR-0808-113', 'cash113'),
       }),
     )
-    assert.equal(cashWithProof.result.ok, true)
-    assert.equal(cashWithProof.result.stage, 'reported')
+    assertPaymentStage(cashWithProof.result, 'reported', 'cash with optional proof')
     if (cashWithProof.result.ok && cashWithProof.result.stage === 'reported') {
       assert.ok(cashWithProof.result.paymentProofId)
     }
@@ -1129,8 +1132,7 @@ async function main(): Promise<void> {
         },
       },
     )
-    assert.equal(retryResult.result.ok, true)
-    assert.equal(retryResult.result.stage, 'reported')
+    assertPaymentStage(retryResult.result, 'reported', 'retryable transaction')
     assert.equal(retryResult.trace.filter((call) => /^BEGIN ISOLATION LEVEL READ COMMITTED/i.test(call.sql)).length, 2)
 
     // Case 18: payment wins expiration race.
@@ -1181,8 +1183,7 @@ async function main(): Promise<void> {
       batchSize: 10,
     })
     const paymentWins = await paymentWinsPromise
-    assert.equal(paymentWins.result.ok, true)
-    assert.equal(paymentWins.result.stage, 'reported')
+    assertPaymentStage(paymentWins.result, 'reported', 'payment wins expiration race')
     assert.equal(expirationDuringPayment.result.ok, true)
     if (expirationDuringPayment.result.ok) {
       assert.equal(expirationDuringPayment.result.expiredBookings.some((row) => row.publicCode === 'TUR-0808-119'), false)
