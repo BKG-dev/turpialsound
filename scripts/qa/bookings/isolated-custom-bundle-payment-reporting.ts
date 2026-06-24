@@ -197,7 +197,7 @@ function makeProofMetadata(
 ): CustomBundleTrustedPaymentProofMetadata {
   return {
     blobPathname: `payment-proofs/${publicCode}/${suffix}.webp`,
-    sha256: `${suffix}`.padEnd(64, 'a').slice(0, 64),
+    sha256: makeHexFingerprint(suffix),
     mimeType: 'image/png',
     sizeBytes: 2048,
     originalFilename: `${suffix}.png`,
@@ -880,7 +880,7 @@ async function main(): Promise<void> {
       id: 'bkg08b_proof_same_booking',
       bookingRequestId: 'bkg08b_booking_same_proof',
       blobPathname: 'payment-proofs/TUR-0808-110/existing.webp',
-      sha256: 'samebooking'.padEnd(64, 'a').slice(0, 64),
+      sha256: makeHexFingerprint('samebooking'),
       reportedReference: 'PM-110',
       normalizedReference: 'PM110',
       duplicateStatus: 'same_booking',
@@ -920,7 +920,7 @@ async function main(): Promise<void> {
       id: 'bkg08b_proof_other_sha_seed',
       bookingRequestId: 'bkg08b_booking_other_sha_seed',
       blobPathname: 'payment-proofs/TUR-0808-111/existing.webp',
-      sha256: 'sharedsha'.padEnd(64, 'a').slice(0, 64),
+      sha256: makeHexFingerprint('sharedsha'),
       reportedReference: 'PM-111',
       normalizedReference: 'PM111',
     })
@@ -938,7 +938,7 @@ async function main(): Promise<void> {
         paymentReference: 'PM-112',
         paymentReportIdempotencyKey: 'PAYMENT_OTHER_SHA_112',
         proofMetadata: makeProofMetadata('TUR-0808-112', 'sharedsha', {
-          sha256: 'sharedsha'.padEnd(64, 'a').slice(0, 64),
+          sha256: makeHexFingerprint('sharedsha'),
         }),
       }),
     )
@@ -988,7 +988,7 @@ async function main(): Promise<void> {
       id: 'bkg08b_proof_blob_seed',
       bookingRequestId: 'bkg08b_booking_blob_seed',
       blobPathname: 'payment-proofs/shared/blob-conflict.webp',
-      sha256: 'blobconflict'.padEnd(64, 'a').slice(0, 64),
+      sha256: makeHexFingerprint('blobconflict'),
       reportedReference: 'PM-114',
       normalizedReference: 'PM114',
     })
