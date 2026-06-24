@@ -10,8 +10,13 @@ import {
   runCustomBundlePaymentProofFlow,
   type CustomBundlePaymentProofFlowResult,
 } from '@/lib/bookings/custom-bundle-payment-proof-flow'
-import type { CustomBundlePaymentProofFileLike, CustomBundlePrivateBlobObject, CustomBundlePrivateBlobStore } from '@/lib/bookings/custom-bundle-payment-proof-boundary'
-import { deleteCustomBundlePaymentProofFromPrivateStore } from '@/lib/bookings/custom-bundle-payment-proof-boundary'
+import {
+  buildCustomBundlePaymentProofPrivatePathname,
+  deleteCustomBundlePaymentProofFromPrivateStore,
+  type CustomBundlePaymentProofFileLike,
+  type CustomBundlePrivateBlobObject,
+  type CustomBundlePrivateBlobStore,
+} from '@/lib/bookings/custom-bundle-payment-proof-boundary'
 import type { CustomBundlePaymentReportSubmission } from '@/lib/bookings/custom-bundle-payment-contract'
 import type { CustomBundleSqlSession } from '@/lib/bookings/custom-bundle-persistence'
 
@@ -1190,8 +1195,14 @@ async function main(): Promise<void> {
       resourceId: catalog.resourceId,
     })
     const reusedFailureStore = createProofStore()
+    const reusedFailurePath = buildCustomBundlePaymentProofPrivatePathname({
+      publicCode: 'TUR-0808-213',
+      paymentReportIdempotencyKey: 'PAYMENT_0808_REUSED_213',
+      sha256: createHash('sha256').update(makeBytes('png')).digest('hex'),
+      mimeType: 'image/png',
+    })
     reusedFailureStore.seedObject({
-      pathname: 'payment-proofs/TUR-0808-213/seed.webp',
+      pathname: reusedFailurePath,
       contentType: 'image/png',
       sizeBytes: makeBytes('png').byteLength,
       uploadedAt: new Date('2026-06-23T13:59:00.000Z'),
