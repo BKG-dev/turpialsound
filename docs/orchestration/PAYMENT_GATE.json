@@ -1,6 +1,6 @@
 {
-  "sprint": "BKG-08A",
-  "baseSha": "33bf4fb91f3a17cd26ebd1cf0952194aefae2f74",
+  "sprint": "BKG-08B",
+  "baseSha": "632faaa777793df9f2f1dd56a62b4e346eece3b8",
   "model": "single_consolidated_manual_payment_report",
   "validation": {
     "workflow": "booking-isolated-custom-bundle-payment-contract.yml",
@@ -24,6 +24,26 @@
     "operationalConsistencyVerified": true,
     "totalSnapshotIntegrityVerified": true
   },
+  "reportingValidation": {
+    "workflow": "booking-isolated-custom-bundle-payment-reporting.yml",
+    "status": "PENDING",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
+    "bookingRowLockVerified": false,
+    "authoritativeTotalVerified": false,
+    "paymentWriteVerified": false,
+    "paymentProofPersistenceVerified": false,
+    "exactReplayNoWritesVerified": false,
+    "globalIdempotencyVerified": false,
+    "duplicateProofClassificationVerified": false,
+    "paymentWinsRaceVerified": false,
+    "expirationWinsRaceVerified": false,
+    "totalRollbackVerified": false,
+    "resourceHistoryPreserved": false,
+    "cleanupVerified": false
+  },
+  "transactionalReportingTechnicallyValidated": false,
   "readyForPaymentReportingAdapter": true,
   "readyForBlobBoundary": false,
   "readyForWizardIntegration": false,

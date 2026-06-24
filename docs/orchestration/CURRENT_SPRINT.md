@@ -1,38 +1,37 @@
 # Current Sprint
 
 Sprint:
-BKG-08A1
+BKG-08B
 
 Name:
-Corregir semantica operacional del replay de pago consolidado
+Adapter transaccional aislado de reporte de pago consolidado
 
 Base:
-7c9c1ce82b7bc3f5e829acd531db347d179e8c15
+632faaa777793df9f2f1dd56a62b4e346eece3b8
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* correct the operational semantics of consolidated payment replay;
-* keep the payment schema proposal evidence intact;
-* keep hold and expiration contracts intact;
-* prepare the sprint for isolated transactional payment reporting.
+* implement the isolated transactional payment reporting adapter;
+* keep the additive payment schema proposal intact;
+* keep hold acquisition and expiration gates compatible;
+* validate replay, proof persistence, rollback, and payment-versus-expiration races in ephemeral PostgreSQL.
 
 Out of Scope:
 
-* transactional payment reporting;
-* blob boundary;
+* blob upload wiring;
 * notifications;
 * wizard integration;
 * production;
 * manual QA;
-* BKG-08B.
+* BKG-08C.
 
 Result:
 
-READY_FOR_BKG_08B
+TRANSACTIONAL_PAYMENT_REPORTING_PENDING_CI
 
 Next Action:
 
-ChatGPT reviews BKG-08A1 and defines isolated transactional payment reporting.
+ChatGPT verifies isolated transactional payment reporting before BKG-08C.

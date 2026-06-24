@@ -1,0 +1,26 @@
+# BKG-08B Handoff
+
+- Sprint: `BKG-08B`
+- Base SHA: `632faaa777793df9f2f1dd56a62b4e346eece3b8`
+- Scope:
+  - isolated transactional payment reporting adapter;
+  - pure reporting contract harness;
+  - isolated PostgreSQL reporting gate;
+  - orchestration and QA routing updates.
+- Initial status: `DIRECTOR_REVIEW`
+- Workflow pending:
+  - `Booking Isolated Custom Bundle Payment Reporting`
+- Guardrails preserved:
+  - `schema.prisma` unchanged;
+  - proposed SQL files unchanged;
+  - no Blob integration;
+  - no server actions;
+  - wizard still disconnected;
+  - production not authorized.
+- Expected evidence:
+  - row lock on `booking_requests`;
+  - authoritative total snapshot preserved;
+  - exact replay without writes;
+  - proof duplicate classification;
+  - payment-versus-expiration race coverage;
+  - total rollback and cleanup.

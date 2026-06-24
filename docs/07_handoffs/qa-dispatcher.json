@@ -1,5 +1,5 @@
 {
-  "version": 15,
+  "version": 16,
   "updated_at": "2026-06-23",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
@@ -1109,6 +1109,85 @@
       ],
       "last_validated_at": null,
       "notes": "Isolated PostgreSQL gate for the consolidated payment schema proposal and legacy compatibility."
+    },
+    "booking_custom_bundle_payment_reporting_contract": {
+      "task_id": "booking_custom_bundle_payment_reporting_contract",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-reporting-contract.ts",
+      "preconditions": [
+        "Node and pnpm available",
+        "Dependencies installed",
+        "No application server required",
+        "No DATABASE_URL required",
+        "No browser required",
+        "No network required"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "base productiva",
+        "Neon",
+        "Supabase",
+        "Vercel DB",
+        "db push",
+        "migrate deploy",
+        "seeds",
+        "HTTP ad hoc",
+        "navegador",
+        "reverse engineering de server actions",
+        "accept booking snapshot from the client",
+        "accept payment fingerprint from the client",
+        "accept duplicateStatus from the client",
+        "accept paymentReportedAt from the client"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-08B.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Canonical QA route for the isolated transactional payment reporting adapter without touching a real database."
+    },
+    "booking_isolated_custom_bundle_payment_reporting": {
+      "task_id": "booking_isolated_custom_bundle_payment_reporting",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-reporting.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql",
+      "preconditions": [
+        "GitHub Actions available",
+        "PostgreSQL service container available",
+        "Baseline SQL generated",
+        "BKG-04 proposal validated",
+        "BKG-07 proposal validated",
+        "BKG-08 proposal validated",
+        "URL exclusively local",
+        "Isolated opt-in enabled",
+        "Single-connection SQL session available"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "DATABASE_URL productiva",
+        "Neon",
+        "Supabase",
+        "Vercel DB",
+        "db push",
+        "migrate deploy",
+        "seeds",
+        "HTTP ad hoc",
+        "navegador",
+        "Blob real",
+        "pagos reales",
+        "Prisma contra produccion"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-08B.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Isolated PostgreSQL gate for transactional consolidated payment reporting, replay, races, rollback, and cleanup."
     }
   }
 }

@@ -307,6 +307,51 @@ Regla:
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
 
+## Booking custom bundle payment reporting contract
+
+Objetivo:
+- validar el adapter transaccional puro del reporte consolidado de pago sin red, sin Prisma y sin escrituras fuera del harness scripted.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-reporting-contract.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar row lock, replay exacto sin escrituras, guards SQL de pago, persistencia opcional de proof, rollback de audit y reintentos transaccionales seguros.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
+
+## Booking isolated custom bundle payment reporting
+
+Objetivo:
+- validar en PostgreSQL efimero el adapter transaccional del reporte consolidado de pago, incluyendo replay, duplicateStatus, carreras con expiracion y limpieza final.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-reporting.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql`
+
+Precondiciones:
+- GitHub Actions disponible;
+- PostgreSQL service container disponible;
+- baseline SQL generado;
+- propuestas BKG-04, BKG-07 y BKG-08 validadas;
+- URL exclusivamente local;
+- opt-in aislado habilitado;
+- session SQL con una sola conexion disponible.
+
+Criterio de evidencia:
+- confirmar metodos de pago manuales, total autoritativo, update de siete campos, proof opcional, replay exacto, conflicto global de idempotencia, carrera pago-vs-expiracion, rollback total y cleanup.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar CDP, HTTP ad hoc ni reverse engineering.
+
 ## Booking isolated custom bundle hold expiration
 
 Objetivo:
