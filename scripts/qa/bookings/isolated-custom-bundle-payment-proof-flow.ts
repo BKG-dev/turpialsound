@@ -661,19 +661,23 @@ async function runFlow(
   trace: TracingSession['calls']
 }> {
   const session = createTracingSession(client, tracingOptions)
-  const result = await runCustomBundlePaymentProofFlow(
-    {
-      store,
-      session,
-      clock: input.clock,
-    },
-    {
-      submission: input.submission,
-      paymentReportIdempotencyKey: input.paymentReportIdempotencyKey,
-      paymentProofFile: input.paymentProofFile,
-    },
-  )
-  return { result, trace: session.calls }
+  try {
+    const result = await runCustomBundlePaymentProofFlow(
+      {
+        store,
+        session,
+        clock: input.clock,
+      },
+      {
+        submission: input.submission,
+        paymentReportIdempotencyKey: input.paymentReportIdempotencyKey,
+        paymentProofFile: input.paymentProofFile,
+      },
+    )
+    return { result, trace: session.calls }
+  } finally {
+    await client.query('ROLLBACK').catch(() => {})
+  }
 }
 
 function createPostgresError(
