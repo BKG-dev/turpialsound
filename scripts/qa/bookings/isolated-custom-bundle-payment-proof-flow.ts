@@ -1234,13 +1234,18 @@ async function main(): Promise<void> {
       resourceId: catalog.resourceId,
     })
     const raceStore = createProofStore()
+    const racePath = buildCustomBundlePaymentProofPrivatePathname({
+      publicCode: 'TUR-0808-214',
+      paymentReportIdempotencyKey: 'PAYMENT_0808_RACE_214',
+      sha256: createHash('sha256').update(makeBytes('png')).digest('hex'),
+      mimeType: 'image/png',
+    })
     raceStore.queueHeadResponse(null)
     raceStore.queueHeadResponse({
-      pathname: 'payment-proofs/TUR-0808-214/' +
-        `${makeHexFingerprint('PAYMENT_0808_RACE_214').slice(0, 16)}-${createHash('sha256').update(makeBytes('png')).digest('hex')}.png`,
+      pathname: racePath,
       contentType: 'image/png',
       sizeBytes: makeBytes('png').byteLength,
-      uploadedAt: new Date('2026-06-23T14:30:00.000Z'),
+      uploadedAt: new Date('2026-06-23T14:38:30.000Z'),
       access: 'private',
     })
     raceStore.queuePutError(createPostgresError('OBJECT_ALREADY_EXISTS', 'object already exists'))
