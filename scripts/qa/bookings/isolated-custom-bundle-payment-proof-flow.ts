@@ -10,6 +10,7 @@ import {
   runCustomBundlePaymentProofFlow,
   type CustomBundlePaymentProofFlowResult,
 } from '@/lib/bookings/custom-bundle-payment-proof-flow'
+import { reportCustomBundlePaymentWithSql } from '@/lib/bookings/custom-bundle-payment-reporting'
 import {
   buildCustomBundlePaymentProofPrivatePathname,
   deleteCustomBundlePaymentProofFromPrivateStore,
@@ -159,6 +160,14 @@ function makeClock(...values: Date[]): { now(): Date } {
   }
 }
 
+function makeThrowingClock(error: Error): { now(): Date } {
+  return {
+    now(): Date {
+      throw error
+    },
+  }
+}
+
 function createTracingSession(
   client: Client,
   options: {
@@ -275,6 +284,7 @@ function makeBookingInput(input: {
   paymentReportIdempotencyKey: string
   paymentProofFile?: CustomBundlePaymentProofFileLike | null
   now?: Date[]
+  clock?: { now(): Date }
 }): {
   submission: CustomBundlePaymentReportSubmission
   paymentReportIdempotencyKey: string
@@ -289,7 +299,7 @@ function makeBookingInput(input: {
     },
     paymentReportIdempotencyKey: input.paymentReportIdempotencyKey,
     paymentProofFile: input.paymentProofFile ?? null,
-    clock: makeClock(...(input.now ?? [new Date('2026-06-23T14:30:00.000Z')])),
+    clock: input.clock ?? makeClock(...(input.now ?? [new Date('2026-06-23T14:30:00.000Z')])),
   }
 }
 
@@ -673,22 +683,40 @@ function assertResultStage(
   assert.equal(result.stage, expected, `${label}: ${JSON.stringify(result)}`)
 }
 
+function assertPostUploadFailure(
+  result: CustomBundlePaymentProofFlowResult,
+  expectedCode: 'INVALID_NOW' | 'CLOCK_READ_FAILED' | 'REPORTING_EXECUTION_FAILED',
+  label: string,
+): void {
+  assert.equal(result.ok, false, `${label}: ${JSON.stringify(result)}`)
+  assert.equal(result.stage, 'post_upload_failure', `${label}: ${JSON.stringify(result)}`)
+  if (result.ok || result.stage !== 'post_upload_failure') {
+    return
+  }
+
+  assert.equal(result.originalFailure.code, expectedCode, `${label}: ${JSON.stringify(result)}`)
+}
+
 async function runFlow(
   client: Client,
   store: ProofStoreControls,
   input: ReturnType<typeof makeBookingInput>,
-  tracingOptions: Parameters<typeof createTracingSession>[1] = {},
+  options: {
+    tracingOptions?: Parameters<typeof createTracingSession>[1]
+    reporter?: typeof reportCustomBundlePaymentWithSql
+  } = {},
 ): Promise<{
   result: CustomBundlePaymentProofFlowResult
   trace: TracingSession['calls']
 }> {
-  const session = createTracingSession(client, tracingOptions)
+  const session = createTracingSession(client, options.tracingOptions ?? {})
   try {
     const result = await runCustomBundlePaymentProofFlow(
       {
         store,
         session,
         clock: input.clock,
+        reporter: options.reporter,
       },
       {
         submission: input.submission,
@@ -1213,6 +1241,388 @@ async function main(): Promise<void> {
     )
     assert.equal(cleanupFailure.result.ok, false)
     assert.equal(cleanupFailure.result.stage, 'cleanup')
+
+    // Case 16: new object, invalid post-upload clock -> cleanup owned object.
+    await insertFixtureBooking(client, {
+      id: 'bkg08c_booking_post_clock_invalid',
+      publicCode: 'TUR-0808-216',
+      serviceVariantId: catalog.variantId,
+      resourceId: catalog.resourceId,
+    })
+    const invalidClockStore = createProofStore()
+    const invalidClock = (() => {
+      let calls = 0
+      return {
+        now(): Date {
+          calls += 1
+          return calls === 1 ? new Date('2026-06-23T14:30:00.000Z') : new Date('Invalid Date')
+        },
+      }
+    })()
+    const invalidClockResult = await runFlow(
+      client,
+      invalidClockStore,
+      makeBookingInput({
+        publicCode: 'TUR-0808-216',
+        paymentMethod: 'pago_movil',
+        paymentReference: 'clock-invalid-216',
+        paymentReportIdempotencyKey: 'PAYMENT_0808_CLOCK_INVALID_216',
+        paymentProofFile: makeFileLike({
+          name: 'clock-invalid.png',
+          type: 'image/png',
+          bytes: makeBytes('png'),
+        }),
+        clock: invalidClock,
+      }),
+    )
+    assertPostUploadFailure(invalidClockResult.result, 'INVALID_NOW', 'invalid post-upload clock')
+    if (!invalidClockResult.result.ok && invalidClockResult.result.stage === 'post_upload_failure') {
+      assert.equal(invalidClockResult.result.createdByThisCall, true)
+      assert.equal(invalidClockResult.result.cleanupPerformed, true)
+    }
+    assert.equal(invalidClockStore.calls.put.length, 1)
+    assert.equal(invalidClockStore.calls.delete.length, 1)
+    assert.equal((await fetchProofs(client, 'bkg08c_booking_post_clock_invalid')).length, 0)
+    assert.equal(await fetchAuditCount(client, 'bkg08c_booking_post_clock_invalid'), 0)
+
+    // Case 17: new object, clock throws after upload -> cleanup owned object.
+    await insertFixtureBooking(client, {
+      id: 'bkg08c_booking_post_clock_throw',
+      publicCode: 'TUR-0808-217',
+      serviceVariantId: catalog.variantId,
+      resourceId: catalog.resourceId,
+    })
+    const throwingClockStore = createProofStore()
+    const throwingClock = (() => {
+      let calls = 0
+      return {
+        now(): Date {
+          calls += 1
+          if (calls === 1) {
+            return new Date('2026-06-23T14:30:00.000Z')
+          }
+          throw new Error('clock exploded')
+        },
+      }
+    })()
+    const throwingClockResult = await runFlow(
+      client,
+      throwingClockStore,
+      makeBookingInput({
+        publicCode: 'TUR-0808-217',
+        paymentMethod: 'pago_movil',
+        paymentReference: 'clock-throw-217',
+        paymentReportIdempotencyKey: 'PAYMENT_0808_CLOCK_THROW_217',
+        paymentProofFile: makeFileLike({
+          name: 'clock-throw.png',
+          type: 'image/png',
+          bytes: makeBytes('png'),
+        }),
+        clock: throwingClock,
+      }),
+    )
+    assertPostUploadFailure(throwingClockResult.result, 'CLOCK_READ_FAILED', 'throwing post-upload clock')
+    if (!throwingClockResult.result.ok && throwingClockResult.result.stage === 'post_upload_failure') {
+      assert.equal(throwingClockResult.result.createdByThisCall, true)
+      assert.equal(throwingClockResult.result.cleanupPerformed, true)
+    }
+    assert.equal(throwingClockStore.calls.put.length, 1)
+    assert.equal(throwingClockStore.calls.delete.length, 1)
+    assert.equal((await fetchProofs(client, 'bkg08c_booking_post_clock_throw')).length, 0)
+    assert.equal(await fetchAuditCount(client, 'bkg08c_booking_post_clock_throw'), 0)
+
+    // Case 18: reused object, invalid post-upload clock preserves object.
+    await insertFixtureBooking(client, {
+      id: 'bkg08c_booking_reused_post_clock_invalid',
+      publicCode: 'TUR-0808-218',
+      serviceVariantId: catalog.variantId,
+      resourceId: catalog.resourceId,
+    })
+    const reusedInvalidStore = createProofStore()
+    const reusedInvalidBytes = new Uint8Array([...makeBytes('png'), 0x23])
+    const reusedInvalidPath = buildCustomBundlePaymentProofPrivatePathname({
+      publicCode: 'TUR-0808-218',
+      paymentReportIdempotencyKey: 'PAYMENT_0808_REUSED_CLOCK_INVALID_218',
+      sha256: createHash('sha256').update(reusedInvalidBytes).digest('hex'),
+      mimeType: 'image/png',
+    })
+    reusedInvalidStore.seedObject({
+      pathname: reusedInvalidPath,
+      contentType: 'image/png',
+      sizeBytes: reusedInvalidBytes.byteLength,
+      uploadedAt: new Date('2026-06-23T14:29:00.000Z'),
+      access: 'private',
+    })
+    const reusedInvalidResult = await runFlow(
+      client,
+      reusedInvalidStore,
+      makeBookingInput({
+        publicCode: 'TUR-0808-218',
+        paymentMethod: 'pago_movil',
+        paymentReference: 'reused-invalid-218',
+        paymentReportIdempotencyKey: 'PAYMENT_0808_REUSED_CLOCK_INVALID_218',
+        paymentProofFile: makeFileLike({
+          name: 'reused-invalid.png',
+          type: 'image/png',
+          bytes: reusedInvalidBytes,
+        }),
+        clock: makeClock(new Date('2026-06-23T14:30:00.000Z'), new Date('Invalid Date')),
+      }),
+    )
+    assertPostUploadFailure(
+      reusedInvalidResult.result,
+      'INVALID_NOW',
+      'reused invalid post-upload clock',
+    )
+    if (!reusedInvalidResult.result.ok && reusedInvalidResult.result.stage === 'post_upload_failure') {
+      assert.equal(reusedInvalidResult.result.createdByThisCall, false)
+      assert.equal(reusedInvalidResult.result.cleanupPerformed, false)
+    }
+    assert.equal(reusedInvalidStore.calls.delete.length, 0)
+    assert.equal(reusedInvalidStore.readObject(reusedInvalidPath) !== null, true)
+
+    // Case 19: reused object, throwing post-upload clock preserves object.
+    await insertFixtureBooking(client, {
+      id: 'bkg08c_booking_reused_post_clock_throw',
+      publicCode: 'TUR-0808-219',
+      serviceVariantId: catalog.variantId,
+      resourceId: catalog.resourceId,
+    })
+    const reusedThrowStore = createProofStore()
+    const reusedThrowBytes = new Uint8Array([...makeBytes('png'), 0x24])
+    const reusedThrowPath = buildCustomBundlePaymentProofPrivatePathname({
+      publicCode: 'TUR-0808-219',
+      paymentReportIdempotencyKey: 'PAYMENT_0808_REUSED_CLOCK_THROW_219',
+      sha256: createHash('sha256').update(reusedThrowBytes).digest('hex'),
+      mimeType: 'image/png',
+    })
+    reusedThrowStore.seedObject({
+      pathname: reusedThrowPath,
+      contentType: 'image/png',
+      sizeBytes: reusedThrowBytes.byteLength,
+      uploadedAt: new Date('2026-06-23T14:29:00.000Z'),
+      access: 'private',
+    })
+    const reusedThrowResult = await runFlow(
+      client,
+      reusedThrowStore,
+      makeBookingInput({
+        publicCode: 'TUR-0808-219',
+        paymentMethod: 'pago_movil',
+        paymentReference: 'reused-throw-219',
+        paymentReportIdempotencyKey: 'PAYMENT_0808_REUSED_CLOCK_THROW_219',
+        paymentProofFile: makeFileLike({
+          name: 'reused-throw.png',
+          type: 'image/png',
+          bytes: reusedThrowBytes,
+        }),
+        clock: makeThrowingClock(new Error('clock exploded')),
+      }),
+    )
+    assertPostUploadFailure(
+      reusedThrowResult.result,
+      'CLOCK_READ_FAILED',
+      'reused throwing post-upload clock',
+    )
+    if (!reusedThrowResult.result.ok && reusedThrowResult.result.stage === 'post_upload_failure') {
+      assert.equal(reusedThrowResult.result.createdByThisCall, false)
+      assert.equal(reusedThrowResult.result.cleanupPerformed, false)
+    }
+    assert.equal(reusedThrowStore.calls.delete.length, 0)
+    assert.equal(reusedThrowStore.readObject(reusedThrowPath) !== null, true)
+
+    // Case 20: new object, reporting throws unexpectedly -> cleanup owned object.
+    await insertFixtureBooking(client, {
+      id: 'bkg08c_booking_reporting_throw',
+      publicCode: 'TUR-0808-220',
+      serviceVariantId: catalog.variantId,
+      resourceId: catalog.resourceId,
+    })
+    const reportingThrowStore = createProofStore()
+    const reportingThrow = await runFlow(
+      client,
+      reportingThrowStore,
+      makeBookingInput({
+        publicCode: 'TUR-0808-220',
+        paymentMethod: 'pago_movil',
+        paymentReference: 'report-throw-220',
+        paymentReportIdempotencyKey: 'PAYMENT_0808_REPORT_THROW_220',
+        paymentProofFile: makeFileLike({
+          name: 'report-throw.png',
+          type: 'image/png',
+          bytes: makeBytes('png'),
+        }),
+      }),
+      {
+        reporter: async () => {
+          throw new Error('reporting exploded')
+        },
+      },
+    )
+    assertPostUploadFailure(
+      reportingThrow.result,
+      'REPORTING_EXECUTION_FAILED',
+      'reporting exception new object',
+    )
+    if (!reportingThrow.result.ok && reportingThrow.result.stage === 'post_upload_failure') {
+      assert.equal(reportingThrow.result.createdByThisCall, true)
+      assert.equal(reportingThrow.result.cleanupPerformed, true)
+    }
+    assert.equal(reportingThrowStore.calls.put.length, 1)
+    assert.equal(reportingThrowStore.calls.delete.length, 1)
+    assert.equal((await fetchProofs(client, 'bkg08c_booking_reporting_throw')).length, 0)
+
+    // Case 21: reused object, reporting throws unexpectedly -> preserve object.
+    await insertFixtureBooking(client, {
+      id: 'bkg08c_booking_reporting_throw_reused',
+      publicCode: 'TUR-0808-221',
+      serviceVariantId: catalog.variantId,
+      resourceId: catalog.resourceId,
+    })
+    const reusedReportingThrowStore = createProofStore()
+    const reusedReportingBytes = new Uint8Array([...makeBytes('png'), 0x25])
+    const reusedReportingPath = buildCustomBundlePaymentProofPrivatePathname({
+      publicCode: 'TUR-0808-221',
+      paymentReportIdempotencyKey: 'PAYMENT_0808_REPORT_THROW_REUSED_221',
+      sha256: createHash('sha256').update(reusedReportingBytes).digest('hex'),
+      mimeType: 'image/png',
+    })
+    reusedReportingThrowStore.seedObject({
+      pathname: reusedReportingPath,
+      contentType: 'image/png',
+      sizeBytes: reusedReportingBytes.byteLength,
+      uploadedAt: new Date('2026-06-23T14:29:00.000Z'),
+      access: 'private',
+    })
+    const reusedReportingThrow = await runFlow(
+      client,
+      reusedReportingThrowStore,
+      makeBookingInput({
+        publicCode: 'TUR-0808-221',
+        paymentMethod: 'pago_movil',
+        paymentReference: 'report-throw-221',
+        paymentReportIdempotencyKey: 'PAYMENT_0808_REPORT_THROW_REUSED_221',
+        paymentProofFile: makeFileLike({
+          name: 'report-throw-reused.png',
+          type: 'image/png',
+          bytes: reusedReportingBytes,
+        }),
+      }),
+      {
+        reporter: async () => {
+          throw new Error('reporting exploded')
+        },
+      },
+    )
+    assertPostUploadFailure(
+      reusedReportingThrow.result,
+      'REPORTING_EXECUTION_FAILED',
+      'reporting exception reused object',
+    )
+    if (!reusedReportingThrow.result.ok && reusedReportingThrow.result.stage === 'post_upload_failure') {
+      assert.equal(reusedReportingThrow.result.createdByThisCall, false)
+      assert.equal(reusedReportingThrow.result.cleanupPerformed, false)
+    }
+    assert.equal(reusedReportingThrowStore.calls.delete.length, 0)
+    assert.equal(reusedReportingThrowStore.readObject(reusedReportingPath) !== null, true)
+
+    // Case 22: cleanup failure after invalid clock preserves original cause.
+    await insertFixtureBooking(client, {
+      id: 'bkg08c_booking_clock_cleanup_fail',
+      publicCode: 'TUR-0808-222',
+      serviceVariantId: catalog.variantId,
+      resourceId: catalog.resourceId,
+    })
+    const clockCleanupFailStore = createProofStore()
+    clockCleanupFailStore.queueDeleteError(createPostgresError('cleanup-failure', 'cleanup failure'))
+    const clockCleanupFail = await runFlow(
+      client,
+      clockCleanupFailStore,
+      makeBookingInput({
+        publicCode: 'TUR-0808-222',
+        paymentMethod: 'pago_movil',
+        paymentReference: 'clock-cleanup-222',
+        paymentReportIdempotencyKey: 'PAYMENT_0808_CLOCK_CLEANUP_222',
+        paymentProofFile: makeFileLike({
+          name: 'clock-cleanup.png',
+          type: 'image/png',
+          bytes: makeBytes('png'),
+        }),
+        clock: makeClock(new Date('2026-06-23T14:30:00.000Z'), new Date('Invalid Date')),
+      }),
+    )
+    assert.equal(clockCleanupFail.result.ok, false)
+    assert.equal(clockCleanupFail.result.stage, 'cleanup')
+    if (!clockCleanupFail.result.ok && clockCleanupFail.result.stage === 'cleanup') {
+      assert.equal(clockCleanupFail.result.code, 'BLOB_CLEANUP_FAILED')
+      assert.equal(clockCleanupFail.result.originalFailure?.code, 'INVALID_NOW')
+    }
+    assert.equal(clockCleanupFailStore.calls.delete.length, 1)
+
+    // Case 23: cleanup failure after reporting exception preserves original cause.
+    await insertFixtureBooking(client, {
+      id: 'bkg08c_booking_reporting_cleanup_fail',
+      publicCode: 'TUR-0808-223',
+      serviceVariantId: catalog.variantId,
+      resourceId: catalog.resourceId,
+    })
+    const reportingCleanupFailStore = createProofStore()
+    reportingCleanupFailStore.queueDeleteError(createPostgresError('cleanup-failure', 'cleanup failure'))
+    const reportingCleanupFail = await runFlow(
+      client,
+      reportingCleanupFailStore,
+      makeBookingInput({
+        publicCode: 'TUR-0808-223',
+        paymentMethod: 'pago_movil',
+        paymentReference: 'report-cleanup-223',
+        paymentReportIdempotencyKey: 'PAYMENT_0808_REPORT_CLEANUP_223',
+        paymentProofFile: makeFileLike({
+          name: 'report-cleanup.png',
+          type: 'image/png',
+          bytes: makeBytes('png'),
+        }),
+      }),
+      {
+        reporter: async () => {
+          throw new Error('reporting exploded')
+        },
+      },
+    )
+    assert.equal(reportingCleanupFail.result.ok, false)
+    assert.equal(reportingCleanupFail.result.stage, 'cleanup')
+    if (!reportingCleanupFail.result.ok && reportingCleanupFail.result.stage === 'cleanup') {
+      assert.equal(reportingCleanupFail.result.code, 'BLOB_CLEANUP_FAILED')
+      assert.equal(reportingCleanupFail.result.originalFailure?.code, 'REPORTING_EXECUTION_FAILED')
+    }
+    assert.equal(reportingCleanupFailStore.calls.delete.length, 1)
+
+    // Case 24: efectivo without proof and invalid clock never touches storage or reporting.
+    await insertFixtureBooking(client, {
+      id: 'bkg08c_booking_cash_clock_invalid',
+      publicCode: 'TUR-0808-224',
+      serviceVariantId: catalog.variantId,
+      resourceId: catalog.resourceId,
+    })
+    const cashInvalidClockStore = createProofStore()
+    const cashInvalidClock = await runFlow(
+      client,
+      cashInvalidClockStore,
+      makeBookingInput({
+        publicCode: 'TUR-0808-224',
+        paymentMethod: 'efectivo',
+        paymentReference: 'cash-clock-224',
+        paymentReportIdempotencyKey: 'PAYMENT_0808_CASH_CLOCK_224',
+        clock: makeClock(new Date('Invalid Date')),
+      }),
+    )
+    assertPostUploadFailure(
+      cashInvalidClock.result,
+      'INVALID_NOW',
+      'cash without proof and invalid clock',
+    )
+    assert.equal(cashInvalidClockStore.calls.head.length, 0)
+    assert.equal(cashInvalidClockStore.calls.put.length, 0)
+    assert.equal(cashInvalidClockStore.calls.delete.length, 0)
 
     // Case 16: reused object + reporting failure must not delete.
     await insertFixtureBooking(client, {

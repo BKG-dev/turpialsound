@@ -1,23 +1,22 @@
 # Current Sprint
 
 Sprint:
-BKG-08C
+BKG-08C1
 
 Name:
-Frontera privada aislada para comprobantes de pago consolidado
+Cerrar cleanup post-upload antes del server action
 
 Base:
-c69581622cbf13459b1ffbde4c5bb6c9ec293bd8
+c47fb56b05d2f904d9c29d71c6aed374d706a267
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* implement the isolated private payment proof boundary;
 * keep the transactional payment reporting adapter intact;
-* validate binary signatures, deterministic private paths, trusted metadata, and cleanup behavior;
-* integrate the boundary only through the isolated proof flow gate.
+* validate post-upload cleanup behavior for invalid clocks and unexpected reporting exceptions;
+* preserve the isolated proof flow gate.
 
 Out of Scope:
 
@@ -30,8 +29,8 @@ Out of Scope:
 
 Result:
 
-READY_FOR_BKG_08D
+POST_UPLOAD_COMPENSATION_PENDING_CI
 
 Next Action:
 
-ChatGPT reviews BKG-08C and defines the safe server-only payment reporting entrypoint.
+ChatGPT verifies post-upload failure compensation before BKG-08D.

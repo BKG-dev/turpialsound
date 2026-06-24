@@ -27,6 +27,7 @@ export interface CustomBundlePaymentProofFlowDependencies {
   store: CustomBundlePrivateBlobStore
   session: CustomBundleSqlSession
   clock: CustomBundlePaymentProofFlowClock
+  reporter?: typeof reportCustomBundlePaymentWithSql
 }
 
 export interface CustomBundlePaymentProofFlowInput {
@@ -37,8 +38,17 @@ export interface CustomBundlePaymentProofFlowInput {
 
 export interface CustomBundlePaymentProofFlowIssue
   extends Pick<CustomBundlePaymentProofBoundaryIssue, 'message'> {
-  code: CustomBundlePaymentProofBoundaryIssue['code'] | 'PROOF_REQUIRED'
+  code:
+    | CustomBundlePaymentProofBoundaryIssue['code']
+    | 'PROOF_REQUIRED'
+    | 'CLOCK_READ_FAILED'
   path?: Array<string | number>
+}
+
+export interface CustomBundlePaymentProofFlowOriginalFailure {
+  stage: 'clock' | 'reporting_exception'
+  code: 'INVALID_NOW' | 'CLOCK_READ_FAILED' | 'REPORTING_EXECUTION_FAILED'
+  message: string
 }
 
 type ProofReportSuccess = Extract<ReportCustomBundlePaymentWithSqlResult, { ok: true }>
@@ -66,6 +76,14 @@ export type CustomBundlePaymentProofFlowResult =
     }
   | {
       ok: false
+      stage: 'post_upload_failure'
+      originalFailure: CustomBundlePaymentProofFlowOriginalFailure
+      createdByThisCall: boolean
+      cleanupPerformed: boolean
+      proofMetadata: CustomBundleTrustedPaymentProofMetadata | null
+    }
+  | {
+      ok: false
       stage: 'reporting'
       reportingResult: ProofReportFailure
       createdByThisCall: boolean
@@ -77,8 +95,10 @@ export type CustomBundlePaymentProofFlowResult =
       stage: 'cleanup'
       code: 'BLOB_CLEANUP_FAILED'
       message: string
-      reportingResult: ProofReportFailure
+      reportingResult?: ProofReportFailure
+      originalFailure?: CustomBundlePaymentProofFlowOriginalFailure
       createdByThisCall: true
+      cleanupPerformed: true
       proofMetadata: CustomBundleTrustedPaymentProofMetadata
     }
   | {
@@ -118,13 +138,90 @@ function normalizeFlowIssues(
   }))
 }
 
-async function cleanupCreatedProofIfNeeded(input: {
+function makeClockFailureIssue(
+  code: 'INVALID_NOW' | 'CLOCK_READ_FAILED',
+): CustomBundlePaymentProofFlowIssue {
+  return {
+    code,
+    message:
+      code === 'INVALID_NOW'
+        ? 'El reloj del servidor no es valido para el reporte de pago.'
+        : 'El reloj del servidor no pudo leerse para continuar el reporte de pago.',
+    path: ['now'],
+  }
+}
+
+function makeClockFailure(
+  code: 'INVALID_NOW' | 'CLOCK_READ_FAILED',
+): CustomBundlePaymentProofFlowOriginalFailure {
+  return {
+    stage: 'clock',
+    code,
+    message:
+      code === 'INVALID_NOW'
+        ? 'El reloj del servidor no es valido para el reporte de pago.'
+        : 'El reloj del servidor no pudo leerse para continuar el reporte de pago.',
+  }
+}
+
+function readFlowClockNow(
+  clock: CustomBundlePaymentProofFlowClock,
+):
+  | { ok: true; now: Date }
+  | {
+      ok: false
+      issue: CustomBundlePaymentProofFlowIssue
+      originalFailure: CustomBundlePaymentProofFlowOriginalFailure
+    } {
+  try {
+    const value = clock.now()
+    if (!isValidDate(value)) {
+      const originalFailure = makeClockFailure('INVALID_NOW')
+      return {
+        ok: false,
+        issue: makeClockFailureIssue('INVALID_NOW'),
+        originalFailure,
+      }
+    }
+
+    return { ok: true, now: new Date(value.getTime()) }
+  } catch {
+    const originalFailure = makeClockFailure('CLOCK_READ_FAILED')
+    return {
+      ok: false,
+      issue: makeClockFailureIssue('CLOCK_READ_FAILED'),
+      originalFailure,
+    }
+  }
+}
+
+async function compensateOwnedProofAfterFailure(input: {
   dependencies: CustomBundlePaymentProofFlowDependencies
   createdByThisCall: boolean
   proofMetadata: CustomBundleTrustedPaymentProofMetadata | null
-}): Promise<{ ok: true } | { ok: false; code: 'BLOB_CLEANUP_FAILED'; message: string }> {
+  reportingResult?: ProofReportFailure
+  originalFailure?: CustomBundlePaymentProofFlowOriginalFailure
+}): Promise<CustomBundlePaymentProofFlowResult> {
   if (!input.createdByThisCall || !input.proofMetadata) {
-    return { ok: true }
+    if (input.reportingResult) {
+      return {
+        ok: false,
+        stage: 'reporting',
+        reportingResult: input.reportingResult,
+        createdByThisCall: false,
+        cleanupPerformed: false,
+        proofMetadata: input.proofMetadata,
+      }
+    }
+
+    return {
+      ok: false,
+      stage: 'post_upload_failure',
+      originalFailure: input.originalFailure!,
+      createdByThisCall: false,
+      cleanupPerformed: false,
+      proofMetadata: input.proofMetadata,
+    }
   }
 
   const cleanupResult = await deleteCustomBundlePaymentProofFromPrivateStore({
@@ -133,10 +230,50 @@ async function cleanupCreatedProofIfNeeded(input: {
   })
 
   if (!cleanupResult.ok) {
-    return cleanupResult
+    if (input.reportingResult) {
+      return {
+        ok: false,
+        stage: 'cleanup',
+        code: cleanupResult.code,
+        message: cleanupResult.message,
+        reportingResult: input.reportingResult,
+        createdByThisCall: true,
+        cleanupPerformed: true,
+        proofMetadata: input.proofMetadata,
+      }
+    }
+
+    return {
+      ok: false,
+      stage: 'cleanup',
+      code: cleanupResult.code,
+      message: cleanupResult.message,
+      originalFailure: input.originalFailure!,
+      createdByThisCall: true,
+      cleanupPerformed: true,
+      proofMetadata: input.proofMetadata,
+    }
   }
 
-  return { ok: true }
+  if (input.reportingResult) {
+    return {
+      ok: false,
+      stage: 'reporting',
+      reportingResult: input.reportingResult,
+      createdByThisCall: true,
+      cleanupPerformed: true,
+      proofMetadata: input.proofMetadata,
+    }
+  }
+
+  return {
+    ok: false,
+    stage: 'post_upload_failure',
+    originalFailure: input.originalFailure!,
+    createdByThisCall: true,
+    cleanupPerformed: true,
+    proofMetadata: input.proofMetadata,
+  }
 }
 
 export async function runCustomBundlePaymentProofFlow(
@@ -200,29 +337,39 @@ export async function runCustomBundlePaymentProofFlow(
     createdByThisCall = uploadResult.createdByThisCall
   }
 
-  const reportNow = dependencies.clock.now()
-  if (!isValidDate(reportNow)) {
-    return {
-      ok: false,
-      stage: 'proof_boundary',
-      proofBoundaryIssues: [
-        {
-          code: 'INVALID_NOW',
-          message: 'El reloj del servidor no es valido para el reporte de pago.',
-          path: ['now'],
-        },
-      ],
-    }
+  const reportNowResult = readFlowClockNow(dependencies.clock)
+  if (!reportNowResult.ok) {
+    return compensateOwnedProofAfterFailure({
+      dependencies,
+      createdByThisCall,
+      proofMetadata,
+      originalFailure: reportNowResult.originalFailure,
+    })
   }
 
-  const reportingResult = await reportCustomBundlePaymentWithSql(dependencies.session, {
-    submission: parsedSubmission.value,
-    serverContext: {
-      now: reportNow,
-      paymentReportIdempotencyKey: input.paymentReportIdempotencyKey,
+  const reporter = dependencies.reporter ?? reportCustomBundlePaymentWithSql
+  let reportingResult: ReportCustomBundlePaymentWithSqlResult
+  try {
+    reportingResult = await reporter(dependencies.session, {
+      submission: parsedSubmission.value,
+      serverContext: {
+        now: reportNowResult.now,
+        paymentReportIdempotencyKey: input.paymentReportIdempotencyKey,
+        proofMetadata,
+      } as CustomBundlePaymentServerContext,
+    })
+  } catch {
+    return compensateOwnedProofAfterFailure({
+      dependencies,
+      createdByThisCall,
       proofMetadata,
-    } as CustomBundlePaymentServerContext,
-  })
+      originalFailure: {
+        stage: 'reporting_exception',
+        code: 'REPORTING_EXECUTION_FAILED',
+        message: 'El reporte de pago consolidado falló inesperadamente.',
+      },
+    })
+  }
 
   if (reportingResult.ok) {
     return {
@@ -235,30 +382,10 @@ export async function runCustomBundlePaymentProofFlow(
     }
   }
 
-  const cleanupResult = await cleanupCreatedProofIfNeeded({
+  return compensateOwnedProofAfterFailure({
     dependencies,
     createdByThisCall,
     proofMetadata,
-  })
-
-  if (!cleanupResult.ok) {
-    return {
-      ok: false,
-      stage: 'cleanup',
-      code: cleanupResult.code,
-      message: cleanupResult.message,
-      reportingResult,
-      createdByThisCall: true,
-      proofMetadata: proofMetadata!,
-    }
-  }
-
-  return {
-    ok: false,
-    stage: 'reporting',
     reportingResult,
-    createdByThisCall,
-    cleanupPerformed: createdByThisCall,
-    proofMetadata,
-  }
+  })
 }

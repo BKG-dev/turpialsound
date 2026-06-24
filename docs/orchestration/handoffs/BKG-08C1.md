@@ -1,0 +1,23 @@
+# BKG-08C1 Handoff
+
+- Sprint: `BKG-08C1`
+- Base SHA: `c47fb56b05d2f904d9c29d71c6aed374d706a267`
+- Estado inicial: `DIRECTOR_REVIEW`
+- Objetivo:
+  - cerrar la compensación post-upload en el flow de comprobantes de pago;
+  - evitar objetos privados huérfanos si el segundo reloj falla o si reporting lanza inesperadamente;
+  - preservar objetos reutilizados.
+- Alcance:
+  - `lib/bookings/custom-bundle-payment-proof-flow.ts`;
+  - scripts QA del proof flow;
+  - documentación de orquestación.
+- Fuera de alcance:
+  - `lib/bookings/payment-proof-upload.ts`;
+  - Blob real;
+  - server actions;
+  - wizard;
+  - producción.
+- Riesgo a corregir:
+  - un fallo posterior al upload podía dejar un objeto privado sin cleanup.
+- Estado remoto:
+  - pendiente de validación.
