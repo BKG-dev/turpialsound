@@ -1126,6 +1126,8 @@ async function main(): Promise<void> {
     )
     assert.equal(auditFailure.result.ok, false)
     assert.equal(auditStore.calls.delete.length, 1)
+    await client.query(`DROP TRIGGER IF EXISTS bkg08c_fail_payment_audit_trigger ON "audit_log"`)
+    await client.query(`DROP FUNCTION IF EXISTS bkg08c_fail_payment_audit()`)
 
     // Case 13: put failure, no reporting transaction.
     await insertFixtureBooking(client, {
