@@ -218,6 +218,10 @@ function makeServerContext(
   }
 }
 
+function makeHexFingerprint(seed: string): string {
+  return seed.toLowerCase().replace(/[^0-9a-f]/g, 'a').padEnd(64, 'a').slice(0, 64)
+}
+
 function makePaymentInput(input: {
   publicCode: string
   paymentMethod: CustomBundlePaymentReportSubmission['paymentMethod']
@@ -345,7 +349,7 @@ async function insertFixtureBooking(client: Client, input: {
       input.internalNotes ?? '[ops_status:pending_payment]\nnota interna',
       (input.estimatedTotal ?? 280).toFixed(2),
       `hold-idem-${input.id}`,
-      `${input.id}`.padEnd(64, '0').slice(0, 64),
+      makeHexFingerprint(input.id),
       holdAcquiredAt,
       holdExpiresAt,
       input.paymentMethod ?? null,
