@@ -574,6 +574,34 @@ async function cleanupFixtures(client: Client): Promise<void> {
   await client.query(`DROP FUNCTION IF EXISTS bkg08b_delay_expiration_update()`).catch(() => {})
 }
 
+async function restorePaymentReportAllOrNoneConstraint(client: Client): Promise<void> {
+  await client.query(`
+    ALTER TABLE "booking_requests"
+    ADD CONSTRAINT "booking_requests_payment_report_all_or_none_chk"
+    CHECK (
+      (
+        "paymentMethod" IS NULL
+        AND "paymentReference" IS NULL
+        AND "paymentNormalizedReference" IS NULL
+        AND "paymentReportedAt" IS NULL
+        AND "paymentExpectedTotalUsdSnapshot" IS NULL
+        AND "paymentReportIdempotencyKey" IS NULL
+        AND "paymentReportFingerprint" IS NULL
+      )
+      OR
+      (
+        "paymentMethod" IS NOT NULL
+        AND "paymentReference" IS NOT NULL
+        AND "paymentNormalizedReference" IS NOT NULL
+        AND "paymentReportedAt" IS NOT NULL
+        AND "paymentExpectedTotalUsdSnapshot" IS NOT NULL
+        AND "paymentReportIdempotencyKey" IS NOT NULL
+        AND "paymentReportFingerprint" IS NOT NULL
+      )
+    )
+  `)
+}
+
 async function main(): Promise<void> {
   if (process.env.TURPIAL_ALLOW_ISOLATED_DB_TESTS !== EXPECTED_OPT_IN) {
     fail('TURPIAL_ALLOW_ISOLATED_DB_TESTS must be true.')
@@ -795,34 +823,48 @@ async function main(): Promise<void> {
     }
 
     // Case 9: malformed partial report.
-    await insertFixtureBooking(client, {
-      id: 'bkg08b_booking_partial',
-      publicCode: 'TUR-0808-107',
-      serviceVariantId: catalog.variantId,
-      resourceId: catalog.resourceId,
-      internalNotes: '[ops_status:payment_reported]',
-      paymentMethod: 'pago_movil',
-      paymentReference: null,
-      paymentNormalizedReference: null,
-      paymentReportedAt: null,
-      paymentExpectedTotalUsdSnapshot: null,
-      paymentReportIdempotencyKey: null,
-      paymentReportFingerprint: null,
-    })
-    const malformed = await runPayment(
-      client,
-      makePaymentInput({
+    await client.query(`
+      ALTER TABLE "booking_requests"
+      DROP CONSTRAINT IF EXISTS "booking_requests_payment_report_all_or_none_chk"
+    `)
+    try {
+      await insertFixtureBooking(client, {
+        id: 'bkg08b_booking_partial',
         publicCode: 'TUR-0808-107',
+        serviceVariantId: catalog.variantId,
+        resourceId: catalog.resourceId,
+        internalNotes: '[ops_status:payment_reported]',
         paymentMethod: 'pago_movil',
-        paymentReference: 'PM-107',
-        paymentReportIdempotencyKey: 'PAYMENT_PARTIAL_107',
-        proofMetadata: makeProofMetadata('TUR-0808-107', 'pm107'),
-      }),
-    )
-    assert.equal(malformed.result.ok, false)
-    if (!malformed.result.ok) {
-      assert.equal(malformed.result.stage, 'replay')
-      assert.equal(malformed.result.code, 'MALFORMED_EXISTING_REPORT')
+        paymentReference: null,
+        paymentNormalizedReference: null,
+        paymentReportedAt: null,
+        paymentExpectedTotalUsdSnapshot: null,
+        paymentReportIdempotencyKey: null,
+        paymentReportFingerprint: null,
+      })
+      const malformed = await runPayment(
+        client,
+        makePaymentInput({
+          publicCode: 'TUR-0808-107',
+          paymentMethod: 'pago_movil',
+          paymentReference: 'PM-107',
+          paymentReportIdempotencyKey: 'PAYMENT_PARTIAL_107',
+          proofMetadata: makeProofMetadata('TUR-0808-107', 'pm107'),
+        }),
+      )
+      assert.equal(malformed.result.ok, false)
+      if (!malformed.result.ok) {
+        assert.equal(malformed.result.stage, 'replay')
+        assert.equal(malformed.result.code, 'MALFORMED_EXISTING_REPORT')
+      }
+    } finally {
+      await client.query(
+        `DELETE FROM "booking_request_items" WHERE "bookingRequestId" = 'bkg08b_booking_partial'`,
+      )
+      await client.query(
+        `DELETE FROM "booking_requests" WHERE id = 'bkg08b_booking_partial'`,
+      )
+      await restorePaymentReportAllOrNoneConstraint(client)
     }
 
     // Case 10: hold expired and exact boundary.
