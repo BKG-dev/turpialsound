@@ -1245,7 +1245,7 @@ async function main(): Promise<void> {
       pathname: racePath,
       contentType: 'image/png',
       sizeBytes: makeBytes('png').byteLength,
-      uploadedAt: new Date('2026-06-23T14:38:30.000Z'),
+      uploadedAt: new Date('2026-06-23T14:29:30.000Z'),
       access: 'private',
     })
     raceStore.queuePutError(createPostgresError('OBJECT_ALREADY_EXISTS', 'object already exists'))
