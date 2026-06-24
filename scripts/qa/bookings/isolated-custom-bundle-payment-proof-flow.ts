@@ -913,7 +913,7 @@ async function main(): Promise<void> {
         paymentProofFile: makeFileLike({
           name: 'proof-alt.png',
           type: 'image/png',
-          bytes: makeBytes('webp'),
+          bytes: new Uint8Array([...makeBytes('png'), 0x01, 0x02, 0x03, 0x04]),
         }),
         now: [new Date('2026-06-23T14:36:00.000Z'), new Date('2026-06-23T14:36:01.000Z')],
       }),
