@@ -899,10 +899,12 @@ async function main(): Promise<void> {
     // 8. Archivo distinto con misma token/referencia.
     {
       const publicCode = 'TUR-0808-101'
+      const proofBytes = makeBytes('png')
+      proofBytes[9] = 0x01
       const proof = makeFileLike({
         name: 'mobile-proof-alt.png',
         type: 'image/png',
-        bytes: makeBytes('plain'),
+        bytes: proofBytes,
       })
       const previousPutCount = store.calls.put.length
       const previousDeleteCount = store.calls.delete.length
