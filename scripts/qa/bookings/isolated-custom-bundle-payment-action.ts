@@ -1125,7 +1125,10 @@ async function main(): Promise<void> {
           publicCode,
           paymentMethod: 'pago_movil',
           paymentReference: 'EXP-108',
-          paymentRecoveryToken: makeValidToken(publicCode, baseNow),
+          paymentRecoveryToken: makeValidToken(
+            publicCode,
+            new Date('2026-06-24T18:30:00.000Z'),
+          ),
           paymentProofFile: proof,
         }),
       )
