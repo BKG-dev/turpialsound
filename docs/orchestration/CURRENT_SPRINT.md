@@ -1,36 +1,36 @@
 # Current Sprint
 
 Sprint:
-BKG-08D
+BKG-08E
 
 Name:
-Entrypoint server-only seguro para reporte de pago consolidado
+Acción protegida y frontera de autorización para pago consolidado
 
 Base:
-14b6dd49029c79cbc705f0598f49def353beb01b
+c86efdb2bdb5cc3cbe7ec2c56e78c6895cd2cca5
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* create a safe server-only payment entrypoint;
-* keep Preview isolated from SQL and Blob;
-* preserve the isolated proof flow and transactional reporting gates.
+* create a protected server action for consolidated payment reporting;
+* keep Preview isolated from SQL, Blob and unauthorized tokens;
+* preserve the isolated proof flow, server entrypoint and transactional reporting gates.
 
 Out of Scope:
 
-* public Server Action wiring;
+* wizard wiring;
+* public action wiring;
 * notifications;
-* wizard integration;
 * production;
 * manual QA;
-* BKG-08E.
+* BKG-08F.
 
 Result:
 
-READY_FOR_PAYMENT_ACTION_WIRING
+PROTECTED_PAYMENT_ACTION_PENDING_CI
 
 Next Action:
 
-ChatGPT reviews BKG-08D and defines the protected payment action and authorization boundary.
+ChatGPT verifies the protected payment action before recovery and transport integration.

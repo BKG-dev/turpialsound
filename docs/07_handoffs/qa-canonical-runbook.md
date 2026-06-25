@@ -304,6 +304,52 @@ Criterio de evidencia:
 Regla:
 - si la ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar Prisma productivo, Blob real ni server actions.
 
+## Booking custom bundle payment action
+
+Objetivo:
+- validar la accion protegida de reporte de pago con token firmado, bloqueo de Preview, resultado sanitizado y sin wiring de UI.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-action-contract.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar autorizacion firmada, frontera exacta de expiracion, guard antes de leer archivo, kill switch de produccion, separacion legacy y ausencia de wiring de UI.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar token del cliente, lectura de archivo previa ni apertura de infraestructura.
+
+## Booking isolated custom bundle payment action
+
+Objetivo:
+- validar en PostgreSQL efimero la accion protegida, la autorizacion por token firmado, la integracion con reporting y la limpieza compensatoria.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-action.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql`
+
+Precondiciones:
+- GitHub Actions disponibles;
+- service container PostgreSQL 16 disponible;
+- baseline SQL generado;
+- propuestas BKG-04, BKG-07 y BKG-08 validadas;
+- URL exclusivamente local;
+- opt-in aislado habilitado;
+- clave secreta ficticia solo para QA;
+- sesion SQL de conexion unica disponible.
+
+Criterio de evidencia:
+- confirmar token authorization, preview isolation, authorization before proof read, protected payment reporting, exact replay, conflict cleanup, expired hold cleanup, missing booking cleanup, secret-free result, database cleanup y storage cleanup.
+
+Regla:
+- si la ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar Blob real, token real, UI wiring ni pagos reales.
+
 ## Booking custom bundle payment contract
 
 Objetivo:

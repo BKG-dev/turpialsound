@@ -1,5 +1,5 @@
 {
-  "version": 18,
+  "version": 19,
   "updated_at": "2026-06-25",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
@@ -1336,6 +1336,82 @@
       ],
       "last_validated_at": null,
       "notes": "Isolated PostgreSQL gate for the server-only payment entrypoint with SQL-before-Blob ordering and sanitised result checks."
+    },
+    "booking_custom_bundle_payment_action_contract": {
+      "task_id": "booking_custom_bundle_payment_action_contract",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-action-contract.ts",
+      "preconditions": [
+        "Node and pnpm available",
+        "Dependencies installed",
+        "No application server required",
+        "No DATABASE_URL required",
+        "No browser required",
+        "No network required"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "aceptar token solo desde localStorage sin validacion",
+        "aceptar publicCode sin token",
+        "leer archivo antes de validar token",
+        "abrir DB antes de validar token",
+        "abrir Blob antes de validar token",
+        "aceptar idempotency key del cliente",
+        "exponer token en resultados",
+        "importar accion desde UI",
+        "modificar accion legacy",
+        "activar produccion",
+        "usar secretos reales en QA"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-08E.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Canonical QA route for the protected payment action, signed recovery token authorization and sanitized public result."
+    },
+    "booking_isolated_custom_bundle_payment_action": {
+      "task_id": "booking_isolated_custom_bundle_payment_action",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-action.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql",
+      "preconditions": [
+        "GitHub Actions available",
+        "PostgreSQL service container available",
+        "Baseline SQL generated",
+        "BKG-04 proposal validated",
+        "BKG-07 proposal validated",
+        "BKG-08 proposal validated",
+        "URL exclusively local",
+        "Isolated opt-in enabled",
+        "Single-connection SQL session available",
+        "Signed recovery token secret configured for QA only"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "aceptar token solo desde localStorage sin validacion",
+        "aceptar publicCode sin token",
+        "leer archivo antes de validar token",
+        "abrir DB antes de validar token",
+        "abrir Blob antes de validar token",
+        "aceptar idempotency key del cliente",
+        "exponer token en resultados",
+        "importar accion desde UI",
+        "modificar accion legacy",
+        "activar produccion",
+        "usar secretos reales en QA"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-08E.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Isolated PostgreSQL gate for the protected payment action with token authorization, SQL-before-Blob ordering and sanitized result checks."
     }
   }
 }

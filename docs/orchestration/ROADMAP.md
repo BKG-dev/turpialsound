@@ -116,8 +116,11 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Blob boundary: `TECHNICALLY_VALIDATED`
 - Post-upload compensation: `TECHNICALLY_VALIDATED`
 - Payment server entrypoint: `TECHNICALLY_VALIDATED`
-- Payment action wiring: `NOT_STARTED`
+- Payment action authorization: `PENDING_CI`
+- Payment action wiring: `PENDING_CI`
 - Payment server action: `NOT_STARTED`
+- Payment transport: `NOT_STARTED`
+- Payment recovery integration: `NOT_STARTED`
 - Notifications: `NOT_STARTED`
 - Wizard integration: `NOT_STARTED`
 
