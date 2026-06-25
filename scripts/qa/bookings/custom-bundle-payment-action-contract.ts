@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { buildPaymentRecoveryToken, validatePaymentRecoveryToken } from '@/lib/bookings/payment-recovery-token'
@@ -218,6 +217,25 @@ function makeValidToken(publicCode: string, now: Date): string {
   return token
 }
 
+function collectFiles(rootPath: string): string[] {
+  const entries = readdirSync(rootPath, { withFileTypes: true })
+  const results: string[] = []
+
+  for (const entry of entries) {
+    const entryPath = resolve(rootPath, entry.name)
+    if (entry.isDirectory()) {
+      results.push(...collectFiles(entryPath))
+      continue
+    }
+
+    if (entry.isFile()) {
+      results.push(entryPath)
+    }
+  }
+
+  return results
+}
+
 async function main(): Promise<void> {
   const wrapperSource = readFileSync(
     resolve(process.cwd(), 'lib/bookings/custom-bundle-payment-action.ts'),
@@ -253,20 +271,14 @@ async function main(): Promise<void> {
 
   process.env.BOOKINGS_PAYMENT_RECOVERY_TOKEN_SECRET ??= 'action-contract-secret'
 
-  try {
-    execFileSync(
-      'rg',
-      ['-n', 'custom-bundle-payment-action', 'app', 'components'],
-      { cwd: process.cwd(), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
-    )
-    fail('UI imports should not reference the protected payment action.')
-  } catch (error) {
-    if (error instanceof Error && 'status' in error && (error as { status?: number }).status === 1) {
-      // Expected: no matches.
-    } else if (error instanceof Error && 'status' in error) {
-      throw error
-    } else {
-      throw error
+  for (const root of ['app', 'components']) {
+    for (const filePath of collectFiles(resolve(process.cwd(), root))) {
+      const fileContents = readFileSync(filePath, 'utf8')
+      assert.equal(
+        fileContents.includes('custom-bundle-payment-action'),
+        false,
+        `UI imports should not reference the protected payment action: ${filePath}`,
+      )
     }
   }
 
