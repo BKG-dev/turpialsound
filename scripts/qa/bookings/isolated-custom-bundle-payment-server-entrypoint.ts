@@ -282,7 +282,7 @@ function makeBookingRow(input: {
     updatedAt: input.holdAcquiredAt,
     bookingMode: 'custom_bundle',
     pricingSource: 'server_catalog_v1',
-    idempotencyKey: 'HOLD_2026:06:24-0001',
+    idempotencyKey: `HOLD_2026:06:24-${input.id}`,
     requestFingerprint: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
     holdAcquiredAt: input.holdAcquiredAt,
     holdExpiresAt: input.holdExpiresAt,
