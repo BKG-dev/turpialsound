@@ -10,7 +10,7 @@ Base:
 14b6dd49029c79cbc705f0598f49def353beb01b
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
@@ -29,8 +29,8 @@ Out of Scope:
 
 Result:
 
-PAYMENT_SERVER_ENTRYPOINT_PENDING_CI
+READY_FOR_PAYMENT_ACTION_WIRING
 
 Next Action:
 
-ChatGPT verifies the safe server-only payment entrypoint before action wiring.
+ChatGPT reviews BKG-08D and defines the protected payment action and authorization boundary.
