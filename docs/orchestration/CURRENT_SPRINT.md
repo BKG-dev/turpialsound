@@ -4,13 +4,13 @@ Sprint:
 BKG-08E
 
 Name:
-Acción protegida y frontera de autorización para pago consolidado
+AcciÃ³n protegida y frontera de autorizaciÃ³n para pago consolidado
 
 Base:
 c86efdb2bdb5cc3cbe7ec2c56e78c6895cd2cca5
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
@@ -29,8 +29,8 @@ Out of Scope:
 
 Result:
 
-PROTECTED_PAYMENT_ACTION_PENDING_CI
+READY_FOR_PAYMENT_RECOVERY_INTEGRATION
 
 Next Action:
 
-ChatGPT verifies the protected payment action before recovery and transport integration.
+ChatGPT reviews BKG-08E and defines the secure recovery-session handoff and payment transport validation.
