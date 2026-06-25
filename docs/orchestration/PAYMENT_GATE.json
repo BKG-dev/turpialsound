@@ -1,6 +1,6 @@
 {
   "sprint": "BKG-08D",
-  "baseSha": "c69581622cbf13459b1ffbde4c5bb6c9ec293bd8",
+  "baseSha": "14b6dd49029c79cbc705f0598f49def353beb01b",
   "model": "single_consolidated_manual_payment_report",
   "validation": {
     "workflow": "booking-isolated-custom-bundle-payment-contract.yml",
@@ -74,7 +74,7 @@
   "privateBlobBoundaryTechnicallyValidated": true,
   "readyForPaymentServerAction": true,
   "serverEntrypointValidation": {
-    "workflow": "booking-isolated-custom-bundle-payment-server-entrypoint.yml",
+    "workflow": "booking-isolated-custom-bundle-payment-proof-boundary.yml",
     "status": "PENDING",
     "runId": null,
     "validatedHeadSha": null,

@@ -1,4 +1,4 @@
-name: Booking Isolated Custom Bundle Payment Proof Boundary
+name: Booking Isolated Custom Bundle Payment Server Entrypoint
 
 on:
   push:
@@ -6,6 +6,11 @@ on:
       - codex/preview-arma-tu-paquete-2026-06-19
     paths:
       - .github/workflows/booking-isolated-custom-bundle-payment-proof-boundary.yml
+      - lib/bookings/environment.ts
+      - lib/bookings/custom-bundle-payment-server-entrypoint-core.ts
+      - lib/bookings/custom-bundle-payment-server-entrypoint.ts
+      - lib/bookings/custom-bundle-payment-sql-session-pg.ts
+      - lib/bookings/custom-bundle-private-blob-store-vercel.ts
       - lib/bookings/custom-bundle-payment-proof-boundary.ts
       - lib/bookings/custom-bundle-payment-proof-flow.ts
       - lib/bookings/custom-bundle-payment-reporting.ts
@@ -13,9 +18,11 @@ on:
       - scripts/qa/bookings/custom-bundle-payment-contract.ts
       - scripts/qa/bookings/custom-bundle-payment-reporting-contract.ts
       - scripts/qa/bookings/custom-bundle-payment-proof-boundary-contract.ts
+      - scripts/qa/bookings/custom-bundle-payment-server-entrypoint-contract.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-schema.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-reporting.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-proof-flow.ts
+      - scripts/qa/bookings/isolated-custom-bundle-payment-server-entrypoint.ts
       - prisma/schema.prisma
       - prisma/proposed/**
       - docs/orchestration/PAYMENT_GATE.json
@@ -119,8 +126,14 @@ jobs:
       - name: Run custom bundle payment proof boundary gate
         run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-proof-boundary-contract.ts
 
+      - name: Run custom bundle payment server entrypoint gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-server-entrypoint-contract.ts
+
       - name: Run isolated payment proof flow gate
         run: pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-proof-flow.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql
+
+      - name: Run isolated payment server entrypoint gate
+        run: pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-server-entrypoint.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql
 
       - name: Run lint
         run: pnpm lint

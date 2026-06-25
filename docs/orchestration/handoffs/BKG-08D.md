@@ -7,8 +7,9 @@
   - adaptador SQL dedicado con conexion unica;
   - adaptador privado de Blob inyectable;
   - contrato y gate aislado para validacion.
-- Estado remoto: pendiente de workflow CI.
+- Codigo local validado, CI remoto pendiente.
+- Workflow transportador reconocido: `booking-isolated-custom-bundle-payment-proof-boundary.yml`.
+- Aprobacion tecnica: pendiente hasta el run remoto.
 - Preview: aislado de SQL y Blob.
 - Wizard: desconectado.
 - Produccion: bloqueada.
-

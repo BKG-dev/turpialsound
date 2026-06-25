@@ -9,7 +9,6 @@ import {
   runCustomBundlePaymentServerEntrypointCore,
   type CustomBundlePaymentServerEntrypointInput,
 } from '@/lib/bookings/custom-bundle-payment-server-entrypoint-core'
-import { openCustomBundlePaymentPgSession } from '@/lib/bookings/custom-bundle-payment-sql-session-pg'
 import type { CustomBundlePaymentProofFileLike } from '@/lib/bookings/custom-bundle-payment-proof-boundary'
 import type { CustomBundlePaymentServerRuntime } from '@/lib/bookings/custom-bundle-payment-server-entrypoint-core'
 
@@ -48,6 +47,17 @@ type MemoryStore = {
     access: 'private'
   }>
   deletePrivate(pathname: string): Promise<void>
+}
+
+type LocalSqlSessionHandle = {
+  session: {
+    transactionScope: 'single_connection'
+    query<Row = Record<string, unknown>>(
+      sql: string,
+      params?: readonly unknown[],
+    ): Promise<{ rows: Row[]; rowCount: number | null }>
+  }
+  close(): Promise<void>
 }
 
 function fail(message: string, error?: unknown): never {
@@ -440,6 +450,40 @@ function makeSessionStub(options: { closeThrows?: boolean } = {}) {
   }
 }
 
+async function openLocalCustomBundlePaymentPgSession(connectionString: string): Promise<LocalSqlSessionHandle> {
+  const client = new Client({ connectionString })
+  await client.connect()
+
+  let closed = false
+
+  return {
+    session: {
+      transactionScope: 'single_connection',
+      async query<Row = Record<string, unknown>>(
+        sql: string,
+        params: readonly unknown[] = [],
+      ): Promise<{ rows: Row[]; rowCount: number | null }> {
+        const result = (await client.query<Row>(sql, [...params])) as {
+          rows: Row[]
+          rowCount: number | null
+        }
+        return {
+          rows: result.rows,
+          rowCount: result.rowCount,
+        }
+      },
+    },
+    async close(): Promise<void> {
+      if (closed) {
+        return
+      }
+
+      closed = true
+      await client.end()
+    },
+  }
+}
+
 function assertSafeMessage(message: string): void {
   assert.ok(message.length > 0)
   assert.equal(/postgres|host|connection|string|sql/i.test(message), false)
@@ -525,7 +569,7 @@ async function main(): Promise<void> {
         runtime: 'isolated_test',
         clock: makeClock(new Date('2026-06-24T18:30:00.000Z')),
         async openSqlSession() {
-          const handle = await openCustomBundlePaymentPgSession({ connectionString })
+          const handle = await openLocalCustomBundlePaymentPgSession(connectionString)
           return {
             session: handle.session,
             close: handle.close,
@@ -563,7 +607,7 @@ async function main(): Promise<void> {
         runtime: 'isolated_test',
         clock: makeClock(new Date('2026-06-24T18:40:00.000Z')),
         async openSqlSession() {
-          const handle = await openCustomBundlePaymentPgSession({ connectionString })
+          const handle = await openLocalCustomBundlePaymentPgSession(connectionString)
           return {
             session: handle.session,
             close: handle.close,
@@ -603,7 +647,7 @@ async function main(): Promise<void> {
         runtime: 'isolated_test',
         clock: makeClock(new Date('2026-06-24T18:50:00.000Z')),
         async openSqlSession() {
-          const handle = await openCustomBundlePaymentPgSession({ connectionString })
+          const handle = await openLocalCustomBundlePaymentPgSession(connectionString)
           return {
             session: handle.session,
             close: handle.close,
@@ -643,7 +687,7 @@ async function main(): Promise<void> {
         runtime: 'isolated_test',
         clock: makeClock(new Date('2026-06-24T18:55:00.000Z')),
         async openSqlSession() {
-          const handle = await openCustomBundlePaymentPgSession({ connectionString })
+          const handle = await openLocalCustomBundlePaymentPgSession(connectionString)
           return {
             session: handle.session,
             close: handle.close,
@@ -679,7 +723,7 @@ async function main(): Promise<void> {
         runtime: 'isolated_test',
         clock: makeClock(new Date('2026-06-24T18:30:00.000Z')),
         async openSqlSession() {
-          const handle = await openCustomBundlePaymentPgSession({ connectionString })
+          const handle = await openLocalCustomBundlePaymentPgSession(connectionString)
           return {
             session: handle.session,
             close: handle.close,
@@ -722,7 +766,7 @@ async function main(): Promise<void> {
           new Error('clock failure'),
         ),
         async openSqlSession() {
-          const handle = await openCustomBundlePaymentPgSession({ connectionString })
+          const handle = await openLocalCustomBundlePaymentPgSession(connectionString)
           return {
             session: handle.session,
             close: handle.close,
