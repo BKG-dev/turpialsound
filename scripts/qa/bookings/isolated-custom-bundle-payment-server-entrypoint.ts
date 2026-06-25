@@ -521,6 +521,8 @@ async function main(): Promise<void> {
     assert.equal(identity.rows[0].current_database, EXPECTED_DATABASE)
     assert.equal(identity.rows[0].current_user, EXPECTED_USER)
 
+    await client.query('DROP SCHEMA IF EXISTS public CASCADE')
+    await client.query('CREATE SCHEMA public')
     await client.query(baselineSql)
     await client.query(bkg04Sql)
     await client.query(bkg07Sql)
