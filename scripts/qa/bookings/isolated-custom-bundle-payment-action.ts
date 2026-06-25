@@ -1176,7 +1176,7 @@ async function main(): Promise<void> {
         }),
       )
       assert.equal(result.ok, false)
-      assert.equal(result.stage, 'booking')
+      assert.equal(result.stage, 'conflict')
       assert.equal(store.calls.delete.length > 0, true)
     }
 
