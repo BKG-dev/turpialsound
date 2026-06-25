@@ -1,36 +1,36 @@
 # Current Sprint
 
 Sprint:
-BKG-08C1
+BKG-08D
 
 Name:
-Cerrar cleanup post-upload antes del server action
+Entrypoint server-only seguro para reporte de pago consolidado
 
 Base:
-c47fb56b05d2f904d9c29d71c6aed374d706a267
+14b6dd49029c79cbc705f0598f49def353beb01b
 
 State:
 TECHNICALLY_VALIDATED
 
 Scope:
 
-* keep the transactional payment reporting adapter intact;
-* validate post-upload cleanup behavior for invalid clocks and unexpected reporting exceptions;
-* preserve the isolated proof flow gate.
+* create a safe server-only payment entrypoint;
+* keep Preview isolated from SQL and Blob;
+* preserve the isolated proof flow and transactional reporting gates.
 
 Out of Scope:
 
-* production Blob wiring;
+* public Server Action wiring;
 * notifications;
 * wizard integration;
 * production;
 * manual QA;
-* BKG-08D.
+* BKG-08E.
 
 Result:
 
-READY_FOR_BKG_08D
+PAYMENT_SERVER_ENTRYPOINT_PENDING_CI
 
 Next Action:
 
-ChatGPT reviews BKG-08C1 and defines the safe server-only payment reporting entrypoint.
+ChatGPT verifies the safe server-only payment entrypoint before action wiring.

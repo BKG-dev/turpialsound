@@ -1,5 +1,5 @@
 {
-  "sprint": "BKG-08C",
+  "sprint": "BKG-08D",
   "baseSha": "c69581622cbf13459b1ffbde4c5bb6c9ec293bd8",
   "model": "single_consolidated_manual_payment_report",
   "validation": {
@@ -73,6 +73,28 @@
   },
   "privateBlobBoundaryTechnicallyValidated": true,
   "readyForPaymentServerAction": true,
+  "serverEntrypointValidation": {
+    "workflow": "booking-isolated-custom-bundle-payment-server-entrypoint.yml",
+    "status": "PENDING",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
+    "serverIdempotencyVerified": false,
+    "previewIsolationVerified": false,
+    "sqlBeforeStorageVerified": false,
+    "privateStoreAdapterVerified": false,
+    "pgSessionLifecycleVerified": false,
+    "reportingIntegrationVerified": false,
+    "exactReplayVerified": false,
+    "failureCleanupVerified": false,
+    "sanitizedResultVerified": false,
+    "noClientKeyVerified": false,
+    "noPublicActionVerified": false,
+    "databaseCleanupVerified": false,
+    "storageCleanupVerified": false
+  },
+  "paymentServerEntrypointTechnicallyValidated": false,
+  "readyForPaymentActionWiring": false,
   "readyForWizardIntegration": false,
   "readyForProduction": false,
   "blockers": []

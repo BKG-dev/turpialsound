@@ -1,6 +1,6 @@
 # QA Canonical Runbook
 
-> Fecha de actualizacion: 2026-06-23
+> Fecha de actualizacion: 2026-06-25
 > Alcance: marketplace no-booking
 > Objetivo: dejar una golden path operativa para QA/CLI sin redescubrir scripts
 
@@ -258,6 +258,51 @@ Precondiciones:
 
 Criterio de evidencia:
 - confirmar expiracion de hold vencido, frontera exacta, proteccion de payment reportado y proof activo, replay clasificado, reintento idempotente, procesamiento por lotes, rollback, limpieza y proteccion de slots liberados.
+
+## Booking custom bundle payment server entrypoint
+
+Objetivo:
+- validar la entrada server-only segura para reporte de pago consolidado sin exponer clave de idempotencia, URL publica ni resultados internos.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-server-entrypoint-contract.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar derivacion server-side de la clave de idempotencia, guard de Preview, sesion SQL dedicada, adaptador privado inyectable y salida publica sanitizada.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar acceso publico, server actions ni Blob real.
+
+## Booking isolated custom bundle payment server entrypoint
+
+Objetivo:
+- validar en PostgreSQL efimero la entrada server-only con orden SQL antes de Blob, integracion de reporting y cierre garantizado.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-server-entrypoint.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql`
+
+Precondiciones:
+- GitHub Actions disponibles;
+- service container PostgreSQL 16 disponible;
+- baseline SQL generado;
+- propuestas BKG-04, BKG-07 y BKG-08 validadas;
+- URL exclusivamente local;
+- opt-in aislado habilitado;
+- sesion SQL de conexion unica disponible.
+
+Criterio de evidencia:
+- confirmar preview isolation, private proof integration, transactional reporting, stable server idempotency, exact replay, conflict cleanup, session lifecycle, secret-free result, database cleanup y storage cleanup.
+
+Regla:
+- si la ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar Prisma productivo, Blob real ni server actions.
 
 ## Booking custom bundle payment contract
 

@@ -1,6 +1,6 @@
 {
-  "version": 17,
-  "updated_at": "2026-06-24",
+  "version": 18,
+  "updated_at": "2026-06-25",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
     "layers": {
@@ -1261,6 +1261,81 @@
       ],
       "last_validated_at": null,
       "notes": "Isolated PostgreSQL gate for the private proof boundary and the proof-flow integration with BKG-08B."
+    },
+    "booking_custom_bundle_payment_server_entrypoint_contract": {
+      "task_id": "booking_custom_bundle_payment_server_entrypoint_contract",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-server-entrypoint-contract.ts",
+      "preconditions": [
+        "Node and pnpm available",
+        "Dependencies installed",
+        "No application server required",
+        "No DATABASE_URL required",
+        "No browser required",
+        "No network required"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "clave de idempotencia enviada por el cliente",
+        "DB antes de Preview guard",
+        "Blob antes de Preview guard",
+        "usar Prisma productivo en QA",
+        "URL publica",
+        "devolver pathname",
+        "devolver token",
+        "devolver errores SQL",
+        "importar entrypoint desde UI",
+        "añadir use server",
+        "notificaciones reales"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-08D.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Canonical QA route for the safe server-only payment entrypoint, preview guard and sanitised public result."
+    },
+    "booking_isolated_custom_bundle_payment_server_entrypoint": {
+      "task_id": "booking_isolated_custom_bundle_payment_server_entrypoint",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-server-entrypoint.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql",
+      "preconditions": [
+        "GitHub Actions available",
+        "PostgreSQL service container available",
+        "Baseline SQL generated",
+        "BKG-04 proposal validated",
+        "BKG-07 proposal validated",
+        "BKG-08 proposal validated",
+        "URL exclusively local",
+        "Isolated opt-in enabled",
+        "Single-connection SQL session available"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "clave de idempotencia enviada por el cliente",
+        "DB antes de Preview guard",
+        "Blob antes de Preview guard",
+        "usar Prisma productivo en QA",
+        "URL publica",
+        "devolver pathname",
+        "devolver token",
+        "devolver errores SQL",
+        "importar entrypoint desde UI",
+        "añadir use server",
+        "notificaciones reales"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-08D.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Isolated PostgreSQL gate for the server-only payment entrypoint with SQL-before-Blob ordering and sanitised result checks."
     }
   }
 }
