@@ -31,6 +31,8 @@ function fail(message: string, error?: unknown): never {
   process.exit(1)
 }
 
+let currentRecoveryToken = ''
+
 function isRemoteIpHost(hostname: string): boolean {
   return /^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname)
 }
@@ -304,11 +306,11 @@ function makeActionInput(input: {
   paymentRecoveryToken: string
   paymentProofFile: CustomBundlePaymentProofFileLike | null
 }) {
+  currentRecoveryToken = input.paymentRecoveryToken
   return {
     publicCode: input.publicCode,
     paymentMethod: input.paymentMethod,
     paymentReference: input.paymentReference,
-    paymentRecoveryToken: input.paymentRecoveryToken,
     paymentProofFile: input.paymentProofFile,
   }
 }
@@ -534,6 +536,10 @@ function makeActionDependencies(input: {
   authorizePaymentAccess?: CustomBundleProtectedPaymentActionDependencies['authorizePaymentAccess']
 }): CustomBundleProtectedPaymentActionDependencies {
   return {
+    readRecoveryToken(): string | null {
+      const token = currentRecoveryToken.trim()
+      return token.length > 0 ? token : null
+    },
     clock: input.clock,
     authorizePaymentAccess: input.authorizePaymentAccess ?? makeAuthorizeAdapter(),
     runServerEntrypoint: input.runServerEntrypoint,
@@ -1184,7 +1190,7 @@ async function main(): Promise<void> {
     {
       const publicCode = 'TUR-0808-110'
       const result = await runCustomBundleProtectedPaymentActionCore(
-        {
+        makeActionDependencies({
           clock: makeClock(baseNow),
           authorizePaymentAccess: async () => {
             throw new Error('authorizer failed')
@@ -1192,7 +1198,7 @@ async function main(): Promise<void> {
           runServerEntrypoint: async () => {
             fail('Authorizer failure must not reach entrypoint.')
           },
-        },
+        }),
         makeActionInput({
           publicCode,
           paymentMethod: 'efectivo',

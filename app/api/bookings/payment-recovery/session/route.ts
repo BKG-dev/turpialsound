@@ -1,9 +1,16 @@
+import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+
 import { prisma } from '@/lib/db'
 import { getOperationalStatus, getPaymentDeadline } from '@/lib/bookings/operations'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
 import { getPrimaryPaymentMethod } from '@/lib/bookings/payment-settings'
 import { validatePaymentRecoveryToken } from '@/lib/bookings/payment-recovery-token'
+import {
+  CUSTOM_BUNDLE_PAYMENT_RECOVERY_COOKIE_NAME,
+  buildCustomBundlePaymentRecoveryCookieClearOptions,
+  buildCustomBundlePaymentRecoveryCookieSetOptions,
+} from '@/lib/bookings/custom-bundle-payment-recovery-cookie'
 
 interface PaymentRecoveryPayload {
   code?: string
@@ -53,24 +60,55 @@ function formatAmountLabel(amount: number, currency: 'USD' | 'VES'): string {
   })}`
 }
 
+function withNoStoreHeaders(response: NextResponse): NextResponse {
+  response.headers.set('Cache-Control', 'no-store')
+  response.headers.set('Pragma', 'no-cache')
+  return response
+}
+
+function clearRecoveryCookie(response: NextResponse): void {
+  response.cookies.set(
+    CUSTOM_BUNDLE_PAYMENT_RECOVERY_COOKIE_NAME,
+    '',
+    buildCustomBundlePaymentRecoveryCookieClearOptions(),
+  )
+}
+
+function setRecoveryCookie(response: NextResponse, token: string, now: Date, expiresAt: Date): void {
+  const options = buildCustomBundlePaymentRecoveryCookieSetOptions({ now, expiresAt })
+  if (!options) {
+    clearRecoveryCookie(response)
+    return
+  }
+
+  response.cookies.set(CUSTOM_BUNDLE_PAYMENT_RECOVERY_COOKIE_NAME, token, options)
+}
+
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  const now = new Date()
   const payload = (await request.json().catch(() => null)) as PaymentRecoveryPayload | null
   const code = payload?.code?.trim().toUpperCase() ?? ''
-  const token = payload?.token?.trim() ?? ''
+  const bodyToken = payload?.token?.trim() ?? ''
+  const cookieToken = cookies().get(CUSTOM_BUNDLE_PAYMENT_RECOVERY_COOKIE_NAME)?.value?.trim() ?? ''
+  const token = bodyToken || cookieToken
 
   if (!code || !token) {
-    return NextResponse.json({ ok: false, error: 'missing_params' }, { status: 400 })
+    const response = NextResponse.json({ ok: false, error: 'missing_params' }, { status: 400 })
+    clearRecoveryCookie(response)
+    return withNoStoreHeaders(response)
   }
 
-  const tokenValidation = validatePaymentRecoveryToken(token, code)
+  const tokenValidation = validatePaymentRecoveryToken(token, code, now)
   if (!tokenValidation.ok) {
-    return NextResponse.json({
+    const response = NextResponse.json({
       ok: true,
       state: 'invalid_link',
       reason: tokenValidation.error,
     })
+    clearRecoveryCookie(response)
+    return withNoStoreHeaders(response)
   }
 
   const booking = await prisma.bookingRequest.findUnique({
@@ -91,33 +129,45 @@ export async function POST(request: NextRequest) {
   })
 
   if (!booking) {
-    return NextResponse.json({ ok: true, state: 'not_found' })
+    const response = NextResponse.json({ ok: true, state: 'not_found' })
+    clearRecoveryCookie(response)
+    return withNoStoreHeaders(response)
   }
 
   const operationalStatus = getOperationalStatus(booking)
   if (operationalStatus === 'payment_reported') {
-    return NextResponse.json({ ok: true, state: 'payment_reported', publicCode: booking.publicCode })
+    const response = NextResponse.json({ ok: true, state: 'payment_reported', publicCode: booking.publicCode })
+    clearRecoveryCookie(response)
+    return withNoStoreHeaders(response)
   }
 
   if (operationalStatus === 'confirmed') {
-    return NextResponse.json({ ok: true, state: 'confirmed', publicCode: booking.publicCode })
+    const response = NextResponse.json({ ok: true, state: 'confirmed', publicCode: booking.publicCode })
+    clearRecoveryCookie(response)
+    return withNoStoreHeaders(response)
   }
 
   if (operationalStatus === 'expired') {
-    return NextResponse.json({ ok: true, state: 'expired', publicCode: booking.publicCode })
+    const response = NextResponse.json({ ok: true, state: 'expired', publicCode: booking.publicCode })
+    clearRecoveryCookie(response)
+    return withNoStoreHeaders(response)
   }
 
   if (operationalStatus === 'cancelled') {
-    return NextResponse.json({ ok: true, state: 'cancelled', publicCode: booking.publicCode })
+    const response = NextResponse.json({ ok: true, state: 'cancelled', publicCode: booking.publicCode })
+    clearRecoveryCookie(response)
+    return withNoStoreHeaders(response)
   }
 
   if (operationalStatus !== 'pending_payment') {
-    return NextResponse.json({
+    const response = NextResponse.json({
       ok: true,
       state: 'unavailable',
       publicCode: booking.publicCode,
       operationalStatus,
     })
+    clearRecoveryCookie(response)
+    return withNoStoreHeaders(response)
   }
 
   const primaryMethod = getPrimaryPaymentMethod()
@@ -135,7 +185,7 @@ export async function POST(request: NextRequest) {
     amountBs = 0
   }
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     ok: true,
     state: 'pending_payment',
     session: {
@@ -161,11 +211,15 @@ export async function POST(request: NextRequest) {
       bcvRate: referenceRate,
     },
   })
+
+  setRecoveryCookie(response, token, now, new Date(tokenValidation.payload.exp * 1000))
+  return withNoStoreHeaders(response)
 }
 
 export async function GET() {
-  return NextResponse.json(
+  const response = NextResponse.json(
     { ok: false, error: 'method_not_allowed' },
     { status: 405, headers: { Allow: 'POST' } },
   )
+  return withNoStoreHeaders(response)
 }

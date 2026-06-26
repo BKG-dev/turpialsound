@@ -737,6 +737,50 @@ Criterio de evidencia:
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar Blob real, URL publica, HTTP ad hoc ni reverse engineering.
 
+## Booking custom bundle payment recovery transport
+
+Objetivo:
+- validar la frontera segura de recuperacion de pago: handoff de sesion, cookie opaca y autorizacion previa al upload.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-recovery-transport-contract.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar frontera de expiracion, cookie handoff, path de recuperacion y ausencia de secretos en la salida.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar token del cliente, Blob real ni HTTP ad hoc.
+
+## Booking custom bundle payment upload transport
+
+Objetivo:
+- validar el transporte protegido de subida del comprobante: intent opaco, reuse privado y rechazo de desalineaciones.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-upload-transport-contract.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar validacion antes del body, intento canonico, preview aislado, subida privada y reuse exacto.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar Blob real, URL publica, HTTP ad hoc ni reverse engineering.
+
 ## Booking isolated custom bundle payment proof flow
 
 Objetivo:
@@ -756,6 +800,29 @@ Precondiciones:
 
 Criterio de evidencia:
 - confirmar proof privado creado o reutilizado, reporte transaccional exitoso o fallido, replay exacto sin reupload, cleanup de objetos creados, preservacion de objetos reutilizados y ausencia de Blob real.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar Blob real, token real, URL publica ni reverse engineering.
+
+## Booking isolated custom bundle payment upload transport
+
+Objetivo:
+- validar en PostgreSQL efimero el transporte protegido de subida, el reuse privado y la limpieza compensatoria.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-upload-transport.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql`
+
+Precondiciones:
+- GitHub Actions disponible;
+- PostgreSQL service container disponible;
+- baseline SQL generado;
+- propuestas BKG-04, BKG-07 y BKG-08 validadas;
+- URL exclusivamente local;
+- opt-in aislado habilitado;
+- session SQL con una sola conexion disponible.
+
+Criterio de evidencia:
+- confirmar preview isolation, private upload transport, exact replay, conflict cleanup, secret-free result, database cleanup y storage cleanup.
 
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar Blob real, token real, URL publica ni reverse engineering.

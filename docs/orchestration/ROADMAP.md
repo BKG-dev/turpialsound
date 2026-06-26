@@ -119,8 +119,9 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Payment action authorization: `TECHNICALLY_VALIDATED`
 - Payment action wiring: `TECHNICALLY_VALIDATED`
 - Payment server action: `NOT_STARTED`
-- Payment transport: `NOT_STARTED`
-- Payment recovery integration: `NOT_STARTED`
+- Payment transport: `PENDING_CI`
+- Recovery-session handoff: `PENDING_CI`
+- Payment recovery integration: `PENDING_CI`
 - Notifications: `NOT_STARTED`
 - Wizard integration: `NOT_STARTED`
 

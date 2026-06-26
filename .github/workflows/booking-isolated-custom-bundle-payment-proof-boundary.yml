@@ -1,4 +1,4 @@
-name: Booking Isolated Custom Bundle Payment Action Boundary
+name: Booking Isolated Custom Bundle Payment Recovery Transport
 
 on:
   push:
@@ -7,10 +7,18 @@ on:
     paths:
       - .github/workflows/booking-isolated-custom-bundle-payment-proof-boundary.yml
       - lib/bookings/environment.ts
+      - app/api/bookings/payment-recovery/session/route.ts
+      - app/api/bookings/custom-bundle-payment-proof/intent/route.ts
+      - app/api/bookings/custom-bundle-payment-proof/upload/route.ts
+      - app/reservas/pago/page.tsx
+      - components/bookings/PaymentRecoveryGatewayClient.tsx
       - lib/bookings/custom-bundle-payment-server-entrypoint-core.ts
       - lib/bookings/custom-bundle-payment-server-entrypoint.ts
       - lib/bookings/custom-bundle-payment-sql-session-pg.ts
       - lib/bookings/custom-bundle-private-blob-store-vercel.ts
+      - lib/bookings/custom-bundle-payment-recovery-cookie.ts
+      - lib/bookings/custom-bundle-payment-upload-token.ts
+      - lib/bookings/custom-bundle-payment-upload-transport-core.ts
       - lib/bookings/custom-bundle-payment-proof-boundary.ts
       - lib/bookings/custom-bundle-payment-proof-flow.ts
       - lib/bookings/custom-bundle-payment-reporting.ts
@@ -18,7 +26,10 @@ on:
       - lib/bookings/custom-bundle-payment-action.ts
       - lib/bookings/custom-bundle-payment-contract.ts
       - lib/bookings/payment-recovery-token.ts
-      - server-only/index.js
+      - scripts/qa/shims/server-only/index.js
+      - scripts/qa/bookings/custom-bundle-payment-recovery-transport-contract.ts
+      - scripts/qa/bookings/custom-bundle-payment-upload-transport-contract.ts
+      - scripts/qa/bookings/isolated-custom-bundle-payment-upload-transport.ts
       - scripts/qa/bookings/custom-bundle-payment-contract.ts
       - scripts/qa/bookings/custom-bundle-payment-reporting-contract.ts
       - scripts/qa/bookings/custom-bundle-payment-proof-boundary-contract.ts
@@ -66,7 +77,7 @@ jobs:
       TURPIAL_ALLOW_ISOLATED_DB_TESTS: 'true'
       TURPIAL_ISOLATED_DATABASE_URL: postgresql://turpial_ci:turpial_ci_only@127.0.0.1:5432/turpial_booking_ci
       DIRECT_URL: postgresql://turpial_ci:turpial_ci_only@127.0.0.1:5432/turpial_booking_ci
-      NODE_PATH: ${{ github.workspace }}
+      NODE_PATH: ${{ github.workspace }}/scripts/qa/shims:${{ github.workspace }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -139,6 +150,12 @@ jobs:
       - name: Run custom bundle payment action contract gate
         run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-action-contract.ts
 
+      - name: Run custom bundle payment recovery transport gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-recovery-transport-contract.ts
+
+      - name: Run custom bundle payment upload transport gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-upload-transport-contract.ts
+
       - name: Run isolated payment proof flow gate
         run: pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-proof-flow.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql
 
@@ -147,6 +164,9 @@ jobs:
 
       - name: Run isolated payment action gate
         run: pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-action.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql
+
+      - name: Run isolated payment upload transport gate
+        run: pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-upload-transport.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql
 
       - name: Run lint
         run: pnpm lint

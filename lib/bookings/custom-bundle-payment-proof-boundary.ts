@@ -465,7 +465,7 @@ export async function prepareCustomBundlePaymentProofUpload(input: {
     fileIssues.push(makeIssue('FILE_EMPTY', 'El comprobante no puede estar vacio.', ['size']))
   } else if (declaredSize > CUSTOM_BUNDLE_PAYMENT_PROOF_MAX_SIZE_BYTES) {
     fileIssues.push(
-      makeIssue('FILE_TOO_LARGE', 'El comprobante supera el maximo permitido de 4.5 MB.', [
+      makeIssue('FILE_TOO_LARGE', 'El comprobante supera el maximo permitido de 3.9 MB.', [
         'size',
       ]),
     )
@@ -495,7 +495,7 @@ export async function prepareCustomBundlePaymentProofUpload(input: {
     return {
       ok: false,
       issues: [
-        makeIssue('FILE_TOO_LARGE', 'El comprobante supera el maximo permitido de 4.5 MB.'),
+      makeIssue('FILE_TOO_LARGE', 'El comprobante supera el maximo permitido de 3.9 MB.'),
       ],
     }
   }

@@ -35,6 +35,8 @@ function deepClone<T>(value: T): T {
   return structuredClone(value)
 }
 
+let currentRecoveryToken = ''
+
 function makeBytes(kind: 'jpeg' | 'png' | 'webp' | 'avif' | 'plain'): Uint8Array {
   switch (kind) {
     case 'jpeg':
@@ -100,7 +102,7 @@ function makeFormData(input: {
   if (input.paymentMethod !== undefined) form.append('paymentMethod', input.paymentMethod)
   if (input.paymentReference !== undefined) form.append('paymentReference', input.paymentReference)
   if (input.paymentRecoveryToken !== undefined) {
-    form.append('paymentRecoveryToken', input.paymentRecoveryToken)
+    currentRecoveryToken = String(input.paymentRecoveryToken)
   }
   if (input.paymentProofFile !== undefined && input.paymentProofFile !== null) {
     form.append('paymentProofFile', input.paymentProofFile)
@@ -133,6 +135,29 @@ function makeAuthorizeAdapter(): CustomBundlePaymentActionDependencies['authoriz
   return async ({ token, expectedPublicCode, now }) => {
     const result = validatePaymentRecoveryToken(token, expectedPublicCode, now)
     return result.ok ? { ok: true } : { ok: false, reason: result.error }
+  }
+}
+
+function makeActionDependencies(
+  overrides: Partial<CustomBundlePaymentActionDependencies> = {},
+): CustomBundlePaymentActionDependencies {
+  return {
+    runtime: overrides.runtime ?? 'isolated_test',
+    killSwitchEnabled: overrides.killSwitchEnabled ?? true,
+    readRecoveryToken(): string | null {
+      const token = currentRecoveryToken.trim()
+      return token.length > 0 ? token : null
+    },
+    clock: overrides.clock ?? makeClock(new Date('2026-06-24T18:00:00.000Z')),
+    authorizePaymentAccess: overrides.authorizePaymentAccess ?? makeAuthorizeAdapter(),
+    runServerEntrypoint:
+      overrides.runServerEntrypoint ??
+      (async () => ({
+        ok: true,
+        stage: 'simulated',
+        simulated: true,
+        message: 'ok',
+      })),
   }
 }
 
@@ -302,13 +327,6 @@ async function main(): Promise<void> {
       paymentRecoveryToken: 'token',
       extra: [['publicCode', 'TUR-2026-002']],
     })
-    const duplicateToken = makeFormData({
-      publicCode: 'TUR-2026-001',
-      paymentMethod: 'efectivo',
-      paymentReference: 'REF-100',
-      paymentRecoveryToken: 'token',
-      extra: [['paymentRecoveryToken', 'token-2']],
-    })
     const duplicateProof = makeFormData({
       publicCode: 'TUR-2026-001',
       paymentMethod: 'efectivo',
@@ -345,10 +363,6 @@ async function main(): Promise<void> {
     assert.equal(duplicatePublicCodeResult.ok, false)
     assertRequestCode(duplicatePublicCodeResult, 'DUPLICATE_ACTION_FIELD')
 
-    const duplicateTokenResult = parseCustomBundlePaymentActionFormData(duplicateToken)
-    assert.equal(duplicateTokenResult.ok, false)
-    assertRequestCode(duplicateTokenResult, 'DUPLICATE_ACTION_FIELD')
-
     const duplicateProofResult = parseCustomBundlePaymentActionFormData(duplicateProof)
     assert.equal(duplicateProofResult.ok, false)
     assertRequestCode(duplicateProofResult, 'DUPLICATE_ACTION_FIELD')
@@ -368,15 +382,14 @@ async function main(): Promise<void> {
   // 8-10. Token length and early security gating.
   {
     const longToken = 'a'.repeat(4097)
-    const dependencies = {
-      runtime: 'isolated_test' as const,
+    const dependencies = makeActionDependencies({
+      runtime: 'isolated_test',
       killSwitchEnabled: true,
       clock: makeClock(new Date('2026-06-24T18:00:00.000Z')),
-      authorizePaymentAccess: makeAuthorizeAdapter(),
       runServerEntrypoint: async (): Promise<CustomBundlePaymentServerEntrypointResult> => {
         fail('Entry point must not run for an oversized token.')
       },
-    }
+    })
 
     const oversized = await runCustomBundlePaymentProtectedActionWithDependencies(
       makeFormData({
@@ -475,15 +488,14 @@ async function main(): Promise<void> {
 
   // 14-17. Authorizer and clock failure mapping.
   {
-    const baseDependencies: CustomBundlePaymentActionDependencies = {
+    const baseDependencies = makeActionDependencies({
       runtime: 'isolated_test',
       killSwitchEnabled: true,
       clock: makeClock(new Date('2026-06-24T18:00:00.000Z')),
-      authorizePaymentAccess: makeAuthorizeAdapter(),
       runServerEntrypoint: async () => {
         fail('Entry point must not run for authorizer or clock failures.')
       },
-    }
+    })
 
     await withEnv(
       { BOOKINGS_PAYMENT_RECOVERY_TOKEN_SECRET: undefined },
@@ -513,12 +525,17 @@ async function main(): Promise<void> {
         paymentReference: 'REF-100',
         paymentRecoveryToken: 'token',
       }),
-      {
-        ...baseDependencies,
+      makeActionDependencies({
+        runtime: 'isolated_test',
+        killSwitchEnabled: true,
+        clock: makeClock(new Date('2026-06-24T18:00:00.000Z')),
         authorizePaymentAccess: async () => {
           throw new Error('authorizer failed')
         },
-      },
+        runServerEntrypoint: async () => {
+          fail('Entry point must not run for authorizer or clock failures.')
+        },
+      }),
     )
     assert.equal(authorizerThrows.ok, false)
     assert.equal(authorizerThrows.stage, 'authorization')
@@ -531,10 +548,14 @@ async function main(): Promise<void> {
         paymentReference: 'REF-100',
         paymentRecoveryToken: 'token',
       }),
-      {
-        ...baseDependencies,
+      makeActionDependencies({
+        runtime: 'isolated_test',
+        killSwitchEnabled: true,
         clock: makeClock(new Date('invalid')),
-      },
+        runServerEntrypoint: async () => {
+          fail('Entry point must not run for authorizer or clock failures.')
+        },
+      }),
     )
     assert.equal(invalidClock.ok, false)
     assert.equal(invalidClock.stage, 'authorization')
@@ -547,10 +568,14 @@ async function main(): Promise<void> {
         paymentReference: 'REF-100',
         paymentRecoveryToken: 'token',
       }),
-      {
-        ...baseDependencies,
+      makeActionDependencies({
+        runtime: 'isolated_test',
+        killSwitchEnabled: true,
         clock: makeThrowingClock(new Error('clock failure')),
-      },
+        runServerEntrypoint: async () => {
+          fail('Entry point must not run for authorizer or clock failures.')
+        },
+      }),
     )
     assert.equal(throwingClock.ok, false)
     assert.equal(throwingClock.stage, 'authorization')
@@ -572,6 +597,7 @@ async function main(): Promise<void> {
       bytes: makeBytes('png'),
       throws: true,
     })
+    currentRecoveryToken = 'invalid-token'
     const authBeforeMethod = await runCustomBundlePaymentProtectedActionWithDependencies(
       makeFormData({
         publicCode: 'TUR-2026-001',
@@ -579,29 +605,26 @@ async function main(): Promise<void> {
         paymentReference: 'REF-100',
         paymentRecoveryToken: 'invalid-token',
       }),
-      {
+      makeActionDependencies({
         runtime: 'isolated_test',
         killSwitchEnabled: true,
         clock,
-        authorizePaymentAccess: makeAuthorizeAdapter(),
         runServerEntrypoint: fn,
-      },
+      }),
     )
     assert.equal(authBeforeMethod.ok, false)
     assert.equal(authBeforeMethod.stage, 'authorization')
     assert.equal(calls.count, 0)
 
     const authBeforeFileRead = await runCustomBundleProtectedPaymentActionCore(
-      {
+      makeActionDependencies({
         clock,
-        authorizePaymentAccess: makeAuthorizeAdapter(),
         runServerEntrypoint: fn,
-      },
+      }),
       {
         publicCode: 'TUR-2026-001',
         paymentMethod: 'pago_movil',
         paymentReference: 'REF-100',
-        paymentRecoveryToken: 'invalid-token',
         paymentProofFile: proofFile,
       },
     )
@@ -617,13 +640,12 @@ async function main(): Promise<void> {
         paymentReference: 'REF-100',
         paymentRecoveryToken: 'invalid-token',
       }),
-      {
+      makeActionDependencies({
         runtime: 'isolated_test',
         killSwitchEnabled: true,
         clock,
-        authorizePaymentAccess: makeAuthorizeAdapter(),
         runServerEntrypoint: fn,
-      },
+      }),
     )
     assert.equal(authBeforeInfrastructure.ok, false)
     assert.equal(authBeforeInfrastructure.stage, 'authorization')
@@ -637,13 +659,12 @@ async function main(): Promise<void> {
         paymentReference: 'REF-100',
         paymentRecoveryToken: validToken,
       }),
-      {
+      makeActionDependencies({
         runtime: 'isolated_test',
         killSwitchEnabled: true,
         clock,
-        authorizePaymentAccess: makeAuthorizeAdapter(),
         runServerEntrypoint: fn,
-      },
+      }),
     )
     assert.equal(validResult.ok, true)
     assert.equal(calls.count, 1)
@@ -695,10 +716,10 @@ async function main(): Promise<void> {
       type: 'image/png',
       bytes: makeBytes('png'),
     })
+    currentRecoveryToken = makeValidToken('TUR-2026-001', new Date('2026-06-24T18:00:00.000Z'))
     const preservedResult = await runCustomBundleProtectedPaymentActionCore(
-      {
+      makeActionDependencies({
         clock: makeClock(new Date('2026-06-24T18:00:00.000Z')),
-        authorizePaymentAccess: makeAuthorizeAdapter(),
         runServerEntrypoint: async (input) => {
           assert.equal(input.paymentProofFile, preservedFile)
           assert.equal(preservedFile.arrayBufferCalls.count, 0)
@@ -709,12 +730,11 @@ async function main(): Promise<void> {
             message: 'ok',
           }
         },
-      },
+      }),
       {
         publicCode: 'TUR-2026-001',
         paymentMethod: 'pago_movil',
         paymentReference: 'REF-100',
-        paymentRecoveryToken: makeValidToken('TUR-2026-001', new Date('2026-06-24T18:00:00.000Z')),
         paymentProofFile: preservedFile,
       },
     )
@@ -808,18 +828,17 @@ async function main(): Promise<void> {
         paymentReference: 'REF-100',
         paymentRecoveryToken: token,
       }),
-      {
+      makeActionDependencies({
         runtime: 'isolated_test',
         killSwitchEnabled: true,
         clock: makeClock(new Date('2026-06-24T18:00:00.000Z')),
-        authorizePaymentAccess: makeAuthorizeAdapter(),
         runServerEntrypoint: async () => ({
           ok: true,
           stage: 'simulated',
           simulated: true,
           message: 'Simulated',
         }),
-      },
+      }),
     )
     assert.equal(simulated.ok, true)
     assertNoLeak(simulated)
@@ -837,13 +856,12 @@ async function main(): Promise<void> {
         paymentReference: 'REF-100',
         paymentRecoveryToken: token,
       }),
-      {
+      makeActionDependencies({
         runtime: 'production',
         killSwitchEnabled: false,
         clock: makeClock(new Date('2026-06-24T18:00:00.000Z')),
-        authorizePaymentAccess: makeAuthorizeAdapter(),
         runServerEntrypoint: blockedSpy.fn,
-      },
+      }),
     )
     assert.equal(blocked.ok, false)
     assert.equal(blocked.stage, 'infrastructure')
@@ -865,13 +883,12 @@ async function main(): Promise<void> {
         paymentReference: 'REF-100',
         paymentRecoveryToken: token,
       }),
-      {
+      makeActionDependencies({
         runtime: 'production',
         killSwitchEnabled: true,
         clock: makeClock(new Date('2026-06-24T18:00:00.000Z')),
-        authorizePaymentAccess: makeAuthorizeAdapter(),
         runServerEntrypoint: enabledSpy.fn,
-      },
+      }),
     )
     assert.equal(enabled.ok, true)
     assert.equal(enabledSpy.calls.count, 1)

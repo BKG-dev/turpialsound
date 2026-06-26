@@ -1,9 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
-
-const BOOKING_PENDING_PAYMENT_STORAGE_KEY = 'turpial_booking_pending_payment_v1'
+import { useEffect, useState } from 'react'
 
 type RecoveryState =
   | 'checking'
@@ -39,39 +37,43 @@ interface PendingSessionPayload {
 
 interface PaymentRecoveryGatewayClientProps {
   code: string
-  token: string
 }
 
-export function PaymentRecoveryGatewayClient({
-  code,
-  token,
-}: PaymentRecoveryGatewayClientProps) {
+export function PaymentRecoveryGatewayClient({ code }: PaymentRecoveryGatewayClientProps) {
   const [state, setState] = useState<RecoveryState>('checking')
   const [detail, setDetail] = useState<string | null>(null)
-
-  const hasParams = useMemo(
-    () => code.trim().length > 0 && token.trim().length > 0,
-    [code, token],
-  )
 
   useEffect(() => {
     let cancelled = false
 
-    if (!hasParams) {
+    if (!code.trim()) {
       setState('unavailable')
-      setDetail('Debes usar un enlace valido con codigo y token.')
+      setDetail('Debes usar un enlace valido con codigo publico.')
       return
     }
 
     const run = async () => {
       try {
+        const url = new URL(window.location.href)
+        const firstAttemptToken = url.searchParams.get('token')?.trim() ?? ''
+        if (url.searchParams.has('token')) {
+          url.searchParams.delete('token')
+          window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}`)
+        }
+
+        const requestBody: { code: string; token?: string } = { code }
+        if (firstAttemptToken) {
+          requestBody.token = firstAttemptToken
+        }
+
         const response = await fetch('/api/bookings/payment-recovery/session', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ code, token }),
+          credentials: 'same-origin',
+          body: JSON.stringify(requestBody),
         })
 
-        const payload = (await response.json().catch(() => null)) as
+        const responsePayload = (await response.json().catch(() => null)) as
           | {
               state?: RecoveryState
               reason?: string
@@ -80,30 +82,22 @@ export function PaymentRecoveryGatewayClient({
           | null
 
         if (cancelled) return
-        if (!response.ok || !payload?.state) {
+        if (!response.ok || !responsePayload?.state) {
           setState('unavailable')
           setDetail('No pudimos validar tu enlace seguro. Intenta nuevamente.')
           return
         }
 
-        if (payload.state === 'pending_payment' && payload.session) {
-          const pendingPaymentSession = {
-            ...payload.session,
-            savedAt: new Date().toISOString(),
-          }
-          window.localStorage.setItem(
-            BOOKING_PENDING_PAYMENT_STORAGE_KEY,
-            JSON.stringify(pendingPaymentSession),
-          )
+        if (responsePayload.state === 'pending_payment' && responsePayload.session) {
           setState('pending_payment')
           setDetail(null)
           return
         }
 
-        setState(payload.state)
+        setState(responsePayload.state)
 
-        if (payload.state === 'invalid_link') {
-          if (payload.reason === 'expired_token') {
+        if (responsePayload.state === 'invalid_link') {
+          if (responsePayload.reason === 'expired_token') {
             setDetail('Este enlace seguro vencio. Solicita uno nuevo desde /reservas.')
           } else {
             setDetail('No pudimos validar este enlace seguro.')
@@ -121,7 +115,7 @@ export function PaymentRecoveryGatewayClient({
     return () => {
       cancelled = true
     }
-  }, [code, hasParams])
+  }, [code])
 
   return (
     <div className="mx-auto max-w-lg rounded-xl border border-brand-border bg-brand-surface p-6">

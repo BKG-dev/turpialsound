@@ -14,11 +14,11 @@ export interface CustomBundleProtectedPaymentActionInput {
   publicCode: unknown
   paymentMethod: unknown
   paymentReference: unknown
-  paymentRecoveryToken: unknown
   paymentProofFile: CustomBundlePaymentProofFileLike | null
 }
 
 export interface CustomBundleProtectedPaymentActionDependencies {
+  readRecoveryToken(): string | null
   clock: {
     now(): Date
   }
@@ -177,30 +177,34 @@ export async function runCustomBundleProtectedPaymentActionCore(
   input: CustomBundleProtectedPaymentActionInput,
 ): Promise<CustomBundleProtectedPaymentActionResult> {
   const publicCode = normalizeRequestedPublicCode(input.publicCode)
-  const paymentRecoveryToken = normalizeRequestedString(input.paymentRecoveryToken)
-
-  const preAuthIssues: RequestFieldIssue[] = []
   if (!/^TUR-\d{4}-\d{3,}$/.test(publicCode) || publicCode.length > 32) {
-    preAuthIssues.push({
-      code: 'INVALID_ACTION_PAYLOAD',
-      path: ['publicCode'],
-      message: 'publicCode no es valido.',
-    })
-  }
-
-  if (paymentRecoveryToken.length === 0 || paymentRecoveryToken.length > 4096) {
-    preAuthIssues.push({
-      code: 'INVALID_ACTION_PAYLOAD',
-      path: ['paymentRecoveryToken'],
-      message: 'paymentRecoveryToken no es valido.',
-    })
-  }
-
-  if (preAuthIssues.length > 0) {
     return makeRequestFailure(
       'INVALID_ACTION_PAYLOAD',
       'No pudimos validar los datos publicos de la accion protegida.',
-      preAuthIssues,
+      [
+        {
+          code: 'INVALID_ACTION_PAYLOAD',
+          path: ['publicCode'],
+          message: 'publicCode no es valido.',
+        },
+      ],
+    )
+  }
+
+  let paymentRecoveryToken = ''
+  try {
+    paymentRecoveryToken = normalizeRequestedString(dependencies.readRecoveryToken())
+  } catch {
+    return makeAuthorizationFailure(
+      'PAYMENT_ACCESS_UNAVAILABLE',
+      'El acceso seguro para reportar pagos no esta disponible temporalmente.',
+    )
+  }
+
+  if (paymentRecoveryToken.length === 0 || paymentRecoveryToken.length > 4096) {
+    return makeAuthorizationFailure(
+      'PAYMENT_ACCESS_DENIED',
+      'No pudimos validar el acceso seguro para reportar este pago.',
     )
   }
 

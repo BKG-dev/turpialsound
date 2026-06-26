@@ -1,11 +1,17 @@
 'use server'
 
+import { cookies } from 'next/headers'
+
 import { isPreviewDeployment } from '@/lib/bookings/environment'
 import { validatePaymentRecoveryToken } from '@/lib/bookings/payment-recovery-token'
 import { runCustomBundlePaymentServerEntrypoint } from '@/lib/bookings/custom-bundle-payment-server-entrypoint'
 import type {
   CustomBundlePaymentProofFileLike,
 } from '@/lib/bookings/custom-bundle-payment-proof-boundary'
+import {
+  CUSTOM_BUNDLE_PAYMENT_RECOVERY_COOKIE_NAME,
+  buildCustomBundlePaymentRecoveryCookieClearOptions,
+} from '@/lib/bookings/custom-bundle-payment-recovery-cookie'
 import {
   runCustomBundleProtectedPaymentActionCore,
   type CustomBundleProtectedPaymentActionDependencies,
@@ -47,7 +53,6 @@ const ACTION_FIELD_NAMES = new Set([
   'publicCode',
   'paymentMethod',
   'paymentReference',
-  'paymentRecoveryToken',
   'paymentProofFile',
 ])
 
@@ -132,6 +137,21 @@ function normalizePaymentProofFile(
   return isEmptyPlaceholderFile(value) ? null : value
 }
 
+function readRecoveryTokenCookie(): string | null {
+  const cookieStore = cookies()
+  const token = cookieStore.get(CUSTOM_BUNDLE_PAYMENT_RECOVERY_COOKIE_NAME)?.value ?? ''
+  return token.trim().length > 0 ? token.trim() : null
+}
+
+function clearRecoveryTokenCookie(): void {
+  const cookieStore = cookies()
+  cookieStore.set(
+    CUSTOM_BUNDLE_PAYMENT_RECOVERY_COOKIE_NAME,
+    '',
+    buildCustomBundlePaymentRecoveryCookieClearOptions(),
+  )
+}
+
 function isRequestFailure(
   value: CustomBundlePaymentActionRequestResult | CustomBundlePaymentProofFileLike | null,
 ): value is CustomBundlePaymentActionRequestResult {
@@ -189,7 +209,7 @@ export function parseCustomBundlePaymentActionFormData(
     }
   }
 
-  const duplicateKeys = ['publicCode', 'paymentMethod', 'paymentReference', 'paymentRecoveryToken', 'paymentProofFile'].filter(
+  const duplicateKeys = ['publicCode', 'paymentMethod', 'paymentReference', 'paymentProofFile'].filter(
     (key) => (entriesByKey.get(key)?.length ?? 0) > 1,
   )
   if (duplicateKeys.length > 0) {
@@ -213,7 +233,6 @@ export function parseCustomBundlePaymentActionFormData(
   const publicCode = normalizeTextValue(entriesByKey.get('publicCode')?.[0])
   const paymentMethod = normalizeTextValue(entriesByKey.get('paymentMethod')?.[0])
   const paymentReference = normalizeTextValue(entriesByKey.get('paymentReference')?.[0])
-  const paymentRecoveryToken = normalizeTextValue(entriesByKey.get('paymentRecoveryToken')?.[0])
   const paymentProofFileResult = normalizePaymentProofFile(entriesByKey.get('paymentProofFile')?.[0])
 
   const issues: Array<{
@@ -246,14 +265,6 @@ export function parseCustomBundlePaymentActionFormData(
     })
   }
 
-  if (!paymentRecoveryToken) {
-    issues.push({
-      code: 'INVALID_ACTION_PAYLOAD',
-      path: ['paymentRecoveryToken'],
-      message: 'paymentRecoveryToken es obligatorio.',
-    })
-  }
-
   if (isRequestFailure(paymentProofFileResult)) {
     return {
       ok: false,
@@ -278,7 +289,6 @@ export function parseCustomBundlePaymentActionFormData(
       publicCode,
       paymentMethod,
       paymentReference,
-      paymentRecoveryToken,
       paymentProofFile: paymentProofFileResult as CustomBundlePaymentProofFileLike | null,
     } as CustomBundleProtectedPaymentActionInput,
   }
@@ -325,6 +335,7 @@ export async function runCustomBundlePaymentProtectedActionWithDependencies(
   }
 
   const guardedDependencies: CustomBundleProtectedPaymentActionDependencies = {
+    readRecoveryToken: dependencies.readRecoveryToken,
     clock: dependencies.clock,
     authorizePaymentAccess: dependencies.authorizePaymentAccess,
     runServerEntrypoint: dependencies.runServerEntrypoint,
@@ -340,6 +351,9 @@ export async function reportCustomBundlePaymentProtectedAction(
   const dependencies: CustomBundlePaymentActionDependencies = {
     runtime,
     killSwitchEnabled: process.env[BOOKINGS_CUSTOM_BUNDLE_PAYMENT_ACTION_ENABLED_ENV]?.trim() === 'true',
+    readRecoveryToken(): string | null {
+      return readRecoveryTokenCookie()
+    },
     clock: {
       now(): Date {
         return new Date()
@@ -349,5 +363,14 @@ export async function reportCustomBundlePaymentProtectedAction(
     runServerEntrypoint: createRunServerEntrypointAdapter(),
   }
 
-  return runCustomBundlePaymentProtectedActionWithDependencies(formData, dependencies)
+  const result = await runCustomBundlePaymentProtectedActionWithDependencies(formData, dependencies)
+  if (!result.ok && result.stage === 'authorization' && result.code === 'PAYMENT_ACCESS_DENIED') {
+    clearRecoveryTokenCookie()
+  }
+
+  if (result.ok && (result.stage === 'reported' || result.stage === 'replayed')) {
+    clearRecoveryTokenCookie()
+  }
+
+  return result
 }
