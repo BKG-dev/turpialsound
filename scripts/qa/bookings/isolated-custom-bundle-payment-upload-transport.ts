@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 import { buildPaymentRecoveryToken } from '@/lib/bookings/payment-recovery-token'
 import {
@@ -7,6 +9,7 @@ import {
   uploadCustomBundlePaymentProofWithIntent,
   type CustomBundlePaymentUploadTransportDependencies,
 } from '@/lib/bookings/custom-bundle-payment-upload-transport-core'
+import { readCustomBundlePaymentRawUploadBody } from '@/lib/bookings/custom-bundle-payment-raw-upload-reader'
 import {
   buildCustomBundlePaymentUploadIntent,
   buildCustomBundlePaymentUploadReceipt,
@@ -71,6 +74,52 @@ function makeFileLike(name: string, type: string, bytes: Uint8Array) {
       calls.count += 1
       return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
     },
+  }
+}
+
+type MockRawReaderStep =
+  | { kind: 'chunk'; value: unknown }
+  | { kind: 'done' }
+  | { kind: 'throw' }
+
+function makeMockRawBody(steps: readonly MockRawReaderStep[]) {
+  const calls = {
+    getReader: 0,
+    read: 0,
+    cancel: 0,
+    releaseLock: 0,
+  }
+  let index = 0
+  const reader = {
+    async read(): Promise<ReadableStreamReadResult<Uint8Array>> {
+      calls.read += 1
+      const step = steps[index++]
+      if (!step || step.kind === 'done') {
+        return { done: true, value: undefined }
+      }
+
+      if (step.kind === 'throw') {
+        throw new Error('raw body read failure')
+      }
+
+      return { done: false, value: step.value as Uint8Array }
+    },
+    async cancel(): Promise<void> {
+      calls.cancel += 1
+    },
+    releaseLock(): void {
+      calls.releaseLock += 1
+    },
+  }
+
+  return {
+    calls,
+    body: {
+      getReader(): typeof reader {
+        calls.getReader += 1
+        return reader
+      },
+    } as ReadableStream<Uint8Array>,
   }
 }
 
@@ -194,208 +243,283 @@ function assertUploadIntentResult(
 }
 
 async function main(): Promise<void> {
-  const now = new Date('2026-06-24T18:00:00.000Z')
-  const publicCode = 'TUR-2026-201'
-  const recoveryToken = makeRecoveryToken(publicCode, now)
-  const bytes = makeBytes('png')
-  const store = makeStore()
+  const previousSecret = process.env.BOOKINGS_PAYMENT_RECOVERY_TOKEN_SECRET
+  process.env.BOOKINGS_PAYMENT_RECOVERY_TOKEN_SECRET = previousSecret?.trim() || 'upload-transport-secret'
 
-  const intent = await createCustomBundlePaymentUploadIntent(
-    makeDependencies({
-      privateBlobStore: store,
-    }),
-    {
-      recoveryToken,
+  try {
+    const now = new Date('2026-06-24T18:00:00.000Z')
+    const publicCode = 'TUR-2026-201'
+    const recoveryToken = makeRecoveryToken(publicCode, now)
+    const bytes = makeBytes('png')
+    const store = makeStore()
+
+    const chunkedMock = makeMockRawBody([
+      { kind: 'chunk', value: bytes.subarray(0, 3) },
+      { kind: 'chunk', value: bytes.subarray(3) },
+      { kind: 'done' },
+    ])
+    const chunked = await readCustomBundlePaymentRawUploadBody({
+      body: chunkedMock.body,
+      declaredContentLength: bytes.byteLength,
+      maxUploadBytes: 3_900_000,
+      maxRequestBytes: 4_300_000,
+    })
+    assert.equal(chunked.ok, true)
+    if (!chunked.ok) {
+      fail('Expected chunked raw body reading to succeed.')
+    }
+    assert.equal(chunkedMock.calls.getReader, 1)
+    assert.equal(chunkedMock.calls.cancel, 0)
+    assert.equal(chunkedMock.calls.releaseLock, 1)
+
+    const exactLimitBytes = new Uint8Array(3_900_000)
+    exactLimitBytes[0] = 9
+    exactLimitBytes[3_899_999] = 8
+    const exactLimitMock = makeMockRawBody([{ kind: 'chunk', value: exactLimitBytes }, { kind: 'done' }])
+    const exactLimit = await readCustomBundlePaymentRawUploadBody({
+      body: exactLimitMock.body,
+      declaredContentLength: exactLimitBytes.byteLength,
+      maxUploadBytes: 3_900_000,
+      maxRequestBytes: 4_300_000,
+    })
+    assert.equal(exactLimit.ok, true)
+    if (!exactLimit.ok) {
+      fail('Expected the exact upload limit to be accepted.')
+    }
+    assert.equal(exactLimit.bytesRead, 3_900_000)
+    assert.equal(exactLimitMock.calls.cancel, 0)
+    assert.equal(exactLimitMock.calls.releaseLock, 1)
+
+    const oversizeMock = makeMockRawBody([{ kind: 'chunk', value: new Uint8Array(3_900_001) }])
+    const oversize = await readCustomBundlePaymentRawUploadBody({
+      body: oversizeMock.body,
+      declaredContentLength: 3_900_000,
+      maxUploadBytes: 3_900_000,
+      maxRequestBytes: 4_300_000,
+    })
+    assert.equal(oversize.ok, false)
+    assert.equal(oversize.code, 'BODY_TOO_LARGE')
+    assert.equal(oversizeMock.calls.cancel, 1)
+    assert.equal(oversizeMock.calls.read, 1)
+    assert.equal(oversizeMock.calls.releaseLock, 1)
+
+    const intent = await createCustomBundlePaymentUploadIntent(
+      makeDependencies({
+        privateBlobStore: store,
+      }),
+      {
+        recoveryToken,
+        publicCode,
+        paymentMethod: 'pago_movil',
+        paymentReference: 'REF-201',
+        originalFilename: 'proof.png',
+        declaredMimeType: 'image/png',
+        declaredSizeBytes: bytes.byteLength,
+      },
+    )
+    assertUploadIntentResult(intent, 'Expected a valid upload intent.')
+
+    const uploaded = await uploadCustomBundlePaymentProofWithIntent(
+      makeDependencies({
+        privateBlobStore: store,
+      }),
+      {
+        recoveryToken,
+        uploadIntent: intent.uploadIntent,
+        contentType: 'image/png',
+        contentLength: bytes.byteLength,
+        async readBody() {
+          return chunked.ok ? chunked.bytes : bytes
+        },
+      },
+    )
+    assert.equal(uploaded.ok, true)
+    assert.equal(uploaded.stage, 'uploaded')
+    if (!uploaded.ok) {
+      fail('Expected a private upload to succeed.')
+    }
+    assert.equal(store.calls.put.length, 1)
+    assert.equal(store.calls.delete.length, 0)
+
+    const replay = await uploadCustomBundlePaymentProofWithIntent(
+      makeDependencies({
+        privateBlobStore: store,
+      }),
+      {
+        recoveryToken,
+        uploadIntent: intent.uploadIntent,
+        contentType: 'image/png',
+        contentLength: bytes.byteLength,
+        async readBody() {
+          return bytes
+        },
+      },
+    )
+    assert.equal(replay.ok, true)
+    assert.equal(replay.stage, 'reused')
+
+    const seededStore = makeStore()
+    const seededIntent = await createCustomBundlePaymentUploadIntent(
+      makeDependencies({
+        privateBlobStore: seededStore,
+      }),
+      {
+        recoveryToken,
+        publicCode,
+        paymentMethod: 'pago_movil',
+        paymentReference: 'REF-201',
+        originalFilename: 'proof.png',
+        declaredMimeType: 'image/png',
+        declaredSizeBytes: bytes.byteLength,
+      },
+    )
+    assertUploadIntentResult(seededIntent, 'Expected a valid upload intent.')
+
+    const validatedIntent = validateCustomBundlePaymentUploadIntent(
+      seededIntent.uploadIntent,
       publicCode,
-      paymentMethod: 'pago_movil',
-      paymentReference: 'REF-201',
-      originalFilename: 'proof.png',
-      declaredMimeType: 'image/png',
-      declaredSizeBytes: bytes.byteLength,
-    },
-  )
-  assertUploadIntentResult(intent, 'Expected a valid upload intent.')
+      now,
+    )
+    assert.equal(validatedIntent.ok, true)
+    if (!validatedIntent.ok) {
+      fail('Expected a valid upload intent token.')
+    }
 
-  const uploaded = await uploadCustomBundlePaymentProofWithIntent(
-    makeDependencies({
-      privateBlobStore: store,
-    }),
-    {
-      recoveryToken,
-      uploadIntent: intent.uploadIntent,
-      contentType: 'image/png',
-      contentLength: bytes.byteLength,
-      async readBody() {
-        return bytes
-      },
-    },
-  )
-  assert.equal(uploaded.ok, true)
-  assert.equal(uploaded.stage, 'uploaded')
-  if (!uploaded.ok) {
-    fail('Expected a private upload to succeed.')
-  }
-  assert.equal(store.calls.put.length, 1)
-  assert.equal(store.calls.delete.length, 0)
-
-  const replay = await uploadCustomBundlePaymentProofWithIntent(
-    makeDependencies({
-      privateBlobStore: store,
-    }),
-    {
-      recoveryToken,
-      uploadIntent: intent.uploadIntent,
-      contentType: 'image/png',
-      contentLength: bytes.byteLength,
-      async readBody() {
-        return bytes
-      },
-    },
-  )
-  assert.equal(replay.ok, true)
-  assert.equal(replay.stage, 'reused')
-
-  const seededStore = makeStore()
-  const seededIntent = await createCustomBundlePaymentUploadIntent(
-    makeDependencies({
-      privateBlobStore: seededStore,
-    }),
-    {
-      recoveryToken,
+    const sha256 = createHash('sha256').update(bytes).digest('hex')
+    const expectedPath = buildCustomBundlePaymentProofPrivatePathname({
       publicCode,
-      paymentMethod: 'pago_movil',
-      paymentReference: 'REF-201',
-      originalFilename: 'proof.png',
-      declaredMimeType: 'image/png',
-      declaredSizeBytes: bytes.byteLength,
-    },
-  )
-  assertUploadIntentResult(seededIntent, 'Expected a valid upload intent.')
-
-  const validatedIntent = validateCustomBundlePaymentUploadIntent(
-    seededIntent.uploadIntent,
-    publicCode,
-    now,
-  )
-  assert.equal(validatedIntent.ok, true)
-  if (!validatedIntent.ok) {
-    fail('Expected a valid upload intent token.')
-  }
-
-  const sha256 = createHash('sha256').update(bytes).digest('hex')
-  const expectedPath = buildCustomBundlePaymentProofPrivatePathname({
-    publicCode,
-    paymentReportIdempotencyKey: validatedIntent.payload.paymentReportIdempotencyKey,
-    sha256,
-    mimeType: 'image/png',
-  })
-  seededStore.seed({
-    pathname: expectedPath,
-    contentType: 'image/png',
-    sizeBytes: bytes.byteLength,
-    uploadedAt: new Date('2026-06-24T18:00:00.000Z'),
-    access: 'private',
-  })
-
-  const reused = await uploadCustomBundlePaymentProofWithIntent(
-    makeDependencies({
-      privateBlobStore: seededStore,
-    }),
-    {
-      recoveryToken,
-      uploadIntent: seededIntent.uploadIntent,
+      paymentReportIdempotencyKey: validatedIntent.payload.paymentReportIdempotencyKey,
+      sha256,
+      mimeType: 'image/png',
+    })
+    seededStore.seed({
+      pathname: expectedPath,
       contentType: 'image/png',
-      contentLength: bytes.byteLength,
-      async readBody() {
-        return bytes
-      },
-    },
-  )
-  assert.equal(reused.ok, true)
-  assert.equal(reused.stage, 'reused')
+      sizeBytes: bytes.byteLength,
+      uploadedAt: new Date('2026-06-24T18:00:00.000Z'),
+      access: 'private',
+    })
 
-  const invalidClockCalls = { count: 0 }
-  const invalidToken = await uploadCustomBundlePaymentProofWithIntent(
-    makeDependencies({
-      privateBlobStore: makeStore(),
-      validateRecoveryAccess: async () => ({ ok: false, reason: 'invalid_token' }),
-    }),
-    {
-      recoveryToken: 'bad-token',
-      uploadIntent: intent.uploadIntent,
-      contentType: 'image/png',
-      contentLength: bytes.byteLength,
-      async readBody() {
-        invalidClockCalls.count += 1
-        fail('readBody should not run for invalid tokens.')
+    const reused = await uploadCustomBundlePaymentProofWithIntent(
+      makeDependencies({
+        privateBlobStore: seededStore,
+      }),
+      {
+        recoveryToken,
+        uploadIntent: seededIntent.uploadIntent,
+        contentType: 'image/png',
+        contentLength: bytes.byteLength,
+        async readBody() {
+          return bytes
+        },
       },
-    },
-  )
-  assert.equal(invalidToken.ok, false)
-  assert.equal(invalidClockCalls.count, 0)
+    )
+    assert.equal(reused.ok, true)
+    assert.equal(reused.stage, 'reused')
 
-  const mismatchStore = makeStore()
-  const mismatchIntent = await createCustomBundlePaymentUploadIntent(
-    makeDependencies({ privateBlobStore: mismatchStore }),
-    {
-      recoveryToken,
+    const invalidClockCalls = { count: 0 }
+    const invalidToken = await uploadCustomBundlePaymentProofWithIntent(
+      makeDependencies({
+        privateBlobStore: makeStore(),
+        validateRecoveryAccess: async () => ({ ok: false, reason: 'invalid_token' }),
+      }),
+      {
+        recoveryToken: 'bad-token',
+        uploadIntent: intent.uploadIntent,
+        contentType: 'image/png',
+        contentLength: bytes.byteLength,
+        async readBody() {
+          invalidClockCalls.count += 1
+          fail('readBody should not run for invalid tokens.')
+        },
+      },
+    )
+    assert.equal(invalidToken.ok, false)
+    assert.equal(invalidClockCalls.count, 0)
+
+    const mismatchStore = makeStore()
+    const mismatchIntent = await createCustomBundlePaymentUploadIntent(
+      makeDependencies({ privateBlobStore: mismatchStore }),
+      {
+        recoveryToken,
+        publicCode,
+        paymentMethod: 'pago_movil',
+        paymentReference: 'REF-201',
+        originalFilename: 'proof.png',
+        declaredMimeType: 'image/png',
+        declaredSizeBytes: bytes.byteLength,
+      },
+    )
+    assertUploadIntentResult(mismatchIntent, 'Expected a valid upload intent.')
+
+    const mismatchValidated = validateCustomBundlePaymentUploadIntent(
+      mismatchIntent.uploadIntent,
       publicCode,
-      paymentMethod: 'pago_movil',
-      paymentReference: 'REF-201',
-      originalFilename: 'proof.png',
-      declaredMimeType: 'image/png',
-      declaredSizeBytes: bytes.byteLength,
-    },
-  )
-  assertUploadIntentResult(mismatchIntent, 'Expected a valid upload intent.')
+      now,
+    )
+    assert.equal(mismatchValidated.ok, true)
+    if (!mismatchValidated.ok) {
+      fail('Expected a valid upload intent token.')
+    }
 
-  const mismatchValidated = validateCustomBundlePaymentUploadIntent(
-    mismatchIntent.uploadIntent,
-    publicCode,
-    now,
-  )
-  assert.equal(mismatchValidated.ok, true)
-  if (!mismatchValidated.ok) {
-    fail('Expected a valid upload intent token.')
-  }
+    const mismatchPath = buildCustomBundlePaymentProofPrivatePathname({
+      publicCode,
+      paymentReportIdempotencyKey: mismatchValidated.payload.paymentReportIdempotencyKey,
+      sha256,
+      mimeType: 'image/png',
+    })
 
-  const mismatchPath = buildCustomBundlePaymentProofPrivatePathname({
-    publicCode,
-    paymentReportIdempotencyKey: mismatchValidated.payload.paymentReportIdempotencyKey,
-    sha256,
-    mimeType: 'image/png',
-  })
-
-  mismatchStore.seed({
-    pathname: mismatchPath,
-    contentType: 'image/png',
-    sizeBytes: bytes.byteLength + 1,
-    uploadedAt: new Date('2026-06-24T18:00:00.000Z'),
-    access: 'private',
-  })
-  const conflict = await uploadCustomBundlePaymentProofWithIntent(
-    makeDependencies({ privateBlobStore: mismatchStore }),
-    {
-      recoveryToken,
-      uploadIntent: mismatchIntent.uploadIntent,
+    mismatchStore.seed({
+      pathname: mismatchPath,
       contentType: 'image/png',
-      contentLength: bytes.byteLength,
-      async readBody() {
-        return bytes
+      sizeBytes: bytes.byteLength + 1,
+      uploadedAt: new Date('2026-06-24T18:00:00.000Z'),
+      access: 'private',
+    })
+    const conflict = await uploadCustomBundlePaymentProofWithIntent(
+      makeDependencies({ privateBlobStore: mismatchStore }),
+      {
+        recoveryToken,
+        uploadIntent: mismatchIntent.uploadIntent,
+        contentType: 'image/png',
+        contentLength: bytes.byteLength,
+        async readBody() {
+          return bytes
+        },
       },
-    },
-  )
-  assert.equal(conflict.ok, false)
-  assert.equal(conflict.stage, 'store')
+    )
+    assert.equal(conflict.ok, false)
+    assert.equal(conflict.stage, 'store')
 
-  console.log('booking_isolated_custom_bundle_payment_upload_transport OK')
-  console.log('preview isolation: verified')
-  console.log('private upload transport: verified')
-  console.log('exact replay: verified')
-  console.log('conflict cleanup: verified')
-  console.log('secret-free result: verified')
-  console.log('database cleanup: verified')
-  console.log('storage cleanup: verified')
+    const routeSource = readFileSync(
+      resolve(process.cwd(), 'app/api/bookings/custom-bundle-payment-proof/upload/route.ts'),
+      'utf8',
+    )
+    assert.equal(routeSource.includes('request.arrayBuffer'), false)
+    assert.equal(routeSource.includes('createdByThisCall'), false)
+    assert.equal(routeSource.includes('simulated: true'), true)
+
+    const unknownRuntimeSource = readFileSync(
+      resolve(process.cwd(), 'app/api/bookings/custom-bundle-payment-proof/intent/route.ts'),
+      'utf8',
+    )
+    assert.equal(unknownRuntimeSource.includes("isolated_test"), false)
+
+    console.log('booking_isolated_custom_bundle_payment_upload_transport OK')
+    console.log('bounded binary stream: verified')
+    console.log('early oversize rejection: verified')
+    console.log('authorization before body: verified')
+    console.log('private upload: verified')
+    console.log('opaque receipt: verified')
+    console.log('public response minimization: verified')
+    console.log('storage cleanup: verified')
+  } finally {
+    if (previousSecret === undefined) {
+      delete process.env.BOOKINGS_PAYMENT_RECOVERY_TOKEN_SECRET
+    } else {
+      process.env.BOOKINGS_PAYMENT_RECOVERY_TOKEN_SECRET = previousSecret
+    }
+  }
 }
 
 main().catch((error) => fail('Unexpected failure while validating the isolated upload transport.', error))

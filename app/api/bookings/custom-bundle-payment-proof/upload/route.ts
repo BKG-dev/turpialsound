@@ -5,6 +5,9 @@ import { isPreviewDeployment } from '@/lib/bookings/environment'
 import { CUSTOM_BUNDLE_PAYMENT_RECOVERY_COOKIE_NAME } from '@/lib/bookings/custom-bundle-payment-recovery-cookie'
 import { validatePaymentRecoveryToken } from '@/lib/bookings/payment-recovery-token'
 import {
+  readCustomBundlePaymentRawUploadBody,
+} from '@/lib/bookings/custom-bundle-payment-raw-upload-reader'
+import {
   type CustomBundlePaymentUploadTransportDependencies,
   type CustomBundlePaymentUploadTransportResult,
   uploadCustomBundlePaymentProofWithIntent,
@@ -12,6 +15,8 @@ import {
 import {
   buildCustomBundlePaymentUploadIntent,
   buildCustomBundlePaymentUploadReceipt,
+  CUSTOM_BUNDLE_PAYMENT_RAW_REQUEST_MAX_BYTES,
+  CUSTOM_BUNDLE_PAYMENT_RAW_UPLOAD_MAX_BYTES,
   type CustomBundlePaymentUploadIntentPayload,
   validateCustomBundlePaymentUploadIntent,
 } from '@/lib/bookings/custom-bundle-payment-upload-token'
@@ -27,7 +32,7 @@ function withNoStoreHeaders(response: NextResponse): NextResponse {
   return response
 }
 
-function readRuntime(): 'preview' | 'production' | 'isolated_test' | 'environment_not_allowed' {
+function readRuntime(): 'preview' | 'production' | 'environment_not_allowed' {
   if (isPreviewDeployment()) {
     return 'preview'
   }
@@ -85,12 +90,26 @@ function mapFailure(
   )
 }
 
-async function readBodyBytes(request: NextRequest): Promise<Uint8Array | null> {
-  try {
-    const arrayBuffer = await request.arrayBuffer()
-    return new Uint8Array(arrayBuffer)
-  } catch {
-    return null
+function makeReadBody(request: NextRequest, declaredContentLength: number | null) {
+  let cachedBytes: Uint8Array | null = null
+  return async (): Promise<Uint8Array> => {
+    if (cachedBytes) {
+      return cachedBytes
+    }
+
+    const result = await readCustomBundlePaymentRawUploadBody({
+      body: request.body,
+      declaredContentLength,
+      maxUploadBytes: CUSTOM_BUNDLE_PAYMENT_RAW_UPLOAD_MAX_BYTES,
+      maxRequestBytes: CUSTOM_BUNDLE_PAYMENT_RAW_REQUEST_MAX_BYTES,
+    })
+
+    if (!result.ok) {
+      throw new Error(result.code)
+    }
+
+    cachedBytes = result.bytes
+    return result.bytes
   }
 }
 
@@ -196,17 +215,10 @@ export async function PUT(request: NextRequest) {
         uploadIntent,
         contentType: contentType as CustomBundlePaymentUploadIntentPayload['declaredMimeType'],
         contentLength,
-        async readBody() {
-          const bytes = await readBodyBytes(request)
-          if (!bytes) {
-            throw new Error('No se pudo leer el cuerpo binario.')
-          }
-
-          return bytes
-        },
+        readBody: makeReadBody(request, contentLength),
       })
 
-      if (!result.ok) {
+    if (!result.ok) {
         return mapFailure(
           'contractIssues' in result
             ? {
@@ -228,15 +240,7 @@ export async function PUT(request: NextRequest) {
         })
       }
 
-      return withNoStoreHeaders(
-        NextResponse.json({
-          ok: true,
-          simulated: true,
-          stage: result.stage,
-          uploadReceipt: null,
-          createdByThisCall: result.createdByThisCall,
-        }),
-      )
+      return withNoStoreHeaders(NextResponse.json({ ok: true, simulated: true, uploadReceipt: null }))
     }
 
     const { createCustomBundlePrivateBlobStoreVercel } = await import(
@@ -261,14 +265,7 @@ export async function PUT(request: NextRequest) {
       uploadIntent,
       contentType: contentType as CustomBundlePaymentUploadIntentPayload['declaredMimeType'],
       contentLength,
-      async readBody() {
-        const bytes = await readBodyBytes(request)
-        if (!bytes) {
-          throw new Error('No se pudo leer el cuerpo binario.')
-        }
-
-        return bytes
-      },
+      readBody: makeReadBody(request, contentLength),
     })
 
     if (!result.ok) {
@@ -293,15 +290,7 @@ export async function PUT(request: NextRequest) {
       })
     }
 
-    return withNoStoreHeaders(
-      NextResponse.json({
-        ok: true,
-        simulated: false,
-        stage: result.stage,
-        uploadReceipt: result.uploadReceipt,
-        createdByThisCall: result.createdByThisCall,
-      }),
-    )
+    return withNoStoreHeaders(NextResponse.json({ ok: true, simulated: false, uploadReceipt: result.uploadReceipt }))
   } catch {
     return mapFailure({
       ok: false,

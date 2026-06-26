@@ -16,6 +16,7 @@ on:
       - lib/bookings/custom-bundle-payment-server-entrypoint.ts
       - lib/bookings/custom-bundle-payment-sql-session-pg.ts
       - lib/bookings/custom-bundle-private-blob-store-vercel.ts
+      - lib/bookings/custom-bundle-payment-raw-upload-reader.ts
       - lib/bookings/custom-bundle-payment-recovery-cookie.ts
       - lib/bookings/custom-bundle-payment-upload-token.ts
       - lib/bookings/custom-bundle-payment-upload-transport-core.ts
@@ -77,7 +78,7 @@ jobs:
       TURPIAL_ALLOW_ISOLATED_DB_TESTS: 'true'
       TURPIAL_ISOLATED_DATABASE_URL: postgresql://turpial_ci:turpial_ci_only@127.0.0.1:5432/turpial_booking_ci
       DIRECT_URL: postgresql://turpial_ci:turpial_ci_only@127.0.0.1:5432/turpial_booking_ci
-      NODE_PATH: ${{ github.workspace }}/scripts/qa/shims:${{ github.workspace }}
+      NODE_PATH: ${{ github.workspace }}/scripts/qa/shims
     steps:
       - name: Checkout
         uses: actions/checkout@v4

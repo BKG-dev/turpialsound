@@ -18,18 +18,25 @@ import {
 import { validatePaymentRecoveryToken } from '@/lib/bookings/payment-recovery-token'
 
 const FALLBACK_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif'])
+const INTENT_ALLOWED_FIELDS = new Set([
+  'publicCode',
+  'paymentMethod',
+  'paymentReference',
+  'originalFilename',
+  'declaredMimeType',
+  'declaredSizeBytes',
+])
 
-type IntentRequestPayload = {
-  publicCode?: unknown
-  paymentMethod?: unknown
-  paymentReference?: unknown
-  originalFilename?: unknown
-  declaredMimeType?: unknown
-  declaredSizeBytes?: unknown
-}
+function isPreviewRuntime(): 'preview' | 'production' | 'environment_not_allowed' {
+  if (isPreviewDeployment()) {
+    return 'preview'
+  }
 
-function isPreviewRuntime(): 'preview' | 'production' | 'isolated_test' {
-  return isPreviewDeployment() ? 'preview' : process.env.VERCEL_ENV === 'production' ? 'production' : 'isolated_test'
+  if (process.env.VERCEL_ENV === 'production') {
+    return 'production'
+  }
+
+  return 'environment_not_allowed'
 }
 
 function isFileNameSafe(value: unknown): value is string | null {
@@ -82,10 +89,51 @@ function parseDeclaredSizeBytes(value: unknown): number | null {
   return null
 }
 
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false
+  }
+
+  const proto = Object.getPrototypeOf(value)
+  return proto === Object.prototype || proto === null
+}
+
+function mapIntentFailure(
+  code: 'INVALID_REQUEST' | 'UNSUPPORTED_INTENT_FIELD',
+  message: string,
+  status = 400,
+): NextResponse {
+  return withNoStoreHeaders(
+    NextResponse.json(
+      {
+        ok: false,
+        stage: 'contract',
+        code,
+        message,
+      },
+      { status },
+    ),
+  )
+}
+
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
-  const body = (await request.json().catch(() => null)) as IntentRequestPayload | null
+  const body = (await request.json().catch(() => null)) as unknown
+  if (!isPlainRecord(body)) {
+    return mapIntentFailure('INVALID_REQUEST', 'La solicitud de intent no es valida.')
+  }
+
+  const unexpectedFields = Object.keys(body).filter((key) => !INTENT_ALLOWED_FIELDS.has(key))
+  if (unexpectedFields.length > 0) {
+    return mapIntentFailure('UNSUPPORTED_INTENT_FIELD', 'La solicitud de intent incluye un campo no admitido.')
+  }
+
+  const runtime = isPreviewRuntime()
+  if (runtime === 'environment_not_allowed') {
+    return mapIntentFailure('INVALID_REQUEST', 'El entorno actual no permite preparar el intento de subida.', 503)
+  }
+
   const publicCode = normalizePublicCode(body?.publicCode)
   const paymentMethod = normalizeString(body?.paymentMethod)
   const paymentReference = normalizeString(body?.paymentReference)
@@ -108,15 +156,11 @@ export async function POST(request: NextRequest) {
     declaredSizeBytes <= 0 ||
     declaredSizeBytes > CUSTOM_BUNDLE_PAYMENT_RAW_UPLOAD_MAX_BYTES
   ) {
-    const response = NextResponse.json(
-      { ok: false, stage: 'contract', code: 'INVALID_REQUEST', message: 'La solicitud de intent no es valida.' },
-      { status: 400 },
-    )
-    return withNoStoreHeaders(response)
+    return mapIntentFailure('INVALID_REQUEST', 'La solicitud de intent no es valida.')
   }
 
   const dependencies: CustomBundlePaymentUploadTransportDependencies = {
-    runtime: isPreviewRuntime(),
+    runtime,
     clock: {
       now(): Date {
         return new Date()
@@ -158,38 +202,14 @@ export async function POST(request: NextRequest) {
   })
 
   if (!result.ok) {
-    return withNoStoreHeaders(
-      NextResponse.json(
-        'contractIssues' in result
-          ? {
-              ok: false,
-              stage: 'contract',
-              code: 'INVALID_REQUEST',
-              message: 'No pudimos preparar el intento de subida.',
-            }
-          : {
-              ok: false,
-              stage: 'authorization',
-              code: 'INVALID_UPLOAD_TOKEN',
-              message: 'No pudimos preparar el intento de subida.',
-            },
-        { status: 400 },
-      ),
+    return mapIntentFailure(
+      'contractIssues' in result ? 'INVALID_REQUEST' : 'INVALID_REQUEST',
+      'No pudimos preparar el intento de subida.',
     )
   }
 
   if (result.stage !== 'intent') {
-    return withNoStoreHeaders(
-      NextResponse.json(
-        {
-          ok: false,
-          stage: 'infrastructure',
-          code: 'PAYMENT_UPLOAD_EXECUTION_FAILED',
-          message: 'No pudimos preparar el intento de subida.',
-        },
-        { status: 503 },
-      ),
-    )
+    return mapIntentFailure('INVALID_REQUEST', 'No pudimos preparar el intento de subida.', 503)
   }
 
   const response = NextResponse.json({

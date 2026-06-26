@@ -103,6 +103,7 @@ function makeFormData(input: {
   if (input.paymentReference !== undefined) form.append('paymentReference', input.paymentReference)
   if (input.paymentRecoveryToken !== undefined) {
     currentRecoveryToken = String(input.paymentRecoveryToken)
+    form.append('paymentRecoveryToken', input.paymentRecoveryToken)
   }
   if (input.paymentProofFile !== undefined && input.paymentProofFile !== null) {
     form.append('paymentProofFile', input.paymentProofFile)

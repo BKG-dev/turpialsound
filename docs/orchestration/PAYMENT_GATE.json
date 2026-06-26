@@ -1,6 +1,6 @@
 {
-  "sprint": "BKG-08F",
-  "baseSha": "b0a3379e7284392725918a018b47117119434fec",
+  "sprint": "BKG-08F1",
+  "baseSha": "e86a4426b2cd715c7e95d1ea5020bc34460704bd",
   "model": "single_consolidated_manual_payment_report",
   "validation": {
     "workflow": "booking-isolated-custom-bundle-payment-contract.yml",
@@ -121,7 +121,7 @@
   },
   "paymentTransportValidation": {
     "workflow": "booking-isolated-custom-bundle-payment-proof-boundary.yml",
-    "status": "PENDING",
+    "status": "PENDING_CORRECTION",
     "runId": null,
     "validatedHeadSha": null,
     "conclusion": null,
@@ -137,7 +137,13 @@
     "noClientTokenVerified": false,
     "noUiWiringVerified": false,
     "databaseCleanupVerified": false,
-    "storageCleanupVerified": false
+    "storageCleanupVerified": false,
+    "boundedStreamReadVerified": false,
+    "earlyStreamCancellationVerified": false,
+    "strictRuntimeGateVerified": false,
+    "unexpectedIntentFieldRejectionVerified": false,
+    "minimalPublicResponseVerified": false,
+    "qaShimIsolationVerified": false
   },
   "paymentServerEntrypointTechnicallyValidated": true,
   "paymentTransportTechnicallyValidated": false,
@@ -145,5 +151,10 @@
   "readyForPaymentTransportIntegration": false,
   "readyForWizardIntegration": false,
   "readyForProduction": false,
-  "blockers": []
+  "blockers": [
+    "RAW_UPLOAD_BODY_IS_FULLY_BUFFERED",
+    "REAL_INTENT_ROUTE_ALLOWS_ISOLATED_TEST_RUNTIME",
+    "UPLOAD_RESPONSE_EXPOSES_INTERNAL_OWNERSHIP_METADATA",
+    "QA_SHIM_NODE_PATH_NOT_ISOLATED"
+  ]
 }

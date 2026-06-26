@@ -53,6 +53,7 @@ const ACTION_FIELD_NAMES = new Set([
   'publicCode',
   'paymentMethod',
   'paymentReference',
+  'paymentRecoveryToken',
   'paymentProofFile',
 ])
 
@@ -135,6 +136,19 @@ function normalizePaymentProofFile(
   }
 
   return isEmptyPlaceholderFile(value) ? null : value
+}
+
+function normalizePaymentRecoveryToken(value: FormDataEntryValue | undefined): string | null {
+  if (value === undefined) {
+    return null
+  }
+
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const normalized = value.trim()
+  return normalized.length > 0 ? normalized : null
 }
 
 function readRecoveryTokenCookie(): string | null {
@@ -233,6 +247,7 @@ export function parseCustomBundlePaymentActionFormData(
   const publicCode = normalizeTextValue(entriesByKey.get('publicCode')?.[0])
   const paymentMethod = normalizeTextValue(entriesByKey.get('paymentMethod')?.[0])
   const paymentReference = normalizeTextValue(entriesByKey.get('paymentReference')?.[0])
+  const paymentRecoveryToken = normalizePaymentRecoveryToken(entriesByKey.get('paymentRecoveryToken')?.[0])
   const paymentProofFileResult = normalizePaymentProofFile(entriesByKey.get('paymentProofFile')?.[0])
 
   const issues: Array<{
@@ -265,6 +280,14 @@ export function parseCustomBundlePaymentActionFormData(
     })
   }
 
+  if (paymentRecoveryToken === null) {
+    issues.push({
+      code: 'INVALID_ACTION_PAYLOAD',
+      path: ['paymentRecoveryToken'],
+      message: 'paymentRecoveryToken es obligatorio.',
+    })
+  }
+
   if (isRequestFailure(paymentProofFileResult)) {
     return {
       ok: false,
@@ -289,6 +312,7 @@ export function parseCustomBundlePaymentActionFormData(
       publicCode,
       paymentMethod,
       paymentReference,
+      paymentRecoveryToken,
       paymentProofFile: paymentProofFileResult as CustomBundlePaymentProofFileLike | null,
     } as CustomBundleProtectedPaymentActionInput,
   }

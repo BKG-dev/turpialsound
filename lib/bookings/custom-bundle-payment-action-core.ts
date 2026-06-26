@@ -14,6 +14,7 @@ export interface CustomBundleProtectedPaymentActionInput {
   publicCode: unknown
   paymentMethod: unknown
   paymentReference: unknown
+  paymentRecoveryToken?: unknown
   paymentProofFile: CustomBundlePaymentProofFileLike | null
 }
 
@@ -191,20 +192,44 @@ export async function runCustomBundleProtectedPaymentActionCore(
     )
   }
 
-  let paymentRecoveryToken = ''
-  try {
-    paymentRecoveryToken = normalizeRequestedString(dependencies.readRecoveryToken())
-  } catch {
-    return makeAuthorizationFailure(
-      'PAYMENT_ACCESS_UNAVAILABLE',
-      'El acceso seguro para reportar pagos no esta disponible temporalmente.',
+  const directRecoveryToken = normalizeRequestedString(input.paymentRecoveryToken)
+  if (directRecoveryToken.length > 4096) {
+    return makeRequestFailure(
+      'INVALID_ACTION_PAYLOAD',
+      'No pudimos validar los datos protegidos de la accion de pago.',
+      [
+        {
+          code: 'INVALID_ACTION_PAYLOAD',
+          path: ['paymentRecoveryToken'],
+          message: 'paymentRecoveryToken no es valido.',
+        },
+      ],
     )
   }
 
+  let paymentRecoveryToken = directRecoveryToken
+  if (paymentRecoveryToken.length === 0) {
+    try {
+      paymentRecoveryToken = normalizeRequestedString(dependencies.readRecoveryToken())
+    } catch {
+      return makeAuthorizationFailure(
+        'PAYMENT_ACCESS_UNAVAILABLE',
+        'El acceso seguro para reportar pagos no esta disponible temporalmente.',
+      )
+    }
+  }
+
   if (paymentRecoveryToken.length === 0 || paymentRecoveryToken.length > 4096) {
-    return makeAuthorizationFailure(
-      'PAYMENT_ACCESS_DENIED',
-      'No pudimos validar el acceso seguro para reportar este pago.',
+    return makeRequestFailure(
+      'INVALID_ACTION_PAYLOAD',
+      'No pudimos validar los datos protegidos de la accion de pago.',
+      [
+        {
+          code: 'INVALID_ACTION_PAYLOAD',
+          path: ['paymentRecoveryToken'],
+          message: 'paymentRecoveryToken no es valido.',
+        },
+      ],
     )
   }
 

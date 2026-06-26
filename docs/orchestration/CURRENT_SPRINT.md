@@ -1,23 +1,24 @@
 # Current Sprint
 
 Sprint:
-BKG-08F
+BKG-08F1
 
 Name:
-Recuperacion segura y transporte privado de pago consolidado
+Endurecimiento final del transporte binario protegido
 
 Base:
-b0a3379e7284392725918a018b47117119434fec
+e86a4426b2cd715c7e95d1ea5020bc34460704bd
 
 State:
 DIRECTOR_REVIEW
 
 Scope:
 
-* secure recovery-session handoff;
-* protected upload transport;
-* cookie-backed recovery token;
-* private upload reuse and cleanup.
+* bounded binary reader;
+* strict runtime gate;
+* exact intent allowlist;
+* minimal public upload response;
+* QA shim isolation.
 
 Out of Scope:
 
@@ -29,8 +30,8 @@ Out of Scope:
 * BKG-08G.
 
 Result:
-READY_FOR_PAYMENT_TRANSPORT_INTEGRATION
+PAYMENT_UPLOAD_TRANSPORT_CORRECTION_PENDING_CI
 
 Next Action:
 
-ChatGPT reviews BKG-08F and defines the secure recovery-session handoff and protected upload transport.
+ChatGPT verifies bounded binary transport and strict runtime isolation before BKG-08G.
