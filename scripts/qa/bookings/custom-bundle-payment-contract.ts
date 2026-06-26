@@ -174,7 +174,7 @@ function main(): void {
     'transferencia',
     'binance',
   ])
-  assert.equal(CUSTOM_BUNDLE_PAYMENT_PROOF_MAX_SIZE_BYTES, 4_718_592)
+  assert.equal(CUSTOM_BUNDLE_PAYMENT_PROOF_MAX_SIZE_BYTES, 3_900_000)
   assert.equal(normalizeCustomBundlePaymentReference(' ref-001 '), 'REF001')
   assert.equal(normalizeCustomBundlePaymentReference('REF 001'), 'REF001')
   assert.equal(normalizeCustomBundlePaymentReference('ref_001'), 'REF001')
