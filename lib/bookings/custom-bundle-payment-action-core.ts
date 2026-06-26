@@ -1,21 +1,14 @@
-import {
-  validateCustomBundlePaymentReportSubmission,
-  type CustomBundlePaymentReportSubmission,
-} from '@/lib/bookings/custom-bundle-payment-contract'
+import { validateCustomBundlePaymentReportSubmission, type CustomBundlePaymentReportSubmission } from '@/lib/bookings/custom-bundle-payment-contract'
 import type {
-  CustomBundlePaymentProofFileLike,
-} from '@/lib/bookings/custom-bundle-payment-proof-boundary'
-import type {
-  CustomBundlePaymentServerEntrypointInput,
-  CustomBundlePaymentServerEntrypointResult,
-} from '@/lib/bookings/custom-bundle-payment-server-entrypoint-core'
+  CustomBundlePaymentReceiptEntrypointInput,
+  CustomBundlePaymentReceiptEntrypointResult,
+} from '@/lib/bookings/custom-bundle-payment-receipt-entrypoint-core'
 
 export interface CustomBundleProtectedPaymentActionInput {
   publicCode: unknown
   paymentMethod: unknown
   paymentReference: unknown
-  paymentRecoveryToken?: unknown
-  paymentProofFile: CustomBundlePaymentProofFileLike | null
+  uploadReceipt: unknown
 }
 
 export interface CustomBundleProtectedPaymentActionDependencies {
@@ -38,21 +31,19 @@ export interface CustomBundleProtectedPaymentActionDependencies {
           | 'misconfigured_secret'
       }
   >
-  runServerEntrypoint(
-    input: CustomBundlePaymentServerEntrypointInput,
-  ): Promise<
-    | CustomBundlePaymentServerEntrypointResult
-    | {
-        ok: false
-        stage: 'infrastructure'
-        code: 'PAYMENT_ACTION_DISABLED'
-        message: string
-      }
-  >
+  runReceiptEntrypoint(
+    input: CustomBundlePaymentReceiptEntrypointInput,
+  ): Promise<CustomBundlePaymentReceiptEntrypointResult>
+}
+
+export interface CustomBundlePaymentActionDependencies
+  extends CustomBundleProtectedPaymentActionDependencies {
+  runtime: 'preview' | 'production' | 'isolated_test' | 'environment_not_allowed'
+  killSwitchEnabled: boolean
 }
 
 export type CustomBundleProtectedPaymentActionResult =
-  | CustomBundlePaymentServerEntrypointResult
+  | CustomBundlePaymentReceiptEntrypointResult
   | {
       ok: false
       stage: 'request'
@@ -86,8 +77,45 @@ type RequestFieldIssue = {
   path?: Array<string | number>
 }
 
-function isValidDate(value: Date): boolean {
-  return value instanceof Date && Number.isFinite(value.getTime())
+type RequestFailure = Extract<CustomBundleProtectedPaymentActionResult, { ok: false; stage: 'request' }>
+type AuthorizationFailure = Extract<
+  CustomBundleProtectedPaymentActionResult,
+  { ok: false; stage: 'authorization' }
+>
+type InfrastructureFailure = Extract<
+  CustomBundleProtectedPaymentActionResult,
+  { ok: false; stage: 'infrastructure' }
+>
+
+export type CustomBundlePaymentActionParseResult =
+  | {
+      ok: true
+      value: {
+        publicCode: string
+        paymentMethod: string
+        paymentReference: string
+        uploadReceipt: string | null
+      }
+    }
+  | {
+      ok: false
+      result: RequestFailure
+    }
+
+const ACTION_FIELD_NAMES = new Set([
+  'publicCode',
+  'paymentMethod',
+  'paymentReference',
+  'uploadReceipt',
+])
+
+function isFormDataLike(value: unknown): value is FormData {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as FormData).entries === 'function' &&
+    typeof (value as FormData).getAll === 'function'
+  )
 }
 
 function makeRequestFailure(
@@ -97,7 +125,7 @@ function makeRequestFailure(
     | 'UNSUPPORTED_ACTION_FIELD',
   message: string,
   fieldIssues?: RequestFieldIssue[],
-): Extract<CustomBundleProtectedPaymentActionResult, { ok: false; stage: 'request' }> {
+): RequestFailure {
   return fieldIssues && fieldIssues.length > 0
     ? { ok: false, stage: 'request', code, message, fieldIssues }
     : { ok: false, stage: 'request', code, message }
@@ -106,66 +134,214 @@ function makeRequestFailure(
 function makeAuthorizationFailure(
   code: 'PAYMENT_ACCESS_DENIED' | 'PAYMENT_ACCESS_UNAVAILABLE',
   message: string,
-): Extract<CustomBundleProtectedPaymentActionResult, { ok: false; stage: 'authorization' }> {
+): AuthorizationFailure {
   return { ok: false, stage: 'authorization', code, message }
 }
 
 function makeInfrastructureFailure(
   code: 'PAYMENT_ACTION_DISABLED' | 'PAYMENT_ACTION_EXECUTION_FAILED',
   message: string,
-): Extract<CustomBundleProtectedPaymentActionResult, { ok: false; stage: 'infrastructure' }> {
+): InfrastructureFailure {
   return { ok: false, stage: 'infrastructure', code, message }
 }
 
-function isFileLike(value: unknown): value is CustomBundlePaymentProofFileLike {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as Record<string, unknown>).name === 'string' &&
-    typeof (value as Record<string, unknown>).type === 'string' &&
-    typeof (value as Record<string, unknown>).size === 'number' &&
-    typeof (value as Record<string, unknown>).arrayBuffer === 'function'
-  )
-}
-
-function normalizeRequestedPublicCode(value: unknown): string {
-  return typeof value === 'string' ? value.trim().toUpperCase() : ''
-}
-
-function normalizeRequestedString(value: unknown): string {
+function normalizeTextValue(value: FormDataEntryValue | undefined): string {
   return typeof value === 'string' ? value.trim() : ''
 }
 
-function normalizeRequestedPaymentProofFile(
-  value: unknown,
-): { ok: true; value: CustomBundlePaymentProofFileLike | null } | { ok: false; issue: RequestFieldIssue } {
-  if (value === null || value === undefined) {
-    return { ok: true, value: null }
+function normalizeOptionalReceipt(
+  value: FormDataEntryValue | undefined,
+): string | null | RequestFailure {
+  if (value === undefined) {
+    return null
   }
 
-  if (!isFileLike(value)) {
-    return {
-      ok: false,
-      issue: {
-        code: 'INVALID_ACTION_PAYLOAD',
-        path: ['paymentProofFile'],
-        message: 'El comprobante no tiene la forma esperada.',
-      },
+  if (typeof value !== 'string') {
+    return makeRequestFailure(
+      'INVALID_ACTION_PAYLOAD',
+      'El recibo de pago protegido no tiene la forma esperada.',
+      [
+        {
+          code: 'INVALID_ACTION_PAYLOAD',
+          path: ['uploadReceipt'],
+          message: 'uploadReceipt no es valido.',
+        },
+      ],
+    )
+  }
+
+  const normalized = value.trim()
+  if (normalized.length === 0) {
+    return null
+  }
+
+  if (normalized.length > 8192) {
+    return makeRequestFailure(
+      'INVALID_ACTION_PAYLOAD',
+      'El recibo de pago protegido supera el tamano permitido.',
+      [
+        {
+          code: 'INVALID_ACTION_PAYLOAD',
+          path: ['uploadReceipt'],
+          message: 'uploadReceipt supera el tamano permitido.',
+        },
+      ],
+    )
+  }
+
+  return normalized
+}
+
+function normalizePublicCode(value: unknown): string {
+  return typeof value === 'string' ? value.trim().toUpperCase() : ''
+}
+
+function normalizePaymentReference(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function isRequestFailure(value: unknown): value is RequestFailure {
+  return Boolean(value && typeof value === 'object' && 'ok' in value && (value as { ok?: unknown }).ok === false)
+}
+
+function normalizeReceiptInput(input: unknown): CustomBundleProtectedPaymentActionInput | RequestFailure {
+  if (!isFormDataLike(input)) {
+    return makeRequestFailure(
+      'INVALID_ACTION_PAYLOAD',
+      'La accion protegida de pago requiere un FormData valido.',
+      [
+        {
+          code: 'INVALID_ACTION_PAYLOAD',
+          path: [],
+          message: 'La accion protegida de pago requiere un FormData valido.',
+        },
+      ],
+    )
+  }
+
+  const entriesByKey = new Map<string, FormDataEntryValue[]>()
+  for (const [key, value] of input.entries()) {
+    const bucket = entriesByKey.get(key)
+    if (bucket) {
+      bucket.push(value)
+    } else {
+      entriesByKey.set(key, [value])
     }
   }
 
-  if (value.name === '' && value.type === '' && value.size === 0) {
-    return { ok: true, value: null }
+  const unexpectedFields = [...entriesByKey.keys()].filter(
+    (key) => !key.startsWith('$ACTION_') && !ACTION_FIELD_NAMES.has(key),
+  )
+  if (unexpectedFields.length > 0) {
+    const unexpectedKey = unexpectedFields[0]
+    return makeRequestFailure(
+      'UNSUPPORTED_ACTION_FIELD',
+      'La accion protegida de pago incluye un campo no admitido.',
+      [
+        {
+          code: 'UNSUPPORTED_ACTION_FIELD',
+          path: [unexpectedKey],
+          message: `Campo no admitido: ${unexpectedKey}.`,
+        },
+      ],
+    )
   }
 
-  return { ok: true, value }
+  const duplicateKeys = ['publicCode', 'paymentMethod', 'paymentReference', 'uploadReceipt'].filter(
+    (key) => (entriesByKey.get(key)?.length ?? 0) > 1,
+  )
+  if (duplicateKeys.length > 0) {
+    const duplicateKey = duplicateKeys[0]
+    return makeRequestFailure(
+      'DUPLICATE_ACTION_FIELD',
+      'La accion protegida de pago incluye un campo duplicado.',
+      [
+        {
+          code: 'DUPLICATE_ACTION_FIELD',
+          path: [duplicateKey],
+          message: `Campo duplicado: ${duplicateKey}.`,
+        },
+      ],
+    )
+  }
+
+  const publicCode = normalizePublicCode(entriesByKey.get('publicCode')?.[0])
+  const paymentMethod = normalizeTextValue(entriesByKey.get('paymentMethod')?.[0])
+  const paymentReference = normalizePaymentReference(entriesByKey.get('paymentReference')?.[0])
+  const uploadReceipt = normalizeOptionalReceipt(entriesByKey.get('uploadReceipt')?.[0])
+
+  const issues: RequestFieldIssue[] = []
+  if (!publicCode) {
+    issues.push({
+      code: 'INVALID_ACTION_PAYLOAD',
+      path: ['publicCode'],
+      message: 'publicCode es obligatorio.',
+    })
+  }
+
+  if (!paymentMethod) {
+    issues.push({
+      code: 'INVALID_ACTION_PAYLOAD',
+      path: ['paymentMethod'],
+      message: 'paymentMethod es obligatorio.',
+    })
+  }
+
+  if (!paymentReference) {
+    issues.push({
+      code: 'INVALID_ACTION_PAYLOAD',
+      path: ['paymentReference'],
+      message: 'paymentReference es obligatorio.',
+    })
+  }
+
+  if (isRequestFailure(uploadReceipt)) {
+    return uploadReceipt
+  }
+
+  if (issues.length > 0) {
+    return makeRequestFailure(
+      'INVALID_ACTION_PAYLOAD',
+      'La accion protegida de pago no tiene la forma esperada.',
+      issues,
+    )
+  }
+
+  return {
+    publicCode,
+    paymentMethod,
+    paymentReference,
+    uploadReceipt,
+  }
 }
 
-function buildPaymentSubmission(input: {
+function readRequestBody(input: unknown): CustomBundlePaymentActionParseResult {
+  const parsed = normalizeReceiptInput(input)
+  if (isRequestFailure(parsed)) {
+    return { ok: false, result: parsed }
+  }
+
+  return {
+    ok: true,
+    value: parsed as {
+      publicCode: string
+      paymentMethod: string
+      paymentReference: string
+      uploadReceipt: string | null
+    },
+  }
+}
+
+function readRecoveryTokenCookie(readRecoveryToken: () => string | null): string | null {
+  const token = readRecoveryToken()
+  return typeof token === 'string' && token.trim().length > 0 ? token.trim() : null
+}
+
+function makeSubmission(input: {
   publicCode: string
   paymentMethod: string
   paymentReference: string
-}): CustomBundlePaymentReportSubmission {
+}) : CustomBundlePaymentReportSubmission {
   return {
     publicCode: input.publicCode,
     paymentMethod: input.paymentMethod as CustomBundlePaymentReportSubmission['paymentMethod'],
@@ -173,11 +349,17 @@ function buildPaymentSubmission(input: {
   }
 }
 
+export function parseCustomBundlePaymentActionFormData(
+  input: unknown,
+): CustomBundlePaymentActionParseResult {
+  return readRequestBody(input)
+}
+
 export async function runCustomBundleProtectedPaymentActionCore(
   dependencies: CustomBundleProtectedPaymentActionDependencies,
   input: CustomBundleProtectedPaymentActionInput,
 ): Promise<CustomBundleProtectedPaymentActionResult> {
-  const publicCode = normalizeRequestedPublicCode(input.publicCode)
+  const publicCode = normalizePublicCode(input.publicCode)
   if (!/^TUR-\d{4}-\d{3,}$/.test(publicCode) || publicCode.length > 32) {
     return makeRequestFailure(
       'INVALID_ACTION_PAYLOAD',
@@ -192,51 +374,18 @@ export async function runCustomBundleProtectedPaymentActionCore(
     )
   }
 
-  const directRecoveryToken = normalizeRequestedString(input.paymentRecoveryToken)
-  if (directRecoveryToken.length > 4096) {
-    return makeRequestFailure(
-      'INVALID_ACTION_PAYLOAD',
-      'No pudimos validar los datos protegidos de la accion de pago.',
-      [
-        {
-          code: 'INVALID_ACTION_PAYLOAD',
-          path: ['paymentRecoveryToken'],
-          message: 'paymentRecoveryToken no es valido.',
-        },
-      ],
-    )
-  }
-
-  let paymentRecoveryToken = directRecoveryToken
-  if (paymentRecoveryToken.length === 0) {
-    try {
-      paymentRecoveryToken = normalizeRequestedString(dependencies.readRecoveryToken())
-    } catch {
-      return makeAuthorizationFailure(
-        'PAYMENT_ACCESS_UNAVAILABLE',
-        'El acceso seguro para reportar pagos no esta disponible temporalmente.',
-      )
-    }
-  }
-
-  if (paymentRecoveryToken.length === 0 || paymentRecoveryToken.length > 4096) {
-    return makeRequestFailure(
-      'INVALID_ACTION_PAYLOAD',
-      'No pudimos validar los datos protegidos de la accion de pago.',
-      [
-        {
-          code: 'INVALID_ACTION_PAYLOAD',
-          path: ['paymentRecoveryToken'],
-          message: 'paymentRecoveryToken no es valido.',
-        },
-      ],
+  const recoveryToken = readRecoveryTokenCookie(dependencies.readRecoveryToken)
+  if (!recoveryToken) {
+    return makeAuthorizationFailure(
+      'PAYMENT_ACCESS_DENIED',
+      'No pudimos validar el acceso seguro para reportar este pago.',
     )
   }
 
   let now: Date
   try {
     const candidate = dependencies.clock.now()
-    if (!isValidDate(candidate)) {
+    if (!(candidate instanceof Date) || Number.isNaN(candidate.getTime())) {
       return makeAuthorizationFailure(
         'PAYMENT_ACCESS_UNAVAILABLE',
         'El acceso seguro para reportar pagos no esta disponible temporalmente.',
@@ -251,10 +400,10 @@ export async function runCustomBundleProtectedPaymentActionCore(
     )
   }
 
-  let authorizationResult
+  let accessResult
   try {
-    authorizationResult = await dependencies.authorizePaymentAccess({
-      token: paymentRecoveryToken,
+    accessResult = await dependencies.authorizePaymentAccess({
+      token: recoveryToken,
       expectedPublicCode: publicCode,
       now,
     })
@@ -265,8 +414,8 @@ export async function runCustomBundleProtectedPaymentActionCore(
     )
   }
 
-  if (!authorizationResult.ok) {
-    if (authorizationResult.reason === 'misconfigured_secret') {
+  if (!accessResult.ok) {
+    if (accessResult.reason === 'misconfigured_secret') {
       return makeAuthorizationFailure(
         'PAYMENT_ACCESS_UNAVAILABLE',
         'El acceso seguro para reportar pagos no esta disponible temporalmente.',
@@ -279,18 +428,16 @@ export async function runCustomBundleProtectedPaymentActionCore(
     )
   }
 
-  const paymentMethod = normalizeRequestedString(input.paymentMethod)
-  const paymentReference = normalizeRequestedString(input.paymentReference)
-  const normalizedFile = normalizeRequestedPaymentProofFile(input.paymentProofFile)
-  if (!normalizedFile.ok) {
-    return makeRequestFailure(
-      'INVALID_ACTION_PAYLOAD',
-      'No pudimos validar la forma del comprobante de pago.',
-      [normalizedFile.issue],
-    )
+  const paymentMethod = normalizeTextValue(input.paymentMethod as FormDataEntryValue | undefined)
+  const paymentReference = normalizePaymentReference(
+    input.paymentReference as FormDataEntryValue | undefined,
+  )
+  const uploadReceipt = normalizeOptionalReceipt(input.uploadReceipt as FormDataEntryValue | undefined)
+  if (isRequestFailure(uploadReceipt)) {
+    return uploadReceipt
   }
 
-  const submission = buildPaymentSubmission({
+  const submission = makeSubmission({
     publicCode,
     paymentMethod,
     paymentReference,
@@ -310,9 +457,9 @@ export async function runCustomBundleProtectedPaymentActionCore(
   }
 
   try {
-    return await dependencies.runServerEntrypoint({
+    return await dependencies.runReceiptEntrypoint({
       submission: parsedSubmission.value,
-      paymentProofFile: normalizedFile.value,
+      uploadReceipt,
     })
   } catch {
     return makeInfrastructureFailure(
@@ -320,4 +467,38 @@ export async function runCustomBundleProtectedPaymentActionCore(
       'No pudimos completar la accion protegida de pago.',
     )
   }
+}
+
+export async function runCustomBundlePaymentProtectedActionWithDependencies(
+  input: unknown,
+  dependencies: CustomBundlePaymentActionDependencies,
+): Promise<CustomBundleProtectedPaymentActionResult> {
+  const parsed = parseCustomBundlePaymentActionFormData(input)
+  if (!parsed.ok) {
+    return parsed.result
+  }
+
+  if (dependencies.runtime === 'environment_not_allowed') {
+    return makeInfrastructureFailure(
+      'PAYMENT_ACTION_DISABLED',
+      'La accion protegida de pago no esta habilitada en este entorno.',
+    )
+  }
+
+  if (dependencies.runtime === 'production' && !dependencies.killSwitchEnabled) {
+    return makeInfrastructureFailure(
+      'PAYMENT_ACTION_DISABLED',
+      'La accion protegida de pago no esta habilitada en este entorno.',
+    )
+  }
+
+  return runCustomBundleProtectedPaymentActionCore(
+    dependencies,
+    parsed.value as {
+      publicCode: string
+      paymentMethod: string
+      paymentReference: string
+      uploadReceipt: string | null
+    },
+  )
 }

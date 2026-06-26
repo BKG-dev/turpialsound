@@ -1,37 +1,36 @@
 # Current Sprint
 
 Sprint:
-BKG-08F1
+BKG-08G
 
 Name:
-Endurecimiento final del transporte binario protegido
+Integracion transaccional del upload receipt con la accion protegida
 
 Base:
-e86a4426b2cd715c7e95d1ea5020bc34460704bd
+261aacc44a7c662cef7a9d1fd1525632f9c8b5c4
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* bounded binary reader;
-* strict runtime gate;
-* exact intent allowlist;
-* minimal public upload response;
-* QA shim isolation.
+* upload receipt opaco;
+* accion protegida server-only;
+* autorizacion firmada;
+* entropia de UI aislada;
+* resultado publico sanitizado.
 
 Out of Scope:
 
-* wizard wiring;
-* public action wiring;
-* notifications;
-* production;
+* wiring del wizard;
+* notificaciones;
+* produccion;
 * manual QA;
-* BKG-08G.
+* siguiente sprint no iniciado.
 
 Result:
-READY_FOR_PAYMENT_RECEIPT_ACTION_INTEGRATION
+UPLOAD_RECEIPT_ACTION_PENDING_CI
 
 Next Action:
 
-ChatGPT reviews BKG-08F1 and defines receipt-to-action transactional integration.
+ChatGPT verifies the protected payment receipt action before payment UI wiring.

@@ -1,6 +1,6 @@
 {
-  "sprint": "BKG-08F1",
-  "baseSha": "e86a4426b2cd715c7e95d1ea5020bc34460704bd",
+  "sprint": "BKG-08G",
+  "baseSha": "261aacc44a7c662cef7a9d1fd1525632f9c8b5c4",
   "model": "single_consolidated_manual_payment_report",
   "validation": {
     "workflow": "booking-isolated-custom-bundle-payment-contract.yml",
@@ -96,6 +96,26 @@
     "databaseCleanupVerified": true,
     "storageCleanupVerified": true
   },
+  "receiptActionValidation": {
+    "workflow": "booking-isolated-custom-bundle-payment-proof-boundary.yml",
+    "status": "PENDING",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
+    "previewIsolationVerified": false,
+    "receiptBindingVerified": false,
+    "sqlBeforeStorageVerified": false,
+    "privateStoreAdapterVerified": false,
+    "sessionLifecycleVerified": false,
+    "reportingIntegrationVerified": false,
+    "exactReplayVerified": false,
+    "conflictCleanupVerified": false,
+    "sanitizedResultVerified": false,
+    "noClientKeyVerified": false,
+    "noUiWiringVerified": false,
+    "databaseCleanupVerified": false,
+    "storageCleanupVerified": false
+  },
   "protectedPaymentActionTechnicallyValidated": true,
   "serverActionTransportBodyLimitVerified": false,
   "readyForPaymentRecoveryIntegration": true,
@@ -149,6 +169,8 @@
   "paymentTransportTechnicallyValidated": true,
   "readyForPaymentActionWiring": true,
   "readyForPaymentTransportIntegration": true,
+  "paymentReceiptActionTechnicallyValidated": false,
+  "readyForPaymentUiWiring": false,
   "readyForWizardIntegration": false,
   "readyForProduction": false,
   "blockers": []

@@ -1,4 +1,4 @@
-name: Booking Isolated Custom Bundle Payment Recovery Transport
+name: Booking Isolated Custom Bundle Payment Receipt Action
 
 on:
   push:
@@ -14,6 +14,8 @@ on:
       - components/bookings/PaymentRecoveryGatewayClient.tsx
       - lib/bookings/custom-bundle-payment-server-entrypoint-core.ts
       - lib/bookings/custom-bundle-payment-server-entrypoint.ts
+      - lib/bookings/custom-bundle-payment-receipt-entrypoint-core.ts
+      - lib/bookings/custom-bundle-payment-receipt-entrypoint.ts
       - lib/bookings/custom-bundle-payment-sql-session-pg.ts
       - lib/bookings/custom-bundle-private-blob-store-vercel.ts
       - lib/bookings/custom-bundle-payment-raw-upload-reader.ts
@@ -26,6 +28,8 @@ on:
       - lib/bookings/custom-bundle-payment-action-core.ts
       - lib/bookings/custom-bundle-payment-action.ts
       - lib/bookings/custom-bundle-payment-contract.ts
+      - lib/bookings/custom-bundle-payment-receipt-entrypoint-core.ts
+      - lib/bookings/custom-bundle-payment-receipt-entrypoint.ts
       - lib/bookings/payment-recovery-token.ts
       - scripts/qa/shims/server-only/index.js
       - scripts/qa/bookings/custom-bundle-payment-recovery-transport-contract.ts
@@ -35,11 +39,13 @@ on:
       - scripts/qa/bookings/custom-bundle-payment-reporting-contract.ts
       - scripts/qa/bookings/custom-bundle-payment-proof-boundary-contract.ts
       - scripts/qa/bookings/custom-bundle-payment-server-entrypoint-contract.ts
+      - scripts/qa/bookings/custom-bundle-payment-receipt-entrypoint-contract.ts
       - scripts/qa/bookings/custom-bundle-payment-action-contract.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-schema.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-reporting.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-proof-flow.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-server-entrypoint.ts
+      - scripts/qa/bookings/isolated-custom-bundle-payment-receipt-action.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-action.ts
       - prisma/schema.prisma
       - prisma/proposed/**
@@ -148,6 +154,9 @@ jobs:
       - name: Run custom bundle payment server entrypoint gate
         run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-server-entrypoint-contract.ts
 
+      - name: Run custom bundle payment receipt entrypoint gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-receipt-entrypoint-contract.ts
+
       - name: Run custom bundle payment action contract gate
         run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-action-contract.ts
 
@@ -163,8 +172,8 @@ jobs:
       - name: Run isolated payment server entrypoint gate
         run: pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-server-entrypoint.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql
 
-      - name: Run isolated payment action gate
-        run: pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-action.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql
+      - name: Run isolated payment receipt action gate
+        run: pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-receipt-action.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql
 
       - name: Run isolated payment upload transport gate
         run: pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-upload-transport.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql

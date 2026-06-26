@@ -13,6 +13,7 @@ import {
 } from '@/lib/bookings/custom-bundle-payment-proof-boundary'
 import {
   CUSTOM_BUNDLE_PAYMENT_RAW_REQUEST_MAX_BYTES,
+  CUSTOM_BUNDLE_PAYMENT_UPLOAD_RECEIPT_TTL_SECONDS,
   CUSTOM_BUNDLE_PAYMENT_RAW_UPLOAD_MAX_BYTES,
   type CustomBundlePaymentUploadIntentPayload,
   type CustomBundlePaymentUploadTokenValidationResult,
@@ -547,6 +548,12 @@ export async function uploadCustomBundlePaymentProofWithIntent(
     uploadedAt: uploadResult.metadata.uploadedAt,
     createdByThisCall: uploadResult.createdByThisCall,
     now,
+    expiresAt: new Date(
+      Math.min(
+        authorization.payload.exp * 1000,
+        now.getTime() + CUSTOM_BUNDLE_PAYMENT_UPLOAD_RECEIPT_TTL_SECONDS * 1000,
+      ),
+    ),
   })
 
   if (!uploadReceipt) {

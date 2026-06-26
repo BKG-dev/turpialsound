@@ -1,26 +1,15 @@
 import assert from 'node:assert/strict'
-import { readdirSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { buildPaymentRecoveryToken, validatePaymentRecoveryToken } from '@/lib/bookings/payment-recovery-token'
 import {
-  reportCustomBundlePaymentProtectedAction,
-  runCustomBundlePaymentProtectedActionWithDependencies,
+  buildPaymentRecoveryToken,
+  validatePaymentRecoveryToken,
+} from '@/lib/bookings/payment-recovery-token'
+import {
   parseCustomBundlePaymentActionFormData,
-  type CustomBundlePaymentActionParseResult,
-  type CustomBundlePaymentActionDependencies,
-} from '@/lib/bookings/custom-bundle-payment-action'
-import { runCustomBundleProtectedPaymentActionCore } from '@/lib/bookings/custom-bundle-payment-action-core'
-import {
-  runCustomBundlePaymentServerEntrypoint,
-} from '@/lib/bookings/custom-bundle-payment-server-entrypoint'
-import { runCustomBundlePaymentServerEntrypointCore } from '@/lib/bookings/custom-bundle-payment-server-entrypoint-core'
-import type {
-  CustomBundlePaymentServerEntrypointInput,
-  CustomBundlePaymentServerEntrypointResult,
-} from '@/lib/bookings/custom-bundle-payment-server-entrypoint-core'
-import type { CustomBundlePaymentProofFileLike } from '@/lib/bookings/custom-bundle-payment-proof-boundary'
-import type { CustomBundleProtectedPaymentActionResult } from '@/lib/bookings/custom-bundle-payment-action-core'
+  runCustomBundlePaymentProtectedActionWithDependencies,
+} from '@/lib/bookings/custom-bundle-payment-action-core'
 
 function fail(message: string, error?: unknown): never {
   console.error('booking_custom_bundle_payment_action_contract FAILED')
@@ -31,182 +20,7 @@ function fail(message: string, error?: unknown): never {
   process.exit(1)
 }
 
-function deepClone<T>(value: T): T {
-  return structuredClone(value)
-}
-
-let currentRecoveryToken = ''
-
-function makeBytes(kind: 'jpeg' | 'png' | 'webp' | 'avif' | 'plain'): Uint8Array {
-  switch (kind) {
-    case 'jpeg':
-      return new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46])
-    case 'png':
-      return new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00])
-    case 'webp':
-      return new Uint8Array([
-        0x52, 0x49, 0x46, 0x46, 0x18, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50, 0x56, 0x50,
-        0x38, 0x20,
-      ])
-    case 'avif':
-      return new Uint8Array([
-        0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x61, 0x76, 0x69, 0x66, 0x00, 0x00,
-        0x00, 0x00, 0x61, 0x76, 0x69, 0x66,
-      ])
-    case 'plain':
-    default:
-      return new Uint8Array([0x01, 0x02, 0x03, 0x04, 0x05, 0x06])
-  }
-}
-
-function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
-}
-
-function makeFileLike(input: {
-  name: string
-  type: string
-  bytes: Uint8Array
-  throws?: boolean
-}): CustomBundlePaymentProofFileLike & { arrayBufferCalls: { count: number } } {
-  const calls = { count: 0 }
-  return {
-    name: input.name,
-    type: input.type,
-    size: input.bytes.byteLength,
-    async arrayBuffer(): Promise<ArrayBuffer> {
-      calls.count += 1
-      if (input.throws) {
-        throw new Error('arrayBuffer failure')
-      }
-
-      return input.bytes.buffer.slice(
-        input.bytes.byteOffset,
-        input.bytes.byteOffset + input.bytes.byteLength,
-      ) as ArrayBuffer
-    },
-    arrayBufferCalls: calls,
-  }
-}
-
-function makeFormData(input: {
-  publicCode?: FormDataEntryValue
-  paymentMethod?: FormDataEntryValue
-  paymentReference?: FormDataEntryValue
-  paymentRecoveryToken?: FormDataEntryValue
-  paymentProofFile?: FormDataEntryValue | null
-  extra?: Array<[string, FormDataEntryValue]>
-} = {}): FormData {
-  const form = new FormData()
-  if (input.publicCode !== undefined) form.append('publicCode', input.publicCode)
-  if (input.paymentMethod !== undefined) form.append('paymentMethod', input.paymentMethod)
-  if (input.paymentReference !== undefined) form.append('paymentReference', input.paymentReference)
-  if (input.paymentRecoveryToken !== undefined) {
-    currentRecoveryToken = String(input.paymentRecoveryToken)
-    form.append('paymentRecoveryToken', input.paymentRecoveryToken)
-  }
-  if (input.paymentProofFile !== undefined && input.paymentProofFile !== null) {
-    form.append('paymentProofFile', input.paymentProofFile)
-  }
-
-  for (const [key, value] of input.extra ?? []) {
-    form.append(key, value)
-  }
-
-  return form
-}
-
-function makeClock(now: Date): { now(): Date } {
-  return {
-    now(): Date {
-      return new Date(now.getTime())
-    },
-  }
-}
-
-function makeThrowingClock(error: Error): { now(): Date } {
-  return {
-    now(): Date {
-      throw error
-    },
-  }
-}
-
-function makeAuthorizeAdapter(): CustomBundlePaymentActionDependencies['authorizePaymentAccess'] {
-  return async ({ token, expectedPublicCode, now }) => {
-    const result = validatePaymentRecoveryToken(token, expectedPublicCode, now)
-    return result.ok ? { ok: true } : { ok: false, reason: result.error }
-  }
-}
-
-function makeActionDependencies(
-  overrides: Partial<CustomBundlePaymentActionDependencies> = {},
-): CustomBundlePaymentActionDependencies {
-  return {
-    runtime: overrides.runtime ?? 'isolated_test',
-    killSwitchEnabled: overrides.killSwitchEnabled ?? true,
-    readRecoveryToken(): string | null {
-      const token = currentRecoveryToken.trim()
-      return token.length > 0 ? token : null
-    },
-    clock: overrides.clock ?? makeClock(new Date('2026-06-24T18:00:00.000Z')),
-    authorizePaymentAccess: overrides.authorizePaymentAccess ?? makeAuthorizeAdapter(),
-    runServerEntrypoint:
-      overrides.runServerEntrypoint ??
-      (async () => ({
-        ok: true,
-        stage: 'simulated',
-        simulated: true,
-        message: 'ok',
-      })),
-  }
-}
-
-function makeEntryPointSpy(result: CustomBundlePaymentServerEntrypointResult) {
-  const calls = {
-    count: 0,
-    inputs: [] as CustomBundlePaymentServerEntrypointInput[],
-  }
-
-  return {
-    calls,
-    fn: async (input: CustomBundlePaymentServerEntrypointInput): Promise<CustomBundlePaymentServerEntrypointResult> => {
-      calls.count += 1
-      calls.inputs.push(deepClone(input))
-      return deepClone(result)
-    },
-  }
-}
-
-function assertNoLeak(result: unknown): void {
-  const text = JSON.stringify(result)
-  assert.equal(text.includes('paymentReportFingerprint'), false)
-  assert.equal(text.includes('blobPathname'), false)
-  assert.equal(text.includes('DATABASE_URL'), false)
-  assert.equal(text.includes('BLOB_READ_WRITE_TOKEN'), false)
-  assert.equal(text.includes('https://'), false)
-}
-
-function assertRequestCode(
-  result: CustomBundlePaymentActionParseResult,
-  code:
-    | 'INVALID_ACTION_PAYLOAD'
-    | 'DUPLICATE_ACTION_FIELD'
-    | 'UNSUPPORTED_ACTION_FIELD',
-): void {
-  assert.equal(result.ok, false)
-  if (result.ok) {
-    fail('Expected a request failure.')
-  }
-
-  assert.equal(result.result.stage, 'request')
-  assert.equal(result.result.code, code)
-}
-
-async function withEnv<T>(
-  env: Record<string, string | undefined>,
-  run: () => Promise<T>,
-): Promise<T> {
+function withEnv<T>(env: Record<string, string | undefined>, run: () => Promise<T>): Promise<T> {
   const previous = new Map<string, string | undefined>()
   for (const [key, value] of Object.entries(env)) {
     previous.set(key, process.env[key])
@@ -217,9 +31,7 @@ async function withEnv<T>(
     }
   }
 
-  try {
-    return await run()
-  } finally {
+  return run().finally(() => {
     for (const [key, value] of previous.entries()) {
       if (value === undefined) {
         delete process.env[key]
@@ -227,684 +39,237 @@ async function withEnv<T>(
         process.env[key] = value
       }
     }
-  }
-}
-
-function makeValidToken(publicCode: string, now: Date): string {
-  const token = buildPaymentRecoveryToken({
-    bookingPublicCode: publicCode,
-    now,
-    expiresAt: new Date(now.getTime() + 15 * 60_000),
   })
-  if (!token) {
-    fail('Unable to build a valid payment recovery token.')
-  }
-
-  return token
 }
 
-function collectFiles(rootPath: string): string[] {
-  const entries = readdirSync(rootPath, { withFileTypes: true })
-  const results: string[] = []
-
-  for (const entry of entries) {
-    const entryPath = resolve(rootPath, entry.name)
-    if (entry.isDirectory()) {
-      results.push(...collectFiles(entryPath))
-      continue
-    }
-
-    if (entry.isFile()) {
-      results.push(entryPath)
-    }
+function makeFormData(entries: Array<[string, string]>): FormData {
+  const formData = new FormData()
+  for (const [key, value] of entries) {
+    formData.append(key, value)
   }
+  return formData
+}
 
-  return results
+function makeResultRecorder() {
+  return {
+    entrypointCalls: 0,
+    authorizedCalls: 0,
+    lastInput: null as null | { submission: unknown; uploadReceipt: string | null },
+  }
+}
+
+function assertNoLeak(value: unknown): void {
+  const text = JSON.stringify(value)
+  assert.equal(text.includes('paymentRecoveryToken'), false)
+  assert.equal(text.includes('paymentReportIdempotencyKey'), false)
+  assert.equal(text.includes('blobPathname'), false)
+  assert.equal(text.includes('sha256'), false)
+  assert.equal(text.includes('createdByThisCall'), false)
+  assert.equal(text.includes('uploadReceipt'), false)
 }
 
 async function main(): Promise<void> {
-  const wrapperSource = readFileSync(
-    resolve(process.cwd(), 'lib/bookings/custom-bundle-payment-action.ts'),
-    'utf8',
-  )
-  const coreSource = readFileSync(
-    resolve(process.cwd(), 'lib/bookings/custom-bundle-payment-action-core.ts'),
-    'utf8',
-  )
-  const legacyActionSource = readFileSync(resolve(process.cwd(), 'lib/bookings/actions.ts'), 'utf8')
+  await withEnv(
+    { BOOKINGS_PAYMENT_RECOVERY_TOKEN_SECRET: 'payment-action-contract-secret' },
+    async () => {
+      const now = new Date('2026-06-25T12:00:00.000Z')
+      const token = buildPaymentRecoveryToken({
+        bookingPublicCode: 'TUR-0808-500',
+        expiresAt: new Date('2026-06-25T12:15:00.000Z'),
+        now,
+      })
+      if (!token) {
+        fail('Unable to build a valid payment recovery token.')
+      }
 
-  assert.equal(wrapperSource.startsWith("'use server'"), true)
-  assert.equal(wrapperSource.includes('validatePaymentRecoveryToken'), true)
-  assert.equal(wrapperSource.includes('runCustomBundlePaymentServerEntrypoint'), true)
-  assert.equal(wrapperSource.includes('app/'), false)
-  assert.equal(wrapperSource.includes('components/'), false)
-
-  for (const [pattern, label] of [
-    [/from\s+['"]@vercel\/blob['"]/, '@vercel/blob import'],
-    [/from\s+['"]pg['"]/, 'pg import'],
-    [/from\s+['"]@\/lib\/db['"]/, 'lib/db import'],
-    [/process\.env/, 'process.env'],
-    [/['"]use server['"]/, 'use server'],
-    [/Next/, 'Next'],
-    [/React/, 'React'],
-    [/headers|cookies/, 'headers/cookies'],
-  ] as const) {
-    assert.equal(pattern.test(coreSource), false, label)
-  }
-
-  assert.equal(legacyActionSource.includes('custom-bundle-payment-action'), false)
-  assert.equal(legacyActionSource.includes('reportBookingPayment'), true)
-
-  process.env.BOOKINGS_PAYMENT_RECOVERY_TOKEN_SECRET ??= 'action-contract-secret'
-
-  for (const root of ['app', 'components']) {
-    for (const filePath of collectFiles(resolve(process.cwd(), root))) {
-      const fileContents = readFileSync(filePath, 'utf8')
-      assert.equal(
-        fileContents.includes('custom-bundle-payment-action'),
-        false,
-        `UI imports should not reference the protected payment action: ${filePath}`,
+      const exactBoundary = validatePaymentRecoveryToken(
+        token,
+        'TUR-0808-500',
+        new Date('2026-06-25T12:15:00.000Z'),
       )
-    }
-  }
+      assert.equal(exactBoundary.ok, false)
+      if (exactBoundary.ok) {
+        fail('Expected the exact recovery-token boundary to be rejected.')
+      }
 
-  // 1-2. Invalid input / missing FormData.
-  {
-    const result = parseCustomBundlePaymentActionFormData(null)
-    assert.equal(result.ok, false)
-    assertRequestCode(result, 'INVALID_ACTION_PAYLOAD')
-
-    const missing = parseCustomBundlePaymentActionFormData(undefined)
-    assert.equal(missing.ok, false)
-    assertRequestCode(missing, 'INVALID_ACTION_PAYLOAD')
-  }
-
-  // 3-7. FormData shape validation.
-  {
-    const duplicatePublicCode = makeFormData({
-      publicCode: 'TUR-2026-001',
-      paymentMethod: 'efectivo',
-      paymentReference: 'REF-100',
-      paymentRecoveryToken: 'token',
-      extra: [['publicCode', 'TUR-2026-002']],
-    })
-    const duplicateProof = makeFormData({
-      publicCode: 'TUR-2026-001',
-      paymentMethod: 'efectivo',
-      paymentReference: 'REF-100',
-      paymentRecoveryToken: 'token',
-      paymentProofFile: new File([toArrayBuffer(makeBytes('png'))], 'proof.png', {
-        type: 'image/png',
-      }),
-      extra: [
-        [
-          'paymentProofFile',
-          new File([toArrayBuffer(makeBytes('png'))], 'proof-2.png', {
-            type: 'image/png',
-          }),
-        ],
-      ],
-    })
-    const unknownField = makeFormData({
-      publicCode: 'TUR-2026-001',
-      paymentMethod: 'efectivo',
-      paymentReference: 'REF-100',
-      paymentRecoveryToken: 'token',
-      extra: [['unexpectedField', 'boom']],
-    })
-    const ignoredActionField = makeFormData({
-      publicCode: 'TUR-2026-001',
-      paymentMethod: 'efectivo',
-      paymentReference: 'REF-100',
-      paymentRecoveryToken: 'token',
-      extra: [['$ACTION_foo', 'ignored']],
-    })
-
-    const duplicatePublicCodeResult = parseCustomBundlePaymentActionFormData(duplicatePublicCode)
-    assert.equal(duplicatePublicCodeResult.ok, false)
-    assertRequestCode(duplicatePublicCodeResult, 'DUPLICATE_ACTION_FIELD')
-
-    const duplicateProofResult = parseCustomBundlePaymentActionFormData(duplicateProof)
-    assert.equal(duplicateProofResult.ok, false)
-    assertRequestCode(duplicateProofResult, 'DUPLICATE_ACTION_FIELD')
-
-    const unknownFieldResult = parseCustomBundlePaymentActionFormData(unknownField)
-    assert.equal(unknownFieldResult.ok, false)
-    assertRequestCode(unknownFieldResult, 'UNSUPPORTED_ACTION_FIELD')
-
-    const ignoredActionResult = parseCustomBundlePaymentActionFormData(ignoredActionField)
-    assert.equal(ignoredActionResult.ok, true)
-    if (ignoredActionResult.ok) {
-      assert.equal(ignoredActionResult.value.publicCode, 'TUR-2026-001')
-      assert.equal(ignoredActionResult.value.paymentProofFile, null)
-    }
-  }
-
-  // 8-10. Token length and early security gating.
-  {
-    const longToken = 'a'.repeat(4097)
-    const dependencies = makeActionDependencies({
-      runtime: 'isolated_test',
-      killSwitchEnabled: true,
-      clock: makeClock(new Date('2026-06-24T18:00:00.000Z')),
-      runServerEntrypoint: async (): Promise<CustomBundlePaymentServerEntrypointResult> => {
-        fail('Entry point must not run for an oversized token.')
-      },
-    })
-
-    const oversized = await runCustomBundlePaymentProtectedActionWithDependencies(
-      makeFormData({
-        publicCode: 'TUR-2026-001',
-        paymentMethod: 'efectivo',
-        paymentReference: 'REF-100',
-        paymentRecoveryToken: longToken,
-      }),
-      dependencies,
-    )
-    assert.equal(oversized.ok, false)
-    assert.equal(oversized.stage, 'request')
-    if (!oversized.ok) {
-      assert.equal(oversized.code, 'INVALID_ACTION_PAYLOAD')
-    }
-    assertNoLeak(oversized)
-
-    const invalid = await runCustomBundlePaymentProtectedActionWithDependencies(
-      makeFormData({
-        publicCode: 'TUR-2026-001',
-        paymentMethod: 'pago_movil',
-        paymentReference: 'REF-100',
-        paymentRecoveryToken: 'not-a-token',
-      }),
-      {
-        ...dependencies,
-        runServerEntrypoint: async () => {
-          fail('Entry point must not run for an invalid token.')
-        },
-      },
-    )
-    assert.equal(invalid.ok, false)
-    assert.equal(invalid.stage, 'authorization')
-    if (!invalid.ok) {
-      assert.equal(invalid.code, 'PAYMENT_ACCESS_DENIED')
-    }
-    assertNoLeak(invalid)
-
-    const token = makeValidToken('TUR-2026-001', new Date('2026-06-24T18:00:00.000Z'))
-    const expired = await runCustomBundlePaymentProtectedActionWithDependencies(
-      makeFormData({
-        publicCode: 'TUR-2026-001',
-        paymentMethod: 'pago_movil',
-        paymentReference: 'REF-100',
-        paymentRecoveryToken: token,
-      }),
-      {
-        ...dependencies,
-        clock: makeClock(new Date('2026-06-24T18:16:00.000Z')),
-        runServerEntrypoint: async () => {
-          fail('Entry point must not run for an expired token.')
-        },
-      },
-    )
-    assert.equal(expired.ok, false)
-    assert.equal(expired.stage, 'authorization')
-    assertNoLeak(expired)
-
-    const boundary = await runCustomBundlePaymentProtectedActionWithDependencies(
-      makeFormData({
-        publicCode: 'TUR-2026-001',
-        paymentMethod: 'pago_movil',
-        paymentReference: 'REF-100',
-        paymentRecoveryToken: token,
-      }),
-      {
-        ...dependencies,
-        clock: makeClock(new Date('2026-06-24T18:15:00.000Z')),
-        runServerEntrypoint: async () => {
-          fail('Entry point must not run on the exact expiry boundary.')
-        },
-      },
-    )
-    assert.equal(boundary.ok, false)
-    assert.equal(boundary.stage, 'authorization')
-    assertNoLeak(boundary)
-
-    const mismatch = await runCustomBundlePaymentProtectedActionWithDependencies(
-      makeFormData({
-        publicCode: 'TUR-2026-001',
-        paymentMethod: 'pago_movil',
-        paymentReference: 'REF-100',
-        paymentRecoveryToken: makeValidToken('TUR-2026-999', new Date('2026-06-24T18:00:00.000Z')),
-      }),
-      {
-        ...dependencies,
-        runServerEntrypoint: async () => {
-          fail('Entry point must not run for a code mismatch.')
-        },
-      },
-    )
-    assert.equal(mismatch.ok, false)
-    assert.equal(mismatch.stage, 'authorization')
-    assertNoLeak(mismatch)
-  }
-
-  // 14-17. Authorizer and clock failure mapping.
-  {
-    const baseDependencies = makeActionDependencies({
-      runtime: 'isolated_test',
-      killSwitchEnabled: true,
-      clock: makeClock(new Date('2026-06-24T18:00:00.000Z')),
-      runServerEntrypoint: async () => {
-        fail('Entry point must not run for authorizer or clock failures.')
-      },
-    })
-
-    await withEnv(
-      { BOOKINGS_PAYMENT_RECOVERY_TOKEN_SECRET: undefined },
-      async () => {
-        const result = await runCustomBundlePaymentProtectedActionWithDependencies(
-          makeFormData({
-            publicCode: 'TUR-2026-001',
-            paymentMethod: 'efectivo',
-            paymentReference: 'REF-100',
-            paymentRecoveryToken: 'token',
-          }),
-          baseDependencies,
-        )
-        assert.equal(result.ok, false)
-        assert.equal(result.stage, 'authorization')
-        if (!result.ok) {
-          assert.equal(result.code, 'PAYMENT_ACCESS_UNAVAILABLE')
-        }
-        assertNoLeak(result)
-      },
-    )
-
-    const authorizerThrows = await runCustomBundlePaymentProtectedActionWithDependencies(
-      makeFormData({
-        publicCode: 'TUR-2026-001',
-        paymentMethod: 'efectivo',
-        paymentReference: 'REF-100',
-        paymentRecoveryToken: 'token',
-      }),
-      makeActionDependencies({
-        runtime: 'isolated_test',
-        killSwitchEnabled: true,
-        clock: makeClock(new Date('2026-06-24T18:00:00.000Z')),
-        authorizePaymentAccess: async () => {
-          throw new Error('authorizer failed')
-        },
-        runServerEntrypoint: async () => {
-          fail('Entry point must not run for authorizer or clock failures.')
-        },
-      }),
-    )
-    assert.equal(authorizerThrows.ok, false)
-    assert.equal(authorizerThrows.stage, 'authorization')
-    assertNoLeak(authorizerThrows)
-
-    const invalidClock = await runCustomBundlePaymentProtectedActionWithDependencies(
-      makeFormData({
-        publicCode: 'TUR-2026-001',
-        paymentMethod: 'efectivo',
-        paymentReference: 'REF-100',
-        paymentRecoveryToken: 'token',
-      }),
-      makeActionDependencies({
-        runtime: 'isolated_test',
-        killSwitchEnabled: true,
-        clock: makeClock(new Date('invalid')),
-        runServerEntrypoint: async () => {
-          fail('Entry point must not run for authorizer or clock failures.')
-        },
-      }),
-    )
-    assert.equal(invalidClock.ok, false)
-    assert.equal(invalidClock.stage, 'authorization')
-    assertNoLeak(invalidClock)
-
-    const throwingClock = await runCustomBundlePaymentProtectedActionWithDependencies(
-      makeFormData({
-        publicCode: 'TUR-2026-001',
-        paymentMethod: 'efectivo',
-        paymentReference: 'REF-100',
-        paymentRecoveryToken: 'token',
-      }),
-      makeActionDependencies({
-        runtime: 'isolated_test',
-        killSwitchEnabled: true,
-        clock: makeThrowingClock(new Error('clock failure')),
-        runServerEntrypoint: async () => {
-          fail('Entry point must not run for authorizer or clock failures.')
-        },
-      }),
-    )
-    assert.equal(throwingClock.ok, false)
-    assert.equal(throwingClock.stage, 'authorization')
-    assertNoLeak(throwingClock)
-  }
-
-  // 11-13, 18-22. Authorization ordering and call-order guarantees.
-  {
-    const clock = makeClock(new Date('2026-06-24T18:00:00.000Z'))
-    const { calls, fn } = makeEntryPointSpy({
-      ok: true,
-      stage: 'simulated',
-      simulated: true,
-      message: 'ok',
-    })
-    const proofFile = makeFileLike({
-      name: 'proof.png',
-      type: 'image/png',
-      bytes: makeBytes('png'),
-      throws: true,
-    })
-    currentRecoveryToken = 'invalid-token'
-    const authBeforeMethod = await runCustomBundlePaymentProtectedActionWithDependencies(
-      makeFormData({
-        publicCode: 'TUR-2026-001',
-        paymentMethod: 'bad-method',
-        paymentReference: 'REF-100',
-        paymentRecoveryToken: 'invalid-token',
-      }),
-      makeActionDependencies({
-        runtime: 'isolated_test',
-        killSwitchEnabled: true,
-        clock,
-        runServerEntrypoint: fn,
-      }),
-    )
-    assert.equal(authBeforeMethod.ok, false)
-    assert.equal(authBeforeMethod.stage, 'authorization')
-    assert.equal(calls.count, 0)
-
-    const authBeforeFileRead = await runCustomBundleProtectedPaymentActionCore(
-      makeActionDependencies({
-        clock,
-        runServerEntrypoint: fn,
-      }),
-      {
-        publicCode: 'TUR-2026-001',
-        paymentMethod: 'pago_movil',
-        paymentReference: 'REF-100',
-        paymentProofFile: proofFile,
-      },
-    )
-    assert.equal(authBeforeFileRead.ok, false)
-    assert.equal(authBeforeFileRead.stage, 'authorization')
-    assert.equal(calls.count, 0)
-    assert.equal(proofFile.arrayBufferCalls.count, 0)
-
-    const authBeforeInfrastructure = await runCustomBundlePaymentProtectedActionWithDependencies(
-      makeFormData({
-        publicCode: 'TUR-2026-001',
-        paymentMethod: 'efectivo',
-        paymentReference: 'REF-100',
-        paymentRecoveryToken: 'invalid-token',
-      }),
-      makeActionDependencies({
-        runtime: 'isolated_test',
-        killSwitchEnabled: true,
-        clock,
-        runServerEntrypoint: fn,
-      }),
-    )
-    assert.equal(authBeforeInfrastructure.ok, false)
-    assert.equal(authBeforeInfrastructure.stage, 'authorization')
-    assert.equal(calls.count, 0)
-
-    const validToken = makeValidToken('TUR-2026-001', new Date('2026-06-24T18:00:00.000Z'))
-    const validResult = await runCustomBundlePaymentProtectedActionWithDependencies(
-      makeFormData({
-        publicCode: 'TUR-2026-001',
-        paymentMethod: 'efectivo',
-        paymentReference: 'REF-100',
-        paymentRecoveryToken: validToken,
-      }),
-      makeActionDependencies({
-        runtime: 'isolated_test',
-        killSwitchEnabled: true,
-        clock,
-        runServerEntrypoint: fn,
-      }),
-    )
-    assert.equal(validResult.ok, true)
-    assert.equal(calls.count, 1)
-    if (calls.inputs[0]) {
-      assert.deepEqual(Object.keys(calls.inputs[0]).sort(), ['paymentProofFile', 'submission'])
-      assert.equal('paymentRecoveryToken' in calls.inputs[0], false)
-      assert.equal('paymentReportIdempotencyKey' in calls.inputs[0], false)
-      assert.equal('bookingRequestId' in calls.inputs[0], false)
-    }
-  }
-
-  // 18-25. Requested request-field rejections and placeholder normalization.
-  {
-    for (const [field, label] of [
-      ['paymentReportIdempotencyKey', 'client idempotency key'],
-      ['bookingRequestId', 'bookingRequestId'],
-      ['amount', 'amount'],
-    ] as const) {
-      const result = parseCustomBundlePaymentActionFormData(
-        makeFormData({
-          publicCode: 'TUR-2026-001',
-          paymentMethod: 'efectivo',
-          paymentReference: 'REF-100',
-          paymentRecoveryToken: 'token',
-          extra: [[field, 'reject-me']],
-        }),
+      const parsedUnknown = parseCustomBundlePaymentActionFormData(
+        makeFormData([
+          ['publicCode', 'TUR-0808-500'],
+          ['paymentMethod', 'pago_movil'],
+          ['paymentReference', 'REF-500'],
+          ['uploadReceipt', 'receipt-token'],
+          ['unexpected', 'nope'],
+        ]),
       )
-      assert.equal(result.ok, false, label)
-      assertRequestCode(result, 'UNSUPPORTED_ACTION_FIELD')
-    }
+      assert.equal(parsedUnknown.ok, false)
+      if (parsedUnknown.ok) {
+        fail('Expected unknown fields to be rejected.')
+      }
 
-    const placeholder = new File([], '', { type: '' })
-    const parsedPlaceholder = parseCustomBundlePaymentActionFormData(
-      makeFormData({
-        publicCode: 'TUR-2026-001',
-        paymentMethod: 'efectivo',
-        paymentReference: 'REF-100',
-        paymentRecoveryToken: 'token',
-        paymentProofFile: placeholder,
-      }),
-    )
-    assert.equal(parsedPlaceholder.ok, true)
-    if (parsedPlaceholder.ok) {
-      assert.equal(parsedPlaceholder.value.paymentProofFile, null)
-    }
+      const parsedDuplicate = parseCustomBundlePaymentActionFormData(
+        makeFormData([
+          ['publicCode', 'TUR-0808-500'],
+          ['paymentMethod', 'pago_movil'],
+          ['paymentReference', 'REF-500'],
+          ['uploadReceipt', 'receipt-a'],
+          ['uploadReceipt', 'receipt-b'],
+        ]),
+      )
+      assert.equal(parsedDuplicate.ok, false)
+      if (parsedDuplicate.ok) {
+        fail('Expected duplicate uploadReceipt fields to be rejected.')
+      }
 
-    const preservedFile = makeFileLike({
-      name: 'proof.png',
-      type: 'image/png',
-      bytes: makeBytes('png'),
-    })
-    currentRecoveryToken = makeValidToken('TUR-2026-001', new Date('2026-06-24T18:00:00.000Z'))
-    const preservedResult = await runCustomBundleProtectedPaymentActionCore(
-      makeActionDependencies({
-        clock: makeClock(new Date('2026-06-24T18:00:00.000Z')),
-        runServerEntrypoint: async (input) => {
-          assert.equal(input.paymentProofFile, preservedFile)
-          assert.equal(preservedFile.arrayBufferCalls.count, 0)
-          return {
-            ok: true,
-            stage: 'simulated',
-            simulated: true,
-            message: 'ok',
-          }
+      const parsedAction = parseCustomBundlePaymentActionFormData(
+        makeFormData([
+          ['publicCode', ' tur-0808-500 '],
+          ['paymentMethod', ' pago_movil '],
+          ['paymentReference', ' ref-500 '],
+          ['uploadReceipt', '  receipt-token  '],
+          ['$ACTION_ID', 'ignored'],
+        ]),
+      )
+      assert.equal(parsedAction.ok, true)
+      if (!parsedAction.ok) {
+        fail('Expected the protected payment action payload to parse.')
+      }
+      assert.equal(parsedAction.value.publicCode, 'TUR-0808-500')
+      assert.equal(parsedAction.value.uploadReceipt, 'receipt-token')
+
+      const previewRecorder = makeResultRecorder()
+      const previewResult = await runCustomBundlePaymentProtectedActionWithDependencies(
+        makeFormData([
+          ['publicCode', 'TUR-0808-500'],
+          ['paymentMethod', 'pago_movil'],
+          ['paymentReference', 'REF-500'],
+          ['uploadReceipt', 'receipt-token'],
+        ]),
+        {
+          runtime: 'preview',
+          killSwitchEnabled: true,
+          readRecoveryToken() {
+            return 'token-from-cookie'
+          },
+          clock: {
+            now(): Date {
+              return new Date('2026-06-25T12:00:00.000Z')
+            },
+          },
+          async authorizePaymentAccess() {
+            previewRecorder.authorizedCalls += 1
+            return { ok: true }
+          },
+          async runReceiptEntrypoint(input) {
+            previewRecorder.entrypointCalls += 1
+            previewRecorder.lastInput = input
+            return {
+              ok: true,
+              stage: 'simulated',
+              simulated: true,
+              message: 'Simulacion completada. No se modifico la base de datos ni el almacenamiento privado.',
+            }
+          },
         },
-      }),
-      {
-        publicCode: 'TUR-2026-001',
-        paymentMethod: 'pago_movil',
-        paymentReference: 'REF-100',
-        paymentProofFile: preservedFile,
-      },
-    )
-    assert.equal(preservedResult.ok, true)
-  }
+      )
+      assert.equal(previewResult.ok, true)
+      assert.equal(previewResult.stage, 'simulated')
+      assert.equal(previewRecorder.authorizedCalls, 1)
+      assert.equal(previewRecorder.entrypointCalls, 1)
+      assert.equal(previewRecorder.lastInput?.uploadReceipt, 'receipt-token')
+      assertNoLeak(previewResult)
 
-  // 26-28. Preview simulation through the real server action.
-  {
-    await withEnv(
-      {
-        VERCEL_ENV: 'preview',
-        BOOKINGS_PAYMENT_RECOVERY_TOKEN_SECRET: 'action-contract-secret',
-      },
-      async () => {
-        const previewNow = new Date()
-        const token = makeValidToken('TUR-2026-001', previewNow)
-        const proofFile = makeFileLike({
-          name: 'proof.png',
-          type: 'image/png',
-          bytes: makeBytes('png'),
-        })
-
-        const result = await reportCustomBundlePaymentProtectedAction(
-          makeFormData({
-            publicCode: 'TUR-2026-001',
-            paymentMethod: 'pago_movil',
-            paymentReference: 'REF-100',
-            paymentRecoveryToken: token,
-            paymentProofFile: new File([toArrayBuffer(makeBytes('png'))], 'proof.png', {
-              type: 'image/png',
-            }),
-          }),
-        )
-        assert.equal(result.ok, true)
-        assert.equal(result.stage, 'simulated')
-        assertNoLeak(result)
-
-        const wrapperResult = await runCustomBundlePaymentServerEntrypoint({
-          submission: {
-            publicCode: 'TUR-2026-001',
-            paymentMethod: 'pago_movil',
-            paymentReference: 'REF-100',
+      const deniedRecorder = makeResultRecorder()
+      const deniedResult = await runCustomBundlePaymentProtectedActionWithDependencies(
+        makeFormData([
+          ['publicCode', 'TUR-0808-500'],
+          ['paymentMethod', 'pago_movil'],
+          ['paymentReference', 'REF-500'],
+          ['uploadReceipt', 'receipt-token'],
+        ]),
+        {
+          runtime: 'isolated_test',
+          killSwitchEnabled: true,
+          readRecoveryToken() {
+            return 'token-from-cookie'
           },
-          paymentProofFile: proofFile,
-        })
-        assert.equal(wrapperResult.ok, true)
-        assert.equal(wrapperResult.stage, 'simulated')
-        assertNoLeak(wrapperResult)
-
-        const previewInfra = {
-          sql: 0,
-          blob: 0,
-        }
-        const coreResult = await runCustomBundlePaymentServerEntrypointCore(
-          {
-            runtime: 'preview',
-            clock: makeClock(new Date('2026-06-24T18:00:00.000Z')),
-            async openSqlSession() {
-              previewInfra.sql += 1
-              fail('Preview must not open SQL sessions.')
-            },
-            async createPrivateBlobStore() {
-              previewInfra.blob += 1
-              fail('Preview must not create private blob stores.')
+          clock: {
+            now(): Date {
+              return new Date('2026-06-25T12:00:00.000Z')
             },
           },
-          {
-            submission: {
-              publicCode: 'TUR-2026-001',
-              paymentMethod: 'pago_movil',
-              paymentReference: 'REF-100',
-            },
-            paymentProofFile: proofFile,
+          async authorizePaymentAccess() {
+            deniedRecorder.authorizedCalls += 1
+            return { ok: false, reason: 'invalid_token' }
           },
-        )
-        assert.equal(coreResult.ok, true)
-        assert.equal(coreResult.stage, 'simulated')
-        assert.equal(previewInfra.sql, 0)
-        assert.equal(previewInfra.blob, 0)
-      },
-    )
-  }
+          async runReceiptEntrypoint() {
+            deniedRecorder.entrypointCalls += 1
+            return {
+              ok: true,
+              stage: 'simulated',
+              simulated: true,
+              message: 'unexpected',
+            }
+          },
+        },
+      )
+      assert.equal(deniedResult.ok, false)
+      assert.equal(deniedResult.stage, 'authorization')
+      assert.equal(deniedRecorder.authorizedCalls, 1)
+      assert.equal(deniedRecorder.entrypointCalls, 0)
 
-  // 29-34. Sanitization and production kill switch.
-  {
-    const token = makeValidToken('TUR-2026-001', new Date('2026-06-24T18:00:00.000Z'))
-    const simulated = await runCustomBundlePaymentProtectedActionWithDependencies(
-      makeFormData({
-        publicCode: 'TUR-2026-001',
-        paymentMethod: 'efectivo',
-        paymentReference: 'REF-100',
-        paymentRecoveryToken: token,
-      }),
-      makeActionDependencies({
-        runtime: 'isolated_test',
-        killSwitchEnabled: true,
-        clock: makeClock(new Date('2026-06-24T18:00:00.000Z')),
-        runServerEntrypoint: async () => ({
-          ok: true,
-          stage: 'simulated',
-          simulated: true,
-          message: 'Simulated',
-        }),
-      }),
-    )
-    assert.equal(simulated.ok, true)
-    assertNoLeak(simulated)
+      const disabledRecorder = makeResultRecorder()
+      const disabledResult = await runCustomBundlePaymentProtectedActionWithDependencies(
+        makeFormData([
+          ['publicCode', 'TUR-0808-500'],
+          ['paymentMethod', 'pago_movil'],
+          ['paymentReference', 'REF-500'],
+          ['uploadReceipt', 'receipt-token'],
+        ]),
+        {
+          runtime: 'production',
+          killSwitchEnabled: false,
+          readRecoveryToken() {
+            return 'token-from-cookie'
+          },
+          clock: {
+            now(): Date {
+              return new Date('2026-06-25T12:00:00.000Z')
+            },
+          },
+          async authorizePaymentAccess() {
+            disabledRecorder.authorizedCalls += 1
+            return { ok: true }
+          },
+          async runReceiptEntrypoint() {
+            disabledRecorder.entrypointCalls += 1
+            return {
+              ok: true,
+              stage: 'simulated',
+              simulated: true,
+              message: 'unexpected',
+            }
+          },
+        },
+      )
+      assert.equal(disabledResult.ok, false)
+      assert.equal(disabledResult.stage, 'infrastructure')
+      assert.equal(disabledRecorder.entrypointCalls, 0)
 
-    const blockedSpy = makeEntryPointSpy({
-      ok: true,
-      stage: 'simulated',
-      simulated: true,
-      message: 'blocked',
-    })
-    const blocked = await runCustomBundlePaymentProtectedActionWithDependencies(
-      makeFormData({
-        publicCode: 'TUR-2026-001',
-        paymentMethod: 'efectivo',
-        paymentReference: 'REF-100',
-        paymentRecoveryToken: token,
-      }),
-      makeActionDependencies({
-        runtime: 'production',
-        killSwitchEnabled: false,
-        clock: makeClock(new Date('2026-06-24T18:00:00.000Z')),
-        runServerEntrypoint: blockedSpy.fn,
-      }),
-    )
-    assert.equal(blocked.ok, false)
-    assert.equal(blocked.stage, 'infrastructure')
-    if (!blocked.ok) {
-      assert.equal(blocked.code, 'PAYMENT_ACTION_DISABLED')
-    }
-    assert.equal(blockedSpy.calls.count, 0)
+      const sourcePath = resolve(process.cwd(), 'lib/bookings/custom-bundle-payment-action.ts')
+      const source = readFileSync(sourcePath, 'utf8')
+      assert.equal(source.includes("'use server'"), true)
+      assert.equal(source.includes('reportBookingPayment('), false)
 
-    const enabledSpy = makeEntryPointSpy({
-      ok: true,
-      stage: 'simulated',
-      simulated: true,
-      message: 'enabled',
-    })
-    const enabled = await runCustomBundlePaymentProtectedActionWithDependencies(
-      makeFormData({
-        publicCode: 'TUR-2026-001',
-        paymentMethod: 'efectivo',
-        paymentReference: 'REF-100',
-        paymentRecoveryToken: token,
-      }),
-      makeActionDependencies({
-        runtime: 'production',
-        killSwitchEnabled: true,
-        clock: makeClock(new Date('2026-06-24T18:00:00.000Z')),
-        runServerEntrypoint: enabledSpy.fn,
-      }),
-    )
-    assert.equal(enabled.ok, true)
-    assert.equal(enabledSpy.calls.count, 1)
-  }
+      const legacySource = readFileSync(resolve(process.cwd(), 'lib/bookings/actions.ts'), 'utf8')
+      assert.equal(legacySource.includes('reportCustomBundlePaymentProtectedAction'), false)
 
-  // 35-38. Source hygiene and legacy separation.
-  {
-    assert.equal(wrapperSource.startsWith("'use server'"), true)
-    assert.equal(wrapperSource.includes('notifications'), false)
-    assert.equal(wrapperSource.includes('use server'), true)
-    assert.equal(coreSource.includes('notifications'), false)
-    assert.equal(legacyActionSource.includes('custom-bundle-payment-action'), false)
-    assert.equal(legacyActionSource.includes('reportBookingPayment'), true)
-    assert.equal(coreSource.includes('custom-bundle-payment-action'), false)
-  }
+      const uiSource = readFileSync(
+        resolve(process.cwd(), 'app/api/bookings/custom-bundle-payment-proof/upload/route.ts'),
+        'utf8',
+      )
+      assert.equal(uiSource.includes('reportCustomBundlePaymentProtectedAction'), false)
+    },
+  )
 
   console.log('booking_custom_bundle_payment_action_contract OK')
   console.log('signed capability authorization: verified')

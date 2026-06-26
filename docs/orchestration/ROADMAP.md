@@ -118,12 +118,12 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Payment server entrypoint: `TECHNICALLY_VALIDATED`
 - Payment action authorization: `TECHNICALLY_VALIDATED`
 - Payment action wiring: `TECHNICALLY_VALIDATED`
-- Payment server action: `NOT_STARTED`
+- Payment server action: `TECHNICALLY_VALIDATED`
 - Payment transport: `TECHNICALLY_VALIDATED`
 - Recovery cookie handoff: `TECHNICALLY_VALIDATED`
 - Protected proof upload transport: `TECHNICALLY_VALIDATED`
 - Bounded raw body transport: `TECHNICALLY_VALIDATED`
-- Upload receipt action integration: `NOT_STARTED`
+- Upload receipt action integration: `PENDING_CI`
 - Payment UI wiring: `NOT_STARTED`
 - Notifications: `NOT_STARTED`
 - Wizard integration: `NOT_STARTED`

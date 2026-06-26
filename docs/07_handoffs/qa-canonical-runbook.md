@@ -350,6 +350,52 @@ Criterio de evidencia:
 Regla:
 - si la ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar Blob real, token real, UI wiring ni pagos reales.
 
+## Booking custom bundle payment receipt entrypoint
+
+Objetivo:
+- validar la entrada server-only que acepta el receipt opaco y protege la transaccion de reporte de pago.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-receipt-entrypoint-contract.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar preview isolation, receipt binding, SQL-before-storage, session lifecycle, replay, cleanup y resultado sanitizado.
+
+Regla:
+- si la ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar token del cliente, receipt del cliente ni Blob real.
+
+## Booking isolated custom bundle payment receipt action
+
+Objetivo:
+- validar en PostgreSQL efimero la accion protegida conectada al upload receipt, la integracion con reporting y la limpieza compensatoria.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-payment-receipt-action.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql`
+
+Precondiciones:
+- GitHub Actions disponibles;
+- service container PostgreSQL 16 disponible;
+- baseline SQL generado;
+- propuestas BKG-04, BKG-07 y BKG-08 validadas;
+- URL exclusivamente local;
+- opt-in aislado habilitado;
+- clave secreta ficticia solo para QA;
+- sesion SQL de conexion unica disponible.
+
+Criterio de evidencia:
+- confirmar preview isolation, private proof integration, transactional reporting, stable server idempotency, exact replay, conflict cleanup, session lifecycle, secret-free result, database cleanup y storage cleanup.
+
+Regla:
+- si la ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar Blob real, token real, UI wiring ni pagos reales.
+
 ## Booking custom bundle payment contract
 
 Objetivo:
