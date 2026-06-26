@@ -92,9 +92,9 @@ export type CustomBundlePaymentActionParseResult =
       ok: true
       value: {
         publicCode: string
-        paymentMethod: string
-        paymentReference: string
-        uploadReceipt: string | null
+        paymentMethod: FormDataEntryValue | undefined
+        paymentReference: FormDataEntryValue | undefined
+        uploadReceipt: FormDataEntryValue | undefined
       }
     }
   | {
@@ -147,49 +147,6 @@ function makeInfrastructureFailure(
 
 function normalizeTextValue(value: FormDataEntryValue | undefined): string {
   return typeof value === 'string' ? value.trim() : ''
-}
-
-function normalizeOptionalReceipt(
-  value: FormDataEntryValue | undefined,
-): string | null | RequestFailure {
-  if (value === undefined) {
-    return null
-  }
-
-  if (typeof value !== 'string') {
-    return makeRequestFailure(
-      'INVALID_ACTION_PAYLOAD',
-      'El recibo de pago protegido no tiene la forma esperada.',
-      [
-        {
-          code: 'INVALID_ACTION_PAYLOAD',
-          path: ['uploadReceipt'],
-          message: 'uploadReceipt no es valido.',
-        },
-      ],
-    )
-  }
-
-  const normalized = value.trim()
-  if (normalized.length === 0) {
-    return null
-  }
-
-  if (normalized.length > 8192) {
-    return makeRequestFailure(
-      'INVALID_ACTION_PAYLOAD',
-      'El recibo de pago protegido supera el tamano permitido.',
-      [
-        {
-          code: 'INVALID_ACTION_PAYLOAD',
-          path: ['uploadReceipt'],
-          message: 'uploadReceipt supera el tamano permitido.',
-        },
-      ],
-    )
-  }
-
-  return normalized
 }
 
 function normalizePublicCode(value: unknown): string {
@@ -266,9 +223,9 @@ function normalizeReceiptInput(input: unknown): CustomBundleProtectedPaymentActi
   }
 
   const publicCode = normalizePublicCode(entriesByKey.get('publicCode')?.[0])
-  const paymentMethod = normalizeTextValue(entriesByKey.get('paymentMethod')?.[0])
-  const paymentReference = normalizePaymentReference(entriesByKey.get('paymentReference')?.[0])
-  const uploadReceipt = normalizeOptionalReceipt(entriesByKey.get('uploadReceipt')?.[0])
+  const paymentMethod = entriesByKey.get('paymentMethod')?.[0]
+  const paymentReference = entriesByKey.get('paymentReference')?.[0]
+  const uploadReceipt = entriesByKey.get('uploadReceipt')?.[0]
 
   const issues: RequestFieldIssue[] = []
   if (!publicCode) {
@@ -277,26 +234,6 @@ function normalizeReceiptInput(input: unknown): CustomBundleProtectedPaymentActi
       path: ['publicCode'],
       message: 'publicCode es obligatorio.',
     })
-  }
-
-  if (!paymentMethod) {
-    issues.push({
-      code: 'INVALID_ACTION_PAYLOAD',
-      path: ['paymentMethod'],
-      message: 'paymentMethod es obligatorio.',
-    })
-  }
-
-  if (!paymentReference) {
-    issues.push({
-      code: 'INVALID_ACTION_PAYLOAD',
-      path: ['paymentReference'],
-      message: 'paymentReference es obligatorio.',
-    })
-  }
-
-  if (isRequestFailure(uploadReceipt)) {
-    return uploadReceipt
   }
 
   if (issues.length > 0) {
@@ -325,9 +262,9 @@ function readRequestBody(input: unknown): CustomBundlePaymentActionParseResult {
     ok: true,
     value: parsed as {
       publicCode: string
-      paymentMethod: string
-      paymentReference: string
-      uploadReceipt: string | null
+      paymentMethod: FormDataEntryValue | undefined
+      paymentReference: FormDataEntryValue | undefined
+      uploadReceipt: FormDataEntryValue | undefined
     },
   }
 }
@@ -347,6 +284,49 @@ function makeSubmission(input: {
     paymentMethod: input.paymentMethod as CustomBundlePaymentReportSubmission['paymentMethod'],
     paymentReference: input.paymentReference,
   }
+}
+
+function normalizeUploadReceiptAfterAuthorization(
+  value: unknown,
+): string | null | RequestFailure {
+  if (value === undefined || value === null) {
+    return null
+  }
+
+  if (typeof value !== 'string') {
+    return makeRequestFailure(
+      'INVALID_ACTION_PAYLOAD',
+      'El recibo de pago protegido no tiene la forma esperada.',
+      [
+        {
+          code: 'INVALID_ACTION_PAYLOAD',
+          path: ['uploadReceipt'],
+          message: 'uploadReceipt no es valido.',
+        },
+      ],
+    )
+  }
+
+  const normalized = value.trim()
+  if (normalized.length === 0) {
+    return null
+  }
+
+  if (normalized.length > 8192) {
+    return makeRequestFailure(
+      'INVALID_ACTION_PAYLOAD',
+      'El recibo de pago protegido supera el tamano permitido.',
+      [
+        {
+          code: 'INVALID_ACTION_PAYLOAD',
+          path: ['uploadReceipt'],
+          message: 'uploadReceipt supera el tamano permitido.',
+        },
+      ],
+    )
+  }
+
+  return normalized
 }
 
 export function parseCustomBundlePaymentActionFormData(
@@ -432,7 +412,7 @@ export async function runCustomBundleProtectedPaymentActionCore(
   const paymentReference = normalizePaymentReference(
     input.paymentReference as FormDataEntryValue | undefined,
   )
-  const uploadReceipt = normalizeOptionalReceipt(input.uploadReceipt as FormDataEntryValue | undefined)
+  const uploadReceipt = normalizeUploadReceiptAfterAuthorization(input.uploadReceipt)
   if (isRequestFailure(uploadReceipt)) {
     return uploadReceipt
   }
@@ -496,9 +476,9 @@ export async function runCustomBundlePaymentProtectedActionWithDependencies(
     dependencies,
     parsed.value as {
       publicCode: string
-      paymentMethod: string
-      paymentReference: string
-      uploadReceipt: string | null
+      paymentMethod: FormDataEntryValue | undefined
+      paymentReference: FormDataEntryValue | undefined
+      uploadReceipt: FormDataEntryValue | undefined
     },
   )
 }

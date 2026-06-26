@@ -396,6 +396,28 @@ Criterio de evidencia:
 Regla:
 - si la ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar Blob real, token real, UI wiring ni pagos reales.
 
+## Booking custom bundle payment receipt compensation
+
+Objetivo:
+- validar la compensacion estructurada del receipt cuando el reporting o la consulta de `headPrivate` fallan despues de crear un objeto propio.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-receipt-compensation-contract.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar structured delete failure, original reporting cause preserved, active proof preservation, reused object preservation, head failure sanitization, advisory lifecycle y public result sanitization.
+
+Regla:
+- si la ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar cleanup alterno, no perder la causa original ni conectar UI.
+
 ## Booking custom bundle payment contract
 
 Objetivo:

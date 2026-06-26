@@ -1,4 +1,4 @@
-name: Booking Isolated Custom Bundle Payment Receipt Action
+name: Booking Isolated Custom Bundle Payment Receipt Hardening
 
 on:
   push:
@@ -40,6 +40,7 @@ on:
       - scripts/qa/bookings/custom-bundle-payment-proof-boundary-contract.ts
       - scripts/qa/bookings/custom-bundle-payment-server-entrypoint-contract.ts
       - scripts/qa/bookings/custom-bundle-payment-receipt-entrypoint-contract.ts
+      - scripts/qa/bookings/custom-bundle-payment-receipt-compensation-contract.ts
       - scripts/qa/bookings/custom-bundle-payment-action-contract.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-schema.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-reporting.ts
@@ -156,6 +157,9 @@ jobs:
 
       - name: Run custom bundle payment receipt entrypoint gate
         run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-receipt-entrypoint-contract.ts
+
+      - name: Run custom bundle payment receipt compensation gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-receipt-compensation-contract.ts
 
       - name: Run custom bundle payment action contract gate
         run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-action-contract.ts

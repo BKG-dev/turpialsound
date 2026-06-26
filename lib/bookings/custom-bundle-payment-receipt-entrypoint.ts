@@ -9,6 +9,20 @@ import {
 } from '@/lib/bookings/custom-bundle-payment-receipt-entrypoint-core'
 import { validateCustomBundlePaymentUploadReceipt } from '@/lib/bookings/custom-bundle-payment-upload-token'
 
+export function sanitizeReceiptResult(
+  result: CustomBundlePaymentReceiptEntrypointResult,
+): CustomBundlePaymentReceiptEntrypointResult {
+  if (result.ok) {
+    return result
+  }
+
+  const { originalFailure, ...rest } = result as CustomBundlePaymentReceiptEntrypointResult & {
+    originalFailure?: unknown
+  }
+  void originalFailure
+  return rest
+}
+
 function getRuntime(): CustomBundlePaymentReceiptEntrypointRuntime | null {
   if (isPreviewDeployment()) {
     return 'preview'
@@ -110,5 +124,5 @@ export async function runCustomBundlePaymentReceiptEntrypoint(
       },
     },
     input,
-  )
+  ).then((result) => sanitizeReceiptResult(result))
 }

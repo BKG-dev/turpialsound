@@ -11,6 +11,7 @@ import {
 import {
   runCustomBundlePaymentReceiptEntrypointCore,
   type CustomBundlePaymentReceiptEntrypointDependencies,
+  type CustomBundlePaymentReceiptEntrypointResult,
 } from '@/lib/bookings/custom-bundle-payment-receipt-entrypoint-core'
 import {
   buildCustomBundlePaymentUploadReceipt,
@@ -99,6 +100,10 @@ function makeFormData(entries: Array<[string, string]>): FormData {
   return formData
 }
 
+function makeReceiptFile(): File {
+  return new File(['receipt'], 'receipt.png', { type: 'image/png' })
+}
+
 function buildReceiptToken(payload: CustomBundlePaymentUploadReceiptPayload): string {
   const token = buildCustomBundlePaymentUploadReceipt({
     publicCode: payload.publicCode,
@@ -123,7 +128,13 @@ function buildReceiptToken(payload: CustomBundlePaymentUploadReceiptPayload): st
   return token
 }
 
-function makeStore(seed: CustomBundlePaymentUploadReceiptPayload) {
+function makeStore(
+  seed: CustomBundlePaymentUploadReceiptPayload,
+  options: {
+    headMode?: 'normal' | 'throws'
+    deleteMode?: 'normal' | 'throws'
+  } = {},
+) {
   const object = {
     pathname: seed.blobPathname,
     contentType: seed.mimeType,
@@ -145,6 +156,9 @@ function makeStore(seed: CustomBundlePaymentUploadReceiptPayload) {
     },
     async headPrivate(pathname: string) {
       calls.head += 1
+      if (options.headMode === 'throws') {
+        throw new Error('receipt action head failure')
+      }
       if (!existing || pathname !== existing.pathname) {
         return null
       }
@@ -157,8 +171,66 @@ function makeStore(seed: CustomBundlePaymentUploadReceiptPayload) {
     },
     async deletePrivate(pathname: string) {
       calls.delete += 1
+      if (options.deleteMode === 'throws') {
+        throw new Error('receipt action delete failure')
+      }
       if (existing && existing.pathname === pathname) {
         existing = null
+      }
+    },
+  }
+}
+
+function makeSession(options: { safetyMode?: 'empty' | 'active' | 'invalid' | 'throws'; closeMode?: 'normal' | 'throws' } = {}) {
+  const calls = { total: 0, lock: 0, safety: 0, unlock: 0, close: 0 }
+
+  return {
+    calls,
+    session: {
+      transactionScope: 'single_connection' as const,
+      async query(sql: string) {
+        calls.total += 1
+        if (sql.includes('pg_advisory_lock')) {
+          calls.lock += 1
+          return { rows: [], rowCount: 0 }
+        }
+
+        if (sql.includes('payment_proofs')) {
+          calls.safety += 1
+          switch (options.safetyMode ?? 'empty') {
+            case 'throws':
+              throw new Error('receipt action safety query failure')
+            case 'invalid':
+              return { rows: null } as any
+            case 'active':
+              return {
+                rows: [
+                  {
+                    id: 'payment-proof-001',
+                    bookingRequestId: 'booking-001',
+                    blobPathname: 'payment-proofs/TUR-0808-700/0123456789abcdef-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png',
+                    isActive: true,
+                  },
+                ],
+                rowCount: 1,
+              }
+            default:
+              return { rows: [], rowCount: 0 }
+          }
+        }
+
+        if (sql.includes('pg_advisory_unlock')) {
+          calls.unlock += 1
+          return { rows: [], rowCount: 0 }
+        }
+
+        return { rows: [], rowCount: 0 }
+      },
+    },
+    async close() {
+      calls.close += 1
+      if (options.closeMode === 'throws') {
+        throw new Error('receipt action close failure')
       }
     },
   }
@@ -198,6 +270,36 @@ function makeReceiptEntrypointDependencies(
   }
 }
 
+function makeReceiptEntrypointDependenciesWithSession(
+  store: ReturnType<typeof makeStore>,
+  session: ReturnType<typeof makeSession>,
+  overrides: Partial<CustomBundlePaymentReceiptEntrypointDependencies> = {},
+): CustomBundlePaymentReceiptEntrypointDependencies {
+  return {
+    runtime: 'isolated_test',
+    clock: {
+      now(): Date {
+        return new Date('2026-06-25T12:00:00.000Z')
+      },
+    },
+    validateUploadReceipt(receipt, expectedPublicCode, now) {
+      return validateCustomBundlePaymentUploadReceipt(receipt, expectedPublicCode, now)
+    },
+    async openSqlSession() {
+      return {
+        session: session.session as any,
+        async close() {
+          return session.close()
+        },
+      } as any
+    },
+    async createPrivateBlobStore() {
+      return store
+    },
+    ...overrides,
+  }
+}
+
 export async function main(): Promise<void> {
   await withEnv(
     { BOOKINGS_PAYMENT_RECOVERY_TOKEN_SECRET: 'receipt-action-contract-secret' },
@@ -209,12 +311,55 @@ export async function main(): Promise<void> {
       }
       const receiptPayload = makeReceiptPayloadForSubmission(submission)
       const receiptToken = buildReceiptToken(receiptPayload)
+      const reusedReceiptPayload = makeReceiptPayloadForSubmission(submission, {
+        createdByThisCall: false,
+      })
+      const reusedReceiptToken = buildReceiptToken(reusedReceiptPayload)
       const store = makeStore(receiptPayload)
       const recoveryToken = buildPaymentRecoveryToken({
         bookingPublicCode: receiptPayload.publicCode,
         expiresAt: new Date('2026-06-25T12:15:00.000Z'),
         now: new Date('2026-06-25T12:00:00.000Z'),
       })
+
+      async function runProtectedReceiptFlow(input: {
+        formData: FormData
+        authorizePaymentAccess: () => Promise<{ ok: true } | { ok: false; reason: 'invalid_token' | 'expired_token' | 'code_mismatch' | 'misconfigured_secret' }>
+        store: ReturnType<typeof makeStore>
+        session: ReturnType<typeof makeSession>
+        reportPayment: () => Promise<any>
+      }): Promise<{
+        result: Awaited<ReturnType<typeof runCustomBundlePaymentProtectedActionWithDependencies>>
+        store: ReturnType<typeof makeStore>
+        session: ReturnType<typeof makeSession>
+      }> {
+        const result = await runCustomBundlePaymentProtectedActionWithDependencies(input.formData, {
+          runtime: 'isolated_test',
+          killSwitchEnabled: true,
+          readRecoveryToken() {
+            return recoveryToken
+          },
+          clock: {
+            now(): Date {
+              return new Date('2026-06-25T12:00:00.000Z')
+            },
+          },
+          async authorizePaymentAccess() {
+            return input.authorizePaymentAccess()
+          },
+          async runReceiptEntrypoint(receiptInput) {
+            return runCustomBundlePaymentReceiptEntrypointCore(
+              makeReceiptEntrypointDependenciesWithSession(input.store, input.session, {
+                async reportPayment() {
+                  return input.reportPayment()
+                },
+              }),
+              receiptInput,
+            )
+          },
+        })
+        return { result, store: input.store, session: input.session }
+      }
 
       const previewResult = await runCustomBundlePaymentProtectedActionWithDependencies(
         makeFormData([
@@ -366,6 +511,7 @@ export async function main(): Promise<void> {
                   return {
                     ok: false,
                     stage: 'replay' as const,
+                    code: 'idempotency_key_conflict' as const,
                     replayClassification: 'idempotency_key_conflict' as const,
                     message: 'conflict',
                   } as never
@@ -407,6 +553,250 @@ export async function main(): Promise<void> {
       assert.equal(exactBoundaryResult.ok, false)
       assert.equal(exactBoundaryResult.stage, 'authorization')
 
+      const invalidTokenBlocked = await runProtectedReceiptFlow({
+        formData: (() => {
+          const formData = new FormData()
+          formData.append('publicCode', submission.publicCode)
+          formData.append('paymentMethod', '   ')
+          formData.append('paymentReference', 'REF-700')
+          formData.append('uploadReceipt', makeReceiptFile())
+          return formData
+        })(),
+        authorizePaymentAccess: async () => ({ ok: false, reason: 'invalid_token' }),
+        store: makeStore(receiptPayload),
+        session: makeSession(),
+        reportPayment: async () => {
+          fail('Invalid tokens must block the receipt entrypoint before SQL.')
+        },
+      })
+      assert.equal(invalidTokenBlocked.result.ok, false)
+      assert.equal(invalidTokenBlocked.result.stage, 'authorization')
+      assert.equal(invalidTokenBlocked.session.calls.total, 0)
+      assert.equal(invalidTokenBlocked.store.calls.head, 0)
+      assert.equal(invalidTokenBlocked.store.calls.delete, 0)
+
+      const invalidReceiptBlocked = await runProtectedReceiptFlow({
+        formData: (() => {
+          const formData = new FormData()
+          formData.append('publicCode', submission.publicCode)
+          formData.append('paymentMethod', submission.paymentMethod)
+          formData.append('paymentReference', 'REF-700')
+          formData.append('uploadReceipt', makeReceiptFile())
+          return formData
+        })(),
+        authorizePaymentAccess: async () => ({ ok: true }),
+        store: makeStore(receiptPayload),
+        session: makeSession(),
+        reportPayment: async () => {
+          fail('Invalid receipts must block the receipt entrypoint before SQL.')
+        },
+      })
+      assert.equal(invalidReceiptBlocked.result.ok, false)
+      assert.equal(invalidReceiptBlocked.result.stage, 'request')
+      assert.equal(invalidReceiptBlocked.session.calls.total, 0)
+      assert.equal(invalidReceiptBlocked.store.calls.head, 0)
+
+      const activeProofPreserved = await runProtectedReceiptFlow({
+        formData: makeFormData([
+          ['publicCode', submission.publicCode],
+          ['paymentMethod', submission.paymentMethod],
+          ['paymentReference', 'REF-700'],
+          ['uploadReceipt', receiptToken],
+        ]),
+        authorizePaymentAccess: async () => ({ ok: true }),
+        store: makeStore(receiptPayload),
+        session: makeSession({ safetyMode: 'active' }),
+        reportPayment: async () => ({
+          ok: false,
+          stage: 'replay',
+          code: 'idempotency_key_conflict',
+          replayClassification: 'idempotency_key_conflict',
+          message: 'conflict',
+        }),
+      })
+      assert.equal(activeProofPreserved.result.ok, false)
+      assert.equal(activeProofPreserved.result.stage, 'conflict')
+      assert.equal(activeProofPreserved.store.calls.delete, 0)
+      assert.equal(activeProofPreserved.session.calls.safety, 1)
+
+      const reusedProofPreserved = await runProtectedReceiptFlow({
+        formData: makeFormData([
+          ['publicCode', submission.publicCode],
+          ['paymentMethod', submission.paymentMethod],
+          ['paymentReference', 'REF-700'],
+          ['uploadReceipt', reusedReceiptToken],
+        ]),
+        authorizePaymentAccess: async () => ({ ok: true }),
+        store: makeStore(
+          reusedReceiptPayload,
+          { deleteMode: 'normal' },
+        ),
+        session: makeSession({ safetyMode: 'empty' }),
+        reportPayment: async () => ({
+          ok: false,
+          stage: 'replay',
+          code: 'idempotency_key_conflict',
+          replayClassification: 'idempotency_key_conflict',
+          message: 'conflict',
+        }),
+      })
+      assert.equal(reusedProofPreserved.result.ok, false)
+      assert.equal(reusedProofPreserved.result.stage, 'conflict')
+      assert.equal(reusedProofPreserved.store.calls.delete, 0)
+      assert.equal(reusedProofPreserved.session.calls.safety, 0)
+
+      const reportThrowVisible = await runProtectedReceiptFlow({
+        formData: makeFormData([
+          ['publicCode', submission.publicCode],
+          ['paymentMethod', submission.paymentMethod],
+          ['paymentReference', 'REF-700'],
+          ['uploadReceipt', receiptToken],
+        ]),
+        authorizePaymentAccess: async () => ({ ok: true }),
+        store: makeStore(receiptPayload, { deleteMode: 'throws' }),
+        session: makeSession({ safetyMode: 'empty' }),
+        reportPayment: async () => {
+          throw new Error('receipt action reporting throw')
+        },
+      })
+      assert.equal(reportThrowVisible.result.ok, false)
+      assert.equal(reportThrowVisible.result.stage, 'cleanup')
+      if (reportThrowVisible.result.ok) {
+        fail('Expected cleanup failure after a reporting throw.')
+      }
+      assert.equal(reportThrowVisible.result.code, 'BLOB_CLEANUP_FAILED')
+      assert.equal(reportThrowVisible.store.calls.delete, 1)
+      assert.equal('originalFailure' in reportThrowVisible.result, true)
+
+      const deleteFailureVisible = await runProtectedReceiptFlow({
+        formData: makeFormData([
+          ['publicCode', submission.publicCode],
+          ['paymentMethod', submission.paymentMethod],
+          ['paymentReference', 'REF-700'],
+          ['uploadReceipt', receiptToken],
+        ]),
+        authorizePaymentAccess: async () => ({ ok: true }),
+        store: makeStore(receiptPayload, { deleteMode: 'throws' }),
+        session: makeSession({ safetyMode: 'empty' }),
+        reportPayment: async () => ({
+          ok: false,
+          stage: 'replay',
+          code: 'idempotency_key_conflict',
+          replayClassification: 'idempotency_key_conflict',
+          message: 'conflict',
+        }),
+      })
+      assert.equal(deleteFailureVisible.result.ok, false)
+      assert.equal(deleteFailureVisible.result.stage, 'cleanup')
+      if (deleteFailureVisible.result.ok) {
+        fail('Expected cleanup failure when deleting the owned proof fails.')
+      }
+      assert.equal(deleteFailureVisible.result.code, 'BLOB_CLEANUP_FAILED')
+      assert.equal(deleteFailureVisible.store.calls.delete, 1)
+      assert.equal('originalFailure' in deleteFailureVisible.result, true)
+
+      const safetyFailureVisible = await runProtectedReceiptFlow({
+        formData: makeFormData([
+          ['publicCode', submission.publicCode],
+          ['paymentMethod', submission.paymentMethod],
+          ['paymentReference', 'REF-700'],
+          ['uploadReceipt', receiptToken],
+        ]),
+        authorizePaymentAccess: async () => ({ ok: true }),
+        store: makeStore(receiptPayload),
+        session: makeSession({ safetyMode: 'throws' }),
+        reportPayment: async () => ({
+          ok: false,
+          stage: 'replay',
+          code: 'idempotency_key_conflict',
+          replayClassification: 'idempotency_key_conflict',
+          message: 'conflict',
+        }),
+      })
+      assert.equal(safetyFailureVisible.result.ok, false)
+      assert.equal(safetyFailureVisible.result.stage, 'cleanup')
+      if (safetyFailureVisible.result.ok) {
+        fail('Expected safety-check cleanup failure.')
+      }
+      assert.equal(safetyFailureVisible.result.code, 'PROOF_CLEANUP_SAFETY_CHECK_FAILED')
+      assert.equal(safetyFailureVisible.store.calls.delete, 0)
+
+      const headThrowVisible = await runProtectedReceiptFlow({
+        formData: makeFormData([
+          ['publicCode', submission.publicCode],
+          ['paymentMethod', submission.paymentMethod],
+          ['paymentReference', 'REF-700'],
+          ['uploadReceipt', receiptToken],
+        ]),
+        authorizePaymentAccess: async () => ({ ok: true }),
+        store: makeStore(receiptPayload, { headMode: 'throws' }),
+        session: makeSession(),
+        reportPayment: async () => {
+          fail('A headPrivate failure must stop reporting.')
+        },
+      })
+      assert.equal(headThrowVisible.result.ok, false)
+      assert.equal(headThrowVisible.result.stage, 'infrastructure')
+      if (headThrowVisible.result.ok) {
+        fail('Expected the headPrivate failure to be sanitized.')
+      }
+      assert.equal(headThrowVisible.result.code, 'PROOF_OBJECT_LOOKUP_FAILED')
+      assert.equal(headThrowVisible.store.calls.delete, 0)
+      assert.equal(headThrowVisible.session.calls.lock, 1)
+      assert.equal(headThrowVisible.session.calls.unlock, 1)
+      assert.equal(headThrowVisible.session.calls.close, 1)
+      assert.equal(headThrowVisible.session.calls.safety, 0)
+
+      const exactReplayResult = await runProtectedReceiptFlow({
+        formData: makeFormData([
+          ['publicCode', submission.publicCode],
+          ['paymentMethod', submission.paymentMethod],
+          ['paymentReference', 'REF-700'],
+          ['uploadReceipt', receiptToken],
+        ]),
+        authorizePaymentAccess: async () => ({ ok: true }),
+        store: makeStore(receiptPayload),
+        session: makeSession({ safetyMode: 'empty' }),
+        reportPayment: async () => ({
+          ok: true,
+          stage: 'replayed',
+          simulated: false,
+          publicCode: receiptPayload.publicCode,
+          paymentStatus: 'payment_reported',
+          replayed: true,
+          message: 'Pago consolidado ya registrado.',
+        }),
+      })
+      assert.equal(exactReplayResult.result.ok, true)
+      assert.equal(exactReplayResult.result.stage, 'replayed')
+      assert.equal(exactReplayResult.store.calls.delete, 0)
+      assert.equal(exactReplayResult.session.calls.safety, 0)
+
+      const reportedCleanupResult = await runProtectedReceiptFlow({
+        formData: makeFormData([
+          ['publicCode', submission.publicCode],
+          ['paymentMethod', submission.paymentMethod],
+          ['paymentReference', 'REF-700'],
+          ['uploadReceipt', receiptToken],
+        ]),
+        authorizePaymentAccess: async () => ({ ok: true }),
+        store: makeStore(receiptPayload),
+        session: makeSession({ safetyMode: 'empty' }),
+        reportPayment: async () => ({
+          ok: true,
+          stage: 'reported',
+          simulated: false,
+          publicCode: receiptPayload.publicCode,
+          paymentStatus: 'payment_reported',
+          replayed: false,
+          message: 'Pago consolidado reportado correctamente.',
+        }),
+      })
+      assert.equal(reportedCleanupResult.result.ok, true)
+      assert.equal(reportedCleanupResult.result.stage, 'reported')
+      assert.equal(reportedCleanupResult.store.calls.delete, 0)
+      assert.equal(reportedCleanupResult.session.calls.safety, 0)
+
       const source = readFileSync(
         resolve(process.cwd(), 'lib/bookings/custom-bundle-payment-action-core.ts'),
         'utf8',
@@ -423,6 +813,10 @@ export async function main(): Promise<void> {
   console.log('stable server idempotency: verified')
   console.log('exact replay: verified')
   console.log('conflict cleanup: verified')
+  console.log('invalid report cleanup: verified')
+  console.log('reporting exception compensation: verified')
+  console.log('reused object preserved after post-upload failure: verified')
+  console.log('original failure preserved: verified')
   console.log('session lifecycle: verified')
   console.log('secret-free result: verified')
   console.log('database cleanup: verified')

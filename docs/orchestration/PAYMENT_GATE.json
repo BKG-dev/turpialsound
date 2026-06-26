@@ -1,6 +1,6 @@
 {
-  "sprint": "BKG-08G",
-  "baseSha": "261aacc44a7c662cef7a9d1fd1525632f9c8b5c4",
+  "sprint": "BKG-08G1",
+  "baseSha": "0a79cb157612e0147b6bddf01324bf11b218a8e4",
   "model": "single_consolidated_manual_payment_report",
   "validation": {
     "workflow": "booking-isolated-custom-bundle-payment-contract.yml",
@@ -116,6 +116,21 @@
     "databaseCleanupVerified": true,
     "storageCleanupVerified": true
   },
+  "receiptActionCorrectionValidation": {
+    "workflow": "booking-isolated-custom-bundle-payment-proof-boundary.yml",
+    "status": "PENDING_CORRECTION",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
+    "structuredDeleteFailureVerified": false,
+    "originalReportingFailurePreserved": false,
+    "cleanupSafetyFailureVerified": false,
+    "headPrivateExceptionSanitized": false,
+    "authorizationBeforeSecondaryValidationVerified": false,
+    "smallServerActionPayloadVerified": false,
+    "databaseCleanupVerified": false,
+    "storageCleanupVerified": false
+  },
   "protectedPaymentActionTechnicallyValidated": true,
   "serverActionTransportBodyLimitVerified": false,
   "readyForPaymentRecoveryIntegration": true,
@@ -169,9 +184,14 @@
   "paymentTransportTechnicallyValidated": true,
   "readyForPaymentActionWiring": true,
   "readyForPaymentTransportIntegration": true,
-  "paymentReceiptActionTechnicallyValidated": true,
-  "readyForPaymentUiWiring": true,
+  "paymentReceiptActionTechnicallyValidated": false,
+  "readyForPaymentUiWiring": false,
   "readyForWizardIntegration": false,
   "readyForProduction": false,
-  "blockers": []
+  "blockers": [
+    "STRUCTURED_BLOB_DELETE_FAILURE_IS_IGNORED",
+    "CLEANUP_FAILURE_LOSES_ORIGINAL_REPORTING_CAUSE",
+    "HEAD_PRIVATE_EXCEPTION_CAN_ESCAPE_RECEIPT_CORE",
+    "SECONDARY_ACTION_FIELDS_VALIDATE_BEFORE_RECOVERY_AUTHORIZATION"
+  ]
 }

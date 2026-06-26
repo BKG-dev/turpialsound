@@ -1,24 +1,24 @@
 # Current Sprint
 
 Sprint:
-BKG-08G
+BKG-08G1
 
 Name:
-Integracion transaccional del upload receipt con la accion protegida
+Endurecimiento de compensación del receipt y orden de autorización
 
 Base:
-261aacc44a7c662cef7a9d1fd1525632f9c8b5c4
+0a79cb157612e0147b6bddf01324bf11b218a8e4
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* upload receipt opaco;
-* accion protegida server-only;
-* autorizacion firmada;
-* entropia de UI aislada;
-* resultado publico sanitizado.
+* cleanup estructurado del receipt;
+* preservacion de la causa original;
+* autorizacion antes de la validacion secundaria;
+* resultado publico sanitizado;
+* UI todavia desconectada.
 
 Out of Scope:
 
@@ -29,8 +29,8 @@ Out of Scope:
 * siguiente sprint no iniciado.
 
 Result:
-READY_FOR_PAYMENT_UI_WIRING
+PAYMENT_RECEIPT_HARDENING_PENDING_CI
 
 Next Action:
 
-ChatGPT reviews BKG-08G and defines payment UI wiring and transport boundary.
+ChatGPT verifies receipt cleanup compensation and authorization ordering before payment UI wiring.

@@ -52,6 +52,11 @@ export interface CustomBundlePaymentReceiptEntrypointDependencies {
   reportPayment?: typeof reportCustomBundlePaymentWithSql
 }
 
+interface ReceiptOriginalFailure {
+  stage: string
+  code: string
+}
+
 export type CustomBundlePaymentReceiptEntrypointResult =
   | {
       ok: true
@@ -78,6 +83,7 @@ export type CustomBundlePaymentReceiptEntrypointResult =
         path?: Array<string | number>
         message: string
       }>
+      originalFailure?: ReceiptOriginalFailure
     }
 
 type ReceiptFailureStage = Extract<
@@ -97,10 +103,13 @@ function makeFailureResult(
   code: string,
   message: string,
   fieldIssues?: Array<{ code: string; path?: Array<string | number>; message: string }>,
+  originalFailure?: ReceiptOriginalFailure,
 ): ReceiptFailure {
-  return fieldIssues && fieldIssues.length > 0
+  const failure: ReceiptFailure = fieldIssues && fieldIssues.length > 0
     ? { ok: false, stage, code, message, fieldIssues }
     : { ok: false, stage, code, message }
+
+  return originalFailure ? { ...failure, originalFailure } : failure
 }
 
 function makeFieldIssues(
@@ -229,12 +238,28 @@ async function cleanupOwnedReceiptAfterFailure(input: {
   reportFailure: ReceiptFailure | null
   thrownFailure: ReceiptFailure | null
 }): Promise<ReceiptFailure | null> {
-  if (!input.receipt.createdByThisCall) {
-    return input.reportFailure ?? input.thrownFailure
+  const originalFailure = input.reportFailure ?? input.thrownFailure
+  if (!originalFailure) {
+    return null
   }
 
-  const safetyQuery = await input.session
-    .query<{
+  if (!input.receipt.createdByThisCall) {
+    return originalFailure
+  }
+
+  let safetyQuery:
+    | {
+        rows: Array<{
+          id: string
+          bookingRequestId: string
+          blobPathname: string
+          isActive: boolean
+        }>
+      }
+    | null = null
+
+  try {
+    safetyQuery = await input.session.query<{
       id: string
       bookingRequestId: string
       blobPathname: string
@@ -253,22 +278,33 @@ async function cleanupOwnedReceiptAfterFailure(input: {
       `,
       [input.receipt.blobPathname],
     )
-    .catch(() => null)
-
-  if (!safetyQuery) {
+  } catch {
     return makeFailureResult(
       'cleanup',
       'PROOF_CLEANUP_SAFETY_CHECK_FAILED',
       'No se pudo verificar si el comprobante ya estaba referenciado.',
+      undefined,
+      originalFailure,
+    )
+  }
+
+  if (!safetyQuery || !Array.isArray(safetyQuery.rows)) {
+    return makeFailureResult(
+      'cleanup',
+      'PROOF_CLEANUP_SAFETY_CHECK_FAILED',
+      'No se pudo verificar si el comprobante ya estaba referenciado.',
+      undefined,
+      originalFailure,
     )
   }
 
   if (safetyQuery.rows.length > 0) {
-    return input.reportFailure ?? input.thrownFailure
+    return originalFailure
   }
 
+  let deleteResult: Awaited<ReturnType<typeof deleteCustomBundlePaymentProofFromPrivateStore>> | null = null
   try {
-    await deleteCustomBundlePaymentProofFromPrivateStore({
+    deleteResult = await deleteCustomBundlePaymentProofFromPrivateStore({
       store: input.store,
       pathname: input.receipt.blobPathname,
     })
@@ -277,10 +313,32 @@ async function cleanupOwnedReceiptAfterFailure(input: {
       'cleanup',
       'BLOB_CLEANUP_FAILED',
       'No se pudo limpiar el comprobante privado despues del fallo.',
+      undefined,
+      originalFailure,
     )
   }
 
-  return input.reportFailure ?? input.thrownFailure
+  if (!deleteResult) {
+    return makeFailureResult(
+      'cleanup',
+      'BLOB_CLEANUP_FAILED',
+      'No se pudo limpiar el comprobante privado despues del fallo.',
+      undefined,
+      originalFailure,
+    )
+  }
+
+  if (!deleteResult.ok) {
+    return makeFailureResult(
+      'cleanup',
+      deleteResult.code,
+      deleteResult.message,
+      undefined,
+      originalFailure,
+    )
+  }
+
+  return originalFailure
 }
 
 function makeSuccessResult(
@@ -426,6 +484,48 @@ export async function runCustomBundlePaymentReceiptEntrypointCore(
     await sessionHandle.close()
   }
 
+  async function finalizeReceiptResult(
+    result: ReceiptFailure | ReceiptSuccess,
+  ): Promise<ReceiptFailure | ReceiptSuccess> {
+    if (!sessionHandle) {
+      return result
+    }
+
+    let unlockFailed = false
+    let closeFailed = false
+
+    if (lockAcquired) {
+      try {
+        await sessionHandle.session.query('SELECT pg_advisory_unlock(hashtextextended($1, 0))', [
+          `${CUSTOM_BUNDLE_PAYMENT_RECEIPT_ENTRYPOINT_VERSION}|${submission.publicCode}`,
+        ])
+      } catch {
+        unlockFailed = true
+      } finally {
+        lockAcquired = false
+      }
+    }
+
+    try {
+      await closeSessionHandle()
+    } catch {
+      closeFailed = true
+    } finally {
+      sessionHandle = null
+      store = null
+    }
+
+    if (result.ok && (unlockFailed || closeFailed)) {
+      return makeFailureResult(
+        'infrastructure',
+        'PAYMENT_RECEIPT_SESSION_CLOSE_FAILED',
+        'No se pudo cerrar la sesion del reporte de pago.',
+      )
+    }
+
+    return result
+  }
+
   try {
     try {
       sessionHandle = await dependencies.openSqlSession()
@@ -445,30 +545,48 @@ export async function runCustomBundlePaymentReceiptEntrypointCore(
       )
       lockAcquired = true
     } catch {
-      return makeFailureResult(
-        'infrastructure',
-        'PAYMENT_RECEIPT_LOCK_FAILED',
-        'No se pudo adquirir el bloqueo transaccional del recibo.',
+      return await finalizeReceiptResult(
+        makeFailureResult(
+          'infrastructure',
+          'PAYMENT_RECEIPT_LOCK_FAILED',
+          'No se pudo adquirir el bloqueo transaccional del recibo.',
+        ),
       )
     }
 
     try {
       store = await dependencies.createPrivateBlobStore()
     } catch {
-      return makeFailureResult(
-        'infrastructure',
-        'PRIVATE_STORAGE_UNAVAILABLE',
-        'El almacenamiento privado del comprobante no esta disponible.',
+      return await finalizeReceiptResult(
+        makeFailureResult(
+          'infrastructure',
+          'PRIVATE_STORAGE_UNAVAILABLE',
+          'El almacenamiento privado del comprobante no esta disponible.',
+        ),
       )
     }
 
     if (receipt) {
-      const object = await store.headPrivate(receipt.blobPathname)
+      let object: Awaited<ReturnType<CustomBundlePrivateBlobStore['headPrivate']>>
+      try {
+        object = await store.headPrivate(receipt.blobPathname)
+      } catch {
+        return await finalizeReceiptResult(
+          makeFailureResult(
+            'infrastructure',
+            'PROOF_OBJECT_LOOKUP_FAILED',
+            'No pudimos verificar el comprobante privado.',
+          ),
+        )
+      }
+
       if (!object) {
-        return makeFailureResult(
-          'proof',
-          'PROOF_OBJECT_NOT_FOUND',
-          'El comprobante privado no existe.',
+        return await finalizeReceiptResult(
+          makeFailureResult(
+            'proof',
+            'PROOF_OBJECT_NOT_FOUND',
+            'El comprobante privado no existe.',
+          ),
         )
       }
 
@@ -481,10 +599,12 @@ export async function runCustomBundlePaymentReceiptEntrypointCore(
         object.uploadedAt.toISOString() !== receipt.uploadedAt ||
         object.uploadedAt.getTime() > nowResult.now.getTime()
       ) {
-        return makeFailureResult(
-          'proof',
-          'PROOF_OBJECT_MISMATCH',
-          'El comprobante privado no coincide con el recibo validado.',
+        return await finalizeReceiptResult(
+          makeFailureResult(
+            'proof',
+            'PROOF_OBJECT_MISMATCH',
+            'El comprobante privado no coincide con el recibo validado.',
+          ),
         )
       }
     }
@@ -517,11 +637,11 @@ export async function runCustomBundlePaymentReceiptEntrypointCore(
           })
         : failure
 
-      return cleanupFailure ?? failure
+      return await finalizeReceiptResult(cleanupFailure ?? failure)
     }
 
     if (reportResult.ok) {
-      return makeSuccessResult(reportResult)
+      return await finalizeReceiptResult(makeSuccessResult(reportResult))
     }
 
     const mappedFailure = mapBookingReportResult(reportResult)
@@ -535,7 +655,7 @@ export async function runCustomBundlePaymentReceiptEntrypointCore(
         })
       : mappedFailure
 
-    return cleanupFailure ?? mappedFailure
+    return await finalizeReceiptResult(cleanupFailure ?? mappedFailure)
   } finally {
     if (lockAcquired && sessionHandle) {
       await sessionHandle.session

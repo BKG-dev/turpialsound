@@ -1,6 +1,6 @@
 {
-  "version": 20,
-  "updated_at": "2026-06-25",
+  "version": 22,
+  "updated_at": "2026-06-26",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
     "layers": {
@@ -1591,6 +1591,40 @@
       ],
       "last_validated_at": null,
       "notes": "Isolated PostgreSQL gate for the protected payment receipt action with receipt binding, transactional reporting and cleanup checks."
+    },
+    "booking_custom_bundle_payment_receipt_compensation_contract": {
+      "task_id": "booking_custom_bundle_payment_receipt_compensation_contract",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-receipt-compensation-contract.ts",
+      "preconditions": [
+        "Node and pnpm available",
+        "Dependencies installed",
+        "No application server required",
+        "No DATABASE_URL required",
+        "No browser required",
+        "No network required"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "ignorar el resultado del helper de delete",
+        "asumir que todo fallo de delete lanza excepcion",
+        "borrar sin safety query",
+        "perder la causa original",
+        "validar receipt antes de recovery authorization",
+        "abrir SQL antes de receipt valido",
+        "exponer originalFailure publicamente",
+        "conectar UI",
+        "activar produccion"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-08G1.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Canonical QA route for the hardened receipt compensation and authorization ordering checks."
     }
   }
 }
