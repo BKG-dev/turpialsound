@@ -123,7 +123,7 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Recovery cookie handoff: `TECHNICALLY_VALIDATED`
 - Protected proof upload transport: `TECHNICALLY_VALIDATED`
 - Bounded raw body transport: `TECHNICALLY_VALIDATED`
-- Upload receipt action integration: `PENDING_CI`
+- Upload receipt action integration: `TECHNICALLY_VALIDATED`
 - Payment UI wiring: `NOT_STARTED`
 - Notifications: `NOT_STARTED`
 - Wizard integration: `NOT_STARTED`

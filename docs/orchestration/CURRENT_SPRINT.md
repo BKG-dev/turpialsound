@@ -10,7 +10,7 @@ Base:
 261aacc44a7c662cef7a9d1fd1525632f9c8b5c4
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
@@ -29,8 +29,8 @@ Out of Scope:
 * siguiente sprint no iniciado.
 
 Result:
-UPLOAD_RECEIPT_ACTION_PENDING_CI
+READY_FOR_PAYMENT_UI_WIRING
 
 Next Action:
 
-ChatGPT verifies the protected payment receipt action before payment UI wiring.
+ChatGPT reviews BKG-08G and defines payment UI wiring and transport boundary.
