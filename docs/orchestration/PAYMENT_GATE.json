@@ -118,22 +118,24 @@
   },
   "receiptActionCorrectionValidation": {
     "workflow": "booking-isolated-custom-bundle-payment-proof-boundary.yml",
-    "status": "PENDING_CORRECTION",
-    "runId": null,
-    "validatedHeadSha": null,
-    "conclusion": null,
-    "structuredDeleteFailureVerified": false,
-    "originalReportingFailurePreserved": false,
-    "cleanupSafetyFailureVerified": false,
-    "headPrivateExceptionSanitized": false,
-    "authorizationBeforeSecondaryValidationVerified": false,
-    "smallServerActionPayloadVerified": false,
-    "databaseCleanupVerified": false,
-    "storageCleanupVerified": false
+    "status": "SUCCESS",
+    "runId": 28266575171,
+    "validatedHeadSha": "b7d114dad394073313d921e57e3fdd3ce3b3c5d1",
+    "conclusion": "success",
+    "structuredDeleteFailureVerified": true,
+    "originalReportingFailurePreserved": true,
+    "cleanupSafetyFailureVerified": true,
+    "headPrivateExceptionSanitized": true,
+    "authorizationBeforeSecondaryValidationVerified": true,
+    "smallServerActionPayloadVerified": true,
+    "databaseCleanupVerified": true,
+    "storageCleanupVerified": true
   },
   "protectedPaymentActionTechnicallyValidated": true,
-  "serverActionTransportBodyLimitVerified": false,
+  "serverActionTransportBodyLimitVerified": true,
   "readyForPaymentRecoveryIntegration": true,
+  "paymentReceiptActionTechnicallyValidated": true,
+  "readyForPaymentUiWiring": true,
   "serverEntrypointValidation": {
     "workflow": "booking-isolated-custom-bundle-payment-proof-boundary.yml",
     "status": "SUCCESS",
@@ -184,14 +186,7 @@
   "paymentTransportTechnicallyValidated": true,
   "readyForPaymentActionWiring": true,
   "readyForPaymentTransportIntegration": true,
-  "paymentReceiptActionTechnicallyValidated": false,
-  "readyForPaymentUiWiring": false,
   "readyForWizardIntegration": false,
   "readyForProduction": false,
-  "blockers": [
-    "STRUCTURED_BLOB_DELETE_FAILURE_IS_IGNORED",
-    "CLEANUP_FAILURE_LOSES_ORIGINAL_REPORTING_CAUSE",
-    "HEAD_PRIVATE_EXCEPTION_CAN_ESCAPE_RECEIPT_CORE",
-    "SECONDARY_ACTION_FIELDS_VALIDATE_BEFORE_RECOVERY_AUTHORIZATION"
-  ]
+  "blockers": []
 }

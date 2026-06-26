@@ -10,7 +10,7 @@ Base:
 0a79cb157612e0147b6bddf01324bf11b218a8e4
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
@@ -29,8 +29,7 @@ Out of Scope:
 * siguiente sprint no iniciado.
 
 Result:
-PAYMENT_RECEIPT_HARDENING_PENDING_CI
+READY_FOR_PAYMENT_UI_WIRING
 
 Next Action:
-
-ChatGPT verifies receipt cleanup compensation and authorization ordering before payment UI wiring.
+ChatGPT reviews BKG-08G1 and defines isolated payment recovery UI wiring.
