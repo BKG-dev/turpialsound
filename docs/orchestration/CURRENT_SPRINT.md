@@ -10,7 +10,7 @@ Base:
 7c049f4ada3fd0856400b40fdb5d6afa517a19b6
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
@@ -29,7 +29,7 @@ Out of Scope:
 * integracion E2E aun no iniciada.
 
 Result:
-PAYMENT_RECOVERY_UI_PENDING_CI
+READY_FOR_END_TO_END_PREVIEW_INTEGRATION
 
 Next Action:
-ChatGPT verifies the Preview-only payment recovery UI before end-to-end custom bundle integration.
+ChatGPT reviews BKG-08H and defines the isolated wizard submission, hold and recovery handoff.

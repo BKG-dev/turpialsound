@@ -126,7 +126,7 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Upload receipt action integration: `TECHNICALLY_VALIDATED`
 - Receipt cleanup compensation: `TECHNICALLY_VALIDATED`
 - Server Action small payload: `TECHNICALLY_VALIDATED`
-- Payment recovery UI: `PENDING_CI`
+- Payment recovery UI: `TECHNICALLY_VALIDATED`
 - End-to-end Preview integration: `NOT_STARTED`
 - Notifications: `NOT_STARTED`
 - Wizard integration: `NOT_STARTED`
