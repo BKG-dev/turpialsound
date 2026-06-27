@@ -1,24 +1,24 @@
 # Current Sprint
 
 Sprint:
-BKG-08G1
+BKG-08H
 
 Name:
-Endurecimiento de compensación del receipt y orden de autorización
+Wiring aislado de la interfaz de recuperación de pago
 
 Base:
-0a79cb157612e0147b6bddf01324bf11b218a8e4
+7c049f4ada3fd0856400b40fdb5d6afa517a19b6
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* cleanup estructurado del receipt;
-* preservacion de la causa original;
-* autorizacion antes de la validacion secundaria;
-* resultado publico sanitizado;
-* UI todavia desconectada.
+* UI de recuperacion solo en Preview;
+* sesion segura con token opaco;
+* metodo, comprobante y receipt acotados;
+* identidad exacta de Arma tu paquete;
+* wizard y produccion fuera de alcance.
 
 Out of Scope:
 
@@ -26,10 +26,10 @@ Out of Scope:
 * notificaciones;
 * produccion;
 * manual QA;
-* siguiente sprint no iniciado.
+* integracion E2E aun no iniciada.
 
 Result:
-READY_FOR_PAYMENT_UI_WIRING
+PAYMENT_RECOVERY_UI_PENDING_CI
 
 Next Action:
-ChatGPT reviews BKG-08G1 and defines isolated payment recovery UI wiring.
+ChatGPT verifies the Preview-only payment recovery UI before end-to-end custom bundle integration.

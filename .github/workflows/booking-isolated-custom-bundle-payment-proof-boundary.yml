@@ -1,4 +1,4 @@
-name: Booking Isolated Custom Bundle Payment Receipt Hardening
+name: Booking Isolated Custom Bundle Payment Recovery UI
 
 on:
   push:
@@ -27,10 +27,17 @@ on:
       - lib/bookings/custom-bundle-payment-reporting.ts
       - lib/bookings/custom-bundle-payment-action-core.ts
       - lib/bookings/custom-bundle-payment-action.ts
+      - lib/bookings/custom-bundle-booking-identity.ts
+      - lib/bookings/custom-bundle-persistence.ts
+      - lib/bookings/custom-bundle-payment-proof-constants.ts
+      - lib/bookings/custom-bundle-payment-recovery-ui-contract.ts
+      - lib/bookings/custom-bundle-payment-recovery-ui-flow.ts
       - lib/bookings/custom-bundle-payment-contract.ts
+      - app/api/bookings/payment-recovery/session/route.ts
       - lib/bookings/custom-bundle-payment-receipt-entrypoint-core.ts
       - lib/bookings/custom-bundle-payment-receipt-entrypoint.ts
       - lib/bookings/payment-recovery-token.ts
+      - components/bookings/CustomBundlePaymentRecoveryForm.tsx
       - scripts/qa/shims/server-only/index.js
       - scripts/qa/bookings/custom-bundle-payment-recovery-transport-contract.ts
       - scripts/qa/bookings/custom-bundle-payment-upload-transport-contract.ts
@@ -42,6 +49,7 @@ on:
       - scripts/qa/bookings/custom-bundle-payment-receipt-entrypoint-contract.ts
       - scripts/qa/bookings/custom-bundle-payment-receipt-compensation-contract.ts
       - scripts/qa/bookings/custom-bundle-payment-action-contract.ts
+      - scripts/qa/bookings/custom-bundle-payment-recovery-ui-contract.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-schema.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-reporting.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-proof-flow.ts
@@ -163,6 +171,9 @@ jobs:
 
       - name: Run custom bundle payment action contract gate
         run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-action-contract.ts
+
+      - name: Run custom bundle payment recovery UI contract gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-recovery-ui-contract.ts
 
       - name: Run custom bundle payment recovery transport gate
         run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-recovery-transport-contract.ts

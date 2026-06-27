@@ -4,13 +4,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getOperationalStatus, getPaymentDeadline } from '@/lib/bookings/operations'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
-import { getPrimaryPaymentMethod } from '@/lib/bookings/payment-settings'
+import { getEnabledPaymentMethods, getPrimaryPaymentMethod } from '@/lib/bookings/payment-settings'
 import { validatePaymentRecoveryToken } from '@/lib/bookings/payment-recovery-token'
 import {
   CUSTOM_BUNDLE_PAYMENT_RECOVERY_COOKIE_NAME,
   buildCustomBundlePaymentRecoveryCookieClearOptions,
   buildCustomBundlePaymentRecoveryCookieSetOptions,
 } from '@/lib/bookings/custom-bundle-payment-recovery-cookie'
+import { isPreviewDeployment } from '@/lib/bookings/environment'
+import { isCustomBundleBookingCandidate } from '@/lib/bookings/custom-bundle-booking-identity'
+import {
+  mapBookingPaymentMethodToPublicUiMethod,
+  resolveCustomBundlePaymentUiMode,
+} from '@/lib/bookings/custom-bundle-payment-recovery-ui-contract'
 
 interface PaymentRecoveryPayload {
   code?: string
@@ -172,6 +178,14 @@ export async function POST(request: NextRequest) {
 
   const primaryMethod = getPrimaryPaymentMethod()
   const primaryItem = booking.items[0]
+  const isCustomBundleCandidate = isCustomBundleBookingCandidate({
+    eventTitle: booking.eventTitle,
+  })
+  const paymentUiMode = resolveCustomBundlePaymentUiMode({
+    isPreview: isPreviewDeployment(),
+    isCustomBundleBookingCandidate: isCustomBundleCandidate,
+  })
+  const paymentMethods = getEnabledPaymentMethods().map(mapBookingPaymentMethodToPublicUiMethod)
   const estimatedTotalUsd = parseOptionalAmount(booking.estimatedTotal) ?? 0
   let referenceRate = 0
   let amountBs = 0
@@ -189,11 +203,10 @@ export async function POST(request: NextRequest) {
     ok: true,
     state: 'pending_payment',
     session: {
-      version: 1,
+      version: 2,
       publicCode: booking.publicCode,
       operationalStatus: 'pending_payment',
-      serviceSlug: primaryItem?.serviceVariant.service.slug ?? null,
-      variantSlug: primaryItem?.serviceVariant.slug ?? null,
+      paymentUiMode,
       serviceName: primaryItem?.serviceVariant.service.name ?? 'Servicio',
       variantName: primaryItem?.serviceVariant.name ?? 'Modalidad',
       eventDate: formatCaracasDateYmd(booking.eventDate),
@@ -209,6 +222,7 @@ export async function POST(request: NextRequest) {
       amountUsdLabel: formatAmountLabel(estimatedTotalUsd, 'USD'),
       amountBsLabel: formatAmountLabel(amountBs, 'VES'),
       bcvRate: referenceRate,
+      paymentMethods,
     },
   })
 

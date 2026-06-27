@@ -17,7 +17,7 @@ import {
   type CustomBundleProtectedPaymentActionResult,
 } from '@/lib/bookings/custom-bundle-payment-action-core'
 
-export const BOOKINGS_CUSTOM_BUNDLE_PAYMENT_ACTION_ENABLED_ENV =
+const BOOKINGS_CUSTOM_BUNDLE_PAYMENT_ACTION_ENABLED_ENV =
   'BOOKINGS_CUSTOM_BUNDLE_PAYMENT_ACTION_ENABLED' as const
 
 export type CustomBundlePaymentActionRuntime =

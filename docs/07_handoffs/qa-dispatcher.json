@@ -1,6 +1,6 @@
 {
-  "version": 22,
-  "updated_at": "2026-06-26",
+  "version": 23,
+  "updated_at": "2026-06-27",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
     "layers": {
@@ -1254,6 +1254,42 @@
       ],
       "last_validated_at": null,
       "notes": "Canonical QA route for the secure recovery-session handoff and cookie-backed transport guard."
+    },
+    "booking_custom_bundle_payment_recovery_ui_contract": {
+      "task_id": "booking_custom_bundle_payment_recovery_ui_contract",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-recovery-ui-contract.ts",
+      "preconditions": [
+        "Node and pnpm available",
+        "Dependencies installed",
+        "No application server required",
+        "No DATABASE_URL required",
+        "No browser required",
+        "No network required"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "habilitar la UI en produccion",
+        "usar el titulo parcial como identidad",
+        "enviar token en FormData",
+        "guardar token en storage",
+        "enviar File en Server Action",
+        "usar multipart",
+        "saltarse upload intent",
+        "importar accion legacy",
+        "conectar wizard",
+        "usar Blob real",
+        "realizar QA manual ahora"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-08H.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Canonical QA route for the Preview-only payment recovery UI and secure session handoff."
     },
     "booking_custom_bundle_payment_upload_transport_contract": {
       "task_id": "booking_custom_bundle_payment_upload_transport_contract",

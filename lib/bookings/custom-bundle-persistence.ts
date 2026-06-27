@@ -10,6 +10,9 @@ import {
   parseCaracasLocalDateTime,
 } from '@/lib/bookings/caracas-time'
 import {
+  CUSTOM_BUNDLE_BOOKING_EVENT_TITLE,
+} from '@/lib/bookings/custom-bundle-booking-identity'
+import {
   getCustomBundlePersistenceTarget,
   getCustomBundleServerIncludedItemSlugs,
   type CustomBundleServerIncludedItemSlug,
@@ -158,7 +161,6 @@ interface ServiceVariantTargetDescriptor {
 }
 
 const BOOKING_PUBLIC_CODE_REGEX = /^TUR-\d{4}-\d{3,}$/
-const BOOKING_REQUEST_EVENT_TITLE = 'Solicitud - Arma tu paquete'
 const BOOKING_REQUEST_STATUS = 'under_review'
 const BOOKING_REQUEST_PRIORITY_LEVEL = 'normal'
 const BOOKING_REQUEST_SOURCE = 'web'
@@ -901,7 +903,7 @@ export async function persistCustomBundleSubmissionWithSql(
         quote.submission.requester.name,
         quote.submission.requester.email,
         quote.submission.requester.phone,
-        BOOKING_REQUEST_EVENT_TITLE,
+          CUSTOM_BUNDLE_BOOKING_EVENT_TITLE,
         eventDateTime,
         eventEndDateTime,
         buildCustomBundleBookingRequestNotes(quote.submission.extrasNotes),

@@ -827,6 +827,28 @@ Criterio de evidencia:
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar token del cliente, Blob real ni HTTP ad hoc.
 
+## Booking custom bundle payment recovery UI
+
+Objetivo:
+- validar la UI Preview-only de recuperacion de pago, la identidad exacta del bundle y el handoff seguro de sesion sin conectar el wizard.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-recovery-ui-contract.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar modo Preview-only, identidad exacta de Arma tu paquete, sesion segura, contrato de metodos de pago, validacion de archivo cliente, orden intent-before-upload, raw protected upload, wiring del receipt action, ausencia de token y storage cliente, disclosure de simulacion y fallback legacy.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no habilitar la UI en produccion, no usar el titulo parcial como identidad, no enviar token en FormData, no guardar token en storage, no enviar File en Server Action, no usar multipart, no saltarse upload intent, no importar la accion legacy, no conectar wizard, no usar Blob real y no realizar QA manual ahora.
+
 ## Booking custom bundle payment upload transport
 
 Objetivo:
