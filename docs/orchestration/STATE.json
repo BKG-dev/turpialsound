@@ -13,5 +13,5 @@
   "releaseCandidateSha": null,
   "previewUrl": null,
   "lastHandoff": "docs/orchestration/handoffs/BKG-08H1.md",
-  "nextAction": "ChatGPT verifies disabled-mode isolation, token retry safety and canonical proof constants before end-to-end Preview integration"
+  "nextAction": "ChatGPT reviews BKG-08H1 and defines isolated wizard submission, hold and recovery handoff"
 }

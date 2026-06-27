@@ -2,8 +2,12 @@
 
 - Sprint: `BKG-08H1`
 - Base SHA: `0068c87083a0e59b2dcb9afd307550f08ca832c4`
-- State: `DIRECTOR_REVIEW`
-- Result: `PAYMENT_RECOVERY_UI_HARDENING_PENDING_CI`
+- State: `TECHNICALLY_VALIDATED`
+- Result: `READY_FOR_END_TO_END_PREVIEW_INTEGRATION`
+- Functional SHA: `0fab3c089c23b15b51b64c0298264d5427041c4f`
+- Validation run: `28302816192`
+- Gate job: `83853960506`
+- Conclusion: `success`
 
 ## Context
 
@@ -14,6 +18,12 @@
 - Las excepciones de intent, upload y action quedan sanitizadas.
 - La UI productiva sigue desactivada y el wizard sigue desconectado.
 
+## Notes
+
+- La validacion remota del gate quedo en success.
+- `paymentRecoveryUiTechnicallyValidated` quedo `true`.
+- `readyForEndToEndPreviewIntegration` quedo `true`.
+
 ## Next Action
 
-- ChatGPT verifica el endurecimiento del modo Preview y la recanalizacion segura del reintento.
+- ChatGPT reviews BKG-08H1 and defines isolated wizard submission, hold and recovery handoff.

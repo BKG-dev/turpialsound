@@ -161,23 +161,23 @@
   },
   "paymentUiCorrectionValidation": {
     "workflow": "booking-isolated-custom-bundle-payment-proof-boundary.yml",
-    "status": "PENDING_CORRECTION",
-    "runId": null,
-    "validatedHeadSha": null,
-    "conclusion": null,
-    "disabledModeBlockedVerified": false,
-    "zeroInfrastructureWhenDisabledVerified": false,
-    "transientFailureTokenRetentionVerified": false,
-    "retryResendsInitialTokenVerified": false,
-    "trustedResponseTokenClearVerified": false,
-    "singleProofConstantsSourceVerified": false,
-    "dependencyExceptionsSanitizedVerified": false,
-    "rawErrorMessageBlockedVerified": false,
-    "noProductionActivationVerified": false,
-    "noWizardWiringVerified": false
+    "status": "SUCCESS",
+    "runId": 28302816192,
+    "validatedHeadSha": "0fab3c089c23b15b51b64c0298264d5427041c4f",
+    "conclusion": "success",
+    "disabledModeBlockedVerified": true,
+    "zeroInfrastructureWhenDisabledVerified": true,
+    "transientFailureTokenRetentionVerified": true,
+    "retryResendsInitialTokenVerified": true,
+    "trustedResponseTokenClearVerified": true,
+    "singleProofConstantsSourceVerified": true,
+    "dependencyExceptionsSanitizedVerified": true,
+    "rawErrorMessageBlockedVerified": true,
+    "noProductionActivationVerified": true,
+    "noWizardWiringVerified": true
   },
-  "paymentRecoveryUiTechnicallyValidated": false,
-  "readyForEndToEndPreviewIntegration": false,
+  "paymentRecoveryUiTechnicallyValidated": true,
+  "readyForEndToEndPreviewIntegration": true,
   "serverEntrypointValidation": {
     "workflow": "booking-isolated-custom-bundle-payment-proof-boundary.yml",
     "status": "SUCCESS",
@@ -230,10 +230,5 @@
   "readyForPaymentTransportIntegration": true,
   "readyForWizardIntegration": false,
   "readyForProduction": false,
-  "blockers": [
-    "DISABLED_UI_MODE_CAN_EXECUTE_PAYMENT_FLOW",
-    "INITIAL_RECOVERY_TOKEN_CLEARED_BEFORE_SECURE_SESSION",
-    "PAYMENT_PROOF_CONSTANTS_HAVE_MULTIPLE_SOURCES",
-    "RAW_CLIENT_EXCEPTION_MESSAGE_CAN_BE_RENDERED"
-  ]
+  "blockers": []
 }
