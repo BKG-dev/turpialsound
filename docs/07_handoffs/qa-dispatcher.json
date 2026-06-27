@@ -851,7 +851,7 @@
         "docs/07_handoffs/qa-canonical-runbook.md",
         "docs/orchestration/handoffs/BKG-07A.md"
       ],
-      "last_validated_at": null,
+      "last_validated_at": "2026-06-27",
       "notes": "Canonical hold contract QA for the expiring BookingRequest hold and canonical fingerprint."
     },
     "booking_isolated_custom_bundle_hold_schema": {

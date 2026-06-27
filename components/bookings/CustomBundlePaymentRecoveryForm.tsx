@@ -69,6 +69,7 @@ export function CustomBundlePaymentRecoveryForm({
   onPaymentStateChange,
 }: CustomBundlePaymentRecoveryFormProps) {
   const isPreviewSimulation = session.paymentUiMode === 'preview_simulation'
+  const isUiEnabled = isPreviewSimulation
   const [selectedMethodSlug, setSelectedMethodSlug] = useState<BookingPaymentMethodSlug>(
     session.selectedPaymentMethodSlug,
   )
@@ -106,7 +107,7 @@ export function CustomBundlePaymentRecoveryForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!isPreviewSimulation) {
+    if (!isUiEnabled) {
       setVisualState('error')
       setErrorMessage('La interfaz de reporte de pago no esta habilitada en este entorno.')
       setAnnouncement('La interfaz de reporte de pago no esta habilitada en este entorno.')
@@ -329,6 +330,7 @@ export function CustomBundlePaymentRecoveryForm({
                 value={method.slug}
                 checked={selectedMethodSlug === method.slug}
                 onChange={() => setSelectedMethodSlug(method.slug)}
+                disabled={!isUiEnabled}
                 className="mt-1"
               />
               <span className="space-y-1">
@@ -372,6 +374,7 @@ export function CustomBundlePaymentRecoveryForm({
           type="text"
           value={reference}
           onChange={(event) => setReference(event.target.value)}
+          disabled={!isUiEnabled}
           className="w-full rounded-md border border-brand-border bg-brand-surface px-3 py-2 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-accent-gold"
           placeholder="Referencia de pago"
         />
@@ -385,6 +388,7 @@ export function CustomBundlePaymentRecoveryForm({
           type="file"
           accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif"
           onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+          disabled={!isUiEnabled}
           className="block w-full text-sm text-text-secondary file:mr-4 file:rounded-md file:border-0 file:bg-accent-gold file:px-4 file:py-2 file:text-sm file:font-semibold file:text-background"
         />
         {selectedFile ? (
@@ -415,7 +419,7 @@ export function CustomBundlePaymentRecoveryForm({
 
       <button
         type="submit"
-        disabled={isSubmitting || !isPreviewSimulation}
+        disabled={isSubmitting || !isUiEnabled}
         className="inline-flex items-center justify-center rounded-md bg-accent-gold px-4 py-2 text-sm font-semibold text-background transition-colors disabled:cursor-not-allowed disabled:opacity-60"
       >
         {visualState === 'creating_intent'

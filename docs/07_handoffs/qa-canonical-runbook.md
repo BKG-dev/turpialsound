@@ -935,7 +935,7 @@ Precondiciones:
 - no requiere red.
 
 Criterio de evidencia:
-- confirmar bloqueo de modo disabled, retencion transitoria del token, limpieza confiable tras respuesta estructurada, excepciones sanitizadas y una sola fuente canonica de tamano y MIME.
+- confirmar bloqueo de modo disabled, retencion transitoria del token ante 500 o JSON invalido, limpieza confiable tras respuesta estructurada, excepciones sanitizadas y una sola fuente canonica de tamano y MIME.
 
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no permitir submit en modo disabled, no limpiar token antes de confirmar respuesta segura, no guardar token en storage, no mostrar `error.message`, no duplicar limites o MIME, no activar produccion, no conectar wizard, no usar Blob real y no ejecutar QA manual.

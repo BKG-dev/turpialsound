@@ -147,6 +147,23 @@ async function main(): Promise<void> {
     }),
     true,
   )
+  for (const terminalState of [
+    'payment_reported',
+    'confirmed',
+    'expired',
+    'cancelled',
+    'not_found',
+    'unavailable',
+  ] as const) {
+    assert.equal(
+      shouldClearInitialRecoveryToken({
+        responseOk: true,
+        responseState: terminalState,
+        hasValidPendingSession: false,
+      }),
+      true,
+    )
+  }
 
   const transientFailureResult = shouldClearInitialRecoveryToken({
     responseOk: false,

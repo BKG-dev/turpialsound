@@ -114,15 +114,11 @@ export function PaymentRecoveryGatewayClient({ code }: PaymentRecoveryGatewayCli
         const responseState = typeof responsePayload?.state === 'string' ? (responsePayload.state as RecoveryState) : null
         const hasValidPendingSession =
           responseState === 'pending_payment' && Boolean(responseData?.session)
-        if (
-          shouldClearInitialRecoveryToken({
-            responseOk: response.ok,
-            responseState,
-            hasValidPendingSession,
-          })
-        ) {
-          tokenRef.current = null
-        }
+        const shouldClearToken = shouldClearInitialRecoveryToken({
+          responseOk: response.ok,
+          responseState,
+          hasValidPendingSession,
+        })
 
         if (!response.ok || !responseState || responseData === null) {
           setState('unavailable')
@@ -135,6 +131,9 @@ export function PaymentRecoveryGatewayClient({ code }: PaymentRecoveryGatewayCli
           setSession(responseData.session)
           setState('pending_payment')
           setDetail(null)
+          if (shouldClearToken) {
+            tokenRef.current = null
+          }
           return
         }
 
@@ -173,6 +172,10 @@ export function PaymentRecoveryGatewayClient({ code }: PaymentRecoveryGatewayCli
             break
           default:
             setDetail('No pudimos validar este enlace seguro.')
+        }
+
+        if (shouldClearToken) {
+          tokenRef.current = null
         }
       } catch {
         if (cancelled || requestId !== requestIdRef.current) {

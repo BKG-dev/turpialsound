@@ -5,7 +5,7 @@
   "integrationBranch": "codex/preview-arma-tu-paquete-2026-06-19",
   "orchestrationStartSha": "656ec6d7dd1c90babb42dfc7d6247b106b3ed8e0",
   "currentSprint": "BKG-08H1",
-  "status": "TECHNICALLY_VALIDATED",
+  "status": "DIRECTOR_REVIEW",
   "directorDecision": "PENDING_REVIEW",
   "manualQaRequiredNow": false,
   "manualQaApproved": false,
@@ -13,5 +13,5 @@
   "releaseCandidateSha": null,
   "previewUrl": null,
   "lastHandoff": "docs/orchestration/handoffs/BKG-08H1.md",
-  "nextAction": "ChatGPT reviews BKG-08H1 and defines isolated wizard submission, hold and recovery handoff"
+  "nextAction": "ChatGPT verifies disabled-mode isolation, token retry safety and canonical proof constants before end-to-end Preview integration"
 }

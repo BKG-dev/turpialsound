@@ -132,10 +132,26 @@ async function main(): Promise<void> {
   assert.equal(
     shouldClearInitialRecoveryToken({
       responseOk: true,
+      responseState: 'unavailable',
+      hasValidPendingSession: false,
+    }),
+    true,
+  )
+  assert.equal(
+    shouldClearInitialRecoveryToken({
+      responseOk: true,
       responseState: 'payment_reported',
       hasValidPendingSession: false,
     }),
     true,
+  )
+  assert.equal(
+    shouldClearInitialRecoveryToken({
+      responseOk: false,
+      responseState: 'payment_reported',
+      hasValidPendingSession: false,
+    }),
+    false,
   )
 
   const publicMethod = mapBookingPaymentMethodToPublicUiMethod(
