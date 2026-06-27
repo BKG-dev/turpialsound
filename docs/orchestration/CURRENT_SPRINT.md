@@ -10,7 +10,7 @@ Base:
 0068c87083a0e59b2dcb9afd307550f08ca832c4
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
@@ -29,7 +29,7 @@ Out of Scope:
 * integracion E2E aun no iniciada.
 
 Result:
-PAYMENT_RECOVERY_UI_HARDENING_PENDING_CI
+READY_FOR_END_TO_END_PREVIEW_INTEGRATION
 
 Next Action:
-ChatGPT verifies disabled-mode isolation, token retry safety and canonical proof constants before end-to-end Preview integration.
+ChatGPT reviews BKG-08H1 and defines isolated wizard submission, hold and recovery handoff.
