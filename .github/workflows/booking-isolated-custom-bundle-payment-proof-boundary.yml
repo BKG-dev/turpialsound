@@ -1,4 +1,4 @@
-name: Booking Isolated Custom Bundle Payment Recovery UI
+name: Booking Isolated Custom Bundle Payment Recovery UI Hardening
 
 on:
   push:
@@ -31,6 +31,7 @@ on:
       - lib/bookings/custom-bundle-persistence.ts
       - lib/bookings/custom-bundle-payment-proof-constants.ts
       - lib/bookings/custom-bundle-payment-recovery-ui-contract.ts
+      - lib/bookings/custom-bundle-payment-recovery-client-session.ts
       - lib/bookings/custom-bundle-payment-recovery-ui-flow.ts
       - lib/bookings/custom-bundle-payment-contract.ts
       - app/api/bookings/payment-recovery/session/route.ts
@@ -50,6 +51,7 @@ on:
       - scripts/qa/bookings/custom-bundle-payment-receipt-compensation-contract.ts
       - scripts/qa/bookings/custom-bundle-payment-action-contract.ts
       - scripts/qa/bookings/custom-bundle-payment-recovery-ui-contract.ts
+      - scripts/qa/bookings/custom-bundle-payment-recovery-ui-hardening-contract.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-schema.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-reporting.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-proof-flow.ts
@@ -174,6 +176,9 @@ jobs:
 
       - name: Run custom bundle payment recovery UI contract gate
         run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-recovery-ui-contract.ts
+
+      - name: Run custom bundle payment recovery UI hardening contract
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-recovery-ui-hardening-contract.ts
 
       - name: Run custom bundle payment recovery transport gate
         run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-recovery-transport-contract.ts

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 
 import { CustomBundlePaymentRecoveryForm } from '@/components/bookings/CustomBundlePaymentRecoveryForm'
+import { shouldClearInitialRecoveryToken } from '@/lib/bookings/custom-bundle-payment-recovery-client-session'
 import type { CustomBundlePaymentRecoveryUiFlowResult } from '@/lib/bookings/custom-bundle-payment-recovery-ui-flow'
 import type { CustomBundlePaymentRecoveryUiSession } from '@/lib/bookings/custom-bundle-payment-recovery-ui-contract'
 
@@ -109,29 +110,48 @@ export function PaymentRecoveryGatewayClient({ code }: PaymentRecoveryGatewayCli
           return
         }
 
-        tokenRef.current = null
+        const responseData = responsePayload
+        const responseState = typeof responsePayload?.state === 'string' ? (responsePayload.state as RecoveryState) : null
+        const hasValidPendingSession =
+          responseState === 'pending_payment' && Boolean(responseData?.session)
+        if (
+          shouldClearInitialRecoveryToken({
+            responseOk: response.ok,
+            responseState,
+            hasValidPendingSession,
+          })
+        ) {
+          tokenRef.current = null
+        }
 
-        if (!response.ok || !responsePayload?.state) {
+        if (!response.ok || !responseState || responseData === null) {
           setState('unavailable')
           setSession(null)
           setDetail('No pudimos validar tu enlace seguro. Intenta nuevamente.')
           return
         }
 
-        if (responsePayload.state === 'pending_payment' && responsePayload.session) {
-          setSession(responsePayload.session)
+        if (responseState === 'pending_payment' && responseData.session) {
+          setSession(responseData.session)
           setState('pending_payment')
           setDetail(null)
           return
         }
 
-        setSession(null)
-        setState(responsePayload.state)
+        if (responseState === 'pending_payment') {
+          setSession(null)
+          setState('unavailable')
+          setDetail('No pudimos validar tu enlace seguro. Intenta nuevamente.')
+          return
+        }
 
-        switch (responsePayload.state) {
+        setSession(null)
+        setState(responseState)
+
+        switch (responseState) {
           case 'invalid_link':
             setDetail(
-              responsePayload.reason === 'expired_token'
+              responseData.reason === 'expired_token'
                 ? 'Este enlace seguro vencio. Solicita uno nuevo desde /reservas.'
                 : 'No pudimos validar este enlace seguro.',
             )

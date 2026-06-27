@@ -916,3 +916,26 @@ Criterio de evidencia:
 
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar Blob real, token real, URL publica ni reverse engineering.
+
+
+## Booking custom bundle payment recovery UI hardening
+
+Objetivo:
+- endurecer el reintento seguro de la UI de recuperacion de pago, bloquear el modo disabled y preservar el token inicial hasta validar una respuesta confiable.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-recovery-ui-hardening-contract.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar bloqueo de modo disabled, retencion transitoria del token, limpieza confiable tras respuesta estructurada, excepciones sanitizadas y una sola fuente canonica de tamano y MIME.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no permitir submit en modo disabled, no limpiar token antes de confirmar respuesta segura, no guardar token en storage, no mostrar `error.message`, no duplicar limites o MIME, no activar produccion, no conectar wizard, no usar Blob real y no ejecutar QA manual.

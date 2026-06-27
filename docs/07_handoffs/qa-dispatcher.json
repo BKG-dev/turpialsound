@@ -1,5 +1,5 @@
 {
-  "version": 23,
+  "version": 24,
   "updated_at": "2026-06-27",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
@@ -1661,6 +1661,40 @@
       ],
       "last_validated_at": null,
       "notes": "Canonical QA route for the hardened receipt compensation and authorization ordering checks."
+    },
+    "booking_custom_bundle_payment_recovery_ui_hardening_contract": {
+      "task_id": "booking_custom_bundle_payment_recovery_ui_hardening_contract",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-recovery-ui-hardening-contract.ts",
+      "preconditions": [
+        "Node and pnpm available",
+        "Dependencies installed",
+        "No application server required",
+        "No DATABASE_URL required",
+        "No browser required",
+        "No network required"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "permitir submit en modo disabled",
+        "limpiar token antes de confirmar respuesta segura",
+        "guardar token en storage",
+        "mostrar error.message",
+        "duplicar limites o MIME",
+        "activar produccion",
+        "conectar wizard",
+        "usar Blob real",
+        "ejecutar QA manual"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-08H1.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Canonical QA route for the hardened payment recovery UI and retry-safe token handling."
     }
   }
 }

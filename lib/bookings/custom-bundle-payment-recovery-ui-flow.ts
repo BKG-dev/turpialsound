@@ -50,6 +50,18 @@ export interface CustomBundlePaymentRecoveryUiFlowDependencies {
   }): Promise<CustomBundleProtectedPaymentActionResult>
 }
 
+type CreateUploadIntentResult = Awaited<
+  ReturnType<CustomBundlePaymentRecoveryUiFlowDependencies['createUploadIntent']>
+>
+
+type UploadProofResult = Awaited<
+  ReturnType<CustomBundlePaymentRecoveryUiFlowDependencies['uploadProof']>
+>
+
+type ReportPaymentResult = Awaited<
+  ReturnType<CustomBundlePaymentRecoveryUiFlowDependencies['reportPayment']>
+>
+
 export type CustomBundlePaymentRecoveryUiFlowResult =
   | {
       ok: true
@@ -136,8 +148,20 @@ export async function submitCustomBundlePaymentRecoveryUiFlow(input: {
   file: CustomBundlePaymentRecoveryUiFile | null
   dependencies: CustomBundlePaymentRecoveryUiFlowDependencies
 }): Promise<CustomBundlePaymentRecoveryUiFlowResult> {
-  if (input.paymentUiMode !== 'preview_simulation' && input.paymentUiMode !== 'disabled') {
-    return makeFailure('validation_error', 'INVALID_PAYMENT_UI_MODE', 'El modo de la interfaz de pago no es valido.')
+  if (input.paymentUiMode === 'disabled') {
+    return makeFailure(
+      'validation_error',
+      'PAYMENT_UI_DISABLED',
+      'La interfaz de reporte de pago no esta habilitada en este entorno.',
+    )
+  }
+
+  if (input.paymentUiMode !== 'preview_simulation') {
+    return makeFailure(
+      'validation_error',
+      'INVALID_PAYMENT_UI_MODE',
+      'El modo de la interfaz de pago no es valido.',
+    )
   }
 
   const publicCode = input.publicCode.trim().toUpperCase()
@@ -203,14 +227,23 @@ export async function submitCustomBundlePaymentRecoveryUiFlow(input: {
       )
     }
 
-    const createIntentResult = await input.dependencies.createUploadIntent({
-      publicCode,
-      paymentMethod: input.paymentMethod,
-      paymentReference,
-      originalFilename: fileResult.value.name,
-      declaredMimeType: fileResult.value.type,
-      declaredSizeBytes: fileResult.value.size,
-    })
+    let createIntentResult: CreateUploadIntentResult
+    try {
+      createIntentResult = await input.dependencies.createUploadIntent({
+        publicCode,
+        paymentMethod: input.paymentMethod,
+        paymentReference,
+        originalFilename: fileResult.value.name,
+        declaredMimeType: fileResult.value.type,
+        declaredSizeBytes: fileResult.value.size,
+      })
+    } catch {
+      return makeFailure(
+        'upload_error',
+        'UPLOAD_INTENT_REQUEST_FAILED',
+        'No pudimos preparar la subida del comprobante.',
+      )
+    }
 
     if (!createIntentResult.ok) {
       const stage =
@@ -220,10 +253,19 @@ export async function submitCustomBundlePaymentRecoveryUiFlow(input: {
       return makeFailure(stage, createIntentResult.code, createIntentResult.message)
     }
 
-    const uploadResult = await input.dependencies.uploadProof({
-      uploadIntent: createIntentResult.uploadIntent,
-      file: input.file,
-    })
+    let uploadResult: UploadProofResult
+    try {
+      uploadResult = await input.dependencies.uploadProof({
+        uploadIntent: createIntentResult.uploadIntent,
+        file: input.file,
+      })
+    } catch {
+      return makeFailure(
+        'upload_error',
+        'PROOF_UPLOAD_REQUEST_FAILED',
+        'No pudimos subir el comprobante.',
+      )
+    }
 
     if (!uploadResult.ok) {
       return makeFailure('upload_error', uploadResult.code, uploadResult.message)
@@ -232,12 +274,21 @@ export async function submitCustomBundlePaymentRecoveryUiFlow(input: {
     uploadReceipt = uploadResult.simulated ? null : uploadResult.uploadReceipt
   }
 
-  const actionResult = await input.dependencies.reportPayment({
-    publicCode,
-    paymentMethod: input.paymentMethod,
-    paymentReference,
-    uploadReceipt,
-  })
+  let actionResult: ReportPaymentResult
+  try {
+    actionResult = await input.dependencies.reportPayment({
+      publicCode,
+      paymentMethod: input.paymentMethod,
+      paymentReference,
+      uploadReceipt,
+    })
+  } catch {
+    return makeFailure(
+      'action_error',
+      'PAYMENT_REPORT_REQUEST_FAILED',
+      'No pudimos enviar el reporte de pago.',
+    )
+  }
 
   return mapActionResult(actionResult)
 }

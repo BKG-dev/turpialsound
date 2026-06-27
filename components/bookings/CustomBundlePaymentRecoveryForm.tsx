@@ -68,6 +68,7 @@ export function CustomBundlePaymentRecoveryForm({
   session,
   onPaymentStateChange,
 }: CustomBundlePaymentRecoveryFormProps) {
+  const isPreviewSimulation = session.paymentUiMode === 'preview_simulation'
   const [selectedMethodSlug, setSelectedMethodSlug] = useState<BookingPaymentMethodSlug>(
     session.selectedPaymentMethodSlug,
   )
@@ -105,6 +106,12 @@ export function CustomBundlePaymentRecoveryForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!isPreviewSimulation) {
+      setVisualState('error')
+      setErrorMessage('La interfaz de reporte de pago no esta habilitada en este entorno.')
+      setAnnouncement('La interfaz de reporte de pago no esta habilitada en este entorno.')
+      return
+    }
     if (submittingRef.current) {
       return
     }
@@ -233,11 +240,9 @@ export function CustomBundlePaymentRecoveryForm({
       if (flowResult.stage === 'simulated') {
         return
       }
-    } catch (error) {
+    } catch {
       const message =
-        error instanceof Error && error.message.length > 0
-          ? error.message
-          : 'No pudimos completar la simulacion del pago.'
+        'No pudimos completar la simulacion del pago. Revisa tu conexion e intenta nuevamente.'
       setVisualState('error')
       setErrorMessage(message)
       setAnnouncement(message)
@@ -256,6 +261,12 @@ export function CustomBundlePaymentRecoveryForm({
         </div>
       )}
 
+      {!isPreviewSimulation && (
+        <div className="rounded-lg border border-brand-border/70 bg-black/10 p-4 text-sm text-text-secondary">
+          <p className="font-semibold text-text-primary">Interfaz desactivada</p>
+          <p className="mt-1">La interfaz de reporte de pago no está habilitada en este entorno.</p>
+        </div>
+      )}
       <header className="space-y-2">
         <h1 className="font-display text-2xl text-text-primary">Recuperar pago de reserva</h1>
         <p className="text-sm text-text-secondary">
@@ -404,7 +415,7 @@ export function CustomBundlePaymentRecoveryForm({
 
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isSubmitting || !isPreviewSimulation}
         className="inline-flex items-center justify-center rounded-md bg-accent-gold px-4 py-2 text-sm font-semibold text-background transition-colors disabled:cursor-not-allowed disabled:opacity-60"
       >
         {visualState === 'creating_intent'

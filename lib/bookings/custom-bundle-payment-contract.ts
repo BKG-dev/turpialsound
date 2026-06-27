@@ -3,6 +3,17 @@ import { createHash } from 'node:crypto'
 import { extractCustomBundleOperationalTags } from '@/lib/bookings/custom-bundle-hold-operational-notes'
 import { isCustomBundleHoldActive } from '@/lib/bookings/custom-bundle-hold-contract'
 import type { BookingPaymentMethodSlug } from '@/lib/bookings/payment-settings.types'
+import {
+  CUSTOM_BUNDLE_PAYMENT_PROOF_ALLOWED_MIME_TYPES,
+  CUSTOM_BUNDLE_PAYMENT_PROOF_MAX_SIZE_BYTES,
+  type CustomBundlePaymentProofAllowedMimeType,
+} from '@/lib/bookings/custom-bundle-payment-proof-constants'
+
+export {
+  CUSTOM_BUNDLE_PAYMENT_PROOF_ALLOWED_MIME_TYPES,
+  CUSTOM_BUNDLE_PAYMENT_PROOF_MAX_SIZE_BYTES,
+  type CustomBundlePaymentProofAllowedMimeType,
+} from '@/lib/bookings/custom-bundle-payment-proof-constants'
 
 export const CUSTOM_BUNDLE_PAYMENT_CONTRACT_VERSION = 'custom_bundle_payment_v1' as const
 
@@ -21,18 +32,6 @@ export const CUSTOM_BUNDLE_PAYMENT_PROOF_REQUIRED_METHODS = [
 
 export const CUSTOM_BUNDLE_PAYMENT_REFERENCE_MAX_LENGTH = 120 as const
 export const CUSTOM_BUNDLE_PAYMENT_NORMALIZED_REFERENCE_MAX_LENGTH = 80 as const
-export const CUSTOM_BUNDLE_PAYMENT_PROOF_MAX_SIZE_BYTES = 3_900_000 as const
-
-export const CUSTOM_BUNDLE_PAYMENT_PROOF_ALLOWED_MIME_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/avif',
-] as const
-
-export type CustomBundlePaymentProofAllowedMimeType =
-  (typeof CUSTOM_BUNDLE_PAYMENT_PROOF_ALLOWED_MIME_TYPES)[number]
-
 export interface CustomBundlePaymentReportSubmission {
   publicCode: string
   paymentMethod: BookingPaymentMethodSlug

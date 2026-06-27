@@ -1,16 +1,16 @@
 # Current Sprint
 
 Sprint:
-BKG-08H
+BKG-08H1
 
 Name:
-Wiring aislado de la interfaz de recuperación de pago
+Endurecimiento del modo Preview y recuperacion reintentable
 
 Base:
-7c049f4ada3fd0856400b40fdb5d6afa517a19b6
+0068c87083a0e59b2dcb9afd307550f08ca832c4
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
@@ -29,7 +29,7 @@ Out of Scope:
 * integracion E2E aun no iniciada.
 
 Result:
-READY_FOR_END_TO_END_PREVIEW_INTEGRATION
+PAYMENT_RECOVERY_UI_HARDENING_PENDING_CI
 
 Next Action:
-ChatGPT reviews BKG-08H and defines the isolated wizard submission, hold and recovery handoff.
+ChatGPT verifies disabled-mode isolation, token retry safety and canonical proof constants before end-to-end Preview integration.

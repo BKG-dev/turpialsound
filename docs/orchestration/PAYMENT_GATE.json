@@ -1,6 +1,6 @@
 {
-  "sprint": "BKG-08H",
-  "baseSha": "7c049f4ada3fd0856400b40fdb5d6afa517a19b6",
+  "sprint": "BKG-08H1",
+  "baseSha": "0068c87083a0e59b2dcb9afd307550f08ca832c4",
   "model": "single_consolidated_manual_payment_report",
   "validation": {
     "workflow": "booking-isolated-custom-bundle-payment-contract.yml",
@@ -159,8 +159,25 @@
     "noWizardWiringVerified": true,
     "noProductionActivationVerified": true
   },
-  "paymentRecoveryUiTechnicallyValidated": true,
-  "readyForEndToEndPreviewIntegration": true,
+  "paymentUiCorrectionValidation": {
+    "workflow": "booking-isolated-custom-bundle-payment-proof-boundary.yml",
+    "status": "PENDING_CORRECTION",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
+    "disabledModeBlockedVerified": false,
+    "zeroInfrastructureWhenDisabledVerified": false,
+    "transientFailureTokenRetentionVerified": false,
+    "retryResendsInitialTokenVerified": false,
+    "trustedResponseTokenClearVerified": false,
+    "singleProofConstantsSourceVerified": false,
+    "dependencyExceptionsSanitizedVerified": false,
+    "rawErrorMessageBlockedVerified": false,
+    "noProductionActivationVerified": false,
+    "noWizardWiringVerified": false
+  },
+  "paymentRecoveryUiTechnicallyValidated": false,
+  "readyForEndToEndPreviewIntegration": false,
   "serverEntrypointValidation": {
     "workflow": "booking-isolated-custom-bundle-payment-proof-boundary.yml",
     "status": "SUCCESS",
@@ -213,5 +230,10 @@
   "readyForPaymentTransportIntegration": true,
   "readyForWizardIntegration": false,
   "readyForProduction": false,
-  "blockers": []
+  "blockers": [
+    "DISABLED_UI_MODE_CAN_EXECUTE_PAYMENT_FLOW",
+    "INITIAL_RECOVERY_TOKEN_CLEARED_BEFORE_SECURE_SESSION",
+    "PAYMENT_PROOF_CONSTANTS_HAVE_MULTIPLE_SOURCES",
+    "RAW_CLIENT_EXCEPTION_MESSAGE_CAN_BE_RENDERED"
+  ]
 }

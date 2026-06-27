@@ -10,6 +10,11 @@ import {
   validateCustomBundlePaymentUiFileMetadata,
 } from '@/lib/bookings/custom-bundle-payment-recovery-ui-contract'
 import {
+  CUSTOM_BUNDLE_PAYMENT_PROOF_ALLOWED_MIME_TYPES,
+  CUSTOM_BUNDLE_PAYMENT_PROOF_MAX_SIZE_BYTES,
+} from '@/lib/bookings/custom-bundle-payment-proof-constants'
+import { shouldClearInitialRecoveryToken } from '@/lib/bookings/custom-bundle-payment-recovery-client-session'
+import {
   submitCustomBundlePaymentRecoveryUiFlow,
   type CustomBundlePaymentRecoveryUiFlowDependencies,
   type CustomBundlePaymentRecoveryUiFile,
@@ -92,6 +97,46 @@ async function main(): Promise<void> {
   assert.equal(resolveCustomBundlePaymentUiMode({ isPreview: true, isCustomBundleBookingCandidate: true }), 'preview_simulation')
   assert.equal(resolveCustomBundlePaymentUiMode({ isPreview: true, isCustomBundleBookingCandidate: false }), 'disabled')
   assert.equal(resolveCustomBundlePaymentUiMode({ isPreview: false, isCustomBundleBookingCandidate: true }), 'disabled')
+  assert.equal(
+    shouldClearInitialRecoveryToken({
+      responseOk: false,
+      responseState: null,
+      hasValidPendingSession: false,
+    }),
+    false,
+  )
+  assert.equal(
+    shouldClearInitialRecoveryToken({
+      responseOk: true,
+      responseState: null,
+      hasValidPendingSession: false,
+    }),
+    false,
+  )
+  assert.equal(
+    shouldClearInitialRecoveryToken({
+      responseOk: true,
+      responseState: 'pending_payment',
+      hasValidPendingSession: false,
+    }),
+    false,
+  )
+  assert.equal(
+    shouldClearInitialRecoveryToken({
+      responseOk: true,
+      responseState: 'pending_payment',
+      hasValidPendingSession: true,
+    }),
+    true,
+  )
+  assert.equal(
+    shouldClearInitialRecoveryToken({
+      responseOk: true,
+      responseState: 'payment_reported',
+      hasValidPendingSession: false,
+    }),
+    true,
+  )
 
   const publicMethod = mapBookingPaymentMethodToPublicUiMethod(
     makeMethod('pago_movil', {
@@ -150,6 +195,14 @@ async function main(): Promise<void> {
   })
   assert.equal(invalidName.ok, false)
 
+  assert.deepStrictEqual(CUSTOM_BUNDLE_PAYMENT_PROOF_ALLOWED_MIME_TYPES, [
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/avif',
+  ])
+  assert.equal(CUSTOM_BUNDLE_PAYMENT_PROOF_MAX_SIZE_BYTES, 3_900_000)
+
   const proofRequiredRecorder = {
     createIntentCalls: 0,
     uploadCalls: 0,
@@ -193,6 +246,29 @@ async function main(): Promise<void> {
   assert.equal(cashRecorder.uploadCalls, 0)
   assert.equal(cashRecorder.reportCalls, 1)
   assert.equal((cashRecorder.lastReportInput as { uploadReceipt: string | null } | undefined)?.uploadReceipt, null)
+
+  const disabledRecorder = {
+    createIntentCalls: 0,
+    uploadCalls: 0,
+    reportCalls: 0,
+    lastUploadIntentInput: undefined as unknown,
+    lastUploadProofInput: undefined as unknown,
+    lastReportInput: undefined as unknown,
+  }
+  const disabledResult = await submitCustomBundlePaymentRecoveryUiFlow({
+    paymentUiMode: 'disabled',
+    publicCode: 'TUR-0808-779',
+    paymentMethod: 'pago_movil',
+    paymentReference: 'REF-DISABLED',
+    file: makeFile(),
+    dependencies: makeDependencies(disabledRecorder),
+  })
+  assert.equal(disabledResult.ok, false)
+  assert.equal(disabledResult.stage, 'validation_error')
+  assert.equal(disabledResult.code, 'PAYMENT_UI_DISABLED')
+  assert.equal(disabledRecorder.createIntentCalls, 0)
+  assert.equal(disabledRecorder.uploadCalls, 0)
+  assert.equal(disabledRecorder.reportCalls, 0)
 
   const previewFlow = await submitCustomBundlePaymentRecoveryUiFlow({
     paymentUiMode: 'preview_simulation',
@@ -244,12 +320,96 @@ async function main(): Promise<void> {
   assert.equal(invalidMethodRecorder.uploadCalls, 0)
   assert.equal(invalidMethodRecorder.reportCalls, 0)
 
+  const intentThrowResult = await submitCustomBundlePaymentRecoveryUiFlow({
+    paymentUiMode: 'preview_simulation',
+    publicCode: 'TUR-0808-781',
+    paymentMethod: 'pago_movil',
+    paymentReference: 'REF-781',
+    file: makeFile(),
+    dependencies: {
+      async createUploadIntent() {
+        throw new Error('boom')
+      },
+      async uploadProof() {
+        return { ok: true as const, simulated: false, uploadReceipt: 'receipt-token' }
+      },
+      async reportPayment() {
+        return {
+          ok: true,
+          stage: 'reported',
+          simulated: false,
+          publicCode: 'TUR-0808-781',
+          paymentStatus: 'payment_reported',
+          replayed: false,
+          message: 'Pago consolidado reportado correctamente.',
+        } as never
+      },
+    },
+  })
+  assert.equal(intentThrowResult.ok, false)
+  assert.equal(intentThrowResult.stage, 'upload_error')
+  assert.equal(intentThrowResult.code, 'UPLOAD_INTENT_REQUEST_FAILED')
+
+  const uploadThrowResult = await submitCustomBundlePaymentRecoveryUiFlow({
+    paymentUiMode: 'preview_simulation',
+    publicCode: 'TUR-0808-782',
+    paymentMethod: 'pago_movil',
+    paymentReference: 'REF-782',
+    file: makeFile(),
+    dependencies: {
+      async createUploadIntent() {
+        return { ok: true as const, uploadIntent: 'upload-intent-token' }
+      },
+      async uploadProof() {
+        throw new Error('boom')
+      },
+      async reportPayment() {
+        return {
+          ok: true,
+          stage: 'reported',
+          simulated: false,
+          publicCode: 'TUR-0808-782',
+          paymentStatus: 'payment_reported',
+          replayed: false,
+          message: 'Pago consolidado reportado correctamente.',
+        } as never
+      },
+    },
+  })
+  assert.equal(uploadThrowResult.ok, false)
+  assert.equal(uploadThrowResult.stage, 'upload_error')
+  assert.equal(uploadThrowResult.code, 'PROOF_UPLOAD_REQUEST_FAILED')
+
+  const reportThrowResult = await submitCustomBundlePaymentRecoveryUiFlow({
+    paymentUiMode: 'preview_simulation',
+    publicCode: 'TUR-0808-783',
+    paymentMethod: 'efectivo',
+    paymentReference: 'REF-783',
+    file: null,
+    dependencies: {
+      async createUploadIntent() {
+        return { ok: true as const, uploadIntent: 'upload-intent-token' }
+      },
+      async uploadProof() {
+        return { ok: true as const, simulated: false, uploadReceipt: 'receipt-token' }
+      },
+      async reportPayment() {
+        throw new Error('boom')
+      },
+    },
+  })
+  assert.equal(reportThrowResult.ok, false)
+  assert.equal(reportThrowResult.stage, 'action_error')
+  assert.equal(reportThrowResult.code, 'PAYMENT_REPORT_REQUEST_FAILED')
+
   const reportSource = readSource('components/bookings/CustomBundlePaymentRecoveryForm.tsx')
   assert.equal(reportSource.includes('reportCustomBundlePaymentProtectedAction'), true)
   assert.equal(reportSource.includes('reportBookingPayment'), false)
   assert.equal(reportSource.includes('accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif"'), true)
   assert.equal(reportSource.includes('aria-live="polite"'), true)
   assert.equal(reportSource.includes('Simular reporte de pago'), true)
+  assert.equal(reportSource.includes('error.message'), false)
+  assert.equal(reportSource.includes('No pudimos completar la simulacion del pago. Revisa tu conexion e intenta nuevamente.'), true)
 
   const gatewaySource = readSource('components/bookings/PaymentRecoveryGatewayClient.tsx')
   assert.equal(gatewaySource.includes('useRef'), true)
@@ -257,6 +417,7 @@ async function main(): Promise<void> {
   assert.equal(gatewaySource.includes('localStorage'), false)
   assert.equal(gatewaySource.includes('sessionStorage'), false)
   assert.equal(gatewaySource.includes('CustomBundlePaymentRecoveryForm'), true)
+  assert.equal(gatewaySource.includes('shouldClearInitialRecoveryToken'), true)
   assert.equal(gatewaySource.includes('Reintentar validación'), true)
 
   const routeSource = readSource('app/api/bookings/payment-recovery/session/route.ts')
@@ -264,6 +425,17 @@ async function main(): Promise<void> {
   assert.equal(routeSource.includes('paymentUiMode'), true)
   assert.equal(routeSource.includes('paymentMethods'), true)
   assert.equal(routeSource.includes('isCustomBundleBookingCandidate'), true)
+
+  const paymentContractSource = readSource('lib/bookings/custom-bundle-payment-contract.ts')
+  const proofConstantsSource = readSource('lib/bookings/custom-bundle-payment-proof-constants.ts')
+  assert.equal(
+    paymentContractSource.includes("from '@/lib/bookings/custom-bundle-payment-proof-constants'"),
+    true,
+  )
+  assert.equal(paymentContractSource.includes('CUSTOM_BUNDLE_PAYMENT_PROOF_MAX_SIZE_BYTES = 3_900_000'), false)
+  assert.equal(paymentContractSource.includes('CUSTOM_BUNDLE_PAYMENT_PROOF_ALLOWED_MIME_TYPES = ['), false)
+  assert.equal(proofConstantsSource.includes('CUSTOM_BUNDLE_PAYMENT_PROOF_MAX_SIZE_BYTES = 3_900_000'), true)
+  assert.equal(proofConstantsSource.includes('image/avif'), true)
 
   const uiContractSource = readSource('lib/bookings/custom-bundle-payment-recovery-ui-contract.ts')
   assert.equal(uiContractSource.includes('Por definir'), true)
