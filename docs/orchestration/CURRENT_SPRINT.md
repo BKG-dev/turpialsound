@@ -10,7 +10,7 @@ Base:
 18efd85c4fe17a586494c67fabaea316354b6d55
 
 State:
-DIRECTOR_REVIEW
+TECHNICALLY_VALIDATED
 
 Scope:
 
@@ -28,7 +28,7 @@ Out of Scope:
 * siguiente sprint.
 
 Result:
-PREVIEW_HANDOFF_SEAL_PENDING_CI
+READY_FOR_ISOLATED_DATABASE_END_TO_END
 
 Next Action:
-ChatGPT verifies the signed hold-expiry invariant and exact Preview action payload before isolated PostgreSQL lifecycle integration.
+ChatGPT reviews BKG-08I2 and defines isolated PostgreSQL lifecycle integration.
