@@ -1026,7 +1026,7 @@ async function readAuditRows(
       SELECT id, "bookingRequestId", action
       FROM "audit_log"
       WHERE "bookingRequestId" = $1
-      ORDER BY created_at ASC, id ASC
+      ORDER BY "createdAt" ASC, id ASC
     `,
     [bookingRequestId],
   )
