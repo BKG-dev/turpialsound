@@ -1,6 +1,6 @@
 {
-  "sprint": "BKG-08I1",
-  "baseSha": "725c07037fa151fd177b88df6b71a3d30c032fbd",
+  "sprint": "BKG-08I2",
+  "baseSha": "18efd85c4fe17a586494c67fabaea316354b6d55",
   "model": "single_consolidated_manual_payment_report",
   "validation": {
     "workflow": "booking-isolated-custom-bundle-payment-contract.yml",
@@ -253,11 +253,15 @@
     "legacyRecoveryIsolationVerified": true,
     "noProductionActivationVerified": true
   },
-  "customBundlePreviewEndToEndTechnicallyValidated": true,
-  "readyForIsolatedDatabaseEndToEnd": true,
+  "customBundlePreviewEndToEndTechnicallyValidated": false,
+  "readyForIsolatedDatabaseEndToEnd": false,
   "readyForWizardIntegration": false,
   "readyForProduction": false,
-  "blockers": [],
+  "blockers": [
+    "PREVIEW_TOKEN_EXPIRY_HOLD_INVARIANT_REVERSED_IN_BUILDER",
+    "PREVIEW_TOKEN_VALIDATOR_DOES_NOT_REJECT_EXPIRY_AFTER_HOLD",
+    "PREVIEW_E2E_DOES_NOT_ASSERT_EXACT_ACTION_PAYLOAD"
+  ],
   "previewEndToEndCorrectionValidation": {
     "workflow": "booking-isolated-custom-bundle-payment-proof-boundary.yml",
     "status": "SUCCESS",
@@ -282,5 +286,28 @@
     "legacyWizardIsolationVerified": true,
     "legacyRecoveryIsolationVerified": true,
     "noProductionActivationVerified": true
+  },
+  "previewEndToEndSealValidation": {
+    "workflow": "booking-isolated-custom-bundle-payment-proof-boundary.yml",
+    "status": "PENDING_CORRECTION",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
+    "tokenExpiryBeforeHoldAcceptedVerified": false,
+    "tokenExpiryEqualHoldAcceptedVerified": false,
+    "tokenExpiryAfterHoldRejectedVerified": false,
+    "builderExpiryInvariantVerified": false,
+    "validatorExpiryInvariantVerified": false,
+    "exactPreviewActionPayloadVerified": false,
+    "simulatedReceiptNullVerified": false,
+    "noFileInActionVerified": false,
+    "noTokenInActionVerified": false,
+    "noClientIdempotencyVerified": false,
+    "noBlobMetadataVerified": false,
+    "proofMethodsVerified": false,
+    "cashMethodVerified": false,
+    "zeroDatabaseVerified": false,
+    "zeroBlobVerified": false,
+    "noProductionActivationVerified": false
   }
 }

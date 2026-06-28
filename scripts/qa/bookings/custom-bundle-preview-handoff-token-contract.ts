@@ -117,6 +117,45 @@ async function main(): Promise<void> {
       assert.equal(valid.payload.iat, Math.floor(now.getTime() / 1000))
       assert.equal(valid.payload.exp, Math.floor(expiresAt.getTime() / 1000))
 
+      const halfHourExpiresAt = new Date('2026-06-24T18:30:00.000Z')
+      const fullHoldShorterExpiresAt = new Date('2026-06-24T18:30:00.000Z')
+      const shorterPayload = makePayload()
+      const shorterToken = buildCustomBundlePreviewHandoffToken({
+        payload: shorterPayload,
+        expiresAt: fullHoldShorterExpiresAt,
+        now,
+      })
+      assert.ok(shorterToken)
+      if (!shorterToken) {
+        fail('Expected a shorter-lived preview handoff token.')
+      }
+      const shorterValid = validateCustomBundlePreviewHandoffToken(shorterToken, 'TUR-2026-001', now)
+      assert.equal(shorterValid.ok, true)
+      if (!shorterValid.ok) {
+        fail('Expected a shorter-lived preview handoff token to validate.')
+      }
+      assert.equal(shorterValid.payload.holdExpiresAt - shorterValid.payload.iat, 3600)
+      assert.equal(shorterValid.payload.exp - shorterValid.payload.iat, 1800)
+
+      const halfHourPayload = makePayload({
+        holdExpiresAt: Math.floor(halfHourExpiresAt.getTime() / 1000),
+      })
+      const equalHoldToken = buildCustomBundlePreviewHandoffToken({
+        payload: halfHourPayload,
+        expiresAt: halfHourExpiresAt,
+        now,
+      })
+      assert.ok(equalHoldToken)
+      if (!equalHoldToken) {
+        fail('Expected a token expiring exactly at the hold boundary.')
+      }
+      const equalHoldValid = validateCustomBundlePreviewHandoffToken(equalHoldToken, 'TUR-2026-001', now)
+      assert.equal(equalHoldValid.ok, true)
+      if (!equalHoldValid.ok) {
+        fail('Expected a token expiring exactly at the hold boundary to validate.')
+      }
+      assert.equal(equalHoldValid.payload.exp, equalHoldValid.payload.holdExpiresAt)
+
       const basePayload = {
         v: 1,
         purpose: 'custom_bundle_preview_recovery_session',
@@ -142,7 +181,19 @@ async function main(): Promise<void> {
         assert.equal(validTtl3600.payload.exp - validTtl3600.payload.iat, 3600)
       }
 
+      const hold1800Payload = makePayload({
+        holdAcquiredAt: Math.floor(now.getTime() / 1000),
+        holdExpiresAt: Math.floor(halfHourExpiresAt.getTime() / 1000),
+      })
+
       const invalidTokens = [
+        {
+          payload: {
+            ...hold1800Payload,
+            exp: hold1800Payload.holdExpiresAt + 1,
+          },
+          expected: 'invalid_token',
+        },
         {
           payload: { ...basePayload, exp: basePayload.iat },
           expected: 'invalid_token',
@@ -152,7 +203,7 @@ async function main(): Promise<void> {
           expected: 'invalid_token',
         },
         {
-          payload: { ...basePayload, exp: basePayload.exp + 1, holdExpiresAt: basePayload.exp + 1 },
+          payload: { ...basePayload, exp: basePayload.holdExpiresAt + 1 },
           expected: 'invalid_token',
         },
         {
@@ -176,11 +227,7 @@ async function main(): Promise<void> {
           expected: 'invalid_token',
         },
         {
-          payload: {
-            ...basePayload,
-            holdExpiresAt: basePayload.holdAcquiredAt + 3601,
-            exp: basePayload.holdAcquiredAt + 3601,
-          },
+          payload: { ...basePayload, holdExpiresAt: basePayload.holdAcquiredAt + 3601 },
           expected: 'invalid_token',
         },
         {
@@ -250,10 +297,12 @@ async function main(): Promise<void> {
   )
 
   console.log('booking_custom_bundle_preview_handoff_token_contract OK')
-  console.log('preview handoff token: verified')
-  console.log('signed preview binding: verified')
-  console.log('exact preview expiry boundary: verified')
-  console.log('secret configuration guard: verified')
+  console.log('shorter token lifetime: verified')
+  console.log('equal hold expiry: verified')
+  console.log('expiry after hold: rejected')
+  console.log('builder temporal invariant: verified')
+  console.log('validator temporal invariant: verified')
+  console.log('exact expiry boundary: verified')
 }
 
 main().catch((error) => fail('Unexpected failure while validating the preview handoff token contract.', error))

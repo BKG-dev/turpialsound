@@ -962,7 +962,7 @@ Precondiciones:
 
 Criterio de evidencia:
 - confirmar handoff token firmado, submission Preview deterministica, session Preview pending_payment, recovery path solo con `code`, wizard Preview sin localStorage para capability y sin token en la URL.
-- Para la correccion BKG-08I1, la evidencia debe confirmar ademas que la duracion total expuesta por el preview y la sesion de recuperacion coincide con la duracion comercial autoritativa del servidor, y que el flujo real llama `submitCustomBundlePaymentRecoveryUiFlow`.
+- Para la correccion BKG-08I2, la evidencia debe confirmar ademas que la duracion total expuesta por el preview y la sesion de recuperacion coincide con la duracion comercial autoritativa del servidor, que el flujo real llama `submitCustomBundlePaymentRecoveryUiFlow`, que `reportPayment` recibe exactamente `publicCode`, `paymentMethod`, `paymentReference` y `uploadReceipt`, y que en Preview `uploadReceipt` es `null`.
 
 Regla:
-- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar token real, URL con token, Blob real, DB real ni wiring del wizard a produccion.
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar token real, URL con token, Blob real, DB real, payload de accion con campos extra ni wiring del wizard a produccion.

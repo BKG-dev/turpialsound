@@ -130,6 +130,7 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Payment recovery UI isolation: `TECHNICALLY_VALIDATED`
 - Recovery retry safety: `TECHNICALLY_VALIDATED`
 - End-to-end Preview integration: `TECHNICALLY_VALIDATED`
+- Preview handoff seal: `PENDING_CI`
 - Notifications: `NOT_STARTED`
 - Wizard integration: `NOT_STARTED`
 

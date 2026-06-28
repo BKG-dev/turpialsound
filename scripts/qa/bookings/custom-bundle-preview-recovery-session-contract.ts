@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { createHmac } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
@@ -73,6 +74,23 @@ function createSixtyMinuteSubmission() {
       },
     ],
   }
+}
+
+function toBase64Url(value: Buffer | string): string {
+  const buffer = typeof value === 'string' ? Buffer.from(value, 'utf8') : value
+  return buffer
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '')
+}
+
+function signPayload(payload: unknown, secret: string): string {
+  const payloadBase64Url = toBase64Url(JSON.stringify(payload))
+  const signatureBase64Url = toBase64Url(
+    createHmac('sha256', secret).update(payloadBase64Url).digest(),
+  )
+  return `${payloadBase64Url}.${signatureBase64Url}`
 }
 
 function isPendingPayment(
@@ -204,6 +222,46 @@ async function main(): Promise<void> {
     )
     assert.equal(sixtyMinuteSessionResult.trusted.durationMinutes, 60)
 
+    const shorterPayloadValidation = validateCustomBundlePreviewHandoffToken(
+      sixtyMinutePreviewResult.previewHandoffToken,
+      sixtyMinutePreviewResult.publicCode,
+      new Date('2026-06-24T18:00:00.000Z'),
+    )
+    assert.equal(shorterPayloadValidation.ok, true)
+    if (!shorterPayloadValidation.ok) {
+      fail('Expected a valid preview handoff token payload.')
+    }
+    const shorterHandoffToken = buildCustomBundlePreviewHandoffToken({
+      payload: shorterPayloadValidation.payload,
+      expiresAt: new Date('2026-06-24T18:30:00.000Z'),
+      now: new Date('2026-06-24T18:00:00.000Z'),
+    })
+    assert.ok(shorterHandoffToken)
+    if (!shorterHandoffToken) {
+      fail('Expected a shorter-lived handoff token to build.')
+    }
+    const shorterSessionResult = runCustomBundlePreviewRecoverySessionCore({
+      publicCode: sixtyMinutePreviewResult.publicCode,
+      recoveryToken: sixtyMinutePreviewResult.recoveryToken,
+      previewHandoffToken: shorterHandoffToken,
+      now: new Date('2026-06-24T18:00:00.000Z'),
+      validateRecoveryToken(token, expectedPublicCode, now) {
+        return validatePaymentRecoveryToken(token, expectedPublicCode, now)
+      },
+      validatePreviewHandoffToken(token, expectedPublicCode, now) {
+        return validateCustomBundlePreviewHandoffToken(token, expectedPublicCode, now)
+      },
+    })
+    assert.equal(shorterSessionResult.ok, true)
+    if (!isPendingPayment(shorterSessionResult)) {
+      fail('Expected the shorter-lived session to remain pending payment.')
+    }
+    assert.equal(shorterSessionResult.trusted.paymentDeadlineIso, sixtyMinutePreviewResult.holdExpiresAtIso)
+    assert.equal(
+      shorterSessionResult.previewHandoffTokenExpiresAtIso,
+      new Date('2026-06-24T18:30:00.000Z').toISOString(),
+    )
+
     const missingHandoff = runCustomBundlePreviewRecoverySessionCore({
       publicCode: previewResult.publicCode,
       recoveryToken: previewResult.recoveryToken,
@@ -220,7 +278,41 @@ async function main(): Promise<void> {
     if (missingHandoff.ok) {
       fail('Expected a missing preview handoff token failure.')
     }
-    assert.equal(missingHandoff.code, 'PREVIEW_HANDOFF_TOKEN_MISSING')
+      assert.equal(missingHandoff.code, 'PREVIEW_HANDOFF_TOKEN_MISSING')
+
+    const strictHoldPayload = validateCustomBundlePreviewHandoffToken(
+      sixtyMinutePreviewResult.previewHandoffToken,
+      sixtyMinutePreviewResult.publicCode,
+      new Date('2026-06-24T18:00:00.000Z'),
+    )
+    assert.equal(strictHoldPayload.ok, true)
+    if (!strictHoldPayload.ok) {
+      fail('Expected a valid preview handoff token payload for strict hold checks.')
+    }
+    const afterHoldToken = signPayload(
+      {
+        ...strictHoldPayload.payload,
+        exp: strictHoldPayload.payload.holdExpiresAt + 1,
+      },
+      envSecret,
+    )
+    const afterHoldSession = runCustomBundlePreviewRecoverySessionCore({
+      publicCode: sixtyMinutePreviewResult.publicCode,
+      recoveryToken: sixtyMinutePreviewResult.recoveryToken,
+      previewHandoffToken: afterHoldToken,
+      now: new Date('2026-06-24T18:00:00.000Z'),
+      validateRecoveryToken(token, expectedPublicCode, now) {
+        return validatePaymentRecoveryToken(token, expectedPublicCode, now)
+      },
+      validatePreviewHandoffToken(token, expectedPublicCode, now) {
+        return validateCustomBundlePreviewHandoffToken(token, expectedPublicCode, now)
+      },
+    })
+    assert.equal(afterHoldSession.ok, false)
+    if (afterHoldSession.ok) {
+      fail('Expected a handoff token expiring after the hold to fail.')
+    }
+    assert.equal(afterHoldSession.code, 'PREVIEW_HANDOFF_TOKEN_INVALID')
 
     const expiredBoundary = runCustomBundlePreviewRecoverySessionCore({
       publicCode: previewResult.publicCode,
@@ -234,11 +326,11 @@ async function main(): Promise<void> {
         return validateCustomBundlePreviewHandoffToken(token, expectedPublicCode, now)
       },
     })
-  assert.equal(expiredBoundary.ok, false)
-  if (expiredBoundary.ok) {
-    fail('Expected the exact hold boundary to expire the preview session.')
-  }
-  assert.equal(expiredBoundary.code, 'RECOVERY_TOKEN_INVALID')
+    assert.equal(expiredBoundary.ok, false)
+    if (expiredBoundary.ok) {
+      fail('Expected the exact hold boundary to expire the preview session.')
+    }
+    assert.equal(expiredBoundary.code, 'RECOVERY_TOKEN_INVALID')
 
     const codeMismatch = runCustomBundlePreviewRecoverySessionCore({
       publicCode: 'not-a-public-code',

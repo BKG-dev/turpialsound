@@ -1,23 +1,23 @@
 # Current Sprint
 
 Sprint:
-BKG-08I1
+BKG-08I2
 
 Name:
-Correccion de autoridad temporal y cobertura E2E del handoff Preview
+Sellado de expiracion del handoff Preview y payload E2E
 
 Base:
-725c07037fa151fd177b88df6b71a3d30c032fbd
+18efd85c4fe17a586494c67fabaea316354b6d55
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* duracion comercial autoritativa desde el servidor;
-* preview success summary autoritativo;
-* flujo UI real de simulacion;
-* claims temporales estrictos en el handoff Preview.
+* invariantes temporales firmadas del handoff Preview;
+* builder/validator del token alineados con expiry del hold;
+* payload exacto del handoff UI hacia la accion;
+* receipt simulado nulo en Preview.
 
 Out of Scope:
 
@@ -28,7 +28,7 @@ Out of Scope:
 * siguiente sprint.
 
 Result:
-READY_FOR_BKG_08J
+PREVIEW_HANDOFF_SEAL_PENDING_CI
 
 Next Action:
-ChatGPT reviews BKG-08I1 and defines isolated PostgreSQL lifecycle integration.
+ChatGPT verifies the signed hold-expiry invariant and exact Preview action payload before isolated PostgreSQL lifecycle integration.

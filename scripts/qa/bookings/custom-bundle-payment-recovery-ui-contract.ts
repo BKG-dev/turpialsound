@@ -68,7 +68,7 @@ function makeDependencies(recorder: {
     async uploadProof(input) {
       recorder.uploadCalls += 1
       recorder.lastUploadProofInput = input
-      return { ok: true as const, simulated: false, uploadReceipt: 'receipt-token' }
+      return { ok: true as const, simulated: true, uploadReceipt: null }
     },
     async reportPayment(input) {
       recorder.reportCalls += 1
@@ -239,7 +239,7 @@ async function main(): Promise<void> {
   assert.equal(proofRequiredRecorder.createIntentCalls, 1)
   assert.equal(proofRequiredRecorder.uploadCalls, 1)
   assert.equal(proofRequiredRecorder.reportCalls, 1)
-  assert.equal((proofRequiredRecorder.lastReportInput as { uploadReceipt: string | null } | undefined)?.uploadReceipt, 'receipt-token')
+  assert.equal((proofRequiredRecorder.lastReportInput as { uploadReceipt: string | null } | undefined)?.uploadReceipt, null)
 
   const cashRecorder = {
     createIntentCalls: 0,

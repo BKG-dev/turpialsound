@@ -236,6 +236,9 @@ async function main(): Promise<void> {
       file: ReturnType<typeof makeUiFile> | null,
     ): Promise<void> {
       const calls: string[] = []
+      let createUploadIntentInput: unknown = null
+      let uploadProofInput: unknown = null
+      let reportPaymentInput: unknown = null
       const result = await submitCustomBundlePaymentRecoveryUiFlow({
         paymentUiMode: 'preview_simulation',
         publicCode: previewSuccess.publicCode,
@@ -245,18 +248,21 @@ async function main(): Promise<void> {
         dependencies: {
           async createUploadIntent(input) {
             calls.push(`createUploadIntent:${input.paymentMethod}`)
+            createUploadIntentInput = input
             return { ok: true, uploadIntent: `intent:${input.paymentMethod}` }
           },
           async uploadProof(input) {
             calls.push(`uploadProof:${input.file.name}`)
+            uploadProofInput = input
             return {
               ok: true,
               simulated: true,
-              uploadReceipt: `receipt:${input.uploadIntent}`,
+              uploadReceipt: null,
             }
           },
           async reportPayment(input) {
             calls.push(`reportPayment:${input.paymentMethod}`)
+            reportPaymentInput = input
             return {
               ok: true,
               stage: 'simulated',
@@ -274,12 +280,43 @@ async function main(): Promise<void> {
       assert.equal(result.stage, 'simulated')
       assert.equal(result.simulated, true)
       if (file) {
+        assert.notEqual(createUploadIntentInput, null)
+        assert.notEqual(uploadProofInput, null)
+        assert.notEqual(reportPaymentInput, null)
+        assert.deepStrictEqual(Object.keys(createUploadIntentInput as Record<string, unknown>).sort(), [
+          'declaredMimeType',
+          'declaredSizeBytes',
+          'originalFilename',
+          'paymentMethod',
+          'paymentReference',
+          'publicCode',
+        ])
+        assert.deepStrictEqual(Object.keys(uploadProofInput as Record<string, unknown>).sort(), [
+          'file',
+          'uploadIntent',
+        ])
+        assert.deepStrictEqual(Object.keys(reportPaymentInput as Record<string, unknown>).sort(), [
+          'paymentMethod',
+          'paymentReference',
+          'publicCode',
+          'uploadReceipt',
+        ])
+        assert.equal((reportPaymentInput as { uploadReceipt: string | null }).uploadReceipt, null)
         assert.deepStrictEqual(calls, [
           `createUploadIntent:${paymentMethod}`,
           `uploadProof:${file.name}`,
           `reportPayment:${paymentMethod}`,
         ])
       } else {
+        assert.equal(createUploadIntentInput, null)
+        assert.equal(uploadProofInput, null)
+        assert.deepStrictEqual(Object.keys(reportPaymentInput as Record<string, unknown>).sort(), [
+          'paymentMethod',
+          'paymentReference',
+          'publicCode',
+          'uploadReceipt',
+        ])
+        assert.equal((reportPaymentInput as { uploadReceipt: string | null }).uploadReceipt, null)
         assert.deepStrictEqual(calls, [`reportPayment:${paymentMethod}`])
       }
     }
@@ -306,13 +343,19 @@ async function main(): Promise<void> {
   })
 
   console.log('booking_custom_bundle_preview_end_to_end OK')
-  console.log('authoritative duration: verified')
-  console.log('real ui simulation flow: verified')
-  console.log('token temporal claims: verified')
-  console.log('preview handoff: verified')
-  console.log('recovery session: verified')
-  console.log('wizard recovery path: verified')
-  console.log('no recovery token in url: verified')
+  console.log('authoritative package duration: verified')
+  console.log('signed recovery handoff: verified')
+  console.log('payment session reconstruction: verified')
+  console.log('payment ui flow executed: verified')
+  console.log('proof methods simulated: verified')
+  console.log('cash simulation: verified')
+  console.log('intent upload action order: verified')
+  console.log('exact action payload: verified')
+  console.log('simulated receipt null: verified')
+  console.log('no file in action: verified')
+  console.log('no client capability: verified')
+  console.log('zero database writes: verified')
+  console.log('zero blob writes: verified')
 }
 
 main().catch((error) => fail('Unexpected failure while validating the preview end-to-end gate.', error))

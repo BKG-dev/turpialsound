@@ -185,7 +185,7 @@ export function buildCustomBundlePreviewHandoffTokenCore(input: {
     !isValidTime(input.payload.startTime) ||
     !isValidPayloadNumbers(input.payload) ||
     input.payload.holdAcquiredAt > nowEpochSeconds ||
-    input.payload.holdExpiresAt > expiresEpochSeconds
+    expiresEpochSeconds > input.payload.holdExpiresAt
   ) {
     return null
   }
@@ -300,6 +300,7 @@ export function validateCustomBundlePreviewHandoffTokenCore(input: {
     payload.exp <= payload.iat ||
     payload.exp - payload.iat > CUSTOM_BUNDLE_PREVIEW_HANDOFF_TTL_SECONDS ||
     payload.holdAcquiredAt > payload.iat ||
+    payload.exp > payload.holdExpiresAt ||
     payload.holdExpiresAt <= payload.holdAcquiredAt ||
     payload.holdExpiresAt - payload.holdAcquiredAt > CUSTOM_BUNDLE_PREVIEW_HANDOFF_TTL_SECONDS
   ) {
