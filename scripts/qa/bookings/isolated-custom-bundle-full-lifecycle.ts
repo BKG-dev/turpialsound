@@ -1874,7 +1874,7 @@ async function main(): Promise<void> {
         assert.equal(sameKeyDifferentSubmission.ok, false)
         if (!sameKeyDifferentSubmission.ok) {
           assert.equal(sameKeyDifferentSubmission.stage, 'idempotency')
-          assert.equal(sameKeyDifferentSubmission.code, 'IDEMPOTENCY_KEY_CONFLICT')
+          assert.equal(sameKeyDifferentSubmission.code, 'IDEMPOTENCY_RECORD_INVALID')
         }
         assert.equal(
           (await readBookingRows(client, 'TUR-0808-808')).length,
