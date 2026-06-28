@@ -1,4 +1,4 @@
-name: Booking Isolated Custom Bundle Payment Recovery UI Hardening
+name: Booking Isolated Custom Bundle Preview End To End
 
 on:
   push:
@@ -20,6 +20,14 @@ on:
       - lib/bookings/custom-bundle-private-blob-store-vercel.ts
       - lib/bookings/custom-bundle-payment-raw-upload-reader.ts
       - lib/bookings/custom-bundle-payment-recovery-cookie.ts
+      - lib/bookings/custom-bundle-preview-handoff-cookie.ts
+      - lib/bookings/custom-bundle-preview-handoff-token-core.ts
+      - lib/bookings/custom-bundle-preview-handoff-token.ts
+      - lib/bookings/custom-bundle-preview-recovery-session-core.ts
+      - lib/bookings/custom-bundle-preview-submission-action.ts
+      - lib/bookings/custom-bundle-preview-submission-core.ts
+      - components/bookings/BookingWizard.tsx
+      - app/api/bookings/payment-recovery/session/route.ts
       - lib/bookings/custom-bundle-payment-upload-token.ts
       - lib/bookings/custom-bundle-payment-upload-transport-core.ts
       - lib/bookings/custom-bundle-payment-proof-boundary.ts
@@ -52,6 +60,11 @@ on:
       - scripts/qa/bookings/custom-bundle-payment-action-contract.ts
       - scripts/qa/bookings/custom-bundle-payment-recovery-ui-contract.ts
       - scripts/qa/bookings/custom-bundle-payment-recovery-ui-hardening-contract.ts
+      - scripts/qa/bookings/custom-bundle-preview-handoff-token-contract.ts
+      - scripts/qa/bookings/custom-bundle-preview-submission-contract.ts
+      - scripts/qa/bookings/custom-bundle-preview-recovery-session-contract.ts
+      - scripts/qa/bookings/custom-bundle-preview-wizard-handoff-contract.ts
+      - scripts/qa/bookings/custom-bundle-preview-end-to-end.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-schema.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-reporting.ts
       - scripts/qa/bookings/isolated-custom-bundle-payment-proof-flow.ts
@@ -179,6 +192,21 @@ jobs:
 
       - name: Run custom bundle payment recovery UI hardening contract
         run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-recovery-ui-hardening-contract.ts
+
+      - name: Run custom bundle preview handoff token contract
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-preview-handoff-token-contract.ts
+
+      - name: Run custom bundle preview submission contract
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-preview-submission-contract.ts
+
+      - name: Run custom bundle preview recovery session contract
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-preview-recovery-session-contract.ts
+
+      - name: Run custom bundle preview wizard handoff contract
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-preview-wizard-handoff-contract.ts
+
+      - name: Run custom bundle preview end-to-end gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-preview-end-to-end.ts
 
       - name: Run custom bundle payment recovery transport gate
         run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-recovery-transport-contract.ts

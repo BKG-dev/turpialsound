@@ -1,7 +1,6 @@
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
-import { prisma } from '@/lib/db'
 import { getOperationalStatus, getPaymentDeadline } from '@/lib/bookings/operations'
 import { resolveReferenceRate } from '@/lib/bookings/reference-rate'
 import { getEnabledPaymentMethods, getPrimaryPaymentMethod } from '@/lib/bookings/payment-settings'
@@ -11,12 +10,18 @@ import {
   buildCustomBundlePaymentRecoveryCookieClearOptions,
   buildCustomBundlePaymentRecoveryCookieSetOptions,
 } from '@/lib/bookings/custom-bundle-payment-recovery-cookie'
+import {
+  CUSTOM_BUNDLE_PREVIEW_HANDOFF_COOKIE_NAME,
+  buildCustomBundlePreviewHandoffCookieClearOptions,
+} from '@/lib/bookings/custom-bundle-preview-handoff-cookie'
 import { isPreviewDeployment } from '@/lib/bookings/environment'
 import { isCustomBundleBookingCandidate } from '@/lib/bookings/custom-bundle-booking-identity'
 import {
   mapBookingPaymentMethodToPublicUiMethod,
   resolveCustomBundlePaymentUiMode,
 } from '@/lib/bookings/custom-bundle-payment-recovery-ui-contract'
+import { validateCustomBundlePreviewHandoffToken } from '@/lib/bookings/custom-bundle-preview-handoff-token'
+import { runCustomBundlePreviewRecoverySessionCore } from '@/lib/bookings/custom-bundle-preview-recovery-session-core'
 
 interface PaymentRecoveryPayload {
   code?: string
@@ -80,6 +85,14 @@ function clearRecoveryCookie(response: NextResponse): void {
   )
 }
 
+function clearPreviewHandoffCookie(response: NextResponse): void {
+  response.cookies.set(
+    CUSTOM_BUNDLE_PREVIEW_HANDOFF_COOKIE_NAME,
+    '',
+    buildCustomBundlePreviewHandoffCookieClearOptions(),
+  )
+}
+
 function setRecoveryCookie(response: NextResponse, token: string, now: Date, expiresAt: Date): void {
   const options = buildCustomBundlePaymentRecoveryCookieSetOptions({ now, expiresAt })
   if (!options) {
@@ -97,8 +110,73 @@ export async function POST(request: NextRequest) {
   const payload = (await request.json().catch(() => null)) as PaymentRecoveryPayload | null
   const code = payload?.code?.trim().toUpperCase() ?? ''
   const bodyToken = payload?.token?.trim() ?? ''
-  const cookieToken = cookies().get(CUSTOM_BUNDLE_PAYMENT_RECOVERY_COOKIE_NAME)?.value?.trim() ?? ''
+  const cookieStore = cookies()
+  const cookieToken = cookieStore.get(CUSTOM_BUNDLE_PAYMENT_RECOVERY_COOKIE_NAME)?.value?.trim() ?? ''
+  const previewHandoffToken = cookieStore.get(CUSTOM_BUNDLE_PREVIEW_HANDOFF_COOKIE_NAME)?.value?.trim() ?? ''
   const token = bodyToken || cookieToken
+  const isPreview = isPreviewDeployment()
+  const validateRecoveryToken = validatePaymentRecoveryToken
+
+  if (isPreview && previewHandoffToken.length > 0) {
+    const previewResult = runCustomBundlePreviewRecoverySessionCore({
+      publicCode: code,
+      recoveryToken: token || null,
+      previewHandoffToken,
+      now,
+      validateRecoveryToken,
+      validatePreviewHandoffToken: validateCustomBundlePreviewHandoffToken,
+    })
+
+    if (!previewResult.ok) {
+      const response = NextResponse.json({
+        ok: true,
+        state: previewResult.stage,
+        reason: previewResult.code,
+      })
+      clearRecoveryCookie(response)
+      clearPreviewHandoffCookie(response)
+      return withNoStoreHeaders(response)
+    }
+
+    const primaryMethod = getPrimaryPaymentMethod()
+    const paymentMethods = getEnabledPaymentMethods().map(mapBookingPaymentMethodToPublicUiMethod)
+    const previewRate = await resolveReferenceRate().catch(() => null)
+    const referenceRate = previewRate?.rate ?? 0
+    const amountUsd = previewResult.trusted.amountUsd
+    const amountBs = amountUsd * referenceRate
+    const response = NextResponse.json({
+      ok: true,
+      state: 'pending_payment',
+      session: {
+        version: 2,
+        publicCode: previewResult.trusted.publicCode,
+        operationalStatus: 'pending_payment',
+        paymentUiMode: 'preview_simulation',
+        serviceName: 'Arma tu paquete',
+        variantName: 'Paquete personalizado',
+        eventDate: previewResult.trusted.eventDate,
+        startTime: previewResult.trusted.startTime,
+        durationMinutes: previewResult.trusted.durationMinutes,
+        paymentDeadlineIso: previewResult.trusted.paymentDeadlineIso,
+        selectedPaymentMethodSlug: primaryMethod.slug,
+        paymentReference: previewResult.trusted.publicCode,
+        amountUsd,
+        amountBs,
+        amountUsdLabel: formatAmountLabel(amountUsd, 'USD'),
+        amountBsLabel: formatAmountLabel(amountBs, 'VES'),
+        bcvRate: referenceRate,
+        paymentMethods,
+      },
+    })
+
+    setRecoveryCookie(
+      response,
+      token || cookieToken,
+      now,
+      new Date(previewResult.recoveryTokenExpiresAtIso),
+    )
+    return withNoStoreHeaders(response)
+  }
 
   if (!code || !token) {
     const response = NextResponse.json({ ok: false, error: 'missing_params' }, { status: 400 })
@@ -116,6 +194,8 @@ export async function POST(request: NextRequest) {
     clearRecoveryCookie(response)
     return withNoStoreHeaders(response)
   }
+
+  const { prisma } = await import('@/lib/db')
 
   const booking = await prisma.bookingRequest.findUnique({
     where: { publicCode: code },

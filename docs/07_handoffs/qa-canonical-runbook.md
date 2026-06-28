@@ -939,3 +939,29 @@ Criterio de evidencia:
 
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no permitir submit en modo disabled, no limpiar token antes de confirmar respuesta segura, no guardar token en storage, no mostrar `error.message`, no duplicar limites o MIME, no activar produccion, no conectar wizard, no usar Blob real y no ejecutar QA manual.
+
+## Booking custom bundle preview end to end
+
+Objetivo:
+- encadenar la simulacion Preview de Arma tu paquete con la recuperacion segura sin exponer token, sin persistir capability y sin tocar produccion.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-preview-handoff-token-contract.ts`
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-preview-submission-contract.ts`
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-preview-recovery-session-contract.ts`
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-preview-wizard-handoff-contract.ts`
+- `pnpm exec tsx scripts/qa/bookings/custom-bundle-preview-end-to-end.ts`
+
+Precondiciones:
+- Node y pnpm disponibles;
+- dependencias instaladas;
+- no requiere app levantada;
+- no requiere `DATABASE_URL`;
+- no requiere navegador;
+- no requiere red.
+
+Criterio de evidencia:
+- confirmar handoff token firmado, submission Preview deterministica, session Preview pending_payment, recovery path solo con `code`, wizard Preview sin localStorage para capability y sin token en la URL.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar token real, URL con token, Blob real, DB real ni wiring del wizard a produccion.

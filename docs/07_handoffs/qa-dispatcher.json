@@ -1,5 +1,5 @@
 {
-  "version": 24,
+  "version": 25,
   "updated_at": "2026-06-27",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
@@ -1695,6 +1695,155 @@
       ],
       "last_validated_at": null,
       "notes": "Canonical QA route for the hardened payment recovery UI and retry-safe token handling."
+    },
+    "booking_custom_bundle_preview_handoff_token_contract": {
+      "task_id": "booking_custom_bundle_preview_handoff_token_contract",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/custom-bundle-preview-handoff-token-contract.ts",
+      "preconditions": [
+        "Node and pnpm available",
+        "Dependencies installed",
+        "No application server required",
+        "No DATABASE_URL required",
+        "No browser required",
+        "No network required"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "token real",
+        "publicCode del cliente",
+        "recovery path con token",
+        "activar produccion",
+        "usar secretos reales en QA"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-08I.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Canonical QA route for the signed preview handoff token that links the wizard with the secure recovery session."
+    },
+    "booking_custom_bundle_preview_submission_contract": {
+      "task_id": "booking_custom_bundle_preview_submission_contract",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/custom-bundle-preview-submission-contract.ts",
+      "preconditions": [
+        "Node and pnpm available",
+        "Dependencies installed",
+        "No application server required",
+        "No DATABASE_URL required",
+        "No browser required",
+        "No network required"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "guardar capability en storage",
+        "exponer token o fingerprint",
+        "activar produccion",
+        "usar secretos reales en QA"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-08I.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Canonical QA route for the Preview-only custom bundle submission and deterministic recovery handoff."
+    },
+    "booking_custom_bundle_preview_recovery_session_contract": {
+      "task_id": "booking_custom_bundle_preview_recovery_session_contract",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/custom-bundle-preview-recovery-session-contract.ts",
+      "preconditions": [
+        "Node and pnpm available",
+        "Dependencies installed",
+        "No application server required",
+        "No DATABASE_URL required",
+        "No browser required",
+        "No network required"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "usar DB productiva",
+        "usar Blob real",
+        "exponer token",
+        "activar produccion",
+        "usar secretos reales en QA"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-08I.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Canonical QA route for the preview recovery session that reconstructs the pending payment UI from secure cookies."
+    },
+    "booking_custom_bundle_preview_wizard_handoff_contract": {
+      "task_id": "booking_custom_bundle_preview_wizard_handoff_contract",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/custom-bundle-preview-wizard-handoff-contract.ts",
+      "preconditions": [
+        "Node and pnpm available",
+        "Dependencies installed",
+        "No application server required",
+        "No DATABASE_URL required",
+        "No browser required",
+        "No network required"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "conectar wizard a produccion",
+        "persistir preview capability",
+        "guardar token en storage",
+        "usar Blob real",
+        "activar produccion"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-08I.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Canonical QA route for the wizard-side Preview handoff that stays disconnected from production flows."
+    },
+    "booking_custom_bundle_preview_end_to_end": {
+      "task_id": "booking_custom_bundle_preview_end_to_end",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/custom-bundle-preview-end-to-end.ts",
+      "preconditions": [
+        "Node and pnpm available",
+        "Dependencies installed",
+        "No application server required",
+        "No DATABASE_URL required",
+        "No browser required",
+        "No network required"
+      ],
+      "allowed_fallbacks": [
+        "Correct only a documented precondition and rerun the same canonical script",
+        "If the route becomes invalid, stop and report GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "usar localStorage para capability",
+        "aceptar token en la URL",
+        "usar Blob real",
+        "activar produccion",
+        "usar secretos reales en QA"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-08I.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Canonical QA route for the Preview-only end-to-end path from wizard submission to recovery session."
     }
   }
 }

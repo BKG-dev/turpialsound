@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
@@ -18,10 +19,11 @@ import { SummaryStep } from '@/components/bookings/steps/SummaryStep'
 import { PaymentCountdownCTA } from '@/components/bookings/PaymentCountdownCTA'
 import { CATALOG_SERVICES, CATALOG_VARIANTS } from '@/lib/bookings/catalog'
 import { reportBookingPayment, submitBookingRequest } from '@/lib/bookings/actions'
+import { submitCustomBundlePreviewAction } from '@/lib/bookings/custom-bundle-preview-submission-action'
 import { buildBookingEstimate } from '@/lib/bookings/estimate'
 import {
-  buildCustomBundleEstimate,
   countCustomBundleAggregateOnlySelections,
+  buildCustomBundleEstimate,
   getCustomBundleItemBySlug,
   splitCustomBundleEstimateLines,
   normalizeCustomBundleSelections,
@@ -44,6 +46,7 @@ import type {
   BookingPaymentMethodConfig,
   BookingPaymentMethodSlug,
 } from '@/lib/bookings/payment-settings.types'
+import type { CustomBundlePreviewSubmissionPublicResult } from '@/lib/bookings/custom-bundle-preview-submission-core'
 
 interface WizardStepDef {
   id: string
@@ -170,11 +173,6 @@ interface BookingPendingPaymentSessionV1 {
 type ContactVerificationFlowMode = 'manual_code' | 'secure_link'
 
 type SecureLinkRequestState = 'idle' | 'loading' | 'sent' | 'failed'
-
-interface CustomBundleSimulationResult {
-  message: string
-  simulatedAt: string
-}
 
 const BOOKING_DRAFT_STORAGE_KEY = 'turpial_booking_draft_v1'
 const BOOKING_PENDING_PAYMENT_STORAGE_KEY = 'turpial_booking_pending_payment_v1'
@@ -391,8 +389,8 @@ export function BookingWizard({
   const [hasRestoredPendingPayment, setHasRestoredPendingPayment] = useState(false)
   const [paymentRecoveryNotice, setPaymentRecoveryNotice] = useState<string | null>(null)
   const [submissionNotice, setSubmissionNotice] = useState<string | null>(null)
-  const [customBundleSimulationResult, setCustomBundleSimulationResult] =
-    useState<CustomBundleSimulationResult | null>(null)
+  const [customBundlePreviewResult, setCustomBundlePreviewResult] =
+    useState<CustomBundlePreviewSubmissionPublicResult | null>(null)
   const pollTimerRef = useRef<number | null>(null)
   const wizardContainerRef = useRef<HTMLDivElement | null>(null)
 
@@ -1243,7 +1241,7 @@ export function BookingWizard({
     setCopyStatusKey(null)
     setSubmitError(null)
     setSubmissionNotice(null)
-    setCustomBundleSimulationResult(null)
+    setCustomBundlePreviewResult(null)
     setPaymentRecoveryNotice(null)
   }
 
@@ -1400,7 +1398,7 @@ export function BookingWizard({
     setCopyStatusKey(null)
     setSubmitError(null)
     setSubmissionNotice(null)
-    setCustomBundleSimulationResult(null)
+    setCustomBundlePreviewResult(null)
     setWhatsappVerification(INITIAL_WHATSAPP_VERIFICATION_STATE)
     setContactVerificationFlowMode(
       whatsappVerificationConfig.mode === 'secure_link' && whatsappVerificationConfig.secureLinkEnabled
@@ -1511,11 +1509,34 @@ export function BookingWizard({
       clearSubmissionArtifacts()
       setSubmissionState('loading')
       setSubmitError(null)
-      setSubmissionNotice('Simulacion completada. No se modifico la base de datos.')
-      setCustomBundleSimulationResult({
-        message: 'Simulacion completada. No se modifico la base de datos.',
-        simulatedAt: new Date().toISOString(),
-      })
+      const canonicalPreviewSubmission = {
+        contractVersion: 1 as const,
+        bookingMode: 'custom_bundle' as const,
+        eventDate: data.eventDate,
+        startTime: data.startTime,
+        items: normalizeCustomBundleSelections(data.customBundleSelections).map((selection) => ({
+          itemSlug: selection.itemSlug,
+          quantity: selection.quantity,
+          sessionDurationMinutes: selection.sessionDurationMinutes,
+        })),
+        extrasNotes: data.extrasNotes,
+        requester: {
+          name: data.requesterName,
+          email: data.requesterEmail,
+          phone: normalizeWhatsappVe(data.requesterPhone),
+          whatsappConsentAccepted: data.whatsappConsentAccepted,
+        },
+      }
+
+      const result = await submitCustomBundlePreviewAction(canonicalPreviewSubmission)
+      if (!result.ok) {
+        setSubmitError(result.message)
+        setSubmissionState('error')
+        return
+      }
+
+      setSubmissionNotice(result.message)
+      setCustomBundlePreviewResult(result)
       setSubmissionState('success')
       return
     }
@@ -1665,14 +1686,16 @@ export function BookingWizard({
     setPaymentReportedAtIso(result.paymentReportedAtIso ?? new Date().toISOString())
   }
 
-  if (submissionState === 'success' && isCustomBundleMode && customBundleSimulationResult) {
+  if (submissionState === 'success' && isCustomBundleMode && customBundlePreviewResult) {
     const simulatedEndTime =
       data.startTime && activeDurationMinutes !== null
         ? deriveEndTime(data.startTime, activeDurationMinutes)
         : null
-    const { itemizedLines, aggregateOnlyLines, includedLines } = splitCustomBundleEstimateLines(
-      customBundleEstimate.lines,
-    )
+    const {
+      itemizedLines,
+      aggregateOnlyLines,
+      includedLines,
+    } = splitCustomBundleEstimateLines(customBundleEstimate.lines)
     const aggregateOnlyCount = countCustomBundleAggregateOnlySelections(customBundleEstimate.lines)
 
     return (
@@ -1780,9 +1803,19 @@ export function BookingWizard({
               <div>
                 <p className="text-[10px] uppercase tracking-wide text-text-muted">Simulada</p>
                 <p className="font-medium text-text-primary">
-                  {formatCaracasDateTime(customBundleSimulationResult.simulatedAt)}
+                  {formatCaracasDateTime(customBundlePreviewResult.holdExpiresAtIso)}
                 </p>
               </div>
+            </div>
+
+            <div className="mt-3 rounded-lg border border-accent-gold/20 bg-accent-gold/5 px-3 py-2 text-[11px] leading-snug text-text-primary">
+              <p className="font-medium">Continua al pago simulado sin token visible.</p>
+              <Link
+                href={customBundlePreviewResult.recoveryPath}
+                className="mt-1 inline-flex font-semibold text-accent-gold underline underline-offset-4"
+              >
+                Abrir recuperacion segura
+              </Link>
             </div>
 
             <div className="mt-3 flex flex-wrap gap-2">
@@ -1791,7 +1824,7 @@ export function BookingWizard({
                 size="sm"
                 onClick={() => {
                   setSubmissionState('idle')
-                  setCustomBundleSimulationResult(null)
+                  setCustomBundlePreviewResult(null)
                   setSubmitError(null)
                 }}
               >
