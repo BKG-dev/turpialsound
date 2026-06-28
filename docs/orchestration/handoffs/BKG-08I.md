@@ -2,13 +2,20 @@
 
 - Sprint: `BKG-08I`
 - Base: `10012b9e4e895316646e0217dbebbf5006a13b`
-- State: `DIRECTOR_REVIEW`
-- Result: `PREVIEW_END_TO_END_HANDOFF_PENDING_CI`
-- Next Action: `ChatGPT verifies the same-browser Preview wizard-to-payment handoff before isolated PostgreSQL lifecycle integration`
+- State: `TECHNICALLY_VALIDATED`
+- Result: `READY_FOR_ISOLATED_DATABASE_END_TO_END`
+
+## Evidence
+
+- Workflow: `Booking Isolated Custom Bundle Payment Proof Boundary`
+- Run: `28307447869`
+- Job: `83866106422`
+- Conclusion: `success`
+- Functional SHA: `a0dbd1ac7f2e53e24eb9a46d8b3f430c37aa59e0`
 
 ## Context
 
-Este sprint conecta exclusivamente en Preview el recorrido:
+Este sprint conectó exclusivamente en Preview el recorrido:
 
 - `Arma tu paquete`
 - submission canónica
@@ -22,20 +29,25 @@ Este sprint conecta exclusivamente en Preview el recorrido:
 
 ## Seguridad
 
-- No se envían tokens al cliente
+- No se enviaron tokens al cliente
 - La recuperación usa cookies HttpOnly firmadas
 - El resultado público sólo expone `recoveryPath`
-- No hay escritura de `BookingRequest`
-- No hay escritura de `PaymentProof`
-- No hay escritura de `AuditLog`
-- No hay Blob
-- No hay notificaciones
-- No hay activación de producción
+- No hubo escritura de `BookingRequest`
+- No hubo escritura de `PaymentProof`
+- No hubo escritura de `AuditLog`
+- No hubo Blob
+- No hubo notificaciones
+- No hubo activación de producción
 
-## Evidencia
+## Verificación
 
-- Technical baseline: `paymentRecoveryUiTechnicallyValidated = true`
-- End-to-end preview integration: `readyForEndToEndPreviewIntegration = true`
-- Wizard integration: `false`
-- Production: `false`
+- `paymentRecoveryUiTechnicallyValidated = true`
+- `readyForEndToEndPreviewIntegration = true`
+- `customBundlePreviewEndToEndTechnicallyValidated = true`
+- `readyForIsolatedDatabaseEndToEnd = true`
+- `readyForWizardIntegration = false`
+- `readyForProduction = false`
 
+## Next Action
+
+ChatGPT reviews BKG-08I and defines the isolated PostgreSQL full booking and payment lifecycle.
