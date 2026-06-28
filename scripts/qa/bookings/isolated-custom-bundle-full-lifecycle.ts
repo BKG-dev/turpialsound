@@ -1338,16 +1338,33 @@ async function main(): Promise<void> {
         assert.equal(mixedReplay.replayed, true)
         assert.equal(mixedReplay.bookingRequestId, mixedResult.bookingRequestId)
 
-        const collisionResult = await acquireCustomBundleHoldWithSql(makeSession(client), {
+        const collisionSeed = await acquireCustomBundleHoldWithSql(makeSession(client), {
           submission: deepClone(
             makeRoomOnlySubmission({
-              startTime: '10:30',
-              extrasNotes: '  Colision activa  ',
+              startTime: '12:00',
+              extrasNotes: '  Colision semilla  ',
             }),
           ),
           serverContext: buildHoldContext({
             publicCode: 'TUR-0808-802',
             idempotencyKey: 'HOLD_2026:06:24-0802',
+            now: new Date('2026-06-24T10:00:00.000Z'),
+            holdDurationMinutes: 60,
+          }),
+        })
+        assertHoldAcquisitionSuccess(collisionSeed, 'collision seed')
+        assert.equal(collisionSeed.stage, 'acquired')
+
+        const collisionResult = await acquireCustomBundleHoldWithSql(makeSession(client), {
+          submission: deepClone(
+            makeRoomOnlySubmission({
+              startTime: '12:30',
+              extrasNotes: '  Colision activa  ',
+            }),
+          ),
+          serverContext: buildHoldContext({
+            publicCode: 'TUR-0808-803',
+            idempotencyKey: 'HOLD_2026:06:24-0803',
             now: new Date('2026-06-24T10:05:00.000Z'),
             holdDurationMinutes: 60,
           }),
