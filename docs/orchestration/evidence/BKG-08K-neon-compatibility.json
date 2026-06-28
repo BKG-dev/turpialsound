@@ -1,0 +1,23 @@
+{
+  "sprint": "BKG-08K",
+  "auditedSha": "a1953fe32cb616f96d54a277cc7bbd9545572b9d",
+  "auditedAt": "2026-06-28T22:47:10.128Z",
+  "database": {
+    "provider": "neon",
+    "hostHash": null,
+    "postgresVersion": null,
+    "transactionReadOnly": false
+  },
+  "proposalStatus": {
+    "bkg04": "BLOCKED_MISSING_READONLY_CREDENTIAL",
+    "bkg07": "BLOCKED_MISSING_READONLY_CREDENTIAL",
+    "bkg08": "BLOCKED_MISSING_READONLY_CREDENTIAL"
+  },
+  "schemaChecks": [],
+  "dataCompatibilityChecks": [],
+  "tableMetrics": [],
+  "blockers": [
+    "TURPIAL_ALLOW_NEON_READONLY_AUDIT"
+  ],
+  "verdict": "BLOCKED_MISSING_READONLY_CREDENTIAL"
+}

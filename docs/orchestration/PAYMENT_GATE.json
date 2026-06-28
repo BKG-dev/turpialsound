@@ -363,5 +363,16 @@
     "zeroDatabaseVerified": true,
     "zeroBlobVerified": true,
     "noProductionActivationVerified": true
-  }
+  },
+  "productionSchemaCompatibilityAudit": {
+    "workflow": "scripts/qa/bookings/neon-custom-bundle-readonly-audit.ts",
+    "status": "BLOCKED",
+    "runId": null,
+    "validatedHeadSha": "a1953fe32cb616f96d54a277cc7bbd9545572b9d",
+    "conclusion": "blocked",
+    "verdict": "BLOCKED_MISSING_READONLY_CREDENTIAL",
+    "missingCredential": "TURPIAL_ALLOW_NEON_READONLY_AUDIT"
+  },
+  "readyForMigrationDryRun": false,
+  "productionAuthorized": false
 }

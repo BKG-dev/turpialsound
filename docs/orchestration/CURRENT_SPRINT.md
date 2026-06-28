@@ -1,35 +1,35 @@
 # Current Sprint
 
 Sprint:
-BKG-08J1
+BKG-08K
 
 Name:
-Ciclo completo aislado PostgreSQL de reserva y pago custom bundle
+Auditoria read-only de compatibilidad Neon
 
 Base:
-943f40fe871d81158427e794d633be5a0d5b17d4
+a1953fe32cb616f96d54a277cc7bbd9545572b9d
 
 State:
-TECHNICALLY_VALIDATED
+BLOCKED
 
 Scope:
 
-* base aislada PostgreSQL para reserva y pago custom bundle;
-* aplicaciones BKG-04, BKG-07 y BKG-08 en base efimera;
-* hold, payment, proof, expiration y cleanup de ciclo completo;
-* verificacion de aislamiento contra recursos y persistencia reales.
+* lectura read-only de Neon para las propuestas BKG-04, BKG-07 y BKG-08;
+* inspeccion de tablas, enums, columnas, indices, constraints y compatibilidad agregada;
+* evidencia local sin escrituras ni migraciones.
 
 Out of Scope:
 
-* Neon de produccion;
-* Blob real de produccion;
-* wiring del wizard a produccion;
+* SQL aplicado;
+* escrituras de cualquier tipo;
+* nuevas ramas Neon;
+* wizard;
 * produccion;
 * QA manual;
 * siguiente sprint.
 
 Result:
-READY_FOR_PRODUCTION_SCHEMA_COMPATIBILITY_AUDIT
+BLOCKED_MISSING_READONLY_CREDENTIAL
 
 Next Action:
-ChatGPT reviews BKG-08J1 and defines the production Neon schema compatibility audit.
+ChatGPT provides TURPIAL_ALLOW_NEON_READONLY_AUDIT and TURPIAL_NEON_READONLY_URL for the Neon audit.

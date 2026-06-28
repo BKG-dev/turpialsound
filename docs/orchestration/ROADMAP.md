@@ -132,7 +132,7 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - End-to-end Preview integration: `TECHNICALLY_VALIDATED`
 - Preview handoff seal: `TECHNICALLY_VALIDATED`
 - Isolated PostgreSQL full lifecycle: `TECHNICALLY_VALIDATED`
-- Production schema compatibility audit: `NOT_STARTED`
+- Production schema compatibility audit: `BLOCKED`
 - Neon migration: `NOT_STARTED`
 - Real Blob integration: `NOT_STARTED`
 - Production wizard integration: `NOT_STARTED`
