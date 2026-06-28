@@ -1,0 +1,169 @@
+name: Booking Isolated Custom Bundle Full Lifecycle
+
+on:
+  push:
+    branches:
+      - codex/preview-arma-tu-paquete-2026-06-19
+    paths:
+      - .github/workflows/booking-isolated-custom-bundle-full-lifecycle.yml
+      - lib/bookings/custom-bundle-hold-acquisition.ts
+      - lib/bookings/custom-bundle-hold-expiration.ts
+      - lib/bookings/custom-bundle-persistence.ts
+      - lib/bookings/custom-bundle-payment-contract.ts
+      - lib/bookings/custom-bundle-payment-proof-boundary.ts
+      - lib/bookings/custom-bundle-payment-reporting.ts
+      - lib/bookings/custom-bundle-payment-receipt-entrypoint-core.ts
+      - lib/bookings/custom-bundle-payment-server-entrypoint-core.ts
+      - lib/bookings/custom-bundle-payment-upload-token.ts
+      - lib/bookings/custom-bundle-payment-proof-flow.ts
+      - lib/bookings/custom-bundle-payment-receipt-entrypoint.ts
+      - lib/bookings/custom-bundle-payment-action-core.ts
+      - lib/bookings/custom-bundle-payment-action.ts
+      - lib/bookings/custom-bundle-payment-recovery-ui-contract.ts
+      - lib/bookings/custom-bundle-payment-recovery-ui-flow.ts
+      - lib/bookings/custom-bundle-resource-policy.ts
+      - lib/bookings/custom-bundle-schedule.ts
+      - lib/bookings/custom-bundle-submission.ts
+      - scripts/qa/bookings/custom-bundle-contract.ts
+      - scripts/qa/bookings/custom-bundle-submission-contract.ts
+      - scripts/qa/bookings/custom-bundle-authoritative-repricing.ts
+      - scripts/qa/bookings/custom-bundle-continuous-schedule.ts
+      - scripts/qa/bookings/custom-bundle-resource-policy.ts
+      - scripts/qa/bookings/custom-bundle-persistence-contract.ts
+      - scripts/qa/bookings/custom-bundle-hold-contract.ts
+      - scripts/qa/bookings/custom-bundle-hold-acquisition-contract.ts
+      - scripts/qa/bookings/custom-bundle-hold-expiration-contract.ts
+      - scripts/qa/bookings/custom-bundle-payment-contract.ts
+      - scripts/qa/bookings/custom-bundle-payment-reporting-contract.ts
+      - scripts/qa/bookings/custom-bundle-payment-proof-boundary-contract.ts
+      - scripts/qa/bookings/custom-bundle-payment-server-entrypoint-contract.ts
+      - scripts/qa/bookings/custom-bundle-payment-action-contract.ts
+      - scripts/qa/bookings/custom-bundle-payment-recovery-transport-contract.ts
+      - scripts/qa/bookings/custom-bundle-payment-upload-transport-contract.ts
+      - scripts/qa/bookings/custom-bundle-payment-receipt-entrypoint-contract.ts
+      - scripts/qa/bookings/custom-bundle-payment-receipt-compensation-contract.ts
+      - scripts/qa/bookings/custom-bundle-payment-recovery-ui-contract.ts
+      - scripts/qa/bookings/custom-bundle-payment-recovery-ui-hardening-contract.ts
+      - scripts/qa/bookings/custom-bundle-preview-handoff-token-contract.ts
+      - scripts/qa/bookings/custom-bundle-preview-submission-contract.ts
+      - scripts/qa/bookings/custom-bundle-preview-recovery-session-contract.ts
+      - scripts/qa/bookings/custom-bundle-preview-wizard-handoff-contract.ts
+      - scripts/qa/bookings/custom-bundle-preview-end-to-end.ts
+      - scripts/qa/bookings/isolated-custom-bundle-full-lifecycle.ts
+      - prisma/schema.prisma
+      - prisma/proposed/**
+      - prisma.config.ts
+      - docs/orchestration/PAYMENT_GATE.json
+      - package.json
+      - pnpm-lock.yaml
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: booking-isolated-custom-bundle-full-lifecycle-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: turpial_ci
+          POSTGRES_PASSWORD: turpial_ci_only
+          POSTGRES_DB: turpial_booking_ci
+        options: >-
+          --health-cmd "pg_isready -U turpial_ci -d turpial_booking_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CI: 'true'
+      TURPIAL_ALLOW_ISOLATED_DB_TESTS: 'true'
+      TURPIAL_ISOLATED_DATABASE_URL: postgresql://turpial_ci:turpial_ci_only@127.0.0.1:5432/turpial_booking_ci
+      DIRECT_URL: postgresql://turpial_ci:turpial_ci_only@127.0.0.1:5432/turpial_booking_ci
+      BOOKINGS_PAYMENT_RECOVERY_TOKEN_SECRET: bkg08j-isolated-ci-secret-not-production
+      NODE_PATH: ${{ github.workspace }}/scripts/qa/shims
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Activate pnpm 10.18.1
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.18.1 --activate
+          pnpm --version
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate baseline SQL
+        run: |
+          pnpm exec prisma migrate diff --config prisma.config.ts --from-empty --to-schema prisma/schema.prisma --script | sed -n '/^-- CreateSchema/,$p' > /tmp/turpial-current-baseline.sql
+
+      - name: Run custom bundle contract gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-contract.ts
+
+      - name: Run custom bundle submission gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-submission-contract.ts
+
+      - name: Run custom bundle repricing gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-authoritative-repricing.ts
+
+      - name: Run custom bundle continuous schedule gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-continuous-schedule.ts
+
+      - name: Run custom bundle resource policy gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-resource-policy.ts
+
+      - name: Run custom bundle persistence gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-persistence-contract.ts
+
+      - name: Run hold contract gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-hold-contract.ts
+
+      - name: Run hold acquisition contract gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-hold-acquisition-contract.ts
+
+      - name: Run hold expiration contract gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-hold-expiration-contract.ts
+
+      - name: Run custom bundle payment contract gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-contract.ts
+
+      - name: Run custom bundle payment reporting contract gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-reporting-contract.ts
+
+      - name: Run custom bundle payment proof boundary gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-proof-boundary-contract.ts
+
+      - name: Run custom bundle payment receipt entrypoint gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-receipt-entrypoint-contract.ts
+
+      - name: Run custom bundle payment receipt compensation gate
+        run: pnpm exec tsx scripts/qa/bookings/custom-bundle-payment-receipt-compensation-contract.ts
+
+      - name: Run isolated custom bundle full lifecycle gate
+        run: pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-full-lifecycle.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql
+
+      - name: Run lint
+        run: pnpm lint
+
+      - name: Run TypeScript
+        run: pnpm exec tsc --noEmit
+
+      - name: Confirm no repository changes
+        run: git diff --exit-code

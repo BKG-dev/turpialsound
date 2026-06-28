@@ -966,3 +966,24 @@ Criterio de evidencia:
 
 Regla:
 - si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar token real, URL con token, Blob real, DB real, payload de accion con campos extra ni wiring del wizard a produccion.
+
+## Booking isolated custom bundle full lifecycle
+
+Objetivo:
+- validar el ciclo completo aislado de booking, hold, payment, proof, expiration y cleanup sobre PostgreSQL efimero sin tocar Neon de produccion.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-full-lifecycle.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql`
+
+Precondiciones:
+- PostgreSQL local efimero;
+- baseline SQL generado;
+- propuestas BKG-04, BKG-07 y BKG-08 validadas;
+- opt-in aislado habilitado;
+- URL exclusivamente local.
+
+Criterio de evidencia:
+- confirmar aplicacion del baseline y de las tres propuestas, hold feliz, colision y replay, recovery persistida, objeto privado, receipt firmado, pago reportado, replay concurrente, proteccion de hold pagado, frontera exacta de expiracion, liberacion de recurso, rollback de persistencia, compensacion del proof, aislamiento legacy y ausencia de activacion de produccion.
+
+Regla:
+- si esta ruta deja de ser valida, detenerse y reportar `GAP OPERATIVO`; no improvisar Neon de produccion, Blob real, DB productiva, navegador ni QA manual.

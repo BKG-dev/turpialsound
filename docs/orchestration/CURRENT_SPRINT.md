@@ -1,34 +1,35 @@
 # Current Sprint
 
 Sprint:
-BKG-08I2
+BKG-08J
 
 Name:
-Sellado de expiracion del handoff Preview y payload E2E
+Ciclo completo aislado PostgreSQL de reserva y pago custom bundle
 
 Base:
-18efd85c4fe17a586494c67fabaea316354b6d55
+04ad8ea1d5bcf5f20cb88810c5c8429651acf89c
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* invariantes temporales firmadas del handoff Preview;
-* builder/validator del token alineados con expiry del hold;
-* payload exacto del handoff UI hacia la accion;
-* receipt simulado nulo en Preview.
+* base aislada PostgreSQL para reserva y pago custom bundle;
+* aplicaciones BKG-04, BKG-07 y BKG-08 en base efimera;
+* hold, payment, proof, expiration y cleanup de ciclo completo;
+* verificacion de aislamiento contra recursos y persistencia reales.
 
 Out of Scope:
 
-* DB o Blob reales;
+* Neon de produccion;
+* Blob real de produccion;
 * wiring del wizard a produccion;
 * produccion;
 * QA manual;
 * siguiente sprint.
 
 Result:
-READY_FOR_ISOLATED_DATABASE_END_TO_END
+ISOLATED_DATABASE_LIFECYCLE_PENDING_CI
 
 Next Action:
-ChatGPT reviews BKG-08I2 and defines isolated PostgreSQL lifecycle integration.
+ChatGPT verifies the isolated PostgreSQL booking and payment lifecycle before the production Neon schema compatibility audit.

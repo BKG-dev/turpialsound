@@ -1,5 +1,5 @@
 {
-  "version": 27,
+  "version": 28,
   "updated_at": "2026-06-28",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
@@ -1844,6 +1844,36 @@
       ],
       "last_validated_at": null,
       "notes": "Canonical QA route for the Preview-only end-to-end path from wizard submission to recovery session; validates signed expiry seal, exact four-field action payload and null simulated receipt."
+    },
+    "booking_isolated_custom_bundle_full_lifecycle": {
+      "task_id": "booking_isolated_custom_bundle_full_lifecycle",
+      "mode": "script",
+      "canonical_script": "pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-full-lifecycle.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql",
+      "preconditions": [
+        "PostgreSQL local efimero disponible",
+        "baseline SQL generado",
+        "propuestas BKG-04, BKG-07 y BKG-08 validadas",
+        "opt-in aislado habilitado",
+        "URL local exclusivamente"
+      ],
+      "allowed_fallbacks": [
+        "Corregir solo la precondicion documentada y reintentar el mismo script",
+        "Si la ruta deja de ser valida, detenerse y reportar GAP OPERATIVO"
+      ],
+      "forbidden_fallbacks": [
+        "Neon de produccion",
+        "Blob real",
+        "DB productiva",
+        "navegador",
+        "QA manual",
+        "improvisar rutas fuera del dispatcher"
+      ],
+      "evidence_source": [
+        "docs/07_handoffs/qa-canonical-runbook.md",
+        "docs/orchestration/handoffs/BKG-08J.md"
+      ],
+      "last_validated_at": null,
+      "notes": "Canonical QA route for the isolated PostgreSQL lifecycle that chains booking, hold, payment, proof, expiration and cleanup without touching production."
     }
   }
 }

@@ -131,6 +131,11 @@ Each milestone starts in `PLANNED` state and remains there until the Director an
 - Recovery retry safety: `TECHNICALLY_VALIDATED`
 - End-to-end Preview integration: `TECHNICALLY_VALIDATED`
 - Preview handoff seal: `TECHNICALLY_VALIDATED`
+- Isolated PostgreSQL full lifecycle: `PENDING_CI`
+- Production schema compatibility audit: `NOT_STARTED`
+- Neon migration: `NOT_STARTED`
+- Real Blob integration: `NOT_STARTED`
+- Production wizard integration: `NOT_STARTED`
 - Notifications: `NOT_STARTED`
 - Wizard integration: `NOT_STARTED`
 
