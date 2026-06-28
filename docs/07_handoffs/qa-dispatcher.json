@@ -1872,7 +1872,7 @@
         "docs/07_handoffs/qa-canonical-runbook.md",
         "docs/orchestration/handoffs/BKG-08J.md"
       ],
-      "last_validated_at": null,
+      "last_validated_at": "2026-06-28",
       "notes": "Canonical QA route for the isolated PostgreSQL lifecycle that chains booking, hold, payment, proof, expiration and cleanup without touching production."
     }
   }

@@ -5,7 +5,7 @@
   "integrationBranch": "codex/preview-arma-tu-paquete-2026-06-19",
   "orchestrationStartSha": "656ec6d7dd1c90babb42dfc7d6247b106b3ed8e0",
   "currentSprint": "BKG-08J",
-  "status": "DIRECTOR_REVIEW",
+  "status": "TECHNICALLY_VALIDATED",
   "directorDecision": "PENDING_REVIEW",
   "manualQaRequiredNow": false,
   "manualQaApproved": false,
@@ -13,5 +13,5 @@
   "releaseCandidateSha": null,
   "previewUrl": null,
   "lastHandoff": "docs/orchestration/handoffs/BKG-08J.md",
-  "nextAction": "ChatGPT verifies the isolated PostgreSQL booking and payment lifecycle before the production Neon schema compatibility audit"
+  "nextAction": "ChatGPT reviews BKG-08J and defines the production Neon schema compatibility audit"
 }
