@@ -110,6 +110,8 @@ type BookingRequestRow = {
   pricingSource: string | null
   estimatedTotal: string | number | null
   currency: string
+  eventDate: Date | null
+  eventEndDate: Date | null
   holdAcquiredAt: Date | null
   holdExpiresAt: Date | null
   paymentMethod: string | null
@@ -158,8 +160,31 @@ type PaymentProofRow = {
   isActive: boolean
 }
 
+type PersistedRecoverySnapshot = {
+  publicCode: string
+  amountUsd: number
+  durationMinutes: number
+  paymentDeadlineIso: string
+}
+
 type TracingSession = CustomBundleSqlSession & {
   calls: Array<{ sql: string; params: readonly unknown[] }>
+}
+
+type SessionTrace = {
+  calls: Array<{ sql: string; params: readonly unknown[] }>
+}
+
+type SessionFault = {
+  pattern: RegExp
+  message: string
+  fired: boolean
+}
+
+type ReceiptSessionInstrumentation = {
+  openedSessions: number
+  closedSessions: number
+  sessionTraces: SessionTrace[]
 }
 
 type DomainIds = {
@@ -506,6 +531,155 @@ function makeExactBoundarySubmission(): CustomBundleSubmissionInputV1 {
   })
 }
 
+function buildPersistedRecoverySnapshot(input: BookingRequestRow): PersistedRecoverySnapshot {
+  assert.ok(input.holdAcquiredAt instanceof Date)
+  assert.ok(input.holdExpiresAt instanceof Date)
+  assert.ok(input.eventDate instanceof Date)
+  assert.ok(input.eventEndDate instanceof Date)
+
+  return {
+    publicCode: input.publicCode,
+    amountUsd: Number(input.estimatedTotal),
+    durationMinutes: Math.round((input.eventEndDate.getTime() - input.eventDate.getTime()) / 60000),
+    paymentDeadlineIso: input.holdExpiresAt.toISOString(),
+  }
+}
+
+async function insertLegacyBookingFixture(client: Client): Promise<{
+  bookingRequestId: string
+  bookingRequestItemId: string
+}> {
+  const bookingRequestId = 'bkg08j_legacy_booking'
+  const bookingRequestItemId = 'bkg08j_legacy_booking_item'
+  await client.query(
+    `
+      INSERT INTO "booking_requests" (
+        "id",
+        "publicCode",
+        "status",
+        "priorityLevel",
+        "source",
+        "requesterName",
+        "requesterEmail",
+        "requesterPhone",
+        "eventTitle",
+        "eventDate",
+        "eventEndDate",
+        "notes",
+        "internalNotes",
+        "estimatedTotal",
+        "currency",
+        "submittedAt",
+        "bookingMode",
+        "pricingSource",
+        "idempotencyKey",
+        "requestFingerprint",
+        "holdAcquiredAt",
+        "holdExpiresAt",
+        "paymentMethod",
+        "paymentReference",
+        "paymentNormalizedReference",
+        "paymentReportedAt",
+        "paymentExpectedTotalUsdSnapshot",
+        "paymentReportIdempotencyKey",
+        "paymentReportFingerprint",
+        "createdAt",
+        "updatedAt"
+      ) VALUES (
+        $1,
+        $2,
+        'under_review',
+        'normal',
+        'web',
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        0,
+        'USD',
+        $11,
+        'single',
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        NOW(),
+        NOW()
+      )
+    `,
+    [
+      bookingRequestId,
+      'TUR-0808-899',
+      'Legacy booking',
+      'legacy@example.com',
+      '+58 000-000-0000',
+      'Legacy booking',
+      new Date('2026-06-24T08:00:00.000Z'),
+      new Date('2026-06-24T09:00:00.000Z'),
+      'Legacy note',
+      'legacy conocida',
+      new Date('2026-06-24T08:00:00.000Z'),
+    ],
+  )
+
+  await client.query(
+    `
+      INSERT INTO "booking_request_items" (
+        "id",
+        "bookingRequestId",
+        "serviceVariantId",
+        "resourceId",
+        "itemSlug",
+        "itemName",
+        "itemKind",
+        "quantity",
+        "sessionDurationMinutes",
+        "durationMinutes",
+        "unitPriceUsdSnapshot",
+        "lineTotalUsdSnapshot",
+        "clientPriceDisplay",
+        "notes",
+        "createdAt",
+        "updatedAt"
+      ) VALUES (
+        $1,
+        $2,
+        null,
+        null,
+        null,
+        null,
+        null,
+        1,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        NOW(),
+        NOW()
+      )
+    `,
+    [bookingRequestItemId, bookingRequestId],
+  )
+
+  return {
+    bookingRequestId,
+    bookingRequestItemId,
+  }
+}
+
 function buildHoldContext(input: {
   publicCode: string
   idempotencyKey: string
@@ -846,13 +1020,35 @@ async function seedCatalog(client: Client): Promise<DomainIds> {
   }
 }
 
-function makeSession(client: Client): CustomBundleSqlSession {
+function makeSession(
+  client: Client,
+  options?: {
+    trace?: SessionTrace
+    fault?: SessionFault
+  },
+): CustomBundleSqlSession {
+  return makeInstrumentedSession(client, options)
+}
+
+function makeInstrumentedSession(
+  client: Client,
+  options: {
+    trace?: SessionTrace
+    fault?: SessionFault
+  } = {},
+): CustomBundleSqlSession {
   return {
     transactionScope: 'single_connection' as const,
     async query<Row = Record<string, unknown>>(
       sql: string,
       params: readonly unknown[] = [],
     ): Promise<{ rows: Row[]; rowCount: number | null }> {
+      options.trace?.calls.push({ sql, params: [...params] })
+      if (options.fault && !options.fault.fired && options.fault.pattern.test(sql)) {
+        options.fault.fired = true
+        throw new Error(options.fault.message)
+      }
+
       const result = (await client.query<Row>(sql, [...params])) as {
         rows: Row[]
         rowCount: number | null
@@ -865,7 +1061,10 @@ function makeSession(client: Client): CustomBundleSqlSession {
   }
 }
 
-async function openLocalCustomBundlePaymentPgSession(connectionString: string): Promise<{
+async function openLocalCustomBundlePaymentPgSession(
+  connectionString: string,
+  instrumentation?: ReceiptSessionInstrumentation,
+): Promise<{
   session: CustomBundleSqlSession
   close(): Promise<void>
 }> {
@@ -873,8 +1072,13 @@ async function openLocalCustomBundlePaymentPgSession(connectionString: string): 
   await client.connect()
 
   let closed = false
+  const trace: SessionTrace = { calls: [] }
+  if (instrumentation) {
+    instrumentation.openedSessions += 1
+    instrumentation.sessionTraces.push(trace)
+  }
   return {
-    session: makeSession(client),
+    session: makeInstrumentedSession(client, { trace }),
     async close(): Promise<void> {
       if (closed) {
         return
@@ -882,6 +1086,9 @@ async function openLocalCustomBundlePaymentPgSession(connectionString: string): 
 
       closed = true
       await client.end()
+      if (instrumentation) {
+        instrumentation.closedSessions += 1
+      }
     },
   }
 }
@@ -935,19 +1142,21 @@ function makeMemoryStore(): MemoryStore {
 function makeReceiptEntrypointDependencies(
   connectionString: string,
   store: MemoryStore,
+  now: Date,
+  instrumentation?: ReceiptSessionInstrumentation,
 ): CustomBundlePaymentReceiptEntrypointDependencies {
   return {
     runtime: 'isolated_test',
     clock: {
       now(): Date {
-        return new Date('2026-06-24T10:05:00.000Z')
+        return new Date(now.getTime())
       },
     },
     validateUploadReceipt(receipt, expectedPublicCode, now) {
       return validateCustomBundlePaymentUploadReceipt(receipt, expectedPublicCode, now)
     },
     async openSqlSession() {
-      return openLocalCustomBundlePaymentPgSession(connectionString)
+      return openLocalCustomBundlePaymentPgSession(connectionString, instrumentation)
     },
     async createPrivateBlobStore() {
       return store
@@ -971,6 +1180,8 @@ async function readBookingRows(
         "pricingSource",
         "estimatedTotal",
         currency,
+        "eventDate",
+        "eventEndDate",
         "holdAcquiredAt",
         "holdExpiresAt",
         "paymentMethod",
@@ -1096,6 +1307,7 @@ async function cleanupFixtures(client: Client, store: MemoryStore): Promise<void
     'TUR-0808-813',
     'TUR-0808-814',
     'TUR-0808-815',
+    'TUR-0808-899',
   ]
 
   await client.query(
@@ -1170,10 +1382,12 @@ async function runPaymentReceipt(
   store: MemoryStore,
   input: {
     submission: CustomBundlePaymentReportSubmission
-    uploadReceipt: string
+    uploadReceipt: string | null
   },
+  now: Date,
+  instrumentation?: ReceiptSessionInstrumentation,
 ): Promise<CustomBundlePaymentReceiptEntrypointResult> {
-  const dependencies = makeReceiptEntrypointDependencies(connectionString, store)
+  const dependencies = makeReceiptEntrypointDependencies(connectionString, store, now, instrumentation)
   return runCustomBundlePaymentReceiptEntrypointCore(dependencies, input)
 }
 
@@ -1261,16 +1475,6 @@ async function main(): Promise<void> {
         fail('Unable to derive the server idempotency key for the lifecycle payment submission.')
       }
 
-      const paymentRecoveryNow = new Date('2026-06-24T10:00:00.000Z')
-      const paymentRecoveryToken = buildPaymentRecoveryToken({
-        bookingPublicCode: paymentPublicCode,
-        now: paymentRecoveryNow,
-        expiresAt: new Date('2026-06-24T11:00:00.000Z'),
-      })
-      if (!paymentRecoveryToken) {
-        fail('Unable to build the lifecycle recovery token.')
-      }
-
       let paidBookingRequestId = ''
       let boundaryBookingRequestId = ''
       let rollbackOwnedBookingRequestId = ''
@@ -1291,6 +1495,7 @@ async function main(): Promise<void> {
         'TUR-0808-813',
         'TUR-0808-814',
         'TUR-0808-815',
+        'TUR-0808-899',
       ]
 
       try {
@@ -1374,6 +1579,23 @@ async function main(): Promise<void> {
           assert.equal(collisionResult.stage, 'collision')
         }
 
+        const legacyFixture = await insertLegacyBookingFixture(client)
+        const legacyRowsBefore = await readBookingRows(client, 'TUR-0808-899')
+        assert.equal(legacyRowsBefore.length, 1)
+        const legacyRowBefore = legacyRowsBefore[0]
+        assert.equal(legacyRowBefore.id, legacyFixture.bookingRequestId)
+        assert.equal(legacyRowBefore.bookingMode, 'single')
+        assert.equal(legacyRowBefore.internalNotes, 'legacy conocida')
+        assert.equal(legacyRowBefore.paymentMethod, null)
+        assert.equal(legacyRowBefore.paymentReference, null)
+        assert.equal(legacyRowBefore.paymentNormalizedReference, null)
+        assert.equal(legacyRowBefore.paymentReportedAt, null)
+        assert.equal(legacyRowBefore.paymentExpectedTotalUsdSnapshot, null)
+        assert.equal(legacyRowBefore.paymentReportIdempotencyKey, null)
+        assert.equal(legacyRowBefore.paymentReportFingerprint, null)
+        assert.equal((await readBookingItems(client, legacyFixture.bookingRequestId)).length, 1)
+        assert.equal((await readAuditRows(client, legacyFixture.bookingRequestId)).length, 0)
+
         const bookingRows = await readBookingRows(client, paymentPublicCode)
         assert.equal(bookingRows.length, 1)
         const bookingRow = bookingRows[0]
@@ -1384,6 +1606,8 @@ async function main(): Promise<void> {
         assert.equal(bookingRow.currency, 'USD')
         assert.ok(bookingRow.holdAcquiredAt)
         assert.ok(bookingRow.holdExpiresAt)
+        assert.ok(bookingRow.eventDate)
+        assert.ok(bookingRow.eventEndDate)
         assert.equal(bookingRow.paymentMethod, null)
         assert.equal(bookingRow.paymentReference, null)
         assert.equal(bookingRow.paymentNormalizedReference, null)
@@ -1427,14 +1651,32 @@ async function main(): Promise<void> {
           true,
         )
 
+        const persistedRecoverySnapshot = buildPersistedRecoverySnapshot(bookingRow)
+        assert.equal(persistedRecoverySnapshot.publicCode, paymentPublicCode)
+        assert.equal(persistedRecoverySnapshot.amountUsd, Number(bookingRow.estimatedTotal))
+        assert.equal(persistedRecoverySnapshot.durationMinutes, mixedResult.totalDurationMinutes)
+        assert.equal(
+          persistedRecoverySnapshot.paymentDeadlineIso,
+          bookingRow.holdExpiresAt!.toISOString(),
+        )
+
+        const paymentNow = new Date(bookingRow.holdExpiresAt!.getTime() - 1)
+        const paymentRecoveryToken = buildPaymentRecoveryToken({
+          bookingPublicCode: bookingRow.publicCode,
+          now: paymentNow,
+          expiresAt: bookingRow.holdExpiresAt!,
+        })
+        if (!paymentRecoveryToken) {
+          fail('Unable to build the lifecycle recovery token from the persisted snapshot.')
+        }
         const recoveryValidation = validatePaymentRecoveryToken(
           paymentRecoveryToken,
           paymentPublicCode,
-          paymentRecoveryNow,
+          paymentNow,
         )
         assert.equal(recoveryValidation.ok, true)
         if (!recoveryValidation.ok) {
-          fail('The recovery token must validate for the canonical lifecycle booking.')
+          fail('The recovery token must validate for the persisted lifecycle booking.')
         }
 
         const paymentBytes = makeBytes('png')
@@ -1446,7 +1688,7 @@ async function main(): Promise<void> {
         const uploadContext: CustomBundlePaymentProofBoundaryContext = {
           publicCode: paymentPublicCode,
           paymentReportIdempotencyKey: paymentIdempotencyResult.idempotencyKey,
-          now: new Date('2026-06-24T10:05:00.000Z'),
+          now: paymentNow,
         }
         const uploadResult = await uploadCustomBundlePaymentProofToPrivateStore({
           file: paymentFile,
@@ -1487,8 +1729,8 @@ async function main(): Promise<void> {
           originalFilename: uploadResult.metadata.originalFilename,
           uploadedAt: uploadResult.metadata.uploadedAt,
           createdByThisCall: uploadResult.createdByThisCall,
-          now: new Date('2026-06-24T10:05:00.000Z'),
-          expiresAt: new Date('2026-06-24T10:20:00.000Z'),
+          now: paymentNow,
+          expiresAt: bookingRow.holdExpiresAt!,
         })
         assert.ok(receiptToken)
         if (!receiptToken) {
@@ -1498,87 +1740,191 @@ async function main(): Promise<void> {
         const validatedReceipt = validateCustomBundlePaymentUploadReceipt(
           receiptToken,
           paymentPublicCode,
-          new Date('2026-06-24T10:05:00.000Z'),
+          paymentNow,
         )
         assert.equal(validatedReceipt.ok, true)
         if (!validatedReceipt.ok) {
           fail('The signed lifecycle upload receipt token must validate.')
         }
 
-        const reportedResult = await runPaymentReceipt(connectionString, store, {
-          submission: paymentSubmission,
-          uploadReceipt: receiptToken,
+        const concurrencyInstrumentationA: ReceiptSessionInstrumentation = {
+          openedSessions: 0,
+          closedSessions: 0,
+          sessionTraces: [],
+        }
+        const concurrencyInstrumentationB: ReceiptSessionInstrumentation = {
+          openedSessions: 0,
+          closedSessions: 0,
+          sessionTraces: [],
+        }
+        const concurrentResultA = runPaymentReceipt(
+          connectionString,
+          store,
+          {
+            submission: paymentSubmission,
+            uploadReceipt: receiptToken,
+          },
+          paymentNow,
+          concurrencyInstrumentationA,
+        )
+        const concurrentResultB = runPaymentReceipt(
+          connectionString,
+          store,
+          {
+            submission: paymentSubmission,
+            uploadReceipt: receiptToken,
+          },
+          paymentNow,
+          concurrencyInstrumentationB,
+        )
+        const [concurrentOutcomeA, concurrentOutcomeB] = await Promise.all([
+          concurrentResultA,
+          concurrentResultB,
+        ])
+        assert.equal(concurrentOutcomeA.ok, true)
+        assert.equal(concurrentOutcomeB.ok, true)
+        const concurrentStages = [concurrentOutcomeA, concurrentOutcomeB].map((result) => {
+          assert.equal(result.ok, true)
+          return result.stage
         })
-        assertPaymentReceiptSuccess(reportedResult, 'reported', 'canonical payment report')
-        const bookingAfterPayment = (await readBookingRows(client, paymentPublicCode))[0]
-        assert.ok(bookingAfterPayment)
-        assert.equal(bookingAfterPayment.paymentMethod, paymentSubmission.paymentMethod)
-        assert.equal(bookingAfterPayment.paymentReference, paymentSubmission.paymentReference)
+        concurrentStages.sort((left, right) => (left === right ? 0 : left === 'replayed' ? -1 : 1))
+        assert.deepEqual(concurrentStages, ['replayed', 'reported'])
         assert.equal(
-          bookingAfterPayment.paymentNormalizedReference,
-          normalizeCustomBundlePaymentReference(paymentSubmission.paymentReference),
-        )
-        assert.ok(bookingAfterPayment.paymentReportedAt)
-        assert.ok(bookingAfterPayment.paymentExpectedTotalUsdSnapshot)
-        assert.ok(bookingAfterPayment.paymentReportIdempotencyKey)
-        assert.ok(bookingAfterPayment.paymentReportFingerprint)
-        assert.equal(
-          bookingAfterPayment.paymentExpectedTotalUsdSnapshot,
-          bookingAfterPayment.estimatedTotal,
-        )
-
-        const paymentProofs = await readActiveProofRows(client, bookingAfterPayment.id)
-        assert.equal(paymentProofs.length, 1)
-        assert.equal(paymentProofs[0]?.blobPathname, uploadResult.metadata.blobPathname)
-        assert.equal(paymentProofs[0]?.sha256, uploadResult.metadata.sha256)
-        assert.equal(paymentProofs[0]?.duplicateStatus, 'none')
-
-        const paymentAuditRows = await readAuditRows(client, bookingAfterPayment.id)
-        assert.equal(
-          paymentAuditRows.filter((row) => row.action === CUSTOM_BUNDLE_PAYMENT_REPORT_ACTION).length,
+          [concurrentOutcomeA, concurrentOutcomeB].filter((result) => result.ok && result.stage === 'reported').length,
           1,
         )
-
-        const replayResult = await runPaymentReceipt(connectionString, store, {
-          submission: paymentSubmission,
-          uploadReceipt: receiptToken,
-        })
-        assertPaymentReceiptSuccess(replayResult, 'replayed', 'canonical payment replay')
-        const replayBooking = (await readBookingRows(client, paymentPublicCode))[0]
-        assert.ok(replayBooking.paymentReportedAt)
         assert.equal(
-          (await readActiveProofRows(client, bookingAfterPayment.id)).length,
+          [concurrentOutcomeA, concurrentOutcomeB].filter((result) => result.ok && result.stage === 'replayed').length,
+          1,
+        )
+        assert.equal(concurrencyInstrumentationA.openedSessions, 1)
+        assert.equal(concurrencyInstrumentationA.closedSessions, 1)
+        assert.equal(concurrencyInstrumentationB.openedSessions, 1)
+        assert.equal(concurrencyInstrumentationB.closedSessions, 1)
+        assert.equal(
+          concurrencyInstrumentationA.sessionTraces[0]?.calls.filter((call) =>
+            /^SELECT pg_advisory_lock/i.test(call.sql),
+          ).length,
           1,
         )
         assert.equal(
-          (await readAuditRows(client, bookingAfterPayment.id)).filter(
+          concurrencyInstrumentationB.sessionTraces[0]?.calls.filter((call) =>
+            /^SELECT pg_advisory_lock/i.test(call.sql),
+          ).length,
+          1,
+        )
+        assert.equal(
+          concurrencyInstrumentationA.sessionTraces[0]?.calls.filter((call) =>
+            /^SELECT pg_advisory_unlock/i.test(call.sql),
+          ).length,
+          1,
+        )
+        assert.equal(
+          concurrencyInstrumentationB.sessionTraces[0]?.calls.filter((call) =>
+            /^SELECT pg_advisory_unlock/i.test(call.sql),
+          ).length,
+          1,
+        )
+        assert.equal(store.calls.delete.length, 0)
+
+        const bookingAfterConcurrency = (await readBookingRows(client, paymentPublicCode))[0]
+        assert.ok(bookingAfterConcurrency.paymentReportedAt)
+        assert.equal(bookingAfterConcurrency.paymentReportedAt?.getTime(), paymentNow.getTime())
+        assert.equal(
+          bookingAfterConcurrency.paymentExpectedTotalUsdSnapshot,
+          bookingAfterConcurrency.estimatedTotal,
+        )
+        const paymentProofsAfterConcurrency = await readActiveProofRows(client, bookingAfterConcurrency.id)
+        assert.equal(paymentProofsAfterConcurrency.length, 1)
+        assert.equal(paymentProofsAfterConcurrency[0]?.blobPathname, uploadResult.metadata.blobPathname)
+        assert.equal(paymentProofsAfterConcurrency[0]?.sha256, uploadResult.metadata.sha256)
+        assert.equal(paymentProofsAfterConcurrency[0]?.duplicateStatus, 'none')
+        assert.equal(
+          (await readAuditRows(client, bookingAfterConcurrency.id)).filter(
             (row) => row.action === CUSTOM_BUNDLE_PAYMENT_REPORT_ACTION,
           ).length,
           1,
         )
 
-        const concurrentDependencies = makeReceiptEntrypointDependencies(connectionString, store)
-        const concurrentA = runCustomBundlePaymentReceiptEntrypointCore(concurrentDependencies, {
-          submission: paymentSubmission,
-          uploadReceipt: receiptToken,
-        })
-        const concurrentB = runCustomBundlePaymentReceiptEntrypointCore(makeReceiptEntrypointDependencies(connectionString, store), {
-          submission: paymentSubmission,
-          uploadReceipt: receiptToken,
-        })
-        const [concurrentResultA, concurrentResultB] = await Promise.all([concurrentA, concurrentB])
-        assert.equal(concurrentResultA.ok, true)
-        assert.equal(concurrentResultB.ok, true)
-        if (concurrentResultA.ok) {
-          assert.equal(concurrentResultA.stage, 'replayed')
+        const replayInstrumentation: ReceiptSessionInstrumentation = {
+          openedSessions: 0,
+          closedSessions: 0,
+          sessionTraces: [],
         }
-        if (concurrentResultB.ok) {
-          assert.equal(concurrentResultB.stage, 'replayed')
+        const replayResult = await runPaymentReceipt(
+          connectionString,
+          store,
+          {
+            submission: paymentSubmission,
+            uploadReceipt: receiptToken,
+          },
+          paymentNow,
+          replayInstrumentation,
+        )
+        assertPaymentReceiptSuccess(replayResult, 'replayed', 'canonical payment replay')
+        assert.equal(replayInstrumentation.openedSessions, 1)
+        assert.equal(replayInstrumentation.closedSessions, 1)
+        const replayBooking = (await readBookingRows(client, paymentPublicCode))[0]
+        assert.ok(replayBooking.paymentReportedAt)
+        assert.equal(replayBooking.paymentReportedAt?.getTime(), paymentNow.getTime())
+        assert.equal(
+          (await readActiveProofRows(client, bookingAfterConcurrency.id)).length,
+          1,
+        )
+        assert.equal(
+          (await readAuditRows(client, bookingAfterConcurrency.id)).filter(
+            (row) => row.action === CUSTOM_BUNDLE_PAYMENT_REPORT_ACTION,
+          ).length,
+          1,
+        )
+
+        const sameKeyDifferentSubmission = await acquireCustomBundleHoldWithSql(makeSession(client), {
+          submission: deepClone(
+            makeMixedSubmission({
+              startTime: '10:30',
+              extrasNotes: '  Material conflict  ',
+            }),
+          ),
+          serverContext: buildHoldContext({
+            publicCode: 'TUR-0808-808',
+            idempotencyKey: mixedContext.idempotencyKey,
+            now: new Date('2026-06-24T10:02:00.000Z'),
+            holdDurationMinutes: 60,
+          }),
+        })
+        assert.equal(sameKeyDifferentSubmission.ok, false)
+        if (!sameKeyDifferentSubmission.ok) {
+          assert.equal(sameKeyDifferentSubmission.stage, 'idempotency')
+          assert.equal(sameKeyDifferentSubmission.code, 'IDEMPOTENCY_KEY_CONFLICT')
         }
+        assert.equal(
+          (await readBookingRows(client, 'TUR-0808-808')).length,
+          0,
+        )
+        const materialConflictRows = await queryRows<{ count: string }>(
+          client,
+          `
+            SELECT COUNT(*)::text AS count
+            FROM "booking_requests"
+            WHERE "idempotencyKey" = $1
+          `,
+          [mixedContext.idempotencyKey],
+        )
+        assert.equal(Number(materialConflictRows[0]?.count ?? 0), 1)
+        assert.equal(
+          (await readBookingRows(client, paymentPublicCode)).length,
+          1,
+        )
+        assert.equal(
+          (await readAuditRows(client, bookingAfterConcurrency.id)).filter(
+            (row) => row.action === CUSTOM_BUNDLE_PAYMENT_REPORT_ACTION,
+          ).length,
+          1,
+        )
 
         const paidExpiration = await expireCustomBundleHoldsWithSql(makeSession(client), {
           serverContext: {
-            now: new Date('2026-06-24T12:30:00.000Z'),
+            now: new Date(bookingRow.holdExpiresAt!.getTime()),
             batchSize: 50,
           },
         })
@@ -1609,9 +1955,38 @@ async function main(): Promise<void> {
         assert.equal(exactBoundaryHold.stage, 'acquired')
         boundaryBookingRequestId = exactBoundaryHold.bookingRequestId
 
+        const exactBoundaryPaymentNow = new Date(new Date(exactBoundaryHold.holdExpiresAtIso).getTime())
+        const exactBoundaryPaymentSubmission = buildPaymentSubmission({
+          publicCode: 'TUR-0808-803',
+          paymentMethod: 'efectivo',
+          paymentReference: 'CASH-0808-803',
+        })
+        const exactBoundaryPaymentResult = await runPaymentReceipt(
+          connectionString,
+          store,
+          {
+            submission: exactBoundaryPaymentSubmission,
+            uploadReceipt: null,
+          },
+          exactBoundaryPaymentNow,
+        )
+        assert.equal(exactBoundaryPaymentResult.ok, false)
+        if (!exactBoundaryPaymentResult.ok) {
+          assert.equal(exactBoundaryPaymentResult.stage, 'booking')
+          assert.equal(exactBoundaryPaymentResult.code, 'PAYMENT_BOOKING_INELIGIBLE')
+        }
+        const exactBoundaryRowBeforeExpiration = (await readBookingRows(client, 'TUR-0808-803'))[0]
+        assert.equal(exactBoundaryRowBeforeExpiration.paymentMethod, null)
+        assert.equal(exactBoundaryRowBeforeExpiration.paymentReference, null)
+        assert.equal(exactBoundaryRowBeforeExpiration.paymentNormalizedReference, null)
+        assert.equal(exactBoundaryRowBeforeExpiration.paymentReportedAt, null)
+        assert.equal(exactBoundaryRowBeforeExpiration.paymentExpectedTotalUsdSnapshot, null)
+        assert.equal(exactBoundaryRowBeforeExpiration.paymentReportIdempotencyKey, null)
+        assert.equal(exactBoundaryRowBeforeExpiration.paymentReportFingerprint, null)
+
         const exactBoundaryExpiration = await expireCustomBundleHoldsWithSql(makeSession(client), {
           serverContext: {
-            now: new Date('2026-06-24T13:00:00.000Z'),
+            now: exactBoundaryPaymentNow,
             batchSize: 50,
           },
         })
@@ -1623,12 +1998,66 @@ async function main(): Promise<void> {
           )
           const exactBoundaryRow = (await readBookingRows(client, 'TUR-0808-803'))[0]
           assert.equal(exactBoundaryRow.status, 'rejected')
+          assert.equal(exactBoundaryRow.paymentMethod, null)
+          assert.equal(exactBoundaryRow.paymentReference, null)
+          assert.equal(exactBoundaryRow.paymentNormalizedReference, null)
+          assert.equal(exactBoundaryRow.paymentReportedAt, null)
+          assert.equal(exactBoundaryRow.paymentExpectedTotalUsdSnapshot, null)
+          assert.equal(exactBoundaryRow.paymentReportIdempotencyKey, null)
+          assert.equal(exactBoundaryRow.paymentReportFingerprint, null)
           const exactBoundaryAuditRows = await readAuditRows(client, exactBoundaryRow.id)
           assert.equal(
             exactBoundaryAuditRows.filter((row) => row.action === CUSTOM_BUNDLE_HOLD_EXPIRATION_ACTION).length,
             1,
           )
         }
+
+        const holdRollbackTrace: SessionTrace = { calls: [] }
+        const holdRollbackSession = makeSession(client, {
+          trace: holdRollbackTrace,
+          fault: {
+            pattern: /INSERT INTO "booking_request_items"/i,
+            message: 'simulated booking_request_items failure',
+            fired: false,
+          },
+        })
+        const holdRollbackAttempt = await acquireCustomBundleHoldWithSql(holdRollbackSession, {
+          submission: deepClone(
+            makeRoomOnlySubmission({
+              startTime: '12:30',
+              extrasNotes: '  Hold rollback  ',
+            }),
+          ),
+          serverContext: buildHoldContext({
+            publicCode: 'TUR-0808-804',
+            idempotencyKey: 'HOLD_2026:06:24-0804',
+            now: new Date('2026-06-24T13:05:00.000Z'),
+            holdDurationMinutes: 60,
+          }),
+        })
+        assert.equal(holdRollbackAttempt.ok, false)
+        if (!holdRollbackAttempt.ok) {
+          assert.equal(holdRollbackAttempt.stage, 'persistence')
+          assert.equal(holdRollbackAttempt.code, 'DATABASE_WRITE_FAILED')
+        }
+        assert.equal(
+          holdRollbackTrace.calls.filter((call) => /^BEGIN ISOLATION LEVEL SERIALIZABLE/i.test(call.sql)).length,
+          1,
+        )
+        assert.equal(
+          holdRollbackTrace.calls.filter((call) => /^ROLLBACK$/i.test(call.sql.trim())).length,
+          1,
+        )
+        assert.equal(
+          holdRollbackTrace.calls.filter((call) => /^COMMIT$/i.test(call.sql.trim())).length,
+          0,
+        )
+        assert.equal(
+          (await readBookingRows(client, 'TUR-0808-804')).length,
+          0,
+        )
+        const reusableAfterRollback = await client.query('SELECT 1 AS value')
+        assert.equal(Number((reusableAfterRollback.rows[0] as { value: string | number }).value), 1)
 
         const releasedSlotReplay = await acquireCustomBundleHoldWithSql(makeSession(client), {
           submission: deepClone(
@@ -1639,8 +2068,8 @@ async function main(): Promise<void> {
             }),
           ),
           serverContext: buildHoldContext({
-            publicCode: 'TUR-0808-804',
-            idempotencyKey: 'HOLD_2026:06:24-0804',
+            publicCode: 'TUR-0808-810',
+            idempotencyKey: 'HOLD_2026:06:24-0810',
             now: new Date('2026-06-24T13:05:00.000Z'),
             holdDurationMinutes: 60,
           }),
@@ -1731,7 +2160,7 @@ async function main(): Promise<void> {
         const rollbackOwnedResultOutcome = await runPaymentReceipt(connectionString, store, {
           submission: rollbackOwnedPayment,
           uploadReceipt: rollbackOwnedReceipt,
-        })
+        }, new Date('2026-06-24T14:01:00.000Z'))
         assert.equal(rollbackOwnedResultOutcome.ok, false)
         assert.equal(store.hasObject(rollbackOwnedUpload.metadata.blobPathname), false)
         assert.equal(
@@ -1832,7 +2261,7 @@ async function main(): Promise<void> {
         const rollbackReusedOutcome = await runPaymentReceipt(connectionString, store, {
           submission: rollbackReusedPayment,
           uploadReceipt: rollbackReusedReceipt,
-        })
+        }, new Date('2026-06-24T15:01:00.000Z'))
         assert.equal(rollbackReusedOutcome.ok, false)
         assert.equal(store.hasObject(rollbackReusedSecondUpload.metadata.blobPathname), true)
         assert.equal(
@@ -1858,7 +2287,7 @@ async function main(): Promise<void> {
         const paidBookingRows = await readBookingRows(client, paymentPublicCode)
         assert.equal(paidBookingRows[0]?.status, 'under_review')
         assert.equal(
-          (await readAuditRows(client, paymentPublicCode) as unknown as Array<AuditLogRow>).filter(
+          (await readAuditRows(client, paidBookingRequestId)).filter(
             (row) => row.action === CUSTOM_BUNDLE_HOLD_EXPIRATION_ACTION,
           ).length,
           0,
@@ -1890,6 +2319,23 @@ async function main(): Promise<void> {
           expirationAuditRows.filter((row) => row.action === CUSTOM_BUNDLE_HOLD_EXPIRATION_ACTION).length,
           1,
         )
+
+        const legacyRowsAfterLifecycle = await readBookingRows(client, 'TUR-0808-899')
+        assert.equal(legacyRowsAfterLifecycle.length, 1)
+        const legacyRowAfterLifecycle = legacyRowsAfterLifecycle[0]
+        assert.equal(legacyRowAfterLifecycle.id, legacyFixture.bookingRequestId)
+        assert.equal(legacyRowAfterLifecycle.bookingMode, 'single')
+        assert.equal(legacyRowAfterLifecycle.status, 'under_review')
+        assert.equal(legacyRowAfterLifecycle.internalNotes, 'legacy conocida')
+        assert.equal(legacyRowAfterLifecycle.paymentMethod, null)
+        assert.equal(legacyRowAfterLifecycle.paymentReference, null)
+        assert.equal(legacyRowAfterLifecycle.paymentNormalizedReference, null)
+        assert.equal(legacyRowAfterLifecycle.paymentReportedAt, null)
+        assert.equal(legacyRowAfterLifecycle.paymentExpectedTotalUsdSnapshot, null)
+        assert.equal(legacyRowAfterLifecycle.paymentReportIdempotencyKey, null)
+        assert.equal(legacyRowAfterLifecycle.paymentReportFingerprint, null)
+        assert.equal((await readBookingItems(client, legacyFixture.bookingRequestId)).length, 1)
+        assert.equal((await readAuditRows(client, legacyFixture.bookingRequestId)).length, 0)
 
         assert.equal(process.env.VERCEL_ENV === 'production', false)
         const wizardSource = readFileSync(resolve(process.cwd(), 'components/bookings/BookingWizard.tsx'), 'utf8')
@@ -1979,36 +2425,35 @@ async function main(): Promise<void> {
         assert.equal(store.objects.size, 0)
 
         console.log('booking_isolated_custom_bundle_full_lifecycle OK')
-        console.log('local postgres only: verified')
-        console.log('baseline schema applied: verified')
-        console.log('additive proposals applied: verified')
         console.log('canonical submission: verified')
         console.log('server repricing: verified')
-        console.log('hold acquisition: verified')
-        console.log('booking request persistence: verified')
+        console.log('transactional hold: verified')
+        console.log('material idempotency conflict: verified')
+        console.log('booking persistence: verified')
         console.log('snapshot items: verified')
-        console.log('physical resource allocation: verified')
-        console.log('active collision: verified')
+        console.log('resource collision: verified')
         console.log('hold replay: verified')
-        console.log('recovery token: verified')
-        console.log('persisted recovery snapshot: verified')
+        console.log('persisted recovery from database: verified')
         console.log('signed upload receipt: verified')
         console.log('private object verification: verified')
-        console.log('payment reported: verified')
-        console.log('payment replay: verified')
-        console.log('concurrent payment replay: verified')
+        console.log('first write payment concurrency: verified')
+        console.log('one reported one replayed: verified')
+        console.log('concurrent sessions closed: verified')
         console.log('payment proof persistence: verified')
         console.log('payment audit log: verified')
-        console.log('paid hold protected from expiration: verified')
-        console.log('exact expiration boundary: verified')
+        console.log('payment one millisecond before expiry: verified')
+        console.log('payment exact expiry rejection: verified')
         console.log('unpaid hold expiration: verified')
-        console.log('expiration audit log: verified')
-        console.log('resource release after expiration: verified')
-        console.log('transaction rollback: verified')
-        console.log('owned proof cleanup: verified')
-        console.log('reused proof preservation: verified')
+        console.log('resource release: verified')
+        console.log('hold persistence rollback: verified')
+        console.log('rollback connection reusable: verified')
+        console.log('audit failure reached: verified')
+        console.log('owned proof cleanup after audit failure: verified')
+        console.log('reused proof preservation after audit failure: verified')
+        console.log('legacy database isolation: verified')
+        console.log('correct booking id audit lookup: verified')
+        console.log('local postgres only: verified')
         console.log('zero real blob: verified')
-        console.log('legacy isolation: verified')
         console.log('no production activation: verified')
       } catch (error) {
         await removeAuditFailureTrigger(client).catch(() => {})

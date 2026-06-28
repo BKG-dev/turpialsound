@@ -1,16 +1,16 @@
 # Current Sprint
 
 Sprint:
-BKG-08J
+BKG-08J1
 
 Name:
 Ciclo completo aislado PostgreSQL de reserva y pago custom bundle
 
 Base:
-04ad8ea1d5bcf5f20cb88810c5c8429651acf89c
+943f40fe871d81158427e794d633be5a0d5b17d4
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
@@ -29,7 +29,7 @@ Out of Scope:
 * siguiente sprint.
 
 Result:
-READY_FOR_PRODUCTION_SCHEMA_COMPATIBILITY_AUDIT
+ISOLATED_DATABASE_LIFECYCLE_CORRECTION_PENDING_CI
 
 Next Action:
-ChatGPT reviews BKG-08J and defines the production Neon schema compatibility audit.
+ChatGPT verifies the corrected isolated PostgreSQL lifecycle before production schema compatibility audit.

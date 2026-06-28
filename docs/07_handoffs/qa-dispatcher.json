@@ -1,5 +1,5 @@
 {
-  "version": 28,
+  "version": 29,
   "updated_at": "2026-06-28",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
@@ -1870,10 +1870,11 @@
       ],
       "evidence_source": [
         "docs/07_handoffs/qa-canonical-runbook.md",
-        "docs/orchestration/handoffs/BKG-08J.md"
+        "docs/orchestration/handoffs/BKG-08J.md",
+        "docs/orchestration/handoffs/BKG-08J1.md"
       ],
       "last_validated_at": "2026-06-28",
-      "notes": "Canonical QA route for the isolated PostgreSQL lifecycle that chains booking, hold, payment, proof, expiration and cleanup without touching production."
+      "notes": "Canonical QA route for the isolated PostgreSQL lifecycle that chains booking, hold, payment, proof, expiration and cleanup without touching production. Corrected BKG-08J1 coverage now verifies first-write concurrency, one reported one replayed, exact payment boundary rejection, persisted recovery snapshot read from PostgreSQL, hold rollback after item insert failure, and audit lookup by bookingRequestId."
     }
   }
 }

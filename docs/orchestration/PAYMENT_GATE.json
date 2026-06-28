@@ -1,6 +1,6 @@
 {
-  "sprint": "BKG-08J",
-  "baseSha": "04ad8ea1d5bcf5f20cb88810c5c8429651acf89c",
+  "sprint": "BKG-08J1",
+  "baseSha": "943f40fe871d81158427e794d633be5a0d5b17d4",
   "model": "single_consolidated_manual_payment_report",
   "validation": {
     "workflow": "booking-isolated-custom-bundle-payment-contract.yml",
@@ -255,11 +255,18 @@
   },
   "customBundlePreviewEndToEndTechnicallyValidated": true,
   "readyForIsolatedDatabaseEndToEnd": true,
-  "isolatedDatabaseEndToEndTechnicallyValidated": true,
-  "readyForProductionSchemaCompatibilityAudit": true,
+  "isolatedDatabaseEndToEndTechnicallyValidated": false,
+  "readyForProductionSchemaCompatibilityAudit": false,
   "readyForWizardIntegration": false,
   "readyForProduction": false,
-  "blockers": [],
+  "blockers": [
+    "CONCURRENT_FIRST_WRITE_NOT_VERIFIED",
+    "EXACT_EXPIRY_BOUNDARY_MISSING",
+    "ROLLBACK_INTEGRAL_NOT_VERIFIED",
+    "PERSISTED_RECOVERY_NOT_BUILT_AFTER_DB_READ",
+    "LEGACY_SINGLE_BOOKING_FIXTURE_NOT_IN_POSTGRES",
+    "AUDIT_LOOKUP_USES_PAYMENT_CODE_INSTEAD_OF_BOOKING_REQUEST_ID"
+  ],
   "isolatedDatabaseLifecycleValidation": {
     "workflow": "booking-isolated-custom-bundle-full-lifecycle.yml",
     "status": "SUCCESS",
@@ -297,6 +304,24 @@
     "zeroRealBlobVerified": true,
     "legacyIsolationVerified": true,
     "noProductionActivationVerified": true
+  },
+  "isolatedDatabaseLifecycleCorrectionValidation": {
+    "workflow": "booking-isolated-custom-bundle-full-lifecycle.yml",
+    "status": "PENDING_CORRECTION",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
+    "concurrentFirstWriteVerified": false,
+    "oneReportedOneReplayedVerified": false,
+    "paymentOneMillisecondBeforeExpiryVerified": false,
+    "paymentExactExpiryRejectionVerified": false,
+    "holdPersistenceRollbackVerified": false,
+    "persistedRecoveryFromDatabaseVerified": false,
+    "materialIdempotencyConflictVerified": false,
+    "legacyDatabaseIsolationVerified": false,
+    "correctBookingIdAuditLookupVerified": false,
+    "zeroRealBlobVerified": false,
+    "noProductionActivationVerified": false
   },
   "previewEndToEndCorrectionValidation": {
     "workflow": "booking-isolated-custom-bundle-payment-proof-boundary.yml",

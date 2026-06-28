@@ -1,6 +1,6 @@
 # QA Canonical Runbook
 
-> Fecha de actualizacion: 2026-06-25
+> Fecha de actualizacion: 2026-06-28
 > Alcance: marketplace no-booking
 > Objetivo: dejar una golden path operativa para QA/CLI sin redescubrir scripts
 
@@ -258,6 +258,34 @@ Precondiciones:
 
 Criterio de evidencia:
 - confirmar expiracion de hold vencido, frontera exacta, proteccion de payment reportado y proof activo, replay clasificado, reintento idempotente, procesamiento por lotes, rollback, limpieza y proteccion de slots liberados.
+
+## Booking isolated custom bundle full lifecycle correction
+
+Objetivo:
+- validar el ciclo aislado de PostgreSQL para `Arma tu paquete` con booking, hold, payment, proof, expiration, rollback y cleanup sobre base efimera.
+
+Ruta canonica:
+- `pnpm exec tsx scripts/qa/bookings/isolated-custom-bundle-full-lifecycle.ts /tmp/turpial-current-baseline.sql prisma/proposed/20260622_bkg04_snapshot_booking_items.sql prisma/proposed/20260622_bkg07_custom_bundle_holds.sql prisma/proposed/20260623_bkg08_custom_bundle_payment_reports.sql`
+
+Precondiciones:
+- PostgreSQL local efimero disponible;
+- baseline SQL generado;
+- propuestas BKG-04, BKG-07 y BKG-08 validadas;
+- opt-in aislado habilitado;
+- URL local exclusivamente.
+
+Criterio de evidencia:
+- primer write concurrente con un `reported` y un `replayed`;
+- validacion exacta de `holdExpiresAt - 1 ms` y rechazo en `holdExpiresAt`;
+- snapshot de recovery persistida leida desde la base antes de construir el token;
+- rollback integral cuando falla `INSERT INTO booking_request_items`;
+- fixture legacy single real en PostgreSQL;
+- audit lookup por `bookingRequestId`, no por `publicCode`.
+
+Reglas:
+- no usar el recovery token antes de leer la fila persistida;
+- no reutilizar el reloj fijo anterior para los casos de compensacion;
+- no improvisar una ruta alterna si esta deja de ser valida.
 
 ## Booking custom bundle payment server entrypoint
 
