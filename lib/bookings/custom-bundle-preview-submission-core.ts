@@ -330,7 +330,16 @@ export function runCustomBundlePreviewSubmissionCore(
   const holdAcquiredAtIso = holdAcquiredAt.toISOString()
   const itemCount = hold.quote.estimate.lines.length
   const estimatedTotalUsd = hold.quote.estimate.estimatedTotalUsd
-  const totalDurationMinutes = hold.holdDurationMinutes
+  const holdWindowMinutes = hold.holdDurationMinutes
+  if (!Number.isInteger(holdWindowMinutes) || holdWindowMinutes <= 0) {
+    return makeFailure(
+      'server_context',
+      'INVALID_NOW',
+      'La ventana simulada del hold no es valida.',
+    )
+  }
+
+  const totalDurationMinutes = hold.quote.estimate.totalDurationMinutes
   const recoveryToken = dependencies.buildRecoveryToken({
     bookingPublicCode: publicCode,
     expiresAt: holdExpiresAt,

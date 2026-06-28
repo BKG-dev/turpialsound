@@ -16,6 +16,10 @@ function main(): void {
     resolve(process.cwd(), 'components/bookings/BookingWizard.tsx'),
     'utf8',
   )
+  const successSummarySource = readFileSync(
+    resolve(process.cwd(), 'components/bookings/CustomBundlePreviewSuccessSummary.tsx'),
+    'utf8',
+  )
   const actionSource = readFileSync(
     resolve(process.cwd(), 'lib/bookings/custom-bundle-preview-submission-action.ts'),
     'utf8',
@@ -27,9 +31,21 @@ function main(): void {
 
   assert.equal(wizardSource.includes('submitCustomBundlePreviewAction'), true)
   assert.equal(wizardSource.includes('customBundlePreviewResult'), true)
-  assert.equal(wizardSource.includes('recoveryPath'), true)
-  assert.equal(wizardSource.includes('Link'), true)
+  assert.equal(wizardSource.includes('CustomBundlePreviewSuccessSummary'), true)
+  assert.equal(wizardSource.includes('recoveryPath'), false)
+  assert.equal(wizardSource.includes('splitCustomBundleEstimateLines'), false)
+  assert.equal(wizardSource.includes('countCustomBundleAggregateOnlySelections'), false)
+  assert.equal(wizardSource.includes('customBundleEstimate.adjustments'), false)
+  assert.equal(wizardSource.includes('durationLabel'), true)
   assert.equal(wizardSource.includes('setCustomBundlePreviewResult(null)'), true)
+
+  assert.equal(successSummarySource.includes('result.publicCode'), true)
+  assert.equal(successSummarySource.includes('result.estimatedTotalUsd'), true)
+  assert.equal(successSummarySource.includes('result.totalDurationMinutes'), true)
+  assert.equal(successSummarySource.includes('result.itemCount'), true)
+  assert.equal(successSummarySource.includes('result.holdExpiresAtIso'), true)
+  assert.equal(successSummarySource.includes('result.recoveryPath'), true)
+  assert.equal(successSummarySource.includes('customBundleEstimate'), false)
 
   assert.equal(actionSource.includes("use server"), true)
   assert.equal(actionSource.includes('buildCustomBundlePreviewHandoffToken'), true)

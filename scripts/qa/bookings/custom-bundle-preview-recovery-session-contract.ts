@@ -46,6 +46,35 @@ function createSubmission() {
   }
 }
 
+function createSixtyMinuteSubmission() {
+  return {
+    contractVersion: 1 as const,
+    bookingMode: 'custom_bundle' as const,
+    eventDate: '2026-06-22',
+    startTime: '10:00',
+    extrasNotes: '  Observaciones del cliente  ',
+    requester: {
+      name: '  Ana Perez  ',
+      email: ' ANA@Example.COM ',
+      phone: '+58 412 123 4567',
+      whatsappConsentAccepted: true,
+    },
+    items: [
+      { itemSlug: 'sala-flexible', quantity: 1, sessionDurationMinutes: null },
+      {
+        itemSlug: 'cuerdas-sesion-completa',
+        quantity: 1,
+        sessionDurationMinutes: null,
+      },
+      {
+        itemSlug: 'instrumentos-adicionales',
+        quantity: 1,
+        sessionDurationMinutes: null,
+      },
+    ],
+  }
+}
+
 function isPendingPayment(
   result: CustomBundlePreviewRecoverySessionResult,
 ): result is Extract<CustomBundlePreviewRecoverySessionResult, { ok: true }> {
@@ -141,8 +170,39 @@ async function main(): Promise<void> {
     assert.equal(sessionResult.trusted.eventDate, '2026-06-24')
     assert.equal(sessionResult.trusted.startTime, '10:00')
     assert.equal(sessionResult.trusted.durationMinutes > 0, true)
+    assert.equal(sessionResult.trusted.durationMinutes, previewResult.quote.estimate.totalDurationMinutes)
     assert.equal(sessionResult.trusted.paymentDeadlineIso, previewResult.holdExpiresAtIso)
     assert.equal(sessionResult.trusted.amountUsd > 0, true)
+
+    const sixtyMinutePreviewResult = runCustomBundlePreviewSubmissionCore(dependencies, {
+      submission: createSixtyMinuteSubmission(),
+    })
+    assert.equal(sixtyMinutePreviewResult.ok, true)
+    if (!sixtyMinutePreviewResult.ok) {
+      fail('Expected the sixty-minute submission to succeed.')
+    }
+
+    const sixtyMinuteSessionResult = runCustomBundlePreviewRecoverySessionCore({
+      publicCode: sixtyMinutePreviewResult.publicCode,
+      recoveryToken: sixtyMinutePreviewResult.recoveryToken,
+      previewHandoffToken: sixtyMinutePreviewResult.previewHandoffToken,
+      now: new Date('2026-06-24T18:00:00.000Z'),
+      validateRecoveryToken(token, expectedPublicCode, now) {
+        return validatePaymentRecoveryToken(token, expectedPublicCode, now)
+      },
+      validatePreviewHandoffToken(token, expectedPublicCode, now) {
+        return validateCustomBundlePreviewHandoffToken(token, expectedPublicCode, now)
+      },
+    })
+    assert.equal(sixtyMinuteSessionResult.ok, true)
+    if (!isPendingPayment(sixtyMinuteSessionResult)) {
+      fail('Expected the sixty-minute session to be pending payment.')
+    }
+    assert.equal(
+      sixtyMinuteSessionResult.trusted.durationMinutes,
+      sixtyMinutePreviewResult.quote.estimate.totalDurationMinutes,
+    )
+    assert.equal(sixtyMinuteSessionResult.trusted.durationMinutes, 60)
 
     const missingHandoff = runCustomBundlePreviewRecoverySessionCore({
       publicCode: previewResult.publicCode,

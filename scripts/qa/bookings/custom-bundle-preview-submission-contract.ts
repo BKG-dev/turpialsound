@@ -42,6 +42,35 @@ function createSubmission() {
   }
 }
 
+function createSixtyMinuteSubmission() {
+  return {
+    contractVersion: 1 as const,
+    bookingMode: 'custom_bundle' as const,
+    eventDate: '2026-06-22',
+    startTime: '10:00',
+    extrasNotes: '  Observaciones del cliente  ',
+    requester: {
+      name: '  Ana Perez  ',
+      email: ' ANA@Example.COM ',
+      phone: '+58 412 123 4567',
+      whatsappConsentAccepted: true,
+    },
+    items: [
+      { itemSlug: 'sala-flexible', quantity: 1, sessionDurationMinutes: null },
+      {
+        itemSlug: 'cuerdas-sesion-completa',
+        quantity: 1,
+        sessionDurationMinutes: null,
+      },
+      {
+        itemSlug: 'instrumentos-adicionales',
+        quantity: 1,
+        sessionDurationMinutes: null,
+      },
+    ],
+  }
+}
+
 function reverseSubmissionItems<T extends { items: Array<unknown> }>(submission: T): T {
   return {
     ...submission,
@@ -128,6 +157,8 @@ async function main(): Promise<void> {
       assert.equal(result.previewHandoffTokenExpiresAtIso, result.holdExpiresAtIso)
       assert.equal(result.recoveryToken.length > 0, true)
       assert.equal(result.previewHandoffToken.length > 0, true)
+      assert.equal(result.public.totalDurationMinutes, result.quote.estimate.totalDurationMinutes)
+      assert.equal(result.public.itemCount, result.quote.estimate.lines.length)
 
       const reversed = runCustomBundlePreviewSubmissionCore(dependencies, {
         submission: reverseSubmissionItems(createSubmission()),
@@ -148,6 +179,31 @@ async function main(): Promise<void> {
         clockNow,
       )
       assert.equal(previewHandoffToken.ok, true)
+      if (previewHandoffToken.ok) {
+        assert.equal(previewHandoffToken.payload.durationMinutes, result.quote.estimate.totalDurationMinutes)
+        assert.equal(previewHandoffToken.payload.estimatedTotalUsdCents, Math.round(result.quote.estimate.estimatedTotalUsd * 100))
+      }
+
+      const sixtyMinuteResult = runCustomBundlePreviewSubmissionCore(dependencies, {
+        submission: createSixtyMinuteSubmission(),
+      })
+      assert.equal(sixtyMinuteResult.ok, true)
+      if (!sixtyMinuteResult.ok) {
+        fail('Expected the sixty-minute submission to remain valid.')
+      }
+      assert.equal(sixtyMinuteResult.public.totalDurationMinutes, sixtyMinuteResult.quote.estimate.totalDurationMinutes)
+      assert.equal(sixtyMinuteResult.public.totalDurationMinutes, 60)
+      assert.equal(sixtyMinuteResult.public.itemCount, sixtyMinuteResult.quote.estimate.lines.length)
+
+      const sixtyMinutePreviewToken = validateCustomBundlePreviewHandoffToken(
+        sixtyMinuteResult.previewHandoffToken,
+        sixtyMinuteResult.publicCode,
+        clockNow,
+      )
+      assert.equal(sixtyMinutePreviewToken.ok, true)
+      if (sixtyMinutePreviewToken.ok) {
+        assert.equal(sixtyMinutePreviewToken.payload.durationMinutes, sixtyMinuteResult.quote.estimate.totalDurationMinutes)
+      }
 
       const disabled = runCustomBundlePreviewSubmissionCore(
         {

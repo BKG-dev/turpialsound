@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { createHmac } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
@@ -66,6 +67,23 @@ function makePayload(overrides: Partial<{
   }
 }
 
+function toBase64Url(value: Buffer | string): string {
+  const buffer = typeof value === 'string' ? Buffer.from(value, 'utf8') : value
+  return buffer
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '')
+}
+
+function signPayload(payload: unknown, secret: string): string {
+  const payloadBase64Url = toBase64Url(JSON.stringify(payload))
+  const signatureBase64Url = toBase64Url(
+    createHmac('sha256', secret).update(payloadBase64Url).digest(),
+  )
+  return `${payloadBase64Url}.${signatureBase64Url}`
+}
+
 async function main(): Promise<void> {
   const source = readFileSync(
     resolve(process.cwd(), 'lib/bookings/custom-bundle-preview-handoff-token.ts'),
@@ -96,6 +114,109 @@ async function main(): Promise<void> {
       assert.equal(valid.payload.publicCode, 'TUR-2026-001')
       assert.equal(valid.payload.requestFingerprint, 'a'.repeat(64))
       assert.equal(valid.payload.purpose, 'custom_bundle_preview_recovery_session')
+      assert.equal(valid.payload.iat, Math.floor(now.getTime() / 1000))
+      assert.equal(valid.payload.exp, Math.floor(expiresAt.getTime() / 1000))
+
+      const basePayload = {
+        v: 1,
+        purpose: 'custom_bundle_preview_recovery_session',
+        publicCode: 'TUR-2026-001',
+        requestFingerprint: 'a'.repeat(64),
+        eventDate: '2026-06-24',
+        startTime: '10:00',
+        durationMinutes: 120,
+        estimatedTotalUsdCents: 28000,
+        holdAcquiredAt: Math.floor(now.getTime() / 1000),
+        holdExpiresAt: Math.floor(expiresAt.getTime() / 1000),
+        iat: Math.floor(now.getTime() / 1000),
+        exp: Math.floor(expiresAt.getTime() / 1000),
+      } as const
+
+      const validTtl3600 = validateCustomBundlePreviewHandoffToken(
+        signPayload(basePayload, 'preview-handoff-token-secret'),
+        'TUR-2026-001',
+        now,
+      )
+      assert.equal(validTtl3600.ok, true)
+      if (validTtl3600.ok) {
+        assert.equal(validTtl3600.payload.exp - validTtl3600.payload.iat, 3600)
+      }
+
+      const invalidTokens = [
+        {
+          payload: { ...basePayload, exp: basePayload.iat },
+          expected: 'invalid_token',
+        },
+        {
+          payload: { ...basePayload, exp: basePayload.iat - 1 },
+          expected: 'invalid_token',
+        },
+        {
+          payload: { ...basePayload, exp: basePayload.exp + 1, holdExpiresAt: basePayload.exp + 1 },
+          expected: 'invalid_token',
+        },
+        {
+          payload: { ...basePayload, iat: basePayload.iat + 1 },
+          expected: 'invalid_token',
+        },
+        {
+          payload: { ...basePayload, iat: basePayload.iat + 0.5 },
+          expected: 'invalid_token',
+        },
+        {
+          payload: { ...basePayload, exp: basePayload.exp + 0.5 },
+          expected: 'invalid_token',
+        },
+        {
+          payload: { ...basePayload, holdAcquiredAt: basePayload.holdAcquiredAt + 0.5 },
+          expected: 'invalid_token',
+        },
+        {
+          payload: { ...basePayload, holdExpiresAt: basePayload.holdExpiresAt + 0.5 },
+          expected: 'invalid_token',
+        },
+        {
+          payload: {
+            ...basePayload,
+            holdExpiresAt: basePayload.holdAcquiredAt + 3601,
+            exp: basePayload.holdAcquiredAt + 3601,
+          },
+          expected: 'invalid_token',
+        },
+        {
+          payload: {
+            ...basePayload,
+            exp: basePayload.holdExpiresAt + 1,
+          },
+          expected: 'invalid_token',
+        },
+        {
+          payload: { ...basePayload, iat: Math.floor(now.getTime() / 1000) + 1 },
+          expected: 'invalid_token',
+        },
+        {
+          payload: { ...basePayload, purpose: 'wrong_purpose' },
+          expected: 'invalid_token',
+        },
+        {
+          payload: { ...basePayload, v: 2 },
+          expected: 'invalid_token',
+        },
+        {
+          token: `${signPayload(basePayload, 'preview-handoff-token-secret')}.tampered`,
+          expected: 'invalid_token',
+        },
+      ] as const
+
+      for (const candidate of invalidTokens) {
+        const token = 'token' in candidate ? candidate.token : signPayload(candidate.payload, 'preview-handoff-token-secret')
+        const result = validateCustomBundlePreviewHandoffToken(token, 'TUR-2026-001', now)
+        assert.equal(result.ok, false)
+        if (result.ok) {
+          fail('Expected a malformed preview handoff token to fail.')
+        }
+        assert.equal(result.error, candidate.expected)
+      }
 
       const codeMismatch = validateCustomBundlePreviewHandoffToken(token, 'TUR-2026-999', now)
       assert.equal(codeMismatch.ok, false)

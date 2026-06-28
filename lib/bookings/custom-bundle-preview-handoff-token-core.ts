@@ -67,6 +67,10 @@ function isValidDate(value: Date): boolean {
   return value instanceof Date && Number.isFinite(value.getTime())
 }
 
+function isIntegerNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value)
+}
+
 function isValidPublicCode(value: string): boolean {
   return /^TUR-\d{4}-\d{3,}$/.test(value)
 }
@@ -101,13 +105,14 @@ function isValidPayloadDate(input: CustomBundlePreviewHandoffTokenPayloadInput):
 
 function isValidPayloadNumbers(input: CustomBundlePreviewHandoffTokenPayloadInput): boolean {
   return (
-    Number.isInteger(input.durationMinutes) &&
+    isIntegerNumber(input.durationMinutes) &&
     input.durationMinutes > 0 &&
-    Number.isInteger(input.estimatedTotalUsdCents) &&
+    isIntegerNumber(input.estimatedTotalUsdCents) &&
     input.estimatedTotalUsdCents >= 0 &&
-    Number.isInteger(input.holdAcquiredAt) &&
-    Number.isInteger(input.holdExpiresAt) &&
-    input.holdExpiresAt > input.holdAcquiredAt
+    isIntegerNumber(input.holdAcquiredAt) &&
+    isIntegerNumber(input.holdExpiresAt) &&
+    input.holdExpiresAt > input.holdAcquiredAt &&
+    input.holdExpiresAt - input.holdAcquiredAt <= CUSTOM_BUNDLE_PREVIEW_HANDOFF_TTL_SECONDS
   )
 }
 
@@ -169,26 +174,38 @@ export function buildCustomBundlePreviewHandoffTokenCore(input: {
   const expiresEpochSeconds = Math.floor(input.expiresAt.getTime() / 1000)
   if (!Number.isInteger(nowEpochSeconds) || !Number.isInteger(expiresEpochSeconds)) return null
   if (expiresEpochSeconds <= nowEpochSeconds) return null
+  if (expiresEpochSeconds - nowEpochSeconds > CUSTOM_BUNDLE_PREVIEW_HANDOFF_TTL_SECONDS) return null
 
   const publicCode = normalizePublicCode(input.payload.publicCode)
   const requestFingerprint = normalizeRequestFingerprint(input.payload.requestFingerprint)
+  if (
+    !isValidPublicCode(publicCode) ||
+    !isValidRequestFingerprint(requestFingerprint) ||
+    !isValidIsoDate(input.payload.eventDate) ||
+    !isValidTime(input.payload.startTime) ||
+    !isValidPayloadNumbers(input.payload) ||
+    input.payload.holdAcquiredAt > nowEpochSeconds ||
+    input.payload.holdExpiresAt > expiresEpochSeconds
+  ) {
+    return null
+  }
+
   const normalizedPayload: CustomBundlePreviewHandoffTokenPayloadInput = {
     publicCode,
     requestFingerprint,
     eventDate: input.payload.eventDate,
     startTime: input.payload.startTime,
-    durationMinutes: Math.trunc(input.payload.durationMinutes),
-    estimatedTotalUsdCents: Math.trunc(input.payload.estimatedTotalUsdCents),
-    holdAcquiredAt: Math.trunc(input.payload.holdAcquiredAt),
-    holdExpiresAt: Math.trunc(input.payload.holdExpiresAt),
+    durationMinutes: input.payload.durationMinutes,
+    estimatedTotalUsdCents: input.payload.estimatedTotalUsdCents,
+    holdAcquiredAt: input.payload.holdAcquiredAt,
+    holdExpiresAt: input.payload.holdExpiresAt,
   }
 
   if (
-    !isValidPublicCode(publicCode) ||
-    !isValidRequestFingerprint(requestFingerprint) ||
     !isValidPayloadDate(normalizedPayload) ||
     !isValidPayloadNumbers(normalizedPayload) ||
-    expiresEpochSeconds > normalizedPayload.holdExpiresAt
+    normalizedPayload.holdAcquiredAt > nowEpochSeconds ||
+    normalizedPayload.holdAcquiredAt > normalizedPayload.holdExpiresAt
   ) {
     return null
   }
@@ -271,13 +288,20 @@ export function validateCustomBundlePreviewHandoffTokenCore(input: {
     !isValidRequestFingerprint(requestFingerprint) ||
     !isValidIsoDate(payload.eventDate) ||
     !isValidTime(payload.startTime) ||
-    !Number.isInteger(payload.durationMinutes) ||
+    !isIntegerNumber(payload.iat) ||
+    !isIntegerNumber(payload.exp) ||
+    !isIntegerNumber(payload.durationMinutes) ||
     payload.durationMinutes <= 0 ||
-    !Number.isInteger(payload.estimatedTotalUsdCents) ||
+    !isIntegerNumber(payload.estimatedTotalUsdCents) ||
     payload.estimatedTotalUsdCents < 0 ||
-    !Number.isInteger(payload.holdAcquiredAt) ||
-    !Number.isInteger(payload.holdExpiresAt) ||
-    payload.holdExpiresAt <= payload.holdAcquiredAt
+    !isIntegerNumber(payload.holdAcquiredAt) ||
+    !isIntegerNumber(payload.holdExpiresAt) ||
+    payload.iat > nowEpochSeconds ||
+    payload.exp <= payload.iat ||
+    payload.exp - payload.iat > CUSTOM_BUNDLE_PREVIEW_HANDOFF_TTL_SECONDS ||
+    payload.holdAcquiredAt > payload.iat ||
+    payload.holdExpiresAt <= payload.holdAcquiredAt ||
+    payload.holdExpiresAt - payload.holdAcquiredAt > CUSTOM_BUNDLE_PREVIEW_HANDOFF_TTL_SECONDS
   ) {
     return { ok: false, error: 'invalid_token' }
   }
@@ -288,10 +312,6 @@ export function validateCustomBundlePreviewHandoffTokenCore(input: {
 
   if (payload.exp <= nowEpochSeconds) {
     return { ok: false, error: 'expired_token' }
-  }
-
-  if (payload.exp > payload.holdExpiresAt) {
-    return { ok: false, error: 'invalid_token' }
   }
 
   return {

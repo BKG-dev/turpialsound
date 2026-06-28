@@ -1,6 +1,6 @@
 {
-  "sprint": "BKG-08I",
-  "baseSha": "10012b9e4e895316646e0217dbebbf5006a6a13b",
+  "sprint": "BKG-08I1",
+  "baseSha": "725c07037fa151fd177b88df6b71a3d30c032fbd",
   "model": "single_consolidated_manual_payment_report",
   "validation": {
     "workflow": "booking-isolated-custom-bundle-payment-contract.yml",
@@ -253,9 +253,39 @@
     "legacyRecoveryIsolationVerified": true,
     "noProductionActivationVerified": true
   },
-  "customBundlePreviewEndToEndTechnicallyValidated": true,
-  "readyForIsolatedDatabaseEndToEnd": true,
+  "customBundlePreviewEndToEndTechnicallyValidated": false,
+  "readyForIsolatedDatabaseEndToEnd": false,
   "readyForWizardIntegration": false,
   "readyForProduction": false,
-  "blockers": []
+  "blockers": [
+    "PACKAGE_DURATION_USES_HOLD_WINDOW_DURATION",
+    "WIZARD_SUCCESS_SUMMARY_USES_CLIENT_ESTIMATE",
+    "PAYMENT_UI_SIMULATION_GATE_DOES_NOT_EXECUTE_UI_FLOW",
+    "PREVIEW_HANDOFF_TEMPORAL_CLAIMS_INCOMPLETE"
+  ],
+  "previewEndToEndCorrectionValidation": {
+    "workflow": "booking-isolated-custom-bundle-payment-proof-boundary.yml",
+    "status": "PENDING_CORRECTION",
+    "runId": null,
+    "validatedHeadSha": null,
+    "conclusion": null,
+    "canonicalWizardSubmissionVerified": false,
+    "serverRepricingVerified": false,
+    "simulatedHoldVerified": false,
+    "serverIdempotencyVerified": false,
+    "previewPublicCodeVerified": false,
+    "recoveryCookieVerified": false,
+    "previewHandoffCookieVerified": false,
+    "dualTokenBindingVerified": false,
+    "exactExpiryBoundaryVerified": false,
+    "codeOnlyRecoveryPathVerified": false,
+    "noClientCapabilityVerified": false,
+    "previewSessionReconstructionVerified": false,
+    "paymentUiSimulationVerified": false,
+    "zeroDatabaseVerified": false,
+    "zeroBlobVerified": false,
+    "legacyWizardIsolationVerified": false,
+    "legacyRecoveryIsolationVerified": false,
+    "noProductionActivationVerified": false
+  }
 }

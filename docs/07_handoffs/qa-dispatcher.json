@@ -1,6 +1,6 @@
 {
-  "version": 25,
-  "updated_at": "2026-06-27",
+  "version": 26,
+  "updated_at": "2026-06-28",
   "architecture": {
     "ref": "docs/marketplace/QA_HARNESS_ARCHITECTURE.md",
     "layers": {
@@ -1721,7 +1721,7 @@
       ],
       "evidence_source": [
         "docs/07_handoffs/qa-canonical-runbook.md",
-        "docs/orchestration/handoffs/BKG-08I.md"
+        "docs/orchestration/handoffs/BKG-08I1.md"
       ],
       "last_validated_at": null,
       "notes": "Canonical QA route for the signed preview handoff token that links the wizard with the secure recovery session."
@@ -1750,7 +1750,7 @@
       ],
       "evidence_source": [
         "docs/07_handoffs/qa-canonical-runbook.md",
-        "docs/orchestration/handoffs/BKG-08I.md"
+        "docs/orchestration/handoffs/BKG-08I1.md"
       ],
       "last_validated_at": null,
       "notes": "Canonical QA route for the Preview-only custom bundle submission and deterministic recovery handoff."
@@ -1780,7 +1780,7 @@
       ],
       "evidence_source": [
         "docs/07_handoffs/qa-canonical-runbook.md",
-        "docs/orchestration/handoffs/BKG-08I.md"
+        "docs/orchestration/handoffs/BKG-08I1.md"
       ],
       "last_validated_at": null,
       "notes": "Canonical QA route for the preview recovery session that reconstructs the pending payment UI from secure cookies."
@@ -1810,7 +1810,7 @@
       ],
       "evidence_source": [
         "docs/07_handoffs/qa-canonical-runbook.md",
-        "docs/orchestration/handoffs/BKG-08I.md"
+        "docs/orchestration/handoffs/BKG-08I1.md"
       ],
       "last_validated_at": null,
       "notes": "Canonical QA route for the wizard-side Preview handoff that stays disconnected from production flows."
@@ -1840,7 +1840,7 @@
       ],
       "evidence_source": [
         "docs/07_handoffs/qa-canonical-runbook.md",
-        "docs/orchestration/handoffs/BKG-08I.md"
+        "docs/orchestration/handoffs/BKG-08I1.md"
       ],
       "last_validated_at": null,
       "notes": "Canonical QA route for the Preview-only end-to-end path from wizard submission to recovery session."

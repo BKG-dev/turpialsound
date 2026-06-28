@@ -1,35 +1,34 @@
 # Current Sprint
 
 Sprint:
-BKG-08I
+BKG-08I1
 
 Name:
-Handoff Preview end-to-end desde Arma tu paquete hasta recuperación de pago
+Correccion de autoridad temporal y cobertura E2E del handoff Preview
 
 Base:
-10012b9e4e895316646e0217dbebbf5006a6a13b
+725c07037fa151fd177b88df6b71a3d30c032fbd
 
 State:
-TECHNICALLY_VALIDATED
+DIRECTOR_REVIEW
 
 Scope:
 
-* flujo Preview end-to-end con cookies HttpOnly firmadas;
-* submission canonica y repricing autoritativo;
-* publicCode Preview y recuperacion same-browser;
-* wizard y produccion fuera de alcance.
+* duracion comercial autoritativa desde el servidor;
+* preview success summary autoritativo;
+* flujo UI real de simulacion;
+* claims temporales estrictos en el handoff Preview.
 
 Out of Scope:
 
-* conectividad del wizard a produccion;
-* notificaciones;
+* DB o Blob reales;
+* wiring del wizard a produccion;
 * produccion;
-* manual QA;
-* base de datos real;
-* Blob real.
+* QA manual;
+* siguiente sprint.
 
 Result:
-READY_FOR_ISOLATED_DATABASE_END_TO_END
+PREVIEW_END_TO_END_AUTHORITY_CORRECTION_PENDING_CI
 
 Next Action:
-ChatGPT reviews BKG-08I and defines the isolated PostgreSQL full booking and payment lifecycle.
+ChatGPT verifies authoritative duration, server-result rendering and real payment UI flow execution before isolated PostgreSQL lifecycle integration.

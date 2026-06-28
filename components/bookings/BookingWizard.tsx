@@ -1,9 +1,9 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
+import { CustomBundlePreviewSuccessSummary } from '@/components/bookings/CustomBundlePreviewSuccessSummary'
 import { ServiceSelectStep } from '@/components/bookings/steps/ServiceSelectStep'
 import { VariantSelectStep } from '@/components/bookings/steps/VariantSelectStep'
 import { DateTimeStep, deriveEndTime } from '@/components/bookings/steps/DateTimeStep'
@@ -22,10 +22,8 @@ import { reportBookingPayment, submitBookingRequest } from '@/lib/bookings/actio
 import { submitCustomBundlePreviewAction } from '@/lib/bookings/custom-bundle-preview-submission-action'
 import { buildBookingEstimate } from '@/lib/bookings/estimate'
 import {
-  countCustomBundleAggregateOnlySelections,
   buildCustomBundleEstimate,
   getCustomBundleItemBySlug,
-  splitCustomBundleEstimateLines,
   normalizeCustomBundleSelections,
 } from '@/lib/bookings/custom-bundle'
 import {
@@ -1687,17 +1685,6 @@ export function BookingWizard({
   }
 
   if (submissionState === 'success' && isCustomBundleMode && customBundlePreviewResult) {
-    const simulatedEndTime =
-      data.startTime && activeDurationMinutes !== null
-        ? deriveEndTime(data.startTime, activeDurationMinutes)
-        : null
-    const {
-      itemizedLines,
-      aggregateOnlyLines,
-      includedLines,
-    } = splitCustomBundleEstimateLines(customBundleEstimate.lines)
-    const aggregateOnlyCount = countCustomBundleAggregateOnlySelections(customBundleEstimate.lines)
-
     return (
       <div className="rounded-2xl border border-brand-border bg-brand-surface p-3">
         {submissionNotice && (
@@ -1705,137 +1692,15 @@ export function BookingWizard({
             {submissionNotice}
           </div>
         )}
-        <div className="mb-2.5 rounded-lg border border-brand-border/70 bg-brand-bg/30 px-2.5 py-2">
-          <div className="flex items-start gap-2">
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-gold/10">
-              <svg className="h-4 w-4 text-accent-gold" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path
-                  d="M5 13l4 4L19 7"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            <div className="min-w-0">
-              <h2 className="font-display text-sm font-bold leading-tight text-text-primary md:text-base">
-                Simulacion completada
-              </h2>
-              <p className="mt-0.5 text-[11px] leading-snug text-text-secondary">
-                No se creo BookingRequest, no se llamo Prisma y no se envio ninguna notificacion real.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-2.5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <div className="space-y-2">
-            <div className="rounded-lg border border-brand-border bg-brand-bg/30 px-2 py-1.5">
-              <div className="space-y-1.5 text-[11px] leading-snug">
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-text-muted">Fecha</p>
-                  <p className="font-medium text-text-primary">{bookingDateLabel ?? 'Por definir'}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-text-muted">Horario</p>
-                  <p className="font-medium text-text-primary">
-                    {data.startTime}
-                    {simulatedEndTime ? ` - ${simulatedEndTime}` : ''}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-text-muted">Duracion total</p>
-                  <p className="font-medium text-text-primary">{durationLabel ?? '0 min'}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-brand-border bg-brand-bg/40 p-2">
-              <div className="space-y-1.5 text-[11px] leading-snug">
-                {itemizedLines.map((line) => (
-                  <div key={`${line.item.slug}-${line.label}`}>
-                    <p className="text-[10px] uppercase tracking-wide text-text-muted">{line.label}</p>
-                    <p className="font-medium text-text-primary">
-                      {`${line.quantity} ${line.item.commercialUnit} · ${line.lineTotalUsd} USD`}
-                    </p>
-                  </div>
-                ))}
-                {aggregateOnlyLines.length > 0 && (
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-text-muted">Adicionales del paquete</p>
-                    <p className="font-medium text-text-primary">{customBundleEstimate.additionalSubtotalUsd} USD</p>
-                    <p className="text-[10px] text-text-muted">
-                      {aggregateOnlyCount} adicionales seleccionados
-                    </p>
-                  </div>
-                )}
-                {includedLines.map((line) => (
-                  <div key={`${line.item.slug}-${line.label}`}>
-                    <p className="text-[10px] uppercase tracking-wide text-text-muted">{line.label}</p>
-                    <p className="font-medium text-text-primary">Incluido — 0 USD</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-brand-border bg-brand-bg/40 p-2">
-            <div className="space-y-1.5 text-[11px] leading-snug">
-              <div>
-                <p className="text-[10px] uppercase tracking-wide text-text-muted">Subtotal</p>
-                <p className="font-medium text-text-primary">{customBundleEstimate.subtotalUsd} USD</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-wide text-text-muted">Recargo de fin de semana</p>
-                <p className="font-medium text-text-primary">
-                  {customBundleEstimate.adjustments.reduce((total, adjustment) => total + adjustment.amountUsd, 0)} USD
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-wide text-text-muted">Total estimado</p>
-                <p className="font-medium text-text-primary">{customBundleEstimate.estimatedTotalUsd} USD</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-wide text-text-muted">Estado</p>
-                <p className="font-medium text-text-primary">Preview / simulacion segura</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-wide text-text-muted">Simulada</p>
-                <p className="font-medium text-text-primary">
-                  {formatCaracasDateTime(customBundlePreviewResult.holdExpiresAtIso)}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-3 rounded-lg border border-accent-gold/20 bg-accent-gold/5 px-3 py-2 text-[11px] leading-snug text-text-primary">
-              <p className="font-medium">Continua al pago simulado sin token visible.</p>
-              <Link
-                href={customBundlePreviewResult.recoveryPath}
-                className="mt-1 inline-flex font-semibold text-accent-gold underline underline-offset-4"
-              >
-                Abrir recuperacion segura
-              </Link>
-            </div>
-
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSubmissionState('idle')
-                  setCustomBundlePreviewResult(null)
-                  setSubmitError(null)
-                }}
-              >
-                Seguir editando
-              </Button>
-              <Button variant="primary" size="sm" onClick={resetWizard}>
-                Nueva simulacion
-              </Button>
-            </div>
-          </div>
-        </div>
+        <CustomBundlePreviewSuccessSummary
+          result={customBundlePreviewResult}
+          onContinueEditing={() => {
+            setSubmissionState('idle')
+            setCustomBundlePreviewResult(null)
+            setSubmitError(null)
+          }}
+          onNewSimulation={resetWizard}
+        />
       </div>
     )
   }
