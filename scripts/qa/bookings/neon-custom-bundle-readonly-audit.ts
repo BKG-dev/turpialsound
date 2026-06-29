@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
@@ -98,12 +99,9 @@ type ColumnInfo = {
   numericScale: number | null
 }
 
-function fail(message: string, error?: unknown): never {
+function fail(message: string): never {
   console.error('booking_neon_custom_bundle_readonly_audit FAILED')
   console.error(message)
-  if (error instanceof Error && error.stack) {
-    console.error(error.stack)
-  }
   process.exit(1)
 }
 
@@ -425,17 +423,72 @@ function columnMatches(
   return true
 }
 
-function buildProposalStatusFromArtifacts(
-  artifacts: Array<{ present: boolean; compatible: boolean }>,
-): ProposalStatus {
-  if (artifacts.some((artifact) => artifact.present && !artifact.compatible)) {
+function evaluateProposalStatus(input: {
+  baselinePresent: boolean
+  artifacts: Array<{ present: boolean; compatible: boolean }>
+}): ProposalStatus {
+  if (!input.baselinePresent) {
     return 'BLOCKED_INCOMPATIBLE_SCHEMA'
   }
 
-  const presentCount = artifacts.filter((artifact) => artifact.present).length
+  if (input.artifacts.some((artifact) => artifact.present && !artifact.compatible)) {
+    return 'BLOCKED_INCOMPATIBLE_SCHEMA'
+  }
+
+  const presentCount = input.artifacts.filter((artifact) => artifact.present).length
   if (presentCount === 0) return 'READY_FOR_MIGRATION_DRY_RUN'
-  if (presentCount < artifacts.length) return 'BLOCKED_PARTIAL_SCHEMA'
+  if (presentCount < input.artifacts.length) return 'BLOCKED_PARTIAL_SCHEMA'
   return 'ALREADY_APPLIED_COMPATIBLE'
+}
+
+function collectProposalBlockers(input: {
+  transactionReadOnly: boolean
+  baselineBookingRequestsPresent: boolean
+  baselineBookingRequestItemsPresent: boolean
+  proposalStatus: { bkg04: ProposalStatus; bkg07: ProposalStatus; bkg08: ProposalStatus }
+  dataCompatibilityChecks: AuditCheck[]
+}): string[] {
+  const blockers: string[] = []
+
+  if (!input.transactionReadOnly) {
+    blockers.push('TRANSACTION_READ_ONLY_NOT_ENABLED')
+  }
+
+  if (!input.baselineBookingRequestsPresent) {
+    blockers.push('BASELINE_BOOKING_REQUESTS_MISSING')
+  }
+
+  if (!input.baselineBookingRequestItemsPresent) {
+    blockers.push('BASELINE_BOOKING_REQUEST_ITEMS_MISSING')
+  }
+
+  if (input.proposalStatus.bkg04 === 'BLOCKED_INCOMPATIBLE_SCHEMA') {
+    blockers.push('BKG04_INCOMPATIBLE_SCHEMA')
+  }
+  if (input.proposalStatus.bkg07 === 'BLOCKED_INCOMPATIBLE_SCHEMA') {
+    blockers.push('BKG07_INCOMPATIBLE_SCHEMA')
+  }
+  if (input.proposalStatus.bkg08 === 'BLOCKED_INCOMPATIBLE_SCHEMA') {
+    blockers.push('BKG08_INCOMPATIBLE_SCHEMA')
+  }
+
+  if (input.proposalStatus.bkg04 === 'BLOCKED_PARTIAL_SCHEMA') {
+    blockers.push('BKG04_PARTIAL_SCHEMA')
+  }
+  if (input.proposalStatus.bkg07 === 'BLOCKED_PARTIAL_SCHEMA') {
+    blockers.push('BKG07_PARTIAL_SCHEMA')
+  }
+  if (input.proposalStatus.bkg08 === 'BLOCKED_PARTIAL_SCHEMA') {
+    blockers.push('BKG08_PARTIAL_SCHEMA')
+  }
+
+  for (const check of input.dataCompatibilityChecks) {
+    if (!check.ok) {
+      blockers.push(check.label)
+    }
+  }
+
+  return blockers
 }
 
 async function inspectSchema(client: Client): Promise<{
@@ -463,9 +516,6 @@ async function inspectSchema(client: Client): Promise<{
     )
     const transactionReadOnly = readOnlyRow?.transaction_read_only === 'on'
     schemaChecks.push(buildCheck('transaction_read_only = on', transactionReadOnly))
-    if (!transactionReadOnly) {
-      blockers.push('TRANSACTION_READ_ONLY_NOT_ENABLED')
-    }
 
     const serverVersionRow = await queryOne<{ version: string }>(client, 'SHOW server_version')
     const postgresVersion = serverVersionRow?.version ?? 'unknown'
@@ -474,6 +524,15 @@ async function inspectSchema(client: Client): Promise<{
     for (const tableName of REQUIRED_TABLES) {
       schemaChecks.push(buildCheck(`table ${tableName} exists`, tableNames.has(tableName)))
     }
+
+    const baselineBookingRequestsPresent = tableNames.has('booking_requests')
+    const baselineBookingRequestItemsPresent = tableNames.has('booking_request_items')
+    schemaChecks.push(
+      buildCheck('baseline booking_requests exists', baselineBookingRequestsPresent),
+    )
+    schemaChecks.push(
+      buildCheck('baseline booking_request_items exists', baselineBookingRequestItemsPresent),
+    )
 
     const bookingRequestColumns = await fetchColumnMap(client, 'booking_requests')
     const bookingRequestItemColumns = await fetchColumnMap(client, 'booking_request_items')
@@ -766,9 +825,18 @@ async function inspectSchema(client: Client): Promise<{
     ]
 
     const proposalStatus = {
-      bkg04: buildProposalStatusFromArtifacts(bkg04Artifacts),
-      bkg07: buildProposalStatusFromArtifacts(bkg07Artifacts),
-      bkg08: buildProposalStatusFromArtifacts(bkg08Artifacts),
+      bkg04: evaluateProposalStatus({
+        baselinePresent: baselineBookingRequestsPresent && baselineBookingRequestItemsPresent,
+        artifacts: bkg04Artifacts,
+      }),
+      bkg07: evaluateProposalStatus({
+        baselinePresent: baselineBookingRequestsPresent,
+        artifacts: bkg07Artifacts,
+      }),
+      bkg08: evaluateProposalStatus({
+        baselinePresent: baselineBookingRequestsPresent,
+        artifacts: bkg08Artifacts,
+      }),
     }
 
     const tableMetrics = await Promise.all(
@@ -986,13 +1054,15 @@ async function inspectSchema(client: Client): Promise<{
       )
     }
 
-    const proposalViolations = [
-      ...schemaChecks.filter((check) => !check.ok).map((check) => check.label),
-      ...dataCompatibilityChecks.filter((check) => !check.ok).map((check) => check.label),
-    ]
-    if (proposalViolations.length > 0) {
-      blockers.push(...proposalViolations.slice(0, 12))
-    }
+    blockers.push(
+      ...collectProposalBlockers({
+        transactionReadOnly,
+        baselineBookingRequestsPresent,
+        baselineBookingRequestItemsPresent,
+        proposalStatus,
+        dataCompatibilityChecks,
+      }),
+    )
 
     return {
       proposalStatus,
@@ -1018,6 +1088,19 @@ function computeVerdict(input: {
   }
 
   const statuses = Object.values(input.proposalStatus)
+
+  if (statuses.some((status) => status === 'BLOCKED_INCOMPATIBLE_SCHEMA')) {
+    return 'BLOCKED_INCOMPATIBLE_SCHEMA'
+  }
+
+  if (input.blockers.length > 0) {
+    return 'BLOCKED_INCOMPATIBLE_SCHEMA'
+  }
+
+  if (statuses.some((status) => status === 'BLOCKED_PARTIAL_SCHEMA')) {
+    return 'BLOCKED_PARTIAL_SCHEMA'
+  }
+
   if (statuses.every((status) => status === 'ALREADY_APPLIED_COMPATIBLE')) {
     return 'ALREADY_APPLIED_COMPATIBLE'
   }
@@ -1026,19 +1109,190 @@ function computeVerdict(input: {
     return 'READY_FOR_MIGRATION_DRY_RUN'
   }
 
-  if (statuses.some((status) => status === 'BLOCKED_INCOMPATIBLE_SCHEMA')) {
-    return 'BLOCKED_INCOMPATIBLE_SCHEMA'
-  }
-
-  if (statuses.some((status) => status === 'BLOCKED_PARTIAL_SCHEMA')) {
-    return 'BLOCKED_PARTIAL_SCHEMA'
-  }
-
-  if (input.blockers.length > 0) {
-    return 'BLOCKED_INCOMPATIBLE_SCHEMA'
-  }
-
   return 'READY_FOR_MIGRATION_DRY_RUN'
+}
+
+function runSelfTest(): void {
+  const connectionSource: ConnectionSource = {
+    name: 'TURPIAL_NEON_READONLY_URL',
+    connectionString: 'postgresql://readonly.example.invalid/turpial_booking_ci?sslmode=require',
+    hostHash: 'deadbeef',
+  }
+
+  const ready = evaluateProposalStatus({
+    baselinePresent: true,
+    artifacts: [
+      { present: false, compatible: true },
+      { present: false, compatible: true },
+      { present: false, compatible: true },
+    ],
+  })
+  assert.equal(ready, 'READY_FOR_MIGRATION_DRY_RUN')
+
+  const applied = evaluateProposalStatus({
+    baselinePresent: true,
+    artifacts: [
+      { present: true, compatible: true },
+      { present: true, compatible: true },
+      { present: true, compatible: true },
+    ],
+  })
+  assert.equal(applied, 'ALREADY_APPLIED_COMPATIBLE')
+
+  const partial = evaluateProposalStatus({
+    baselinePresent: true,
+    artifacts: [
+      { present: true, compatible: true },
+      { present: false, compatible: true },
+      { present: false, compatible: true },
+    ],
+  })
+  assert.equal(partial, 'BLOCKED_PARTIAL_SCHEMA')
+
+  const baselineMissing = evaluateProposalStatus({
+    baselinePresent: false,
+    artifacts: [
+      { present: false, compatible: true },
+      { present: false, compatible: true },
+      { present: false, compatible: true },
+    ],
+  })
+  assert.equal(baselineMissing, 'BLOCKED_INCOMPATIBLE_SCHEMA')
+
+  const incompatibleObject = evaluateProposalStatus({
+    baselinePresent: true,
+    artifacts: [
+      { present: true, compatible: false },
+      { present: false, compatible: true },
+      { present: false, compatible: true },
+    ],
+  })
+  assert.equal(incompatibleObject, 'BLOCKED_INCOMPATIBLE_SCHEMA')
+
+  assert.deepEqual(
+    collectProposalBlockers({
+      transactionReadOnly: true,
+      baselineBookingRequestsPresent: true,
+      baselineBookingRequestItemsPresent: true,
+      proposalStatus: {
+        bkg04: ready,
+        bkg07: ready,
+        bkg08: ready,
+      },
+      dataCompatibilityChecks: [],
+    }),
+    [],
+  )
+
+  assert.deepEqual(
+    collectProposalBlockers({
+      transactionReadOnly: true,
+      baselineBookingRequestsPresent: false,
+      baselineBookingRequestItemsPresent: true,
+      proposalStatus: {
+        bkg04: ready,
+        bkg07: ready,
+        bkg08: ready,
+      },
+      dataCompatibilityChecks: [],
+    }),
+    ['BASELINE_BOOKING_REQUESTS_MISSING'],
+  )
+
+  assert.deepEqual(
+    collectProposalBlockers({
+      transactionReadOnly: false,
+      baselineBookingRequestsPresent: true,
+      baselineBookingRequestItemsPresent: true,
+      proposalStatus: {
+        bkg04: ready,
+        bkg07: ready,
+        bkg08: ready,
+      },
+      dataCompatibilityChecks: [],
+    }),
+    ['TRANSACTION_READ_ONLY_NOT_ENABLED'],
+  )
+
+  assert.equal(
+    computeVerdict({
+      connectionSource,
+      proposalStatus: {
+        bkg04: partial,
+        bkg07: ready,
+        bkg08: ready,
+      },
+      blockers: [],
+    }),
+    'BLOCKED_PARTIAL_SCHEMA',
+  )
+
+  assert.equal(
+    computeVerdict({
+      connectionSource,
+      proposalStatus: {
+        bkg04: ready,
+        bkg07: ready,
+        bkg08: ready,
+      },
+      blockers: ['DATA_PAYMENT_TOTAL_INVALID'],
+    }),
+    'BLOCKED_INCOMPATIBLE_SCHEMA',
+  )
+
+  assert.equal(
+    computeVerdict({
+      connectionSource,
+      proposalStatus: {
+        bkg04: ready,
+        bkg07: ready,
+        bkg08: ready,
+      },
+      blockers: ['TRANSACTION_READ_ONLY_NOT_ENABLED'],
+    }),
+    'BLOCKED_INCOMPATIBLE_SCHEMA',
+  )
+
+  assert.equal(
+    computeVerdict({
+      connectionSource: null,
+      proposalStatus: {
+        bkg04: ready,
+        bkg07: ready,
+        bkg08: ready,
+      },
+      blockers: [],
+    }),
+    'BLOCKED_MISSING_READONLY_CREDENTIAL',
+  )
+
+  assert.equal(
+    computeVerdict({
+      connectionSource,
+      proposalStatus: {
+        bkg04: applied,
+        bkg07: applied,
+        bkg08: applied,
+      },
+      blockers: [],
+    }),
+    'ALREADY_APPLIED_COMPATIBLE',
+  )
+
+  assert.equal(
+    computeVerdict({
+      connectionSource,
+      proposalStatus: {
+        bkg04: ready,
+        bkg07: ready,
+        bkg08: ready,
+      },
+      blockers: [],
+    }),
+    'READY_FOR_MIGRATION_DRY_RUN',
+  )
+
+  console.log('booking_neon_custom_bundle_readonly_audit_self_test OK')
 }
 
 function writeEvidence(evidence: EvidenceFile): void {
@@ -1063,6 +1317,12 @@ function printSuccessResult(evidence: EvidenceFile): void {
 }
 
 async function run(): Promise<void> {
+  const args = process.argv.slice(2)
+  if (args.includes('--self-test')) {
+    runSelfTest()
+    return
+  }
+
   const auditedAt = new Date().toISOString()
   for (const relativePath of PROPOSAL_SQL_FILES) {
     const sql = readSqlFile(resolve(process.cwd(), relativePath))
@@ -1130,7 +1390,7 @@ async function run(): Promise<void> {
 
     writeEvidence(evidence)
     printSuccessResult(evidence)
-  } catch (error) {
+  } catch {
     const evidence: EvidenceFile = {
       sprint: 'BKG-08K',
       auditedSha: EXPECTED_REPO_SHA,
@@ -1155,14 +1415,11 @@ async function run(): Promise<void> {
 
     writeEvidence(evidence)
     console.log('booking_neon_custom_bundle_readonly_audit BLOCKED')
-    console.log('missing credential: READ_ONLY_AUDIT_EXECUTION_FAILED')
+    console.log('READ_ONLY_AUDIT_EXECUTION_FAILED')
     console.log(`verdict: ${evidence.verdict}`)
-    if (error instanceof Error && error.stack) {
-      console.error(error.stack)
-    }
   } finally {
     await client.end().catch(() => {})
   }
 }
 
-void run().catch((error) => fail('Unexpected failure while executing the Neon read-only audit.', error))
+void run().catch(() => fail('Unexpected failure while executing the Neon read-only audit.'))
